@@ -11,12 +11,13 @@ import android.os.Looper
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.provider.Settings
+import dev.tvremote.setup.keys.KeysProtocol
 import org.xmlpull.v1.XmlPullParser
 
 /**
  * Remote buttons that only the stock launcher answered (Input, YouTube, Netflix...). Android sends some keys as a "global key" to
  * one component named in the framework's global_keys.xml, in every app, and eats them there: when that component is gone (Optimize
- * TV turned Google TV's launcher off, a home swap) the button is dead everywhere. [KeyFixService] brings them back.
+ * TV turned Google TV's launcher off, a home swap) the button is dead everywhere. [KeysBridge] brings them back.
  *
  * This file decides, with no Android type in [plan] so a test can run it: a key is taken over only when the system maps it to a
  * component that is not there (not installed, or turned off) AND we have something to do for it. A key that still works is
@@ -69,7 +70,7 @@ object KeyFix {
     /** What a real press of [code] does: the plan (TV Home's map laid over the dead keys' rules, as [plan] made it); null = nothing of ours, send the key plainly. */
     fun decide(plan: Map<Int, Rule>, code: Int): Rule? = plan[code]
 
-    /** Does what [r] says. Called from the key filter ([KeyFixService]) and for a key a client sent ([KeyFixService.press]). */
+    /** Does what [r] says. Called from the key filter ([KeysBridge]) and for a key a client sent ([KeysBridge.press]). */
     fun run(c: Context, r: Rule) {
         fun start(i: Intent?) { if (i != null) c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         try {
@@ -145,23 +146,31 @@ object KeyFix {
 
     private const val PREFS = "keyfix"
     private const val PERM = "android.permission.WRITE_SECURE_SETTINGS"
-    val SERVICE = "dev.tvremote.setup/dev.tvremote.setup.KeyFixService"
+    /** The accessibility service lives in the add-on TV Setup Keys ([KeysAddon]), not here: this app declares none (DECISIONS.md). */
+    val SERVICE = "${KeysProtocol.ADDON}/${KeysProtocol.ADDON}.KeyFixService"
 
     /** Wanted unless a person switched it off on TV Setup's screen. */
     fun wanted(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
     fun want(c: Context, on: Boolean) { c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("on", on).apply(); sync(c) }
     fun can(c: Context): Boolean = c.packageManager.checkPermission(PERM, c.packageName) == PackageManager.PERMISSION_GRANTED
 
-    /** The list with [SERVICE] put in or taken out, the others (KeyCatch while the screen is off, TalkBack) as they were. */
+    /**
+     * The list with [SERVICE] put in or taken out, the others (KeyCatch while the screen is off, TalkBack) as they were. The entries
+     * of the versions that kept the services inside TV Setup ([stale]) are dropped on the way: the move of a TV that was updated.
+     */
     fun list(was: String?, on: Boolean): String {
-        val keep = (was ?: "").split(":").filter { it.isNotEmpty() && it != "null" && !isOurs(it) }
+        val keep = (was ?: "").split(":").filter { it.isNotEmpty() && it != "null" && !isOurs(it) && !stale(it) }
         return (if (on) keep + SERVICE else keep).joinToString(":")
     }
 
-    /** Android rewrites the list in its short form ("dev.tvremote.setup/.KeyFixService") once the service is bound. */
-    fun isOurs(entry: String): Boolean = entry == SERVICE || entry == "dev.tvremote.setup/.KeyFixService"
+    /** Android rewrites the list in its short form ("dev.tvremote.setup.keys/.KeyFixService") once the service is bound. */
+    fun isOurs(entry: String): Boolean = entry == SERVICE || entry == "${KeysProtocol.ADDON}/.KeyFixService"
+
+    /** An entry of TV Setup before the move: its services were `dev.tvremote.setup/...KeyFixService` and `...KeyCatch`, which no longer exist. */
+    fun stale(entry: String): Boolean = entry.startsWith("${KeysProtocol.SETUP}/") && Regex("[.](KeyFixService|KeyCatch)$").containsMatchIn(entry)
 
     fun has(was: String?): Boolean = was?.split(":")?.any { isOurs(it) } == true
+    fun hasStale(was: String?): Boolean = was?.split(":")?.any { stale(it) } == true
 
     @Volatile var prepared = false
 
@@ -173,6 +182,7 @@ object KeyFix {
         // APP_AUTO_START: a TCL's firmware kept the service from being bound (TclAppBoot isAllow = 'false') though the setting
         // named it; an op the TV does not know is an error that changes nothing
         try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1; appops set ${c.packageName} APP_AUTO_START allow 2>&1"); prepared = true } catch (e: Exception) { }
+        KeysAddon.prepare(adb)                                        // the service is the add-on's: the same for its package, once it is installed
     }
 
     private var wrote = 0L
@@ -184,13 +194,15 @@ object KeyFix {
             val r = c.contentResolver
             val was = Settings.Secure.getString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
             val has = has(was)
+            val old = hasStale(was)                                   // updated from a TV Setup that had the services inside: move the entry
             val map = systemMap()
             val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
             val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c)   // a dead key to bring back, or "hold to use Input" (HoldKeys)
-            if (need == has) return
+            if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
+            if (need == has && !old) return
             val t = System.currentTimeMillis()
-            if (need && t - wrote < 60000) return                     // the system took it out again just now (a policy): not every few seconds
+            if (need && !old && t - wrote < 60000) return        // the system took it out again just now (a policy): not every few seconds
             if (need) wrote = t
             val now = list(was, need)
             Settings.Secure.putString(r, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, now.ifEmpty { null })

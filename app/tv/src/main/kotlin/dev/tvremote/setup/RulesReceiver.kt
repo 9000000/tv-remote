@@ -47,7 +47,17 @@ class RulesReceiver : BroadcastReceiver() {
             }
             if (change.optString("do") == "key") {                  // a client's key (RulesClient.key): the real press's decision, else it sends the key itself
                 resultCode = Activity.RESULT_OK
-                resultData = Base64.encodeToString(JSONObject().put("acted", KeyFixService.press(c, change.optInt("code"))).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                resultData = Base64.encodeToString(JSONObject().put("acted", KeysBridge.press(c, change.optInt("code"))).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                return
+            }
+            if (change.optString("do") == "keys_addon") {           // Screen.java (the key that wakes the screen) needs TV Setup Keys: put it on the TV, answer when done
+                val pending = goAsync()
+                Thread({
+                    val ok = try { RemoteService.adb()?.let { KeysAddon.ensure(c, it) } == true } catch (e: Exception) { false }
+                    pending.resultCode = Activity.RESULT_OK
+                    pending.resultData = Base64.encodeToString(JSONObject().put("installed", ok).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                    pending.finish()
+                }, "keys-addon").apply { isDaemon = true }.start()
                 return
             }
             val state = Rules.change(c, change)

@@ -1,4 +1,4 @@
-package dev.tvremote.home
+package dev.tvremote.tvui
 
 import android.content.Context
 import android.graphics.Bitmap

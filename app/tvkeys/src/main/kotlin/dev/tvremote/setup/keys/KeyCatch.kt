@@ -1,4 +1,4 @@
-package dev.tvremote.setup
+package dev.tvremote.setup.keys
 
 import android.accessibilityservice.AccessibilityService
 import android.os.Build
@@ -11,12 +11,13 @@ import android.view.accessibility.AccessibilityEvent
  * OK that woke it would also open the app under the focus. Turned on and off by tvr-helper's Screen (as the shell, through
  * the secure settings) for just that time. A key from a real input device is eaten, down to its last repeat and its up, and the
  * service turns itself off; the remotes' keys (ADB `input`, scrcpy: a virtual device) pass, so the phone still drives the TV.
+ * Needs nothing from TV Setup, so it works on its own.
  */
 class KeyCatch : AccessibilityService() {
     private var eating = -1
 
     companion object {
-        /** Bound now: KeyFixService leaves keys alone then, the one that wakes the screen is this service's. */
+        /** Bound now: [KeyFixService] leaves keys alone then, the one that wakes the screen is this service's. */
         @Volatile var live = false
     }
 

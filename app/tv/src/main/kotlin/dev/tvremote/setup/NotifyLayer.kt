@@ -45,8 +45,12 @@ internal object NotifyLayer {
         val card = card(ctx, msg.optString("title"), msg.optString("text"))
         val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+        // Android 12+ fades a window that lets touches through to 0.8, the card's words then mixed with what is under it; a
+        // TV has no touch to let through, so only a touchscreen keeps it (a small corner, for a few seconds: no Air Mouse in the way)
+        val pass = if (ctx.packageManager.hasSystemFeature("android.hardware.touchscreen")) WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            else WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
         val lp = WindowManager.LayoutParams(-2, -2, type,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or pass or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT)
         lp.gravity = (if (corner.startsWith("top")) Gravity.TOP else Gravity.BOTTOM) or (if (corner.endsWith("left")) Gravity.START else Gravity.END)

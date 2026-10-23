@@ -209,6 +209,7 @@ class PlayActivity : Activity() {
         streams = all[n].sortedBy { if (Store.alive(this, it.url) == false) 1 else 0 }   // known-dead streams last
         stream = 0; asProgressive = false; retried = false
         Store.setLast(this, streams.first().id)
+        Store.setLastChannel(this, streams.first())
         showInfo()
         (sideList.adapter as SideList).notifyDataSetChanged()
         start()

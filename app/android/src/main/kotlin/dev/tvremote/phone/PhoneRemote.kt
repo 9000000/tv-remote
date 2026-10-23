@@ -34,7 +34,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "key" to act { k -> val code = Scenes.KEYS[k] ?: return@act; if (code in Tv.OPENERS) opens(code) else press(code) },   // a key from a menu (Tools)
     "timer" to act { timerMenu() },
     "scenes" to act { scenesMenu() },
-    "notify" to act { notifyDialog() },
+    "notify" to act { if (!needsAdb()) managing.open(host, then = "fromRemote(notifyDialog)") },   // the page's dialogs (js/notify.js, dim.js, setup.js): one copy
     "draw" to act { if (drawing) stopDrawing() else startDrawing() },
     "search" to act { askText(T("remote.search_play_store"), T("phone_remote.e_g_vlc"), T("remote.search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) } },   // the TV's Play Store takes searches only this way
     "package" to act { askText(T("remote.package_id"), "org.videolan.vlc", T("apps.open")) { storePage(it) } },
@@ -52,13 +52,14 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "automation" to act { c -> if (!needsAdb()) managing.open(host, "auto", c?.filter { it.isLetter() }?.let { "goTo('auto','$it')" }) },
     "clip" to act { clipDialog() },
     "screenOff" to act { screenOff() },
-    "dim" to act { dimDialog() },
-    "share" to act { shareDialog() },
+    "dim" to act { if (!needsAdb()) managing.open(host, then = "fromRemote(dimOpen)") },
+    "share" to act { if (!needsAdb()) managing.open(host, then = "fromRemote(shareDialog)") },
     "inputs" to act { inputsMenu() },
     "air" to act { if (airMode() != "mouse" && !airCan()) say(T("air.needs_adb"), true); airPick("mouse") },
     "gamespad" to act { if (!needsAdb()) gamesPointerOpen() },
     "ir" to act { irOpen(entry ?: host) },
-    "homeCustom" to act { if (!needsAdb()) managing.open(host, "tv", "homeOpen()") },   // the page's TV Home dialog: one place for it
+    "manage" to act { if (!needsAdb()) managing.open(host) },          // Tiện ích → Quản lý TV: the top-right icon, with its name
+    "homeCustom" to act { if (!needsAdb()) managing.open(host, "tv", "fromRemote(homeOpen)") },   // the page's TV Home dialog: one place for it
     "rescue" to act { rescueTv() },
 )
 

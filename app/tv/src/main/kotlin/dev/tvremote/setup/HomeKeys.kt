@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import dev.tvremote.home.HomeConfig
+import dev.tvremote.home.Target
 import org.json.JSONObject
 
 /**
@@ -33,12 +34,39 @@ internal object HomeKeys {
     } catch (e: Exception) { JSONObject() }
 
     /** The key → app map the person wants; empty while the switch is off. */
-    fun keys(c: Context): Map<Int, String> = load(c).let { if (it.optBoolean("keyon")) HomeConfig.keyApps(it.optJSONObject("keyapps")) else emptyMap() }
+    fun keys(c: Context): Map<Int, String> = all(c).filterValues { Target.kind(it) == Target.Kind.APP }   // apps only: the key filter's rule can start nothing else (KeyFix); see [open] for the others
+
+    /** Every target the person gave a key, shortcuts and live tiles too. */
+    fun all(c: Context): Map<Int, String> = load(c).let { if (it.optBoolean("keyon")) HomeConfig.keyApps(it.optJSONObject("keyapps")) else emptyMap() }
+
+    /**
+     * Opens [t], any [Target]: an app by its launch intent; a launcher shortcut or live tile through TV Home (only the home app may
+     * start another app's shortcut, LauncherApps), whose OpenActivity checks [t] is in its own settings. False: nothing to start.
+     */
+    fun open(c: Context, t: String): Boolean {
+        val pm = c.packageManager
+        val intent = when (Target.kind(t)) {
+            Target.Kind.APP -> pm.getLeanbackLaunchIntentForPackage(t) ?: pm.getLaunchIntentForPackage(t)
+            Target.Kind.PIN, Target.Kind.TILE ->
+                Intent().setClassName("dev.tvremote.home", "dev.tvremote.home.OpenActivity").putExtra("t", t).takeIf { launchable(c, "dev.tvremote.home") }
+            null -> null
+        } ?: return false
+        return try { c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); true } catch (e: Exception) { false }
+    }
+
+    /** Whether [t] can be opened now: an app is installed, a shortcut or tile needs TV Home. */
+    fun can(c: Context, t: String): Boolean = when (Target.kind(t)) {
+        null -> false
+        Target.Kind.APP -> c.packageManager.getLeanbackLaunchIntentForPackage(t) != null || c.packageManager.getLaunchIntentForPackage(t) != null
+        else -> launchable(c, "dev.tvremote.home")
+    }
+
+    private fun launchable(c: Context, pkg: String) = try { c.packageManager.getPackageInfo(pkg, 0); true } catch (e: Exception) { false }
 
     fun auto(c: Context): Pair<Boolean, String> = load(c).let { it.optBoolean("autoon") to it.optString("autoapp") }
 
     /** The service has to run for these: the key filter's list is kept by [KeyFixWatch], waking is heard by [AutoOpenWatch]. */
-    fun active(c: Context): Boolean = keys(c).isNotEmpty() || auto(c).let { it.first && it.second.isNotEmpty() }
+    fun active(c: Context): Boolean = all(c).isNotEmpty() || auto(c).let { it.first && it.second.isNotEmpty() }
 }
 
 /**
@@ -84,19 +112,16 @@ internal object AutoOpen {
     @Synchronized
     private fun run(c: Context, event: String) {
         val (on, pkg) = HomeKeys.auto(c)
-        val pm = c.packageManager
         val now = SystemClock.elapsedRealtime()
         val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val boot = bootCount(c)
         if (lastBoot < 0) { lastBoot = p.getInt("last_boot", -1); lastAt = p.getLong("last_at", 0L) }
         val ago = if (lastBoot == boot) now - lastAt else null        // elapsedRealtime restarts with the TV: a new run has no "last"
         val homes = homes(c)
-        val intent = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)
         val front = front(c)
-        val verdict = decide(on, pkg, intent != null, front, homes, setOf("com.android.systemui", c.packageName), ago)
+        val verdict = decide(on, pkg, HomeKeys.can(c, pkg), front, homes, setOf("com.android.systemui", c.packageName), ago)
         Log.i(TAG, "$event: $verdict ($pkg, on screen: '$front')")                         // adb logcat -s AutoOpen
-        if (verdict != Why.OPEN || intent == null) return
-        c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        if (verdict != Why.OPEN || !HomeKeys.open(c, pkg)) return
         lastBoot = boot; lastAt = now
         p.edit().putInt("last_boot", boot).putLong("last_at", now).apply()
     }

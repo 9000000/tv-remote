@@ -108,6 +108,20 @@ object Store {
 
     fun last(c: Context): String? = p(c).getString("last", null)
     fun setLast(c: Context, id: String) = p(c).edit().putString("last", id).apply()
+    /** The last channel watched whole (name, logo, streams), for TV Home's "Keep watching" tile, which needs no list read to show it. */
+    fun setLastChannel(c: Context, ch: Channel) { p(c).edit().putString("last_ch", write(ch).toString()).apply(); publishLast(c, ch) }
+
+    /** The dynamic launcher shortcut `last` (TV Home's picker lists it): the channel just watched, so it follows what is playing. */
+    private fun publishLast(c: Context, ch: Channel) {
+        if (android.os.Build.VERSION.SDK_INT < 25) return          // no ShortcutManager before 7.1
+        try {
+            val i = android.content.Intent(android.content.Intent.ACTION_VIEW, Pins.link(ch.id)).setClass(c, PlayActivity::class.java)
+            val s = android.content.pm.ShortcutInfo.Builder(c, "last").setShortLabel(c.getString(R.string.sc_last_short)).setLongLabel(ch.name.ifEmpty { c.getString(R.string.sc_last_short) })
+                .setIcon(android.graphics.drawable.Icon.createWithResource(c, R.drawable.icon)).setIntent(i).build()
+            c.getSystemService(android.content.pm.ShortcutManager::class.java)?.setDynamicShortcuts(listOf(s))
+        } catch (e: Exception) { }                                   // rate-limited or no launcher: the list is only a convenience
+    }
+    fun lastChannel(c: Context): Channel? = try { p(c).getString("last_ch", null)?.let { read(JSONObject(it)) } } catch (e: Exception) { null }
 
     /** The stream's last check: true answered, false did not, null not checked in the last 6 hours. */
     fun alive(c: Context, url: String): Boolean? {

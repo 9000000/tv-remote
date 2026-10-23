@@ -1,5 +1,6 @@
 package dev.tvremote.home
 
+import dev.tvremote.tvui.Motion
 import android.content.Context
 import android.animation.ObjectAnimator
 import android.animation.TimeInterpolator

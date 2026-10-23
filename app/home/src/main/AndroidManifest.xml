@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />   <!-- only ever granted over ADB (Dream.kt): the screensaver switch -->
     <queries>                                                         <!-- the apps it lists, and TV Setup for the usage card -->
         <package android:name="dev.tvremote.setup" />
+        <package android:name="dev.tvremote.channels" />           <!-- its "Keep watching" tile: its key is checked (Tiles) -->
         <package android:name="com.esaba.downloader" />           <!-- the power button opens it to get TV Setup -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
@@ -36,7 +37,7 @@
         </activity>
         <!-- The remote's Input key while another app is in front: the system sends VIEW_INPUTS to whoever answers it. Off from the start and
              turned on by InputOpen.sync only when nothing else answers (the stock launcher turned off by Optimize TV / the swap; TV Setup
-             declares no filter: its InputsActivity is started by name, by KeyFixService, after this intent finds nobody). Where the TV has
+             declares no filter: its InputsActivity is started by name, by KeysBridge (TV Setup, for the key filter of TV Setup Keys), after this intent finds nobody). Where the TV has
              an answer of its own two would make Android ask which on every press, and a priority cannot outbid it (non-system apps get 0). -->
         <activity-alias android:name=".InputsEntry" android:targetActivity=".HomeActivity" android:exported="true" android:enabled="false">
             <intent-filter>
@@ -57,6 +58,9 @@
             android:noHistory="true" android:taskAffinity="">
             <intent-filter><action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" /></intent-filter>
         </activity>
+        <!-- TV Setup hands a key's or the power-on app's shortcut / live tile here (only the home screen may start one): Targets.kt, which opens only what the settings name -->
+        <activity android:name=".OpenActivity" android:exported="true" android:theme="@style/Ghost" android:excludeFromRecents="true"
+            android:noHistory="true" android:taskAffinity="" />
         <!-- its settings, from a phone or computer that has ADB here (core/ontv/Home.kt); DUMP is held by the shell only, so no app can -->
         <receiver android:name=".HomeReceiver" android:exported="true" android:permission="android.permission.DUMP" />
         <receiver android:name="dev.tvremote.update.SelfUpdate$Installed" android:exported="false" />

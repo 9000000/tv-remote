@@ -51,7 +51,9 @@
       { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"], "cores": ["phone"],
         "why": "on the web TV Home has its own key in the grid" },
       { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",
-        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" }
+        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" },
+      { "id": "tools-manage", "icon": "apps", "t": "rkey.manage_tv", "sub": "rkey.manage_tv_sub", "do": "manage", "needs": ["adb"], "cores": ["phone"],
+        "why": "the remote's top-right icon, here with its name: an icon alone is easy to miss; on the web the tabs are this" }
     ],
     "tvkeys": [
       { "id": "tools-tv", "icon": "tv", "t": "rkey.tv", "do": "key", "arg": "LIVE" },

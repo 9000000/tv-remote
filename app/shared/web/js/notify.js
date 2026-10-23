@@ -44,7 +44,7 @@ async function notifyDialog() {
     UI.head(T('notify.dialog_title'), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     title, text,
     UI.group(T('notify.screen_corner'), corners), UI.group(T('notify.stays_for'), secs),
-    UI.actions(el('button', { textContent: T('common.cancel'), onclick: () => d.close() }), UI.btn(T('notify.send'), send, 'primary'))));
+    UI.actions(el('button', { textContent: T('common.cancel'), onclick: () => d.close() }), UI.btn('📤 ' + T('notify.send'), send, 'primary'))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal(); text.focus();
 }

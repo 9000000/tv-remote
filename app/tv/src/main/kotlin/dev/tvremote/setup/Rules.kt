@@ -67,7 +67,7 @@ internal object Rules {
         save(c, o)
         Guard.poke()
         KeepAwake.live?.check()
-        if (d.optString("do") == "holdkeys") Thread({ KeyFix.sync(c); KeyFixService.poke() }, "holdkeys").apply { isDaemon = true }.start()   // the key filter on or off
+        if (d.optString("do") == "holdkeys") Thread({ KeyFix.sync(c); KeysBridge.poke() }, "holdkeys").apply { isDaemon = true }.start()   // the key filter on or off
         return state(c)
     }
 

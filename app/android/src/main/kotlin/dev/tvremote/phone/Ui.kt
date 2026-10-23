@@ -419,3 +419,18 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
 
 /** The menu a choice was just picked in (its title, when, how to open it again), for the next menu's Back. */
 private var menuFrom: Triple<String, Long, () -> Unit>? = null
+
+/** A row of choices that look like buttons, the picked one on (setOn); [pick] is told the new choice. */
+internal fun MainActivity.chips(options: List<Pair<String, String>>, now: String, pick: (String) -> Unit): LinearLayout {
+    val row = LinearLayout(this)
+    options.forEachIndexed { i, (value, words) ->
+        val b = button(words, BTN).apply { setOn(value == now) }
+        b.textSize = 13f
+        b.isSingleLine = true                                         // "10 giây" on one line: a wrapped chip was cut at the bottom
+        b.setPadding(0, b.paddingTop, 0, b.paddingBottom)
+        b.setOnClickListener { pick(value) }
+        val wide = options.any { it.second.length <= 2 } && words.length > 2   // "Tự động" beside "1", "2": more room for the word
+        row.addView(b, cell(40, i > 0).apply { if (wide) weight = 1.6f })
+    }
+    return row
+}

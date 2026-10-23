@@ -11,7 +11,7 @@ async function dimOpen() {
   const chips = el('div', { className: 'fchips dimc' });
   const out = el('output');
   const r = el('input', { type: 'range', min: 5, max: 90, step: 5, value: s.pct, ariaLabel: T('dim.strength'), oninput: (e) => set({ pct: +e.target.value, on: true }) });
-  const off = el('button', { textContent: T('dim.off'), onclick: () => set({ on: false }) });
+  const off = el('button', { textContent: '💤 ' + T('dim.off'), onclick: () => set({ on: false }) });
   function draw() {
     const words = dimWords();
     chips.replaceChildren(...Object.keys(DIM_COLORS).map((c) => {

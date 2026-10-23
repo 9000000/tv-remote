@@ -19,7 +19,7 @@ object HomeApi {
     /** [set] changed first (HomeConfig.merge cleans it), [drop] one photo deleted first, [thumbs] the photos' small pictures too. */
     fun snapshot(c: Context, set: JSONObject?, drop: String?, thumbs: Boolean): JSONObject {
         if (drop != null && HomeConfig.isPhoto(drop)) drop(c, drop)
-        if (set == null) Tiles.refresh(c)                              // a client reading: what the providers offer is as true as this moment
+        if (set == null) { Tiles.refresh(c); Pins.refresh(c) }         // a client reading: what the providers and the apps offer is as true as this moment
         val config = if (set == null) Store.get(c) else Store.change(c, set)
         val apps = JSONArray()
         for (a in Apps.list(c)) apps.put(JSONObject().put("pkg", a.pkg).put("label", a.label))

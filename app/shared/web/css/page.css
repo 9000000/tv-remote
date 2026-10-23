@@ -211,6 +211,7 @@ dialog.ask .fields { display:flex; gap:12px; }
 dialog.ask .fields label { flex:1; display:flex; align-items:center; gap:8px; }
 dialog.ask .fields input { flex:1; min-width:0; text-align:center; font-size:18px; }
 dialog.ask .acts { display:flex; justify-content:flex-end; gap:8px; }
+dialog.ask .card > .actions:last-child { justify-content:flex-end; }   /* a dialog's closing row, made with UI.actions: on the right as .acts, not where a card's buttons sit */
 dialog.ask .acts button { min-width:88px; padding:0 18px; }
 dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
 .aboutbox { max-width:480px; margin:0; }
@@ -231,6 +232,17 @@ dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
 .choice b { font-size:15px; }
 .choice small { font-weight:400; opacity:.75; font-size:12.5px; line-height:1.4; }
 .assistrow { display:flex; gap:8px; flex-wrap:wrap; }
+/* a how-to as numbered steps (setup.js steps()): one short line each, the words to look for bold, a Settings path as arrows */
+.asteps { list-style:none; counter-reset:s; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.asteps li { counter-increment:s; display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; background:var(--btn); font-size:14px; line-height:1.5; }
+.asteps li::before { content:counter(s); flex:none; width:22px; height:22px; margin-top:1px; border-radius:50%; background:var(--accent); color:var(--accent-ink); display:grid; place-items:center; font-weight:700; font-size:12px; }
+.asteps .arr { color:var(--muted); margin:0 3px; }
+#assistbody p.anote { font-size:13px; color:var(--muted); }
+#assistbody p.amore { margin-top:6px; font-weight:600; font-size:13px; color:var(--muted); }
+.afold { border:1px solid var(--line); border-radius:12px; padding:0 12px; }
+.afold summary { cursor:pointer; padding:11px 0; font-weight:600; font-size:14px; }
+.afold[open] { padding-bottom:12px; }
+.afold .asteps li { background:none; padding:4px 0; }
 dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; cursor:zoom-out; }
 @media (min-width:900px) {
   #pickcols.solo { columns:1; }

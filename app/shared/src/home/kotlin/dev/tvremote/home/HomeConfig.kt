@@ -64,14 +64,15 @@ import org.json.JSONObject
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
- *   tiles   live tiles on the app grid: keys "tile:<provider package>/<id>" ([isTile]), at most [TILES_MAX]. A provider (TV Setup's RAM tile:
- *           tile:dev.tvremote.setup/ram) draws a tile's value itself; the key then sits in dock / hidden / order like an app's package name.
- *           A TV Home that has this reports "tilesOk": true, "tilesAvail" (what the provider offers: [{key, title, kind}]) and
+ *   tiles   live tiles ("tile:<provider package>/<id>", [isTile]) and launcher shortcuts ("pin:<package>/<id>", [Target.isPin]) on the app grid, at most [TILES_MAX]. A provider (TV Setup's RAM
+ *           tile: tile:dev.tvremote.setup/ram, and its sleep timer; TV Channels' tile:dev.tvremote.channels/next) draws a tile's value
+ *           itself, in the tile's layout (gauge / next / toggle); the key then sits in dock / hidden / order like an app's package name.
+ *           A TV Home that has this reports "tilesOk": true, "tilesAvail" (what the providers offer: [{key, title, kind, layout}]) and
  *           "tilesState": "ok" | "missing" (no TV Setup or one without tiles) | "untrusted" (signed by another key)
- *   keyon   remote keys that open an app (default off); keyapps: {"183": "package"} the key code to its app, only keys [keyFree]
- *           allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
+ *   keyon   remote keys that open something (default off); keyapps: {"183": target} the key code to its [Target] (a package, "pin:pkg/id"
+ *           or "tile:provider/id"; a plain package is how older configs saved it), only keys [keyFree] allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
  *           A TV Home that has this reports "keysOk": true, "keysSetup" (TV Setup took the map) and "keysDead" (the keys it found dead)
- *   autoon  open [autoapp] once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
+ *   autoon  open [autoapp] (a [Target] too) once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
  *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
  */
 object HomeConfig {
@@ -127,6 +128,14 @@ object HomeConfig {
         "day" -> Math.floorDiv(now + off, DAY) != Math.floorDiv(last + off, DAY)
         else -> false
     }
+    /**
+     * How full a bar or ring is, as a colour word: amber from [WARN_AT] %, red from [BAD_AT] % ("ok" / "warn" / "bad"). The ONE place
+     * the thresholds live: TV Home's System card (RAM, storage) and TV Setup's RAM tile both say it through here; TV Setup's
+     * memory notice (Rules, default 90) is a different, chosen number. The web page shows no such level (it has no bars).
+     */
+    const val WARN_AT = 70
+    const val BAD_AT = 85
+    fun level(pct: Int): String = if (pct >= BAD_AT) "bad" else if (pct >= WARN_AT) "warn" else "ok"
     /** How long until [due] turns true (for the one timer set while Home is on screen); null when time does not decide it. */
     fun wait(every: String, last: Long, now: Long, off: Long): Long? = when (every) {
         "30m", "1h", "6h" -> (last + everyMs(every) - now).coerceIn(0L, everyMs(every))
@@ -204,7 +213,7 @@ object HomeConfig {
         if (o != null) for (k in o.keys()) {
             val code = k.toIntOrNull() ?: continue
             val p = o.optString(k)
-            if (keyAllowed(code) && p.length <= 200 && PKG_NAME.matches(p)) out[code] = p
+            if (keyAllowed(code) && Target.valid(p)) out[code] = p       // any [Target]: an app, a shortcut, a live tile
         }
         return out
     }
@@ -217,7 +226,7 @@ object HomeConfig {
     val LANGS = listOf("", "vi", "en")
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
     private val TILE = Regex("tile:[A-Za-z][\\w]*(\\.[\\w]+)+/[a-z][a-z0-9_]{0,15}")
-    const val TILES_MAX = 8
+    const val TILES_MAX = 24                                          // live tiles and shortcuts together: the picker adds both
     /** [k] is a live tile's key ("tile:dev.tvremote.setup/ram"), not an app's package name. */
     fun isTile(k: String) = k.length <= 100 && TILE.matches(k)
     fun tileKey(provider: String, id: String) = "tile:$provider/$id"
@@ -264,8 +273,8 @@ object HomeConfig {
             .put("keyon", o.optBoolean("keyon", false))
             .put("keyapps", JSONObject().also { m -> keyApps(o.optJSONObject("keyapps")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
             .put("autoon", o.optBoolean("autoon", false))
-            .put("autoapp", o.optString("autoapp").takeIf { it.length <= 200 && PKG_NAME.matches(it) } ?: "")
-            .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) }.distinct().take(TILES_MAX)))
+            .put("autoapp", Target.clean(o.optString("autoapp")))
+            .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
             .put("qrs", qrs)
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
@@ -329,7 +338,7 @@ object HomeConfig {
         val out = LinkedHashSet<String>()
         if (a != null) for (i in 0 until a.length()) {
             val p = a.optString(i)
-            if (p.length <= 200 && (PKG_NAME.matches(p) || isTile(p))) out.add(p)
+            if (Target.valid(p)) out.add(p)
         }
         return out.take(max)
     }

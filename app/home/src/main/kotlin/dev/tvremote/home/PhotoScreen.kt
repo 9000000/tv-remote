@@ -1,5 +1,7 @@
 package dev.tvremote.home
 
+import dev.tvremote.tvui.Motion
+import dev.tvremote.tvui.TvGlass
 import android.app.Activity
 import android.app.Dialog
 import android.graphics.Color
@@ -20,18 +22,12 @@ import org.json.JSONObject
  * ([ManageServer]) lives exactly as long as this dialog (and at most 10 minutes); [onSet] runs when this screen closes after a photo became the background (the settings panel behind it closes too, to show it).
  */
 object PhotoScreen {
-    private val PANEL_TOP = 0xFF161B2B.toInt()                        // the same panel as Customize's
-    private val PANEL_BOTTOM = 0xFF0C1020.toInt()
-    private const val EDGE = 0x33FFFFFF
     private val SOFT = 0xFFB8C7E6.toInt()
     private val GOOD = 0xFF7BE0A1.toInt()
     private val BAD = 0xFFFFB4A9.toInt()
     private val DIM = 0xA6FFFFFF.toInt()
     private val FAINT = 0x8CFFFFFF.toInt()
     private val INK = 0xFF111318.toInt()
-    private const val CHIP_FOCUS = 0x2EFFFFFF                         // the option chips: Customize's chips
-    private const val CHIP_FILL = 0x12FFFFFF
-    private const val CHIP_EDGE = 0x1FFFFFFF
 
     /** [web] true: the same screen for "Web page as the background" (the phone page pastes a link; the D-pad picks how it updates). */
     fun show(a: Activity, web: Boolean = false, onSet: () -> Unit): Dialog {
@@ -88,9 +84,7 @@ object PhotoScreen {
         col.addView(close, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
 
         val panel = android.widget.FrameLayout(a).apply {
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(PANEL_TOP, PANEL_BOTTOM)).apply {
-                cornerRadius = dp(28).toFloat(); setStroke(dp(1), EDGE)
-            }
+            background = TvGlass.panelBg(a)
             addView(col, android.widget.FrameLayout.LayoutParams(-1, -2))
         }
         val w = minOf(a.resources.displayMetrics.widthPixels - dp(64), dp(640))
@@ -120,8 +114,8 @@ object PhotoScreen {
             setText(Store.get(a).optString("wurl")); setSelection(text.length)
             setPadding(dp(14), dp(10), dp(14), dp(10))
             background = android.graphics.drawable.StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
-                addState(intArrayOf(), glass(14, CHIP_FILL, CHIP_EDGE, dp))
+                addState(intArrayOf(android.R.attr.state_focused), glass(14, TvGlass.ROW_FOCUS, Color.WHITE, dp))
+                addState(intArrayOf(), glass(14, TvGlass.ROW_FILL, TvGlass.ROW_EDGE, dp))
             }
         }
         fun use() {
@@ -136,8 +130,8 @@ object PhotoScreen {
             text = a.getString(R.string.pq_web_use); textSize = 15f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = Font.medium
             isFocusable = true; isClickable = true; setPadding(dp(20), dp(10), dp(20), dp(10))
             background = android.graphics.drawable.StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
-                addState(intArrayOf(), glass(14, CHIP_FILL, CHIP_EDGE, dp))
+                addState(intArrayOf(android.R.attr.state_focused), glass(14, TvGlass.ROW_FOCUS, Color.WHITE, dp))
+                addState(intArrayOf(), glass(14, TvGlass.ROW_FILL, TvGlass.ROW_EDGE, dp))
             }
             setOnClickListener { use() }
         }
@@ -158,8 +152,8 @@ object PhotoScreen {
     private fun options(a: Activity, col: LinearLayout, used: () -> Unit, dp: (Number) -> Int): View {
         // the chosen way looks chosen when the focus is elsewhere (a light edge and a ✓): one lone chip read as a label
         fun look(on: Boolean) = android.graphics.drawable.StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
-            addState(intArrayOf(), if (on) glass(14, CHIP_FOCUS, SOFT, dp) else glass(14, CHIP_FILL, CHIP_EDGE, dp))
+            addState(intArrayOf(android.R.attr.state_focused), glass(14, TvGlass.ROW_FOCUS, Color.WHITE, dp))
+            addState(intArrayOf(), if (on) glass(14, TvGlass.ROW_FOCUS, SOFT, dp) else glass(14, TvGlass.ROW_FILL, TvGlass.ROW_EDGE, dp))
         }
         fun chip(onClick: (TextView) -> Unit) = Font.on(TextView(a)).apply {
             textSize = 14f; gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END

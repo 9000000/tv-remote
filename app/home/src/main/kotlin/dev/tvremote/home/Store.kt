@@ -29,6 +29,8 @@ object Store {
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
             .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
+            .let { Pins.report(c, it) }                           // shortcuts: "pinsOk", what the apps offer ([Target] "pin:...")
+            .put("keysHave", Keys.have(c))                        // the keys this remote has (the quick keys screen greys out the others)
     }
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */

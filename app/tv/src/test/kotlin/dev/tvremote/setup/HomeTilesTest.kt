@@ -66,4 +66,27 @@ class HomeTilesTest {
         assertTrue(HomeTiles.protectedPkg("dev.tvremote.home", "", emptySet()))
         assertTrue(HomeTiles.protectedPkg("dev.tvremote.setup", "", emptySet()))
     }
+
+    @Test fun sleepPressCyclesThirtySixtyNinetyOff() {
+        assertEquals(30, HomeTiles.nextSleep(0))                          // off -> 30
+        assertEquals(60, HomeTiles.nextSleep(30)); assertEquals(90, HomeTiles.nextSleep(60)); assertEquals(0, HomeTiles.nextSleep(90))
+        assertEquals(60, HomeTiles.nextSleep(25))                         // 30 running down: still the 30 step
+        assertEquals(90, HomeTiles.nextSleep(45)); assertEquals(0, HomeTiles.nextSleep(75))
+        assertEquals(0, HomeTiles.nextSleep(120))                         // set longer elsewhere: a press switches it off
+    }
+
+    @Test fun sleepLeftRoundsUp() {
+        assertEquals(0, HomeTiles.sleepLeft(0, 1000)); assertEquals(0, HomeTiles.sleepLeft(1000, 1000))
+        assertEquals(1, HomeTiles.sleepLeft(1001, 1000)); assertEquals(30, HomeTiles.sleepLeft(1000 + 30 * 60_000L, 1000))
+    }
+
+    @Test fun sleepStateIsAToggleInBothLanguages() {
+        val on = HomeTiles.sleepState("en", 60)
+        assertEquals("toggle", on.getString("layout")); assertEquals("60 min", on.getString("big")); assertTrue(on.getBoolean("on")); assertEquals("Press: 90 min", on.getString("small"))
+        val off = HomeTiles.sleepState("vi", 0)
+        assertEquals("Tắt", off.getString("big")); assertFalse(off.getBoolean("on")); assertEquals("Bấm: 30 phút", off.getString("small"))
+        assertEquals("Bấm: tắt", HomeTiles.sleepState("vi", 90).getString("small"))
+        assertEquals("Hẹn giờ tắt", HomeTiles.list("vi").getJSONObject(1).getString("title"))
+        assertEquals("gauge", HomeTiles.list("en").getJSONObject(0).getString("layout"))
+    }
 }

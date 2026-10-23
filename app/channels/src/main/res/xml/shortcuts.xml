@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- listed by launchers (TV Home's picker: pin:<package>/<id>); ids stay lowercase and never change, a pin keeps pointing at them -->
+    <shortcut android:shortcutId="favourites" android:enabled="true" android:icon="@drawable/icon"
+        android:shortcutShortLabel="@string/sc_favs_short" android:shortcutLongLabel="@string/sc_favs_long">
+        <intent android:action="android.intent.action.VIEW" android:data="tvchannels://group/fav"
+            android:targetPackage="dev.tvremote.channels" android:targetClass="dev.tvremote.channels.BrowseActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="search" android:enabled="true" android:icon="@drawable/icon"
+        android:shortcutShortLabel="@string/sc_search_short" android:shortcutLongLabel="@string/sc_search_long">
+        <intent android:action="android.intent.action.VIEW" android:data="tvchannels://find"
+            android:targetPackage="dev.tvremote.channels" android:targetClass="dev.tvremote.channels.PlayActivity" />
+    </shortcut>
+</shortcuts>

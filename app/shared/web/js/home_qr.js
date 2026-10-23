@@ -66,7 +66,7 @@ function homeQrAsk(card) {
     const hiddenBox = el('input', { type: 'checkbox', checked: !!vals.hidden, onchange: () => { vals.hidden = hiddenBox.checked; redraw(); } });
     const tplChips = el('div', { className: 'fchips homeqr-tpl', role: 'group', 'aria-label': T('home.qr_tpl') });
     const form = el('div', { className: 'homeqr-form' }), view = el('div', { className: 'homeqr-view' }), info = el('p', { className: 'note' });
-    const save = el('button', { type: 'button', className: 'primary', textContent: T('home.qr_save'), onclick: () => { done = homeQrCard(tpl, vals, cap.value, showBox.checked); d.close(); } });
+    const save = el('button', { type: 'button', className: 'primary', textContent: '💾 ' + T('home.qr_save'), onclick: () => { done = homeQrCard(tpl, vals, cap.value, showBox.checked); d.close(); } });
     const field = (k) => {
       const area = k === 'text' || k === 'body', input = el(area ? 'textarea' : 'input', { value: vals[k] || '', rows: 3, maxLength: HOME_QR_FIELD_MAX, autocomplete: 'off', autocapitalize: 'off', spellcheck: false,
         inputMode: k === 'num' || (k === 'tel') ? 'tel' : k === 'to' || k === 'email' ? 'email' : k === 'url' ? 'url' : 'text', 'aria-label': T(HOME_QR_FIELD_WORDS[k]) });

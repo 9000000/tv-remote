@@ -18,16 +18,46 @@ import org.json.JSONObject
  *              icon?, tone? (how TV Home draws it), note? (a shorter line than small, for the outcome),
  *              result?: {before, after, freed_mb, none, text}}; answers at once, a binder call never waits on ADB
  *   "tile_do"  runs its action (arg = id) on a thread of its own and answers {started}; the outcome shows in "tile" as mode done / failed
- * The only tile now is "ram": RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the
- * measured before -> after. The pure parts (numbers, words, which packages may be closed) live here and are tested without a TV.
+ * Each tile has a "layout" (how TV Home draws it): "gauge" (a ring and a line) or "toggle" (a value to cycle). Two tiles:
+ * "ram" (gauge): RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the measured
+ * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it steps 30 -> 60 -> 90 -> off ([nextSleep]).
+ * The pure parts (numbers, words, which packages may be closed) live here and are tested without a TV.
  */
 internal object HomeTiles {
     const val RAM = "ram"
+    const val SLEEP = "sleep"
+    val SLEEP_STEPS = listOf(30, 60, 90)                               // minutes a press cycles through, then off
     const val DONE_MS = 6000L                                          // how long the before -> after stays, then the live value again
     const val MIN_FREED_MB = 16L                                       // less than this is noise: "nothing to free", said honestly
     private const val SETTLE_MS = 1500L                                // Android takes a moment to hand the memory back before it is read again
 
-    fun list(lang: String): JSONArray = JSONArray().put(JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title")).put("icon", "ram").put("kind", "meter"))
+    fun list(lang: String): JSONArray = JSONArray()
+        .put(JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title")).put("icon", "ram").put("kind", "meter").put("layout", "gauge"))
+        .put(JSONObject().put("id", SLEEP).put("title", Words.get(lang, "tile.sleep_title")).put("icon", "moon").put("kind", "toggle").put("layout", "toggle"))
+
+    // ---- the sleep timer tile ----
+
+    /** Whole minutes left on the timer (rounded up, so "1 min" shows until it fires); 0 = none set. */
+    fun sleepLeft(sleepAt: Long, now: Long): Int = if (sleepAt > now) ((sleepAt - now + 59_999L) / 60_000L).toInt() else 0
+
+    /**
+     * What a press sets, given the minutes left: off -> 30 -> 60 -> 90 -> off. A timer running down between steps counts as the step
+     * it is under (25 left of a 60 is "30"), so a press always moves up; one set longer than 90 elsewhere (a remote's 120) goes off.
+     */
+    fun nextSleep(left: Int): Int = when {
+        left <= 0 -> SLEEP_STEPS.first()
+        left > SLEEP_STEPS.last() -> 0
+        else -> { val under = SLEEP_STEPS.first { it >= left }; SLEEP_STEPS.firstOrNull { it > under } ?: 0 }
+    }
+
+    /** The state: "toggle" layout, big = minutes left or "Off", small = what a press does next. */
+    fun sleepState(lang: String, left: Int): JSONObject {
+        val o = JSONObject().put("id", SLEEP).put("title", Words.get(lang, "tile.sleep_title")).put("layout", "toggle").put("mode", "live")
+            .put("icon", "moon").put("accent", "ok").put("on", left > 0).put("tone", if (left > 0) "night" else "off")
+        val next = nextSleep(left)
+        return o.put("big", if (left > 0) Words.get(lang, "tile.sleep_left", "n" to left) else Words.get(lang, "tile.sleep_off"))
+            .put("small", Words.get(lang, if (next > 0) "tile.sleep_next" else "tile.sleep_next_off", "n" to next))
+    }
 
     /** What one measure (total, available, in MB) says. */
     class Mem(val total: Long, val avail: Long) {
@@ -57,7 +87,7 @@ internal object HomeTiles {
     fun state(lang: String, now: Mem, working: Boolean, last: Result?, failed: Boolean, at: Long): JSONObject {
         val o = JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title"))
         val live = o.put("big", "${now.pct}%").put("small", Words.get(lang, "tile.ram_free", "mb" to now.avail))
-            .put("progress", now.pct / 100.0).put("accent", accent(now.pct)).put("mode", "live")
+            .put("progress", now.pct / 100.0).put("accent", accent(now.pct)).put("mode", "live").put("layout", "gauge")
             .put("icon", "memory").put("tone", "clean")            // how TV Home draws it: a drawable name of its own and the gradient family
         if (working) return live.put("mode", "working").put("small", Words.get(lang, "tile.ram_working"))
         if (failed) return live.put("mode", "failed").put("small", Words.get(lang, "tile.ram_noadb"))
@@ -114,9 +144,10 @@ internal object HomeTiles {
     private fun mem(): Mem = Guard.memory().let { Mem(it.first, it.second) }
 
     /** "tile": the state now, from /proc/meminfo (apps may read it): no ADB, no wait. */
-    fun tile(lang: String, id: String): JSONObject? {
-        if (id != RAM) return null
+    fun tile(c: Context, lang: String, id: String): JSONObject? {
         val now = System.currentTimeMillis()
+        if (id == SLEEP) return sleepState(lang, sleepLeft(Rules.load(c).optLong("sleep_at"), now))
+        if (id != RAM) return null
         val bad = failed && now - failedAt <= DONE_MS
         if (failed && !bad) failed = false
         return state(lang, mem(), working, last, bad, now)
@@ -124,6 +155,11 @@ internal object HomeTiles {
 
     /** "tile_do": starts the action once at a time (a second press while it runs is the same run); {started} or {busy}. */
     fun act(c: Context, id: String): JSONObject? {
+        if (id == SLEEP) {                                             // the timer itself is Rules' own: one write, at once
+            val left = sleepLeft(Rules.load(c).optLong("sleep_at"), System.currentTimeMillis())
+            Rules.change(c, JSONObject().put("do", "sleep").put("minutes", nextSleep(left)))
+            return JSONObject().put("started", true)
+        }
         if (id != RAM) return null
         val app = c.applicationContext
         synchronized(this) {

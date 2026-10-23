@@ -49,9 +49,40 @@ class KeyFixTest {
         assertEquals("a/b:c/d:$s", KeyFix.list("a/b:c/d", true))
         assertEquals("a/b:c/d:$s", KeyFix.list("a/b:$s:c/d", true))   // once, never twice
         assertEquals("a/b:c/d", KeyFix.list("a/b:$s:c/d", false))
-        assertTrue(KeyFix.has("a/b:dev.tvremote.setup/.KeyFixService")); assertFalse(KeyFix.has("a/b:dev.tvremote.setup/.KeyCatch"))   // the system's short form
-        assertEquals("a/b:$s", KeyFix.list("a/b:dev.tvremote.setup/.KeyFixService", true))
-        assertEquals("dev.tvremote.setup/dev.tvremote.setup.KeyCatch", KeyFix.list("dev.tvremote.setup/dev.tvremote.setup.KeyCatch:$s", false))
+        assertTrue(KeyFix.has("a/b:dev.tvremote.setup.keys/.KeyFixService")); assertFalse(KeyFix.has("a/b:dev.tvremote.setup.keys/.KeyCatch"))   // the system's short form
+        assertEquals("a/b:$s", KeyFix.list("a/b:dev.tvremote.setup.keys/.KeyFixService", true))
+        val catch = "dev.tvremote.setup.keys/dev.tvremote.setup.keys.KeyCatch"   // the add-on's, while the screen is off: never ours to drop
+        assertEquals(catch, KeyFix.list("$catch:$s", false))
+    }
+
+    @Test fun anEntryOfTheVersionsBeforeTheMoveIsReplaced() {          // a TV updated from a TV Setup that kept the services inside it
+        val old = "dev.tvremote.setup/dev.tvremote.setup.KeyFixService"
+        assertTrue(KeyFix.hasStale("a/b:$old")); assertFalse(KeyFix.has("a/b:$old"))
+        assertTrue(KeyFix.hasStale("dev.tvremote.setup/.KeyCatch")); assertFalse(KeyFix.hasStale("a/b:${KeyFix.SERVICE}"))
+        assertEquals("a/b:${KeyFix.SERVICE}", KeyFix.list("a/b:$old", true))   // moved, not doubled
+        assertEquals("a/b", KeyFix.list("a/b:$old:dev.tvremote.setup/dev.tvremote.setup.KeyCatch", false))   // and gone when no longer needed
+    }
+
+    @Test fun theAddOnIsAskedAboutEveryKeyTheAppMayTake() {
+        val asked = dev.tvremote.setup.keys.KeysProtocol.INTEREST
+        assertTrue(asked.containsAll(KeyFix.RULES.keys)); assertTrue(asked.containsAll(KeyFix.COLOUR)); assertTrue(asked.containsAll(HoldKeys.KEYS))
+    }
+
+    @Test fun noAccessibilityServiceInThisApp() {                      // Play Protect blocks one from a browser or Downloader: they live in app/tvkeys
+        val manifest = java.io.File("src/main/AndroidManifest.xml").readText()
+        assertFalse(manifest.contains("BIND_ACCESSIBILITY_SERVICE")); assertFalse(manifest.contains("android.accessibilityservice"))
+    }
+
+    @Test fun theAddOnIsPackedInTheAppAndSignedAlike() {
+        val dir = System.getProperty("tvkeys.dir")
+        val apk = java.io.File(dir, "debug/tvkeys.apk")
+        assertTrue("packKeysDebug did not put the add-on in assets: $apk", apk.length() > 2000)
+        java.util.zip.ZipFile(apk).use { z ->
+            assertTrue(z.getEntry("classes.dex") != null && z.getEntry("AndroidManifest.xml") != null)
+            assertTrue("signed (a signature permission only trusts the same key)", z.entries().asSequence().any { it.name.startsWith("META-INF/") && it.name.endsWith(".RSA") })
+        }
+        val gradle = java.io.File("build.gradle.kts").readText()
+        assertTrue(gradle.contains("../tvkeys/src/protocol/kotlin") && gradle.contains("packKeys"))
     }
     // ---- TV Home's own key → app map -------------------------------------------------------------------------------
 

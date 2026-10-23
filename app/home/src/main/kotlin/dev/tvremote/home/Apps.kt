@@ -12,6 +12,8 @@ import android.graphics.drawable.Drawable
 class App(val pkg: String, val label: String, val info: ActivityInfo?, val pin: Any? = null) {
     /** A live tile ([Tiles]) rather than an app: its pkg is "tile:<provider>/<id>", it has no pictures, a press runs its action. */
     val live: Boolean get() = HomeConfig.isTile(pkg)
+    /** On the grid by the settings' "tiles" (a live tile or a shortcut the picker added), not an installed app. */
+    val grid: Boolean get() = live || (pin != null && Target.isPin(pkg))
     var banner: Drawable? = null
     var icon: Drawable? = null
 

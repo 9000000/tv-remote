@@ -16,12 +16,12 @@ The shared values are copied into each app's `res/values/tv_style.xml` (this fil
 
 - **`app/shared/src/tvui` is the reference** for what the apps have in common, and the one copy: `Tv.kt` (`TvUi`: tokens, `row`, `sheet`, `button`,
   `field` (TvField), `states`, `ring`, `initials`, `TvState`; Games-style `panel`, `scrim`, `menuButton`, `withIcon`, `pill`, `heading`) and
-  `res/values/tv_style.xml`. Channels and Games build it in (`srcDirs` / `res.srcDirs`); TV Home compiles `TvField` only; TV Setup keeps
-  its own until phase 2 (`dev/DECISIONS.md`). Use a component from there, never a look-alike; a look it lacks is added there first.
+  `res/values/tv_style.xml`; the tile focus (`TvTile`, `Glass`, `Motion`) and the glass panel / menu (`TvGlass`). TV Setup, Channels and Games build
+  it in (`srcDirs` / `res.srcDirs`); TV Home compiles the Kotlin (no `tv_style.xml`: it takes the constants). Use a component from there, never a look-alike; a look it lacks is added there first.
   Components take words and drawable ids, not string ids: strings and generated icons stay per app. `tv_design.test.js` fails when
-  channels / games define a component tvui has, or Tv.kt's colours differ from tv_style.xml.
-- Until phase 2, `app/tv/.../tv_style.xml` is byte-identical to `tvui/res`'s: change a value in both, in `TvUi`, and here together.
-  - **TV Home** for focus on tiles: ring, glass, grow, motion (`HomeActivity.kt:857-1012`, `Glass.kt`);
+  any app defines a component tvui has, or Tv.kt's colours differ from tv_style.xml.
+- `tv_style.xml` exists once (`tvui/res`): change a value there, in `TvUi`, and here together; the test compares them.
+  - **TV Home** for focus on tiles: ring, glass, grow, motion (now `TvTile`, `Glass`, `Motion` in tvui; Home's `Tile` is a thin subclass);
   - **`tvui`** for rows, lists, fields, dialogs, buttons, pills and full-screen popups (`panel()` / `scrim()`): it was Channels' and Games' `Ui.kt`.
 
 ## 1. Principles (10-foot UI)
@@ -141,7 +141,7 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 | **List row** | `TvUi.row(c, icon, label, count) { go }` (`tvui/Tv.kt`) | Channels | icon tinted `TEXT`, count in `DIM`; `isActivated` = the one in use |
 | **Dialog sheet** (choices) | `TvUi.sheet(c, R.style.Dialog, w)` + `TvUi.sheetTitle()` + `TvUi.row`s (`tvui/Tv.kt`) | Channels | 380-420 dp wide; Back closes it |
 | **Popup on a scrim** | `scrim(panel(title).apply { addView(menuButton(...).withIcon(R.drawable.ic_x)) })` (`tvui/Tv.kt`, used `LibraryActivity.kt` `popup()`) | Games | always add a Close button; Back closes; first entry focused |
-| **System list menu** | `AlertDialog.Builder(this, R.style.Menu)` / `Theme_DeviceDefault_Dialog_Alert` | Home (`:744`), Setup (`:293`) | for plain lists of actions only |
+| **System list menu** | `TvGlass.menu` (glass panel, icon + label rows, as Customize) | Home's app menu; Setup keeps `Theme_DeviceDefault_Dialog_Alert` for plain lists | for plain lists of actions only |
 | **Drop-down from a head button** | `Drop.show(a, anchor, rows)` | Home | a Dialog: Home and Back close it |
 | **App / game tile** | Home `Tile` (`HomeActivity.kt:857`); Games `shell()` | Home, Games | 16:9; rings outside the face; name under it, in the row gap |
 | **Action tile** (icon, title, one line) | Setup `Tile` (`MainActivity.kt:73`): `say()`, `work(on)` spinner, `enable()` | Setup | |
@@ -204,10 +204,10 @@ Raw colours are counted per file in `app/shared/tests/tv_design.test.js` (`RAW`)
 
 | # | What | Where |
 |---|---|---|
-| 1 | TV Home has no `tv_style.xml`: ring colour, tile radius and margins are hard-coded | `HomeActivity.kt:130,877,1012-1013` |
+| 1 | (fixed in phase 2: ring, tile radius and glass come from tvui) | |
 | 2 | Two focus lifts: TV Home and Games tiles grow **1.12×** on a 520 ms spring, Channels cards and Setup tiles **1.06×** in 120 ms (§2.5 keeps both: big tiles vs small cards; don't add a third) | `HomeActivity.kt:967`, `LibraryActivity.kt:917`, `BrowseActivity.kt:726`, `MainActivity.kt:112` |
 | 3 | Muted grey: `tv_dim` `#9AA0A6` vs Setup `MUTED` `#8C96A3`, Warn `#AAB2BD`, Games `#AAB0C0` `#8892A6` `#6B7385` `#9AA3B8` `#D5DAE6`, Home white-alpha `0xA6FFFFFF` / `0x8CFFFFFF` | `MainActivity.kt:66`, `WarnActivity.kt:61`, `LibraryActivity.kt:265,276`, `LobbyView.kt:36-46`, `Widgets.kt:75`, `Drop.kt:27` |
-| 4 | Panel fill / radius: `tv_card` r16 (Games) vs Channels sheets `0xF21B2028` r20 + hairline, Warn `#191D23` r20, Notify `#F2202124` r20, Home Drop gradient r20, Customize r28, Home/Setup system AlertDialogs | `games/Ui.kt:54`, `BrowseActivity.kt:395,462,567`, `WarnActivity.kt:44`, `NotifyLayer.kt:81`, `Drop.kt:37`, `Customize.kt:270` |
+| 4 | Panel fill / radius: `tv_card` r16 (Games) vs Channels sheets `0xF21B2028` r20 + hairline, Warn `#191D23` r20, Notify `#F2202124` r20, Home Drop gradient r20, Customize r28, Setup system AlertDialogs | `games/Ui.kt:54`, `BrowseActivity.kt:395,462,567`, `WarnActivity.kt:44`, `NotifyLayer.kt:81`, `Drop.kt:37`, `Customize.kt:270` |
 | 5 | Scrim: Games `0xD90E1116` vs Warn black at 200/255 | `games/Ui.kt:69`, `WarnActivity.kt:39` |
 | 6 | Button focus: ring (tiles) vs Games white fill + 4 dp white edge vs Setup / Warn solid accent fill `#3B73F6` + 2 dp white vs Home white fill | `games/Ui.kt:27,77`, `MainActivity.kt:1083`, `WarnActivity.kt:138-139`, `Drop.kt:53` |
 | 7 | App accent differs: Channels teal `#5EEAD4` (and activated `0x2214B8A6`), Setup `#3B73F6`, Home `#8AB4F8`, Games lobby `#4F8CFF` | `channels/Ui.kt:18,42`, `MainActivity.kt:67`, `home/styles.xml`, `LobbyTheme.kt:11` |

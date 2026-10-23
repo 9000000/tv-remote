@@ -56,9 +56,28 @@ object Keys {
         if (code !in HomeConfig.KEY_COLOURS && code !in HomeConfig.KEY_NUMBERS) return false
         val conf = Store.get(a)
         if (!conf.optBoolean("keyon")) return false
-        val pkg = HomeConfig.keyApps(conf.optJSONObject("keyapps"))[code] ?: return false
+        val target = HomeConfig.keyApps(conf.optJSONObject("keyapps"))[code] ?: return false
         if (e.repeatCount > 0) return true                             // a held key opens it once
-        return Apps.launch(a, pkg)
+        return Targets.open(a, target)
+    }
+
+    /**
+     * The keys of [HomeConfig.KEY_COLOURS] / [HomeConfig.KEY_NUMBERS] a remote here has, as the codes: the union over the keyboards that
+     * are not virtual (the TV's own buttons and a paired remote say what they can send, InputDevice.hasKeys). Null = not known (no
+     * device answered): the screens then leave every key on rather than greying a working one.
+     */
+    fun have(c: Context): JSONArray? {
+        val codes = (HomeConfig.KEY_COLOURS + HomeConfig.KEY_NUMBERS).toIntArray()
+        val has = BooleanArray(codes.size)
+        var seen = false
+        for (id in android.view.InputDevice.getDeviceIds()) {
+            val d = android.view.InputDevice.getDevice(id) ?: continue
+            if (d.isVirtual || d.sources and android.view.InputDevice.SOURCE_KEYBOARD != android.view.InputDevice.SOURCE_KEYBOARD) continue
+            seen = true
+            val got = d.hasKeys(*codes)
+            for (i in codes.indices) if (got[i]) has[i] = true
+        }
+        return if (!seen) null else JSONArray(codes.filterIndexed { i, _ -> has[i] })
     }
 
     /** The key's words in the setting: "Red", "Green"... a number as itself, others by what the stock remote called them. */

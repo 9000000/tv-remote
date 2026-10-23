@@ -14,7 +14,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
 const RAW = {
   tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 5, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
     'PinActivity.kt': 8, 'WarnActivity.kt': 6 },
-  home: { 'Customize.kt': 42, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 59, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
+  home: { 'Customize.kt': 36, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 55, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
     'Widgets.kt': 41, 'Zoom.kt': 3 },
   channels: { 'BrowseActivity.kt': 4, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1 },
   games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 34, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,
@@ -39,7 +39,7 @@ test('no new raw colour in the TV apps\' views: a colour is a named constant or 
 // components (DESIGN-TV.md §3): the RAM tile and its own frame, 2026-10-23. A count may only go down; a new one needs a reason here.
 const DRAWN = {
   tv: { 'DrawLayer.kt': 1 },                                          // drawing over the TV: strokes, nothing to reuse
-  home: { 'Widgets.kt': 8, 'HomeActivity.kt': 1, 'QrCard.kt': 1, 'Glass.kt': 1, 'Zoom.kt': 1, 'Customize.kt': 1, 'Tiles.kt': 1 },
+  home: { 'Widgets.kt': 8, 'HomeActivity.kt': 1, 'QrCard.kt': 1, 'Zoom.kt': 1, 'Customize.kt': 1, 'Tiles.kt': 1 },
   android: { 'RemoteScreen.kt': 1, 'IconButton.kt': 1, 'AirMouse.kt': 2, 'Drawing.kt': 1 },
 };
 
@@ -59,12 +59,12 @@ test('no new hand-drawn view: build from the components (DESIGN-TV.md §3, phone
 // The shared look (app/shared/src/tvui): tv_style.xml and Tv.kt are the ONE copy; channels and games build them in (res.srcDirs / srcDirs).
 const TVUI = path.join(ROOT, 'app', 'shared', 'src', 'tvui');
 
-test('tv_style.xml: one copy in tvui; app/tv keeps an identical one until it moves; channels and games have none of their own', () => {
-  const one = fs.readFileSync(path.join(TVUI, 'res/values/tv_style.xml'), 'utf8');
-  assert.strictEqual(fs.readFileSync(path.join(ROOT, 'app/tv/src/main/res/values/tv_style.xml'), 'utf8'), one, 'app/tv tv_style.xml differs from tvui\'s');
-  for (const a of ['channels', 'games']) {
+test('tv_style.xml: one copy in tvui; no app has its own; tv, channels and games build tvui/res in', () => {
+  for (const a of APPS) {
     assert.ok(!fs.existsSync(path.join(ROOT, 'app', a, 'src/main/res/values/tv_style.xml')), `app/${a} has its own tv_style.xml: delete it, tvui's is built in`);
-    assert.match(fs.readFileSync(path.join(ROOT, 'app', a, 'build.gradle.kts'), 'utf8'), /res\.srcDirs\("\.\.\/shared\/src\/tvui\/res"\)/, `${a} must build tvui/res in`);
+    const gradle = fs.readFileSync(path.join(ROOT, 'app', a, 'build.gradle.kts'), 'utf8');
+    assert.match(gradle, /shared\/src\/tvui\/kotlin/, `${a} must compile tvui's Kotlin`);
+    if (a !== 'home') assert.match(gradle, /res\.srcDirs\("\.\.\/shared\/src\/tvui\/res"\)/, `${a} must build tvui/res in`);   // TV Home reads no R.*.tv_* (it takes the constants)
   }
 });
 
@@ -81,16 +81,30 @@ test('Tv.kt\'s colours are tv_style.xml\'s, and it holds no raw colour outside a
 });
 
 // The components live in tvui and nowhere else: a hand-built look-alike row / sheet / panel is how the apps drifted (DECISIONS.md, 2026-10-23).
-test('channels and games define no component tvui already has', () => {
+test('no app defines a component tvui already has', () => {
   const names = ['row', 'sheet', 'sheetTitle', 'sheetNote', 'states', 'ring', 'field', 'panel', 'panelBg', 'scrim', 'menuButton', 'withIcon',
     'pill', 'pillText', 'focusBg', 'heading', 'label'];   // (a game's own initials() / a pad button() are other things)
+  // TV Setup and TV Home have local helpers that share a short name (a nested `fun row(` of a page, `label()`), so for them only the
+  // names that are unmistakably tvui's: the tile focus, the glass, the motion, the ring, the glass menu and panel
+  const own = ['states', 'ringDrawable', 'panelBg', 'scrim', 'menuButton', 'focusBg', 'pillText', 'sheetTitle'];
   const bad = [];
-  for (const a of ['channels', 'games']) for (const f of walk(path.join(ROOT, 'app', a, 'src', 'main'))) {
+  for (const a of APPS) for (const f of walk(path.join(ROOT, 'app', a, 'src', 'main'))) {
     const src = fs.readFileSync(f, 'utf8');
-    for (const n of names) if (new RegExp('fun (\\w+\\.)?' + n + '\\(').test(src)) bad.push(`app/${a}/.../${path.basename(f)}: fun ${n}( : use tvui's`);
+    for (const n of (a === 'channels' || a === 'games') ? names : own) if (new RegExp('fun (\\w+\\.)?' + n + '\\(').test(src)) bad.push(`app/${a}/.../${path.basename(f)}: fun ${n}( : use tvui's`);
     if (/object Ui\b/.test(src)) bad.push(`app/${a}/.../${path.basename(f)}: object Ui: the look is tvui's TvUi`);
+    if (/(object Motion|class Spring|class Glass|object TvGlass|open class TvTile)\b/.test(src)) bad.push(`app/${a}/.../${path.basename(f)}: Motion / Spring / Glass / TvTile are tvui's`);
+    // the colours tvui owns, named again (Setup's BG / CARD / INK, Home's RING_ACCENT / GLASS_* / PANEL_*)
+    if (/\b(private |internal )?(const )?va[lr] (BG|CARD|RING_ACCENT|RING_OUT|GLASS_FOCUS|GLASS_FILL|GLASS_EDGE|PANEL_TOP|PANEL_BOTTOM)\b/.test(src)) bad.push(`app/${a}/.../${path.basename(f)}: a look constant tvui has: use TvUi / TvGlass`);
   }
   assert.deepStrictEqual(bad, []);
+});
+
+test('TV Home and TV Setup colour RAM and storage through ONE level function (HomeConfig.level), not their own thresholds', () => {
+  const cfg = fs.readFileSync(path.join(ROOT, 'app/shared/src/home/kotlin/dev/tvremote/home/HomeConfig.kt'), 'utf8');
+  assert.match(cfg, /const val WARN_AT = 70/); assert.match(cfg, /const val BAD_AT = 85/);
+  const w = fs.readFileSync(path.join(ROOT, 'app/home/src/main/kotlin/dev/tvremote/home/Widgets.kt'), 'utf8');
+  assert.match(w, /HomeConfig\.level\(/, 'the System card must colour its rings and bars by HomeConfig.level');
+  assert.ok(!/availMem/.test(w.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/it\.totalMem - it\.availMem/, '')), 'the card reads MemAvailable (/proc/meminfo); availMem counts cached apps as free (only as a fallback)');
 });
 
 test('every word of TV Home, TV Channels and TV Games is in English and Vietnamese', () => {

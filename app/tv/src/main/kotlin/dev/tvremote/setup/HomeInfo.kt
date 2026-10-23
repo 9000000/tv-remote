@@ -46,7 +46,7 @@ class HomeInfo : ContentProvider() {
             val lang = extras?.getString("lang")?.let { Words.pick(it) } ?: Words.lang
             val json = when (method) {
                 "tiles" -> HomeTiles.list(lang).toString()
-                "tile" -> HomeTiles.tile(lang, arg.orEmpty())?.toString()
+                "tile" -> HomeTiles.tile(c, lang, arg.orEmpty())?.toString()
                 else -> HomeTiles.act(c, arg.orEmpty())?.toString()
             }
             return Bundle().apply { if (json != null) putString("json", json) }
@@ -114,7 +114,7 @@ class HomeInfo : ContentProvider() {
     private fun keys(c: Context, arg: String?): Bundle {
         if (!arg.isNullOrEmpty() && HomeKeys.save(c, arg)) {
             Thread({
-                KeyFix.sync(c); KeyFixService.poke()
+                KeyFix.sync(c); KeysBridge.poke()
                 if (HomeKeys.active(c) && !RemoteService.isRunning()) try { RemoteService.start(c, true) } catch (e: Exception) { }   // the wake-up hearing lives there
             }, "home-keys").apply { isDaemon = true }.start()
         }

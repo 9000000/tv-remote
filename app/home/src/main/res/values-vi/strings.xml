@@ -246,10 +246,12 @@
     <string name="tile_need_setup">Cần TV Setup mới hơn</string>
     <string name="tile_need_setup_long">Ô sống cần TV Setup mới hơn trên TV này</string>
     <string name="tile_untrusted">TV Setup khác nguồn cài</string>
+    <string name="tile_need_channels">Cần TV Channels mới hơn</string>
+    <string name="tile_untrusted_channels">TV Channels khác nguồn cài</string>
     <string name="tile_remove">Bỏ khỏi lưới</string>
     <string name="c_tiles">Ô sống</string>
     <string name="c_tiles_on">Đang ở trong lưới</string>
-    <string name="c_tiles_none">Ô sống do TV Setup cung cấp: cài hoặc cập nhật TV Setup để có</string>
+    <string name="c_tiles_none">Ô sống do TV Setup và TV Channels cung cấp: cài hoặc cập nhật để có</string>
     <string name="c_power">Nút nguồn trên thanh</string>
     <string name="g_look">Giao diện</string>
     <string name="g_layout">Bố cục</string>
@@ -301,4 +303,22 @@
     <string name="mg_step">1. Mở camera điện thoại, quét mã này\n2. Đổi cài đặt bất kỳ trong trang vừa mở</string>
     <string name="mg_connected">Đã có điện thoại kết nối</string>
     <string name="mg_changed">Đã đổi từ điện thoại</string>
+    <string name="pk_search">Tìm</string>
+    <string name="pk_apps">Ứng dụng</string>
+    <string name="pk_pins">Lối tắt</string>
+    <string name="pk_tiles">Ô trực tiếp</string>
+    <string name="pk_hidden">Đã ẩn</string>
+    <string name="pk_live">Trực tiếp</string>
+    <string name="pk_none">Không</string>
+    <string name="pk_none_found">Không thấy gì</string>
+    <string name="pk_grid_hint">Bấm một ô để đưa lên màn hình chính hoặc gỡ xuống.</string>
+    <string name="pk_target_hint">Chọn thứ sẽ mở: một app, lối tắt của app hoặc ô trực tiếp.</string>
+    <string name="pk_pins_need_home">Chỉ đọc được lối tắt khi TV Home là màn hình chính.</string>
+    <string name="c_add_home">Thêm vào màn hình chính</string>
+    <string name="qk_title">Phím nhanh</string>
+    <string name="qk_on">Bật phím</string>
+    <string name="qk_auto_on">Mở khi bật TV</string>
+    <string name="qk_power">Khi bật TV</string>
+    <string name="qk_no_key">remote không có</string>
+    <string name="c_quickkeys">Phím nhanh</string>
 </resources>

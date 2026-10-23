@@ -1,5 +1,6 @@
 package dev.tvremote.home
 
+import dev.tvremote.tvui.Motion
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator

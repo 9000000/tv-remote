@@ -10,12 +10,15 @@ class SetupApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Words.open = { name -> try { assets.open(name) } catch (e: java.io.IOException) { null } }
-        Words.lang = Words.pick(Locale.getDefault().language)
+        Words.lang = Words.pick(speak(resources.configuration))
         dev.tvremote.guard.Guard.install(this, { dev.tvremote.core.guardWords() })
     }
 
     override fun onConfigurationChanged(c: Configuration) {
         super.onConfigurationChanged(c)
-        Words.lang = Words.pick(Locale.getDefault().language)
+        Words.lang = Words.pick(speak(c))
     }
+
+    /** The language the system gives THIS app (a per-app choice included): Locale.getDefault() still said the TV's own while this ran, so the dialogs spoke English on a Vietnamese screen. */
+    private fun speak(c: Configuration) = c.locales.get(0)?.language ?: Locale.getDefault().language
 }

@@ -60,6 +60,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         @Volatile private var guesses = 0
         @Volatile private var running: RemoteService? = null
         @Volatile private var adbState = "connecting"
+        @Volatile private var adbDetail = ""                       // why the last session failed, as the TV said it: the page shows it under "ADB error"
 
         // sharing (Invite.kt): one invite at a time, ten minutes, one browser; 128 random bits, so no count of guesses
         @Volatile private var invite: String? = null
@@ -394,13 +395,17 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "allow" -> adbState = "allow"                             // the TV is asking "Allow USB debugging?"
             "live" -> {
                 adbState = "ready"
+                adbDetail = ""
                 retryMs = 5000
                 if (!saidAlive && serving) { saidAlive = true; afterUpdate() }
                 if (!KeepAdb.can(this) || !KeyFix.prepared) Thread({ try { link?.get()?.let { KeepAdb.grant(this, it); KeyFix.prepare(this, it); KeyFix.sync(this) } } catch (e: Exception) { } }, "grant").apply { isDaemon = true }.start()
             }
             "closed", "error" -> {                                    // ADB off, TV just booted, session dropped: keep trying
                 if (resting) return                                   // we closed it ourselves
-                adbState = if (key == "error") "error" else "connecting"
+                // a refused port is ADB switched off (or not open on the network), the one case with a plain fix: said as "closed", not "error"
+                val refused = key == "error" && Regex("ECONNREFUSED|Connection refused", RegexOption.IGNORE_CASE).containsMatchIn(detail)
+                adbDetail = if (key == "error" && !refused) detail.take(200) else ""   // refused already has its plain words; the raw socket text only scared
+                adbState = if (key == "error" && !refused) "error" else if (refused) "refused" else "connecting"
                 tv = null
                 ui.removeCallbacks(retry); ui.postDelayed(retry, retryMs)
                 retryMs = minOf(retryMs * 2, 5 * 60_000L)              // ADB off for good: every 5 min at most, not a session every 5 s forever; a use tries at once
@@ -553,7 +558,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 val keyCode = KEYS[d.optString("key").uppercase(Locale.ROOT)] ?: return HttpServer.Response.error(400, "unknown key")
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
                 val action = when (d.optString("dir")) { "START_LONG" -> "down"; "END_LONG" -> "up"; else -> "press" }   // the words of the computer's server
-                if (action == "press" && keyCode in dev.tvremote.core.ontv.RulesClient.SETUP_KEYS && KeyFixService.press(this, keyCode)) return ok()   // as a real press would
+                if (action == "press" && keyCode in dev.tvremote.core.ontv.RulesClient.SETUP_KEYS && KeysBridge.press(this, keyCode)) return ok()   // as a real press would
                 if (action == "press" && keyCode in Tv.OPENERS)   // keys that should open something
                     return HttpServer.Response.json(JSONObject().put("ok", true).put("noop", !t.pressSeen(keyCode)))
                 if (keyCode == 26) {                                  // sleep or wake by what the TV is doing now, so a tap never does the opposite
@@ -621,7 +626,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             .put("device", JSONObject().put("manufacturer", Build.MANUFACTURER).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE))
             .put("version", version).put("app_name", "TV Setup")
             .put("released", try { getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] } } catch (e: Exception) { "" })
-            .put("adb", JSONObject().put("state", adbWord()))
+            .put("adb", JSONObject().put("state", adbWord()).put("detail", adbDetail))
             .put("app", front.get(link?.takeIf { adbState == "ready" }?.let { l -> { c: String -> l.get().shell(c) } }).ifEmpty { JSONObject.NULL })   // the remote screen's "now open" line
             .put("volume", JSONObject().put("level", am.getStreamVolume(AudioManager.STREAM_MUSIC)).put("max", am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
                 .put("muted", Build.VERSION.SDK_INT >= 23 && am.isStreamMute(AudioManager.STREAM_MUSIC)))

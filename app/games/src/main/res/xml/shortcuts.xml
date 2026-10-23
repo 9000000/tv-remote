@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- listed by launchers (TV Home's picker: pin:<package>/<id>); ids stay lowercase and never change, a pin keeps pointing at them -->
+    <shortcut android:shortcutId="library" android:enabled="true" android:icon="@drawable/icon"
+        android:shortcutShortLabel="@string/sc_lib_short" android:shortcutLongLabel="@string/sc_lib_long">
+        <intent android:action="android.intent.action.MAIN"
+            android:targetPackage="dev.tvremote.games" android:targetClass="dev.tvremote.games.LibraryActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="padtest" android:enabled="true" android:icon="@drawable/icon"
+        android:shortcutShortLabel="@string/sc_pad_short" android:shortcutLongLabel="@string/padtest_name">
+        <intent android:action="android.intent.action.VIEW" android:data="tvgames://play/w:builtin:padtest"
+            android:targetPackage="dev.tvremote.games" android:targetClass="dev.tvremote.games.LibraryActivity" />
+    </shortcut>
+</shortcuts>

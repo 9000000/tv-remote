@@ -146,4 +146,7 @@
     <string name="err_close">Đóng</string>
     <string name="err_share">Chia sẻ</string>
     <string name="err_repeat">lặp lại %d lần</string>
+    <string name="sc_lib_short">Trò chơi</string>        <!-- launcher shortcuts (TV Home picker) -->
+    <string name="sc_lib_long">Thư viện trò chơi</string>
+    <string name="sc_pad_short">Tay cầm</string>
 </resources>

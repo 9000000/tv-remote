@@ -23,8 +23,8 @@ import android.widget.ProgressBar
 import android.widget.TextView
 
 /**
- * THE look of the TV apps (app/DESIGN-TV.md): the tokens and the components, ONE copy. Compiled into TV Channels and TV Games
- * (and TV Home, TvField only until it moves) through `srcDirs("../shared/src/tvui/kotlin")`: an app that needs a row, a sheet, a
+ * THE look of the TV apps (app/DESIGN-TV.md): the tokens and the components, ONE copy. Compiled into all four TV apps
+ * (TV Setup, TV Home, TV Channels, TV Games) through `srcDirs("../shared/src/tvui/kotlin")`: an app that needs a row, a sheet, a
  * panel, a pill or a field calls it here and never builds a look-alike (a hand-built copy is how they drifted, DECISIONS.md).
  * Plain Views: the apps must stay small and quick on a 1 GB TV box. Components take words and drawable ids, never string ids:
  * each app keeps its own strings and its own generated icons.
@@ -62,6 +62,7 @@ object TvUi {
     const val R_ROW = 12f
     const val R_BUTTON = 22f                                           // a button or a search field (a field in a sheet: R_FIELD)
     const val R_FIELD = 18f
+    const val R_TILE = 10f                                             // = tv_radius_tile: an app / game tile, a poster
     const val R_MENU = 10f                                             // a menu button
     const val R_PILL = 30f
     const val RING_DP = 3f                                             // = tv_ring

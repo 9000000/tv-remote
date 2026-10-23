@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Shortcuts other apps pin to the favourites, through Android's own request (ShortcutManager.requestPinShortcut, Android 8+):
@@ -60,6 +62,50 @@ object Pins {
         try { la(c)!!.pinShortcuts(s.`package`, keep, Process.myUserHandle()) } catch (e: Exception) {}
         order(c, order(c) - key(s))
     }
+
+    // ---- every shortcut an app offers (static, dynamic, pinned), for the picker and for a key / the grid that points at one ----
+
+    private const val ALL = LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
+
+    /** One app's shortcuts. The query names a package: without one the system answers only the pinned ones. */
+    @TargetApi(26)
+    private fun of(c: Context, pkg: String, ids: List<String>? = null): List<ShortcutInfo> = try {
+        la(c)!!.getShortcuts(LauncherApps.ShortcutQuery().setPackage(pkg).setQueryFlags(ALL).also { q -> if (ids != null) q.setShortcutIds(ids) }, Process.myUserHandle())
+    } catch (e: Exception) { null }.orEmpty().filter { it.isEnabled }
+
+    /** The shortcut [key] ("pin:pkg/id", a [Target]) points at; null when its app is gone or took it back, or this is not the home screen. */
+    fun find(c: Context, key: String): ShortcutInfo? =
+        if (Build.VERSION.SDK_INT < 26 || !can(c) || !Target.isPin(key)) null else of(c, Target.pkg(key), listOf(Target.id(key))).firstOrNull()
+
+    fun start(c: Context, key: String, o: Bundle? = null): Boolean {
+        val s = find(c, key) ?: return false
+        return try { la(c)!!.startShortcut(s.`package`, s.id, null, o, Process.myUserHandle()); true } catch (e: Exception) { false }
+    }
+
+    private val made = HashMap<String, App>()                       // a grid tile's app per key: the same object while nothing changed, so its tile is kept
+
+    /** [key] as a tile's app with its picture (shortcut + app label), or null when the shortcut is not there. */
+    fun app(c: Context, key: String): App? {
+        val s = find(c, key) ?: return null
+        val label = (s.shortLabel ?: s.longLabel ?: s.id).toString()
+        made[key]?.let { old -> if ((old.pin as ShortcutInfo).let { (it.shortLabel ?: it.longLabel ?: it.id).toString() } == label) return old }
+        return App(key, label, null, s).also { it.load(c); made[key] = it }
+    }
+
+    /**
+     * Every shortcut of the apps TV Home lists, as [{key, title, app}] in app order: what the picker offers. A stored copy ([report]
+     * reads it), made when the settings are read or Home comes back: asking each app is a binder call, not for every [Store.get].
+     */
+    fun refresh(c: Context) {
+        val out = JSONArray()
+        if (can(c)) for (a in Apps.list(c)) for (s in of(c, a.pkg).sortedBy { it.rank })
+            out.put(JSONObject().put("key", key(s)).put("title", (s.shortLabel ?: s.longLabel ?: s.id).toString()).put("app", a.pkg))
+        prefs(c).edit().putString("avail", out.toString()).putBoolean("can", can(c)).apply()
+    }
+
+    /** The config the clients read gains "pinsOk", "pinsAvail" [{key, title, app}] and "pinsCan" (only the home screen may start a shortcut). */
+    fun report(c: Context, conf: JSONObject): JSONObject = conf.put("pinsOk", true).put("pinsCan", can(c))
+        .put("pinsAvail", try { JSONArray(prefs(c).getString("avail", "[]")) } catch (e: Exception) { JSONArray() })
 
     /** Room for one more in the dock: its apps (still installed) and the pins share [HomeConfig.DOCK_MAX]. */
     fun room(c: Context): Boolean {

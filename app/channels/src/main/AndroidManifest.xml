@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />               <!-- a reminder over other apps; allowed through ADB (appops) -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <queries><package android:name="dev.tvremote.home" /></queries>   <!-- TV Home's key, checked before it is told the tile (HomeInfo) -->
     <application android:name=".ChannelsApp" android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false"
         android:theme="@style/Channels" android:supportsRtl="false" android:usesCleartextTraffic="true">
         <!-- the list; usesCleartextTraffic: many public streams are plain http -->
@@ -18,6 +19,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />   <!-- launcher shortcuts: res/xml/shortcuts.xml -->
             <!-- tvchannels://country/vn: the list of a country (a phone or computer opens it over ADB) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -51,6 +53,8 @@
         </receiver>
         <!-- favourites and groups for a phone or computer over ADB (core/ontv/Channels.kt): only the shell holds DUMP -->
         <receiver android:name=".ChannelsReceiver" android:exported="true" android:permission="android.permission.DUMP" />
+        <!-- the live tile for TV Home: open to every app, answered only for TV Home with its key (HomeInfo checks) -->
+        <provider android:name=".HomeInfo" android:authorities="dev.tvremote.channels.home" android:exported="true" />
         <receiver android:name="dev.tvremote.update.SelfUpdate$Installed" android:exported="false" />
     </application>
 </manifest>

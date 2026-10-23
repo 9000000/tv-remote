@@ -22,7 +22,7 @@ package:com.google.android.tvlauncher
 #known
 package:com.amazon.tv.acr
 #a11y
-dev.tvremote.setup/dev.tvremote.setup.KeyFixService
+dev.tvremote.setup.keys/dev.tvremote.setup.keys.KeyFixService
 #notif
 com.google.android.apps.tv.launcherx/com.google.android.apps.tv.launcherx.coreservices.notificationlistener.TvNotificationListenerService
 #assist
@@ -97,7 +97,7 @@ A 6 dev.tvremote.setup
         val s = r.getValue("dev.tvremote.setup")                         // this project's own: a group of its own, never "high"
         assertEquals("own", s.getString("grade"))
         assertTrue(s.getBoolean("own"))
-        assertEquals(listOf("a11y", "overlay", "usage", "boot"), tags(s))
+        assertEquals(listOf("overlay", "usage", "boot"), tags(s))   // no accessibility service in this app any more (Play Protect)
     }
 
     @Test fun specialAccessAndSystemAppsHoldingOnly() {

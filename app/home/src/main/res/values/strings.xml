@@ -248,10 +248,12 @@
     <string name="tile_need_setup">Needs a newer TV Setup</string>
     <string name="tile_need_setup_long">Live tiles need a newer TV Setup on this TV</string>
     <string name="tile_untrusted">TV Setup is from another source</string>
+    <string name="tile_need_channels">Needs a newer TV Channels</string>
+    <string name="tile_untrusted_channels">TV Channels is from another source</string>
     <string name="tile_remove">Take off the grid</string>
     <string name="c_tiles">Live tiles</string>
     <string name="c_tiles_on">On the grid</string>
-    <string name="c_tiles_none">Live tiles come from TV Setup: install or update it to get them</string>
+    <string name="c_tiles_none">Live tiles come from TV Setup and TV Channels: install or update them to get them</string>
     <string name="c_power">Power button in the bar</string>
     <string name="g_look">Look</string>
     <string name="g_layout">Layout</string>
@@ -303,4 +305,22 @@
     <string name="mg_step">1. Point the phone\'s camera at the code\n2. Change any setting in the page that opens</string>
     <string name="mg_connected">A phone is connected</string>
     <string name="mg_changed">Changed from the phone</string>
+    <string name="pk_search">Search</string>
+    <string name="pk_apps">Apps</string>
+    <string name="pk_pins">Shortcuts</string>
+    <string name="pk_tiles">Live tiles</string>
+    <string name="pk_hidden">Hidden</string>
+    <string name="pk_live">Live</string>
+    <string name="pk_none">None</string>
+    <string name="pk_none_found">Nothing found</string>
+    <string name="pk_grid_hint">Press a tile to put it on the home screen or take it off.</string>
+    <string name="pk_target_hint">Pick what this opens: an app, one of its shortcuts or a live tile.</string>
+    <string name="pk_pins_need_home">Shortcuts can be read only while TV Home is the home app.</string>
+    <string name="c_add_home">Add to home screen</string>
+    <string name="qk_title">Quick keys</string>
+    <string name="qk_on">Keys on</string>
+    <string name="qk_auto_on">Open at power-on</string>
+    <string name="qk_power">At power-on</string>
+    <string name="qk_no_key">not on this remote</string>
+    <string name="c_quickkeys">Quick keys</string>
 </resources>

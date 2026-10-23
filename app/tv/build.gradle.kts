@@ -21,6 +21,11 @@ android {
         // 100000 +: above every code of the numbers before the restart at 0.1.0 (2.24.x was 22400), so Android installs over them
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
+    sourceSets["main"].java.srcDirs("../shared/src/tvui/kotlin")           // the TV apps' one look (app/DESIGN-TV.md): tokens + components, TvField
+    sourceSets["main"].res.srcDirs("../shared/src/tvui/res")                // tv_style.xml: ONE copy for the TV apps
+    sourceSets["main"].java.srcDirs("../tvkeys/src/protocol/kotlin")        // KeysProtocol: what this app and its add-on agree on, ONE copy
+    // the add-on's APK (same variant, same key) rides inside this one as assets/tvkeys.apk: see packKeys below
+    for (v in listOf("debug", "release")) sourceSets[v].assets.srcDirs(layout.buildDirectory.dir("generated/keys/$v"))
     signingConfigs {
         create("release") {
             storeFile = keystore
@@ -45,6 +50,22 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
+
+// TV Setup Keys (app/tvkeys) holds the accessibility services, so this app declares none; its APK is built here and packed as an asset, never
+// downloaded, so the two always have the same version. KeysAddon.kt puts it on the TV over ADB. No version of its own: this app's.
+for (v in listOf("Debug", "Release")) {
+    val pack = tasks.register<Copy>("packKeys$v") {
+        dependsOn(":tvkeys:assemble$v")
+        from(project(":tvkeys").layout.buildDirectory.dir("outputs/apk/${v.lowercase()}")) { include("*.apk"); rename { "tvkeys.apk" } }
+        into(layout.buildDirectory.dir("generated/keys/${v.lowercase()}"))
+    }
+    tasks.matching { it.name == "merge${v}Assets" || it.name == "generate${v}LintReportModel" || it.name == "lintVitalAnalyze$v" }.configureEach { dependsOn(pack) }
+}
+tasks.withType<Test>().configureEach {                            // KeysAddonTest: the add-on is really in the APK, and signed alike
+    systemProperty("tvkeys.dir", layout.buildDirectory.dir("generated/keys").get().asFile.path)
+}
+tasks.matching { it.name == "testDebugUnitTest" }.configureEach { dependsOn("packKeysDebug") }
+tasks.matching { it.name == "testReleaseUnitTest" }.configureEach { dependsOn("packKeysRelease") }
 
 dependencies {
     implementation(project(":shared"))

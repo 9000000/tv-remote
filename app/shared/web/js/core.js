@@ -332,7 +332,7 @@ async function refresh() {
   ADB = s.adb || { state: 'unknown' };
   if (ADB.state === 'unknown' && !adbSoon) adbSoon = setTimeout(() => { adbSoon = 0; refresh(); }, adbSoonMs = Math.min(adbSoonMs * 2, 2000));   // connecting: told the moment it is up, not at the next 4 s tick
   if (ADB.state !== 'unknown') adbSoonMs = 125;
-  const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long);
+  const [cls, txt, long] = ADB_TEXT[ADB.state] || ADB_TEXT.unknown; setChip('#chipAdb', cls, txt, long + (ADB.detail ? ' · ' + ADB.detail : ''));
   put($('#chipAdb'), 'hidden', NATIVE());                                    // no ADB on this kind of TV: nothing to report
   if (NATIVE() && !s.connected) setChip('#chipTv', s.asking ? 'warn' : 'bad', s.asking ? T('core.waiting_tv') : s.paired === false ? T('core.not_paired') : T('core.disconnected'));
   const tvName = s.name || (s.device && s.device.model) || (s.host ? 'TV ' + s.host : '');
@@ -430,6 +430,17 @@ function applyKind(s) {
   if (currentTab) showTab(currentTab);                                // a tab now greyed shows its card, and back
 }
 
+// The phone app opens some of the page's dialogs from its remote (PhoneRemote.kt, AdbHelp.kt): closing one goes straight back
+// there, not to the manage screen behind it, unless it led on to something here (another dialog, a TV Setup update)
+async function fromRemote(open) {
+  await open();
+  const left = () => setTimeout(() => {
+    if (!document.querySelector('dialog[open]') && !(typeof setupBusy !== 'undefined' && setupBusy)) fetch('/api/phone/back', { method: 'POST' });
+  }, 300);
+  const d = [...document.querySelectorAll('dialog[open]')].pop();
+  if (d) d.addEventListener('close', left, { once: true }); else left();   // none: it stopped short (no ADB, TV Setup not wanted)
+}
+
 // ---------- ADB gating + banners ----------
 // The page from the TV works through the TV Setup app's own ADB session: without it nothing works, and there is no other machine to blame.
 const BANNERS_TV = {
@@ -451,7 +462,7 @@ function adbNow(r) { ADB = r; bannerAgain(); }                        // ADB cha
 onTvChange(() => { scenesLoaded = false; bannerAgain(); });
 function buildBanner() {
   if (ADB.state === 'none') return el('span');                        // LG / Samsung: no ADB to turn on
-  const set = CORE === 'pc' ? BANNERS : BANNERS_TV, [cls, title, text] = set[ADB.state] || set.unknown;
+  const set = CORE === 'tv' ? BANNERS_TV : BANNERS, [cls, title, text] = set[ADB.state] || set.unknown;   // the phone reaches the TV itself, as a computer does: no TV Setup to blame
   const retry = el('button', { className: 'small primary', textContent: T('core.retry_connection'), onclick: async (e) => {
     const done = UI.busy(e.currentTarget, T('core.connecting'));
     const r = await api('/api/adb/connect', {}); if (r) { ADB = r; bannerKey = ''; applyAdb(); refresh(); }
@@ -462,7 +473,12 @@ function buildBanner() {
     setTimeout(() => { retry.hidden = false; }, 8000);
     return el('div', { className: 'banner wait' }, el('span', { className: 'minispin' }), el('span', { textContent: title }), retry);
   }
-  if (CORE !== 'pc') return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), el('div', { className: 'actions' }, retry));
+  if (CORE !== 'pc') {                                                // the TV's own page and the phone app: no computer to help, so the steps on the TV, and what the TV said
+    const detail = ADB.detail ? el('p', { className: 'note', textContent: T('core.adb_detail', { d: ADB.detail }) }) : null;
+    const how = el('button', { type: 'button', className: 'small primary', textContent: T('core.tvb_help_btn'), onclick: () => showAdbGuide() });
+    retry.className = 'small';
+    return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), detail, el('div', { className: 'actions' }, how, retry));
+  }
   const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: T('core.adb_help_me'), onclick: () => adbHelp() }) : null;
   if (helpMe) retry.className = 'small';
   const loss = el('p'); loss.append(el('b', { textContent: T('core.lost_features') + ' ' }), T('core.lost_features_list'));

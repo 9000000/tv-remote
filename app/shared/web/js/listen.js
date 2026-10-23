@@ -154,7 +154,7 @@ $('#listenboost').addEventListener('click', () => {                   // a slide
     el('div', { className: 'card-head' }, el('h2', { textContent: T('listen.loudness_here') }), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'vol boost' }, r, out),
     el('p', { className: 'note', textContent: T('listen.boost_note') }),
-    el('div', { className: 'actions' }, el('button', { textContent: T('listen.back_to_x1'), onclick: () => set(1) }))));
+    el('div', { className: 'actions' }, el('button', { textContent: '↩ ' + T('listen.back_to_x1'), onclick: () => set(1) }))));
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 });

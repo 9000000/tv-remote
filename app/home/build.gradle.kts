@@ -58,7 +58,7 @@ val copyQr = tasks.register<Copy>("copyQr") {
 // "Manage from phone": TV Home serves TV Home's own settings page (home.html and what it loads) from assets/homeweb. The files are the
 // ones TV Setup's web UI uses, copied from app/shared/web at build time, so the UI has ONE source; only the words the page needs travel.
 val webDir = file("../shared/web")
-val homeWebJs = listOf("theme", "i18n", "qr", "base", "home_link", "homeweb", "appicon", "ui", "home_walls", "home_qr", "photofit", "home")
+val homeWebJs = listOf("theme", "i18n", "qr", "base", "home_link", "homeweb", "target", "appicon", "quickkeys", "ui", "home_walls", "home_qr", "photofit", "home")
 val homeWebCss = listOf("base", "page", "apps", "remote", "auto", "kit")
 val homeWebWords = listOf("home.", "homeweb.", "common.", "core.", "apps.")
 val packHomeWeb = tasks.register("packHomeWeb") {

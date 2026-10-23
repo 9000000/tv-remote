@@ -135,12 +135,12 @@ async function homeOpen() {
   };
 
   const row = (pkg, acts) => {
-    const icon = appIcon(pkg), name = el('span', { textContent: appLabel(pkg) });
-    if (!isTile(pkg)) onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appLabel(pkg)); });   // a live tile is no app: TV Setup names it
+    const icon = Target.kind(pkg) === 'app' ? appIcon(pkg) : qkLogo(r.config, pkg), name = el('span', { textContent: appLabel(pkg) });
+    if (!isTile(pkg) && Target.kind(pkg) === 'app') onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appLabel(pkg)); });   // a live tile is no app: TV Setup names it
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, name), el('div', { className: 'acts' }, ...acts));
   };
   const isTile = (p) => /^tile:[^/]+\/[a-z][a-z0-9_]{0,15}$/.test(p);
-  const appLabel = (pkg) => { if (isTile(pkg)) { const t = (r.config.tilesAvail || []).find((x) => x.key === pkg); return (t && t.title) || pkg.split('/').pop(); } const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
+  const appLabel = (pkg) => { if (Target.kind(pkg) === 'pin') return qkLabel(r.config, r.apps, pkg); if (isTile(pkg)) { const t = (r.config.tilesAvail || []).find((x) => x.key === pkg); return (t && t.title) || pkg.split('/').pop(); } const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
   const tool = (text, title, fn, off) => el('button', { type: 'button', className: 'small iconbtn', textContent: text, title, 'aria-label': title, disabled: !!off, onclick: fn });
 
   // live tiles (HomeConfig "tiles"): what TV Setup offers, each on or off the app grid; only a TV Home that reports "tilesOk"
@@ -182,11 +182,7 @@ async function homeOpen() {
   const autoOn = el('input', { type: 'checkbox', onchange: () => send({ autoon: autoOn.checked }) });
   const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' });
   const keysOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.keys_old') });   // a TV Home from before them
-  const autoRow = el('div', { className: 'list' }), autoNote = el('p', { className: 'note' });
-  const pickKey = async (title, now, set) => {
-    const p = await chooseApp(title, apps(), now);
-    if (p) set(p);
-  };
+  const autoNote = el('p', { className: 'note' });
   const powerOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.power_old') });   // a TV Home from before the button: the switch stays, with how to get it
   // the cards over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
@@ -265,15 +261,24 @@ async function homeOpen() {
   const galHead = el('h3', { textContent: T('home.gallery') });
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
 
+  // "Add to home screen": a picker of the apps (hidden ones too), their shortcuts and the live tiles; a press puts one on the grid or
+  // takes it off and the list stays open. Shortcuts and live tiles are in config "tiles" (the order they have on the grid), an app is
+  // on the grid unless it is in "hidden"
+  const addHome = el('button', { type: 'button', className: 'small', textContent: T('home.qk_addhome'), onclick: async () => {
+    const has = (t) => { const c = r.config; return Target.kind(t) === 'app' ? !c.hidden.includes(t) : (c.tiles || []).includes(t); };
+    const toggle = (t) => {
+      const c = r.config;
+      if (Target.kind(t) === 'app') send(c.hidden.includes(t) ? { hidden: c.hidden.filter((x) => x !== t) } : { hidden: [...c.hidden, t], dock: c.dock.filter((x) => x !== t) });
+      else send((c.tiles || []).includes(t) ? { tiles: c.tiles.filter((x) => x !== t) } : { tiles: [...(c.tiles || []), t] });
+    };
+    pickTarget(T('home.qk_addhome'), '', r.config, r.apps, { toggle, has });
+  } });
   function drawTiles(c) {
-    const on = !!c.tilesOk; tilesHead.hidden = tilesNote.hidden = tilesList.hidden = !on;
+    const on = !!c.tilesOk || !!c.pinsOk; tilesHead.hidden = tilesNote.hidden = tilesList.hidden = addHome.hidden = !on;
     if (!on) return;
     const have = c.tiles || [], offer = c.tilesAvail || [];
-    tilesNote.textContent = T(c.tilesState === 'untrusted' ? 'home.tiles_untrusted' : offer.length || have.length ? 'home.tiles_note' : 'home.tiles_missing');
-    const keys = [...new Set([...have, ...offer.map((t) => t.key)])];       // one on the grid whose provider is away stays, to take off
-    tilesList.replaceChildren(...keys.map((k) => row(k, [have.includes(k)
-      ? tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))
-      : tool('+', T('home.tile_add'), () => send({ tiles: [...have, k] }))])));
+    tilesNote.textContent = T(c.tilesState === 'untrusted' ? 'home.tiles_untrusted' : offer.length || have.length || c.pinsOk ? 'home.tiles_note' : 'home.tiles_missing');
+    tilesList.replaceChildren(...have.map((k) => row(k, [tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))])));   // a tile whose provider is away stays, to take off
   }
   function draw() {
     const c = r.config, d = c.dock;
@@ -325,16 +330,8 @@ async function homeOpen() {
     keyOn.disabled = autoOn.disabled = !kOk; keysOld.hidden = kOk;
     keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : 'home.keys_everywhere') : '';
     autoNote.textContent = kOk ? T(!c.keysSetup ? 'home.auto_need_setup' : 'home.auto_note') : '';
-    const appRow = (name, pkg, pick, clear) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: name })),
-      el('div', { className: 'acts' }, el('button', { type: 'button', className: 'small', textContent: pkg ? appLabel(pkg) : T('home.key_pick'), onclick: pick }),
-        ...(pkg ? [tool('✕', T('home.remove'), clear)] : [])));
-    const codes = [183, 184, 185, 186, ...(c.keysDead || []).filter((k) => HOME_KEY_WORDS[k]), 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
     keysList.hidden = !kOk;
-    keysList.replaceChildren(...codes.map((code) => appRow(homeKeyName(code), ka[code],
-      () => pickKey(homeKeyName(code), ka[code], (p) => send({ keyapps: { ...ka, [code]: p } })),
-      () => { const n = { ...ka }; delete n[code]; send({ keyapps: n }); })));
-    autoRow.hidden = !kOk;
-    autoRow.replaceChildren(appRow(T('home.auto_app'), c.autoapp, () => pickKey(T('home.auto_app'), c.autoapp, (p) => send({ autoapp: p })), () => send({ autoapp: '' })));
+    if (kOk) quickKeysDraw(keysList, c, r.apps, send);              // the slots: 1-9 and 0, the colour keys, the power-on app
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     const qrs = c.qrs || {};                                          // the QR cards' fields, by key (absent: a TV Home older than them)
     const has = (k) => !!w && w.includes(k);
@@ -454,8 +451,8 @@ async function homeOpen() {
     el('label', { className: 'check' }, power, el('span', { textContent: T('home.power') })), powerOld,
     el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
     keysHead, keysOld, el('label', { className: 'check' }, keyOn, el('span', { textContent: T('home.keys_on') })), keysNote, keysList,
-    el('label', { className: 'check' }, autoOn, el('span', { textContent: T('home.auto_on') })), autoRow, autoNote,
-    tilesHead, tilesNote, tilesList,
+    el('label', { className: 'check' }, autoOn, el('span', { textContent: T('home.auto_on') })), autoNote,
+    tilesHead, tilesNote, addHome, tilesList,
     wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine,
     noteHead, noteLine, qrHead, qrList, qrNote,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
@@ -521,7 +518,7 @@ function homeCropAsk(img, W, H) {
       el('h2', { textContent: T('home.crop_title') }), cv, el('p', { className: 'note', textContent: T('home.crop_hint') }),
       el('div', { className: 'actions' },
         el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() }),
-        el('button', { type: 'button', className: 'primary', textContent: T('home.crop_send'), onclick: () => { view = pv; d.close(); } }))));
+        el('button', { type: 'button', className: 'primary', textContent: '🖼️ ' + T('home.crop_send'), onclick: () => { view = pv; d.close(); } }))));
     d.addEventListener('close', () => { d.remove(); ok(view); });
     document.body.append(d); d.showModal();
     const pv = photoCrop(cv, img);

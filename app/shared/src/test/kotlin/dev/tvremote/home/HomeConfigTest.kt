@@ -335,6 +335,6 @@ class HomeConfigTest {
         assertEquals(c.toString(), HomeConfig.clean(JSONObject(c.toString())).toString())   // cleaning twice changes nothing
         assertEquals("dev.tvremote.setup", HomeConfig.tileProvider(k)); assertEquals("ram", HomeConfig.tileId(k))
         assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("tiles").length())
-        assertEquals(HomeConfig.TILES_MAX, HomeConfig.clean(JSONObject().put("tiles", JSONArray((1..20).map { "tile:com.x.y/t$it" }))).getJSONArray("tiles").length())
+        assertEquals(HomeConfig.TILES_MAX, HomeConfig.clean(JSONObject().put("tiles", JSONArray((1..30).map { "tile:com.x.y/t$it" }))).getJSONArray("tiles").length())
     }
 }

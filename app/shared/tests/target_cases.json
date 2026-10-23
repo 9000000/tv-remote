@@ -1,0 +1,18 @@
+{ "_": "what a Target is: Target.kt and js/target.js must give the same kind / pkg / id for each (tests/target.test.js, TargetTest.kt)",
+ "cases": [
+  { "t": "com.google.android.youtube.tv", "kind": "app", "pkg": "com.google.android.youtube.tv", "id": "" },
+  { "t": "dev.tvremote.games", "kind": "app", "pkg": "dev.tvremote.games", "id": "" },
+  { "t": "pin:dev.tvremote.channels/keep", "kind": "pin", "pkg": "dev.tvremote.channels", "id": "keep" },
+  { "t": "pin:com.x.y/a-b.c_1", "kind": "pin", "pkg": "com.x.y", "id": "a-b.c_1" },
+  { "t": "tile:dev.tvremote.setup/ram", "kind": "tile", "pkg": "dev.tvremote.setup", "id": "ram" },
+  { "t": "", "kind": "", "pkg": "", "id": "" },
+  { "t": "x", "kind": "", "pkg": "", "id": "" },
+  { "t": "pin:", "kind": "", "pkg": "", "id": "" },
+  { "t": "pin:a.b", "kind": "", "pkg": "", "id": "" },
+  { "t": "pin:a.b/", "kind": "", "pkg": "", "id": "" },
+  { "t": "tile:a.b/Ram", "kind": "", "pkg": "", "id": "" },
+  { "t": "a b.c", "kind": "", "pkg": "", "id": "" },
+  { "t": "x; rm -rf /", "kind": "", "pkg": "", "id": "" },
+  { "t": "pin:a.b/x y", "kind": "", "pkg": "", "id": "" },
+  { "t": "http://x.y/z", "kind": "", "pkg": "", "id": "" }
+ ]}

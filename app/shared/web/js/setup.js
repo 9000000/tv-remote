@@ -296,6 +296,37 @@ function assistShow(title, ...kids) {
 }
 const choice = (title, sub, fn, cls = '') => el('button', { className: 'choice ' + cls, onclick: fn }, el('b', { textContent: title }), sub ? el('small', { textContent: sub }) : null);
 const say = (text) => el('p', { textContent: text });
+// A how-to as numbered steps, one short line each: a wall of text put people off (2026-10-23). The words to look for are
+// bold, a Settings path reads as arrows; a paragraph after a blank line is a small note under the steps.
+const rich = (t) => t.split(/(“[^”]*”| → )/).filter(Boolean).map((p) => p === ' → ' ? el('span', { className: 'arr', textContent: '→' })
+  : p.startsWith('“') ? el('b', { textContent: p.slice(1, -1) }) : p);
+function steps(text) {
+  const [list, ...notes] = text.split('\n\n');
+  return [el('ol', { className: 'asteps' }, ...list.split('\n').map((l) => el('li', {}, el('span', {}, ...rich(l.replace(/^\d+\.\s*/, '')))))),
+    ...notes.map((n) => el('p', { className: 'anote' }, ...rich(n)))];
+}
+const fold = (title, text) => el('details', { className: 'afold' }, el('summary', { textContent: title }), ...steps(text));
+// Turning ADB on by hand. A TV whose maker hides the switch somewhere else (Xiaomi's China models, TCL's) is told from its
+// name and model: its own steps come first, the usual way folded under them; the other makers' ways wait under one fold.
+const BRANDS = { xiaomi: [/xiaomi|\bmi ?tv|mitv|redmi/i, 'setup.xiaomi_title', 'setup.xiaomi_steps'], tcl: [/\btcl\b|ffalcon/i, 'setup.tcl_title', 'setup.tcl_steps'] };
+function tvBrand(more = '') {
+  const d = STATE.device || {}, words = [STATE.name, d.manufacturer, d.model, more].join(' ');
+  return Object.keys(BRANDS).find((b) => BRANDS[b][0].test(words)) || '';
+}
+function adbGuide(more = '') {
+  const b = tvBrand(more), mine = BRANDS[b];
+  return [
+    ...(mine ? [el('p', { className: 'amore', textContent: T('setup.for_this_tv', { name: T(mine[1]) }) }), ...steps(T(mine[2])), fold(T('setup.adb_general'), T('setup.adb_steps'))]
+      : steps(T('setup.adb_steps'))),
+    el('p', { className: 'amore', textContent: T('setup.adb_more') }),
+    fold(T('setup.adb_fix_title'), T('setup.adb_fix')),
+    el('details', { className: 'afold' }, el('summary', { textContent: T('setup.adb_other_tvs') }),
+      ...Object.keys(BRANDS).filter((k) => k !== b).map((k) => fold(T(BRANDS[k][1]), T(BRANDS[k][2])))),
+  ];
+}
+// Its own dialog: the TV page's ADB notice, and the phone app's help (AdbHelp.kt adbSteps, [more] = the maker and model the TV
+// gave over the remote protocol while ADB is off)
+function showAdbGuide(more = '') { assistShow(T('core.tvb_help_btn'), ...adbGuide(more)); }
 const row = (...kids) => el('div', { className: 'assistrow' }, ...kids.filter(Boolean));
 const assist = (do_, extra) => api('/api/assist', { do: do_, ...extra });
 $('#assistclose').addEventListener('click', () => $('#assist').close());
@@ -308,7 +339,7 @@ async function adbHelp() {
   if (!STATE.connected) {                                             // everything here goes through the remote buttons
     assistShow(T('setup.turn_on_adb'), say(STATE.paired === false ? T('setup.pair_first')
       : T('setup.remote_unreachable')),
-      row(act(T('setup.go_pair'), async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say(T('setup.or_by_hand')), say(ADB_STEPS), say(tip),
+      row(act(T('setup.go_pair'), async () => { $('#assist').close(); showTab('tv'); }, 'primary')), say(T('setup.or_by_hand')), ...adbGuide(), say(tip),
       CORE !== 'tv' ? choice(T('setup.wireless_choice'), '', wirelessPair) : null);
     return;
   }
@@ -348,9 +379,8 @@ async function wirelessPair() {
   const p = f && (f.pairing || []).find((s) => s.ip === f.host) || f && (f.pairing || [])[0];
   if (p && !addr.value) addr.value = p.ip + ':' + p.port;
 }
-const ADB_STEPS = T('setup.adb_steps') + '\n\n' + T('setup.tcl_hidden_adb');
 function adbSteps() {
-  assistShow(T('setup.steps_title'), say(T('setup.steps_use_keys')), say(ADB_STEPS),
+  assistShow(T('setup.steps_title'), say(T('setup.steps_use_keys')), ...adbGuide(),
     row(act(T('setup.connect_now'), async () => { const r = await api('/api/adb/connect', {}); if (r) { adbNow(r); await refresh(); } }, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
 }
 function lookOnHome() {
@@ -562,10 +592,13 @@ function nativeSteps(s) {
 }
 setInterval(() => { if (currentTab === 'tv' && !document.hidden && !stopped) loadSteps(); }, 6000);
 
-const startTab = (window.LANG_KEEP && window.LANG_KEEP.tab) || location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
-if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
-else if (startTab === 'term') { showTab('files'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
-document.documentElement.classList.add('tabbed');                     // the right tab is open: show it (theme.js)
+// The first tab once every script is in: the TV tab fills its cards from home.js and tvset.js, which come after this one
+document.addEventListener('DOMContentLoaded', () => {
+  const startTab = (window.LANG_KEEP && window.LANG_KEEP.tab) || location.hash.slice(1) || new URLSearchParams(location.search).get('tab') || (CORE === 'phone' ? 'apps' : '');
+  if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
+  else if (startTab === 'term') { showTab('files'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
+  document.documentElement.classList.add('tabbed');                   // the right tab is open: show it (theme.js)
+});
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
 let polling = false;
 applyAdb(); refresh(); setInterval(async () => { if (polling || document.hidden) return; polling = true; try { await refresh(); } finally { polling = false; } }, 4000);

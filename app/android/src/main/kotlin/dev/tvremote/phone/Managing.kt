@@ -131,7 +131,9 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             if (http == null) {
                 val server = HttpServer(this)
                 http = server
-                port = server.start(0, true)
+                val last = a.prefs.getInt("managePort", 0)               // the same port as last time: the page's origin, so what it keeps (localStorage: Notify's corner, the tab) stays
+                port = (if (last > 0) try { server.start(last, true) } catch (e: java.io.IOException) { 0 } else 0).takeIf { it > 0 } ?: server.start(0, true)
+                a.prefs.edit().putInt("managePort", port).apply()
             }
             if (tvHost != forHost) bind(tvHost)
             if (!loaded) {
@@ -220,6 +222,10 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         if (r.path == "/api/state" || r.path == "/api/about")      // the page only needs to know it may show itself, and for which TV
             return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", a.name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
                 .put("adb", JSONObject().put("state", manage?.adbState() ?: "unknown")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))
+        if (r.path == "/api/phone/back" && r.method == "POST") {       // a dialog opened from the remote (AdbHelp.kt adbSteps) was closed: straight back to it
+            a.ui.post { back() }
+            return HttpServer.Response.json(JSONObject())
+        }
         if (r.path == "/api/scenes") {                                 // this phone's scenes: the widget, tiles and shortcuts use them too
             if (r.method == "POST") SceneStore.save(a, r.json().optJSONArray("scenes") ?: JSONArray())
             if (r.query["download"] != null) return Scenes.backup(SceneStore.all(a))   // "Export": lands in the phone's Download folder

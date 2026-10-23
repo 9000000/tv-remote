@@ -9,23 +9,28 @@ import android.graphics.drawable.Drawable
 import android.graphics.Paint
 import android.graphics.RectF
 import android.net.Uri
+import java.net.HttpURLConnection
+import java.net.URL
 import android.view.View
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
 
 /**
- * Live tiles: a tile another app provides (TV Setup's "Free RAM"), drawn in the app grid at an app tile's size with its own render,
+ * Live tiles: a tile another app provides (TV Setup's "Free RAM" and "Sleep timer", TV Channels' "Keep watching"), drawn in the app grid at an app tile's size with its own render,
  * pressed like an app. This file is the small API the rest of TV Home (and the "Add to home screen" browser) uses, apart from any view:
  *   [available]  what the provider offers now: [Info] (key, title, kind), from the last [refresh]; [status] says why the list is empty
  *   [fetch]      one tile's state now (the provider's JSON: mode live|working|done|failed, big, small, progress, accent, result)
  *   [run]        its action (the press); [press] is fetch-and-follow for a screen
  * A tile's key is "tile:<provider package>/<id>" ([HomeConfig.tileKey]) and sits in the config's "tiles" (which are on the grid) and
- * in dock / hidden / order like an app's package name. The provider answers only TV Home, by its signing key (TV Setup's HomeInfo).
+ * in dock / hidden / order like an app's package name. A provider answers only TV Home, by its signing key (its HomeInfo), and TV
+ * Home asks a provider only when that app is signed by the key pinned here ([PINNED]) or by this app's own.
+ * A tile's "layout" says how [LiveFace] draws it: "gauge" (a ring and a line; the default), "next" (a channel and its programmes)
+ * or "toggle" (a value that a press steps through).
  * Calls to it are binder calls to another app: never on the main thread.
  */
 object Tiles {
-    class Info(val key: String, val title: String, val kind: String)
+    class Info(val key: String, val title: String, val kind: String, val layout: String = "gauge")
 
     const val OK = "ok"                                                 // the provider answered with its list
     const val MISSING = "missing"                                       // no TV Setup, or one older than the tiles
@@ -38,12 +43,46 @@ object Tiles {
     /** The provider's content address by its package: "<package>.home", as TV Setup's HomeInfo is "dev.tvremote.setup.home" ([HomeConfig.USAGE]). */
     fun uri(provider: String): Uri = Uri.parse("content://$provider.home")
 
-    /** TV Setup, the one provider so far; others would be asked the same way. */
-    val PROVIDERS = listOf("dev.tvremote.setup")
+    /** TV Setup and TV Channels; each is asked the same way. */
+    val PROVIDERS = listOf("dev.tvremote.setup", "dev.tvremote.channels")
 
-    private fun call(c: Context, provider: String, method: String, arg: String?): android.os.Bundle? = try {
-        c.contentResolver.call(uri(provider), method, arg, android.os.Bundle().apply { putString("lang", Locale.getDefault().language) })
-    } catch (e: Exception) { null }                                     // no such provider, or one that does not know this word
+    /** The release certificate (SHA-256) each provider must be signed with; every app has a key of its own (each app's signing.jks). */
+    val PINNED = mapOf(
+        "dev.tvremote.setup" to "6dbf49b2d455de428edaca6674266f7e3d1222483d59c26f7345f8cc129bd966",       // app/tv/signing.jks
+        "dev.tvremote.channels" to "a3e09c97fb750bf09285d6fa7c065d4c63ee6d8247b1caaa555dd279e2534b6a")    // app/channels/signing.jks
+
+    /** Whether [certs] (the provider's signing digests) are the pinned one, or one of [mine] (debug builds of all apps share a key). */
+    fun certOk(provider: String, certs: List<String>, mine: List<String>): Boolean = certs.any { it == PINNED[provider] || it in mine }
+
+    private val vouched = HashMap<String, Pair<Long, Boolean?>>()       // provider -> (checked at, signed right; null: not installed), a minute
+
+    @Suppress("DEPRECATION")
+    private fun certs(c: Context, pkg: String): List<String> = try {
+        val pm = c.packageManager
+        val sigs = if (android.os.Build.VERSION.SDK_INT >= 28) pm.getPackageInfo(pkg, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES).signingInfo?.apkContentsSigners
+            else pm.getPackageInfo(pkg, android.content.pm.PackageManager.GET_SIGNATURES).signatures
+        sigs.orEmpty().map { s -> java.security.MessageDigest.getInstance("SHA-256").digest(s.toByteArray()).joinToString("") { "%02x".format(it) } }
+    } catch (e: Exception) { emptyList() }
+
+    /** true: [provider] is installed and signed right; false: signed by another key; null: not installed. */
+    private fun signedRight(c: Context, provider: String): Boolean? = synchronized(vouched) {
+        vouched[provider]?.takeIf { System.currentTimeMillis() - it.first < 60_000L }?.let { return it.second }
+        val theirs = certs(c, provider)
+        val ok = if (theirs.isEmpty()) null else certOk(provider, theirs, certs(c, c.packageName))
+        vouched[provider] = System.currentTimeMillis() to ok
+        ok
+    }
+
+    private fun call(c: Context, provider: String, method: String, arg: String?): android.os.Bundle? {
+        when (signedRight(c, provider)) {
+            null -> return null
+            false -> return android.os.Bundle().apply { putString("result", "untrusted") }
+            true -> {}
+        }
+        return try {
+            c.contentResolver.call(uri(provider), method, arg, android.os.Bundle().apply { putString("lang", Locale.getDefault().language) })
+        } catch (e: Exception) { null }                                 // no such provider, or one that does not know this word
+    }
 
     /** Asks every provider for its tiles and keeps the answer; returns whether it changed (the grid and the config are then read again). */
     fun refresh(c: Context): Boolean {
@@ -57,7 +96,8 @@ object Tiles {
                 else -> try {
                     val l = JSONArray(b.getString("json") ?: "[]")
                     for (i in 0 until l.length()) l.getJSONObject(i).let { all.put(JSONObject().put("key", HomeConfig.tileKey(p, it.getString("id")))
-                        .put("title", it.optString("title")).put("kind", it.optString("kind"))) }
+                        .put("title", it.optString("title")).put("kind", it.optString("kind"))
+                        .put("layout", it.optString("layout").ifEmpty { "gauge" })) }
                     state = OK
                 } catch (e: Exception) { }
             }
@@ -73,7 +113,7 @@ object Tiles {
     /** What the providers offered at the last [refresh]; empty when [status] is not [OK]. */
     fun available(c: Context): List<Info> = try {
         val l = JSONArray(prefs(c).getString("list", "[]"))
-        List(l.length()) { l.getJSONObject(it).let { o -> Info(o.getString("key"), o.optString("title"), o.optString("kind")) } }
+        List(l.length()) { l.getJSONObject(it).let { o -> Info(o.getString("key"), o.optString("title"), o.optString("kind"), o.optString("layout", "gauge")) } }
     } catch (e: Exception) { emptyList() }
 
     /** The name to show for [key]: the provider's, else (a tile set from a phone before the provider was seen) its id. */
@@ -82,13 +122,13 @@ object Tiles {
     /** The tiles that are on the grid (config "tiles"), as tiles' apps; they show even while their provider is away, saying so. */
     fun apps(c: Context, conf: JSONObject): List<App> {
         val a = conf.optJSONArray("tiles") ?: return emptyList()
-        return List(a.length()) { a.getString(it) }.map { App(it, title(c, it), null) }
+        return List(a.length()) { a.getString(it) }.mapNotNull { if (Target.isPin(it)) Pins.app(c, it) else App(it, title(c, it), null) }   // a shortcut that is gone shows nothing
     }
 
-    /** The config the clients read gains: "tilesOk", "tilesAvail" [{key, title, kind}] and "tilesState" ([OK] / [MISSING] / [UNTRUSTED]). */
+    /** The config the clients read gains: "tilesOk", "tilesAvail" [{key, title, kind, layout}] and "tilesState" ([OK] / [MISSING] / [UNTRUSTED]). */
     fun report(c: Context, conf: JSONObject): JSONObject {
         val l = JSONArray()
-        for (t in available(c)) l.put(JSONObject().put("key", t.key).put("title", t.title).put("kind", t.kind))
+        for (t in available(c)) l.put(JSONObject().put("key", t.key).put("title", t.title).put("kind", t.kind).put("layout", t.layout))
         return conf.put("tilesOk", true).put("tilesAvail", l).put("tilesState", status(c))
     }
 
@@ -98,15 +138,20 @@ object Tiles {
 
     /** One tile's state now (a binder call: a thread of its own); a state with mode "missing" / "untrusted" when its provider does not answer. */
     fun fetch(c: Context, key: String): JSONObject {
-        val b = call(c, HomeConfig.tileProvider(key), "tile", HomeConfig.tileId(key))
+        val provider = HomeConfig.tileProvider(key)
+        val b = call(c, provider, "tile", HomeConfig.tileId(key))
         val s = when {
-            b == null -> JSONObject().put("mode", MISSING)
-            b.getString("result") == "untrusted" -> JSONObject().put("mode", UNTRUSTED)
+            b == null -> JSONObject().put("mode", MISSING).also { missingLine(c, provider)?.let { l -> it.put("small", l) } }
+            b.getString("result") == "untrusted" -> JSONObject().put("mode", UNTRUSTED).also { missingLine(c, provider)?.let { l -> it.put("small", l) } }
             else -> try { JSONObject(b.getString("json") ?: "") } catch (e: Exception) { JSONObject().put("mode", MISSING) }
         }
         synchronized(last) { last[key] = s }
         return s
     }
+
+    /** The line for a provider that is away, when it is not TV Setup (the face's own words speak of TV Setup). */
+    private fun missingLine(c: Context, provider: String): String? =
+        if (provider == "dev.tvremote.channels") c.getString(if (signedRight(c, provider) == false) R.string.tile_untrusted_channels else R.string.tile_need_channels) else null
 
     /** Runs the tile's action: true when it started (or was already running), false when the provider is missing, untrusted or refused. */
     fun run(c: Context, key: String): Boolean {
@@ -120,6 +165,8 @@ object Tiles {
      * [FOLLOW_TRY] times), each state handed to [onState]. Call it from a thread of its own; false when it could not start.
      */
     fun press(c: Context, key: String, onState: (JSONObject) -> Unit): Boolean {
+        val open = (cached(key) ?: fetch(c, key)).optString("open")      // a tile that opens its app's screen: TV Home is in front, so it starts the link
+        if (open.isNotEmpty()) return launch(c, HomeConfig.tileProvider(key), open).also { onState(fetch(c, key)) }
         if (!run(c, key)) { onState(fetch(c, key)); return false }
         Thread.sleep(FOLLOW_MS)
         var n = 0
@@ -131,6 +178,12 @@ object Tiles {
         return true
     }
     private const val FOLLOW_TRY = 40
+
+    /** Starts [link] in the provider's own app only (setPackage): a provider cannot send TV Home to another app. */
+    private fun launch(c: Context, provider: String, link: String): Boolean = try {
+        c.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(link)).setPackage(provider).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        true
+    } catch (e: Exception) { false }
 }
 
 
@@ -142,6 +195,9 @@ object Tiles {
  * shorter line shown instead of small, e.g. "-37 MB" after a press). A press shows the outcome as the ring running down to the
  * new value (about a second, once per outcome) and, while the provider works, a spinner turning on the ring; with motion off or
  * calm (a weak box) the numbers just change.
+ * Two more layouts ("layout" in the state): "next", a channel to keep watching (a logo, its name, what is on and next: state big,
+ * small, line2, logo; "empty" dims it) and "toggle", a value that a press steps through (a pill with big, a line under it; "on"
+ * fills the pill; the pill gives one small pop when the value changes, none with motion off).
  */
 class LiveFace(c: Context, private val w: Int, private val h: Int, private val title: String, private val say: (String) -> String) : View(c) {
     private companion object {
@@ -151,13 +207,19 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
         val BLUE = intArrayOf(0xFF3B73F6.toInt(), 0xFF1E3A8A.toInt())                                                   // TV Setup's family, for a tone nobody named
         val AMBER = intArrayOf(0xFFD97706.toInt(), 0xFF9A3412.toInt())
         val RED = intArrayOf(0xFFDC2626.toInt(), 0xFF9F1239.toInt())
-        val IDLE = intArrayOf(0xFF2A3446.toInt(), 0xFF171E2B.toInt())                                                   // no answer from the provider
+        val IDLE = intArrayOf(0xFF2A3446.toInt(), 0xFF171E2B.toInt())                                                   // no answer from the provider, or a toggle that is off
+        val VIOLET = intArrayOf(0xFF7C3AED.toInt(), 0xFF3B1E8A.toInt())                                                 // tone "watch": a channel to keep watching
+        val NIGHT = intArrayOf(0xFF4F46E5.toInt(), 0xFF1E1B4B.toInt())                                                  // tone "night": the sleep timer, set
+        val logos = object : android.util.LruCache<String, android.graphics.Bitmap>(12) {}                              // channel logos, fetched once
         const val SPIN_MS = 1100L
     }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
     private var big = ""; private var small = ""; private var mode = "live"; private var accent = "ok"; private var tone = ""
     private var hasRing = true
+    private var layout = "gauge"; private var line2 = ""; private var logoUrl = ""; private var empty = false; private var on = false
+    private var pop = 1f                                                // the toggle pill's scale during its pop
+    private var popAnim: ValueAnimator? = null
     private var icon: Drawable? = null; private var iconName = ""
     private var progress = 0f                                           // what the ring shows now (moves during the animation)
     private var seenAt = 0L                                             // the outcome already animated
@@ -174,9 +236,12 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
         val m = s?.optString("mode").orEmpty()
         if (s == null || m == Tiles.MISSING || m == Tiles.UNTRUSTED || m.isEmpty()) {
             anim?.cancel(); spinning(false)
-            mode = m.ifEmpty { Tiles.MISSING }; big = "—"; small = say(mode); progress = 0f; hasRing = true; tone = "idle"; invalidate(); return
+            mode = m.ifEmpty { Tiles.MISSING }; big = "—"; small = s?.optString("small").orEmpty().ifEmpty { say(mode) }; progress = 0f; hasRing = true; tone = "idle"
+            layout = "gauge"; line2 = ""; empty = false; invalidate(); return
         }
         accent = s.optString("accent", "ok"); mode = m; tone = s.optString("tone")
+        layout = s.optString("layout", "gauge").let { if (it == "next" || it == "toggle") it else "gauge" }
+        if (layout != "gauge") { setOther(s); return }
         small = s.optString("note").ifEmpty { s.optString("small") }
         hasRing = s.has("progress")
         icon(s.optString("icon"))
@@ -189,6 +254,46 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
         }
         if (anim?.isRunning == true) return                             // the count-down is on: it ends on the same numbers
         progress = p; big = s.optString("big"); invalidate()
+    }
+
+    /** The state of a "next" or "toggle" tile: only text and a picture, nothing that runs. */
+    private fun setOther(s: JSONObject) {
+        anim?.cancel(); spinning(false)
+        small = s.optString("small"); line2 = s.optString("line2"); empty = s.optBoolean("empty"); on = s.optBoolean("on"); hasRing = false; progress = 0f
+        icon(s.optString("icon"))
+        val v = s.optString("big")
+        if (layout == "toggle" && big.isNotEmpty() && v != big && motion) popPill()
+        big = v
+        logo(s.optString("logo"))
+        invalidate()
+    }
+
+    private fun popPill() {
+        popAnim?.cancel()
+        popAnim = ValueAnimator.ofFloat(1f, 1.14f, 1f).apply { duration = 260; addUpdateListener { pop = it.animatedValue as Float; invalidate() }; start() }
+    }
+
+    /** The channel's picture, fetched once on a thread of its own (a plain http(s) address, at most 1.5 MB); the tile draws without it until it is there. */
+    private fun logo(url: String) {
+        if (url == logoUrl) return
+        logoUrl = url
+        if (!url.startsWith("http") || logos.get(url) != null) return
+        Thread({
+            try {
+                val k = URL(url).openConnection() as HttpURLConnection
+                k.connectTimeout = 6000; k.readTimeout = 8000; k.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10)")
+                val bytes = try { k.inputStream.use { it.readBytes(1_500_000) } } finally { k.disconnect() }
+                val b = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }.also { android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, it) }
+                val o = android.graphics.BitmapFactory.Options().apply { inSampleSize = Math.max(1, Math.max(b.outWidth, b.outHeight) / 256) }
+                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size, o)?.let { bmp -> logos.put(url, bmp); post { invalidate() } }
+            } catch (e: Exception) { }
+        }, "tile-logo").apply { isDaemon = true }.start()
+    }
+
+    private fun java.io.InputStream.readBytes(max: Int): ByteArray {
+        val out = java.io.ByteArrayOutputStream(); val buf = ByteArray(8192)
+        while (out.size() < max) { val n = read(buf); if (n < 0) break; out.write(buf, 0, n) }
+        return out.toByteArray()
     }
 
     private fun icon(name: String) {
@@ -222,14 +327,16 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
     private fun ringTint(): Int = when (accent) { "bad" -> RING_BAD; "warn" -> RING_WARN; else -> RING_OK }
 
     private fun colours(): IntArray = when {
-        tone == "idle" -> IDLE
+        tone == "idle" || tone == "off" -> IDLE
+        tone == "watch" -> VIOLET
+        tone == "night" -> NIGHT
         accent == "bad" -> RED
         accent == "warn" -> AMBER
         tone == "clean" -> CLEAN
         else -> BLUE
     }
 
-    override fun onDetachedFromWindow() { anim?.cancel(); spin?.cancel(); spin = null; super.onDetachedFromWindow() }
+    override fun onDetachedFromWindow() { anim?.cancel(); spin?.cancel(); spin = null; popAnim?.cancel(); super.onDetachedFromWindow() }
 
     override fun onDraw(cv: Canvas) {
         val r = 10f * u
@@ -240,6 +347,8 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
         cv.drawRoundRect(box, r, r, paint); paint.shader = null
 
         val pad = 12f * u
+        if (layout == "next") { drawNext(cv, pad); return }
+        if (layout == "toggle") { drawToggle(cv, pad); return }
         val ring = if (hasRing) 29f * u else 0f                         // the ring's outer radius; a state without progress gives the room to the words
         val ringX = w - pad - ring
         val textW = if (hasRing) ringX - ring - pad - 6f * u else w - 2 * pad - 40f * u
@@ -279,6 +388,62 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
         val room = 2f * (rr - sw / 2f) - 2f * u
         while (paint.measureText(big) > room && paint.textSize > 8f * u) paint.textSize -= u
         cv.drawText(big, ringX, cy + paint.textSize * 0.36f, paint); paint.textAlign = Paint.Align.LEFT
+    }
+
+    /** The icon and the tile's name on top, in one row; returns where the next row starts. */
+    private fun drawHead(cv: Canvas, pad: Float, size: Float): Float {
+        val ic = if (icon != null) 20f * u else 0f
+        icon?.let { it.setBounds(pad.toInt(), (10f * u).toInt(), (pad + ic).toInt(), (10f * u + ic).toInt()); it.draw(cv) }
+        paint.typeface = Font.bold; paint.textSize = size; paint.color = LINE_INK
+        val x = pad + if (ic > 0f) ic + 6f * u else 0f
+        cv.drawText(fit(title, w - x - pad), x, 10f * u + ic / 2f + size * 0.36f, paint)
+        return 10f * u + ic
+    }
+
+    private fun drawNext(cv: Canvas, pad: Float) {
+        drawHead(cv, pad, 13f * u)
+        val room = w - 2 * pad
+        if (empty) {                                                    // nothing watched yet: say so, and what a press does
+            paint.typeface = Font.bold; paint.textSize = 19f * u; paint.color = INK
+            cv.drawText(fit(big, room), pad, 56f * u, paint)
+            paint.typeface = Font.medium; paint.textSize = 12.5f * u; paint.color = LINE_INK
+            cv.drawText(fit(small, room), pad, 77f * u, paint)
+            return
+        }
+        val logoSize = 32f * u; val top = 31f * u
+        val bmp = logos.get(logoUrl)
+        box.set(pad, top, pad + logoSize, top + logoSize)
+        paint.color = INK; cv.drawRoundRect(box, 6f * u, 6f * u, paint)
+        if (bmp != null) {
+            val f = Math.min((logoSize - 6f * u) / bmp.width, (logoSize - 6f * u) / bmp.height)
+            val bw = bmp.width * f; val bh = bmp.height * f
+            cv.drawBitmap(bmp, null, RectF(pad + (logoSize - bw) / 2f, top + (logoSize - bh) / 2f, pad + (logoSize + bw) / 2f, top + (logoSize + bh) / 2f), paint)
+        }
+        val nx = pad + logoSize + 8f * u
+        paint.typeface = Font.bold; paint.textSize = 20f * u; paint.color = INK
+        cv.drawText(fit(big, w - nx - pad), nx, top + logoSize / 2f + 7f * u, paint)
+        paint.typeface = Font.medium; paint.textSize = 12.5f * u; paint.color = INK
+        cv.drawText(fit(small, room), pad, 77f * u, paint)
+        if (line2.isNotEmpty()) { paint.textSize = 11.5f * u; paint.color = LINE_INK; cv.drawText(fit(line2, room), pad, 91f * u, paint) }
+    }
+
+    private fun drawToggle(cv: Canvas, pad: Float) {
+        drawHead(cv, pad, 15f * u)
+        paint.typeface = Font.bold; paint.textSize = 22f * u
+        val ph = 36f * u; val top = 33f * u                              // the pill, then what a press does under it: both get the whole width
+        val pw = Math.max(paint.measureText(big) + 24f * u, ph * 1.5f)
+        val cx = pad + pw / 2f; val cy = top + ph / 2f
+        cv.save(); cv.scale(pop, pop, cx, cy)
+        box.set(pad, top, pad + pw, top + ph)
+        if (on) { paint.style = Paint.Style.FILL; paint.color = INK }
+        else { paint.style = Paint.Style.STROKE; paint.strokeWidth = 3f * u; paint.color = LINE_INK; box.inset(1.5f * u, 1.5f * u) }
+        cv.drawRoundRect(box, ph / 2f, ph / 2f, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = if (on) colours()[1] else INK; paint.textAlign = Paint.Align.CENTER
+        cv.drawText(big, cx, cy + 8f * u, paint); paint.textAlign = Paint.Align.LEFT
+        cv.restore()
+        paint.typeface = Font.medium; paint.textSize = 12.5f * u; paint.color = LINE_INK
+        cv.drawText(fit(small, w - 2 * pad), pad, 90f * u, paint)
     }
 
     private fun fit(t: String, room: Float): String {

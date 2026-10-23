@@ -2,6 +2,7 @@ package dev.tvremote.setup
 
 import android.app.Activity
 import dev.tvremote.core.T
+import dev.tvremote.tvui.TvUi
 import dev.tvremote.core.Words
 import android.graphics.Color
 import android.graphics.Typeface
@@ -59,15 +60,13 @@ class MainActivity : Activity() {
     private var busy = false
     private var focusedOnce = false
 
-    private val BG = Color.rgb(14, 17, 22)    // tv_bg (app/DESIGN-TV.md)
-    private val CARD = Color.rgb(27, 32, 40)    // tv_card
     private val TILE = Color.rgb(34, 39, 47)
-    private val INK = Color.rgb(232, 234, 237)   // tv_ink
     private val MUTED = Color.rgb(140, 150, 163)
     private val ACCENT = Color.rgb(59, 115, 246)
     private val OK = Color.rgb(70, 210, 131)
     private val WARN = Color.rgb(240, 179, 74)
     private val BAD = Color.rgb(255, 112, 112)
+    private val HOWTO = Color.rgb(138, 180, 248)                       // what to do next: a light blue, apart from white info and the three states
 
     /** An action: an icon, a title, and one line beside it saying what it does or where it stands. */
     private inner class Tile(icon: Int, title: String, sub: String, run: () -> Unit) {
@@ -82,8 +81,8 @@ class MainActivity : Activity() {
             view.isClickable = true
             view.background = box(TILE, 14, 0)
             badge.setImageResource(icon)
-            badge.setColorFilter(INK)
-            badge.background = box(CARD, 10, 0)
+            badge.setColorFilter(TvUi.TEXT)
+            badge.background = box(TvUi.CARD, 10, 0)
             badge.setPadding(dp(5), dp(5), dp(5), dp(5))
             val slot = android.widget.FrameLayout(this@MainActivity)
             slot.addView(badge, android.widget.FrameLayout.LayoutParams(dp(26), dp(26)))
@@ -95,7 +94,7 @@ class MainActivity : Activity() {
             val words = LinearLayout(this@MainActivity)
             words.orientation = LinearLayout.VERTICAL
             words.setPadding(dp(10), 0, 0, 0)
-            val head = text(title, 13, INK, true)
+            val head = text(title, 13, TvUi.TEXT, true)
             head.maxLines = 2                                         // four tiles across: a long name wraps, not "Manage on th…"
             head.ellipsize = TextUtils.TruncateAt.END
             words.addView(head)
@@ -106,8 +105,8 @@ class MainActivity : Activity() {
             view.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
             view.setOnClickListener { if (!busy) run() else log(T("tv_main.busy")) }
             view.setOnFocusChangeListener { v, f ->
-                v.background = if (f) ring(TILE, 14) else box(TILE, 14, 0)
-                badge.background = box(if (f) Color.argb(60, 255, 255, 255) else CARD, 10, 0)
+                v.background = if (f) TvUi.ring(this@MainActivity, TILE, dp(14).toFloat()) else box(TILE, 14, 0)
+                badge.background = box(if (f) Color.argb(60, 255, 255, 255) else TvUi.CARD, 10, 0)
                 subView.setTextColor(if (f) Color.WHITE else MUTED)
                 v.animate().scaleX(if (f) 1.06f else 1f).scaleY(if (f) 1.06f else 1f).setDuration(120).start()
             }
@@ -137,7 +136,7 @@ class MainActivity : Activity() {
         super.onCreate(state)
         dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         val page = LinearLayout(this)
-        page.setBackgroundColor(BG)
+        page.setBackgroundColor(TvUi.BG)
         if (phone) {
             page.orientation = LinearLayout.VERTICAL
             page.setPadding(dp(16), dp(20), dp(16), dp(24))
@@ -163,7 +162,7 @@ class MainActivity : Activity() {
         val names = LinearLayout(this)
         names.orientation = LinearLayout.VERTICAL
         names.setPadding(resources.getDimension(R.dimen.tv_head_gap).toInt(), 0, 0, 0)
-        names.addView(text("TV Setup", if (phone) 20 else 24, INK, true))
+        names.addView(text("TV Setup", if (phone) 20 else 24, TvUi.TEXT, true))
         names.addView(text(T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" } +
             "   ·   Hoang Tran   ·   github.com/HoangTran0410/tv-remote", 12, MUTED, false))
         head.addView(names)
@@ -171,14 +170,14 @@ class MainActivity : Activity() {
 
         val status = LinearLayout(this)
         status.gravity = Gravity.CENTER_VERTICAL
-        status.background = box(CARD, 16, 0)
+        status.background = box(TvUi.CARD, 16, 0)
         status.setPadding(dp(16), dp(10), dp(16), dp(10))
         dot = View(this)
         status.addView(dot, LinearLayout.LayoutParams(dp(10), dp(10)))
         val st = LinearLayout(this)
         st.orientation = LinearLayout.VERTICAL
         st.setPadding(dp(14), 0, 0, 0)
-        statusTitle = text("", 15, INK, true)
+        statusTitle = text("", 15, TvUi.TEXT, true)
         statusDetail = text("", 12, MUTED, false)
         st.addView(statusTitle)
         st.addView(statusDetail)
@@ -223,15 +222,15 @@ class MainActivity : Activity() {
         logView = text(T("tv_main.activity_empty"), 14, MUTED, false)   // until the first line
         logView.setLineSpacing(dp(3).toFloat(), 1f)
         scroll = ScrollView(this)
-        scroll.background = box(CARD, 14, 0)
+        scroll.background = box(TvUi.CARD, 14, 0)
         scroll.setPadding(dp(16), dp(10), dp(16), dp(10))
         scroll.isFocusable = true                                     // D-pad can scroll back to an error that went by
-        scroll.onFocusChangeListener = View.OnFocusChangeListener { v, on -> v.background = if (on) ring(CARD, 14) else box(CARD, 14, 0) }
+        scroll.onFocusChangeListener = View.OnFocusChangeListener { v, on -> v.background = if (on) TvUi.ring(this@MainActivity, TvUi.CARD, dp(14).toFloat()) else box(TvUi.CARD, 14, 0) }
         scroll.addView(logView)
         // ---- right: taking over from a phone or a computer
         webCol = LinearLayout(this)
         webCol.orientation = LinearLayout.VERTICAL
-        webCol.background = box(CARD, 18, 0)
+        webCol.background = box(TvUi.CARD, 18, 0)
         webCol.setPadding(dp(18), dp(14), dp(18), dp(14))
         webBtn = smallButton("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb(); webBtn.requestFocus() }
         if (phone) {                                                  // header, status, then the card (what a phone is mostly here for), the tiles, the log
@@ -240,7 +239,7 @@ class MainActivity : Activity() {
             left.addView(scroll, LinearLayout.LayoutParams(-1, dp(240)).apply { topMargin = dp(8) })
             page.addView(left, LinearLayout.LayoutParams(-1, -2))
             val outer = ScrollView(this)
-            outer.setBackgroundColor(BG)
+            outer.setBackgroundColor(TvUi.BG)
             outer.isFillViewport = true
             outer.addView(page)
             setContentView(outer)
@@ -368,14 +367,15 @@ class MainActivity : Activity() {
         val ip = lanIp.ifEmpty { wifiIp() }
         val focused = currentFocus
         webCol.removeAllViews()
-        webCol.addView(text(T("tv_main.control_from_a_phone"), 16, INK, true))
+        webCol.addView(text(T("tv_main.control_from_a_phone"), 16, TvUi.TEXT, true).apply { gravity = Gravity.CENTER_HORIZONTAL },   // over the centred QR and address
+            LinearLayout.LayoutParams(-1, -2))
         if (on && ip.isNotEmpty()) {
             val secure = RemoteService.secure()                       // HTTPS once its certificate exists; plain HTTP before and on an older browser's bookmark
             val scheme = if (secure) "https://" else "http://"
             val port = if (secure) RemoteService.HTTPS_PORT else RemoteService.PORT
             val link = scheme + ip + ":" + port
             qr(link)?.let { webCol.addView(it, LinearLayout.LayoutParams(dp(136), dp(136)).apply { topMargin = dp(10); gravity = Gravity.CENTER_HORIZONTAL }) }
-            val addr = text(link.removePrefix(scheme), 15, INK, true)
+            val addr = text(link.removePrefix(scheme), 15, TvUi.TEXT, true)
             addr.gravity = Gravity.CENTER
             webCol.addView(addr, margins(top = 8))
             if (secure) Tls.shortFingerprintIfReady(this)?.let {      // to compare with what the browser shows for the certificate
@@ -403,7 +403,7 @@ class MainActivity : Activity() {
         val words = LinearLayout(this)
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(12), 0, 0, 0)
-        words.addView(text(T("tv_main.tv_remote_android_app"), 14, INK, true))
+        words.addView(text(T("tv_main.tv_remote_android_app"), 14, TvUi.TEXT, true))
         words.addView(text(T("tv_main.scan_to_download"), 12, MUTED, false))
         app.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         webCol.addView(app)
@@ -415,7 +415,7 @@ class MainActivity : Activity() {
         rulesCard.removeAllViews()
         val (line, sleeping) = rulesLine() ?: run { rulesCard.visibility = View.GONE; return }
         rulesCard.visibility = View.VISIBLE
-        rulesCard.addView(text(line, 14, INK, false).apply { setLineSpacing(dp(3).toFloat(), 1f); gravity = Gravity.END })
+        rulesCard.addView(text(line, 14, TvUi.TEXT, false).apply { setLineSpacing(dp(3).toFloat(), 1f); gravity = Gravity.END })
         if (sleeping) rulesCard.addView(smallButton(T("tv_main.cancel_the_sleep_timer")) {
             Rules.change(this, org.json.JSONObject().put("do", "sleep").put("minutes", 0)); showWeb()
         }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6); gravity = Gravity.END })
@@ -440,7 +440,7 @@ class MainActivity : Activity() {
             row.setPadding(0, dp(8), 0, dp(8))
             val words = LinearLayout(this)
             words.orientation = LinearLayout.VERTICAL
-            words.addView(text(name, 15, INK, true))
+            words.addView(text(name, 15, TvUi.TEXT, true))
             words.addView(text(listOf(if (d.created > 0) T("tv_main.paired_at", "at" to fmt.format(java.util.Date(d.created))) else "", T("tv_main.used_when", "when" to seen), d.ip)
                 .filter { it.isNotEmpty() }.joinToString("   ·   "), 12, MUTED, false))
             row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
@@ -568,9 +568,12 @@ class MainActivity : Activity() {
                 connecting = false
                 ui {
                     setStatus(BAD, T("tv_main.no_adb_connection"), T("tv_main.turn_on_adb_debugging"))
-                    log("✗ " + reason(e))
-                    log(T("tv_main.enable_adb_howto"))
-                    log(T("tv_main.then_come_back_here"))
+                    val refused = (e.message ?: "").contains("refused", ignoreCase = true)   // on this very TV a refused port is ADB off, never a slow network
+                    log("✗ " + if (refused) T("tv_main.adb_refused") else reason(e))
+                    if (android.os.Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)) howto(T("tv_main.xiaomi_adb"))
+                    else if (android.os.Build.MANUFACTURER.equals("TCL", ignoreCase = true)) howto(T("setup.tcl_hidden_adb"))   // TCL China: a key sequence, no Developer options   // China's PatchWall has no Developer options: ADB is under Account & Security
+                    howto(T("tv_main.enable_adb_howto"))
+                    howto(T("tv_main.then_come_back_here"))
                     tiles[1].enable(true)
                     tiles[1].view.requestFocus()
                     val off = (e.message ?: "").lowercase().let { it.contains("refused") }   // ADB is off; not: the person said no to the prompt
@@ -602,7 +605,7 @@ class MainActivity : Activity() {
     private fun setStatus(color: Int, title: String, detail: String) {
         dot.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(color) }
         statusTitle.text = title
-        statusTitle.setTextColor(if (color == OK) INK else color)
+        statusTitle.setTextColor(if (color == OK) TvUi.TEXT else color)
         statusDetail.text = detail
         statusDetail.visibility = if (detail.isEmpty()) View.GONE else View.VISIBLE
     }
@@ -691,7 +694,7 @@ class MainActivity : Activity() {
             // a screen that is not allowed to open closes itself at once and leaves us in front: then try the next one
             window.decorView.postDelayed({
                 if (hasWindowFocus()) attempt(i + 1)
-                else log(if (off) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
+                else howto(if (off) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
             }, 1200)
         }
         attempt(0)
@@ -720,7 +723,7 @@ class MainActivity : Activity() {
         root.setBackgroundColor(Color.argb(215, 5, 7, 10))
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
-        card.background = box(CARD, 22, 0)
+        card.background = box(TvUi.CARD, 22, 0)
         card.setPadding(dp(32), dp(26), dp(32), dp(22))
 
         val head = LinearLayout(this)
@@ -734,7 +737,7 @@ class MainActivity : Activity() {
         val words = LinearLayout(this)
         words.orientation = LinearLayout.VERTICAL
         words.setPadding(dp(14), 0, 0, 0)
-        words.addView(text(T("tv_main.optimize_tv"), 22, INK, true))
+        words.addView(text(T("tv_main.optimize_tv"), 22, TvUi.TEXT, true))
         words.addView(text(T("tv_main.turning_an_app_off"), 13, MUTED, false))
         head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         card.addView(head)
@@ -763,7 +766,7 @@ class MainActivity : Activity() {
             val w = LinearLayout(this)
             w.orientation = LinearLayout.VERTICAL
             w.setPadding(dp(14), 0, 0, 0)
-            val tt = text(title, 16, INK, true)
+            val tt = text(title, 16, TvUi.TEXT, true)
             tt.isSingleLine = true
             tt.ellipsize = TextUtils.TruncateAt.END
             w.addView(tt)
@@ -865,9 +868,9 @@ class MainActivity : Activity() {
         root.setBackgroundColor(Color.argb(215, 5, 7, 10))
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
-        card.background = box(CARD, 22, 0)
+        card.background = box(TvUi.CARD, 22, 0)
         card.setPadding(dp(32), dp(26), dp(32), dp(22))
-        card.addView(text(T("launcher.title"), 22, INK, true))
+        card.addView(text(T("launcher.title"), 22, TvUi.TEXT, true))
         val status = text("", 13, MUTED, false)
         card.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
         val list = LinearLayout(this)
@@ -915,7 +918,7 @@ class MainActivity : Activity() {
             val w = LinearLayout(this)
             w.orientation = LinearLayout.VERTICAL
             w.setPadding(dp(16), 0, 0, 0)
-            w.addView(text(if (e.kind == "play") e.name + "  ▶ " + T("launcher.badge_play") else e.name, 17, INK, true))
+            w.addView(text(if (e.kind == "play") e.name + "  ▶ " + T("launcher.badge_play") else e.name, 17, TvUi.TEXT, true))
             val ds = text(e.desc(Words.lang), 12, MUTED, false)
             ds.maxLines = 2
             ds.ellipsize = TextUtils.TruncateAt.END
@@ -978,6 +981,9 @@ class MainActivity : Activity() {
                 val s = setup
                 val a = adb
                 if (s == null || a == null) {                         // no ADB here: Android's own way
+                    try {
+                        if (KeysAddon.installed(this)) startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, android.net.Uri.parse("package:${dev.tvremote.setup.keys.KeysProtocol.ADDON}")))   // its key add-on first
+                    } catch (e: Exception) { }
                     try { startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, android.net.Uri.parse("package:$packageName"))) } catch (e: Exception) { log("✗ " + reason(e)) }
                     return@setPositiveButton
                 }
@@ -987,6 +993,7 @@ class MainActivity : Activity() {
                 Thread {
                     try {
                         if (s.optimized()) s.undo()
+                        a.shell("pm uninstall ${dev.tvremote.setup.keys.KeysProtocol.ADDON} 2>&1")   // its key add-on (KeysAddon) goes too: it is useless alone
                         a.shell("pm uninstall $packageName 2>&1")              // the end of this app: nothing after this runs
                     } catch (e: Exception) { ui { log("✗ " + reason(e)) } }
                     busy = false
@@ -1037,14 +1044,38 @@ class MainActivity : Activity() {
     }
 
     private var logUsed = false
-    private fun log(line: String) {
+    /** A step the person has to do on the TV: its own colour, so it stands out from the plain lines around it. */
+    private fun howto(line: String) = log(line, HOWTO)
+
+    private fun log(line: String, kind: Int? = null) {
         val at = java.text.SimpleDateFormat("HH:mm:ss", Locale.US).format(java.util.Date())   // when it happened, not when it is drawn
         ui {
-            if (!logUsed) { logUsed = true; logView.text = ""; logView.setTextColor(INK) }
-            logView.append("$at  $line\n")
-            if (logView.lineCount > 300) logView.text = logView.text.toString().lines().takeLast(200).joinToString("\n")
+            if (!logUsed) { logUsed = true; logView.setText("", android.widget.TextView.BufferType.EDITABLE); logView.setTextColor(TvUi.TEXT) }
+            // one colour per kind, read from the line's own mark before a font without it drops the mark: one look tells a failure from a step
+            val tint = kind ?: when (line.trimStart().firstOrNull()) { '✗', '❌' -> BAD; '⚠' -> WARN; '✓', '✅' -> OK; else -> null }
+            val row = android.text.SpannableString("$at  ${drawable(line)}\n")
+            row.setSpan(android.text.style.ForegroundColorSpan(TvUi.DIM), 0, at.length, 0)   // the time stays quiet
+            if (tint != null) row.setSpan(android.text.style.ForegroundColorSpan(tint), at.length, row.length, 0)
+            logView.append(row)
+            if (logView.lineCount > 300) logView.editableText?.let { e ->        // the oldest go, the colours of the rest stay
+                var cut = 0; repeat(100) { cut = e.indexOf('\n', cut) + 1 }
+                e.delete(0, cut)
+            }
             scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         }
+    }
+
+    /** [line] without the symbols this TV's font has no glyph for (✗ ✓ ⚠ came out as empty boxes on a Chinese Xiaomi): the words say it anyway. */
+    private fun drawable(line: String): String {
+        if (android.os.Build.VERSION.SDK_INT < 23) return line
+        val p = logView.paint
+        val sb = StringBuilder(); var i = 0
+        while (i < line.length) {
+            val n = Character.charCount(line.codePointAt(i)); val ch = line.substring(i, i + n)
+            if (line.codePointAt(i) < 0x2000 || p.hasGlyph(ch)) sb.append(ch) else if (i + n < line.length && line[i + n] == ' ') i++   // its space goes with it
+            i += n
+        }
+        return sb.toString()
     }
 
     private fun reason(e: Exception): String = dev.tvremote.core.Errors.say(e, Words.lang)
@@ -1062,14 +1093,6 @@ class MainActivity : Activity() {
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
 
     private fun margins(top: Int) = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) }
-
-    /** TV Home's focus ring (app/DESIGN-TV.md): 3 dp of accent blue outside, 1 dp of white inside. */
-    private fun ring(fill: Int, radius: Int): android.graphics.drawable.Drawable {
-        val o = resources.getDimension(R.dimen.tv_ring).toInt(); val w = dp(1)
-        fun band(c: Int, r: Float, stroke: Int, edge: Int) = GradientDrawable().apply { cornerRadius = r; setColor(c); setStroke(stroke, edge) }
-        return android.graphics.drawable.LayerDrawable(arrayOf(band(fill, dp(radius).toFloat(), o + w, getColor(R.color.tv_ring_accent)),
-            band(Color.TRANSPARENT, maxOf(0f, dp(radius) - w.toFloat()), w, Color.WHITE))).apply { setLayerInset(1, o, o, o, o) }
-    }
 
     private fun box(color: Int, radius: Int, stroke: Int): GradientDrawable {
         val d = GradientDrawable()

@@ -74,4 +74,14 @@
     <string name="err_close">Close</string>
     <string name="err_share">Share</string>
     <string name="err_repeat">repeated %d times</string>
+    <!-- the live tile on TV Home's grid (HomeInfo) -->
+    <string name="tile_next_title">Keep watching</string>
+    <string name="tile_next_empty">No channel yet</string>
+    <string name="tile_next_empty_line">Press to pick one</string>
+    <string name="tile_next_play">Press to keep watching</string>
+    <string name="sc_favs_short">Favourites</string>        <!-- launcher shortcuts (TV Home picker) -->
+    <string name="sc_favs_long">Favourite channels</string>
+    <string name="sc_search_short">Search</string>
+    <string name="sc_search_long">Search channels</string>
+    <string name="sc_last_short">Last channel</string>
 </resources>

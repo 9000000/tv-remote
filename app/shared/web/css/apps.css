@@ -89,3 +89,28 @@ button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:now
 .chmbar.bad .chmn { color:var(--bad); }
 /* the photo-crop frame (js/photofit.js): the TV's shape, dragged with a finger, so the page must not scroll under it */
 canvas.photocrop { width:100%; height:auto; aspect-ratio:16/9; border-radius:12px; touch-action:none; cursor:grab; background:#000; }
+/* quick keys (js/quickkeys.js): the grid of key slots, each the logo of what it opens; pickTarget(): the list of what can be opened */
+.qkgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); gap:12px; margin:8px 0; }
+.qk { position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 6px 8px; border-radius:14px; background:var(--btn); color:var(--ink); border:1px solid var(--line); cursor:pointer; min-width:0; transition:transform .18s, box-shadow .18s; }
+.qk .appicon { width:56px; height:56px; border-radius:14px; }
+.qk .appicon.wide { width:84px; border-radius:9px; }
+.qk .qkplus { background:transparent; border:2px dashed var(--line); color:var(--muted); font-size:22px; }
+.qklive { background:#2b3a45; color:#fff; }                     /* a live tile wherever it is listed: the Quick keys screen and TV Home's tile list */
+.qkname { font-size:12px; max-width:100%; text-align:center; overflow-wrap:anywhere; min-height:1.2em; }   /* wraps: a long name is never cut */
+.qk:not(.set) .qkname { color:var(--muted); }
+.qkbadge { position:absolute; top:6px; left:8px; font-size:12px; font-weight:700; color:var(--muted); }
+.qkbadge.red, .qkbadge.green, .qkbadge.yellow, .qkbadge.blue { width:12px; height:12px; border-radius:50%; top:8px; left:9px; }
+.qkbadge.red { background:#d33a2f; } .qkbadge.green { background:#2e9e45; } .qkbadge.yellow { background:#d9a406; } .qkbadge.blue { background:#2f6fdc; }
+.qk.dead { opacity:.4; cursor:not-allowed; border-style:dashed; }
+.qktag { font-size:10px; color:var(--muted); }
+/* the focus follows the TV's setting (config "focus"): a lifted pane of glass, or a plain ring */
+.qkgrid.focus-glass .qk:hover:not(.dead), .qkgrid.focus-glass .qk:focus-visible { transform:scale(1.07); background:color-mix(in srgb, var(--btn) 70%, #fff 30%); box-shadow:0 8px 22px #0003; outline:none; }
+.qkgrid.focus-ring .qk:hover:not(.dead), .qkgrid.focus-ring .qk:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+dialog.ask.qkpick .card { width:min(760px, 94vw); }
+.qklist { max-height:min(60vh, 560px); overflow-y:auto; margin:0 -4px; padding:2px 4px; }
+.qkhead { margin:12px 0 6px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.qkhead[hidden], .choosegrid2[hidden] { display:none; }
+.choosegrid2 { display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:10px; }
+.choosegrid2 .tile { cursor:pointer; color:var(--ink); }
+.choosegrid2 .tile[hidden] { display:none; }
+.qkbadge:not(.red):not(.green):not(.yellow):not(.blue):not(:empty) { background:var(--bg); border-radius:8px; padding:0 6px; line-height:18px; }   /* readable over a wide logo */

@@ -1,5 +1,6 @@
 package dev.tvremote.home
 
+import dev.tvremote.tvui.Motion
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
@@ -75,6 +76,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         private val VIOLET = intArrayOf(0xFFC59BFF.toInt(), 0xFF7B5CFF.toInt())
         private val GREEN = intArrayOf(0xFF6BE8A6.toInt(), 0xFF22B07D.toInt())
         private val AMBER = intArrayOf(0xFFFFD27A.toInt(), 0xFFFF8A4C.toInt())
+        private val RED = intArrayOf(0xFFFF8A80.toInt(), 0xFFFF453A.toInt())
+        /** A ring or bar of RAM / storage: green, amber from 70 %, red from 85 % ([HomeConfig.level], also TV Setup's RAM tile). */
+        private fun levelColors(part: Float) = when (HomeConfig.level(Math.round(part * 100))) { "bad" -> RED; "warn" -> AMBER; else -> GREEN }
         private val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         private const val DIM = 0xA6FFFFFF.toInt()
         private const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
@@ -113,6 +117,14 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         }
     }
 
+    /** (used, total) bytes of RAM from /proc/meminfo, which any app may read; null when it cannot be read. */
+    private fun memory(): Pair<Long, Long>? = try {
+        val m = java.io.File("/proc/meminfo").readText()
+        fun kb(k: String) = Regex("^$k:\\s+(\\d+)", RegexOption.MULTILINE).find(m)?.groupValues?.get(1)?.toLongOrNull()
+        val total = kb("MemTotal"); val free = kb("MemAvailable")
+        if (total == null || free == null || total <= 0) null else ((total - free).coerceAtLeast(0) * 1024) to total * 1024
+    } catch (e: Exception) { null }
+
     /** Set by the screen: the weather arrived (or failed) on its own thread, the cards are read again. */
     var onWeather: (() -> Unit)? = null
 
@@ -127,7 +139,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     fun read(want: List<String>): Facts {
-        val mem = ActivityManager.MemoryInfo().also { (a.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(it) }
+        // MemAvailable, as TV Setup's RAM tile reads it: ActivityManager.availMem counts cached apps as free (53 % here, 75 % there)
+        val mem = memory() ?: ActivityManager.MemoryInfo().also { (a.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(it) }.let { (it.totalMem - it.availMem) to it.totalMem }
         val disk = try { StatFs(Environment.getDataDirectory().path).let { (it.totalBytes - it.availableBytes) to it.totalBytes } } catch (e: Exception) { 0L to 0L }
         var ip = ""; var eth = false
         try {                                                          // the system's networks: NetworkInterface would need INTERNET, which TV Home has not
@@ -175,7 +188,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             if (Weather.due(a, typed)) Weather.refresh(a, typed, resources.configuration.locales[0].language) { onWeather?.invoke() }
             Weather.cached(a)
         } else null
-        return Facts((mem.totalMem - mem.availMem) to mem.totalMem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
+        return Facts(mem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
             cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy)
     }
 
@@ -369,9 +382,9 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     private fun systemHalf(card: LinearLayout, f: Facts, room: Int) {
         fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
         val all = ArrayList<View>()
-        all += ring(part(f.ram), a.getString(R.string.w_ram), CYAN)
+        all += ring(part(f.ram), a.getString(R.string.w_ram), levelColors(part(f.ram)))
         f.cpu?.let { all += ring(it, a.getString(R.string.w_cpu), AMBER) }
-        all += ring(part(f.disk), a.getString(R.string.w_disk), VIOLET)
+        all += ring(part(f.disk), a.getString(R.string.w_disk), levelColors(part(f.disk)))
         f.rssi?.let { r -> all += ring(((r + 100) * 2).coerceIn(0, 100) / 100f, a.getString(R.string.w_signal), GREEN) }
         val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         all.take((room / dp(78)).coerceAtLeast(1)).forEach { row.addView(it, LayoutParams(0, -2, 1f)) }
@@ -385,7 +398,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
         addView(FrameLayout(a).apply {
             addView(Ring(a, part, colors))
-            addView(text("${(part * 100).toInt()}%", 13f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER },
+            addView(text("${Math.round(part * 100)}%", 13f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER },
                 FrameLayout.LayoutParams(-1, -1))
         }, LayoutParams(dp(50), dp(50)))
         addView(text(name, 12f, Color.WHITE).apply { gravity = Gravity.CENTER }, LayoutParams(-1, -2).apply { topMargin = dp(2) })
@@ -602,13 +615,13 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val room = width - dp(40)
         val gb = 1024.0 * 1024 * 1024
         fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
-        fun pct(x: Float) = "${(x * 100).toInt()}%"
+        fun pct(x: Float) = "${Math.round(x * 100)}%"
         val cores = f.cores.takeIf { it > 0 } ?: Runtime.getRuntime().availableProcessors()
         val ghz = maxGhz()
         val cpu = Stat(R.drawable.ic_cpu, f.cpu?.let(::pct) ?: ghz?.let { "%.2f GHz".format(it) } ?: "—",
             if (f.cpu == null && f.cpuWhy != 0) a.getString(f.cpuWhy) else a.getString(R.string.w_cpu) + " · " + a.getString(R.string.w_cpu_cores, cores), f.cpu)   // the reason alone: with "CPU · " in front it was cut with an ellipsis
-        val ram = Stat(R.drawable.ic_memory, pct(part(f.ram)), "%s %.1f/%.1fG".format(a.getString(R.string.w_ram), f.ram.first / gb, f.ram.second / gb), part(f.ram))
-        val disk = Stat(R.drawable.ic_drive, pct(part(f.disk)), "%s %.0f/%.0fG".format(a.getString(R.string.w_disk), f.disk.first / gb, f.disk.second / gb), part(f.disk))
+        val ram = Stat(R.drawable.ic_memory, pct(part(f.ram)), "%s %.1f/%.1fG".format(a.getString(R.string.w_ram), f.ram.first / gb, f.ram.second / gb), part(f.ram), level = true)
+        val disk = Stat(R.drawable.ic_drive, pct(part(f.disk)), "%s %.0f/%.0fG".format(a.getString(R.string.w_disk), f.disk.first / gb, f.disk.second / gb), part(f.disk), level = true)
         val up = Stat(R.drawable.ic_clock, span(f.up), a.getString(R.string.w_up))
         val ip = Stat(R.drawable.ic_router, f.ip.ifEmpty { "—" }, "IP · " + if (f.eth) "LAN" else if (f.ip.isEmpty()) a.getString(R.string.w_offline) else "Wi-Fi")
         val signal = f.rssi?.let { Stat(R.drawable.ic_wifi, "$it dBm", f.link?.let { l -> "$l Mbps" } ?: a.getString(R.string.w_signal)) }
@@ -619,7 +632,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         fun layout(cols: Int) = when (cols) {
             4 -> listOf(listOf(cpu, ram, disk, up), listOf(ip) + listOfNotNull(signal, dns, net).take(2) + adb(true))
             3 -> listOf(listOf(cpu, ram, disk), listOf(ip, dns ?: signal ?: net, adb(true)))
-            else -> listOf(listOf(Stat(ram.icon, ram.value, a.getString(R.string.w_ram), ram.bar), Stat(disk.icon, disk.value, a.getString(R.string.w_disk), disk.bar)),
+            else -> listOf(listOf(Stat(ram.icon, ram.value, a.getString(R.string.w_ram), ram.bar, level = true), Stat(disk.icon, disk.value, a.getString(R.string.w_disk), disk.bar, level = true)),
                 listOf(ip, adb(false)))                              // narrow: the names without the sizes
         }
         // each row shares its width on its own: alike when every figure fits its equal part (CPU, RAM, disk), else by what each
@@ -652,7 +665,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     }
 
     /** One figure of [system]: [bar] a share drawn under it; [live] the network's speed, its two lines set by [sample]. */
-    private class Stat(val icon: Int, val value: String, val label: String, val bar: Float? = null, val tint: Int? = null, val live: Boolean = false)
+    private class Stat(val icon: Int, val value: String, val label: String, val bar: Float? = null, val tint: Int? = null, val live: Boolean = false, val level: Boolean = false)
 
     private fun stat(s: Stat): View = LinearLayout(a).apply {
         orientation = HORIZONTAL
@@ -665,10 +678,10 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
         }
         col.addView(v)
-        val l = Shrink(a, 12f, 12f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 2; letterSpacing = 0.08f }   // two lines: four columns left "CẦN SE…" / "ĐÃ B…"
+        val l = Shrink(a, 12f, 9f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 1; letterSpacing = 0.08f }   // one line, shrunk like the figure: a wrapped "BỘ / NHỚ" read as two labels
         col.addView(l)
         if (s.live) { speed = v; speedUp = l.apply { letterSpacing = 0f } }
-        s.bar?.let { col.addView(Bar(a, it, CYAN), LayoutParams(-1, dp(3)).apply { topMargin = dp(6); rightMargin = dp(8) }) }
+        s.bar?.let { col.addView(Bar(a, it, if (s.level) levelColors(it) else CYAN), LayoutParams(-1, dp(3)).apply { topMargin = dp(6); rightMargin = dp(8) }) }
         addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = dp(9) })
     }
 

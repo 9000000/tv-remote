@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  * at a black TV would think it broke. Keys the remotes inject (input, scrcpy) never show there, so they leave it off; when one
  * makes Android light the panel again it is turned off at once. It quits when the TV goes to standby (waking turns the screen on
  * anyway). `on` turns it on at once (the remotes stop the waiting one first: ScreenOff.kt). Both say "ok" or "error ..." on one line.
- * Meanwhile TV Setup's KeyCatch is on (where TV Setup has it), so the key that wakes the screen does nothing else.
+ * Meanwhile KeyCatch is on (the accessibility service of TV Setup's add-on TV Setup Keys, which TV Setup puts on the TV when asked here;
+ * an older TV Setup has it inside itself), so the key that wakes the screen does nothing else.
  */
 public final class Screen {
     private Screen() { }
@@ -45,10 +46,10 @@ public final class Screen {
         System.out.println("ok");
         System.out.flush();
         if (!off) return;
-        try { catchKeys(true); } catch (Throwable ignored) { }         // an older TV Setup, or none: the key goes on to the app too
-        Thread keys = new Thread(Screen::watchKeys);
+        Thread keys = new Thread(Screen::watchKeys);                   // first: putting the add-on on a TV the first time takes a few seconds
         keys.setDaemon(true);
         keys.start();
+        try { catchKeys(true); } catch (Throwable ignored) { }         // an older TV Setup, or none: the key goes on to the app too
         long was = -1;
         for (int i = 1; ; i++) {
             Thread.sleep(700);
@@ -76,18 +77,30 @@ public final class Screen {
         } catch (Exception ignored) { }
     }
 
-    private static final String CATCH = "dev.tvremote.setup/dev.tvremote.setup.KeyCatch";
+    private static final String ADDON = "dev.tvremote.setup.keys";   // TV Setup Keys: TV Setup declares no accessibility service itself (Play Protect)
+    private static final String CATCH = ADDON + "/" + ADDON + ".KeyCatch";
+    private static final String CATCH_OLD = "dev.tvremote.setup/dev.tvremote.setup.KeyCatch";   // TV Setup before the add-on
 
-    /** TV Setup's KeyCatch on (it eats the key that wakes the screen) or off again, the TV's other accessibility services kept. */
+    /** The service that eats the key: the add-on's (asked of TV Setup to install if not there yet), else an older TV Setup's own; null: none. */
+    private static String catcher() throws Exception {
+        if (run("pm path " + ADDON).contains("package:")) return CATCH;
+        // {"do":"keys_addon"} to TV Setup's RulesReceiver (DUMP: the shell may); it answers once the add-on is installed
+        run("am broadcast -n dev.tvremote.setup/.RulesReceiver --es set eyJkbyI6ImtleXNfYWRkb24ifQ==");
+        if (run("pm path " + ADDON).contains("package:")) return CATCH;
+        return run("dumpsys package dev.tvremote.setup | grep -F KeyCatch").contains("KeyCatch") ? CATCH_OLD : null;
+    }
+
+    /** KeyCatch on (it eats the key that wakes the screen) or off again, the TV's other accessibility services kept. */
     private static void catchKeys(boolean on) throws Exception {
-        if (on && !run("dumpsys package dev.tvremote.setup | grep -F KeyCatch").contains("KeyCatch")) return;
+        String catcher = on ? catcher() : null;
+        if (on && catcher == null) return;
         String was = run("settings get secure enabled_accessibility_services").trim();
         StringBuilder now = new StringBuilder();
         if (!was.isEmpty() && !was.equals("null"))
-            for (String c : was.split(":")) if (!c.isEmpty() && !c.equals(CATCH)) now.append(now.length() > 0 ? ":" : "").append(c);
+            for (String c : was.split(":")) if (!c.isEmpty() && !c.equals(CATCH) && !c.equals(CATCH_OLD)) now.append(now.length() > 0 ? ":" : "").append(c);
         boolean others = now.length() > 0;
-        if (on) now.append(others ? ":" : "").append(CATCH);
-        else if (!was.contains(CATCH)) return;                        // not ours to touch
+        if (on) now.append(others ? ":" : "").append(catcher);
+        else if (!was.contains(CATCH) && !was.contains(CATCH_OLD)) return;   // not ours to touch
         run(now.length() > 0 ? "settings put secure enabled_accessibility_services " + now + "; settings put secure accessibility_enabled 1"
             : "settings delete secure enabled_accessibility_services; settings put secure accessibility_enabled 0");
     }

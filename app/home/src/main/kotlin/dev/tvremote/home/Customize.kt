@@ -1,5 +1,7 @@
 package dev.tvremote.home
 
+import dev.tvremote.tvui.Motion
+import dev.tvremote.tvui.TvGlass
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
@@ -32,9 +34,9 @@ object Customize {
     private const val ACCENT = 0xFF8AB4F8.toInt()
     private const val STEP_FILL = 0xF0161A24.toInt()                   // the rows stepper: nearly opaque, its number read over any background
     private const val DIM = 0xA6FFFFFF.toInt()
-    private const val GLASS_FOCUS = 0x2EFFFFFF                          // a row of the panel: focused, at rest, its edge
-    private const val GLASS_FILL = 0x12FFFFFF
-    private const val GLASS_EDGE = 0x1FFFFFFF
+    private const val DOOR_FOCUS = 0x2EFFFFFF                          // a settings row that opens a screen: fill under focus, at rest, its edge
+    private const val DOOR_REST = 0x12FFFFFF
+    private const val DOOR_EDGE = 0x1FFFFFFF
     private const val TINT_BG = 0xFF6F8DFF.toInt()                      // each group's chip hue on the first level: its icon in full, the chip a fifth of it
     private const val TINT_LOOK = 0xFFB48CFF.toInt()
     private const val TINT_LAYOUT = 0xFF5EEAD4.toInt()
@@ -102,7 +104,7 @@ object Customize {
         var v = if (rows) Store.get(a).optDouble("rows", 0.0) else if (shade) Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT).toDouble() else Store.get(a).optInt("cols", HomeConfig.COLS_DEFAULT).toDouble()
         val most = if (shade) 100.0 else if (!rows) HomeConfig.COLS_MAX.toDouble() else if (rowsFit >= 1) rowsFit else HomeConfig.ROWS_MAX
         val bar = android.widget.ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100; progressTintList = ColorStateList.valueOf(ACCENT); progressBackgroundTintList = ColorStateList.valueOf(GLASS_FOCUS)
+            max = 100; progressTintList = ColorStateList.valueOf(ACCENT); progressBackgroundTintList = ColorStateList.valueOf(TvGlass.ROW_FOCUS)
             visibility = if (shade) View.VISIBLE else View.GONE
         }
         val dialog = Dialog(a, R.style.Menu)
@@ -304,10 +306,7 @@ object Customize {
         col.addView(LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
             setPadding(dp(14), dp(12), dp(14), dp(12))
-            background = StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
-                addState(intArrayOf(), glass(16, GLASS_FILL, GLASS_EDGE))
-            }
+            background = TvGlass.rowBg(a, 16)
             addView(ImageView(a).apply { setImageResource(R.drawable.ic_cast); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
             addView(LinearLayout(a).apply {
                 orientation = LinearLayout.VERTICAL
@@ -398,8 +397,8 @@ object Customize {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                 setPadding(dp(14), dp(12), dp(14), dp(12))
                 background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), glass(16, 0x2EFFFFFF, Color.WHITE))
-                    addState(intArrayOf(), glass(16, 0x12FFFFFF, 0x1FFFFFFF))
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
                 }
                 addView(ImageView(a).apply { setImageResource(R.drawable.ic_message); imageTintList = ColorStateList.valueOf(0xFFFFD27A.toInt()) }, LinearLayout.LayoutParams(dp(26), dp(26)))
                 addView(LinearLayout(a).apply {
@@ -411,13 +410,12 @@ object Customize {
                 setOnClickListener { Store.change(a, JSONObject().put("note", "")); sub.text = a.getString(R.string.c_note_gone); alpha = 0.6f }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
-        tilesPage(a, col, ::glass, ::label, gap)
         col = groups[4].col
         tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
         endRow()
         col = groups[5].col
-        keysPage(a, col, { r, t, k -> tile(r, t, null, k) }, ::endRow, ::glass, ::label, gap)
+        launchPage(a, col, ::glass, ::label, gap)
         col = groups[6].col
         tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
             listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))
@@ -487,10 +485,7 @@ object Customize {
             val row = LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                 setPadding(dp(10), dp(8), dp(14), dp(8))
-                background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), glass(18, GLASS_FOCUS, Color.WHITE))
-                    addState(intArrayOf(), glass(18, GLASS_FILL, GLASS_EDGE))
-                }
+                background = TvGlass.rowBg(a, 18)
                 addView(chip, LinearLayout.LayoutParams(dp(42), dp(42)))
                 addView(LinearLayout(a).apply {
                     orientation = LinearLayout.VERTICAL
@@ -510,7 +505,7 @@ object Customize {
                 contentDescription = a.getString(R.string.g_back)
                 setPadding(dp(10), dp(8), dp(16), dp(8))
                 background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, TvGlass.ROW_FOCUS, Color.WHITE))
                     addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
                 }
                 addView(ImageView(a).apply { setImageResource(R.drawable.ic_left); imageTintList = ColorStateList.valueOf(g.tint) }, LinearLayout.LayoutParams(dp(24), dp(24)))
@@ -527,10 +522,7 @@ object Customize {
         top.addView(LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
             setPadding(dp(10), dp(8), dp(14), dp(8))
-            background = StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), glass(18, GLASS_FOCUS, Color.WHITE))
-                addState(intArrayOf(), glass(18, GLASS_FILL, GLASS_EDGE))
-            }
+            background = TvGlass.rowBg(a, 18)
             addView(FrameLayout(a).apply {
                 background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(ACCENT); alpha = 51 }
                 val (iv, s) = icon(R.drawable.ic_qr, ACCENT, dp(24))
@@ -573,9 +565,7 @@ object Customize {
             }
         }.apply {
             // solid: the home screen's text must not show through
-            background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF161B2B.toInt(), 0xFF0C1020.toInt())).apply {
-                cornerRadius = dp(28).toFloat(); setStroke(dp(1), 0x33FFFFFF)
-            }
+            background = TvGlass.panelBg(a)
             // no clip and no fading edge: clipped to its corners it cost the FPT box ~10 ms a frame, the ScrollView's fading edge drew
             // the whole list into a layer every frame (55 ms a frame while a tile grew); the list stops 1 dp inside the border instead
             addView(stack, FrameLayout.LayoutParams(-1, -1).apply { setMargins(dp(1), dp(1), dp(1), dp(1)) })
@@ -607,104 +597,34 @@ object Customize {
     }
 
     /**
-     * "Keys & startup": remote keys that open an app, and the app that opens when the TV is turned on (HomeConfig keyon / keyapps /
-     * autoon / autoapp, both default off). A key row picks its app from a list; the lines under the switches say what needs TV Setup
-     * (everywhere but TV Home's own screen, and the power-on app), kept current by [Keys.onState] when TV Setup answers.
+     * Two doors to full screens built of tvui tiles: "Add to home screen" ([Picker] in grid mode: apps, their shortcuts, live tiles,
+     * the hidden apps) and "Quick keys" ([QuickKeys]: 0-9, colour keys and the power-on app, each shown by the logo of its [Target]).
+     * They replaced a row list here that could not show logos nor shortcuts. Lines under say what needs TV Setup.
      */
-    private fun keysPage(a: Activity, col: LinearLayout, tile: (Int, String, String) -> Unit, endRow: () -> Unit,
-                         glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, gap: Int) {
+    private fun launchPage(a: Activity, col: LinearLayout, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, gap: Int) {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
-        val apps = Apps.list(a)
-        fun name(pkg: String) = apps.firstOrNull { it.pkg == pkg }?.label ?: if (pkg.isEmpty()) "—" else pkg
-        val none = a.getString(R.string.k_none)
-        val subs = ArrayList<() -> Unit>()                             // each row's second line, painted again after a choice
-        fun pick(title: String, now: String, done: (String) -> Unit) {
-            val list = apps.sortedBy { it.label.lowercase() }
-            val items = arrayOf(none) + list.map { it.label }
-            AlertDialog.Builder(a, R.style.Menu).setTitle(title).setItems(items) { _, i -> done(if (i == 0) "" else list[i - 1].pkg); subs.forEach { it() } }.show()
-        }
-        fun row(title: String, value: () -> String, onPick: () -> Unit) {
-            val sub = label("", 12f, ACCENT).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
-            subs.add { sub.text = value() }; sub.text = value()
+        fun door(icon: Int, title: String, sub: () -> String, open: () -> Unit) {
+            val line = label(sub(), 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
             col.addView(LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(14), dp(10), dp(14), dp(10))
+                setPadding(dp(14), dp(12), dp(14), dp(12))
                 background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
-                    addState(intArrayOf(), glass(16, GLASS_FILL, GLASS_EDGE))
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
                 }
-                addView(label(title, 15f, Color.WHITE).apply { maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
-                addView(sub, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+                addView(ImageView(a).apply { setImageResource(icon); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(label(title, 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    addView(line)
+                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
-                setOnClickListener { onPick() }
+                setOnClickListener { open() }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
-        fun hint(text: () -> String) {
-            val t = label("", 12f, DIM)
-            subs.add { t.text = text() }; t.text = text()
-            col.addView(t, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap; leftMargin = dp(6) })
-        }
-        fun keys() = HomeConfig.keyApps(Store.get(a).optJSONObject("keyapps"))
-
-        tile(R.drawable.ic_keyboard, a.getString(R.string.c_keyapps), "keyon")
-        endRow()
-        hint { a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere) }
-        val codes = HomeConfig.KEY_COLOURS + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD } + HomeConfig.KEY_NUMBERS
-        for (code in codes) row(Keys.name(a, code), { keys()[code]?.let { name(it) } ?: none }) {
-            pick(Keys.name(a, code), keys()[code].orEmpty()) { pkg ->
-                val m = JSONObject(); for ((k, v) in keys()) if (k != code) m.put(k.toString(), v)
-                if (pkg.isNotEmpty()) m.put(code.toString(), pkg)
-                Store.change(a, JSONObject().put("keyapps", m))
-            }
-        }
-        col.addView(View(a), LinearLayout.LayoutParams(-1, dp(14)))
-        tile(R.drawable.ic_power, a.getString(R.string.c_autoopen), "autoon")
-        endRow()
-        row(a.getString(R.string.c_autoapp), { name(Store.get(a).optString("autoapp")) }) {
-            pick(a.getString(R.string.c_autoapp), Store.get(a).optString("autoapp")) { pkg -> Store.change(a, JSONObject().put("autoapp", pkg)) }
-        }
-        hint { a.getString(if (!Keys.setup(a)) R.string.k_auto_need_setup else R.string.k_auto_note) }
-        Keys.onState = { subs.forEach { it() } }
-        Keys.push(a)                                                  // asks TV Setup again, so the lines above are true when it answers
-    }
-
-    /**
-     * Live tiles ([Tiles]) the TV Setup offers: a row each, pressed to put it on the app grid or take it off. A minimal entry; the
-     * "Add to home screen" browser lists tiles too. Without tiles (no TV Setup, an old one, another key) one line says why.
-     */
-    private fun tilesPage(a: Activity, col: LinearLayout, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, gap: Int) {
-        val d = a.resources.displayMetrics.density
-        fun dp(v: Number) = (v.toFloat() * d).toInt()
-        val offered = Tiles.available(a)
-        col.addView(label(a.getString(R.string.c_tiles).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18) })
-        if (offered.isEmpty()) {
-            col.addView(label(a.getString(if (Tiles.status(a) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.c_tiles_none), 12f, DIM),
-                LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap; leftMargin = dp(6) })
-            return
-        }
-        for (t in offered) {
-            val sub = label("", 12f, ACCENT).apply { maxLines = 1 }
-            fun on() = Store.list(a, "tiles").contains(t.key)
-            fun paint() { sub.text = if (on()) a.getString(R.string.c_tiles_on) else a.getString(R.string.w_off) }
-            paint()
-            col.addView(LinearLayout(a).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(14), dp(10), dp(14), dp(10))
-                background = StateListDrawable().apply {
-                    addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
-                    addState(intArrayOf(), glass(16, GLASS_FILL, GLASS_EDGE))
-                }
-                addView(label(t.title, 15f, Color.WHITE).apply { maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
-                addView(sub, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
-                setOnClickListener {
-                    val now = Store.list(a, "tiles")
-                    Store.change(a, JSONObject().put("tiles", org.json.JSONArray(if (t.key in now) now - t.key else now + t.key)))
-                    paint()
-                }
-            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
-        }
+        door(R.drawable.ic_apps, a.getString(R.string.c_add_home), { a.getString(R.string.pk_grid_hint) }) { Picker.show(a, Picker.Mode.GRID, a.getString(R.string.c_add_home)) }
+        door(R.drawable.ic_keyboard, a.getString(R.string.c_quickkeys), { a.getString(if (Keys.setup(a)) R.string.k_everywhere else R.string.k_need_setup) }) { QuickKeys.show(a) }
     }
 
     /** The screensaver switch cannot write the setting (no WRITE_SECURE_SETTINGS yet; a phone or computer grants it): the system's own screen for it instead. */

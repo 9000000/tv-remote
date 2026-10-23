@@ -395,14 +395,10 @@ internal fun MainActivity.otherHome() {
     })
 }
 
+// The steps are the web's (setup.js adbGuide): one copy for the phone, the TV's page and the computer. ADB is off here, so the
+// page cannot ask the TV what it is: the maker and model it gave over the remote protocol pick its maker's way. Once the
+// switch is on, watchAdb() moves to the full connection by itself.
 internal fun MainActivity.adbSteps() {
-    Popup.Builder(this).setTitle(T("setup.steps_title"))
-        .setMessage(T("adb_help.use_this_remote_s") + "\n\n" + T("setup.tcl_hidden_adb"))
-        .setPositiveButton(T("adb_help.full_connection")) { _, _ ->
-            val ip = host
-            val e = entry
-            disconnect(null)
-            if (ip != null) connect(ip, e)
-        }
-        .setNegativeButton(T("common.close"), null).show()
+    val words = listOfNotNull(basic?.vendor, basic?.model).joinToString(" ")
+    managing.open(host ?: return, then = "fromRemote(() => showAdbGuide(" + org.json.JSONObject.quote(words) + "))")
 }

@@ -45,6 +45,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import dev.tvremote.tvui.Glass
+import dev.tvremote.tvui.Motion
+import dev.tvremote.tvui.TvGlass
+import dev.tvremote.tvui.TvTile
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
 
@@ -428,7 +432,7 @@ class HomeActivity : Activity() {
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
     /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. A tile being moved has the ring alone. */
-    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass && moving == null) glass.to(content, pane, Tile.GROW, corner, glide && Motion.on) else glass.hide() }
+    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass && moving == null) glass.to(content, pane, TvTile.GROW, corner, glide && Motion.on) else glass.hide() }
 
     private fun scrollToY(y: Int) {
         scrollAnim?.cancel()
@@ -506,7 +510,7 @@ class HomeActivity : Activity() {
         bg.execute {
             val list = Apps.list(this)
             list.forEach { it.load(this) }                            // the pictures off the main thread: dozens of apps on a slow chip
-            runOnUiThread { if (!isDestroyed) { apps = (list + apps.filter { it.live }).sortedBy { it.label.lowercase() }; shownKey = ""; show() } }
+            runOnUiThread { if (!isDestroyed) { apps = (list + apps.filter { it.grid }).sortedBy { it.label.lowercase() }; shownKey = ""; show() } }
         }
     }
 
@@ -554,12 +558,13 @@ class HomeActivity : Activity() {
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
-        val key = (dockPkgs + pins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order")
+        val shownPins = pins.filter { it.pkg !in byPkg }                // a shortcut put on the grid by the picker shows as that tile, not twice
+        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order")
         if (key == shownKey) return                                   // nothing that decides the tiles changed: not one view is rebuilt
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
         val width = resources.displayMetrics.widthPixels - dp(96)
-        val favs = dockPkgs.map { byPkg.getValue(it) } + pins       // the pins after the apps, under the same limit
+        val favs = dockPkgs.map { byPkg.getValue(it) } + shownPins     // the pins after the apps, under the same limit
 
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
         grid.removeAllViews()
@@ -605,7 +610,7 @@ class HomeActivity : Activity() {
     }
 
     private fun startMove(pkg: String) {
-        val t = tiles().firstOrNull { it.app?.pkg == pkg && it.app.pin == null } ?: return
+        val t = tiles().firstOrNull { it.app?.pkg == pkg && (it.app.pin == null || it.app.grid) } ?: return
         moving = t; movingFavs = dockCount()
         t.requestFocus(); t.carry(true); glass.hide()                 // the glass's edge inside the ring read as two borders
         for (o in tiles()) if (o !== t) o.animate().cancel().also { o.animate().alpha(DIM).setDuration(if (Motion.on) 150L else 0L).start() }   // the rest steps back
@@ -619,7 +624,7 @@ class HomeActivity : Activity() {
     }
 
     /** The tiles an app can be carried through: every app's, across the rows (the favourites are only the first [movingFavs]); a pinned shortcut keeps its place after them. */
-    private fun movable(): List<Tile> = tiles().filter { it.app != null && it.app.pin == null }
+    private fun movable(): List<Tile> = tiles().filter { it.app != null && (it.app.pin == null || it.app.grid) }
     private var movingFavs = 0
 
     /** The favourites are the first tiles, as many as the saved dock holds (pins and the rest follow). */
@@ -772,9 +777,9 @@ class HomeActivity : Activity() {
     /** The tiles in the config ([HomeConfig] "tiles") are among the apps, so move, hide and the order work on them as on any app. */
     private fun syncTiles() {
         val live = Tiles.apps(this, conf)
-        val now = apps.filter { it.live }
+        val now = apps.filter { it.grid }
         if (live.map { it.pkg to it.label } == now.map { it.pkg to it.label }) return
-        apps = (apps.filter { !it.live } + live).sortedBy { it.label.lowercase() }
+        apps = (apps.filter { !it.grid } + live).sortedBy { it.label.lowercase() }
     }
 
     private fun tile(a: App, w: Int, made: HashMap<String, Tile>): Tile {
@@ -992,27 +997,26 @@ class HomeActivity : Activity() {
 
     // ---- what the buttons and the menu do ----
 
+    /** The long-press / Menu menu of an app: the glass panel of Customize ([TvGlass.menu]), one row per action with its line icon. */
     private fun menu(a: App) {
-        if (a.pin != null) {                                          // a pinned shortcut: only taken away here; its app decides the rest
-            val acts = listOf(R.string.unpin to { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() }, R.string.customize to { customize() })
-            AlertDialog.Builder(this, R.style.Menu).setTitle(a.label)
-                .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show().also { open = it }
-            return
+        val acts = ArrayList<Triple<Int, Int, () -> Unit>>()          // icon, words, what it does
+        if (a.pin != null && !a.grid) {                               // a pinned shortcut: only taken away here; its app decides the rest
+            acts.add(Triple(R.drawable.ic_close, R.string.unpin) { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() })
+            acts.add(Triple(R.drawable.ic_sliders, R.string.customize) { customize() })
+        } else {                                                      // no "add to / take from the favourites": they are only the first places, and Move puts an app there
+            acts.add(Triple(R.drawable.ic_sliders, R.string.customize) { customize() })
+            acts.add(Triple(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
+            acts.add(Triple(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
+                .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
+            acts.add(Triple(R.drawable.ic_sparkle, if (Motion.on) R.string.anim_off else R.string.anim_on) { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
+            if (a.grid) acts.add(Triple(R.drawable.ic_trash, R.string.tile_remove) {   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
+                fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
+                Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
+            }) else acts.add(Triple(R.drawable.ic_info, R.string.info) {
+                try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
+            })
         }
-        val acts = ArrayList<Pair<Int, () -> Unit>>()                // no "add to / take from the favourites": they are only the first places, and Move puts an app there
-        acts.add(R.string.move to { ui.post { startMove(a.pkg) } })
-        acts.add(R.string.hide to { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
-            .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
-        acts.add(0, R.string.customize to { customize() })
-        acts.add((if (Motion.on) R.string.anim_off else R.string.anim_on) to { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
-        if (a.live) acts.add(R.string.tile_remove to {                   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
-            fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
-            Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
-        }) else acts.add(R.string.info to {
-            try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
-        })
-        AlertDialog.Builder(this, R.style.Menu).setTitle(a.label)
-            .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show().also { open = it }
+        open = TvGlass.menu(this, R.style.Menu, a.label, acts.map { TvGlass.Item(it.first, getString(it.second), it.third) }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
     }
 
     private var panel: android.app.Dialog? = null
@@ -1031,8 +1035,7 @@ class HomeActivity : Activity() {
     private fun unhide() {
         val hidden = Store.list(this, "hidden")
         val here = apps.filter { it.pkg in hidden }
-        AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.show))
-            .setItems(here.map { it.label }.toTypedArray()) { _, i -> Store.putList(this, "hidden", hidden - here[i].pkg) }.show().also { open = it }
+        open = TvGlass.menu(this, R.style.Menu, getString(R.string.show), here.map { h -> TvGlass.Item(0, h.label) { Store.putList(this, "hidden", hidden - h.pkg) } }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
     }
 
     /**
@@ -1105,43 +1108,28 @@ class HomeActivity : Activity() {
 }
 
 /**
- * One app: its banner (or icon on a colour, with the name; or, for a live tile, its own render: [LiveFace]), the name under it shown while focused. Focus grows it and rings it.
- * [app] null: the "hidden apps" tile.
+ * One app: its banner (or icon on a colour, with the name; or, for a live tile, its own render: [LiveFace]), the name under it shown while focused. Focus grows it and rings it
+ * ([TvTile]: the look is tvui's, TV Home's own moved there). [app] null: the "hidden apps" tile.
  */
-class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }) : LinearLayout(c) {
-    private val card = FrameLayout(c)                               // what grows: the face and, round it, the ring
-    private val face = FrameLayout(c)                               // the picture, clipped to its rounded corners
-    private val ring = View(c)
-    private val name = Font.on(TextView(c))
-    private val shine = View(c)
+class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }) : TvTile(c, w, dp) {
     private val content: View
     private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
     private val badge = BadgeView(c, dp)
     private var shownMark: Badges.Mark? = null
-    private val lift: Float
-    private val across: Float
-    val pane: View get() = face                                     // where the glass goes
-    val corner: Float
-    var nudged: ((Float, Float) -> Unit)? = null                   // the glass leans with the card
 
     init {
-        orientation = VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
-        clipChildren = false; clipToPadding = false
+        Font.on(name)
         val h = w * 9 / 16
-        val r = dp(10).toFloat()
-        corner = r
-        lift = dp(14).toFloat(); across = w.toFloat()
         val banner = app?.banner
         val liveFace = if (app?.live == true) LiveFace(c, w, h, label, say).also { it.set(Tiles.cached(app.pkg), animate = false) } else null
-        face.background = GradientDrawable().apply { cornerRadius = r; setColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: "")) }
-        face.clipToOutline = true
+        faceColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: ""))
         if (liveFace != null) {                                       // a live tile draws itself ([Tiles]); its state comes from [live]
             content = liveFace
-            face.addView(content, FrameLayout.LayoutParams(-1, -1))
+            fill(content)
         } else if (banner != null) {
             content = ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }
             pic = content as ImageView
-            face.addView(content, FrameLayout.LayoutParams(-1, -1))
+            fill(content)
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             inner.addView(ImageView(c).apply {
@@ -1151,93 +1139,11 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
                 text = label; textSize = 12f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
-            face.addView(inner, FrameLayout.LayoutParams(-1, -1))
+            fill(inner)
             content = inner
         }
-        shine.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x30FFFFFF, 0x0AFFFFFF, 0x00FFFFFF))
-        shine.alpha = 0f; shine.translationY = -lift
-        face.addView(shine, FrameLayout.LayoutParams(-1, h * 2 / 3))
         face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-        // the ring lies OUTSIDE the face, its solid blue over the face's edge: drawn on the edge, a white banner's soft-cornered
-        // pixels showed past it at the corners. The card is that much larger (and the tile that much smaller round it) so the
-        // ring is inside the card's own layer while it grows; the tiles stay where they were.
-        val o = dp(RING_OUT)
-        card.addView(face, FrameLayout.LayoutParams(w, h).apply { setMargins(o, o, o, o) })
-        ring.background = ringDrawable(r, dp)
-        ring.alpha = 0f
-        card.addView(ring, FrameLayout.LayoutParams(-1, -1))
-        card.clipChildren = false
-        card.outlineProvider = object : android.view.ViewOutlineProvider() {   // the shadow under the face only
-            override fun getOutline(v: View, out: android.graphics.Outline) { out.setRoundRect(o, o, o + w, o + h, r) }
-        }
-        addView(card, LayoutParams(w + 2 * o, h + 2 * o).apply { setMargins(-o, -o, -o, -o) })
-        name.apply {
-            text = if (banner != null) label else ""                  // a tile without a banner already shows its name inside
-            textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
-            alpha = 0f; setPadding(0, 0, 0, 0); setShadowLayer(dp(5).toFloat(), 0f, dp(1).toFloat(), 0xCC000000.toInt())
-        }
-        // under the scaled card, inside the gap between rows (the gap is sized for it): it adds no height to the row, so rows sit
-        // as far apart as tiles are side by side, and it never reaches the picture or the next row
-        val below = (h * (GROW - 1f) / 2f).toInt() + o + dp(3)
-        addView(name, LayoutParams(w, dp(18)).apply { topMargin = below; bottomMargin = -(below + dp(18)) })   // fixed height: the row stays the picture's
-        background = ColorDrawable(Color.TRANSPARENT)
-    }
-
-    /**
-     * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
-     * with motion off only the ring and the name change, at once. Hardware layers only while it moves.
-     */
-    /** Being carried (move mode): the card a step larger than a focused one, on top of the others; [focus] puts it back. */
-    fun carry(on: Boolean) {
-        val s = if (on) GROW + 0.10f else GROW
-        card.animate().cancel()
-        ring.animate().cancel(); ring.alpha = if (on || !Motion.glass) 1f else 0f   // the accent ring even where the focus is the glass; back to the glass after
-        if (!Motion.on) { card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift * 1.5f else 0f; return }
-        card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift * 1.5f else 0f).setDuration(150).setInterpolator(Motion.glide).start()
-    }
-
-    fun focus(on: Boolean) {
-        card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
-        if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
-            val s = if (on) GROW else 1f
-            card.translationX = 0f; card.translationY = 0f
-            card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift else 0f; content.scaleX = if (on) 1.05f else 1f; content.scaleY = content.scaleX
-            ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
-            return
-        }
-        // in on a spring, out on a plain glide a little slower: the next tile's rise leads, the last one sinks behind it
-        val s = if (on) GROW else 1f
-        val t = Motion.ms(if (on) 520L else 300L)
-        val ip = if (on) Motion.spring else Motion.glide
-        card.translationX = 0f; card.translationY = 0f
-        if (Motion.calm) {                                            // one animator, not five: the rest is set at once
-            card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f; shine.alpha = 0f; name.translationY = 0f
-            ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f
-            card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
-            return
-        }
-        // the shadow at once, only the size glides: animating translationZ re-made the shadow every frame, on a BRAVIA (MT5891,
-        // Android 9) 41% of the frames over 16.7 ms while focus moved sideways, 12% this way (no shadow at all: the same 12%)
-        card.translationZ = if (on) lift else 0f
-        card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
-        content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
-        ring.animate().alpha(if (on && !Motion.glass) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
-        name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
-        // the gloss: light from above that settles on the card as it rises, rather than a sweep on every move (busy when stepping fast)
-        shine.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift).setDuration(if (on) 420L else 200L).setInterpolator(Motion.glide).start()
-    }
-
-    companion object { const val GROW = 1.12f }                      // a focused card's size
-
-    /** Nothing that way: the card leans toward it and wobbles back, so the press was felt (Apple TV does the same). */
-    fun nudge(dx: Int, dy: Int) {
-        if (!Motion.on || Motion.calm) return
-        val px = across / 40f
-        nudged?.invoke(dx * px * GROW, dy * px * GROW)
-        card.animate().cancel()
-        card.animate().translationX(dx * px).translationY(dy * px).setDuration(80).setInterpolator(Motion.glide).withEndAction {
-            card.animate().translationX(0f).translationY(0f).setDuration(460).setInterpolator(Motion.bounce).start()
-        }.start()
+        name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
     }
 
     /** A live tile's newest state from its provider (null: no answer); [animate] when motion is on and not calm. */
@@ -1261,27 +1167,13 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     }
 }
 
-/**
- * The ring round the focused tile: the accent (almost no banner is that blue) from [RING_OUT] dp outside the face to 1 dp over it,
- * covering the face's soft edge, then a thin white line for a banner that is blue itself. No dark edge: on a TV it read as a black
- * border round the blue.
- */
-private fun ringDrawable(r: Float, dp: (Number) -> Int): Drawable {
-    val o = dp(RING_OUT)
-    fun band(w: Int, color: Int, radius: Float) = GradientDrawable().apply { cornerRadius = maxOf(0f, radius); setStroke(w, color); setColor(Color.TRANSPARENT) }
-    return android.graphics.drawable.LayerDrawable(arrayOf(band(o + dp(1), RING_ACCENT, r + o), band(dp(1), Color.WHITE, r - dp(1)))).apply {
-        setLayerInset(1, o + dp(1), o + dp(1), o + dp(1), o + dp(1))
-    }
-}
 const val DIM = 0.35f                                                 // the tiles that are not being moved
 /** The most rows of apps the first screen can show (to tenths), as the last layout measured; 0 = not measured yet. */
 @Volatile var rowsFit = 0.0
 
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
-const val RING_OUT = 3                                                // dp the ring reaches past the face
 private const val HEAD_DIM = 0xB3FFFFFF.toInt()                       // the greeting over the day
 private const val HEAD_RULE = 0x40FFFFFF                             // the line between the clock and the day
-const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner
 
 /**
  * A pill on a tile's corner: a lock, or an hourglass and the time left. Drawn by hand with the paints and icons made once, and
@@ -1324,56 +1216,8 @@ class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
 }
 
-/**
- * A damped spring as an interpolator, [damping] < 1: x(t) = 1 - e^(-ζωt)(cos ωd·t + ζω/ωd · sin ωd·t), with ω chosen so it has
- * settled (within 0.2 %) at t = 1. A PathInterpolator can overshoot once; a spring eases into its rest, which is what reads as smooth.
- */
-class Spring(private val damping: Float) : android.animation.TimeInterpolator {
-    private val w = 6.2f / damping
-    private val wd = w * Math.sqrt(1.0 - damping * damping).toFloat()
-    override fun getInterpolation(t: Float): Float {
-        if (t >= 1f) return 1f
-        val e = Math.exp((-damping * w * t).toDouble()).toFloat()
-        return 1f - e * (Math.cos((wd * t).toDouble()).toFloat() + damping * w / wd * Math.sin((wd * t).toDouble()).toFloat())
-    }
-}
-
-/** The motion TV Home uses: on from its setting, off when the system's animator duration scale is 0 (Settings, "remove animations"). */
-object Motion {
-    @JvmField var on = true
-    @JvmField var calm = false                                        // less moves: no overshoot, shorter, only the card grows (HomeConfig "motion")
-    @JvmField var glass = true                                        // the focus is a pane of glass gliding between tiles ([Glass]); false: a blue ring on each
-    val lift = PathInterpolator(0.34f, 1.35f, 0.64f, 1f)              // overshoots a little then settles: a spring
-    private val springy = Spring(0.62f)                               // a real damped spring: rises fast, passes ~6 %, settles (Apple TV's focus)
-    private val bouncy = Spring(0.35f)                                // looser: the nudge at an edge wobbles back
-    val glide = PathInterpolator(0.2f, 0.8f, 0.2f, 1f)                // fast out, long soft end
-    val spring: android.animation.TimeInterpolator get() = if (calm) glide else springy
-    val bounce: android.animation.TimeInterpolator get() = if (calm) glide else bouncy
-
-    /** [t] ms, shorter when calm: fewer frames to draw. */
-    fun ms(t: Long): Long = if (calm) t * 11 / 20 else t
-
-    /** Little memory (Android's own flag, or 1.5 GB or less: TCL's 1 GB MT9221 boxes): calm unless chosen otherwise. */
-    fun lowRam(c: Context): Boolean {
-        val am = c.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-        return am.isLowRamDevice || android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.totalMem <= 1536L * 1024 * 1024
-    }
-
-    fun read(c: Context, conf: JSONObject) {
-        val scale = try { Settings.Global.getFloat(c.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) } catch (e: Exception) { 1f }
-        on = conf.optBoolean("anim", true) && scale > 0f
-        calm = when (conf.optString("motion")) { "calm" -> true; "full" -> false; else -> lowRam(c) }
-        glass = conf.optString("focus", "glass") != "ring"
-    }
-
-    /** A button a little larger while focused. */
-    fun pop(v: View, focused: Boolean) {
-        v.animate().cancel()
-        val s = if (focused) 1.06f else 1f
-        if (!on) { v.scaleX = 1f; v.scaleY = 1f }
-        else v.animate().scaleX(s).scaleY(s).setDuration(ms(if (focused) 420L else 220L)).setInterpolator(if (focused) spring else glide).withLayer().start()   // on a layer: without it each frame drew the whole panel again (16 ms + 36 ms GPU on the FPT box)
-    }
-}
+/** TV Home's settings into tvui's [Motion] (the object lives there, shared): "anim", "motion" and "focus" of the config. */
+fun Motion.read(c: Context, conf: JSONObject) = read(c, conf.optBoolean("anim", true), conf.optString("motion"), conf.optString("focus", "glass"))
 
 /** The colours of a built-in background (the page's small tiles copy them: js/home.js HOME_WALLS). */
 fun wallColors(wall: String): IntArray = when (wall) {

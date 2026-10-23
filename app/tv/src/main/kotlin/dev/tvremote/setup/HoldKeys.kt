@@ -6,7 +6,7 @@ import dev.tvremote.core.T
 /**
  * "Hold to use Input / Settings" (opt-in, the rule "holdkeys" in [Rules]): an elderly person who presses Source or Settings by mistake
  * lands on an empty HDMI and thinks the TV broke. With it on, a short press of those physical keys does nothing but say how to do
- * it; holding [HOLD_MS] does the normal thing. [KeyFixService] asks [Gate] for every key (the filter sees only physical keys: what
+ * it; holding [HOLD_MS] does the normal thing. [KeysBridge] asks [Gate] about every key the add-on sends (the filter sees only physical keys: what
  * a phone or computer injects with `input keyevent` skips it, so the remote stays the way round this).
  *
  * No Android type in [Gate] so a test can run it.
