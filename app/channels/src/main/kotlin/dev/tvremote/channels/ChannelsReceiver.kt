@@ -40,6 +40,7 @@ class ChannelsReceiver : BroadcastReceiver() {
         if (i.getBooleanExtra("countries", false)) out.put("countries", JSONArray().apply {
             Catalog.countries(c).forEach { put(JSONObject().put("cc", it.code).put("name", it.name).put("flag", it.flag)) } })
         i.getStringExtra("list")?.lowercase()?.takeIf { it.matches(Regex("[a-z]{2}")) }?.let { cc ->
+            Categories.current(c, cc)?.let { d -> if (Categories.alsoStale(c, cc, d)) Categories.alsoFetch(c, cc, d) }   // the web page's lists carry what the TV's shelves do
             val all = Catalog.channels(c, cc, i.getBooleanExtra("fresh", false))
             // a big country is ~200 KB: more than a broadcast's answer may carry (~250 KB base64 failed), so it goes in a file the shell reads
             val f = java.io.File(c.getExternalFilesDir(null), "lists/$cc.json")

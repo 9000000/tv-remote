@@ -45,3 +45,14 @@ test('categorize: no file, nothing breaks', () => {
   assert.equal(r.cats.length, 0);
   assert.equal(r.other.length, 1);
 });
+
+test('categorize: a category listed twice (same id or same title) is one shelf', () => {
+  const r = V.categorize([{ n: 'VTV1' }, { n: 'VTV2' }, { n: 'VTV3' }, { n: 'ON Kids' }], { v: 1, categories: [
+    { id: 'vtv', vi: 'VTV', en: 'VTV', match: ['vtv1'] },
+    { id: 'vtvcab', vi: 'VTVcab', en: 'VTVcab', match: ['onkids'] },
+    { id: 'vtv2', vi: 'vtv', en: 'VTV', match: ['vtv2'] },
+    { id: 'vtv', vi: 'Khác', match: ['vtv3'] },
+  ] });
+  assert.equal(JSON.stringify(r.cats.map((c) => c.id)), '["vtv","vtvcab"]');
+  assert.equal(JSON.stringify(r.cats[0].list.map((c) => c.n)), '["VTV1","VTV2","VTV3"]');
+});

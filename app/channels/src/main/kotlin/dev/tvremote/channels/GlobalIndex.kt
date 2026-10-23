@@ -43,6 +43,25 @@ class GlobalIndex private constructor(private val lines: Array<String>, private 
         return out.values.toList()
     }
 
+    /**
+     * The streams of the channels [ids] name ("CartoonNetwork.us", the id without its "@feed"), at most [per] each, in the order of [ids];
+     * every feed of one id is one channel (id without the feed, the name from [names] or else the shortest, with its "(United States)" taken off), a stream that is
+     * not geo-blocked or flaky first. An id the index lacks gives nothing.
+     */
+    fun byIds(ids: List<String>, per: Int = 4, names: Map<String, String> = emptyMap()): List<Channel> {
+        val want = ids.toSet()
+        val got = HashMap<String, ArrayList<Channel>>()
+        for (l in lines) {
+            val id = l.substring(0, l.indexOf('\t')).substringBefore('@')
+            if (id in want) got.getOrPut(id) { ArrayList() }.add(channel(l))
+        }
+        return ids.distinct().flatMap { id ->
+            val l = got[id].orEmpty()
+            val name = names[id] ?: l.map { plain(it.name) }.minByOrNull { it.length }.orEmpty()
+            l.sortedBy { it.geo || it.notAlways }.take(per).map { it.copy(id = id, name = name) }
+        }
+    }
+
     companion object {
         const val CAP = 60
         private const val URL_ = "${Catalog.BASE}/iptv/index.country.m3u"
@@ -80,12 +99,15 @@ class GlobalIndex private constructor(private val lines: Array<String>, private 
         /** m3u in, index lines out, one channel at a time. */
         fun write(m3u: BufferedReader, out: java.io.Writer) {
             out.write("v1\n")
-            M3u.parseLines(m3u.lineSequence()) { ch ->
-                out.write(listOf(ch.id, ch.name, Find.fold(ch.name), ch.group, ch.logo, ch.url, ch.quality,
-                    (if (ch.geo) 1 else 0) + (if (ch.notAlways) 2 else 0), ch.referrer, ch.agent).joinToString("\t") { it.toString().replace('\t', ' ') })
-                out.write("\n")
-            }
+            M3u.parseLines(m3u.lineSequence()) { ch -> out.write(line(ch)); out.write("\n") }
         }
+
+        /** A name without its "(United States)" / "(1080p)" tails: "Cartoon Network (United States)" -> "Cartoon Network". */
+        fun plain(name: String) = name.replace(Regex("\\s*\\([^)]*\\)\\s*"), " ").trim().ifEmpty { name }
+
+        /** One channel as an index line (no newline). */
+        fun line(ch: Channel) = listOf(ch.id, ch.name, Find.fold(ch.name), ch.group, ch.logo, ch.url, ch.quality,
+            (if (ch.geo) 1 else 0) + (if (ch.notAlways) 2 else 0), ch.referrer, ch.agent).joinToString("\t") { it.toString().replace('\t', ' ') }
 
         fun load(r: BufferedReader): GlobalIndex {
             val ls = ArrayList<String>(); val fs = ArrayList<String>()

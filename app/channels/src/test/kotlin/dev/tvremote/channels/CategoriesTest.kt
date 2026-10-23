@@ -63,4 +63,51 @@ class CategoriesTest {
             assertTrue(f.name, d!!.cats.all { it.title("en").isNotEmpty() })
         }
     }
+
+    @Test fun sameTitleIsOneShelf() {
+        val d = Categories.parse("""{"v":1,"categories":[
+            {"id":"vtv","vi":"VTV","en":"VTV","match":["vtv1"]},
+            {"id":"vtvcab","vi":"VTVcab","en":"VTVcab","match":["onkids"]},
+            {"id":"vtv-more","vi":"vtv","en":"VTV","match":["vtv2"]},
+            {"id":"vtv","vi":"Other words","match":["vtv3"]}]}""")!!
+        assertEquals(listOf("vtv", "vtvcab"), d.cats.map { it.id })                 // same title, or same id: joined, never two shelves
+        val r = Categories.categorize(d, listOf("VTV3", "VTV2", "VTV1", "ON Kids").map { ch(it) })
+        assertEquals(listOf("VTV1", "VTV2", "VTV3"), r.sections[0].items.map { it.first().name })
+    }
+
+    @Test fun alsoIds() {
+        val d = Categories.parse("""{"v":1,"also":["CartoonNetworkAsia.sg"," HBO.us","HBO.us",{"id":"DW.de","name":"DW"},{"id":"X.us"},""],"categories":[{"id":"a","match":["x"]}]}""")!!
+        assertEquals(listOf("CartoonNetworkAsia.sg", "HBO.us", "DW.de", "X.us"), d.also); assertEquals(mapOf("DW.de" to "DW"), d.names)
+        assertTrue(doc.also.isEmpty())
+    }
+
+    /** The shipped Vietnam file: one shelf per title, and the foreign channels it asks for land where a viewer looks. */
+    @Test fun vietnamShelves() {
+        val d = Categories.parse(File("../../docs/channels/categories/vn.json").readText())!!
+        val titles = d.cats.map { it.title("vi").lowercase() }
+        assertEquals(titles.distinct(), titles); assertEquals(d.cats.map { it.id }.distinct(), d.cats.map { it.id })
+        fun shelves(name: String) = Categories.categorize(d, listOf(ch(name))).sections.map { it.cat.id }
+        assertTrue(shelves("Cartoon Network Asia").contains("kids")); assertTrue(shelves("Nick Jr.").contains("kids")); assertTrue(shelves("BabyTV").contains("kids"))
+        assertTrue(shelves("Disney Junior").contains("kids")); assertTrue(shelves("Boomerang").contains("kids"))
+        assertTrue(shelves("HBO").contains("movies")); assertTrue(shelves("Cinemax").contains("movies")); assertTrue(shelves("Star Movies").contains("movies"))
+        assertTrue(shelves("ESPN").contains("sports")); assertTrue(shelves("Fox Sports 1").contains("sports")); assertTrue(!shelves("Fox Sports 1").contains("movies"))
+        assertTrue(shelves("CNN International").contains("news")); assertTrue(shelves("BBC News").contains("news")); assertTrue(shelves("MTV").contains("music"))
+        assertTrue(shelves("National Geographic").contains("docs")); assertTrue(shelves("Discovery Channel").contains("docs")); assertTrue(shelves("Animal Planet").contains("docs"))
+        assertTrue(d.also.contains("CartoonNetworkAsia.sg") && d.also.size > 20)
+        val vn = Categories.categorize(d, listOf("VTV1 HD", "HTV7", "ON Kids").map { ch(it) }).sections.map { it.cat.id }
+        assertEquals(listOf("vtv", "htv", "vtvcab", "kids", "entertainment", "news"), vn.filter { it != "intl" })
+    }
+
+    @Test fun globalIndexByIds() {
+        val tsv = "v1\n" + listOf(
+            Channel("CartoonNetwork.us@East", "Cartoon Network (United States) (720p)", "l", "g", "http://a", "720p"),
+            Channel("CartoonNetwork.us@West", "Cartoon Network West (720p)", "l", "g", "http://b", "720p", geo = true),
+            Channel("CartoonNetwork.us@Mex", "Cartoon Network (Mexico)", "l", "g", "http://c", "", notAlways = true),
+            Channel("HBO.us@East", "HBO (United States)", "", "g", "http://d"),
+            Channel("Other.xx", "Other", "", "g", "http://e")).joinToString("\n") { GlobalIndex.line(it) }
+        val got = GlobalIndex.load(java.io.BufferedReader(java.io.StringReader(tsv))).byIds(listOf("HBO.us", "CartoonNetwork.us", "Missing.us"), 2, mapOf("HBO.us" to "HBO Max"))
+        assertEquals(listOf("HBO.us", "CartoonNetwork.us", "CartoonNetwork.us"), got.map { it.id })     // the id's order, feeds are one channel, at most 2 streams
+        assertEquals(listOf("HBO Max", "Cartoon Network", "Cartoon Network"), got.map { it.name })       // a configured name wins
+        assertEquals(listOf("http://d", "http://a", "http://b"), got.map { it.url })                      // the geo-blocked / flaky streams go last (b before c: the index order)
+    }
 }

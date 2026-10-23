@@ -18,7 +18,13 @@ const ChanCat = {
   // channels: [{ n: name, ... }]; doc: the parsed categories file. -> { cats: [{ id, vi, en, list }] (only the ones with a channel), other: [] }
   // A channel goes in every category it matches; inside one, by the index of its first matching entry, then by name.
   categorize(channels, doc) {
-    const cats = ((doc && doc.categories) || []).map((c) => ({ id: c.id, vi: c.vi, en: c.en, tests: ChanCat.matchers(c), hit: [] }));
+    // one shelf per category: the same id, or the same title in every language both carry, is one (its entries joined, as the TV app does)
+    const merged = [];
+    for (const c of (doc && doc.categories) || []) {
+      const same = merged.find((m) => m.id === c.id || (['vi', 'en'].some((k) => m[k] && c[k]) && ['vi', 'en'].every((k) => !(m[k] && c[k]) || String(m[k]).toLowerCase() === String(c[k]).toLowerCase())));
+      if (same) same.match = same.match.concat(c.match || []); else merged.push({ id: c.id, vi: c.vi, en: c.en, match: (c.match || []).slice() });
+    }
+    const cats = merged.map((c) => ({ id: c.id, vi: c.vi, en: c.en, tests: ChanCat.matchers(c), hit: [] }));
     const other = [];
     for (const ch of channels) {
       const n = ChanCat.norm(ch.n); let any = false;

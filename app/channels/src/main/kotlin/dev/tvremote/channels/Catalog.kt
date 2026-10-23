@@ -19,8 +19,9 @@ object Catalog {
 
     class Country(val code: String, val name: String, val flag: String)
 
-    /** A country's channels: iptv-org's playlist, with the providers' of that country merged in (Providers.kt). */
-    fun channels(c: Context, cc: String, fresh: Boolean = false): List<Channel> = Providers.merge(c, cc, iptv(c, cc, fresh), fresh)
+    /** A country's channels: iptv-org's playlist, with the providers' of that country merged in (Providers.kt), and the other countries' channels its categories file asks for ("also"). */
+    fun channels(c: Context, cc: String, fresh: Boolean = false): List<Channel> =
+        Providers.merge(c, cc, iptv(c, cc, fresh), fresh).let { l -> l + Categories.alsoKept(c, cc, Categories.current(c, cc)) }   // + other countries' channels the categories file asks for (kept copy)
 
     /** Only iptv-org's playlist of [cc], the part a screen can show first (the providers' channels wait on more requests); [progress] as in [cached]. */
     fun iptv(c: Context, cc: String, fresh: Boolean = false, progress: ((Long, Long) -> Unit)? = null): List<Channel> =

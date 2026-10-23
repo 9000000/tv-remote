@@ -16,7 +16,7 @@ function norm(name) {
   for (let p = null; p !== s;) { p = s; s = s.replace(/(hd|fhd|uhd|sd|4k)$/, ''); }
   return s;
 }
-const VN_ORDER = ['vtv', 'htv', 'vtvcab', 'sctv', 'vtc', 'local', 'sports', 'movies', 'kids', 'music', 'entertainment', 'news', 'intl'];
+const VN_ORDER = ['vtv', 'htv', 'vtvcab', 'sctv', 'vtc', 'local', 'sports', 'movies', 'kids', 'docs', 'music', 'entertainment', 'news', 'intl'];
 const load = (f = 'vn.json') => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
 const cats = (n) => load().categories.filter((c) => c.match.some((m) => m.startsWith('re:') ? new RegExp(m.slice(3)).test(n) : m === n)).map((c) => c.id);
 
@@ -45,6 +45,19 @@ for (const f of files) test('schema ' + f, () => {
       else assert.strictEqual(norm(m), m, 'plain entry must be normalized: ' + m);
     }
   }
+});
+
+test('vn: "also" names other countries\' iptv-org ids, once each; titles are unique', () => {
+  const j = load();
+  assert.ok(Array.isArray(j.also) && j.also.length > 20);
+  const ids = j.also.map((e) => (typeof e === 'string' ? e : e.id));       // a bare id, or {id, name} for a card name the index spells oddly
+  for (const e of j.also) if (typeof e !== 'string') assert.deepStrictEqual(Object.keys(e).sort(), ['id', 'name']);
+  for (const id of ids) assert.match(id, /^[A-Za-z0-9]+\.[a-z]{2}$/, id);
+  assert.strictEqual(new Set(ids).size, ids.length);
+  const t = j.categories.map((c) => c.vi.toLowerCase());
+  assert.strictEqual(new Set(t).size, t.length, 'two categories with one title');
+  for (const n of ['cartoonnetworkasia', 'nickjr', 'babytv', 'disneyjunior', 'hbo', 'cinemax', 'espn', 'cnninternational', 'nationalgeographic', 'discoverychannel', 'mtv']) assert.ok(cats(n).length > 0, n);
+  assert.ok(!cats('foxsports1').includes('movies'));
 });
 
 test('known channels land where expected', () => {

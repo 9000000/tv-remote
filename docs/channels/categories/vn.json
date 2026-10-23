@@ -60,8 +60,8 @@
   },
   {
    "id": "vtvcab",
-   "vi": "VTVcab",
-   "en": "VTVcab",
+   "vi": "VTVcab (ON)",
+   "en": "VTVcab (ON)",
    "match": [
     "vtvcab1",
     "vtvcab2",
@@ -272,10 +272,12 @@
     "cinemax",
     "cinemaworld",
     "axn",
+    "starmovies",
+    "hbohits",
     "davinci",
     "davinciasia",
     "re:^sctv\\d*phim",
-    "re:phim|movie|cinema|film|drama|^(fox|star|warner|lifetime|kix|fx|tcm|paramount)"
+    "re:phim|movie|cinema|film|drama|^(foxmovies|foxlife|foxcrime|starmovies|starworld|warner|lifetime|kix|fx|tcm|paramount)"
    ]
   },
   {
@@ -295,6 +297,14 @@
     "bibi",
     "re:^(cartoon|disney|nick|dreamworks|babytv|boomerang|cbeebies|cbbc|toon|kids|tinytv|pop)",
     "re:thieunhi|kids"
+   ]
+  },
+  {
+   "id": "docs",
+   "vi": "Khám phá",
+   "en": "Documentary",
+   "match": [
+    "re:^(discovery|nationalgeographic|natgeo|animalplanet|bbcearth|sonybbcearth|history|documentary|tailieu|khampha)"
    ]
   },
   {
@@ -355,12 +365,14 @@
     "vietnamtoday",
     "vtvnews",
     "cnn",
+    "cnninternational",
     "bbcworldnews",
     "bbcnews",
     "aljazeera",
     "channelnewsasia",
     "cna",
     "bloomberg",
+    "bloombergtv",
     "cnbc",
     "nhkworld",
     "dw",
@@ -380,6 +392,7 @@
    "en": "International",
    "match": [
     "cnn",
+    "cnninternational",
     "bbcworldnews",
     "bbcnews",
     "bbcearth",
@@ -388,6 +401,7 @@
     "nhk",
     "kbsworld",
     "arirang",
+    "arirangtv",
     "dw",
     "france24",
     "france24english",
@@ -399,6 +413,7 @@
     "abcaustralia",
     "afn",
     "bloomberg",
+    "bloombergtv",
     "cnbc",
     "discovery",
     "discoverychannel",
@@ -434,8 +449,66 @@
     "hmongtvnetwork",
     "vietnamtoday",
     "tvbvietnam",
-    "re:^(bbc|nhk|kbs|cnn|hbo|fox|disney|nick|euro|sky|aljazeera|natgeo|discovery|animal|tv5)"
+    "re:^(bbc|nhk|kbs|cnn|hbo|fox(?!sport)|disney|nick|euro|sky|aljazeera|natgeo|nationalgeographic|discovery|animal|tv5)"
    ]
   }
+ ],
+ "also": [
+  "CartoonNetworkAsia.sg",
+  "Boomerang.us",
+  {
+   "id": "BabyTV.uk",
+   "name": "BabyTV"
+  },
+  "CartoonitoAsia.sg",
+  "NickJr.us",
+  "Nickelodeon.us",
+  "Nicktoons.us",
+  "DisneyJunior.us",
+  "NationalGeographic.us",
+  {
+   "id": "NationalGeographicWild.us",
+   "name": "National Geographic Wild"
+  },
+  "AnimalPlanet.us",
+  "DiscoveryChannel.in",
+  "DiscoveryWorld.us",
+  "TLC.in",
+  "HistoryAsia.us",
+  "HBO.us",
+  "HBOHits.us",
+  {
+   "id": "Cinemax.us",
+   "name": "Cinemax"
+  },
+  {
+   "id": "StarMovies.in",
+   "name": "Star Movies"
+  },
+  "ESPN.us",
+  {
+   "id": "ESPN2.us",
+   "name": "ESPN 2"
+  },
+  "FoxSports1.us",
+  "FoxSports2.us",
+  "MTV.us",
+  "MTVLive.us",
+  {
+   "id": "BBCNews.uk",
+   "name": "BBC News"
+  },
+  "CNNInternational.us",
+  "CNN.us",
+  "EuronewsEnglish.fr",
+  {
+   "id": "DW.de",
+   "name": "DW"
+  },
+  "France24.fr",
+  "NHKWorldJapan.jp",
+  "ArirangTV.kr",
+  "BloombergTV.us",
+  "CNA.sg"
  ]
 }

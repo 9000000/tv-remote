@@ -34,7 +34,11 @@ object Categories {
         }
     }
 
-    class Doc(val updated: String, val cats: List<Cat>)
+    /**
+     * [also]: iptv-org ids of other countries' channels shown in this country too ("CartoonNetwork.us"), when the index has a stream;
+     * [names]: the name a card shows for an id whose own names are odd ("DW Arabic" for DW.de): `{"id":"DW.de","name":"DW"}` in the file.
+     */
+    class Doc(val updated: String, val cats: List<Cat>, val also: List<String> = emptyList(), val names: Map<String, String> = emptyMap())
 
     /** One shelf: a category and its channels (each channel its streams, as [byChannel] makes them), in the category's order. */
     class Section(val cat: Cat, val items: List<List<Channel>>)
@@ -58,20 +62,34 @@ object Categories {
         val o = JSONObject(text)
         val a = o.optJSONArray("categories")
         if (o.optInt("v") != 1 || a == null) null else {
-            val cats = (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { c ->
-                val id = c.optString("id").ifEmpty { return@mapNotNull null }
+            // one shelf per category: two entries with the same id, or the same title in every language they share, are one (their entries joined)
+            class Raw(val id: String, val labels: Map<String, String>, val entries: MutableList<String>)
+            val raws = ArrayList<Raw>()
+            for (c in (0 until a.length()).mapNotNull { a.optJSONObject(it) }) {
+                val id = c.optString("id"); if (id.isEmpty()) continue
                 val labels = HashMap<String, String>()
                 for (k in c.keys()) if (k != "id" && k != "match") c.optString(k).takeIf { it.isNotEmpty() && c.opt(k) is String }?.let { labels[k] = it }
-                val m = c.optJSONArray("match") ?: return@mapNotNull null
+                val m = c.optJSONArray("match") ?: continue
+                val entries = (0 until m.length()).map { m.optString(it) }
+                val same = raws.firstOrNull { r -> r.id == id || (r.labels.keys.intersect(labels.keys).let { ks -> ks.isNotEmpty() && ks.all { r.labels[it].equals(labels[it], true) } }) }
+                if (same != null) same.entries.addAll(entries) else raws.add(Raw(id, labels, entries.toMutableList()))
+            }
+            val cats = raws.map { r ->
                 val exact = HashMap<String, Int>(); val re = ArrayList<Pair<Int, Regex>>()
-                for (i in 0 until m.length()) {
-                    val e = m.optString(i)
+                for ((i, e) in r.entries.withIndex()) {
                     if (e.startsWith("re:")) try { re.add(i to Regex(e.substring(3))) } catch (x: Exception) { }   // a bad pattern loses its entry only
                     else norm(e).let { if (it.isNotEmpty() && !exact.containsKey(it)) exact[it] = i }
                 }
-                Cat(id, labels, exact, re)
+                Cat(r.id, r.labels, exact, re)
             }
-            if (cats.isEmpty()) null else Doc(o.optString("updated"), cats)
+            val also = ArrayList<String>(); val names = HashMap<String, String>()
+            o.optJSONArray("also")?.let { x -> for (i in 0 until x.length()) {
+                val e = x.opt(i)
+                val id = (if (e is JSONObject) e.optString("id") else x.optString(i)).trim()
+                if (id.isEmpty() || id in also) continue
+                also.add(id); if (e is JSONObject) e.optString("name").trim().takeIf { it.isNotEmpty() }?.let { names[id] = it }
+            } }
+            if (cats.isEmpty()) null else Doc(o.optString("updated"), cats, also, names)
         }
     } catch (e: JSONException) { null }
 
@@ -110,6 +128,43 @@ object Categories {
             out.add(Section(cat, items))
         }
         return Result(out, list.filterIndexed { k, _ -> !hit[k] })
+    }
+
+    // ---- other countries' channels the file asks for ("also") ----
+
+    private fun alsoFile(c: Context, cc: String) = File(c.filesDir, "also-$cc.tsv")
+    private fun alsoKey(doc: Doc) = "v2 " + (doc.also.joinToString(",") + doc.names.toSortedMap()).hashCode()
+
+    /** The kept streams of [doc]'s "also" channels, off the network: empty when none are kept yet, or the list changed. Any age (the old copy beats none). */
+    fun alsoKept(c: Context, cc: String, doc: Doc?): List<Channel> {
+        if (doc == null || doc.also.isEmpty()) return emptyList()
+        val f = alsoFile(c, cc).takeIf { it.exists() } ?: return emptyList()
+        return try {
+            val ls = f.readLines()
+            if (ls.firstOrNull() != alsoKey(doc)) emptyList() else ls.drop(1).filter { it.isNotEmpty() }.map { GlobalIndex.channel(it) }
+        } catch (e: IOException) { emptyList() }
+    }
+
+    /** Whether [alsoKept] needs the index again: nothing kept for this list of ids, or the copy is over a day old. */
+    fun alsoStale(c: Context, cc: String, doc: Doc?): Boolean {
+        if (doc == null || doc.also.isEmpty()) return false
+        val f = alsoFile(c, cc)
+        return !f.exists() || System.currentTimeMillis() - f.lastModified() >= DAY || try { f.bufferedReader().use { it.readLine() } != alsoKey(doc) } catch (e: IOException) { true }
+    }
+
+    /**
+     * The "also" channels of [doc] out of iptv-org's all-countries index (a 3 MB download the first time, the disk copy after), kept as a
+     * few lines so the next open needs no index. Offline: the old copy. Blocking; the index is let go again unless a search holds it.
+     */
+    fun alsoFetch(c: Context, cc: String, doc: Doc): List<Channel> {
+        if (doc.also.isEmpty()) return emptyList()
+        if (!alsoStale(c, cc, doc)) return alsoKept(c, cc, doc)
+        val held = GlobalIndex.held()
+        val idx = try { GlobalIndex.get(c) } catch (e: Exception) { null } ?: return alsoKept(c, cc, doc)
+        val got = idx.byIds(doc.also, names = doc.names)
+        if (!held) GlobalIndex.release()
+        try { File(c.filesDir, "also-$cc.tsv.tmp").apply { writeText((listOf(alsoKey(doc)) + got.map { GlobalIndex.line(it) }).joinToString("\n") + "\n"); renameTo(alsoFile(c, cc)) } } catch (e: IOException) { }
+        return got
     }
 
     // ---- the data: the site's file per country ----

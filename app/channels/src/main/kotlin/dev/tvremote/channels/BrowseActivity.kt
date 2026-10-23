@@ -229,6 +229,7 @@ class BrowseActivity : Activity() {
             var doc = Categories.current(this, country)               // the kept copy at once; the site is asked only when there is none (or Refresh)
             val known = Catalog.young(this, "countries.json")
             fun nameOf() = Catalog.countries(this).firstOrNull { it.code == country }?.let { "${it.flag} ${it.name}" } ?: country.uppercase()
+            fun full(l: List<Channel>, d: Categories.Doc?) = if (d == null || d.also.isEmpty()) l else l + Categories.alsoKept(this, country, d)   // + the other countries' channels the file asks for (kept copy)
             fun show(l: List<Channel>, name: String, res: Categories.Result?, first: Boolean) = main.post {
                 if (isDestroyed || country != cc) return@post          // gone, or another country was chosen meanwhile
                 all = l.byChannel(); failed = l.isEmpty() && !java.io.File(filesDir, "m3u-$country.m3u").exists(); countryName = name; loading = false; catRes = res
@@ -243,21 +244,30 @@ class BrowseActivity : Activity() {
                 } else if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
             }
             if (quick) {
-                val res = doc?.let { Categories.categorize(it, list.byChannel()) }
-                show(list, nameOf(), res, true)
+                val l2 = full(list, doc)
+                val res = doc?.let { Categories.categorize(it, l2.byChannel()) }
+                show(l2, nameOf(), res, true)
             } else {
                 main.post { if (loading && country == cc) state.loading(getString(R.string.loading_read), 100) }
                 if (iptv.isNotEmpty()) { show(list, if (known) nameOf() else country.uppercase(), doc?.let { Categories.categorize(it, list.byChannel()) }, true) }
                 val cats = if (doc == null || fresh) java.util.concurrent.CompletableFuture.runAsync { Categories.refresh(this, country, fresh) } else null   // beside the providers
                 list = Providers.merge(this, country, iptv, fresh)
                 if (cats != null) { cats.join(); doc = Categories.current(this, country) }
-                val res = doc?.let { Categories.categorize(it, list.byChannel()) }
-                show(list, nameOf(), res, false)
+                val l2 = full(list, doc)
+                val res = doc?.let { Categories.categorize(it, l2.byChannel()) }
+                show(l2, nameOf(), res, false)
+            }
+            // the other countries' channels the file asks for: kept ones were on the screen already; the index (3 MB, once a day) comes last, so it never delays the first screen
+            Categories.current(this, country)?.takeIf { Categories.alsoStale(this, country, it) }?.let { d ->
+                if (Categories.alsoFetch(this, country, d).isNotEmpty()) {
+                    val l2 = full(list, d); val res = Categories.categorize(d, l2.byChannel())
+                    show(l2, nameOf(), res, false)
+                }
             }
             if (Categories.stale(this, country)) {                    // a day old: the site's newer file is used next time, or now if it changed what is shown
                 Categories.refresh(this, country)
                 val now = Categories.current(this, country)
-                if (now != null && now !== doc) { val r2 = Categories.categorize(now, list.byChannel()); main.post { if (!isDestroyed && country == cc) { catRes = r2; refreshHome() } } }
+                if (now != null && now !== doc) { val r2 = Categories.categorize(now, full(list, now).byChannel()); main.post { if (!isDestroyed && country == cc) { catRes = r2; refreshHome() } } }
             }
         }
     }
