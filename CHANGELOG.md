@@ -39,6 +39,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: đổi từ ảnh sang nền màu chuyển thì viên 3 nút góc trên phải đổi theo; trước nó giữ màu của ảnh cũ.
 - TV Games: nghiêng điện thoại để ngắm (Bắn bóng bay, Bida, Air Hockey, Đập chuột, Chém hoa quả) chạy được trên trình duyệt điện thoại: con quay chỉ có ở trang https, nên tay cầm có thêm cổng https riêng (chứng chỉ tự ký, QR vẫn là http). Bấm "Bật nghiêng" sẽ hiện hướng dẫn trước (trình duyệt cảnh báo, bấm Nâng cao rồi Tiếp tục; iPhone thêm bước Cho phép), rồi mới chuyển sang https. Cùng một điện thoại vào lại bằng https thì giữ nguyên ghế; kết nối treo quá 5 giây thì tự thử lại. Game web nhận thêm hướng và chuyển động 3D của điện thoại (`motion` trong WEBGAMES.md).
 - TV Games: tải lại game web. Trên TV, giữ OK ở game web → "Mở bản mới nhất"; trên điện thoại, menu ⚙ → "Tải lại game" (chỉ hiện khi đang chơi game web). Trang được tải mới, bỏ qua bộ nhớ đệm của TV, các điện thoại vẫn giữ kết nối.
+- Game bài trên TV (Tiến lên, Mèo nổ, Bài màu): bảng bài của người chơi bằng remote gọn hơn (còn khoảng 29% chiều cao màn hình), nền trong hơn, luôn một hàng và nằm gọn trong màn hình; bàn chơi thu nhỏ ở phía trên thay vì bị che, đúng với các cỡ TV 16:9 và 21:9.
 
 **English**
 - TV Home: on TVs short of memory (a Coocaa), coming back from YouTube could leave the wallpaper blurred and every app logo gone until Home was left and opened again; it comes back in full now. With motion off, the chosen app tile still grows (only the glass showed, round a small logo); TV Games too.
@@ -73,6 +74,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: switching from a photo to a gradient background now updates the three-button capsule at the top right; it kept the old photo's colours.
 - TV Games: tilting the phone to aim (Balloons, Pool, Air Hockey, Moles, Slice) works in the phone's browser: the gyroscope is only given to https pages, so the pad has its own https port too (self-signed, the QR stays http). "Turn on tilt" first explains the steps (the browser's warning: Advanced, then Proceed; on an iPhone also Allow), then moves to https. The same phone coming back over https keeps its seat; a connection stuck over 5 s retries. Web games also get the phone's 3D attitude and motion (`motion` in WEBGAMES.md).
 - TV Games: reload a web game. On the TV, hold OK on a web game → "Open the latest version"; on the phone, the ⚙ menu → "Reload the game" (only while a web game is on). The page is fetched fresh, past the TV's cache, and the phones stay connected.
+- Card games on TV (Tiến lên, Mèo nổ, Bài màu): the hand panel for the player using the TV remote is now compact (about 29% of the screen height), more translucent, always a single row and fully on screen; the table shrinks above it instead of being covered, on 16:9 and 21:9 TVs.
 
 ## 0.18.1 - 2026-10-22
 

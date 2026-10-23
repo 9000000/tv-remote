@@ -124,37 +124,40 @@
       if (!R.el) {
         R.el = mk('div'); R.el.id = 'rmt'; (RM.mount ? document.querySelector(RM.mount) : document.body).append(R.el);
         const css = mk('style');
-        css.textContent = `#rmt{--u:1vh;position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;gap:calc(var(--u)*1.2);padding:calc(var(--u)*1.2) 2vw calc(var(--u)*1.4);
-  background:#0b0f1af2;border-top:calc(var(--u)*.3) solid var(--pc);font:700 calc(var(--u)*3.2)/1.2 system-ui,sans-serif;color:#f1f4fb;cursor:none}
+        css.textContent = `:root{--rmu:1vh;--rmt-h:calc(var(--rmu)*29.5)}   /* --rmt-h: the band the dock owns; a game lays its table out above it (bottom:var(--rmt-h)) */
+@media (max-aspect-ratio:16/9){:root{--rmu:.5625vw}}   /* narrower than 16:9: size by the width, or the 165-unit fan would run off the sides */
+@media (min-aspect-ratio:17/9){body.rmt-on .seat{min-width:0;padding:1.2vh 1.4vh;border-radius:1.4vh}body.rmt-on .seat .name{font-size:3.4vh;max-width:40vh}body.rmt-on .seat .info{font-size:2.8vh}body.rmt-on .seat .info .n{font-size:3.4vh}}   /* wider than 16:9 (21:9): seats sized in vw would swell over the table */
+#rmt{--u:var(--rmu);position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;gap:calc(var(--u)*.8);padding:calc(var(--u)*1) 2vw calc(var(--u)*1.2);overflow:hidden;
+  background:#0b0f1ac4;border-top:calc(var(--u)*.3) solid var(--pc);font:700 calc(var(--u)*2.6)/1.2 system-ui,sans-serif;color:#f1f4fb;cursor:none}
 #rmt[hidden]{display:none}
-#rmt .top{display:flex;align-items:center;gap:calc(var(--u)*1.6);min-height:calc(var(--u)*4.4)}
-#rmt .dot{width:calc(var(--u)*2.4);height:calc(var(--u)*2.4);border-radius:50%;background:var(--pc);flex:none}
-#rmt .nm{flex:none;font-size:calc(var(--u)*3.4)}#rmt .tt{flex:none;color:#9aa5bd;font-size:calc(var(--u)*2.8)}
+#rmt .top{display:flex;align-items:center;gap:calc(var(--u)*1.6);min-height:calc(var(--u)*3.6)}
+#rmt .dot{width:calc(var(--u)*2);height:calc(var(--u)*2);border-radius:50%;background:var(--pc);flex:none}
+#rmt .nm{flex:none;font-size:calc(var(--u)*2.8)}#rmt .tt{flex:none;color:#9aa5bd;font-size:calc(var(--u)*2.2)}
 #rmt .note{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9aa5bd}#rmt .note.turn{color:#fff}#rmt .note.bad{color:#fdba74}
 #rmt .tm{flex:none;width:12vw;height:calc(var(--u)*.9);border-radius:99px;background:#fff2;overflow:hidden}#rmt .tm i{display:block;height:100%;background:var(--pc);transition:width 1s linear}
-#rmt .hand{display:flex;justify-content:center;padding-top:calc(var(--u)*4.4);min-height:calc(var(--u)*19)}
+#rmt .hand{display:flex;flex-wrap:nowrap;justify-content:center;padding-top:calc(var(--u)*3.2);min-height:calc(var(--u)*16.1)}   /* one row: cards overlap more, never wrap */
 #rmt .hand:empty{display:none}
-#rmt .cd{position:relative;flex:0 0 calc(var(--u)*12.4);height:calc(var(--u)*17.4);border-radius:calc(var(--u)*1.2);background:#f7f7f2;color:#1b1e27;overflow:hidden;
+#rmt .cd{position:relative;flex:0 0 calc(var(--u)*9.2);height:calc(var(--u)*12.9);border-radius:calc(var(--u)*.9);background:#f7f7f2;color:#1b1e27;overflow:hidden;
   box-shadow:0 .3vh .8vh #0008;transition:transform .12s,filter .12s}
 #rmt .cd.red{color:#d7263d}
-#rmt .cd b{position:absolute;left:calc(var(--u)*1);top:calc(var(--u)*.6);font:800 calc(var(--u)*5)/1 system-ui}
-#rmt .cd i{position:absolute;left:calc(var(--u)*1.2);top:calc(var(--u)*5.8);font:calc(var(--u)*3.8)/1 system-ui;font-style:normal}
-#rmt .cd u{position:absolute;right:calc(var(--u)*.8);bottom:calc(var(--u)*.6);font:calc(var(--u)*8)/1 system-ui;text-decoration:none}
-#rmt .cd.own{--bg:#334155;background:linear-gradient(150deg,#ffffff30,#fff0 45%,#0004),var(--bg);color:#fff;flex-basis:calc(var(--u)*13.6);border:calc(var(--u)*.5) solid #f7f7f2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.8)}
-#rmt .cd.own b{position:static;font-size:calc(var(--u)*6.4);text-shadow:0 .2vh .6vh #000a}
-#rmt .cd.own span{font-size:calc(var(--u)*2.6);white-space:nowrap;padding:0 calc(var(--u)*.6);text-shadow:0 .2vh .5vh #000a}
+#rmt .cd b{position:absolute;left:calc(var(--u)*.8);top:calc(var(--u)*.5);font:800 calc(var(--u)*3.8)/1 system-ui}
+#rmt .cd i{position:absolute;left:calc(var(--u)*.9);top:calc(var(--u)*4.4);font:calc(var(--u)*2.9)/1 system-ui;font-style:normal}
+#rmt .cd u{position:absolute;right:calc(var(--u)*.6);bottom:calc(var(--u)*.5);font:calc(var(--u)*6)/1 system-ui;text-decoration:none}
+#rmt .cd.own{--bg:#334155;background:linear-gradient(150deg,#ffffff30,#fff0 45%,#0004),var(--bg);color:#fff;flex-basis:calc(var(--u)*10.1);border:calc(var(--u)*.4) solid #f7f7f2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.6)}
+#rmt .cd.own b{position:static;font-size:calc(var(--u)*4.8);text-shadow:0 .2vh .6vh #000a}
+#rmt .cd.own span{font-size:calc(var(--u)*2);white-space:nowrap;padding:0 calc(var(--u)*.6);text-shadow:0 .2vh .5vh #000a}
 #rmt .cd.deed{display:block;border:0;background:#f7f7f2;color:#1b1e27;text-align:center}
 #rmt .cd.deed s{display:flex;align-items:center;justify-content:center;height:calc(var(--u)*4.6);font-size:calc(var(--u)*2.4);text-decoration:none;color:#fff;background:#64748b}
 #rmt .cd.deed span{display:block;margin-top:calc(var(--u)*1.2);font-size:calc(var(--u)*2.5);line-height:1.1;white-space:normal;text-shadow:none}
 #rmt .cd.deed em{display:block;margin-top:calc(var(--u)*.8);font-style:normal;font-size:calc(var(--u)*2.2);color:#475569}
 #rmt .cd+.cd{margin-left:calc(var(--u)*var(--ov,.8))}
-#rmt .cd.own .co{position:absolute;left:calc(var(--u)*.8);top:calc(var(--u)*.5);font:800 calc(var(--u)*3.6)/1 system-ui;text-shadow:0 .2vh .5vh #000a}
+#rmt .cd.own .co{position:absolute;left:calc(var(--u)*.8);top:calc(var(--u)*.5);font:800 calc(var(--u)*2.8)/1 system-ui;text-shadow:0 .2vh .5vh #000a}
 #rmt .cd.off{filter:brightness(.45) saturate(.6)}   /* darker, not see-through: overlapped cards must not show through */
-#rmt .cd.sel{transform:translateY(calc(var(--u)*-2.4));box-shadow:0 0 0 calc(var(--u)*.5) #38bdf8,0 .3vh .8vh #0008}
-#rmt .cd.focus{z-index:3;outline:calc(var(--u)*.7) solid #fff;outline-offset:calc(var(--u)*.2);transform:translateY(calc(var(--u)*-3.6)) scale(1.08)}
-#rmt .cd.sel.focus{transform:translateY(calc(var(--u)*-4.6)) scale(1.08)}
+#rmt .cd.sel{transform:translateY(calc(var(--u)*-2));box-shadow:0 0 0 calc(var(--u)*.5) #38bdf8,0 .3vh .8vh #0008}
+#rmt .cd.focus{z-index:3;outline:calc(var(--u)*.7) solid #fff;outline-offset:calc(var(--u)*.2);transform:translateY(calc(var(--u)*-3)) scale(1.08)}
+#rmt .cd.sel.focus{transform:translateY(calc(var(--u)*-3.8)) scale(1.08)}
 #rmt .acts{display:flex;justify-content:center;gap:calc(var(--u)*1.6);flex-wrap:nowrap}
-#rmt .ac{flex:0 1 auto;min-width:0;height:calc(var(--u)*7.4);padding:0 calc(var(--u)*3);border-radius:calc(var(--u)*1.2);background:#243044;color:#e2e8f0;display:flex;align-items:center;white-space:nowrap;
+#rmt .ac{flex:0 1 auto;min-width:0;height:calc(var(--u)*5.6);padding:0 calc(var(--u)*2.4);border-radius:calc(var(--u)*1.2);background:#243044;color:#e2e8f0;display:flex;align-items:center;white-space:nowrap;
   border:calc(var(--u)*.4) solid transparent;transition:transform .12s}
 #rmt .ac.main{background:#2563eb;color:#fff}
 #rmt .ac.off{opacity:.4}
@@ -180,7 +183,7 @@
       top.append(mk('span', 'dot'), mk('b', 'nm', t.name(0)), mk('span', 'tt', W.total + ' ' + (t.scores[0] > 0 ? '+' : '') + t.scores[0]), note, tm);
       const hand = mk('div', 'hand'), bar = mk('div', 'acts');
       if (cs.length && cs[0].look !== 'deed') {                    // a fanned hand: each card shows about half of itself (more when few), never wider than the screen
-        const w = cs[0].t == null ? 12.4 : 13.6, n = cs.length, full = n <= 4 ? .85 : n <= 7 ? .65 : .5, room = (RM.width || 165) - w;
+        const w = cs[0].t == null ? 9.2 : 10.1, n = cs.length, full = n <= 4 ? .85 : n <= 7 ? .65 : .5, room = (RM.width || 165) - w;
         hand.style.setProperty('--ov', String(-(w - Math.max(w * .25, Math.min(w * full, n > 1 ? room / (n - 1) : w)))));
       }
       cs.forEach((x, k) => { const e = rcard(x); if (R.zone === 'hand' && k === R.i) e.classList.add('focus'); hand.append(e); });
