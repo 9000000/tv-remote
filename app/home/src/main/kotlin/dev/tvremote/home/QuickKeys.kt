@@ -40,7 +40,6 @@ object QuickKeys {
         val area = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
         val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(34), dp(24), dp(34), dp(70)) }
         area.addView(grid, FrameLayout.LayoutParams(-1, -2))
-        val focus = TileFocus(a, area, ::dp)
         val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(area) }
 
         fun line(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply { text = t; textSize = size; setTextColor(color) }
@@ -53,14 +52,11 @@ object QuickKeys {
             addView(keysOn); addView(autoOn)
         }
         val panel = LinearLayout(a).apply {
-            orientation = LinearLayout.VERTICAL; background = TvGlass.panelBg(a)
+            orientation = LinearLayout.VERTICAL
             addView(head); addView(hint); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         }
         dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, dm.heightPixels - dp(64), Gravity.CENTER)) })   // centred: a bare content view sat at the left
-        dialog.window?.apply {
-            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(PK_SCRIM))
-            setLayout(-1, -1); setGravity(Gravity.CENTER); setWindowAnimations(0)
-        }
+        dialog.window?.let(::solidPage)
 
         val keyOrder = (HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()) + HomeConfig.KEY_COLOURS + POWER + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD }   // 1..9, 0, the colours, power-on, then keys the stock launcher answered
         val tiles = HashMap<Int, PickTile>()
@@ -92,7 +88,7 @@ object QuickKeys {
                 for (code in keyOrder) targetOf(code).takeIf { it.isNotEmpty() }?.let { pics[code] = Targets.app(a, it) }
                 a.runOnUiThread {
                     if (mine != seq || !dialog.isShowing) return@runOnUiThread
-                    paintHead(); focus.hide()
+                    paintHead()
                     grid.removeAllViews(); tiles.clear()
                     var row: LinearLayout? = null
                     keyOrder.forEachIndexed { i, code ->
@@ -105,7 +101,7 @@ object QuickKeys {
                             tag = words(code), icon = if (code == POWER) R.drawable.ic_power else if (Target.kind(target) == Target.Kind.TILE) R.drawable.ic_gauge else 0, plus = target.isEmpty(), color = if (art == null) COLOUR[code] ?: PK_EMPTY else 0)
                         t.dead = code != POWER && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS && have != null && code !in have && target.isEmpty()
                         t.setOnClickListener { choose(code) }
-                        focus.wire(t); tiles[code] = t
+                        tiles[code] = t
                         row!!.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
                     }
                     (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: tiles.values.firstOrNull { it.isFocusable })?.requestFocus()
@@ -117,7 +113,7 @@ object QuickKeys {
         var lastFocus: Int? = null
         Store.onChange = { change?.invoke(); redraw(tiles.entries.firstOrNull { it.value.hasFocus() }?.key ?: lastFocus) }
         Keys.onState = { paintHead() }
-        dialog.setOnDismissListener { Store.onChange = change; Keys.onState = null; focus.hide() }
+        dialog.setOnDismissListener { Store.onChange = change; Keys.onState = null }
         dialog.setOnShowListener { Keys.push(a) }                     // asks TV Setup again, so the line above is true when it answers
         paintHead(); redraw(null)
         dialog.show()

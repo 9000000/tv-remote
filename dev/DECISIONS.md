@@ -266,6 +266,10 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   own crossfade brings Home in. A launcher's `windowAnimationStyle` is ignored for this on Android 14 (a test 1.5x scale over
   1.5 s never showed on the Google TV emulator), and shrinking the app's own picture is not possible: only the system's launcher
   may take another app's window. `SPLASH_SCREEN_STYLE_ICON` was dropped: it changed nothing.
+- The pickers over Home ("Add to home screen", "Quick keys") are a solid page, not a panel over a dimmed, see-through Home: the window
+  over Home and the Customize panel was blended again on every frame of a focus move. Emulator, 12 D-pad moves, 3 runs: 14-26% late
+  frames (median 31-36 ms) as before; dropping only the gliding glass changed nothing (48% → 48% in one run); solid window, no dim,
+  plain panel: 6-11% (25 ms). Home's own grid: 0.4% (16 ms). `solidPage()` in Picker.kt; `TvTile.glassy` false keeps the ring.
 
 ## The stock launcher wins over the HOME choice (BRAVIA, Android 9)
 

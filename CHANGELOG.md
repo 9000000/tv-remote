@@ -11,6 +11,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Remote: hàng dưới D-pad đổi thành Ứng dụng · Quay lại · Home · Cài đặt, Home và Quay lại nằm giữa, tay trái hay tay phải đều dễ bấm.
 - TV Home: mở app không còn màn đen. Logo app trượt vào giữa màn hình và nhấp nháy cho tới khi app hiện. Hết lỗi app chậm mở bị "mất zoom", lộ Home một lúc rồi mới vào. TV Setup chỉ tự cập nhật TV Channels / TV Games khi TV đang tắt màn hình (standby), không còn đá bạn ra khỏi app vừa mở.
 - TV Home mượt hơn trên TV yếu khi mở và thoát app: app được mở sớm hơn, logo nhấp nháy không còn làm chậm app đang mở; khi quay về, Home hiện lại bằng hiệu ứng mờ dần của hệ thống thay cho hiệu ứng thu nhỏ hay bị giật hoặc mất hẳn.
+- TV Home: "Thêm vào màn hình chính" và "Phím nhanh" lướt mượt hơn. Hai màn này giờ là một trang nền đặc, ô được chọn có viền xanh thay cho tấm kính lướt, không còn làm mờ Home phía sau. Trên emulator số khung hình trễ giảm từ 14-26% xuống 6-11%.
 - Sửa lỗi app điện thoại báo lỗi (NetworkOnMainThreadException) khi đóng hình TV: việc đóng kết nối ADB bảo mật giờ chạy ở luồng nền. Hướng dẫn bật ADB thêm đường cho Chromecast với Google TV (Hệ thống → Giới thiệu → Bản dựng Android TV OS → Tùy chọn nhà phát triển → Gỡ lỗi USB). Mọi chỗ hướng dẫn bật ADB trong app, trang web và README giờ ghi cả đường của Google TV (Hệ thống thay cho Tùy chọn thiết bị).
 
 **English**
@@ -18,6 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Remote: the row under the D-pad is now Apps · Back · Home · Settings, with Home and Back in the middle, easy to reach with either thumb.
 - TV Home: no more black screen when opening an app: the app's logo glides to the middle and pulses until the app shows; a slow app no longer loses its zoom and flashes Home first. TV Setup updates TV Channels / TV Games only while the TV is in standby, so an app you just opened is no longer closed under you.
 - TV Home is smoother on weak TVs when opening and leaving an app: the app starts sooner, the pulsing logo no longer slows the app it waits for, and coming back Home now uses the system's crossfade instead of a shrink that stuttered or never showed.
+- TV Home: "Add to home screen" and "Quick keys" move more smoothly: they are now a solid page, the chosen tile has a blue ring instead of the gliding glass, and Home is no longer dimmed behind them. On the emulator, late frames went from 14-26% to 6-11%.
 - Fixed the phone app showing an error (NetworkOnMainThreadException) when closing the TV picture: closing the secure ADB connection now runs on a background thread. The ADB how-to adds the Chromecast with Google TV path (System → About → Android TV OS build → Developer options → USB debugging). Every ADB how-to in the apps, the site and the READMEs now gives the Google TV path too (System instead of Device Preferences).
 
 ## 0.20.0 - 2026-10-23

@@ -26,7 +26,15 @@ import org.json.JSONObject
 internal const val PK_DIM = 0xA6FFFFFF.toInt()                      // a section name, a hint: white at about two thirds
 internal const val PK_SOFT = 0xB3FFFFFF.toInt()
 internal const val PK_FAINT = 0x99FFFFFF.toInt()
-internal const val PK_SCRIM = 0xB30E1116.toInt()                    // the screen behind a full-screen picker
+/**
+ * A full-screen picker is a page of one solid colour, not a panel over a dimmed Home: Home and the Customize panel showing through
+ * were blended again on every frame of a focus move (emulator: 14-26% of the frames late, 6% solid; Home's own grid 0.4%).
+ */
+internal fun solidPage(w: android.view.Window) {
+    w.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(TvGlass.PANEL_BOTTOM))
+    w.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+    w.setLayout(-1, -1); w.setGravity(Gravity.CENTER); w.setWindowAnimations(0)
+}
 internal const val PK_EMPTY = 0xFF232838.toInt()                     // a quick key with nothing on it
 private const val PK_CHECK = 0xFF2F7DF6.toInt()
 private const val PK_TAG = 0xCC101420.toInt()
@@ -35,9 +43,8 @@ private val PK_HUES = intArrayOf(0xFF27324A.toInt(), 0xFF2E3B2F.toInt(), 0xFF432
 
 /**
  * One tile of the picker and of the quick keys: the logo of a [Target] (an app's banner or icon, a shortcut's picture, a live tile's
- * mark) on a colour of its own, its name inside when it has no wide picture, and the focus TV Home's grid has ([TvTile]: the ring, or
- * the glass [TileFocus] moves, by the user's setting). [tag] is a small pill on a corner, [mark] a check, [dead] a tile that cannot
- * be used (greyed, no focus).
+ * mark) on a colour of its own, its name inside when it has no wide picture, and TV Home's lift and ring ([TvTile]), never the
+ * glass ([glassy]). [tag] is a small pill on a corner, [mark] a check, [dead] a tile that cannot be used (greyed, no focus).
  */
 class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: String, label: String, art: App?, hue: String,
                tag: String = "", icon: Int = 0, plus: Boolean = false, color: Int = 0) : TvTile(c, w, dpx) {
@@ -46,11 +53,13 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
     private val tagView = Font.on(TextView(c)).apply { textSize = 11f; setTextColor(Color.WHITE); maxLines = 1; setPadding(dpx(7), dpx(2), dpx(7), dpx(2))
         background = GradientDrawable().apply { cornerRadius = dpx(9).toFloat(); setColor(PK_TAG) }; visibility = View.GONE }
     private val h = w * 9 / 16
+    override val glassy get() = false                                 // a window over Home: the glass's layer, composed over two see-through windows, made half the frames late (emulator: 50% janky, 48 ms median)
     var dead = false
         set(v) { field = v; isFocusable = !v; isClickable = !v; alpha = if (v) 0.38f else 1f }
 
     init {
         Font.on(name)
+        setOnFocusChangeListener { _, on -> focus(on) }
         val banner = art?.banner
         faceColor(if (banner != null) PK_BANNER_BACK else if (color != 0) color else shade(hue))
         if (banner != null) {
@@ -85,25 +94,6 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
 }
 
 /**
- * The focus of the tiles in [area] (a FrameLayout round the grid, inside the scroller): each tile's own lift and ring or shine, and
- * the pane of glass gliding between them when the setting is "glass" ([Motion.glass]), exactly as on the home screen.
- */
-class TileFocus(c: Context, private val area: FrameLayout, dp: (Number) -> Int) {
-    private val glass = Glass(c, dp).also { area.addView(it, FrameLayout.LayoutParams(0, 0)) }
-
-    fun wire(t: PickTile) {
-        t.nudged = { x, y -> if (Motion.glass) glass.nudge(x, y) }
-        t.setOnFocusChangeListener { v, on ->
-            t.focus(on)
-            if (on) { if (Motion.glass) glass.to(area, t.pane, TvTile.GROW, t.corner, Motion.on) else glass.hide() }
-            else v.post { if (area.findFocus() == null) glass.hide() }
-        }
-    }
-
-    fun hide() = glass.hide()
-}
-
-/**
  * "Add to home screen" and the choice of what a key or the power-on opens: one screen listing the apps (the hidden ones too), the
  * launcher shortcuts each app offers ([Pins]) and the live tiles ([Tiles]), made of [PickTile]s with a search over their names. In
  * [Mode.GRID] a press switches the tile on the app grid or off; in [Mode.TARGET] it returns the chosen [Target] (or "" for none).
@@ -131,7 +121,6 @@ object Picker {
         val area = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
         val list = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(34), dp(24), dp(34), dp(70)) }   // room for a focused tile to grow past the first and last row
         area.addView(list, FrameLayout.LayoutParams(-1, -2))
-        val focus = TileFocus(a, area, ::dp)
         val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(area) }
         val search = TvUi.field(a, a.getString(R.string.pk_search), 16f, EditorInfo.IME_ACTION_SEARCH, TvUi.FIELD_REST, TvUi.R_BUTTON, 18, 10, R.drawable.ic_search)
         val head = LinearLayout(a).apply {
@@ -141,14 +130,11 @@ object Picker {
         }
         val note = Font.on(TextView(a)).apply { textSize = 13f; setTextColor(PK_DIM); setPadding(dp(34), 0, dp(34), dp(4)); text = a.getString(if (mode == Mode.GRID) R.string.pk_grid_hint else R.string.pk_target_hint) }
         val panel = LinearLayout(a).apply {
-            orientation = LinearLayout.VERTICAL; background = TvGlass.panelBg(a)
+            orientation = LinearLayout.VERTICAL
             addView(head); addView(note); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         }
         dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, dm.heightPixels - dp(64), Gravity.CENTER)) })   // centred: a bare content view sat at the left
-        dialog.window?.apply {
-            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(PK_SCRIM))
-            setLayout(-1, -1); setGravity(Gravity.CENTER); setWindowAnimations(0)
-        }
+        dialog.window?.let(::solidPage)
 
         val items = ArrayList<Item>()
         val tiles = HashMap<String, PickTile>()
@@ -178,7 +164,6 @@ object Picker {
         fun tileFor(it: Item): PickTile = tiles.getOrPut(it.key) {
             PickTile(a, tileW, ::dp, it.key, it.label, it.app, it.key, it.tag, it.icon, plus = it.key.isEmpty()).also { t ->
                 t.setOnClickListener { _ -> press(it) }
-                focus.wire(t)
                 t.mark(it.key.isNotEmpty() && on(it.key))
             }
         }
@@ -186,7 +171,7 @@ object Picker {
         fun heading(t: String) = Font.on(TextView(a)).apply { text = t.uppercase(); textSize = 12f; setTextColor(PK_DIM); letterSpacing = 0.12f; setPadding(0, dp(18), 0, dp(14)) }
         fun redraw() {
             val q = fold(search.text.toString().trim())
-            list.removeAllViews(); focus.hide()
+            list.removeAllViews()
             for (s in sections.indices) {
                 val here = items.filter { it.section == s && (q.isEmpty() || fold(it.label).contains(q) || fold(it.tag).contains(q)) }
                 val empty = when {
@@ -240,7 +225,6 @@ object Picker {
                 (first ?: search).requestFocus()
             }
         }
-        dialog.setOnDismissListener { focus.hide() }
         dialog.show()
         return dialog
     }
