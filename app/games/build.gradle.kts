@@ -51,9 +51,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")                          // ./gradlew :games:testDebugUnitTest (ThumbNames)
 }
 
-// Qr.kt only needs android.graphics, so the one file is copied from :shared (a srcDir of the whole folder would pull the web server in)
+// Qr.kt only needs android.graphics, SelfSigned.kt only java.security, so those files are copied from :shared (a srcDir of the
+// whole folder would pull the web server in)
 val copyQr = tasks.register<Copy>("copyQr") {
-    from("../shared/src/main/kotlin/dev/tvremote/core/web/Qr.kt")
-    into(layout.buildDirectory.dir("generated/qr/dev/tvremote/core/web"))
+    from("../shared/src/main/kotlin/dev/tvremote/core/web/Qr.kt") { into("web") }
+    from("../shared/src/main/kotlin/dev/tvremote/core/SelfSigned.kt")
+    into(layout.buildDirectory.dir("generated/qr/dev/tvremote/core"))
 }
 tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(copyQr) }

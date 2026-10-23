@@ -2,9 +2,17 @@
 const K = new URLSearchParams(location.search).get('k') || '';
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const W = VI
-  ? { p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', pf: 'Bắn', ps: 'Phụ', pr: 'Căn giữa', ph: 'Rê ngón tay để ngắm', rp: 'Tay cầm đang mở ở tab khác', rph: 'Chạm để dùng ở tab này.', sv: 'Lưu', cx: 'Huỷ', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
+  ? { tlT: 'Bật nghiêng', tlP: 'Điện thoại chỉ cho dùng cảm biến nghiêng qua kết nối bảo mật, nên tay cầm sẽ mở lại bằng https.',
+    tl1: 'Trình duyệt sẽ báo “Kết nối không riêng tư”: đó là TV nhà bạn, không sao, chỉ lần đầu.',
+    tl2a: 'Bấm “Nâng cao”, rồi “Tiếp tục truy cập…”.', tl2i: 'Bấm “Hiện chi tiết”, rồi “truy cập trang web này”, rồi “Truy cập trang web”.',
+    tl3a: 'Tay cầm mở lại, vẫn đúng chỗ của bạn: nghiêng máy để ngắm.', tl3i: 'Tay cầm mở lại, vẫn đúng chỗ của bạn: bấm “Bật nghiêng” lần nữa và chọn Cho phép.',
+    tlGo: 'Tiếp tục', tlNo: 'Thôi, chơi bằng cảm ứng', rl: 'Tải lại game', p: 'Người chơi', c: 'Đang kết nối…', rc: 'Đang kết nối lại…', rch: 'Không thấy TV? Nếu TV đổi mạng hoặc địa chỉ, quét lại mã QR trên TV.', rs: 'Quét lại mã QR trên TV', rsh: 'Mã kết nối đã đổi. Quét mã mới để vào lại.', nm: 'Tên của bạn', pf: 'Bắn', ps: 'Phụ', pr: 'Căn giữa', ph: 'Rê ngón tay để ngắm', phg: 'Nghiêng máy hoặc rê ngón tay để ngắm', gy: 'Bật nghiêng', gyOn: 'Nghiêng: bật', gyOff: 'Nghiêng: tắt', rp: 'Tay cầm đang mở ở trình duyệt hoặc tab khác', rph: 'Chạm để dùng ở đây.', sv: 'Lưu', cx: 'Huỷ', f: 'Hết chỗ chơi', h: 'Rung', a: 'Thêm game', s: 'Gửi', k: 'Cần xoay thay D-pad', b: 'Quay lại', g: 'TV Games', t: 'Thêm vào Màn hình chính để chơi toàn màn hình',
     s1: 'Bấm nút Chia sẻ của Safari (ô vuông có mũi tên lên)', s2: 'Chọn “Thêm vào Màn hình chính”', s3: 'Mở tay cầm từ biểu tượng mới: toàn màn hình', fs: 'Toàn màn hình', sp: 'Game này tối đa {n} người: bạn đang xem', rd: 'Sẵn sàng', rdOn: 'Đã sẵn sàng ✓', lb: 'Phòng chờ: thử các nút, rồi bấm Sẵn sàng', cl: 'Bắt đầu sau' }
-  : { p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', pf: 'Fire', ps: 'Alt', pr: 'Recenter', ph: 'Drag a finger to aim', rp: 'The pad is open in another tab', rph: 'Tap to use it here.', sv: 'Save', cx: 'Cancel', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
+  : { tlT: 'Turn on tilt', tlP: 'Phones give the tilt sensor only over a secure connection, so the pad opens again over https.',
+    tl1: 'The browser will say “Your connection is not private”: it is your own TV, that is fine, and only the first time.',
+    tl2a: 'Tap “Advanced”, then “Proceed to…”.', tl2i: 'Tap “Show Details”, then “visit this website”, then “Visit Website”.',
+    tl3a: 'The pad opens again in your same seat: tilt the phone to aim.', tl3i: 'The pad opens again in your same seat: tap “Turn on tilt” again and choose Allow.',
+    tlGo: 'Continue', tlNo: 'No, play by touch', rl: 'Reload the game', p: 'Player', c: 'Connecting…', rc: 'Reconnecting…', rch: 'No TV in sight? If the TV changed network or address, scan its QR code again.', rs: 'Scan the QR code on the TV again', rsh: 'The connection code was changed. Scan the new one to join again.', nm: 'Your name', pf: 'Fire', ps: 'Alt', pr: 'Recenter', ph: 'Drag a finger to aim', phg: 'Tilt the phone or drag a finger to aim', gy: 'Turn on tilt', gyOn: 'Tilt: on', gyOff: 'Tilt: off', rp: 'The pad is open in another browser or tab', rph: 'Tap to use it here.', sv: 'Save', cx: 'Cancel', f: 'Room is full', h: 'Haptics', a: 'Add game', s: 'Send', k: 'Stick instead of D-pad', b: 'Back', g: 'TV Games', t: 'Add to Home Screen to play fullscreen',
     s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen', sp: 'This game takes {n} players at most: you are watching', rd: 'Ready', rdOn: 'Ready ✓', lb: 'Lobby: try the buttons, then tap Ready', cl: 'Starting in' };
 // the TV left TV Games (Home) or closed it: the pad says so instead of looking healthy
 Object.assign(W, VI
@@ -18,7 +26,7 @@ const store = {
 };
 let cid = store.get('tvg-cid') || '';
 if (!cid) { cid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store.set('tvg-cid', cid); }
-$('#pF').textContent = W.pf; $('#pS').textContent = W.ps; $('#pC').textContent = W.pr; $('#tpHint').textContent = W.ph; $('#nmOk').textContent = W.sv; $('#nmNo').setAttribute('aria-label', W.cx); $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#tipText').textContent = W.t;
+$('#pF').textContent = W.pf; $('#pS').textContent = W.ps; $('#pC').textContent = W.pr; $('#tpHint').textContent = W.ph; $('#nmOk').textContent = W.sv; $('#nmNo').setAttribute('aria-label', W.cx); $('#lblHaptic').textContent = W.h; $('#lblAdd').textContent = W.a; $('#lblReload').textContent = W.rl; $('#tipText').textContent = W.t;
 $('#lblBack').textContent = W.b; $('#lblHome').textContent = W.g; $('#shTitle').textContent = W.t; $('#sh1').textContent = W.s1; $('#sh2').textContent = W.s2; $('#sh3').textContent = W.s3; $('#fs').setAttribute('aria-label', W.fs); $('#send').textContent = W.s; $('#lblStick').textContent = W.k;
 $('#lobbyHint').textContent = W.lb; $('#countLbl').textContent = W.cl; $('#offTitle').textContent = W.rs; $('#offHint').textContent = W.rsh; $('#nm').placeholder = W.nm; $('#nm').maxLength = 40;
 $('#awayTitle').textContent = W.aw; $('#awayHint').textContent = W.awh; $('#reopen').textContent = W.awo;
@@ -122,6 +130,7 @@ function relayout() {
   // {pointer, side:'left'|'right'}: the touchpad on that half, the side the player's own piece is on the TV (air hockey); no A nor B: no buttons
   $('#pF').hidden = Array.isArray(l.buttons) && !l.buttons.includes('A'); $('#pbtn').hidden = $('#pF').hidden && $('#pS').hidden;
   $('#ptr').dataset.side = l.side === 'left' || l.side === 'right' ? l.side : '';
+  gyroSync();
   tpAspect = l.pointer && +l.aspect > 0.2 && +l.aspect < 5 ? +l.aspect : 0; fitTpad();
   $('#choices').hidden = !ch; $('#textrow').hidden = !l.text;
   const cd = l.cards && Array.isArray(l.cards.hand) ? l.cards : null;
@@ -235,6 +244,9 @@ function connect() {
   if (ws && ws.readyState <= 1) return;                       // shown again while a reconnect was on its way: two sockets for one phone kicked each other
   show(0);
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?k=' + encodeURIComponent(K));
+  // a socket can stay CONNECTING for good, no error, no close (an iPhone's Chrome over https, the TV saw no request at all): the check
+  // above then refused every new try and the pad said "Connecting…" until the page was reloaded
+  const w = ws; setTimeout(() => { if (w === ws && w.readyState === 0) { w.onclose = null; w.close(); ws = null; lost(); } }, 5000);
   ws.onopen = () => { opened = Date.now(); retry = 400; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
   ws.onmessage = (e) => {
     const t = String(e.data);
@@ -248,6 +260,7 @@ function connect() {
       if (m.full) { show(-1); return; }
       if ('sys' in m && !('slot' in m)) { sysName = m.sys; layout = null; relayout(); return; }
       if ('game' in m && !('slot' in m)) { setMode(m.game ? 'pad' : 'nav'); $('#add').hidden = !!m.game; if (!m.game) setLobby(false); return; }
+      if ('web' in m && !('slot' in m)) { $('#reload').hidden = !m.web; return; }
       if ('lobby' in m && !('slot' in m)) { setLobby(m.lobby, false, m.max); return; }
       if ('count' in m) { showCount(m.count); return; }
       if ('layout' in m) { layout = m.layout; relayout(); return; }
@@ -258,7 +271,7 @@ function connect() {
       closed = false; setAway(false, false);                       // a hello answer: the TV is back; an "away" message may follow at once
       show(m.slot); setLobby(m.lobby, m.ready, m.max);
       if (haptics && 'vibrate' in navigator) navigator.vibrate([30, 40, 30]); else buzz(0);   // a stronger one: the TV says the slot is yours
-      $('#add').hidden = !!m.game;
+      $('#add').hidden = !!m.game; $('#reload').hidden = !m.web;
       if (m.sys) sysName = m.sys; layout = null; say('');
       if (first_hello || (mode === 'nav') === !!m.game) setMode(m.game ? 'pad' : 'nav'); else relayout();
       first_hello = false;
@@ -347,16 +360,20 @@ function navUp(id, cancel) {
 const ACT = {
   fs() { toggleFs(); buzz(12); },
   sheetx() { $('#sheet').hidden = true; },
+  tiltGo() { location.href = 'https://' + location.hostname + ':' + TLS + '/?k=' + encodeURIComponent(K); },
+  tiltNo() { $('#tiltSheet').hidden = true; },
   mode() { setMode(mode === 'nav' ? 'pad' : 'nav'); buzz(12); },
   who() { if (mySlot > 0) editName(true); },
   gear() { const m = $('#menu'); m.hidden = !m.hidden; },
   haptic() { setHaptic(!haptics); buzz(12); },
   add(el) { location.href = el.href; },
+  reload() { send('reload'); $('#menu').hidden = true; buzz(12); },   // the TV fetches the page again, past its cache
   stick() { const on = !wantStick(); store.set(stickKey(), on ? '1' : '0'); relayout(); buzz(12); },
   ready() { if (!lobbyOn) return; iReady = !iReady; send('ready ' + (iReady ? 1 : 0)); syncReady(); buzz(iReady ? 20 : 10); },
   reopen() { send('open'); buzz(20); $('#reopen').disabled = true; setTimeout(() => { $('#reopen').disabled = false; }, 2000); },
   take() { if (!replaced) return; replaced = false; quick = []; delete $('#off').dataset.act; $('#off').hidden = true; retry = 400; connect(); },
   recenter() { send('pc'); buzz(15); },
+  gyro() { gyroTap(); },
   tipx() { $('#tip').hidden = true; store.set('tvg-tip', '1'); },
 };
 function act(el) { const a = el.closest('[data-act]'); if (a) { ACT[a.dataset.act](a); return true; } return false; }
@@ -485,12 +502,89 @@ document.addEventListener('click', (e) => {                            // a mous
 });
 // ---- pointer layout (a game that aims: air hockey, shooting gallery ...): the big pad moves a crosshair on the TV by RELATIVE moves, speeded up
 // when the finger is fast (like a laptop's touchpad), sent as "m dx dy" at most every 16 ms with the moves added up in between.
-// A phone browser on a plain http page gets no gyroscope (DeviceOrientation / Gyroscope are not defined there: measured on a POCO,
-// Chrome, secure context false), so aiming is by touch only.
+// Turning the phone aims too (gyroSync), where the browser gives the gyroscope.
 let tpId = null, tpLast = null, tpAcc = { x: 0, y: 0 }, tpTimer = 0;
 function tpFlush() {
   tpTimer = 0; const x = Math.round(tpAcc.x), y = Math.round(tpAcc.y); if (!x && !y) return;
   tpAcc.x -= x; tpAcc.y -= y; send('m ' + x + ' ' + y);
+}
+// ---- tilt: the gyroscope moves the same crosshair, through the same "m dx dy", so a game needs nothing new. Only where the page
+// gets it: NOT on this plain http page in Chrome or Brave (no devicemotion at all: a POCO, Chrome 155, 2026-10, while the same page
+// over https got readings); Safari asks first (requestPermission, from a tap). Shown once a reading came, Safari can be asked, or the https page opened. Any grip: the turn about the
+// vertical (gravity's axis) is left / right, the turn about the screen's horizontal edge is up / down.
+const GYRO_GAIN = 900;                                               // "m" units per radian: a wrist's sweep (~40°) crosses the TV
+const GYRO_DEAD = 0.02;                                               // rad/s: a hand held still does not crawl
+let gyroSeen = false, gyroOn = store.get('tvg-gyro') !== '0', gyroUp = null;
+const gyroAsk = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
+function gyroLive() { return gyroSeen && gyroOn && document.body.classList.contains('ptr') && !document.hidden; }
+// the QR opens plain http (no certificate warning for touch-only players), where no browser gives the gyroscope: Tilt there moves the
+// pad to the https port, the warning once (Advanced, Proceed), the seat kept (the TV gives a phone's second page its first one's seat)
+const TLS = +(document.querySelector('meta[name="tvg-tls"]') || {}).content || 0;
+const gyroMove = !isSecureContext && TLS > 0;
+function tiltSheet() {                                              // what the warning page will ask, before it shows up
+  const ios = gyroAsk;                                               // requestPermission: WebKit, so iOS's words on its warning page
+  $('#tlT').textContent = W.tlT; $('#tlP').textContent = W.tlP; $('#tl1').textContent = W.tl1;
+  $('#tl2').textContent = ios ? W.tl2i : W.tl2a; $('#tl3').textContent = ios ? W.tl3i : W.tl3a;
+  $('#tlGo').textContent = W.tlGo; $('#tlNo').textContent = W.tlNo; $('#tiltSheet').hidden = false;
+}
+function gyroSync() {
+  const b = $('#pG'), can = gyroSeen || gyroAsk || gyroMove;
+  b.hidden = !can; b.textContent = !gyroSeen ? W.gy : gyroOn ? W.gyOn : W.gyOff; b.classList.toggle('on', gyroSeen && gyroOn);
+  $('#tpHint').textContent = gyroSeen && gyroOn ? W.phg : W.ph;
+}
+// iOS (Safari, and Chrome / Edge there: all WebKit) asks only from a real click: from touchstart, or from a touchend whose touchstart
+// was preventDefault-ed (every touch of the pad), it never showed its question (an iPhone, iOS 26). So the Tilt chip is left to the
+// browser (handle() skips it) and asks in its click; a probe page asking from a button's click got the question and readings
+function gyroAskNow() {
+  DeviceMotionEvent.requestPermission().then((r) => { if (r === 'granted') { gyroOn = true; store.set('tvg-gyro', '1'); } }).catch(() => {});
+  if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) DeviceOrientationEvent.requestPermission().catch(() => {});
+}
+function gyroTap() {
+  if (!gyroSeen && gyroMove) { tiltSheet(); return; }
+  if (!gyroSeen && gyroAsk) { gyroAskNow(); return; }
+  gyroOn = !gyroOn; store.set('tvg-gyro', gyroOn ? '1' : '0'); gyroSync(); buzz(12);
+}
+function screenRight() {                                             // the screen's left-to-right in the phone's own axes
+  const a = (screen.orientation && screen.orientation.angle) || +window.orientation || 0;
+  return a === 90 ? [0, -1, 0] : a === 270 || a === -90 ? [0, 1, 0] : a === 180 ? [-1, 0, 0] : [1, 0, 0];
+}
+window.addEventListener('devicemotion', (e) => {
+  const r = e.rotationRate, g = e.accelerationIncludingGravity;
+  if (!r || r.alpha == null) return;
+  if (!gyroSeen) { gyroSeen = true; gyroSync(); }
+  if (g && g.x != null) {                                            // up, smoothed: the hand's own jolts are not the vertical
+    const n = Math.hypot(g.x, g.y, g.z) || 1, u = [g.x / n, g.y / n, g.z / n];
+    gyroUp = gyroUp ? gyroUp.map((v, i) => v * 0.9 + u[i] * 0.1) : u;
+  }
+  motionNow.r = r; motionNow.g = g; motionOut();
+  if (!gyroLive() || !gyroUp) return;
+  const D = Math.PI / 180, w = [r.beta * D, r.gamma * D, r.alpha * D];   // rad/s about the phone's x, y, z
+  const dt = Math.min(0.1, Math.max(0.005, (e.interval > 1 ? e.interval / 1000 : e.interval) || 0.016));   // ms in Chrome, s in old Safari
+  const un = Math.hypot(...gyroUp) || 1, up = gyroUp.map((v) => v / un);
+  const sr = screenRight(), k = sr[0] * up[0] + sr[1] * up[1] + sr[2] * up[2];
+  let h = sr.map((v, i) => v - k * up[i]); const hn = Math.hypot(...h);
+  if (hn < 0.2) return;                                              // the screen's edge points up or down: no horizon to aim by
+  h = h.map((v) => v / hn);
+  const yaw = w[0] * up[0] + w[1] * up[1] + w[2] * up[2], pitch = w[0] * h[0] + w[1] * h[1] + w[2] * h[2];
+  if (Math.hypot(yaw, pitch) < GYRO_DEAD) return;
+  tpAcc.x -= yaw * dt * GYRO_GAIN; tpAcc.y -= pitch * dt * GYRO_GAIN;   // turning left (about up) goes left, the far edge up goes up
+  if (!tpTimer) tpTimer = setTimeout(tpFlush, 16);
+});
+// ---- the whole 3D motion, for a game that asked for it ({motion:true} in its layout: tvpad.on('motion')): the phone's attitude
+// (deviceorientation alpha / beta / gamma, degrees), its turn rate (deg/s) and gravity + the hand's push (m/s²), in the phone's
+// own axes, with the screen's angle so the game can turn them to the way the phone is held. At most 30 a second, as
+// "o" + ten integers: orientation x10, rates, acceleration x100, screen angle.
+const motionNow = { o: null, r: null, g: null };
+let motionAt = 0;
+window.addEventListener('deviceorientation', (e) => { if (e.beta != null) { motionNow.o = e; motionOut(); } });
+function motionOut() {
+  const l = layout || {};
+  if (!l.motion || mode !== 'pad' || document.hidden || !motionNow.r) return;
+  const now = performance.now(); if (now - motionAt < 33) return; motionAt = now;
+  const o = motionNow.o || {}, r = motionNow.r, g = motionNow.g || {};
+  const i = (v, k) => Math.round((+v || 0) * k);
+  const a = (screen.orientation && screen.orientation.angle) || +window.orientation || 0;
+  send('o ' + [i(o.alpha, 10), i(o.beta, 10), i(o.gamma, 10), i(r.alpha, 1), i(r.beta, 1), i(r.gamma, 1), i(g.x, 100), i(g.y, 100), i(g.z, 100), (a + 360) % 360].join(' '));
 }
 function tpTouch(t, type) {
   if (type === 'touchstart') { tpId = t.identifier; tpLast = { x: t.clientX, y: t.clientY, t: performance.now() }; $('#tpad').classList.add('on'); return; }
@@ -501,7 +595,8 @@ function tpTouch(t, type) {
   if (!tpTimer) tpTimer = setTimeout(tpFlush, 16);
 }
 function handle(e) {
-  if (e.target.closest && e.target.closest('#textrow,#nameform')) return;      // the text field needs its own touches (keyboard, caret)
+  if (e.target.closest && e.target.closest('#textrow,#nameform')) return;
+  if (gyroAsk && !gyroSeen && e.target.closest && e.target.closest('#pG')) return;   // a real click, the only thing iOS asks from      // the text field needs its own touches (keyboard, caret)
   e.preventDefault();
   if (document.body.classList.contains('cards') && cardsTouch(e)) return;
   if (e.type === 'touchstart') {

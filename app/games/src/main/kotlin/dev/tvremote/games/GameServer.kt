@@ -45,6 +45,9 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var system = "nes"; private set
     fun setSystem(id: String) { system = id; send(0, "{\"sys\":\"$id\"}") }
     @Volatile var webMode = false                          // a web game: any pad button is passed on (the game's layout decides which are shown)
+        set(v) { val ch = field != v; field = v; if (ch) send(0, "{\"web\":$v}") }   // the pads offer Reload only in one
+    /** A phone's Reload: the web game's page fetched again from its server, not from the WebView's cache. */
+    @Volatile var onReload: () -> Unit = {}
     /** The pad page offers "add game" only outside a game, and opens in navigate mode outside one (the phones are told when it changes). */
     @Volatile var inGame = false
         set(v) { val ch = field != v; field = v; if (ch) send(0, "{\"game\":$v}") }
@@ -53,6 +56,8 @@ class GameServer private constructor(private val ctx: Context) {
     @Volatile var onKeyLat: ((port: Int, action: Int, keyCode: Int, latMs: Int) -> Unit)? = null
     /** A phone with the pointer layout: relative move of its crosshair (pad px, already speeded up), or [center] = its Recenter. Web games only; ignored in the lobby. */
     @Volatile var onPointer: (player: Int, dx: Int, dy: Int, center: Boolean) -> Unit = { _, _, _, _ -> }
+    /** A phone whose layout asked for {motion}: its attitude, turn rates and acceleration as the pad's "o" (ten integers, WEBGAMES.md). Web games only. */
+    @Volatile var onMotion: (player: Int, v: IntArray) -> Unit = { _, _ -> }
     @Volatile var onPing: (player: Int, ms: Int) -> Unit = { _, _ -> }   // a phone's ping changed, player 1..4
     fun pingOf(player: Int): Int = if (player in 1..MAX) slots[player - 1].ping else -1
     @Volatile var onPlayers: (List<Int>) -> Unit = {}      // slots (1..4) now in use, any thread
@@ -80,6 +85,7 @@ class GameServer private constructor(private val ctx: Context) {
     private var server: ServerSocket? = null
     @Volatile var port = 0; private set
     private val prefs = ctx.getSharedPreferences("games", Context.MODE_PRIVATE)
+    private val tls = PadTls(ctx)
     /** Kept in the app's prefs (made once): a phone's link and the iPhone's Home Screen icon still work after TV Games was closed and opened again. */
     @Volatile var token: String = prefs.getString("padToken", null) ?: newToken().also { prefs.edit().putString("padToken", it).apply() }
         private set
@@ -117,7 +123,7 @@ class GameServer private constructor(private val ctx: Context) {
         if (port > 0) prefs.edit().putInt("padPort", port).apply()
         val s = server ?: return Unit.also { Log.w(TAG, "no free port") }
         (ctx as? android.app.Application)?.registerActivityLifecycleCallbacks(tracker)
-        presence.attach(); PadService.start(ctx); publish()
+        tls.start { c -> serve(c) }; presence.attach(); PadService.start(ctx); publish()
         Log.i(TAG, "listening ${url()}")
         Thread({ while (!s.isClosed) try { val c = s.accept(); Thread({ serve(c) }, "pad-conn").apply { isDaemon = true }.start() } catch (e: Exception) { } }, "pad-accept")
             .apply { isDaemon = true }.start()
@@ -170,11 +176,12 @@ class GameServer private constructor(private val ctx: Context) {
         (ctx as? android.app.Application)?.unregisterActivityLifecycleCallbacks(tracker)
         presence.detach(); PadService.stop(ctx)
         val cs = synchronized(slots) { slots.mapNotNull { it.conn } }
-        try { server?.close() } catch (e: Exception) { }
+        try { server?.close() } catch (e: Exception) { }; tls.stop()
         offMain { cs.forEach { it.text("{\"closed\":true}"); it.close() } }     // the pads say "closed" and retry quietly until TV Games is back
     }
 
     /** The link the QR holds: the TV's Wi-Fi address, the port and the token. */
+    // plain http: no certificate warning for whoever only plays by touch; the pad moves to the https port (PadTls) when Tilt is asked for
     fun url(): String = "http://${localIp()}:$port/?k=$token"
 
     /** What the page's own origin looks like from inside the TV: the web games load from here. */
@@ -214,10 +221,15 @@ class GameServer private constructor(private val ctx: Context) {
         val changed: Int
         synchronized(slots) {
             val now = SystemClock.uptimeMillis()
-            val i = PadNames.pick(slots.map { PadNames.S(it.cid, it.conn != null, it.dev >= 0, reserved(it, now)) }, cid)
+            // the same phone (its Wi-Fi address) already playing under another id: a second browser or tab, whose storage (and so id)
+            // is its own. It takes that seat over, as the same id would, instead of a second player (an iPhone's Edge and Chrome were
+            // P2 and P3). Two phones behind one address would kick each other: a guest network that isolates phones cannot reach the TV anyway
+            val ip = c.sock.inetAddress
+            val twin = if (slots.any { it.cid == cid && it.conn != null }) -1 else slots.indexOfFirst { o -> o.conn.let { it != null && it !== c && it.sock.inetAddress == ip } }
+            val i = if (twin >= 0) twin else PadNames.pick(slots.map { PadNames.S(it.cid, it.conn != null, it.dev >= 0, reserved(it, now)) }, cid)
             if (i < 0) return -1
             val s = slots[i]
-            if (s.cid == cid) s.conn?.takeIf { it !== c }?.let { it.text("{\"replaced\":true}"); it.close() } else s.name = null    // a new phone in a seat: not the last one's name
+            if (s.cid == cid || i == twin) s.conn?.takeIf { it !== c }?.let { it.text("{\"replaced\":true}"); it.close() } else s.name = null    // a new phone in a seat: not the last one's name
             if (s.conn !== c) release(i)                   // a reconnect before the old socket was seen dead: what it held went up (the phone sends what it still holds)
             Log.i(TAG, "assign slot ${i + 1}"); s.cid = cid; s.conn = c; s.ready = false
             if (name != null) s.name = name
@@ -354,7 +366,7 @@ class GameServer private constructor(private val ctx: Context) {
             val name = when (path) { "/", "/index.html" -> "index.html"; "/pad.css" -> "pad.css"; "/pad.js" -> "pad.js"; "/add" -> "add.html"; "/layouts.json" -> "layouts.json"; "/manifest.webmanifest" -> "manifest.webmanifest"; "/icon.png" -> "icon.png"; else -> null }
                 ?: return reply(conn, 404, "text/plain", "not found".toByteArray())
             var body = if (name == "layouts.json") Catalog.layouts(ctx).toByteArray() else ctx.assets.open("pad/$name").use { it.readBytes() }   // the catalog's pad overrides
-            if (name.endsWith(".html") || name.endsWith(".webmanifest")) body = String(body).replace("__K__", token).toByteArray()
+            if (name.endsWith(".html") || name.endsWith(".webmanifest")) body = String(body).replace("__K__", token).replace("__TLS__", tls.port.toString()).toByteArray()
             reply(conn, 200, when { name.endsWith(".css") -> "text/css"; name.endsWith(".js") -> "text/javascript"; name.endsWith(".json") -> "application/json"; name.endsWith(".webmanifest") -> "application/manifest+json"; name.endsWith(".png") -> "image/png"; else -> "text/html" } + "; charset=utf-8", body)
         } catch (e: Exception) {
         } finally { conn.close() }                                    // the early returns too (no websocket key, a header cut off)
@@ -439,7 +451,7 @@ class GameServer private constructor(private val ctx: Context) {
                                 val i = assign(rest.substringBefore(' ').take(40), if (' ' in rest) PadNames.clean(rest.substringAfter(' ')) else null, c)
                                 if (i < 0) { c.text("{\"full\":true}"); break }
                                 slot = i
-                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"max\":$lobbyMax,\"ready\":false}")
+                                c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"web\":$webMode,\"max\":$lobbyMax,\"ready\":false}")
                                 (synchronized(slots) { (if (lobby) null else layouts[i]) ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
                                 if (presence.away) c.text(presence.state())
                                 presence.padsChanged()
@@ -448,10 +460,14 @@ class GameServer private constructor(private val ctx: Context) {
                             slot >= 0 && msg.startsWith("r ") -> msg.split(' ').let { if (it.size == 3) report(slot, it[1].toIntOrNull(), it[2].toLongOrNull()) }
                             slot >= 0 && !lobby && msg.startsWith("m ") -> msg.split(' ').let { if (it.size == 3) onPointer(slot + 1, (it[1].toIntOrNull() ?: 0).coerceIn(-400, 400), (it[2].toIntOrNull() ?: 0).coerceIn(-400, 400), false) }
                             slot >= 0 && !lobby && msg == "pc" -> onPointer(slot + 1, 0, 0, true)
+                            // numbers only reach the page: anything else in it and the whole message is dropped
+                            slot >= 0 && !lobby && msg.startsWith("o ") -> msg.split(' ').drop(1).mapNotNull { it.toIntOrNull()?.coerceIn(-100000, 100000) }
+                                .let { if (it.size == 10) onMotion(slot + 1, it.toIntArray()) }
                             slot >= 0 && msg.startsWith("ready ") -> if (lobby) { slots[slot].ready = msg.trim().endsWith("1"); Log.i(TAG, "ready p${slot + 1} ${slots[slot].ready}"); onReady() }
                             slot >= 0 && msg.startsWith("name") -> rename(slot, msg.substring(4))
                             msg.startsWith("n ") -> nav(msg.substring(2).trim())
                             msg == "open" -> presence.open()
+                            slot >= 0 && msg == "reload" && webMode -> onReload()
                             slot >= 0 && msg.startsWith("a ") -> msg.split(' ').let { if (it.size == 3) axis(slot, (it[1].toIntOrNull() ?: 0) / 100f, (it[2].toIntOrNull() ?: 0) / 100f) }
                             slot >= 0 && msg.startsWith("t ") -> onText(slot + 1, msg.substring(2).take(200))
                             slot >= 0 && msg.length >= 3 && (msg[0] == 'd' || msg[0] == 'u') -> msg.substring(2).trim().split(' ').let { key(slot, msg[0] == 'd', it[0], it.getOrNull(1)?.toLongOrNull()) }

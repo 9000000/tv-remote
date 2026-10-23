@@ -13,6 +13,14 @@
     axes: [0, 0, 0, 0], buttons: Array.from({ length: 19 }, () => ({ pressed: false, touched: false, value: 0 })),
     vibrationActuator: { type: 'dual-rumble', playEffect: (_t, o) => { N.vibrate(p, Math.round((o && o.duration) || 100)); return Promise.resolve('complete'); }, reset: () => Promise.resolve('complete') },
   });
+  // the phone's attitude as a quaternion [w, x, y, z] in the screen's frame (x right, y up, z out of the screen, as the player holds
+  // it), from the Z-X'-Y'' angles of deviceorientation, then turned by the screen's angle: what a 3D game rotates its object by
+  const quat = (al, be, ga, sc) => {
+    const r = Math.PI / 360, cz = Math.cos(al * r), sz = Math.sin(al * r), cx = Math.cos(be * r), sx = Math.sin(be * r), cy = Math.cos(ga * r), sy = Math.sin(ga * r);
+    const w = cz * cx * cy - sz * sx * sy, x = cz * sx * cy - sz * cx * sy, y = cz * cx * sy + sz * sx * cy, z = cz * sx * sy + sz * cx * cy;
+    const cs = Math.cos(-sc * r), ss = Math.sin(-sc * r);             // then about the screen's own z by -angle
+    return [w * cs - z * ss, x * cs + y * ss, y * cs - x * ss, z * cs + w * ss];
+  };
   const fire = (t, g) => { const e = new Event(t); e.gamepad = g; window.dispatchEvent(e); };
   navigator.getGamepads = () => pads.slice();
   try { list = JSON.parse(N.players()); } catch (e) { list = []; }
@@ -30,7 +38,7 @@
     vibrate(p, ms) { N.vibrate(call(p), ms | 0); },
     say(p, text) { N.say(call(p), String(text)); },
     ownKeys() { if (N.ownKeys) N.ownKeys(); },                         // the page reads every pad's buttons and stick itself: no stand-in arrow keys for player 1
-    has(f) { return ['cards'].indexOf(f) >= 0; },                      // what this TV Games' pad can show beyond buttons (WEBGAMES.md); older ones lack has()
+    has(f) { return ['cards', 'motion'].indexOf(f) >= 0; },                      // what this TV Games' pad can show beyond buttons (WEBGAMES.md); older ones lack has()
   };
   window.addEventListener('load', () => pads.forEach((g) => g && fire('gamepadconnected', g)));
   // events from the TV app
@@ -49,5 +57,9 @@
       emit('axis', { player: p, x: a, y: b });
     } else if (kind === 'pointer') { emit('pointer', a === 'c' ? { player: p, center: true } : { player: p, dx: a, dy: b });   // a pad with the pointer layout: relative moves, or its Recenter
     } else if (kind === 'text') emit('text', { player: p, text: a });
+    else if (kind === 'motion' && Array.isArray(a) && a.length === 10) {   // the pad's "o": see WEBGAMES.md, Motion
+      emit('motion', { player: p, alpha: a[0] / 10, beta: a[1] / 10, gamma: a[2] / 10, rate: { alpha: a[3], beta: a[4], gamma: a[5] },
+        gravity: { x: a[6] / 100, y: a[7] / 100, z: a[8] / 100 }, screen: a[9], quat: quat(a[0] / 10, a[1] / 10, a[2] / 10, a[9]) });
+    }
   };
 })();

@@ -101,12 +101,17 @@ body.nav #pad,body.nav #choices,body.nav #textrow,body.nav #stick,body.nav #card
 
 #fs svg{width:20px;height:20px;stroke:#c9cfdd;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:block;margin:auto}
 #fs{padding:0}
-#sheet{position:fixed;inset:0;background:#000a;z-index:5;display:flex;align-items:center;justify-content:center;padding:16px}
-#sheet[hidden]{display:none}
-#sheet .card{background:#151a25;border-radius:18px;padding:18px 20px;max-width:340px;max-height:100%;overflow:auto;font-size:15px;line-height:1.4}
-#sheet b{display:block;font-size:17px;margin-bottom:6px}
-#sheet ol{margin:8px 0 14px;padding-left:20px;color:#c9cfdd}
-#sheet button{width:100%;height:46px;border:0;border-radius:12px;background:var(--c);color:#fff;font:700 16px system-ui}
+.sheet{position:fixed;inset:0;background:#000a;z-index:5;display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet[hidden]{display:none}
+.sheet .card{background:#151a25;border-radius:18px;padding:18px 20px;max-width:340px;max-height:100%;overflow:auto;font-size:15px;line-height:1.4}
+.sheet b{display:block;font-size:17px;margin-bottom:6px}
+.sheet ol{margin:8px 0 14px;padding-left:20px;color:#c9cfdd}
+.sheet button{width:100%;height:46px;border:0;border-radius:12px;background:var(--c);color:#fff;font:700 16px system-ui}
+.sheet p{margin:0 0 4px;color:#c9cfdd}
+.sheet button.no{background:#ffffff14}
+.sheet .wide{max-width:640px}                                        /* a phone held sideways: the steps and both buttons without scrolling */
+.sheet .acts{display:flex;gap:8px}
+.sheet .acts button{height:auto;min-height:46px;padding:6px 10px}       /* a narrow portrait screen: the words wrap, not cut */
 /* lobby: a Ready toggle at the bottom, the 3-2-1 over everything; the pad stays usable to try the buttons */
 #lobbybar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom));z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;width:min(320px,calc(100vw - 32px))}
 #lobbybar[hidden],#count[hidden]{display:none}
@@ -128,6 +133,7 @@ body.ptr #pad,body.ptr #stick,body.ptr #choices,body.ptr #textrow{display:none!i
 #tpad{border-radius:20px;background:linear-gradient(135deg,#171c29,#10141d);border:2px solid #2a3142;display:flex;align-items:center;justify-content:center;touch-action:none}
 #tpad.on{border-color:var(--c);box-shadow:0 0 0 3px var(--glow) inset}
 #tpad span{color:#5b6579;font-size:15px;pointer-events:none}
+#tpad{position:relative}.gy{position:absolute;top:10px;right:10px;min-height:36px;padding:0 14px;border:0;border-radius:18px;background:var(--key);color:#dfe4f1;font:700 14px system-ui}.gy.on{background:#fff2;color:#fff;box-shadow:0 0 0 2px var(--glow)}.gy[hidden]{display:none}
 #pbtn{display:flex;flex-direction:column;gap:12px}
 .pb{flex:1;min-height:56px;border:0;border-radius:18px;background:var(--key);color:#dfe4f1;font:800 20px system-ui}
 #pF{flex:2.2;background:var(--c);color:#fff;font-size:26px}

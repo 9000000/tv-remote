@@ -37,6 +37,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: về màn hình chính thì hỏi Android có app nào đổi không (Android 8+), bắt cả thay đổi lỡ mất khi đang ẩn; thiếu RAM thì dọn ảnh xem trước của bảng tùy chỉnh, khi đang ẩn thì cả hình nền và logo, quay lại dựng lại.
 - Cập nhật TV Home (nút Cập nhật, hay TV Setup tự cập nhật khi TV đang chờ): TV Home đang hiện thì sau khi cài nó hiện lại; trước đó Android mở app dùng gần nhất vào chỗ nó (một box FPT tự hiện TV Channels dù không ai bấm).
 - TV Home: đổi từ ảnh sang nền màu chuyển thì viên 3 nút góc trên phải đổi theo; trước nó giữ màu của ảnh cũ.
+- TV Games: nghiêng điện thoại để ngắm (Bắn bóng bay, Bida, Air Hockey, Đập chuột, Chém hoa quả) chạy được trên trình duyệt điện thoại: con quay chỉ có ở trang https, nên tay cầm có thêm cổng https riêng (chứng chỉ tự ký, QR vẫn là http). Bấm "Bật nghiêng" sẽ hiện hướng dẫn trước (trình duyệt cảnh báo, bấm Nâng cao rồi Tiếp tục; iPhone thêm bước Cho phép), rồi mới chuyển sang https. Cùng một điện thoại vào lại bằng https thì giữ nguyên ghế; kết nối treo quá 5 giây thì tự thử lại. Game web nhận thêm hướng và chuyển động 3D của điện thoại (`motion` trong WEBGAMES.md).
+- TV Games: tải lại game web. Trên TV, giữ OK ở game web → "Mở bản mới nhất"; trên điện thoại, menu ⚙ → "Tải lại game" (chỉ hiện khi đang chơi game web). Trang được tải mới, bỏ qua bộ nhớ đệm của TV, các điện thoại vẫn giữ kết nối.
 
 **English**
 - TV Home: on TVs short of memory (a Coocaa), coming back from YouTube could leave the wallpaper blurred and every app logo gone until Home was left and opened again; it comes back in full now. With motion off, the chosen app tile still grows (only the glass showed, round a small logo); TV Games too.
@@ -69,6 +71,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: on return it asks Android which apps changed (Android 8+), catching changes missed while hidden; low on memory it frees the customize panel's thumbnails, and while hidden the wallpaper and logos, rebuilt on return.
 - Updating TV Home (the Update button, or TV Setup's own update while the TV sleeps): when TV Home was on screen it comes back after the install; Android used to bring up the last app used in its place (an FPT box showed TV Channels with nothing pressed).
 - TV Home: switching from a photo to a gradient background now updates the three-button capsule at the top right; it kept the old photo's colours.
+- TV Games: tilting the phone to aim (Balloons, Pool, Air Hockey, Moles, Slice) works in the phone's browser: the gyroscope is only given to https pages, so the pad has its own https port too (self-signed, the QR stays http). "Turn on tilt" first explains the steps (the browser's warning: Advanced, then Proceed; on an iPhone also Allow), then moves to https. The same phone coming back over https keeps its seat; a connection stuck over 5 s retries. Web games also get the phone's 3D attitude and motion (`motion` in WEBGAMES.md).
+- TV Games: reload a web game. On the TV, hold OK on a web game → "Open the latest version"; on the phone, the ⚙ menu → "Reload the game" (only while a web game is on). The page is fetched fresh, past the TV's cache, and the phones stay connected.
 
 ## 0.18.1 - 2026-10-22
 

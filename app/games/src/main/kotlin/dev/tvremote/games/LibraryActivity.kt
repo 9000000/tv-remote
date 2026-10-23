@@ -56,6 +56,7 @@ class LibraryActivity : ComponentActivity() {
         val genre: String,
         val shelf: Boolean,                                           // can be a favourite / in a folder (a game here to play, not a download)
         val play: (() -> Unit)? = null,                               // null: a suggestion to download
+        val fresh: (() -> Unit)? = null,                              // a web game opened past the WebView's cache
         val rom: Pair<org.json.JSONObject, Systems.Sys>? = null,
         val web: String? = null,                                      // a link the person added: the menu can remove it
         val file: java.io.File? = null,                               // a ROM on the TV: the menu can delete it
@@ -263,6 +264,7 @@ class LibraryActivity : ComponentActivity() {
             val pc = if (e != null) Catalog.players(this, null, w.url, 4) else 0 to 1
             l += Item("w:" + w.url, w.name, "Web", "web", 0xFF0891B2.toInt(), webSrc(w.url, null), pc.first, pc.second, genreOf(e, other), true,
                 play = { try { startActivity(Intent(this, WebGameActivity::class.java).putExtra("name", w.name).putExtra("url", w.url)) } catch (e: Exception) { } },
+                fresh = { try { startActivity(Intent(this, WebGameActivity::class.java).putExtra("name", w.name).putExtra("url", w.url).putExtra("fresh", true)) } catch (e: Exception) { } },
                 web = w.url.takeIf { !it.startsWith("builtin:") })
         }
         l.sortBy { it.name.lowercase() }
@@ -276,6 +278,7 @@ class LibraryActivity : ComponentActivity() {
             s += Item("w:$url", nm, "Web", "web", 0xFF0891B2.toInt(), webSrc(url, w.optString("img")), w.optInt("players", 4).coerceIn(1, 4), w.optInt("min", 1),
                 genreOf(w, other), true,
                 play = { try { startActivity(Intent(this, WebGameActivity::class.java).putExtra("name", nm).putExtra("url", url).putExtra("pad", w.optString("pad", "web"))) } catch (e: Exception) { } },
+                fresh = { try { startActivity(Intent(this, WebGameActivity::class.java).putExtra("name", nm).putExtra("url", url).putExtra("pad", w.optString("pad", "web")).putExtra("fresh", true)) } catch (e: Exception) { } },
                 hideId = "w:" + w.optString("id"))
         }
         val brew = (0 until (cat.optJSONArray("homebrew")?.length() ?: 0)).mapNotNull { cat.optJSONArray("homebrew")?.optJSONObject(it) }
@@ -583,6 +586,7 @@ class LibraryActivity : ComponentActivity() {
             e += getString(R.string.m_group) to { groupPicker(i) }; ic += R.drawable.ic_folder
             if (Pins.can(this)) { e += getString(R.string.m_pin) to { closeOverlay(); pinGame(i) }; ic += R.drawable.ic_pin }
         }
+        i.fresh?.let { f -> e += getString(R.string.m_reload) to { closeOverlay(); f() }; ic += R.drawable.ic_refresh }
         i.web?.let { u -> e += getString(R.string.m_remove) to { closeOverlay(); Systems.removeWeb(this, u); reload() }; ic += R.drawable.ic_trash }
         i.file?.let { f -> e += getString(R.string.m_delete) to { popup(getString(R.string.m_delete_q, i.name), listOf(getString(R.string.yes_delete) to { closeOverlay(); deleteRom(i, f) }), replace = true, focusIndex = 1, icons = listOf(R.drawable.ic_trash)) }; ic += R.drawable.ic_trash }
         i.hideId?.let { h -> e += getString(R.string.m_hide) to { closeOverlay(); hide(h) }; ic += R.drawable.ic_eye_off }

@@ -129,6 +129,7 @@ class WebGameActivity : ComponentActivity() {
             onSave = null, onLoad = null, onQuit = { finish() }, alone = false, quiet = link == "builtin:padtest",
             withLobby = Catalog.lobbyOn(this, link), kind = "Web", art = lobbyArt(link, url), maxPlayers = counts.first, minPlayers = counts.second)
         this.url = url; this.root = root
+        if (intent.getBooleanExtra("fresh", false)) fresh()
         web.loadUrl(url); loading()
         web.postDelayed(timeout, LOAD_MS)                         // no page at all in time: the same card as offline
     }
@@ -193,11 +194,17 @@ class WebGameActivity : ComponentActivity() {
         server.onPing = { p, ms -> runOnUiThread { cards.setPing(p, ms); js("__tvpadIn('ping',$p,$ms)") } }   // the cards' labels and the page
         for (p in 1..4) server.pingOf(p).let { if (it >= 0) js("__tvpadIn('ping',$p,$it)") }
         server.onPointer = { p, dx, dy, c -> runOnUiThread { js(if (c) "__tvpadIn('pointer',$p,'c')" else "__tvpadIn('pointer',$p,$dx,$dy)") } }   // the pad's pointer layout (touchpad)
+        server.onMotion = { p, v -> runOnUiThread { js("__tvpadIn('motion',$p,[${v.joinToString(",")}])") } }
         server.onText = { p, t -> runOnUiThread { js("__tvpadIn('text',$p,${JSONObject.quote(t)})") } }
         server.onPlayers = { l -> runOnUiThread { cards.setPlayers(l); diff(l) } }
         server.playersNow().let { cards.setPlayers(it); diff(it) }                         // phones that were in before this game started
         server.onAdded = { }
+        server.onReload = { runOnUiThread { fresh(); web.reload() } }
     }
+
+    /** No cached copy for the rest of this game: the page's server may not say when it changed (a Python test server, a NAS),
+     *  and the WebView then kept running an old version of a game fixed since. */
+    private fun fresh() { web.settings.cacheMode = WebSettings.LOAD_NO_CACHE }
 
     override fun onPause() { if (::server.isInitialized) server.onKeyLat = null; super.onPause() }
 

@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="TV Games pad">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest?k=__K__">
+<meta name="tvg-tls" content="__TLS__">
 <link rel="apple-touch-icon" href="icon.png?k=__K__">
 <link rel="stylesheet" href="pad.css?k=__K__">
 </head>
@@ -18,9 +19,11 @@
 <div id="menu" hidden>
   <div class="row" data-act="haptic"><span id="lblHaptic">Rung</span><span class="sw" id="sw"></span></div>
   <div class="row" data-act="stick"><span id="lblStick">Stick</span><span class="sw" id="sw2"></span></div>
+  <div class="row" id="reload" data-act="reload" hidden>↻ <span id="lblReload">Tải lại game</span></div>
   <a class="row" id="add" data-act="add" hidden>＋ <span id="lblAdd">Thêm game</span></a>
 </div>
-<div id="sheet" hidden><div class="card"><b id="shTitle"></b><ol><li id="sh1"></li><li id="sh2"></li><li id="sh3"></li></ol><button data-act="sheetx" id="shOk">OK</button></div></div>
+<div id="sheet" class="sheet" hidden><div class="card"><b id="shTitle"></b><ol><li id="sh1"></li><li id="sh2"></li><li id="sh3"></li></ol><button data-act="sheetx" id="shOk">OK</button></div></div>
+<div id="tiltSheet" class="sheet" hidden><div class="card wide"><b id="tlT"></b><p id="tlP"></p><ol><li id="tl1"></li><li id="tl2"></li><li id="tl3"></li></ol><div class="acts"><button data-act="tiltNo" class="no" id="tlNo"></button><button data-act="tiltGo" id="tlGo"></button></div></div></div>
 <div id="tip" hidden><span id="tipText"></span><b data-act="tipx">✕</b></div>
 <label id="ios" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
 <div id="say" hidden></div>
@@ -33,7 +36,7 @@
 </div>
 <form id="textrow" hidden autocomplete="off"><input id="txt" maxlength="60" enterkeyhint="send" autocomplete="off" autocapitalize="off"><button id="send" type="submit"></button></form>
 <main id="cardsui"><div id="cnote"></div><div id="hand"></div><div id="cacts"></div></main>
-<main id="ptr"><div id="tpad"><span id="tpHint"></span></div><div id="pbtn"><button class="pb" id="pF" data-b="A"></button><button class="pb alt" id="pS" data-b="B"></button><button class="pb rc" id="pC" data-act="recenter"></button></div></main>
+<main id="ptr"><div id="tpad"><span id="tpHint"></span><button class="gy" id="pG" data-act="gyro" hidden></button></div><div id="pbtn"><button class="pb" id="pF" data-b="A"></button><button class="pb alt" id="pS" data-b="B"></button><button class="pb rc" id="pC" data-act="recenter"></button></div></main>
 <main id="pad">
   <div id="shl" class="sh"></div><div id="shr" class="sh"></div>
   <div id="left"><div id="dpad"><i class="arm u"></i><i class="arm d"></i><i class="arm l"></i><i class="arm r"></i><i class="hub"></i></div></div>

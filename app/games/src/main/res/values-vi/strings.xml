@@ -106,6 +106,7 @@
     <string name="m_group">Thêm vào nhóm…</string>
     <string name="m_pin">Ghim ra màn hình chính</string>
     <string name="m_remove">Xóa liên kết</string>
+    <string name="m_reload">Mở bản mới nhất</string>
     <string name="m_delete">Xóa khỏi TV</string>
     <string name="m_delete_q">Xóa \"%1$s\" khỏi TV? Bản lưu cũng mất.</string>
     <string name="m_hide">Ẩn gợi ý</string>
