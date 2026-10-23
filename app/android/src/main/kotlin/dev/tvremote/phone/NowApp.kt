@@ -36,6 +36,9 @@ internal class NowApp(private val a: MainActivity) {
     private var shownFor: String? = null                             // the TV [shown] is about
     private var fine = 0L                                             // last answer from a TV that could be asked
 
+    // TV Games on screen: its pad page and the gyroscope aim are one tap away (they were under Tools)
+    private val chip = a.button("@gamepad|" + T("rkey.pad_chip").replace(Regex("^[^\\p{L}]+"), ""), BTN)
+
     init {
         view.gravity = Gravity.CENTER
         view.visibility = View.GONE
@@ -51,8 +54,13 @@ internal class NowApp(private val a: MainActivity) {
         name.typeface = android.graphics.Typeface.DEFAULT_BOLD
         name.runs()
         view.addView(name, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = a.dp(8) })   // its own gap: the picture may be missing
+        view.addView(chip, LinearLayout.LayoutParams(-2, a.dp(32)).apply { leftMargin = a.dp(12) })
+        chip.visibility = View.GONE
+        chip.textSize = 13f
+        chip.setOnClickListener { a.gamePadMenu() }
         a.ui.post { tick.run() }
     }
+
 
     /** Back on screen: ask now rather than at the next 2 s tick. */
     fun wake() { a.ui.removeCallbacks(tick); a.ui.post(tick) }
@@ -111,6 +119,7 @@ internal class NowApp(private val a: MainActivity) {
     private fun show(id: String, label: String, png: ByteArray?) {
         val hide = id.isEmpty() || label.isEmpty() && '.' in id && png == null   // a bare package name says nothing to most people
         view.visibility = if (hide) View.GONE else View.VISIBLE
+        chip.visibility = if (id == dev.tvremote.core.ontv.Games.PKG && a.tv?.ready() == true) View.VISIBLE else View.GONE
         if (hide || "$id|$label|${png?.size}" == shown) return
         shown = "$id|$label|${png?.size}"
         name.say(label.ifEmpty { id })

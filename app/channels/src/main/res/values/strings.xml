@@ -66,4 +66,12 @@
     <string name="your_lists">Your lists</string>
     <string name="list_failed">This list could not be read. Check the link, or try Refresh.</string>
     <string name="list_empty">This list has no channels.</string>
+    <!-- the error guard (shared/src/guard/android/Guard.kt); the same words as err.* in shared/web/i18n -->
+    <string name="err_title">Something went wrong</string>
+    <string name="err_last_time">The app crashed last time</string>
+    <string name="err_copy">Copy</string>
+    <string name="err_copied">Copied</string>
+    <string name="err_close">Close</string>
+    <string name="err_share">Share</string>
+    <string name="err_repeat">repeated %d times</string>
 </resources>

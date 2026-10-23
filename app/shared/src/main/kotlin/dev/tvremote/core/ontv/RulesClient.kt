@@ -49,4 +49,31 @@ object RulesClient {
         val kind = if (have.isEmpty()) "missing" else if (SetupNeed.ok(have, "rules")) "busy" else "old"
         return JSONObject().put("setup", kind).put("have", have).put("min", SetupNeed.MIN["rules"])
     }
+
+    /**
+     * Keys a real press would hand to TV Setup's key filter (colour keys TV Home gave an app, the dead YouTube / Netflix / Prime / All
+     * apps buttons KeyFix brings back). `input keyevent` and scrcpy inject after that filter, so from a client with ADB these go
+     * through [key] first; every other key is sent as it always was.
+     */
+    val SETUP_KEYS = setOf(183, 184, 185, 186, 190, 191, 195, 284)
+
+    /** True when TV Setup took [code] (opened the app a real press would), false when the key should be sent plainly: nothing set for it, or TV Setup missing / old. */
+    fun key(sh: (String) -> String, code: Int): Boolean = try {
+        val arg = " --es set " + B64.encode(JSONObject().put("do", "key").put("code", code).toString().toByteArray(Charsets.UTF_8))
+        acted(sh("am broadcast --include-stopped-packages -n $SETUP/.RulesReceiver$arg 2>&1"))
+    } catch (e: Exception) { false }
+
+    /** The app a remote's app button opens: when TV Setup did not take the key and the app is not on the TV, the button says so. */
+    val APP_KEYS = mapOf(190 to "com.google.android.youtube.tv", 191 to "com.netflix.ninja", 195 to "com.amazon.amazonvideo.livingroom")
+
+    fun appMissing(sh: (String) -> String, code: Int): Boolean {
+        val pkg = APP_KEYS[code] ?: return false
+        return try { !sh("pm path $pkg 2>/dev/null").contains("package:") } catch (e: Exception) { false }
+    }
+
+    /** The broadcast's answer: an old TV Setup says {"error": "unknown action"}, none says nothing at all. */
+    fun acted(out: String): Boolean {
+        val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(out) ?: return false
+        return try { JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8)).optBoolean("acted") } catch (e: Exception) { false }
+    }
 }

@@ -22,6 +22,7 @@ class HomeReceiver : BroadcastReceiver() {
         val answer = try {
             i.getStringExtra("drop")?.takeIf { HomeConfig.isPhoto(it) }?.let { drop(c, it) }
             val set = i.getStringExtra("set")
+            if (set.isNullOrEmpty()) Tiles.refresh(c)                    // a client reading: what the providers offer is as true as this moment
             val config = if (set.isNullOrEmpty()) Store.get(c)
                 else Store.change(c, JSONObject(String(Base64.decode(set, Base64.DEFAULT), Charsets.UTF_8)))
             val apps = JSONArray()

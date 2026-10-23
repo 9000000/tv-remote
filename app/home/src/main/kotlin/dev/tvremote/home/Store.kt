@@ -26,7 +26,9 @@ object Store {
             .put("wweb", true)                                    // the background can be a web page (an older one would clean it away)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
+            .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
+            .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
     }
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */

@@ -41,6 +41,7 @@ object Scenes {
             "SLEEP" to 223, "VOL_UP" to 24, "VOL_DOWN" to 25, "MUTE" to 164, "PLAY_PAUSE" to 85, "NEXT" to 87, "PREV" to 88, "SETTINGS" to 176, "INPUT" to 178,
             "DEL" to 67, "ENTER" to 66, "ASSIST" to 219, "CH_UP" to 166, "CH_DOWN" to 167,
             "PAD_A" to 96, "PAD_B" to 97, "PAD_X" to 99, "PAD_Y" to 100, "PAD_L1" to 102, "PAD_R1" to 103, "PAD_START" to 108, "PAD_SELECT" to 109,
+            "RED" to 183, "GREEN" to 184, "YELLOW" to 185, "BLUE" to 186, "YOUTUBE" to 190, "NETFLIX" to 191, "PRIME" to 195, "ALL_APPS" to 284,
             "INFO" to 165, "GUIDE" to 172, "LIVE" to 170, "SUBTITLE" to 175, "REWIND" to 89, "STOP" to 86, "FFWD" to 90))
         for (d in 0..9) put(d.toString(), 7 + d)
     }

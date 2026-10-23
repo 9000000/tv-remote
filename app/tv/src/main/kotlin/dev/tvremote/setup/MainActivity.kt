@@ -640,7 +640,8 @@ class MainActivity : Activity() {
         val items = arrayOf(T("tv_main.optimize_tv") + " · " + T("tv_main.fewer_extra_apps"),
             T("setup.undo_ok") + " · " + T("tv_main.as_before_optimize"),
             T("launcher.tile") + " · " + T("launcher.tile_sub"),
-            T("keyfix.tile") + " · " + keysSub())
+            T("keyfix.tile") + " · " + keysSub(),
+            T("hold.tile") + " · " + T(if (HoldKeys.on(this)) "hold.on" else "hold.off") + "\n" + T("hold.sub"))   // says the remote on the phone / web is the way round
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(T("tv_main.optimize_tv"))
             .setItems(items) { _, i ->
@@ -650,6 +651,11 @@ class MainActivity : Activity() {
                     1 -> job { it.undo() }
                     2 -> chooseLauncher()
                     3 -> { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) }
+                    4 -> {                                            // HoldKeys: stored as a rule, so the phone and web switch it too
+                        val on = !HoldKeys.on(this)
+                        Rules.change(this, org.json.JSONObject().put("do", "holdkeys").put("on", on))
+                        log(T("hold.tile") + " · " + T(if (on) "hold.on" else "hold.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
+                    }
                 }
             }.show()
     }

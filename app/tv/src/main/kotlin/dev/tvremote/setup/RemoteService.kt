@@ -139,6 +139,17 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
         fun forgetAll(c: Context) { Paired.forgetAll(c) }
 
+        /**
+         * Check-out (RulesReceiver "forget_web", sent over ADB by the several-TVs tool): every paired browser forgotten, the code on
+         * the TV and any invite (a shared QR) dead, so the next browser needs a fresh code shown on the TV's own screen. Returns
+         * how many browsers went. A picture already streaming to a forgotten browser is not cut (its request was let in once).
+         */
+        @Synchronized fun rotateWeb(c: Context): Int {
+            val n = Paired.forgetBrowsers(c)
+            code = null; guesses = 0; invite = null
+            return n
+        }
+
         private fun cookie(token: String, tls: Boolean, age: Int = COOKIE_AGE): String =
             (if (tls) COOKIE_TLS else COOKIE) + "=$token; Max-Age=$age; Path=/; HttpOnly; SameSite=Strict" + (if (tls) "; Secure" else "")
 
@@ -542,6 +553,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 val keyCode = KEYS[d.optString("key").uppercase(Locale.ROOT)] ?: return HttpServer.Response.error(400, "unknown key")
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
                 val action = when (d.optString("dir")) { "START_LONG" -> "down"; "END_LONG" -> "up"; else -> "press" }   // the words of the computer's server
+                if (action == "press" && keyCode in dev.tvremote.core.ontv.RulesClient.SETUP_KEYS && KeyFixService.press(this, keyCode)) return ok()   // as a real press would
                 if (action == "press" && keyCode in Tv.OPENERS)   // keys that should open something
                     return HttpServer.Response.json(JSONObject().put("ok", true).put("noop", !t.pressSeen(keyCode)))
                 if (keyCode == 26) {                                  // sleep or wake by what the TV is doing now, so a tap never does the opposite

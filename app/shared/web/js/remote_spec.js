@@ -32,19 +32,20 @@ function remoteMenu(name, ctx = {}) {
       else if (sub.length) out.push(['@' + e.icon + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => menuDlg(T(REMOTE_GROUPS[e.arg]), -1, sub)]);
       continue;                                                       // none: nothing here (a guest, an LG)
     }
-    out.push(['@' + e.icon + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
+    out.push(['@' + e.icon + (e.tint ? ':' + e.tint : '') + '|' + remoteWords(e.t), e.sub ? remoteWords(e.sub) : '', () => REMOTE_DO[e.do](e.arg)]);
   }
   return out;
 }
 
 // the groups an entry opens ("do": "menu", "arg": its name): their titles
-const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', screen: 'rkey.timer_screen', tools: 'rkey.tools' };
+const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', screen: 'rkey.timer_screen', tools: 'rkey.tools', tvkeys: 'rkey.tools_keys' };
+const APP_KEYS = new Set(['YOUTUBE', 'NETFLIX', 'PRIME']);
 const REMOTE_DO = {
   shot: () => screenshot(),
   open: () => quickOpen(),
   apps: () => openInstalled(),
   menu: (m) => menuDlg(T(REMOTE_GROUPS[m]), -1, remoteMenu(m)),
-  key: (k) => { buzz(); api('/api/key', { key: k }).then((r) => { if (r && r.noop) toast(T('remote.key_no_reaction')); }); },   // a key from a menu (Tools)
+  key: (k) => { buzz(); api('/api/key', { key: k }).then((r) => { if (r && r.noop) toast(T(APP_KEYS.has(k) ? 'remote.app_key_missing' : 'remote.key_no_reaction')); }); },   // a key from a menu (Tools); an app button the screen ignored: its app is not on the TV
   timer: () => timerMenu(),
   scenes: () => scenesMenu(),
   notify: () => notifyDialog(),

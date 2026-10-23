@@ -17,7 +17,7 @@ object RemoteSpec {
     class Entry(
         val id: String, val icon: String, val t: String, val sub: String,
         val key: String?, val action: String?, val arg: String?, val whenCond: String?, val expand: String?, val style: String?,
-        val needs: List<String> = emptyList(),
+        val needs: List<String> = emptyList(), val tint: String = "",
     ) {
         fun can(caps: Set<String>) = needs.all { it in caps }
         /** The words in the app's language ([t] and [sub] are ids in i18n/<lang>.json). */
@@ -49,6 +49,7 @@ object RemoteSpec {
             e.optString("key").ifEmpty { null }, e.optString("do").ifEmpty { null }, e.optString("arg").ifEmpty { null },
             e.optString("when").ifEmpty { null }, e.optString("expand").ifEmpty { null }, e.optString("style").ifEmpty { null },
             e.optJSONArray("needs")?.let { n -> (0 until n.length()).map { n.getString(it) } } ?: emptyList(),
+            e.optString("tint"),
         )
     }
 }

@@ -128,6 +128,17 @@
     <string name="t_snoozed">Giờ ngủ tạm dừng</string>
     <string name="t_until">đến %s</string>
     <string name="c_lunar_sub">ngày âm, rằm, Tết</string>
+    <string name="w_qr">Mã QR</string>
+    <string name="w_qr_named">QR · %1$s</string>
+    <string name="c_qr_sub">mã để quét; viết ở điện thoại hoặc trang web</string>
+    <string name="qr_pass">Mật khẩu: %1$s</string>
+    <string name="qr_t_wifi">Wi-Fi</string>
+    <string name="qr_t_link">Link</string>
+    <string name="qr_t_text">Văn bản</string>
+    <string name="qr_t_tel">Gọi điện</string>
+    <string name="qr_t_sms">Tin nhắn</string>
+    <string name="qr_t_mail">E-mail</string>
+    <string name="qr_t_contact">Danh bạ</string>
     <string name="c_clock_sub">đồng hồ kim</string>
     <string name="c_timer_sub">khi có hẹn giờ</string>
     <string name="c_note_clear">Bấm để xóa</string>
@@ -253,6 +264,13 @@
     <string name="power_untrusted">TV Home và TV Setup cài từ hai nơi khác nhau: cài lại cả hai từ cùng một nơi</string>
     <string name="power_noadb">TV Setup chưa có ADB: bật gỡ lỗi USB trước</string>
     <string name="power_failed">TV không thực hiện được</string>
+    <string name="tile_need_setup">Cần TV Setup mới hơn</string>
+    <string name="tile_need_setup_long">Ô sống cần TV Setup mới hơn trên TV này</string>
+    <string name="tile_untrusted">TV Setup khác nguồn cài</string>
+    <string name="tile_remove">Bỏ khỏi lưới</string>
+    <string name="c_tiles">Ô sống</string>
+    <string name="c_tiles_on">Đang ở trong lưới</string>
+    <string name="c_tiles_none">Ô sống do TV Setup cung cấp: cài hoặc cập nhật TV Setup để có</string>
     <string name="c_power">Nút nguồn trên thanh</string>
     <string name="g_look">Giao diện</string>
     <string name="g_layout">Bố cục</string>
@@ -290,4 +308,12 @@
     <string name="k_btn5">Nút PatchWall</string>
     <string name="k_allapps">Phím tất cả app</string>
     <string name="k_settings">Phím Cài đặt</string>
+    <!-- bộ bắt lỗi (shared/src/guard/android/Guard.kt); cùng chữ với err.* trong shared/web/i18n -->
+    <string name="err_title">Có lỗi xảy ra</string>
+    <string name="err_last_time">Lần trước app bị lỗi</string>
+    <string name="err_copy">Sao chép</string>
+    <string name="err_copied">Đã chép</string>
+    <string name="err_close">Đóng</string>
+    <string name="err_share">Chia sẻ</string>
+    <string name="err_repeat">lặp lại %d lần</string>
 </resources>

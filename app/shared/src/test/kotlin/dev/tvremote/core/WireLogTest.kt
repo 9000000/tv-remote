@@ -29,4 +29,9 @@ class WireLogTest {
         for (i in 1..5) l.add("→", "m$i")
         assertEquals(listOf("m3", "m4", "m5"), l.text().lines().map { it.substringAfterLast(' ') })
     }
+
+    @Test fun aWifiPasswordNeverReachesTheLog() {
+        val c = WireLog.clean("""{"qrs":{"qr1":{"tpl":"wifi","f":{"ssid":"Home","pass":"hunter2"}}},"x":"WIFI:T:WPA;S:Home;P:hun\;ter2;;"}""")
+        assertTrue(c, !c.contains("hunter2") && !c.contains("ter2") && c.contains("Home"))
+    }
 }

@@ -24,7 +24,7 @@ private fun hook(f: MainActivity.(IconButton) -> Unit) = f
 
 /** What each "do" in remote.json does here; `it` is the entry's "arg". */
 /** The groups an entry opens ("do": "menu", "arg": its name): their titles (REMOTE_GROUPS on the page). */
-private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "screen" to "rkey.timer_screen", "tools" to "rkey.tools")
+private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "screen" to "rkey.timer_screen", "tools" to "rkey.tools", "tvkeys" to "rkey.tools_keys")
 
 internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },
@@ -132,8 +132,10 @@ internal fun MainActivity.remoteMenu(name: String, conditions: Set<String> = emp
             else if (sub.isNotEmpty()) items.add(Triple("@" + e.icon + "|" + e.words(), e.subWords()) { menu(T(remoteGroups[e.arg] ?: ""), -1, sub) })
             continue                                                  // none: nothing in it on this TV
         }
-        val run = phoneActions[e.action!!] ?: error("remote.json: no phone handler for \"${e.action}\"")
-        items.add(Triple("@" + e.icon + "|" + e.words(), e.subWords()) { run(this, e.arg) })
+        val act = e.action ?: "key"                                   // an entry with a "key" (Menu, Info, Subtitles) is the key action with that key
+        val arg = if (e.action == null) e.key else e.arg
+        val run = phoneActions[act] ?: error("remote.json: no phone handler for \"$act\"")
+        items.add(Triple("@" + e.icon + (if (e.tint.isEmpty()) "" else ":" + e.tint) + "|" + e.words(), e.subWords()) { run(this, arg) })
     }
     return items
 }

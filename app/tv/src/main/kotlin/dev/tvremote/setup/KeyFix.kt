@@ -20,8 +20,8 @@ import org.xmlpull.v1.XmlPullParser
  *
  * This file decides, with no Android type in [plan] so a test can run it: a key is taken over only when the system maps it to a
  * component that is not there (not installed, or turned off) AND we have something to do for it. A key that still works is
- * never touched, and every other key passes. [sync] keeps the service on in the secure settings only while there is such a key,
- * so a TV whose buttons all work pays nothing for it (every key of a filtering service waits for its answer).
+ * never touched, and every other key passes. [sync] keeps the service on in the secure settings only while there is such a key
+ * (or "hold to use Input" is on, [HoldKeys]), so a TV whose buttons all work pays nothing for it (every key of a filtering service waits for its answer).
  */
 object KeyFix {
     /** What a key does when it is dead: [input] the TV's input picker, [app] the first of [pkgs] that is installed, [home], [settings]. */
@@ -64,6 +64,29 @@ object KeyFix {
         val free = free(mapped, alive)
         for ((code, pkg) in user) if (code in COLOUR || code in free) if (launchable(pkg)) out[code] = Rule(APP, listOf(pkg))
         return out
+    }
+
+    /** What a real press of [code] does: the plan (TV Home's map laid over the dead keys' rules, as [plan] made it); null = nothing of ours, send the key plainly. */
+    fun decide(plan: Map<Int, Rule>, code: Int): Rule? = plan[code]
+
+    /** Does what [r] says. Called from the key filter ([KeyFixService]) and for a key a client sent ([KeyFixService.press]). */
+    fun run(c: Context, r: Rule) {
+        fun start(i: Intent?) { if (i != null) c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        try {
+            when (r.act) {
+                INPUT -> inputs(c, ::start)
+                APP -> start(c.packageManager.getLeanbackLaunchIntentForPackage(r.pkgs[0]) ?: c.packageManager.getLaunchIntentForPackage(r.pkgs[0]))
+                HOME -> start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+                SETTINGS -> start(Intent(Settings.ACTION_SETTINGS))
+            }
+        } catch (e: Exception) { }
+    }
+
+    /** The system's input picker; where the TV has none, ours (the TV's inputs as the TV lists them), else the Settings. */
+    private fun inputs(c: Context, start: (Intent?) -> Unit) {
+        try { start(Intent("com.android.tv.action.VIEW_INPUTS")); return } catch (e: Exception) { }
+        val have = try { (c.getSystemService(Context.TV_INPUT_SERVICE) as? android.media.tv.TvInputManager)?.tvInputList?.isNotEmpty() == true } catch (e: Exception) { false }
+        start(if (have) Intent(c, InputsActivity::class.java) else Intent(Settings.ACTION_SETTINGS))
     }
 
     /** Colour keys: no app answers them in every app, so they are the person's to give. Numbers are TV Home's alone (it gets them, nobody else filters them). */
@@ -164,7 +187,7 @@ object KeyFix {
             val map = systemMap()
             val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
-            val need = wanted(c) && now0.isNotEmpty()
+            val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c)   // a dead key to bring back, or "hold to use Input" (HoldKeys)
             if (need == has) return
             val t = System.currentTimeMillis()
             if (need && t - wrote < 60000) return                     // the system took it out again just now (a policy): not every few seconds

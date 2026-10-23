@@ -110,6 +110,18 @@ object Paired {
 
     @Synchronized fun forgetAll(c: Context) { all(c).clear(); save(c) }
 
+    /** What stays after a check-out: the Phone / Computer apps' passes (the owner's); every browser (kind "web", a shared QR's too) goes. */
+    fun withoutBrowsers(l: List<Entry>): List<Entry> = l.filter { it.kind != "web" }
+
+    /** Check-out: every browser forgotten, so a guest who left cannot use the TV's page from the same Wi-Fi. How many went. */
+    @Synchronized fun forgetBrowsers(c: Context): Int {
+        val l = all(c)
+        val keep = withoutBrowsers(l)
+        val gone = l.size - keep.size
+        if (gone > 0) { l.retainAll(keep.toSet()); save(c) }
+        return gone
+    }
+
     /** "iPhone · Safari" from a browser's User-Agent. */
     fun deviceName(ua: String): String {
         val os = when {

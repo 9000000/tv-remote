@@ -24,6 +24,13 @@ async function gameInstall() {
   gameCard();
 }
 
+// The phone as a pad: TV Games' own page for it, opened here (the window first, a click's permission lasts only until the first await).
+async function gamePad() {
+  const w = window.open('', '_blank');
+  const r = await api('/api/games/pad', null, true);
+  if (r && r.url && w) w.location = r.url; else { if (w) w.close(); if (r) toast(T('gpad.off')); }
+}
+
 async function gameOpen() {
   if (await api('/api/games/open', {})) { toast(T('games.opening')); setTimeout(refresh, 1500); }
 }

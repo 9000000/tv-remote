@@ -15,20 +15,15 @@
         { "id": "screenshot", "icon": "camera", "t": "rkey.screenshot", "do": "shot", "needs": ["adb"] },
         { "id": "draw", "icon": "pen", "t": "rkey.draw", "do": "draw", "needs": ["adb"] },
         { "id": "scenes", "icon": "scene", "t": "rkey.scenes", "do": "scenes" },
-        { "id": "notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] }
-      ],
-      [
-        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
-        { "id": "subtitles", "icon": "subtitle", "t": "rkey.subtitles", "key": "SUBTITLE" },
-        { "id": "info", "icon": "info", "t": "rkey.info", "key": "INFO" },
-        { "id": "tools", "icon": "apps", "t": "rkey.tools", "do": "menu", "arg": "tools" }
+        { "id": "tools", "icon": "wrench", "t": "rkey.tools", "do": "menu", "arg": "tools" }
       ]
     ],
     "nav": [
       [
-        { "id": "back", "icon": "back", "t": "rkey.back", "key": "BACK" },
+        { "id": "apps", "icon": "apps", "t": "rkey.apps", "do": "apps" },
+        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
         { "id": "home", "icon": "home", "t": "rkey.home", "key": "HOME" },
-        { "id": "menu", "icon": "menu", "t": "rkey.menu", "key": "MENU" }
+        { "id": "back", "icon": "back", "t": "rkey.back", "key": "BACK" }
       ]
     ],
     "media": [
@@ -49,20 +44,30 @@
   },
   "menus": {
     "tools": [
-      { "id": "tools-tv", "icon": "tv", "t": "rkey.tv", "do": "key", "arg": "LIVE" },
-      { "id": "tools-guide", "icon": "guide", "t": "rkey.guide", "do": "key", "arg": "GUIDE" },
+      { "id": "tools-keys", "icon": "tv", "t": "rkey.tools_keys", "sub": "rkey.tools_keys_sub", "do": "menu", "arg": "tvkeys" },
       { "id": "tools-share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
-      { "id": "tools-stop", "icon": "stop", "t": "rkey.stop", "do": "key", "arg": "STOP" },
+      { "id": "tools-notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },
       { "id": "tools-rescue", "icon": "alert", "t": "rkey.rescue", "sub": "rkey.rescue_sub", "do": "rescue", "needs": ["adb"] },
       { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"], "cores": ["phone"],
         "why": "on the web TV Home has its own key in the grid" },
       { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",
-        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" },
-      { "id": "tools-pad-start", "icon": "gamepad", "t": "rkey.pad_start", "sub": "rkey.pad_sub", "do": "key", "arg": "PAD_START" },
-      { "id": "tools-pad-select", "icon": "gamepad", "t": "rkey.pad_select", "sub": "rkey.pad_sub", "do": "key", "arg": "PAD_SELECT" },
-      { "id": "tools-pad-b", "icon": "gamepad", "t": "rkey.pad_b", "sub": "rkey.pad_sub", "do": "key", "arg": "PAD_B" },
-      { "id": "tools-gamespad", "icon": "gamepad", "t": "rkey.gamespad", "do": "gamespad", "needs": ["adb"], "cores": ["phone"],
-        "why": "the phone's gyroscope aims in TV Games (GamesPointer.kt); a browser hides the sensor on a plain-http page" }
+        "why": "the phone's own IR LED (IrRemote.kt), for this TV: a browser has none; 'when': only a phone that has one" }
+    ],
+    "tvkeys": [
+      { "id": "tools-tv", "icon": "tv", "t": "rkey.tv", "do": "key", "arg": "LIVE" },
+      { "id": "tools-guide", "icon": "guide", "t": "rkey.guide", "do": "key", "arg": "GUIDE" },
+      { "id": "tools-stop", "icon": "stop", "t": "rkey.stop", "do": "key", "arg": "STOP" },
+      { "id": "keys-red", "icon": "dot", "tint": "#e5484d", "t": "rkey.red", "do": "key", "arg": "RED" },
+      { "id": "keys-green", "icon": "dot", "tint": "#30a46c", "t": "rkey.green", "do": "key", "arg": "GREEN" },
+      { "id": "keys-yellow", "icon": "dot", "tint": "#f5d90a", "t": "rkey.yellow", "do": "key", "arg": "YELLOW" },
+      { "id": "keys-blue", "icon": "dot", "tint": "#3e63dd", "t": "rkey.blue", "do": "key", "arg": "BLUE" },
+      { "id": "keys-youtube", "icon": "play", "t": "rkey.youtube", "do": "key", "arg": "YOUTUBE" },
+      { "id": "keys-netflix", "icon": "play", "t": "rkey.netflix", "do": "key", "arg": "NETFLIX" },
+      { "id": "keys-prime", "icon": "play", "t": "rkey.prime", "do": "key", "arg": "PRIME" },
+      { "id": "keys-allapps", "icon": "apps", "t": "rkey.all_apps", "do": "key", "arg": "ALL_APPS" },
+      { "id": "keys-menu", "icon": "menu", "t": "rkey.menu", "do": "key", "arg": "MENU" },
+      { "id": "keys-info", "icon": "info", "t": "rkey.info", "do": "key", "arg": "INFO" },
+      { "id": "keys-subtitles", "icon": "subtitle", "t": "rkey.subtitles", "do": "key", "arg": "SUBTITLE" }
     ],
     "open": [
       { "id": "open-apps", "icon": "apps", "t": "rkey.open_apps", "do": "apps", "sub": "rkey.open_apps_sub" },
@@ -82,7 +87,6 @@
       { "id": "open-vlc", "icon": "play", "t": "rkey.open_vlc", "do": "store", "needs": ["store"], "arg": "org.videolan.vlc", "sub": "rkey.open_youtube_sub" },
       { "id": "open-kodi", "icon": "play", "t": "rkey.open_kodi", "do": "store", "needs": ["store"], "arg": "org.xbmc.kodi", "sub": "rkey.open_youtube_sub" },
       { "id": "open-downloader", "icon": "download", "t": "rkey.open_downloader", "do": "store", "needs": ["store"], "arg": "com.esaba.downloader", "sub": "rkey.open_youtube_sub" },
-      { "id": "open-projectivy", "icon": "home", "t": "rkey.open_projectivy", "do": "store", "needs": ["store"], "arg": "com.spocky.projengmenu", "sub": "rkey.open_youtube_sub" },
       { "id": "open-tailscale", "icon": "globe", "t": "rkey.open_tailscale", "do": "store", "needs": ["store"], "arg": "com.tailscale.ipn", "sub": "rkey.open_youtube_sub" }
     ],
     "send": [

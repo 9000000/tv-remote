@@ -96,6 +96,11 @@ class Saved(private val file: File) {
         @Synchronized get() = JSONArray((cfg.optJSONArray("scenes") ?: JSONArray()).toString())
         @Synchronized set(v) { cfg.put("scenes", v) }
 
+    /** The owner's check-out choice (apps to clear, volume), kept for the next one: [dev.tvremote.core.ontv.Checkout.Config]. */
+    var checkout: JSONObject
+        @Synchronized get() = JSONObject((cfg.optJSONObject("checkout") ?: JSONObject()).toString())
+        @Synchronized set(v) { cfg.put("checkout", v) }
+
     /** The Home Assistant / Shortcuts hook: `on`, and its own `token` (Hook.kt). */
     var hook: JSONObject
         @Synchronized get() = JSONObject((cfg.optJSONObject("hook") ?: JSONObject()).toString())

@@ -23,6 +23,18 @@ object Games {
     @Throws(IOException::class)
     fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject = app.install(adb, dir, lang, go)
 
+    /** TV Games writes "port token" here when its pad server runs (the pad page of the QR on the TV); the shell may read it. */
+    const val PAD_FILE = "/sdcard/Android/data/$PKG/files/pad.txt"
+
+    /** The address of the pad page on the TV at [host], or null while TV Games is not running its server. */
+    @Throws(IOException::class)
+    fun pad(sh: (String) -> String, host: String): String? = padUrl(sh("cat $PAD_FILE 2>/dev/null"), host)
+
+    fun padUrl(file: String, host: String): String? {
+        val f = file.trim().split(' ')
+        return if (f.size == 2 && f[0].toIntOrNull() != null && f[1].length >= 16) "http://$host:${f[0]}/?k=${f[1]}" else null
+    }
+
     /** Opens its library on the TV; false when TV Games is not there. */
     @Throws(IOException::class)
     fun open(sh: (String) -> String): Boolean {

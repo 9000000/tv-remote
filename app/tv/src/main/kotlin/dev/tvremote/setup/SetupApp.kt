@@ -11,6 +11,7 @@ class SetupApp : Application() {
         super.onCreate()
         Words.open = { name -> try { assets.open(name) } catch (e: java.io.IOException) { null } }
         Words.lang = Words.pick(Locale.getDefault().language)
+        dev.tvremote.guard.Guard.install(this, { dev.tvremote.core.guardWords() })
     }
 
     override fun onConfigurationChanged(c: Configuration) {

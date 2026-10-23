@@ -14,6 +14,7 @@ import dev.tvremote.core.Errors
 import dev.tvremote.core.Fleet
 import dev.tvremote.core.web.Manage
 import dev.tvremote.core.ontv.RemoteLabels
+import dev.tvremote.core.ontv.Checkout
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -82,7 +83,94 @@ private fun MainActivity.fleetMenu() = menu(T("many_tvs.several_tvs_at_once_2"),
         fleetPick(T("many_tvs.restart_which_tvs")) { ips ->
             fleetRun(T("fleet.menu_restart"), ips) { link, _ -> Fleet.reboot(link.get()); T("many_tvs.restarting") }
         }
+    },
+    Triple("@sparkle|" + T("fleet.menu_checkout"), T("fleet.menu_checkout_sub")) {
+        fleetPick(T("fleet.menu_checkout")) { fleetCheckout(it) }
     }))
+
+/** The result of a check-out on one TV as the TV's line: the same pieces, in the same words, as js/checkout.js (a TV Setup too old is said). */
+private fun checkoutLine(r: Checkout.Result): String = listOfNotNull(
+    if (r.cleared > 0 || r.failed.isEmpty()) T("fleet.co_cleared", "n" to r.cleared) else null,
+    if (r.failed.isNotEmpty()) T("fleet.co_failed", "n" to r.failed.size) else null,
+    T("fleet.co_vol", "v" to r.volume),
+    when (r.web) {
+        "ok" -> if (r.forgot > 0) T("fleet.co_web_ok", "n" to r.forgot) else T("fleet.co_web_0")
+        "old" -> T("fleet.co_web_old")
+        "missing" -> T("fleet.co_web_missing")
+        else -> T("fleet.co_web_failed")
+    },
+    if (r.home) T("fleet.co_home") else null).joinToString(" · ")
+
+/** A step under way ("checkout clear 2/5", Checkout.run's [say]) in words. */
+private fun checkoutStep(msg: String): String {
+    val m = Regex("checkout (clear|volume|web|home)(?: (\\d+)/(\\d+))?").matchEntire(msg) ?: return msg
+    return when (m.groupValues[1]) {
+        "clear" -> T("fleet.co_step_clear", "i" to (m.groupValues[2].toIntOrNull() ?: 0), "n" to (m.groupValues[3].toIntOrNull() ?: 0))
+        "volume" -> T("fleet.co_step_volume")
+        "web" -> T("fleet.co_step_web")
+        else -> T("fleet.co_step_home")
+    }
+}
+
+/**
+ * Check-out (Trả phòng, Checkout.kt) on the TVs ticked: asks each for its apps, then which to clear (what was chosen last time, else the
+ * suggestions that are installed, come ticked), the volume, and one last question: it signs the guest out and cannot be undone.
+ */
+private fun MainActivity.fleetCheckout(ips: List<String>) {
+    val wait = Popup.Builder(this).setMessage(T("fleet.asking_each")).setCancelable(false).show()
+    val apps = HashMap<String, Int>()                                 // package -> how many TVs have it
+    val names = HashMap<String, String>()
+    val answered = HashSet<String>()
+    val pool = Executors.newFixedThreadPool(PARALLEL)
+    for (ip in ips) pool.execute {
+        val link = AdbLink(filesDir, route[ip] ?: ip)
+        try {
+            val adb = link.get()
+            val info = Fleet.info(adb)
+            val mine = (info.apps + Checkout.here { adb.shell(it) }).distinct()           // a system YouTube counts too
+            val rl = RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }, File(cacheDir, "meta/" + ip.replace(Regex("[^\\w.-]"), "_")))
+            val label = try { rl.names() } catch (e: Exception) { emptyMap() }
+            synchronized(apps) { mine.forEach { apps[it] = (apps[it] ?: 0) + 1 }; names.putAll(label); answered.add(ip) }
+        } catch (ignored: Exception) {                                // a TV that does not answer is told so on its own line when the run starts
+        } finally { link.close() }
+    }
+    pool.shutdown()
+    Thread {
+        pool.awaitTermination(3, java.util.concurrent.TimeUnit.MINUTES)
+        ui.post {
+            wait.dismiss()
+            if (isFinishing) return@post
+            val saved = try { prefs.getString("checkout", null)?.let { JSONObject(it) } } catch (e: Exception) { null }
+            val cfg = Checkout.Config.of(saved)
+            val want = (cfg.apps ?: Checkout.SUGGEST.keys.toList()).toSet()
+            val list = apps.keys.filter { Checkout.blocked(it) == null }
+                .sortedWith(compareBy({ it !in want }, { -(apps[it] ?: 0) }, { (names[it] ?: it).lowercase() }))
+            val labels = list.map { (names[it] ?: it.substringAfterLast('.')) + "  ·  " + T("fleet.on_tvs", "n" to (apps[it] ?: 0), "total" to answered.size) }.toTypedArray()
+            val on = BooleanArray(list.size) { list[it] in want }
+            val pickVolume = { chosen: List<String> ->
+                menu(T("fleet.co_volume"), 0, listOf(10, 25, 40, 60).map { v ->
+                    Triple("@vol_up|$v%" + if (v == cfg.volume) "  ✓" else "", "") { fleetCheckoutAsk(ips, Checkout.Config(chosen, v)) }
+                })
+            }
+            val box = Popup.Builder(this).setTitle(T("fleet.co_apps"))
+            if (list.isEmpty()) box.setMessage(T("fleet.co_none")) else box.setMultiChoiceItems(labels, on) { _, i, c -> on[i] = c }
+            box.setPositiveButton(T("draw.next")) { _, _ -> pickVolume(list.filterIndexed { i, _ -> on[i] }) }
+                .setNegativeButton(T("common.cancel"), null).show()
+        }
+    }.start()
+}
+
+private fun MainActivity.fleetCheckoutAsk(ips: List<String>, cfg: Checkout.Config) {
+    Popup.Builder(this).setTitle(T("fleet.menu_checkout"))
+        .setMessage(T("fleet.co_ask", "n" to ips.size, "apps" to (cfg.apps?.size ?: 0)) + "\n\n" + ips.joinToString("\n") { "• " + title(it) })
+        .setPositiveButton(T("fleet.co_go", "n" to ips.size)) { _, _ ->
+            prefs.edit().putString("checkout", cfg.json().toString()).apply()   // remembered for the next check-out
+            fleetRun(T("fleet.menu_checkout"), ips) { link, p ->
+                val adb = link.get()
+                Checkout.run({ adb.shell(it) }, cfg) { p.step = checkoutStep(it) }.let { checkoutLine(it) }
+            }
+        }.setNegativeButton(T("common.cancel"), null).show()
+}
 
 /** A home screen from the gallery on several TVs: one download (kept in the cache), each TV checked and put back on its own if its home does not hold. */
 private fun MainActivity.fleetLauncher() {

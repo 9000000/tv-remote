@@ -64,9 +64,9 @@ test('the last choice is remembered, and storage that throws is no problem', () 
   assert.doesNotThrow(() => blocked.notifySave({ corner: 'top-left', seconds: 3 }));
 });
 
-test('it is in More keys, a scene step, and a feature that needs a newer TV Setup', () => {
+test('it is in Tools, a scene step, and a feature that needs a newer TV Setup', () => {
   const spec = JSON.parse(read('shared/web/remote.json'));
-  const e = Object.values(spec.rows.more).flat().find((x) => x.do === 'notify');
+  const e = spec.menus.tools.find((x) => x.do === 'notify');   // moved from More keys to Tools: rarely used
   assert.ok(e && e.icon === 'bell' && e.needs.includes('adb'));
   const html = read('shared/web/index.html'), auto = read('shared/web/js/auto.js'), core = read('shared/web/js/core.js');
   assert.match(html, /<option value="notify"[ >]/);

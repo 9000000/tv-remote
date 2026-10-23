@@ -55,6 +55,13 @@ NAMES = {
     "INFO": "info display information",
     "GUIDE": "guide epg",
     "SUBTITLE": "subtitle subtitles sub cc",
+    "RED": "red keyred redkey colorred colourred",
+    "GREEN": "green keygreen greenkey colorgreen colourgreen",
+    "YELLOW": "yellow keyyellow yellowkey coloryellow colouryellow",
+    "BLUE": "blue keyblue bluekey colorblue colourblue",
+    "NETFLIX": "netflix keynetflix netflixbutton netflixkey",
+    "YOUTUBE": "youtube keyyoutube youtubebutton youtubekey",
+    "PRIME": "prime primevideo amazon amazonprime amazonvideo keyprime keyamazon",
 }
 LOOKUP = {}
 for key, words in NAMES.items():
@@ -63,7 +70,7 @@ for key, words in NAMES.items():
 for z, d in DIGITS.items():
     LOOKUP[z] = str(d)
 ORDER = ["POWER", "HOME", "BACK", "UP", "DOWN", "LEFT", "RIGHT", "OK", "MENU", "SETTINGS", "VOL_UP", "VOL_DOWN", "MUTE", "CH_UP", "CH_DOWN",
-         "INPUT", "PLAY_PAUSE", "STOP", "REWIND", "FFWD", "NEXT", "PREV", "INFO", "GUIDE", "SUBTITLE"] + [str(d) for d in range(10)]
+         "INPUT", "PLAY_PAUSE", "STOP", "REWIND", "FFWD", "NEXT", "PREV", "INFO", "GUIDE", "SUBTITLE", "RED", "GREEN", "YELLOW", "BLUE", "NETFLIX", "YOUTUBE", "PRIME"] + [str(d) for d in range(10)]
 
 
 def norm(name):

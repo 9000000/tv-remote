@@ -10,6 +10,8 @@ import android.graphics.drawable.Drawable
  * another app pinned here ([pin], a ShortcutInfo: [Pins]); its [pkg] is then "pin:<app>/<id>", the key of its tile.
  */
 class App(val pkg: String, val label: String, val info: ActivityInfo?, val pin: Any? = null) {
+    /** A live tile ([Tiles]) rather than an app: its pkg is "tile:<provider>/<id>", it has no pictures, a press runs its action. */
+    val live: Boolean get() = HomeConfig.isTile(pkg)
     var banner: Drawable? = null
     var icon: Drawable? = null
 

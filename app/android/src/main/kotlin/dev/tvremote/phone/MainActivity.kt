@@ -741,7 +741,12 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal fun press(code: Int, feel: Boolean = true) {
         if (feel) buzz()
         val tv = tv
-        if (tv != null) { if (tv.ready()) tv.press(code) }
+        if (tv != null && code in dev.tvremote.core.ontv.RulesClient.SETUP_KEYS && tv.ready())   // TV Setup decides, as for a real press; else the key as usual
+            Thread {
+                if (dev.tvremote.core.ontv.RulesClient.key({ tv.shell(it) }, code)) return@Thread
+                if (dev.tvremote.core.ontv.RulesClient.appMissing({ tv.shell(it) }, code)) runOnUiThread { Toast.makeText(this, T("remote.app_key_missing"), Toast.LENGTH_LONG).show() } else tv.press(code)
+            }.start()
+        else if (tv != null) { if (tv.ready()) tv.press(code) }
         else if (code in 19..23) basic?.pulse(code, 110)              // arrows and OK are held for a moment: see Atv.pulse
         else basic?.key(code, Atv.SHORT)
     }

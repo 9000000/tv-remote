@@ -62,6 +62,7 @@ class Fleets(private val keys: File, private val cache: File) {
             val i = Fleet.info(link.get())
             o.put("model", i.model).put("android", i.android).put("sdk", i.sdk).put("disk_total", i.diskTotal).put("disk_free", i.diskFree)
                 .put("ram", i.ram).put("apps", JSONArray(i.apps)).put("setup", i.setup)
+            o.put("also", JSONArray(try { dev.tvremote.core.ontv.Checkout.here { link.get().shell(it) } } catch (e: Exception) { emptyList<String>() }))   // system apps Check-out may offer
         } catch (e: Exception) {
             o.put("state", "error").put("error", e.message ?: "timed out")
         }
@@ -135,6 +136,12 @@ class Fleets(private val keys: File, private val cache: File) {
         part.put("pct", 10)
         file.inputStream().use { Manage(link, null, cache).welcomeBulk(it, file.length(), name, cfg, part, current.get()) }
         return "set"
+    }
+
+    /** Check-out on one TV (Checkout.kt): each step writes its words into the TV's line, the last one is the result token js/checkout.js reads. */
+    fun checkout(cfg: dev.tvremote.core.ontv.Checkout.Config): (AdbLink, JSONObject) -> String = { link, part ->
+        val adb = link.get()
+        dev.tvremote.core.ontv.Checkout.run({ adb.shell(it) }, cfg) { part.put("msg", it) }.token()
     }
 
     /** The work for one of the bulk actions that are not an install, refused here before any TV is touched. */

@@ -40,6 +40,16 @@ class RulesReceiver : BroadcastReceiver() {
         } else try {
             val set = i.getStringExtra("set")
             val change = if (set.isNullOrEmpty()) JSONObject() else JSONObject(String(Base64.decode(set, Base64.DEFAULT), Charsets.UTF_8))
+            if (change.optString("do") == "forget_web") {           // check-out (Checkout.kt): only the shell reaches this receiver (DUMP), as every client call here
+                resultCode = Activity.RESULT_OK
+                resultData = Base64.encodeToString(JSONObject().put("forgot", RemoteService.rotateWeb(c)).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                return
+            }
+            if (change.optString("do") == "key") {                  // a client's key (RulesClient.key): the real press's decision, else it sends the key itself
+                resultCode = Activity.RESULT_OK
+                resultData = Base64.encodeToString(JSONObject().put("acted", KeyFixService.press(c, change.optInt("code"))).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                return
+            }
             val state = Rules.change(c, change)
             if (Rules.active(c) && !RemoteService.isRunning()) {
                 try { RemoteService.start(c, true) } catch (e: Exception) { }   // may be refused from the background: RulesClient starts it through the shell then

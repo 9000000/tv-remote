@@ -239,7 +239,7 @@ class HomeActivity : Activity() {
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
         Store.onChange = null
         open?.dismiss()
-        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(webRetry)
+        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(webRetry); ui.removeCallbacks(tileTick)
         detachWeb()
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
@@ -260,6 +260,8 @@ class HomeActivity : Activity() {
         Keys.push(this)                                               // TV Setup keeps the keys and the power-on app: told again, so a TV Setup installed later has them
         badgesRead()
         pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
+        bg.execute { if (Tiles.refresh(this)) runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }   // what TV Setup offers (it may have been installed or updated while away)
+        ui.removeCallbacks(tileTick); ui.post(tileTick)
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
         if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
@@ -339,7 +341,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); super.onPause() }
+    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(tileTick); super.onPause() }
 
     private var cpuAgain = false
 
@@ -408,7 +410,7 @@ class HomeActivity : Activity() {
             val f = widgets.read(want)
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
-                widgets.show(want, f, note, { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }, sizes)
+                widgets.show(want, f, note, { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }, sizes, conf.optJSONObject("qrs") ?: JSONObject())
                 // TV Setup answers the CPU with its last measure and starts the next: the first time there is none, so ask again soon, once
                 if ("system" in want && f.cpu == null && !cpuAgain) { cpuAgain = true; ui.postDelayed({ if (!isDestroyed) widgetsRead() }, 2500) }
             }
@@ -504,7 +506,7 @@ class HomeActivity : Activity() {
         bg.execute {
             val list = Apps.list(this)
             list.forEach { it.load(this) }                            // the pictures off the main thread: dozens of apps on a slow chip
-            runOnUiThread { if (!isDestroyed) { apps = list; shownKey = ""; show() } }
+            runOnUiThread { if (!isDestroyed) { apps = (list + apps.filter { it.live }).sortedBy { it.label.lowercase() }; shownKey = ""; show() } }
         }
     }
 
@@ -548,6 +550,7 @@ class HomeActivity : Activity() {
         clockAndDay()
         powerBar()
         widgetsRead()
+        syncTiles()
         val byPkg = apps.associateBy { it.pkg }
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
@@ -571,6 +574,7 @@ class HomeActivity : Activity() {
         fill(cells, cols, gap)
         tileCache = made
         badgeTiles()
+        ui.removeCallbacks(tileTick); if (!away && liveViews().isNotEmpty()) ui.post(tileTick)   // a new grid asks at once
 
         val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
         if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
@@ -740,6 +744,39 @@ class HomeActivity : Activity() {
     private fun centre(v: View): Int { val xy = IntArray(2); v.getLocationInWindow(xy); return xy[0] + v.width / 2 }
     private fun centres(p: ViewGroup) = IntArray(p.childCount) { centre(p.getChildAt(it)) }
 
+    // ---- live tiles ([Tiles]): read every few seconds while Home is on screen, never while it is not ----
+
+    private fun tileSays(mode: String) = getString(if (mode == Tiles.UNTRUSTED) R.string.tile_untrusted else R.string.tile_need_setup)
+    private fun liveViews(): List<Tile> = tiles().filter { it.app?.live == true }
+    private fun animateTiles() = Motion.on && !Motion.calm            // a weak box (calm by itself under 1.5 GB) just changes the numbers
+
+    private val tileTick = object : Runnable { override fun run() { tilesRead(); if (liveViews().isNotEmpty()) ui.postDelayed(this, Tiles.EVERY_MS) } }
+
+    /** Every live tile on the grid asks its provider for its state, off the main thread. */
+    private fun tilesRead() {
+        val keys = liveViews().mapNotNull { it.app?.pkg }.distinct()
+        if (keys.isEmpty() || isDestroyed) return
+        bg.execute { for (k in keys) { val s = Tiles.fetch(this, k); runOnUiThread { tileShow(k, s) } } }
+    }
+
+    private fun tileShow(key: String, s: JSONObject) { if (!isDestroyed) for (t in liveViews()) if (t.app?.pkg == key) t.live(s, animateTiles()) }
+
+    /** The press: the provider does its job and the tile follows it until it is done (the count-down is the tile's). */
+    private fun pressTile(a: App) {
+        bg.execute {
+            val ok = Tiles.press(this, a.pkg) { s -> runOnUiThread { tileShow(a.pkg, s) } }
+            if (!ok) runOnUiThread { toast(if (Tiles.status(this) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.tile_need_setup_long) }
+        }
+    }
+
+    /** The tiles in the config ([HomeConfig] "tiles") are among the apps, so move, hide and the order work on them as on any app. */
+    private fun syncTiles() {
+        val live = Tiles.apps(this, conf)
+        val now = apps.filter { it.live }
+        if (live.map { it.pkg to it.label } == now.map { it.pkg to it.label }) return
+        apps = (apps.filter { !it.live } + live).sortedBy { it.label.lowercase() }
+    }
+
     private fun tile(a: App, w: Int, made: HashMap<String, Tile>): Tile {
         val k = "${a.pkg}|$w"
         val t = tileCache[k]?.takeIf { it.app === a } ?: makeTile(a, w)
@@ -747,8 +784,9 @@ class HomeActivity : Activity() {
         return t
     }
 
-    private fun makeTile(a: App, w: Int) = Tile(this, a, w, a.label, ::dp).apply {
+    private fun makeTile(a: App, w: Int) = Tile(this, a, w, a.label, ::dp, ::tileSays).apply {
         setOnClickListener {
+            if (a.live) { pressTile(a); return@setOnClickListener }   // a live tile does its job in place: no app opens, no zoom
             lastOpened = a.pkg
             fun go(o: Bundle?) { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a, o) else Apps.launch(this@HomeActivity, a.pkg, o))) { zoom.end(); toast(R.string.no_open) } }
             if (!zoom.open(this, ::go)) go(null)
@@ -967,7 +1005,10 @@ class HomeActivity : Activity() {
             .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
         acts.add(0, R.string.customize to { customize() })
         acts.add((if (Motion.on) R.string.anim_off else R.string.anim_on) to { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
-        acts.add(R.string.info to {
+        if (a.live) acts.add(R.string.tile_remove to {                   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
+            fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
+            Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
+        }) else acts.add(R.string.info to {
             try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
         })
         AlertDialog.Builder(this, R.style.Menu).setTitle(a.label)
@@ -1064,10 +1105,10 @@ class HomeActivity : Activity() {
 }
 
 /**
- * One app: its banner (or icon on a colour, with the name), the name under it shown while focused. Focus grows it and rings it.
+ * One app: its banner (or icon on a colour, with the name; or, for a live tile, its own render: [LiveFace]), the name under it shown while focused. Focus grows it and rings it.
  * [app] null: the "hidden apps" tile.
  */
-class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int) : LinearLayout(c) {
+class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }) : LinearLayout(c) {
     private val card = FrameLayout(c)                               // what grows: the face and, round it, the ring
     private val face = FrameLayout(c)                               // the picture, clipped to its rounded corners
     private val ring = View(c)
@@ -1091,9 +1132,13 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         corner = r
         lift = dp(14).toFloat(); across = w.toFloat()
         val banner = app?.banner
+        val liveFace = if (app?.live == true) LiveFace(c, w, h, label, say).also { it.set(Tiles.cached(app.pkg), animate = false) } else null
         face.background = GradientDrawable().apply { cornerRadius = r; setColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: "")) }
         face.clipToOutline = true
-        if (banner != null) {
+        if (liveFace != null) {                                       // a live tile draws itself ([Tiles]); its state comes from [live]
+            content = liveFace
+            face.addView(content, FrameLayout.LayoutParams(-1, -1))
+        } else if (banner != null) {
             content = ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP }
             pic = content as ImageView
             face.addView(content, FrameLayout.LayoutParams(-1, -1))
@@ -1194,6 +1239,9 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             card.animate().translationX(0f).translationY(0f).setDuration(460).setInterpolator(Motion.bounce).start()
         }.start()
     }
+
+    /** A live tile's newest state from its provider (null: no answer); [animate] when motion is on and not calm. */
+    fun live(s: org.json.JSONObject?, animate: Boolean) { (content as? LiveFace)?.set(s, animate) }
 
     /** The picture let go (memory is short while the screen is hidden) and put back; the tile keeps its place and its colour meanwhile. */
     fun release() { pic?.setImageDrawable(null) }

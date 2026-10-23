@@ -365,7 +365,7 @@ internal fun MainActivity.buildRemote() {
     sp2.gravity = Gravity.CENTER_HORIZONTAL
     sp2.topMargin = dp(8)
     controls.addView(chips, sp2)
-    controls.addView(remoteRow("nav", 0, 58, 0), gap(16))                    // Back, Home, Menu across the width
+    controls.addView(remoteRow("nav", 0, 52, 0), gap(10))                    // Apps, Settings, Home, Back (nearest the right thumb) across the width, close under the D-pad
     // the same rows, in the same order, as the two web remotes: remote.json
     // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.
     // The same block, in the same order, as the two web remotes.
@@ -524,6 +524,10 @@ internal fun MainActivity.opens(code: Int) {
     val tv = tv
     if (tv == null || !tv.ready()) return
     Thread {
+        if (code in dev.tvremote.core.ontv.RulesClient.SETUP_KEYS) {   // an app key: TV Setup first, then "the app is not on the TV", as in press()
+            if (dev.tvremote.core.ontv.RulesClient.key({ tv.shell(it) }, code)) return@Thread
+            if (dev.tvremote.core.ontv.RulesClient.appMissing({ tv.shell(it) }, code)) { ui.post { Toast.makeText(this, T("remote.app_key_missing"), Toast.LENGTH_LONG).show() }; return@Thread }
+        }
         if (!tv.pressSeen(code)) ui.post {
             if (!isFinishing && this.tv === tv) Toast.makeText(this, T("remote.key_no_reaction"), Toast.LENGTH_SHORT).show()
         }
@@ -674,10 +678,10 @@ internal fun MainActivity.dpad(): View {
     for (i in 0 until 4) {
         val b = icon(names[i], says[i], 0)
         b.setIcon(names[i], MUTED)
-        b.size = 30f
+        b.size = 26f
         b.background = oval(0)
         bindKey(b, arrows[i][0], oval(HELD))
-        val lp = FrameLayout.LayoutParams(dp(80), dp(80), arrows[i][1])
+        val lp = FrameLayout.LayoutParams(dp(72), dp(72), arrows[i][1])
         lp.setMargins(dp(4), dp(4), dp(4), dp(4))
         pad.addView(b, lp)
     }
@@ -688,10 +692,10 @@ internal fun MainActivity.dpad(): View {
     ok.background = oval(ACCENT)
     ok.elevation = dp(6).toFloat()
     bindKey(ok, 23, oval(HELD))
-    pad.addView(ok, FrameLayout.LayoutParams(dp(92), dp(92), Gravity.CENTER))
+    pad.addView(ok, FrameLayout.LayoutParams(dp(84), dp(84), Gravity.CENTER))
     val wrap = LinearLayout(this)
     wrap.gravity = Gravity.CENTER
-    wrap.addView(pad, LinearLayout.LayoutParams(dp(248), dp(248)))
+    wrap.addView(pad, LinearLayout.LayoutParams(dp(216), dp(216)))
     return wrap
 }
 

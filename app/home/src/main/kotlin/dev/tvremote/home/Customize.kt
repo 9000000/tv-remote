@@ -411,6 +411,7 @@ object Customize {
                 setOnClickListener { Store.change(a, JSONObject().put("note", "")); sub.text = a.getString(R.string.c_note_gone); alpha = 0.6f }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
+        tilesPage(a, col, ::glass, ::label, gap)
         col = groups[4].col
         tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
         tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
@@ -647,6 +648,44 @@ object Customize {
         Keys.push(a)                                                  // asks TV Setup again, so the lines above are true when it answers
     }
 
+    /**
+     * Live tiles ([Tiles]) the TV Setup offers: a row each, pressed to put it on the app grid or take it off. A minimal entry; the
+     * "Add to home screen" browser lists tiles too. Without tiles (no TV Setup, an old one, another key) one line says why.
+     */
+    private fun tilesPage(a: Activity, col: LinearLayout, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, gap: Int) {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val offered = Tiles.available(a)
+        col.addView(label(a.getString(R.string.c_tiles).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18) })
+        if (offered.isEmpty()) {
+            col.addView(label(a.getString(if (Tiles.status(a) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.c_tiles_none), 12f, DIM),
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap; leftMargin = dp(6) })
+            return
+        }
+        for (t in offered) {
+            val sub = label("", 12f, ACCENT).apply { maxLines = 1 }
+            fun on() = Store.list(a, "tiles").contains(t.key)
+            fun paint() { sub.text = if (on()) a.getString(R.string.c_tiles_on) else a.getString(R.string.w_off) }
+            paint()
+            col.addView(LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, GLASS_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), glass(16, GLASS_FILL, GLASS_EDGE))
+                }
+                addView(label(t.title, 15f, Color.WHITE).apply { maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
+                addView(sub, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                setOnClickListener {
+                    val now = Store.list(a, "tiles")
+                    Store.change(a, JSONObject().put("tiles", org.json.JSONArray(if (t.key in now) now - t.key else now + t.key)))
+                    paint()
+                }
+            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+        }
+    }
+
     /** The screensaver switch cannot write the setting (no WRITE_SECURE_SETTINGS yet; a phone or computer grants it): the system's own screen for it instead. */
     private fun systemDream(a: Activity) {
         val go = {
@@ -667,6 +706,13 @@ object Customize {
         arrayOf<Any>("clock", R.drawable.ic_clock, R.string.w_clock, R.string.c_clock_sub),
     )
 
+    private val QR_ROW = arrayOf<Any>("qr", R.drawable.ic_qr, R.string.w_qr, R.string.c_qr_sub)
+
+    /** What a QR card holds, in a word: "Wi-Fi", "Link" … (its fields are written on the phone or the web page). */
+    private fun qrKind(a: Context, card: JSONObject) = a.getString(when (card.optString("tpl")) {
+        "wifi" -> R.string.qr_t_wifi; "link" -> R.string.qr_t_link; "tel" -> R.string.qr_t_tel; "sms" -> R.string.qr_t_sms
+        "mail" -> R.string.qr_t_mail; "contact" -> R.string.qr_t_contact; else -> R.string.qr_t_text })
+
     /**
      * The widgets in the order they have on the screen, the chosen ones first. OK on a card switches it; the button at its right
      * is the move mode: OK turns it on, Up / Down move the card, OK or Back (or leaving it) turn it off. One column, so Up / Down
@@ -683,18 +729,20 @@ object Customize {
             building = true                                            // taking the rows down loses their focus: not a wander
             box.removeAllViews()
             val on = Store.list(a, "widgets")
-            val order = on + HomeConfig.WIDGETS.filter { it !in on }
             val conf = Store.get(a)
+            val qrs = conf.optJSONObject("qrs") ?: JSONObject()
+            val order = (on + HomeConfig.WIDGETS.filter { it !in on }).filter { it !in HomeQr.KEYS || qrs.has(it) }   // a QR card is written on the phone or the web page: only those that exist
             val big = HomeConfig.bigs(conf)
             val waiting = HomeConfig.pack(on, big, conf.optString("note").isNotEmpty()).waiting.toSet()
             var want: View? = null
             order.forEachIndexed { i, k ->
-                val r = WIDGET_ROWS.first { it[0] == k }
+                val r = WIDGET_ROWS.firstOrNull { it[0] == k } ?: QR_ROW
+                val qr = if (k in HomeQr.KEYS) qrs.getJSONObject(k) else null
                 val isOn = k in on
                 val line = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
                 val ic = ImageView(a).apply { setImageResource(r[1] as Int); imageTintList = ColorStateList.valueOf(if (isOn) ACCENT else DIM) }
                 val state = label("", 12f, if (isOn) ACCENT else DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
-                val sub = a.getString(r[3] as Int)
+                val sub = if (qr != null) qrKind(a, qr) else a.getString(r[3] as Int)
                 val word = a.getString(if (isOn) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
                 state.text = if (moving == k) a.getString(R.string.c_moving) else if (k in waiting) "$word · ${a.getString(R.string.c_waits)}" else "$word · $sub"
                 val t = LinearLayout(a).apply {
@@ -707,7 +755,7 @@ object Customize {
                     addView(ic, LinearLayout.LayoutParams(dp(26), dp(26)))
                     addView(LinearLayout(a).apply {
                         orientation = LinearLayout.VERTICAL
-                        addView(label(a.getString(r[2] as Int), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                        addView(label(if (qr != null) a.getString(R.string.w_qr_named, qr.optString("cap").ifEmpty { qrKind(a, qr) }) else a.getString(r[2] as Int), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                         addView(state)
                     }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }

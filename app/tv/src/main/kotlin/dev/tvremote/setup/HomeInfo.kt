@@ -10,6 +10,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import dev.tvremote.core.Words
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -24,6 +25,7 @@ import java.util.Locale
  * the marks on the tiles ("badges"): {limits: [{pkg, min, used}] as above, locked: [pkg] behind a PIN, bed: bedtime is on now}, TV Home needs none of it,
  * its "timer" card: {sleep_at, bedtime: {on, ranges}, in_bedtime, snooze_until} (Rules.state's),
  * and the system card's CPU ring, "cpu": {busy (0..1 over one second), cores}; Android 8+ keeps /proc/stat from apps, the shell reads it.
+ * and "tiles" / "tile" / "tile_do" (HomeTiles: live tiles drawn in TV Home's app grid; the RAM tile is the first),
  * and "power" (HomePower: screen off, standby, power off; `arg` the action, "result" ok / noadb / failed).
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
  * a build signed with one key for both), gets an answer.
@@ -31,7 +33,7 @@ import java.util.Locale
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val c = context ?: return null
-        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys")) return null
+        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do")) return null
         // TV Home's package name signed by another key (built elsewhere, a fork): said as such, nothing else given, so the
         // button tells the person to install both from one place instead of "update TV Setup", which would not help
         if (!trusted(c, Binder.getCallingUid())) return if (fromHome(c, Binder.getCallingUid())) Bundle().apply { putString("result", "untrusted") } else null
@@ -40,6 +42,15 @@ class HomeInfo : ContentProvider() {
             try { return Bundle().apply { putString("result", HomePower.run(c, arg.orEmpty())) } } finally { Binder.restoreCallingIdentity(token) }
         }
         if (method == "keys") return keys(c, arg)
+        if (method.startsWith("tile")) {                               // live tiles (HomeTiles): the state at once, the action on a thread of its own
+            val lang = extras?.getString("lang")?.let { Words.pick(it) } ?: Words.lang
+            val json = when (method) {
+                "tiles" -> HomeTiles.list(lang).toString()
+                "tile" -> HomeTiles.tile(lang, arg.orEmpty())?.toString()
+                else -> HomeTiles.act(c, arg.orEmpty())?.toString()
+            }
+            return Bundle().apply { if (json != null) putString("json", json) }
+        }
         val now = System.currentTimeMillis()
         if (method == "cpu") {                                         // the last measure at once, the next one started: a binder call never waits on ADB
             measure()

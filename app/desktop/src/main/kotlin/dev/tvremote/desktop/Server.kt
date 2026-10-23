@@ -1,5 +1,7 @@
 package dev.tvremote.desktop
 
+import dev.tvremote.core.ontv.RulesClient
+import dev.tvremote.core.ontv.Checkout
 import dev.tvremote.core.Words
 import dev.tvremote.core.adb.TvShell
 import dev.tvremote.core.ontv.Draw
@@ -191,6 +193,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
             "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
+            "/api/fleet/checkout" -> return Response.json(Checkout.Config.of(saved.checkout.takeIf { it.length() > 0 }).json()   // what was chosen last time; no "apps" = never chosen
+                .put("suggest", JSONArray(Checkout.SUGGEST.keys)))
             "/api/fleet/status" -> return fleetView.status()
             "/api/fleet/shot" -> return fleetView.shot(r.q("host"))
             "/api/fleet/job" -> return fleets.jobs[r.q("id")]?.let { Response.json(fleets.snapshot(it)) } ?: Response.error(404, "unknown job")
@@ -236,6 +240,15 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             if (!Vidaa.importCert(keys, r.body, r.length)) return Response.error(400, "vidaa: no certificate in this file")
             if (s.kind == Remote.Kind.VIDAA) s.redial()
             return Response.ok()
+        }
+        if (r.path == "/api/fleet/checkout") {                          // Trả phòng: remembered for the next one, then run on each TV ticked
+            val d = r.json()
+            val apps = d.optJSONArray("apps")?.let { a -> Checkout.clean((0 until a.length()).map { a.optString(it) }) } ?: emptyList()
+            val cfg = Checkout.Config(apps, Checkout.volumeOf(d.optInt("volume", Checkout.VOLUME)))
+            val hosts = d.optJSONArray("hosts")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+            val targets = targets(hosts, s)
+            saved.checkout = cfg.json(); saved.save()
+            return Response.json(fleets.run("checkout", targets, work = fleets.checkout(cfg)))
         }
         if (r.path == "/api/fleet/cancel") { fleets.stop(r.json().optString("id")); return Response.json(org.json.JSONObject().put("ok", true)) }
         if (r.path == "/api/voice") return voice(s, r)
@@ -383,6 +396,9 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val dir = d.optString("dir").ifEmpty { "SHORT" }.uppercase()
         if (dir !in setOf("SHORT", "START_LONG", "END_LONG")) throw IllegalArgumentException("bad dir")
         val adb = adbReady(s)
+        if (code in RulesClient.SETUP_KEYS && dir == "SHORT" && adb) {   // keys TV Setup's filter answers: injected ones skip it, so ask it (old or none: the key as before)
+            try { if (RulesClient.key({ sh(s, it) }, code)) return Response.ok() } catch (e: IOException) { }
+        }
         if ((k in OPENERS || k in ADB_KEYS) && dir == "SHORT" && adb) {
             try {
                 val before = if (k in OPENERS) front(s) else ""           // openers: say so when the screen ignores them
@@ -566,7 +582,9 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val pool = java.util.concurrent.Executors.newCachedThreadPool()
         try {
             val rows = hosts.map { t -> pool.submit<JSONObject> { fleets.info(t.optString("host"), fleets.link(t.optString("host"))).put("name", t.optString("name")) } }.map { it.get() }
-            return Response.json(JSONObject().put("current", s.host).put("tvs", JSONArray(rows)))
+            val blocked = rows.flatMap { o -> o.optJSONArray("apps")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList() }.distinct()
+                .filter { Checkout.blocked(it) != null }              // never offered by Check-out: the hard block list (js/fleet.js hides them)
+            return Response.json(JSONObject().put("current", s.host).put("tvs", JSONArray(rows)).put("blocked", JSONArray(blocked)))
         } finally {
             pool.shutdown()
         }
@@ -616,13 +634,13 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         /** The "More" keys go through ADB when it is open: TVs ignore some of them over the remote protocol (the input key, for one). */
         val ADB_KEYS = setOf("INPUT", "INFO", "GUIDE", "LIVE", "SUBTITLE", "CH_UP", "CH_DOWN", "REWIND", "STOP", "FFWD",
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
-        val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE")   // keys that should bring up a screen of their own
+        val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE", "YOUTUBE", "NETFLIX", "PRIME")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
             "/api/tv/remove", "/api/voice", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",
-            "/api/fleet", "/api/fleet/job", "/api/fleet/install", "/api/fleet/welcome", "/api/fleet/cancel", "/api/fleet/status", "/api/fleet/shot")
+            "/api/fleet", "/api/fleet/checkout", "/api/fleet/job", "/api/fleet/install", "/api/fleet/welcome", "/api/fleet/cancel", "/api/fleet/status", "/api/fleet/shot")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for
         val PRIVATE = Regex("(10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.)[0-9.]+")

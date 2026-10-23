@@ -24,10 +24,16 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import java.lang.ref.WeakReference
 
+/** The error guard's words from strings.xml (no :shared here, so no i18n files). */
+fun guardWords(c: android.content.Context) = dev.tvremote.guard.GuardWords(c.getString(R.string.err_title), c.getString(R.string.err_last_time),
+    c.getString(R.string.err_copy), c.getString(R.string.err_copied), c.getString(R.string.err_share), c.getString(R.string.err_close)) { n ->
+    c.getString(R.string.err_repeat, n) }
+
 /** The app, only to know which of its screens is in front (a reminder then shows inside it). */
 class ChannelsApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        dev.tvremote.guard.Guard.install(this, { c -> guardWords(c) })
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(a: Activity) { ReminderNotice.front = WeakReference(a) }
             override fun onActivityPaused(a: Activity) { if (ReminderNotice.front?.get() === a) ReminderNotice.front = null }

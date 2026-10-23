@@ -17,6 +17,7 @@ unused class, `guide.test.js` the user guide short (40 words a block, 250 of pro
 | Table | JS | Kotlin (`app/shared/src/test`) |
 |---|---|---|
 | `qr_cases.json` | `qr.test.js` (`js/qr.js`) | `QrTest.kt` (`Qr.kt`) |
+| `home_qr_cases.json` | `home_qr.test.js` (`js/home_qr.js`) | `HomeQrTest.kt` (`HomeQr.kt`) |
 | `tvshell_cases.json` | (what `js/tvread.js` reads) | `TvShellTest.kt` (`TvShell.kt`) |
 | `fleet_cases.json` | | `FleetTest.kt` (`Fleet.kt`) |
 

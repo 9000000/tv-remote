@@ -45,7 +45,7 @@ async function loadHeavy(now) {
   heavyBusy = false;
   if (gen !== heavyGen || !r || hmode !== 'now') return;
   const old = r.heavy === undefined, h = r.heavy || { on: false, apps: [], log: [], mem_mb: 0, wait: 15 };
-  const seen = JSON.stringify(h) + window.LANG;
+  const seen = JSON.stringify([h, r.holdkeys]) + window.LANG;
   if (seen === heavySeen) return;                                      // nothing new: keep what is on screen
   heavySeen = seen;
   const skew = r.now ? Math.round((Date.now() - r.now) / 1000) : 0, at = (t) => t / 1000 + (Math.abs(skew) > 120 ? skew : 0);
@@ -70,7 +70,15 @@ async function loadHeavy(now) {
   });
   const log = UI.group(T('health.heavy_log_title'), UI.list(rows, T('health.heavy_none')),
     rows.length ? UI.actions(UI.btn(T('health.heavy_clear'), () => send({ do: 'heavy_clear' }), 'small')) : null);
-  box.replaceChildren(UI.card(T('health.heavy_title'), {}, hint, sw, UI.note(T('health.heavy_note', { n: h.wait || 15 })), keep, log));
+  // "Hold to use Input / Settings" (HoldKeys.kt in TV Setup): the remote's own keys need a 2 s hold; keys sent from here are not filtered
+  const holdOld = r.holdkeys === undefined;
+  const hold = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!r.holdkeys, onchange: async (e) => {
+    const cb = e.currentTarget, on = cb.checked; cb.disabled = true;
+    const ok = (!holdOld || await setupFor('holdkeys')) && await api('/api/rules', { do: 'holdkeys', on });
+    cb.disabled = false; if (!ok) cb.checked = !on; else { heavySeen = ''; toast(on ? T('hold.enabled') : T('hold.disabled')); }
+  } }), ' ' + T('hold.switch'));
+  box.replaceChildren(UI.card(T('health.heavy_title'), {}, hint, sw, UI.note(T('health.heavy_note', { n: h.wait || 15 })), keep, log),
+    UI.card(T('hold.tile'), {}, hold, UI.note(T('hold.sub'))));
 }
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
 // decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.

@@ -130,6 +130,17 @@
     <string name="t_snoozed">Bedtime paused</string>
     <string name="t_until">until %s</string>
     <string name="c_lunar_sub">lunar date, full moon, Tết</string>
+    <string name="w_qr">QR code</string>
+    <string name="w_qr_named">QR · %1$s</string>
+    <string name="c_qr_sub">a code to scan; written on the phone or the web page</string>
+    <string name="qr_pass">Password: %1$s</string>
+    <string name="qr_t_wifi">Wi-Fi</string>
+    <string name="qr_t_link">Link</string>
+    <string name="qr_t_text">Text</string>
+    <string name="qr_t_tel">Phone call</string>
+    <string name="qr_t_sms">SMS</string>
+    <string name="qr_t_mail">E-mail</string>
+    <string name="qr_t_contact">Contact</string>
     <string name="c_clock_sub">analog clock</string>
     <string name="c_timer_sub">while one is set</string>
     <string name="c_note_clear">Press to clear</string>
@@ -255,6 +266,13 @@
     <string name="power_untrusted">TV Home and TV Setup come from two different places: install both from the same one</string>
     <string name="power_noadb">TV Setup has no ADB yet: turn on USB debugging first</string>
     <string name="power_failed">The TV did not do it</string>
+    <string name="tile_need_setup">Needs a newer TV Setup</string>
+    <string name="tile_need_setup_long">Live tiles need a newer TV Setup on this TV</string>
+    <string name="tile_untrusted">TV Setup is from another source</string>
+    <string name="tile_remove">Take off the grid</string>
+    <string name="c_tiles">Live tiles</string>
+    <string name="c_tiles_on">On the grid</string>
+    <string name="c_tiles_none">Live tiles come from TV Setup: install or update it to get them</string>
     <string name="c_power">Power button in the bar</string>
     <string name="g_look">Look</string>
     <string name="g_layout">Layout</string>
@@ -292,4 +310,12 @@
     <string name="k_btn5">PatchWall button</string>
     <string name="k_allapps">All apps key</string>
     <string name="k_settings">Settings key</string>
+    <!-- the error guard (shared/src/guard/android/Guard.kt); the same words as err.* in shared/web/i18n -->
+    <string name="err_title">Something went wrong</string>
+    <string name="err_last_time">The app crashed last time</string>
+    <string name="err_copy">Copy</string>
+    <string name="err_copied">Copied</string>
+    <string name="err_close">Close</string>
+    <string name="err_share">Share</string>
+    <string name="err_repeat">repeated %d times</string>
 </resources>

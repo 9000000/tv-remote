@@ -6,6 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import dev.tvremote.core.ontv.RulesClient
+import dev.tvremote.core.B64
 import dev.tvremote.core.ontv.Setup
 import dev.tvremote.core.ontv.SetupNeed
 
@@ -34,5 +35,20 @@ class SetupNeedTest {
         assertEquals("missing", kind(null))
         assertEquals("old", kind("0.0.9"))
         assertEquals("busy", kind("0.3.0"))                           // being updated: no Update button for it
+    }
+
+    @Test fun aSentKeyIsActedOnOnlyWhenTvSetupSaysSo() {
+        fun answer(json: String) = "Broadcast completed: result=-1, data=\"" + B64.encode(json.toByteArray()) + "\""
+        assertTrue(RulesClient.acted(answer("""{"acted":true}""")))
+        assertFalse(RulesClient.acted(answer("""{"acted":false}""")))      // nothing set for the key: the client presses it
+        assertFalse(RulesClient.acted(answer("""{"error":"unknown action"}""")))   // an old TV Setup
+        assertFalse(RulesClient.acted("Broadcast completed: result=0"))      // none
+        assertFalse(RulesClient.key({ throw java.io.IOException("gone") }, 183))
+    }
+
+    @Test fun theGamesPadAddress() {
+        val g = dev.tvremote.core.ontv.Games
+        assertEquals("http://10.0.0.5:8780/?k=0123456789abcdef", g.padUrl("8780 0123456789abcdef\n", "10.0.0.5"))
+        assertNull(g.padUrl("", "10.0.0.5")); assertNull(g.padUrl("8780 short", "10.0.0.5")); assertNull(g.padUrl("x 0123456789abcdef", "10.0.0.5"))
     }
 }

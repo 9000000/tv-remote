@@ -4,6 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** What the phone or computer sends TV Home is cleaned the same way on both sides: nothing out of range is ever kept. */
@@ -39,13 +40,13 @@ class HomeConfigTest {
         val none = HomeConfig.clean(JSONObject())
         assertEquals(0, none.getJSONObject("wsize").length())                    // nothing chosen: the defaults apply
         assertFalse(none.has("wlayout"))
-        assertEquals(setOf("system", "usage", "calendar", "weather"), HomeConfig.bigs(none))
+        assertEquals(setOf("system", "usage", "calendar", "weather") + HomeQr.KEYS, HomeConfig.bigs(none))   // QR cards are big by default
         val c = HomeConfig.clean(JSONObject().put("wsize", JSONObject().put("system", "small").put("lunar", "big").put("timer", "huge").put("bogus", "big")))
         assertEquals("small", c.getJSONObject("wsize").getString("system"))
         assertEquals("big", c.getJSONObject("wsize").getString("lunar"))
         assertFalse(c.getJSONObject("wsize").has("timer"))                       // an unknown size: dropped
         assertFalse(c.getJSONObject("wsize").has("bogus"))
-        assertEquals(setOf("usage", "calendar", "weather", "lunar"), HomeConfig.bigs(c))
+        assertEquals(setOf("usage", "calendar", "weather", "lunar") + HomeQr.KEYS, HomeConfig.bigs(c))
         val m = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wsize", JSONObject().put("weather", "small")))
         assertEquals("small", m.getJSONObject("wsize").getString("weather"))
         assertEquals("weather", m.getJSONArray("widgets").getString(0))          // moving never sorts them back
@@ -304,5 +305,36 @@ class HomeConfigTest {
         assertEquals("a.b", f.getJSONObject("keyapps").getString("185"))
         val n = HomeConfig.merge(f, JSONObject().put("autoon", true))
         assertEquals(true, n.getBoolean("keyon")); assertEquals(true, n.getBoolean("autoon")); assertEquals("a.b", n.getJSONObject("keyapps").getString("185"))
+    }
+
+    @Test fun qrCardsAreKeptAndTheirKeyIsACardOnlyWithTheirContent() {
+        val card = JSONObject().put("tpl", "link").put("f", JSONObject().put("url", "example.com")).put("cap", "Menu")
+        val c = HomeConfig.clean(JSONObject().put("qrs", JSONObject().put("qr1", card).put("qr9", card).put("qr2", JSONObject().put("tpl", "wifi")))
+            .put("widgets", JSONArray(listOf("clock", "qr1", "qr2", "qr3"))))
+        assertEquals(listOf("qr1"), c.getJSONObject("qrs").keys().asSequence().toList())      // qr9 is no key, qr2 has nothing in it
+        assertEquals(listOf("clock", "qr1"), List(c.getJSONArray("widgets").length()) { c.getJSONArray("widgets").getString(it) })
+        assertEquals("big", HomeConfig.defaultSize("qr1"))                                      // read from the sofa
+        // taking a card out of "qrs" takes its place off the screen too; the others stay
+        val n = HomeConfig.merge(c, JSONObject().put("qrs", JSONObject()))
+        assertEquals(listOf("clock"), List(n.getJSONArray("widgets").length()) { n.getJSONArray("widgets").getString(it) })
+        // a size chosen for a QR card is kept
+        val s = HomeConfig.merge(c, JSONObject().put("wsize", JSONObject().put("qr1", "small")))
+        assertEquals("small", s.getJSONObject("wsize").getString("qr1"))
+        assertTrue(HomeConfig.clean(s).getJSONObject("qrs").getJSONObject("qr1").getJSONObject("f").getString("url") == "example.com")
+    }
+
+    @Test fun liveTilesRoundTrip() {
+        val k = HomeConfig.tileKey("dev.tvremote.setup", "ram")
+        assertEquals("tile:dev.tvremote.setup/ram", k)
+        assertTrue(HomeConfig.isTile(k)); assertFalse(HomeConfig.isTile("dev.tvremote.setup")); assertFalse(HomeConfig.isTile("tile:x/ram; rm"))
+        val c = HomeConfig.clean(JSONObject().put("tiles", JSONArray(listOf(k, k, "junk", "tile:Bad Pkg/ram")))
+            .put("dock", JSONArray(listOf("com.a.b", k))).put("hidden", JSONArray(listOf("tile:com.x.y/z1"))).put("order", JSONArray(listOf(k))))
+        assertEquals(listOf(k), c.getJSONArray("tiles").let { a -> List(a.length()) { a.getString(it) } })
+        assertEquals(listOf("com.a.b", k), dock(c))                    // a tile sits among the apps in the dock, the hidden list and the order
+        assertEquals(listOf("tile:com.x.y/z1"), hidden(c))
+        assertEquals(c.toString(), HomeConfig.clean(JSONObject(c.toString())).toString())   // cleaning twice changes nothing
+        assertEquals("dev.tvremote.setup", HomeConfig.tileProvider(k)); assertEquals("ram", HomeConfig.tileId(k))
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("tiles").length())
+        assertEquals(HomeConfig.TILES_MAX, HomeConfig.clean(JSONObject().put("tiles", JSONArray((1..20).map { "tile:com.x.y/t$it" }))).getJSONArray("tiles").length())
     }
 }

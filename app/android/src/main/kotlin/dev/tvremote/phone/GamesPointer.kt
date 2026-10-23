@@ -40,6 +40,20 @@ private const val DEAD = 0.02f             // rad/s of hand tremor ignored
 private const val BOOST = 0.35f            // a faster wrist goes further, slow stays fine
 private const val FILE = "/sdcard/Android/data/dev.tvremote.games/files/pad.txt"
 
+/** The chip beside "now open" while TV Games is on screen: its pad page (any browser, the touch pad) or this phone's gyroscope aim. */
+internal fun MainActivity.gamePadMenu() {
+    val t = tv ?: return
+    val ip = host ?: return
+    menu(T("rkey.pad_chip").replace(Regex("^[^\\p{L}]+"), ""), -1, listOf(
+        Triple("@gamepad|" + T("rkey.pad_chip").replace(Regex("^[^\\p{L}]+"), ""), T("rkey.pad_page_sub")) {
+            Thread {
+                val url = try { dev.tvremote.core.ontv.Games.pad({ t.shell(it) }, ip) } catch (e: Exception) { null }
+                runOnUiThread { if (url == null) say(T("gpad.off"), true) else startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))) }
+            }.start()
+        },
+        Triple("@gamepad|" + T("rkey.gamespad"), T("rkey.gamespad_sub")) { gamesPointerOpen() }))
+}
+
 internal fun MainActivity.gamesPointerOpen() {
     val t = tv
     if (t == null || !t.ready()) { say(T("air.needs_adb"), true); return }

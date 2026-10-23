@@ -48,6 +48,10 @@ import org.json.JSONObject
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
  *           location or the internet address's)
  *           Their order in the list is the order on the screen (the page and the TV's panel move them).
+ *   qrs     QR cards: {"qr1": {tpl, f, cap, show}, ...} up to [HomeQr.CARDS_MAX], each a template's fields (Wi-Fi, link, text, phone, SMS,
+ *           e-mail, contact: [HomeQr]) and a caption; a card is on the screen when its key is also in "widgets" (the order, the size).
+ *           A key with no card here is dropped from "widgets". The Wi-Fi password lives here, on the TV, and nowhere else. A TV Home
+ *           that has this reports "qrOk": true
  *   wsize   how big each card is: {"system": "big", "lunar": "small", ...}, "big" or "small", the default of a card when it is
  *           missing ([defaultSize]). [pack] turns the sizes and the order into columns: a big card is a column, two small cards
  *           in a row stack in one, a small card alone is a narrow column; what does not fit waits. A TV Home that has this reports
@@ -60,6 +64,10 @@ import org.json.JSONObject
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
+ *   tiles   live tiles on the app grid: keys "tile:<provider package>/<id>" ([isTile]), at most [TILES_MAX]. A provider (TV Setup's RAM tile:
+ *           tile:dev.tvremote.setup/ram) draws a tile's value itself; the key then sits in dock / hidden / order like an app's package name.
+ *           A TV Home that has this reports "tilesOk": true, "tilesAvail" (what the provider offers: [{key, title, kind}]) and
+ *           "tilesState": "ok" | "missing" (no TV Setup or one without tiles) | "untrusted" (signed by another key)
  *   keyon   remote keys that open an app (default off); keyapps: {"183": "package"} the key code to its app, only keys [keyFree]
  *           allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
  *           A TV Home that has this reports "keysOk": true, "keysSetup" (TV Setup took the map) and "keysDead" (the keys it found dead)
@@ -135,13 +143,13 @@ object HomeConfig {
         }
         return null
     }
-    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "clock")
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "clock") + HomeQr.KEYS
     /** The looks of the cards that have more than one, the first is the default ("wstyle"). */
     val STYLES: Map<String, List<String>> = mapOf("clock" to listOf("classic", "light", "minimal", "roman"))
     fun styles(): JSONObject = JSONObject().also { o -> STYLES.forEach { (k, v) -> o.put(k, JSONArray(v)) } }
     /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, clock, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
-    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather")
+    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
     /**
      * Widths as weights (a column's share of the row): a big card, the calendar (seven day columns) a little more, a small column
      * (stacked pills, or one standing) a little less. The row holds [BUDGET] at most: three big cards and a small column fit; a
@@ -208,10 +216,19 @@ object HomeConfig {
     val MOTIONS = listOf("calm", "full")
     val LANGS = listOf("", "vi", "en")
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
+    private val TILE = Regex("tile:[A-Za-z][\\w]*(\\.[\\w]+)+/[a-z][a-z0-9_]{0,15}")
+    const val TILES_MAX = 8
+    /** [k] is a live tile's key ("tile:dev.tvremote.setup/ram"), not an app's package name. */
+    fun isTile(k: String) = k.length <= 100 && TILE.matches(k)
+    fun tileKey(provider: String, id: String) = "tile:$provider/$id"
+    /** The provider's package of a tile key, and its id there. */
+    fun tileProvider(k: String) = k.removePrefix("tile:").substringBefore('/')
+    fun tileId(k: String) = k.substringAfter('/')
 
     /** [o] made safe: unknown fields dropped, lists of real package names without repeats, every value in range. */
     fun clean(o: JSONObject): JSONObject {
-        val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()
+        val qrs = HomeQr.cards(o.optJSONObject("qrs"))
+        val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS && (it !in HomeQr.KEYS || qrs.has(it)) }.distinct()
         val dock = pkgs(o.optJSONArray("dock"), DOCK_MAX)
         val wurl = wurl(o.optString("wurl"))
         val wall = o.optString("wall").takeIf { it in WALLS && (it != WEB || wurl.isNotEmpty()) } ?: "night"
@@ -248,6 +265,8 @@ object HomeConfig {
             .put("keyapps", JSONObject().also { m -> keyApps(o.optJSONObject("keyapps")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
             .put("autoon", o.optBoolean("autoon", false))
             .put("autoapp", o.optString("autoapp").takeIf { it.length <= 200 && PKG_NAME.matches(it) } ?: "")
+            .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) }.distinct().take(TILES_MAX)))
+            .put("qrs", qrs)
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
             .put("wstyle", JSONObject().also { out ->
@@ -304,11 +323,13 @@ object HomeConfig {
         return clean(n)
     }
 
+    private fun strs(a: JSONArray?) = if (a == null) emptyList() else (0 until a.length()).map { a.optString(it) }
+
     private fun pkgs(a: JSONArray?, max: Int): List<String> {
         val out = LinkedHashSet<String>()
         if (a != null) for (i in 0 until a.length()) {
             val p = a.optString(i)
-            if (p.length <= 200 && PKG_NAME.matches(p)) out.add(p)
+            if (p.length <= 200 && (PKG_NAME.matches(p) || isTile(p))) out.add(p)
         }
         return out.take(max)
     }

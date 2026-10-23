@@ -29,6 +29,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.tvremote.core.web.Qr
 import org.json.JSONObject
 import java.net.Inet4Address
 import java.text.SimpleDateFormat
@@ -50,6 +51,7 @@ import java.util.Locale
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
  *   timer   the sleep timer or bedtime and the time left (TV Setup's rules, through the same provider); none while neither is set
  *   note    the family's note (HomeConfig "note"), while there is one
+ *   qr1..4  QR cards (HomeConfig "qrs", [QrCard]): big by default, white with dark modules whatever the wallpaper
  */
 class Widgets(private val a: Activity, private val dp: (Number) -> Int) : LinearLayout(a) {
     private var cpuMiss = 0
@@ -182,7 +184,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
      * column, two small cards in a row stack in one, a small card alone stands in a narrow one; what does not fit waits. The height
      * is fixed so the favourites below stay in view. A column's width is its weight's share of the row.
      */
-    fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, sizes: JSONObject = JSONObject()) {
+    fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, sizes: JSONObject = JSONObject(), qrs: JSONObject = JSONObject()) {
         removeAllViews(); spark = null; speed = null; speedUp = null
         val timerView = if ("timer" in want) timer(f.timer) else null
         val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
@@ -190,13 +192,14 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         } else null
         val tall = layoutParams
         if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
-        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) }   // a card with nothing to show takes no place
+        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) && (it !in HomeQr.KEYS || qrs.has(it)) }   // a card with nothing to show takes no place
         val big = HomeConfig.bigs(JSONObject().put("wsize", sizes))
         val packed = HomeConfig.pack(keys, big, noteView != null)
         if (packed.cols.isEmpty()) { visibility = View.GONE; return }
         fun plain(k: String, alone: Boolean): View? = when (k) {
             "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView
             "clock" -> clock(if (!alone) 0 else if (k in big) 2 else 1)
+            in HomeQr.KEYS -> qrCard(qrs.getJSONObject(k))
             else -> noteView
         }
         val gap = dp(20)
@@ -228,6 +231,16 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
         }
         visibility = View.VISIBLE
+    }
+
+    /** A QR card: the code of the card's template, the caption under it and, if asked, the Wi-Fi password as text. */
+    private fun qrCard(c: JSONObject): View {
+        val f = c.getJSONObject("f")
+        val grid = Qr.modules(HomeQr.payload(c.getString("tpl"), f))
+        val pass = f.optString("pass")
+        val secret = if (c.optBoolean("show") && pass.isNotEmpty()) a.getString(R.string.qr_pass, pass) else ""
+        return if (grid != null) QrCard(a, grid, c.optString("cap"), secret)
+            else pill(tile(AMBER, R.drawable.ic_message), c.optString("cap"), "", 2)         // too long for any code: cleaned away before it gets here
     }
 
     /**
@@ -593,7 +606,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val cores = f.cores.takeIf { it > 0 } ?: Runtime.getRuntime().availableProcessors()
         val ghz = maxGhz()
         val cpu = Stat(R.drawable.ic_cpu, f.cpu?.let(::pct) ?: ghz?.let { "%.2f GHz".format(it) } ?: "—",
-            a.getString(R.string.w_cpu) + " · " + if (f.cpu == null && f.cpuWhy != 0) a.getString(f.cpuWhy) else a.getString(R.string.w_cpu_cores, cores), f.cpu)
+            if (f.cpu == null && f.cpuWhy != 0) a.getString(f.cpuWhy) else a.getString(R.string.w_cpu) + " · " + a.getString(R.string.w_cpu_cores, cores), f.cpu)   // the reason alone: with "CPU · " in front it was cut with an ellipsis
         val ram = Stat(R.drawable.ic_memory, pct(part(f.ram)), "%s %.1f/%.1fG".format(a.getString(R.string.w_ram), f.ram.first / gb, f.ram.second / gb), part(f.ram))
         val disk = Stat(R.drawable.ic_drive, pct(part(f.disk)), "%s %.0f/%.0fG".format(a.getString(R.string.w_disk), f.disk.first / gb, f.disk.second / gb), part(f.disk))
         val up = Stat(R.drawable.ic_clock, span(f.up), a.getString(R.string.w_up))
@@ -652,7 +665,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0x80000000.toInt())
         }
         col.addView(v)
-        val l = Shrink(a, 12f, 12f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 1; letterSpacing = 0.08f }
+        val l = Shrink(a, 12f, 12f).apply { text = s.label.uppercase(); setTextColor(DIM); maxLines = 2; letterSpacing = 0.08f }   // two lines: four columns left "CẦN SE…" / "ĐÃ B…"
         col.addView(l)
         if (s.live) { speed = v; speedUp = l.apply { letterSpacing = 0f } }
         s.bar?.let { col.addView(Bar(a, it, CYAN), LayoutParams(-1, dp(3)).apply { topMargin = dp(6); rightMargin = dp(8) }) }

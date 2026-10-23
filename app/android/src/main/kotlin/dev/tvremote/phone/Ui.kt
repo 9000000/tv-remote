@@ -370,7 +370,9 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
     list.setPadding(dp(16), dp(8), dp(16), dp(4))
     var dialog: Popup? = null
     items.forEachIndexed { i, (label0, what, run) ->                  // not "title": that one is the menu's, for Back to reopen it by
-        val art = if (label0.startsWith("@")) label0.substringBefore("|").substring(1) else null
+        val art0 = if (label0.startsWith("@")) label0.substringBefore("|").substring(1) else null
+        val art = art0?.substringBefore(':')                          // "dot:#e5484d": the icon and its own colour (remote.json "tint")
+        val tint = art0?.substringAfter(':', "")?.takeIf { it.startsWith("#") }?.let { try { Color.parseColor(it) } catch (e: Exception) { null } }
         val name = if (art != null) label0.substringAfter("|") else label0
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER_VERTICAL
@@ -382,7 +384,7 @@ internal fun Activity.menu(title: String, primary: Int, items: List<Triple<Strin
         if (id != 0) {
             val img = android.widget.ImageView(this)
             img.setImageResource(id)
-            img.setColorFilter(if (i == primary) Color.WHITE else ACCENT_TEXT)
+            img.setColorFilter(tint ?: if (i == primary) Color.WHITE else ACCENT_TEXT)
             val ilp = LinearLayout.LayoutParams(dp(24), dp(24))
             ilp.rightMargin = dp(14)
             row.addView(img, ilp)

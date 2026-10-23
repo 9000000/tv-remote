@@ -17,6 +17,7 @@ import android.os.IBinder
  * activity is in front (the only time Android lets it), stopped with the server.
  */
 class PadService : Service() {
+    override fun attachBaseContext(b: Context) = super.attachBaseContext(Lang.wrap(b))   // the notification in the app's language
     override fun onBind(i: Intent?): IBinder? = null
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int {
         val nm = getSystemService(NotificationManager::class.java)

@@ -29,7 +29,9 @@ object SetupNeed {
         "lock" to "0.12.1",                                            // 🔒 an app opened only with a PIN (the release after 0.12.0)
         "dim" to "0.12.1",                                             // 🔅 a tint over the whole screen (DimLayer)
         "unextra" to "0.12.1",                                         // ↺ taking back the minutes granted to an app today
+        "holdkeys" to "0.19.1",                                        // 🔘 Input / Settings need a 2 s hold (HoldKeys)
         "heavy" to "0.19.1",                                           // 🧠 one heavy app at a time: a video app left behind is closed (Heavy)
+        "checkout" to "0.19.1",                                        // 🧳 check-out: forget the guests' browsers (RulesReceiver "forget_web")
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )
 
@@ -59,6 +61,8 @@ object SetupNeed {
             "unextra" -> t("core.need_unextra")
             "home_usage" -> t("core.need_home_usage")
             "heavy" -> t("core.need_heavy")
+            "holdkeys" -> t("core.need_holdkeys")
+            "checkout" -> t("core.need_checkout")
             else -> feature
         }
     }

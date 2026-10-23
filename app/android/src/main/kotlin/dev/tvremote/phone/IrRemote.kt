@@ -400,6 +400,27 @@ private fun MainActivity.irKeys(box: LinearLayout, p: IrProfile) {
     val media = listOf(k("REWIND", "@rewind", T("rkey.rewind")), k("PLAY_PAUSE", "@play_pause", T("rkey.playpause")), k("FFWD", "@ffwd", T("rkey.forward")), k("STOP", "@stop", T("rkey.stop")))
     val more = listOf(k("SETTINGS", "@gear", T("rkey.settings")), k("INFO", "@info", T("rkey.info")), k("GUIDE", "@guide", T("rkey.guide")), k("SUBTITLE", "@subtitle", T("rkey.subtitles")))
     for (keys in listOf(media, more)) if (keys.any { it.first in p.keys }) box.addView(irRow(p, 48, *keys.toTypedArray()), gap(14))
+    // only the keys this remote has (most have none of them): the four colours in their own colour, then the apps' buttons by name
+    val colours = listOf("RED" to 0xffe5484d.toInt(), "GREEN" to 0xff30a46c.toInt(), "YELLOW" to 0xfff5d90a.toInt(), "BLUE" to 0xff3e63dd.toInt()).filter { it.first in p.keys }
+    if (colours.isNotEmpty()) {
+        val row = LinearLayout(this)
+        colours.forEachIndexed { i, (key, c) ->
+            val b = button(" ", c).also { it.contentDescription = T("rkey." + key.lowercase()) }
+            irBind(b, p, key, box(HELD, 16))
+            row.addView(b, cell(34, i > 0))
+        }
+        box.addView(row, gap(14))
+    }
+    val apps = listOf("NETFLIX" to T("rkey.netflix"), "YOUTUBE" to T("rkey.youtube"), "PRIME" to T("rkey.prime")).filter { it.first in p.keys }
+    if (apps.isNotEmpty()) {
+        val row = LinearLayout(this)
+        apps.forEachIndexed { i, (key, name) ->
+            val b = button(name, BTN).also { it.textSize = 14f; it.setPadding(dp(4), 0, dp(4), 0) }
+            irBind(b, p, key, box(HELD, 14))
+            row.addView(b, cell(44, i > 0))
+        }
+        box.addView(row, gap(14))
+    }
 }
 
 private fun MainActivity.irPill(p: IrProfile, name: String, up: Triple<String, String, String>, down: Triple<String, String, String>): LinearLayout {
@@ -428,10 +449,10 @@ private fun MainActivity.irDpad(p: IrProfile): View {
     for ((key, sym, gravity) in arrows) {
         val b = icon(sym, says.getValue(key), 0)
         b.setIcon(sym, MUTED)
-        b.size = 30f
+        b.size = 26f
         b.background = oval(0)
         irBind(b, p, key, oval(HELD))
-        pad.addView(b, FrameLayout.LayoutParams(dp(80), dp(80), gravity).apply { setMargins(dp(4), dp(4), dp(4), dp(4)) })
+        pad.addView(b, FrameLayout.LayoutParams(dp(72), dp(72), gravity).apply { setMargins(dp(4), dp(4), dp(4), dp(4)) })
     }
     val ok = button("OK", ACCENT)
     ok.typeface = Typeface.DEFAULT_BOLD
@@ -440,10 +461,10 @@ private fun MainActivity.irDpad(p: IrProfile): View {
     ok.background = oval(ACCENT)
     ok.elevation = dp(6).toFloat()
     irBind(ok, p, "OK", oval(HELD))
-    pad.addView(ok, FrameLayout.LayoutParams(dp(92), dp(92), Gravity.CENTER))
+    pad.addView(ok, FrameLayout.LayoutParams(dp(84), dp(84), Gravity.CENTER))
     val wrap = LinearLayout(this)
     wrap.gravity = Gravity.CENTER
-    wrap.addView(pad, LinearLayout.LayoutParams(dp(248), dp(248)))
+    wrap.addView(pad, LinearLayout.LayoutParams(dp(216), dp(216)))
     return wrap
 }
 

@@ -117,6 +117,9 @@
     <string name="ok">OK</string>
     <string name="meta_n">%1$d players</string>
     <string name="pin_full">Dock is full (6): remove one item, then pin again</string>
+    <string name="lang_title">Choose language</string>
+    <string name="lang_auto">Follow the TV</string>
+    <string name="lang_pill">Language</string>
     <string name="refresh_pill">Refresh</string>
     <string name="cols_pill">%d per row</string>
     <string name="refresh_ok">Updated · %1$d games</string>
@@ -135,4 +138,12 @@
     <string name="upd_loading">Downloading… %1$d%%</string>
     <string name="upd_cancel">Cancel</string>
     <string name="upd_failed">Could not update (%1$s). The TV Remote app on a phone can update it too.</string>
+    <!-- the error guard (shared/src/guard/android/Guard.kt); the same words as err.* in shared/web/i18n -->
+    <string name="err_title">Something went wrong</string>
+    <string name="err_last_time">The app crashed last time</string>
+    <string name="err_copy">Copy</string>
+    <string name="err_copied">Copied</string>
+    <string name="err_close">Close</string>
+    <string name="err_share">Share</string>
+    <string name="err_repeat">repeated %d times</string>
 </resources>

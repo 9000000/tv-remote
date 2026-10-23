@@ -23,7 +23,7 @@ const homeThumbs = {};                                                // a photo
 const HOME_DOCK_MAX = 6;                                             // HomeConfig.DOCK_MAX
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'clock'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
-const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather'];     // HomeConfig.defaultSize: these are big until chosen otherwise
+const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
 const HOME_W = { big: 100, cal: 120, small: 90, budget: 415, floor: 190 };   // HomeConfig.W_BIG / W_CAL / W_SMALL / BUDGET / FLOOR
 const homeSize = (c, k) => (c.wsize && (c.wsize[k] === 'big' || c.wsize[k] === 'small')) ? c.wsize[k] : (HOME_BIG_KINDS.includes(k) ? 'big' : 'small');
 // HomeConfig.pack, the same rule (tests/home_pack_cases.json holds the cases both are tested with): walk the cards in order, a big
@@ -133,12 +133,15 @@ async function homeOpen() {
 
   const row = (pkg, acts) => {
     const icon = appIcon(pkg), name = el('span', { textContent: appLabel(pkg) });
-    onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appLabel(pkg)); });
+    if (!isTile(pkg)) onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appLabel(pkg)); });   // a live tile is no app: TV Setup names it
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, name), el('div', { className: 'acts' }, ...acts));
   };
-  const appLabel = (pkg) => { const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
+  const isTile = (p) => /^tile:[^/]+\/[a-z][a-z0-9_]{0,15}$/.test(p);
+  const appLabel = (pkg) => { if (isTile(pkg)) { const t = (r.config.tilesAvail || []).find((x) => x.key === pkg); return (t && t.title) || pkg.split('/').pop(); } const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
   const tool = (text, title, fn, off) => el('button', { type: 'button', className: 'small iconbtn', textContent: text, title, 'aria-label': title, disabled: !!off, onclick: fn });
 
+  // live tiles (HomeConfig "tiles"): what TV Setup offers, each on or off the app grid; only a TV Home that reports "tilesOk"
+  const tilesHead = el('h3', { textContent: T('home.tiles_head') }), tilesNote = el('p', { className: 'note' }), tilesList = el('div', { className: 'list' });
   const dock = el('div', { className: 'list' }), hidden = el('div', { className: 'list' });
   const addDock = el('button', { type: 'button', className: 'small', textContent: T('home.add'), onclick: async () => {
     const p = await chooseApp(T('home.pick_dock'), apps().filter((x) => !r.config.dock.includes(x)));
@@ -222,6 +225,13 @@ async function homeOpen() {
   place.addEventListener('keydown', (e) => { if (e.key === 'Enter') placeSet.click(); });
   const placeHead = el('h3', { textContent: T('home.place') }), placeLine = UI.line(place, placeSet, placeAuto);
   const noteHead = el('h3', { textContent: T('home.note') }), noteLine = UI.line(note, pin, unpin);
+  // QR cards (HomeConfig "qrs", home_qr.js): a code of anything, up to four, each its own card among the others (order, size, off in the list above)
+  const qrAdd = el('button', { type: 'button', className: 'small', textContent: T('home.qr_add'), onclick: async () => {
+    const k = HOME_QR_KEYS.find((x) => !(r.config.qrs || {})[x]);
+    const card = k && await homeQrAsk(null);
+    if (card) send({ qrs: { ...r.config.qrs, [k]: card }, widgets: [...r.config.widgets, k] });
+  } });
+  const qrHead = el('div', { className: 'card-head' }, el('h3', { textContent: T('home.qr') }), qrAdd), qrList = el('div', { className: 'list' }), qrNote = el('p', { className: 'note', textContent: T('home.qr_note') });
   // a web page as the background and the screensaver (HomeConfig.wurl, http or https); the TV shows it, so a typo costs nothing but the gradient
   const web = el('input', { type: 'url', maxLength: 500, placeholder: T('home.web_ph'), 'aria-label': T('home.web') });
   const webSet = el('button', { type: 'button', className: 'primary', textContent: T('home.web_set'), onclick: () => {
@@ -252,8 +262,19 @@ async function homeOpen() {
   const galHead = el('h3', { textContent: T('home.gallery') });
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
 
+  function drawTiles(c) {
+    const on = !!c.tilesOk; tilesHead.hidden = tilesNote.hidden = tilesList.hidden = !on;
+    if (!on) return;
+    const have = c.tiles || [], offer = c.tilesAvail || [];
+    tilesNote.textContent = T(c.tilesState === 'untrusted' ? 'home.tiles_untrusted' : offer.length || have.length ? 'home.tiles_note' : 'home.tiles_missing');
+    const keys = [...new Set([...have, ...offer.map((t) => t.key)])];       // one on the grid whose provider is away stays, to take off
+    tilesList.replaceChildren(...keys.map((k) => row(k, [have.includes(k)
+      ? tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))
+      : tool('+', T('home.tiles_head'), () => send({ tiles: [...have, k] }))])));
+  }
   function draw() {
     const c = r.config, d = c.dock;
+    drawTiles(c);
     const move = (i, j) => { const n = d.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ dock: n }); };
     dock.replaceChildren(...d.map((p, i) => row(p, [
       tool('↑', T('home.up'), () => move(i, i - 1), i === 0),
@@ -312,6 +333,7 @@ async function homeOpen() {
     autoRow.hidden = !kOk;
     autoRow.replaceChildren(appRow(T('home.auto_app'), c.autoapp, () => pickKey(T('home.auto_app'), c.autoapp, (p) => send({ autoapp: p })), () => send({ autoapp: '' })));
     const w = c.widgets;                                              // absent: a TV Home older than the cards
+    const qrs = c.qrs || {};                                          // the QR cards' fields, by key (absent: a TV Home older than them)
     const has = (k) => !!w && w.includes(k);
     wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined); });   // weather: a TV Home older than it has no card
     wHead.hidden = !w;
@@ -332,7 +354,7 @@ async function homeOpen() {
     const styleChips = (k) => el('div', { className: 'fchips wstyle', role: 'group', 'aria-label': T('home.style') },
       ...c.wstyles[k].map((v) => el('button', { type: 'button', className: styleOf(k) === v ? 'on' : '', 'aria-pressed': String(styleOf(k) === v), textContent: HOME_STYLE_WORDS[v] ? T(HOME_STYLE_WORDS[v]) : v, onclick: () => wstyle(k, v) })));
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
-      el('div', { className: 'name' }, el('span', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : T('home.w_newer', { k }) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
+      el('div', { className: 'name' }, el('span', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : qrs[k] ? homeQrName(qrs[k]) : T('home.w_newer', { k }) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
       el('div', { className: 'acts' },
         ...(sized ? [sizeChips(k)] : []),
         tool('↑', T('home.up'), () => wmove(i, i - 1), i === 0),
@@ -360,6 +382,16 @@ async function homeOpen() {
     placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the card is on
     if (document.activeElement !== place) place.value = c.place || '';
     placeAuto.disabled = !c.place;
+    const qrKeys = HOME_QR_KEYS.filter((k) => qrs[k]);
+    qrHead.hidden = qrNote.hidden = !c.qrOk;                          // a TV Home older than the QR cards
+    qrList.hidden = !c.qrOk || !qrKeys.length;
+    qrAdd.disabled = qrKeys.length >= HOME_QR_KEYS.length;
+    qrList.replaceChildren(...qrKeys.map((k) => el('div', { className: 'item' },
+      el('div', { className: 'name' }, el('span', { textContent: homeQrName(qrs[k]) }), ...(has(k) ? [] : [el('small', { textContent: T('home.qr_hidden_now') })])),
+      el('div', { className: 'acts' },
+        tool('✎', T('home.qr_edit'), async () => { const card = await homeQrAsk(qrs[k]); if (card) send({ qrs: { ...qrs, [k]: card } }); }),
+        el('button', { type: 'button', className: 'small', textContent: T(has(k) ? 'home.qr_hide' : 'home.qr_show'), onclick: () => send({ widgets: has(k) ? w.filter((x) => x !== k) : [...w, k] }) }),
+        tool('✕', T('home.remove'), () => { const n = { ...qrs }; delete n[k]; send({ qrs: n, widgets: w.filter((x) => x !== k) }); })))));
     noteHead.hidden = noteLine.hidden = c.note === undefined;     // a TV Home older than the note
     if (document.activeElement !== note) note.value = c.note || '';
     unpin.disabled = !c.note;
@@ -418,8 +450,9 @@ async function homeOpen() {
     el('label', { className: 'check' }, dream, el('span', { textContent: T('home.dream') })),
     keysHead, keysOld, el('label', { className: 'check' }, keyOn, el('span', { textContent: T('home.keys_on') })), keysNote, keysList,
     el('label', { className: 'check' }, autoOn, el('span', { textContent: T('home.auto_on') })), autoRow, autoNote,
+    tilesHead, tilesNote, tilesList,
     wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine,
-    noteHead, noteLine,
+    noteHead, noteLine, qrHead, qrList, qrNote,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
   d.addEventListener('close', () => { d.remove(); homeCard(); });
   draw();

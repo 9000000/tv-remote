@@ -124,7 +124,80 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   a test keeps them equal) and, on TV Home's screen only, 0-9. A working key is never taken. `input keyevent` over ADB is injected after
   the accessibility filter, so the service cannot be tested with it; on the TV emulator `adb emu event send EV_KEY:KEY_RED` also does not
   reach it (the emulator has no such key in its layout path), so the service path was checked by its logged plan only.
+- **A key a client sends is decided by TV Setup, not injected:** measured on the TV emulator (5554, RED given an app, 178 dead): `input keyevent`
+  183 / 178 while Settings was in front did nothing, so a phone / computer that injects a colour key or a dead YouTube / Netflix / Prime /
+  All apps key reaches no one. With ADB these keys (`RulesClient.SETUP_KEYS`) go as a `RulesReceiver` broadcast `{"do":"key","code"}`; TV Setup
+  answers `{"acted"}` after `KeyFix.decide` (TV Home's map laid over the dead keys' rules, the same plan the filter uses) and opens the app; not
+  acted, an old TV Setup (answers "unknown action") or no ADB: the plain key as before, no error. The TV web page decides in-process. LIVE / INPUT
+  stay on their old path (an extra broadcast ~0.3 s on every press for a plan that is mostly empty).
 - **Power-on app fires once per power-on, by a 120 s guard** keyed on (boot count, elapsedRealtime): the boot and the screen coming on right
   after it are one power-on. It looks at the app on screen (UsageStats) and keeps it when the TV woke into another app (HDMI-CEC, cast).
   Home pressed later never re-fires: the trigger is a power event only. No `SetupNeed.MIN` entry: the setting asks TV Setup itself and
   says "install TV Setup" when it gets no answer; the first TV Setup with "keys" is the next one.
+
+## The error guard (`app/shared/src/guard`, `js/errbox.js`)
+
+- **Why:** a NullPointerException in `PhoneRemote.remoteMenu` from one menu tap killed the whole phone app, and nothing said what
+  broke. Goal: no crash, and when something fails the error is on the screen, easy to copy.
+- **The main looper is kept alive** (`Guard.install` posts `while (true) { try { Looper.loop(); break } catch ... }` to the main
+  thread): a throw inside a click, a posted job or a callback ends only that message, the screen is still drawn and the person
+  sees a dialog (title, first 6 stack lines, Copy / Share / Close; the TV's D-pad starts on Close). Other threads: saved and
+  shown, the process lives.
+- **It is NOT kept alive** when the stack has an Activity lifecycle frame (`ActivityThread.perform*/handle*Activity`,
+  `Activity.performCreate`, `TransactionExecutor`; `GuardLogic.inLifecycle`, causes included): an Activity that threw in
+  `onCreate` / `onResume` stays half built, a blank screen nothing ever draws into, and the looper would carry on with a window
+  that cannot work. There the trace is saved, the app dies as before, and the next start shows "Lần trước app bị lỗi" once
+  (`guard-died` flag + `guard-last.txt` in filesDir). Also left to die: 10 throws within 2 s on the main thread (the loop is not recovering).
+- Same error again while the dialog is open: counted ("repeated n times"), never a second dialog. The web page does the same
+  (`ErrBox`), and ignores resource load errors, the cross-origin "Script error." and the ResizeObserver notice.
+- Checked on the emulators (phone, TV Home): a throw on the main and on a background thread left the pid unchanged and showed
+  the dialog. A debug-only trigger stays in `Guard.install` (`am broadcast -a dev.tvremote.GUARD_TEST --es on main|bg`, only when
+  the APK is debuggable). Native crashes (SIGSEGV) and an ANR are not caught: no JVM exception.
+
+
+## Hold to use Input / Settings (HoldKeys)
+
+- **The rule is `holdkeys` in `Rules` (not a KeyFix pref)** so every client switches it the same way: `/api/rules {do:"holdkeys",on}` (TV web page,
+  computer, phone Manage screen: the card under "one heavy app" in Health), and the TV's own Optimize TV menu. A change calls `KeyFix.sync` +
+  `KeyFixService.poke`; `sync` keeps the accessibility service on while a dead key needs it OR this is on (`need = wanted && plan || hold`), off
+  when neither. `Rules.active` is true while it is on, so `KeyFixWatch` (in RemoteService) keeps re-adding the service if the system drops it.
+- **Time, not repeats:** the key filter sits before the dispatcher's auto-repeat, so it sees a down and an up and no repeats. A press is armed on
+  its down (hint toast at once), `HoldKeys.Gate.timer` fires once after 2 s if the key is still down; repeats (a remote that sends them) with
+  `eventTime - downTime >= 2 s` fire too, never twice. Down and up of a short press are both eaten; a lost up does not stick (a down with repeat 0
+  is always a new press). The hold does what the key does when it is dead (`KeyFixService.plan`, TV Home's key → app included), else
+  `KeyFix.RULES` (input picker / Settings); the direct HDMI keys (243-251) land on the input picker, not on their HDMI (no unprivileged way to switch).
+- **Keys covered:** 170 TV, 178 TV_INPUT, 176 SETTINGS, 243-251 TV_INPUT_HDMI_1..4 / COMPOSITE / COMPONENT / VGA. A client's `input keyevent` and
+  the scrcpy keys skip the filter, so they act at once: the phone / web remote is the escape hatch (said in the switch's sub text).
+- **Measured on the TV emulator (5554), the real physical path:** `adb emu event send EV_KEY:KEY_TV` is dropped (the emulator keyboard has no such
+  key bit; `EV_SYN` has no code names), `sendevent` needs root (none), `input keyevent` skips the filter. What does reach the filter: the shell is in
+  group `uhid`, so `/dev/uhid` is writable: create a HID consumer device (usage 0x0C/0x89 = KEY_TV = Android 170, the Generic.kl map) with one
+  `UHID_CREATE2` and `UHID_INPUT2` events, each written by `dd bs=<exact event size> >&3` on ONE open fd (`cat` splits the write and gets EPERM;
+  closing the fd removes the device). Script: build the structs with python `struct` (type u32 11 / 12), push, `exec 3>/dev/uhid`.
+  Only 170 is reachable this way (Generic.kl has no line for 176 / 178). With it on: a 0.5 s press showed the toast and left Home in front; a 3.5 s
+  press opened the app TV Home gave key 170 (TV Games) at 2 s; switched off, a 0.3 s press opened it at once.
+- Not covered: a TV whose firmware handles Input before the Android input pipeline (some boxes' own OSD): the filter never sees that key.
+
+## TV Home QR cards
+
+- Encoder: Qr.kt / qr.js now do versions 1-10 (271 bytes, level L, mask 0; blocks interleaved, alignment patterns, version info). Every length 10-271 decoded with zbarimg; a Wi-Fi line with a long password or a menu link did not fit in v5 (106 bytes).
+- Model: config `qrs` = {qr1..qr4: {tpl, f: fields, cap, show}} and the keys are ordinary "widgets" (order, size, off for free). The TV builds the payload from the fields (HomeQr.payload), JS mirrors it (home_qr.js); both are held to tests/home_qr_cases.json. A template is only a form; "text" is the raw payload.
+- The Wi-Fi password lives only in TV Home's config on the TV (and comes back to a paired client so the card can be edited). WireLog.clean blanks `WIFI:...;;` and "pass" values. Shown as text only with `show` (default off).
+- Drawing: white card, dark modules at whole pixels, 2-module quiet zone plus padding, whatever the theme. Measured on emulator-5554 (1920x1080): two cards, each ~260 px code; zbarimg read both from the screenshot.
+
+## Check-out (Trả phòng) for homestays and hotels
+
+- Where: "Several TVs" on the phone (`ManyTvs.kt`) and the computer (`Fleets.checkout`, `/api/fleet/checkout`, `js/checkout.js`). One run per TV: `pm clear` of the chosen apps, volume, forget the browsers paired with TV Setup's web page, Home. The chosen apps and volume are remembered (computer: `tvs.json` "checkout"; phone: prefs "checkout"); never chosen = the suggested apps that are installed (`Checkout.SUGGEST`).
+- Block list in code (`Checkout.blocked`, tested): `Setup.mustKeep` (system, launchers, Play, our apps), our extra patterns, `Bloat.factory`, and at run time the TV's current home app. The page and the phone hide them; the server cleans the list again.
+- The list is the TV's own apps (`pm list packages -3`) plus the suggested ones that came with the TV (`Checkout.here`): a YouTube or Netflix preinstalled as a system app is not in `-3`, and is the app a guest signs in to. `pm clear` works on system apps.
+- Forgetting browsers goes through `RulesReceiver` (`{"do":"forget_web"}`, DUMP: only ADB), not `HomeInfo` (for apps, signature-checked). It drops every "web" pass (a shared QR's too), keeps the owner's "app" passes (Phone / Computer), clears the pending code and invite. A stream a forgotten browser already has open is not cut (it ends with the page). Needs TV Setup 0.19.1 (`SetupNeed.MIN["checkout"]`); an older one is said on that TV's line and the other steps still run.
+- Measured on emulator-5554 (TV Setup 0.19.0 and 0.19.1), run from the phone: `ActivityManager: Force stopping com.google.android.youtube.tv ... clear data`; volume 3 -> 9 (60%) and 2 -> 4 (25%, by the keys: the emulator keeps `media_session` volume); a browser paired before got 401 afterwards on 0.19.1 and the old-setup warning on 0.19.0.
+- Network: guests on the same Wi-Fi can reach port 8765 of every room's TV, and the pairing code shown on the TV is the only gate. For a business use a separate network or VLAN for the TVs, or client isolation on the access point.
+- Not done: a daily time (e.g. 12:00) for the check-out. It needs something always on (the computer app running, or a rule on the TV); asked for later, not built now.
+
+## Live tiles in TV Home's app grid (TV Setup provides them)
+- A tile is another app's small live view drawn in TV Home's grid at app-tile size; pressing it runs that app's action. Key `tile:<provider pkg>/<id>` (`HomeConfig.tileKey/isTile`), kept in config `tiles` (on the grid) and usable in dock / hidden / order like a package name. Hooks: `app/home/.../Tiles.kt` (`available`, `fetch`, `run`, `press`, `report`; no view code) and TV Setup `HomeTiles.kt` + `HomeInfo` methods `tiles` / `tile` / `tile_do` (signature-checked, same as the other methods; old TV Setup answers null = "missing", another key = "untrusted").
+- Binder calls never wait on ADB: `tile` reads `/proc/meminfo` (allowed for apps), `tile_do` starts a thread and answers `{started}`; TV Home follows with `tile` every 350 ms until the mode leaves `working`. While on screen TV Home reads each tile every 5 s (`tileTick`, removed in onPause/onDestroy).
+- Free RAM closes only what `ps -A -o NAME` shows as installed packages, minus `Setup.mustKeep`, the app on screen, launchers, enabled keyboards, accessibility services and `android.*`; it uses per-package `am kill`, which Android only applies to cached processes (a second lock). Android 7 without `ps -A`: falls back to `am kill-all`.
+- Honest numbers: before/after are used% from `/proc/meminfo` 1.5 s after the kill; under 16 MB freed is shown as "nothing more to free". Part of the freed RAM returns as services restart: the tile reports the moment, not a promise.
+- Low-RAM TV Home (calm motion) skips the count-down animation and just changes the number.
+- Not done: other tiles/providers (the list is ready for them), a tile bigger than one app tile, the shared "Add to home screen" browser (Customize has a minimal on/off list).

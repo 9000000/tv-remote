@@ -13,7 +13,7 @@ internal class IrProfile(val id: String, val brand: String, val name: String, va
 internal object IrCodes {
     /** Every key a profile may hold, in the order the screen and the file list them. */
     val KEYS = listOf("POWER", "HOME", "BACK", "UP", "DOWN", "LEFT", "RIGHT", "OK", "MENU", "SETTINGS", "VOL_UP", "VOL_DOWN", "MUTE", "CH_UP", "CH_DOWN",
-        "INPUT", "PLAY_PAUSE", "STOP", "REWIND", "FFWD", "NEXT", "PREV", "INFO", "GUIDE", "SUBTITLE") + (0..9).map { it.toString() }
+        "INPUT", "PLAY_PAUSE", "STOP", "REWIND", "FFWD", "NEXT", "PREV", "INFO", "GUIDE", "SUBTITLE", "RED", "GREEN", "YELLOW", "BLUE", "NETFLIX", "YOUTUBE", "PRIME") + (0..9).map { it.toString() }
 
     /** The keys "Dò mã" can try: one the box surely answers, whatever remote it came with. */
     val PROBES = listOf("POWER", "HOME", "VOL_UP", "MUTE")

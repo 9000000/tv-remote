@@ -26,6 +26,8 @@ class GameActivity : ComponentActivity() {
     private lateinit var sys: Systems.Sys
     private lateinit var file: File
 
+    override fun attachBaseContext(b: android.content.Context) = super.attachBaseContext(Lang.wrap(b))
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         file = File(intent.getStringExtra("path") ?: return finish())

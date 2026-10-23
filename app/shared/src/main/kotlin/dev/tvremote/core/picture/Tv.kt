@@ -142,7 +142,7 @@ class Tv(
          * whose software encoder costs about 0.7 of 4 cores at 960 px and 2 Mbit/s, far more uncapped.
          */
         /** Keys that should bring up a screen of their own: Menu, TV settings, Input, Guide, Live TV. See [pressSeen]. */
-        val OPENERS = setOf(82, 176, 178, 172, 170)
+        val OPENERS = setOf(82, 176, 178, 172, 170, 190, 191, 195)
 
         val QUALITY = arrayOf(intArrayOf(480, 300_000, 15), intArrayOf(720, 800_000, 20), intArrayOf(960, 2_000_000, 20),
             intArrayOf(360, 200_000, 15), intArrayOf(240, 120_000, 15),   // added later, at the end: the index is what people have saved

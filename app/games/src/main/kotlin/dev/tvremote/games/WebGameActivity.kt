@@ -39,6 +39,8 @@ class WebGameActivity : ComponentActivity() {
     private lateinit var cards: GameCards
     private var origin = ""
     @Volatile private var pageOrigin = ""
+
+    override fun attachBaseContext(b: android.content.Context) = super.attachBaseContext(Lang.wrap(b))
     private var errorRetry: View? = null
     private var errorCard: View? = null                         // our own card for a page that cannot load (offline, 404, too slow), over the lobby and the WebView
     private val timeout = Runnable { if (!pageDone) { Log.w(TAG, "no page in ${LOAD_MS / 1000} s"); failCard(R.string.web_fail_net) } }

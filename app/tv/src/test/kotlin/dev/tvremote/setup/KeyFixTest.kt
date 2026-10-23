@@ -82,4 +82,15 @@ class KeyFixTest {
         assertEquals(KeyFix.RULES.keys, dev.tvremote.home.HomeConfig.KEY_DEAD.toSet())
         assertEquals(KeyFix.COLOUR, dev.tvremote.home.HomeConfig.KEY_COLOURS.toSet())
     }
+
+    // ---- a key a client sends: the same decision as a real press ---------------------------------------------------
+
+    @Test fun aSentKeyGetsTheDecisionOfARealPress() {
+        val plan = KeyFix.plan(mapped, { false }, { true }, mapOf(183 to "dev.tvremote.channels", 190 to "org.videolan.vlc"))
+        assertEquals(listOf("dev.tvremote.channels"), KeyFix.decide(plan, 183)?.pkgs)      // a colour key TV Home gave an app
+        assertEquals(listOf("org.videolan.vlc"), KeyFix.decide(plan, 190)?.pkgs)           // the person's choice over the dead key's old job
+        assertEquals(KeyFix.INPUT, KeyFix.decide(plan, 178)?.act)                          // a dead key: its rule
+        assertNull(KeyFix.decide(plan, 184))                                               // green, nothing given: the plain key
+        assertNull(KeyFix.decide(emptyMap(), 190))
+    }
 }

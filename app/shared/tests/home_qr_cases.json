@@ -1,0 +1,198 @@
+{
+ "about": "The text each TV Home QR template builds from its fields: js/home_qr.js homeQrPayload and HomeQr.payload (Kotlin) must both give 'payload'. Written by hand, not made from the code. Read by home_qr.test.js and HomeQrTest.kt",
+ "cases": [
+  {
+   "name": "Wi-Fi WPA",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "Home",
+    "pass": "abc12345",
+    "sec": "WPA",
+    "hidden": false
+   },
+   "payload": "WIFI:T:WPA;S:Home;P:abc12345;;"
+  },
+  {
+   "name": "Wi-Fi escapes \\ ; , : \" in the name and the password",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "My;Net:\"x\"\\,y",
+    "pass": "pa;ss,wo:rd\\\"",
+    "sec": "WPA"
+   },
+   "payload": "WIFI:T:WPA;S:My\\;Net\\:\\\"x\\\"\\\\\\,y;P:pa\\;ss\\,wo\\:rd\\\\\\\";;"
+  },
+  {
+   "name": "Wi-Fi with no password is open, whatever security was chosen",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "Cafe",
+    "pass": "",
+    "sec": "WPA"
+   },
+   "payload": "WIFI:T:nopass;S:Cafe;;"
+  },
+  {
+   "name": "Wi-Fi chosen as open sends no password left in the field",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "Cafe",
+    "pass": "secret",
+    "sec": "nopass"
+   },
+   "payload": "WIFI:T:nopass;S:Cafe;;"
+  },
+  {
+   "name": "Wi-Fi WEP, hidden",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "Lab",
+    "pass": "12345",
+    "sec": "WEP",
+    "hidden": true
+   },
+   "payload": "WIFI:T:WEP;S:Lab;P:12345;H:true;;"
+  },
+  {
+   "name": "Wi-Fi without a name has no code",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "",
+    "pass": "x",
+    "sec": "WPA"
+   },
+   "payload": ""
+  },
+  {
+   "name": "Wi-Fi with accents and no security chosen is WPA",
+   "tpl": "wifi",
+   "f": {
+    "ssid": "Nhà Hạnh Phúc",
+    "pass": "mật khẩu"
+   },
+   "payload": "WIFI:T:WPA;S:Nhà Hạnh Phúc;P:mật khẩu;;"
+  },
+  {
+   "name": "link without a scheme gets https://",
+   "tpl": "link",
+   "f": {
+    "url": "  example.com/menu "
+   },
+   "payload": "https://example.com/menu"
+  },
+  {
+   "name": "link with a port is a host, not a scheme",
+   "tpl": "link",
+   "f": {
+    "url": "192.168.1.5:8080/x"
+   },
+   "payload": "https://192.168.1.5:8080/x"
+  },
+  {
+   "name": "link with a scheme stays",
+   "tpl": "link",
+   "f": {
+    "url": "http://192.168.1.5:8080/x?a=1"
+   },
+   "payload": "http://192.168.1.5:8080/x?a=1"
+  },
+  {
+   "name": "link empty",
+   "tpl": "link",
+   "f": {
+    "url": "   "
+   },
+   "payload": ""
+  },
+  {
+   "name": "text is the raw payload",
+   "tpl": "text",
+   "f": {
+    "text": "Line 1\nLine 2  "
+   },
+   "payload": "Line 1\nLine 2  "
+  },
+  {
+   "name": "tel keeps digits, + * #",
+   "tpl": "tel",
+   "f": {
+    "num": "+84 (90) 123-4567"
+   },
+   "payload": "tel:+84901234567"
+  },
+  {
+   "name": "tel empty",
+   "tpl": "tel",
+   "f": {
+    "num": "abc"
+   },
+   "payload": ""
+  },
+  {
+   "name": "sms without a message",
+   "tpl": "sms",
+   "f": {
+    "num": "0901 234 567",
+    "body": ""
+   },
+   "payload": "sms:0901234567"
+  },
+  {
+   "name": "sms with a message",
+   "tpl": "sms",
+   "f": {
+    "num": "0901 234 567",
+    "body": "Xin chào & hi"
+   },
+   "payload": "sms:0901234567?body=Xin%20ch%C3%A0o%20%26%20hi"
+  },
+  {
+   "name": "mail with subject and message",
+   "tpl": "mail",
+   "f": {
+    "to": " a@b.com ",
+    "subject": "Đặt phòng",
+    "body": "1 đêm\n=ok"
+   },
+   "payload": "mailto:a@b.com?subject=%C4%90%E1%BA%B7t%20ph%C3%B2ng&body=1%20%C4%91%C3%AAm%0A%3Dok"
+  },
+  {
+   "name": "mail address only",
+   "tpl": "mail",
+   "f": {
+    "to": "a@b.com",
+    "subject": "",
+    "body": ""
+   },
+   "payload": "mailto:a@b.com"
+  },
+  {
+   "name": "contact escapes the comma",
+   "tpl": "contact",
+   "f": {
+    "name": "Nguyễn, Văn A",
+    "tel": "0901234567",
+    "email": "a@b.com"
+   },
+   "payload": "MECARD:N:Nguyễn\\, Văn A;TEL:0901234567;EMAIL:a@b.com;;"
+  },
+  {
+   "name": "contact with a number only",
+   "tpl": "contact",
+   "f": {
+    "name": "",
+    "tel": "0901234567",
+    "email": ""
+   },
+   "payload": "MECARD:TEL:0901234567;;"
+  },
+  {
+   "name": "unknown template",
+   "tpl": "fax",
+   "f": {
+    "num": "1"
+   },
+   "payload": ""
+  }
+ ]
+}

@@ -145,6 +145,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 }
                 "games" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Games.state { sh(it) })   // TV Games: on the TV, a newer one, or "soon"
                 "games/install" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Games.install(link.get(), dir, r.lang) })
+                "games/pad" -> if (!post) return HttpServer.Response.json(JSONObject().put("url", dev.tvremote.core.ontv.Games.pad({ sh(it) }, link.host) ?: ""))   // the pad page's address; "" while TV Games is not running
                 "games/open" -> if (post) {
                     if (!dev.tvremote.core.ontv.Games.open { sh(it) }) throw IOException("games:missing")
                     return HttpServer.Response.ok()

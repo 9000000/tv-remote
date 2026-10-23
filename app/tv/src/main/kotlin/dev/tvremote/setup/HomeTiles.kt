@@ -1,0 +1,149 @@
+package dev.tvremote.setup
+
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
+import android.view.inputmethod.InputMethodManager
+import dev.tvremote.core.WireLog
+import dev.tvremote.core.Words
+import dev.tvremote.core.ontv.Foreground
+import dev.tvremote.core.ontv.Setup
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Live tiles TV Home draws in its app grid at the size of an app tile, provided here through the HomeInfo provider:
+ *   "tiles"    the list [{id, title, icon, kind}] (the key in TV Home's config is "tile:dev.tvremote.setup/<id>")
+ *   "tile"     one tile's state now (arg = id): {id, mode: live|working|done|failed, big, small, progress 0..1, accent: ok|warn|bad,
+ *              result?: {before, after, freed_mb, none, text}}; answers at once, a binder call never waits on ADB
+ *   "tile_do"  runs its action (arg = id) on a thread of its own and answers {started}; the outcome shows in "tile" as mode done / failed
+ * The only tile now is "ram": RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the
+ * measured before -> after. The pure parts (numbers, words, which packages may be closed) live here and are tested without a TV.
+ */
+internal object HomeTiles {
+    const val RAM = "ram"
+    const val DONE_MS = 6000L                                          // how long the before -> after stays, then the live value again
+    const val MIN_FREED_MB = 16L                                       // less than this is noise: "nothing to free", said honestly
+    private const val SETTLE_MS = 1500L                                // Android takes a moment to hand the memory back before it is read again
+
+    fun list(lang: String): JSONArray = JSONArray().put(JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title")).put("icon", "ram").put("kind", "meter"))
+
+    /** What one measure (total, available, in MB) says. */
+    class Mem(val total: Long, val avail: Long) {
+        val used get() = (total - avail).coerceAtLeast(0)
+        val pct: Int get() = if (total <= 0) 0 else Math.round(100f * used / total).coerceIn(0, 100)
+    }
+
+    /** How full the bar is: amber from 70 %, red from 85 % (the memory notice of Rules counts the same way, its default being 90). */
+    fun accent(pct: Int) = if (pct >= 85) "bad" else if (pct >= 70) "warn" else "ok"
+
+    /** "43% → 31% · −280 MB"; [none]: nothing came back, said as such with the number it stays at. */
+    fun doneText(lang: String, before: Mem, after: Mem, freedMb: Long): String =
+        if (freedMb < MIN_FREED_MB) Words.get(lang, "tile.ram_nothing", "pct" to after.pct)
+        else Words.get(lang, "tile.ram_done", "from" to before.pct, "to" to after.pct, "mb" to freedMb)
+
+    /** The outcome of one press. */
+    class Result(val before: Mem, val after: Mem, val at: Long) {
+        val freedMb get() = (after.avail - before.avail).coerceAtLeast(0)
+        val none get() = freedMb < MIN_FREED_MB
+    }
+
+    /** The state to answer: the live value, or the last press's outcome for [DONE_MS], or "working" while it runs. */
+    fun state(lang: String, now: Mem, working: Boolean, last: Result?, failed: Boolean, at: Long): JSONObject {
+        val o = JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title"))
+        val live = o.put("big", "${now.pct}%").put("small", Words.get(lang, "tile.ram_free", "mb" to now.avail))
+            .put("progress", now.pct / 100.0).put("accent", accent(now.pct)).put("mode", "live")
+        if (working) return live.put("mode", "working").put("small", Words.get(lang, "tile.ram_working"))
+        if (failed) return live.put("mode", "failed").put("small", Words.get(lang, "tile.ram_noadb"))
+        if (last != null && at - last.at in 0..DONE_MS) {
+            val text = doneText(lang, last.before, last.after, last.freedMb)
+            return live.put("mode", "done").put("big", "${last.after.pct}%").put("small", text).put("progress", last.after.pct / 100.0)
+                .put("accent", accent(last.after.pct))
+                .put("result", JSONObject().put("before", last.before.pct).put("after", last.after.pct).put("freed_mb", last.freedMb)
+                    .put("none", last.none).put("text", text).put("at", last.at))
+        }
+        return live
+    }
+
+    // ---- which packages the press may close ----
+
+    private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
+
+    /** Package names in `ps -A -o NAME` text: a process "com.x.app:service" belongs to "com.x.app"; kernel threads ("[kworker]") and daemons have no dot. */
+    fun packagesOf(ps: String): List<String> =
+        ps.lines().map { it.trim().substringBefore(':') }.filter { PKG.matches(it) }.distinct()
+
+    /**
+     * Never closed, whatever is running: TV Home, TV Setup and the rest of this project, Android itself and the brands' must-keep
+     * apps ([Setup.mustKeep], the Apps tab's own list), the app on screen, launchers, keyboards and accessibility services.
+     */
+    fun protectedPkg(pkg: String, front: String, safe: Set<String>) =
+        Setup.mustKeep(pkg) || pkg == front || pkg in safe || pkg.startsWith("android.")   // android.process.acore & co: Android's shared processes, not apps
+
+    /** The packages to close out of those running; `am kill` itself only takes a cached process, so this is a second lock, not the only one. */
+    fun targets(running: List<String>, front: String, safe: Set<String>): List<String> = running.filter { !protectedPkg(it, front, safe) }
+
+    /** The launchers, keyboards and accessibility services of this TV. */
+    fun safeSet(c: Context): Set<String> {
+        val out = HashSet<String>()
+        out.add(c.packageName)
+        try {
+            c.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0).forEach { out.add(it.activityInfo.packageName) }
+        } catch (e: Exception) { }
+        try { (c.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).enabledInputMethodList.forEach { out.add(it.packageName) } } catch (e: Exception) { }
+        for (s in (Settings.Secure.getString(c.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: "").split(':'))
+            s.substringBefore('/').takeIf { it.isNotEmpty() }?.let { out.add(it) }
+        return out
+    }
+
+    private fun installed(c: Context, pkg: String) = try { c.packageManager.getApplicationInfo(pkg, 0); true } catch (e: Exception) { false }
+
+    // ---- the state kept between binder calls ----
+
+    @Volatile private var working = false
+    @Volatile private var failed = false
+    @Volatile private var failedAt = 0L
+    @Volatile private var last: Result? = null
+
+    private fun mem(): Mem = Guard.memory().let { Mem(it.first, it.second) }
+
+    /** "tile": the state now, from /proc/meminfo (apps may read it): no ADB, no wait. */
+    fun tile(lang: String, id: String): JSONObject? {
+        if (id != RAM) return null
+        val now = System.currentTimeMillis()
+        val bad = failed && now - failedAt <= DONE_MS
+        if (failed && !bad) failed = false
+        return state(lang, mem(), working, last, bad, now)
+    }
+
+    /** "tile_do": starts the action once at a time (a second press while it runs is the same run); {started} or {busy}. */
+    fun act(c: Context, id: String): JSONObject? {
+        if (id != RAM) return null
+        val app = c.applicationContext
+        synchronized(this) {
+            if (working) return JSONObject().put("started", false).put("busy", true)
+            working = true; failed = false
+        }
+        Thread({
+            try {
+                val before = mem()
+                val sh = { cmd: String -> RemoteService.shell(cmd) }
+                val front = Foreground.parse(sh(Foreground.CMD).orEmpty())
+                val ps = sh("ps -A -o NAME")
+                if (ps == null) { failed = true; failedAt = System.currentTimeMillis(); return@Thread }   // no ADB link: nothing to say about memory
+                val named = packagesOf(ps)
+                val running = named.filter { installed(app, it) }   // a process name that is no package (a daemon's) is not an app to close
+                // an Android without `ps -A` (7 and older) gives no list: the same call the Free RAM button makes
+                val mine = targets(running, front, safeSet(app))
+                if (named.isEmpty()) sh("am kill-all")
+                else if (mine.isNotEmpty()) sh(mine.joinToString("; ") { "am kill $it" })
+                Thread.sleep(SETTLE_MS)
+                last = Result(before, mem(), System.currentTimeMillis())
+                WireLog.all.add("·", "tile ram: ${before.pct}% -> ${last!!.after.pct}% (${last!!.freedMb} MB)")
+            } catch (e: Exception) {
+                failed = true; failedAt = System.currentTimeMillis()
+            } finally { working = false }
+        }, "home-tile").apply { isDaemon = true }.start()
+        return JSONObject().put("started", true)
+    }
+}

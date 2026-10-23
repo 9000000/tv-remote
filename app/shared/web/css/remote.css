@@ -21,9 +21,12 @@
 .rc { display:flex; flex-direction:column; align-items:center; gap:16px; padding:18px 16px; }
 .rrow { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:300px; }
 .rrow.three { grid-template-columns:repeat(3,1fr); }
-.rrow.four { grid-template-columns:repeat(4,1fr); }
+.rrow.four { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.rrow.four .rb small { letter-spacing:.02em; max-width:100%; }   /* "SCREENSHOT" in a quarter of 300px */
 #more[hidden] { display:none; }
 #more { margin-top:-8px; }   /* more rows of the row above it: its 8px, not the card's 16px between parts */
+.rrow[data-rows="nav"] { margin-top:-6px; }   /* 10px under the D-pad, not the card's 16 */
+.rrow[data-rows="nav"] .rb { min-height:0; height:52px; }
 .sliding { overflow:hidden; }
 .rb { min-height:52px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:0; }
 .rb.lab { min-height:60px; }
@@ -31,10 +34,10 @@
 .rb.power { color:var(--bad); }
 .rb.play { background:var(--ink); color:var(--card); }
 .rb.play:hover { background:var(--ink); filter:brightness(.9); }
-.dpad { position:relative; width:min(250px, 72vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); flex:none; }
+.dpad { position:relative; width:min(218px, 63vw); aspect-ratio:1; border-radius:50%; background:var(--btn); border:1px solid var(--line); box-shadow:inset 0 2px 12px rgba(0,0,0,.18); flex:none; }
 .dpad button { position:absolute; width:34%; height:34%; min-height:0; background:transparent; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--muted); }
 .dpad button:hover { background:var(--btn-hi); color:var(--ink); }
-.dpad .ic { width:28px; height:28px; }
+.dpad .ic { width:24px; height:24px; }
 .dpad .up { top:2%; left:33%; }
 .dpad .down { bottom:2%; left:33%; }
 .dpad .left { left:2%; top:33%; }
@@ -143,6 +146,7 @@ fieldset#kbd:disabled { opacity:.4; pointer-events:none; }
 .nowapp { display:flex; align-items:center; gap:8px; min-width:0; }
 .nowapp small { color:var(--muted); flex:none; }
 .nowapp .appicon { width:24px; height:24px; border-radius:6px; flex:none; font-size:12px; }
+.nowapp button { margin-left:auto; flex:none; }
 .nowapp b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .nowapp .appicon:not(.placeholder):not(.adaptive) { width:auto; max-width:96px; }
 .nowapp .appicon:not(.adaptive) img { width:auto; max-width:96px; height:24px; object-fit:contain; }   /* the picture's own shape: a wide banner is not cut to a square */
@@ -201,6 +205,12 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .packview b { display:flex; flex-direction:column; gap:4px; flex:var(--w) 1 0; min-width:0; }
 .packview s { flex:1; border-radius:5px; background:var(--btn-hi); }
 .packview s.big { background:var(--sel); box-shadow:inset 0 0 0 1.5px var(--accent); }
+.homeqr .homeqr-tpl, .homeqr .homeqr-sec { flex-wrap:wrap; overflow:visible; mask-image:none; }   /* seven templates: they wrap rather than scroll */
+.homeqr-form { display:flex; flex-direction:column; gap:10px; }
+.homeqr-field { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--muted); }
+.homeqr-field :is(input, textarea) { width:100%; box-sizing:border-box; }
+.homeqr-view { align-self:center; line-height:0; border-radius:12px; overflow:hidden; }   /* the code is black on white (its own white margin) in both themes: a phone must be able to read it */
+.homeqr-view[hidden] { display:none; }
 .homeask .item { flex-wrap:nowrap; }
 .homeask .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .homeask .homew .item { flex-wrap:wrap; }               /* the cards' names are sentences: on a narrow screen the buttons go under */

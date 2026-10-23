@@ -1,6 +1,7 @@
 package dev.tvremote.games
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -79,7 +80,9 @@ class LibraryActivity : ComponentActivity() {
     private var wantFolder: String? = null                            // a tvgames://folder/<id> link: its row takes the focus once drawn
     private var scroller: ScrollView? = null
     private var scrollAnim: android.animation.ValueAnimator? = null
-    private val en get() = java.util.Locale.getDefault().language != "vi"
+    private val en get() = Lang.code() != "vi"                      // the app's choice, not only the TV's
+
+    override fun attachBaseContext(b: Context) = super.attachBaseContext(Lang.wrap(b))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -379,7 +382,21 @@ class LibraryActivity : ComponentActivity() {
             renderSections()
         }.apply { contentDescription = getString(R.string.cols_pill, cols) }
         addView(cb, LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) })
+        val gb = pill("", 15f, lead = R.drawable.ic_globe) { languages() }.apply { contentDescription = getString(R.string.lang_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
+        addView(gb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
+        if (refocusLang) { refocusLang = false; gb.post { gb.requestFocus() } }   // after the rebuild in the new language the focus is back on the globe
         addView(f, LinearLayout.LayoutParams(dp(280), dp(40)))
+    }
+
+    /** The 🌐 sheet: follow the TV / Tiếng Việt / English, the current one ticked; a change builds the screen again in it. */
+    private fun languages() {
+        val now = Lang.pref(this)
+        val names = mapOf("" to getString(R.string.lang_auto), "vi" to "Tiếng Việt", "en" to "English")
+        popup(getString(R.string.lang_title), Lang.CHOICES.map { l ->
+            ((if (l == now) "✓  " else "     ") + names[l]) to {
+                if (l != now) { Lang.set(this, l); refocusLang = true; recreate() } else closeOverlay()
+            }
+        }, focusIndex = Lang.CHOICES.indexOf(now), icons = Lang.CHOICES.map { R.drawable.ic_globe })
     }
 
     private fun firstTile(): View? { val b = sections ?: return null; return findTile(b) }
@@ -1030,6 +1047,7 @@ class LibraryActivity : ComponentActivity() {
     }
 
     companion object {
+        private var refocusLang = false                             // set just before recreate() for a language change: the globe takes the focus back
         const val GROW = 1.12f                                       // a focused card's size (TV Home's)
         private val SAVES = setOf("srm", "state", "state.tmp", "rtc")
         private const val ART = "art"                                // the views a cover adds to a card's face, taken off before the next

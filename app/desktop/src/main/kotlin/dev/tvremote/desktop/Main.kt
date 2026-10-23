@@ -30,6 +30,14 @@ fun main(args: Array<String>) {
     val window = (packaged || "--window" in args) && "--browser" !in args
     val data = if (packaged) App.data().also { it.mkdirs() } else repo
     if (packaged) File(data, "server.log").let { System.setOut(PrintStream(it.outputStream(), true, Charsets.UTF_8)); System.setErr(System.out) }   // nobody sees a terminal
+    // A throw on a thread nobody watches (a TV's session, a scan) must not take the server down: log it (server.log when packaged) and
+    // keep the last one in guard-last.txt. The page shows its own errors (js/errbox.js); the Android apps show a dialog (shared/src/guard).
+    Thread.setDefaultUncaughtExceptionHandler { th, t ->
+        val text = dev.tvremote.guard.GuardLogic.report(java.time.Instant.now().toString(), "desktop " + (System.getProperty("tvr.version") ?: "dev"),
+            System.getProperty("os.name") + " " + System.getProperty("os.version"), System.getProperty("os.arch"), th.name, t)
+        System.err.println(text)
+        try { File(data, "guard-last.txt").writeText(text) } catch (_: Exception) { }
+    }
     val url = "http://127.0.0.1:$port"
     val passFile = File(if (packaged) data else File(repo, ".cache/desktop").also { it.mkdirs() }, if (port == 8765) "pass" else "pass-$port")   // a test server on its own port keeps its own
     if (packaged && App.answers(url, Pass.read(passFile))) {          // already running (Windows, Linux: opened twice): one more window onto it

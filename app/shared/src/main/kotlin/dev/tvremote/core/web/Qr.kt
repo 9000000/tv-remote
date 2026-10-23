@@ -3,12 +3,16 @@ import android.graphics.Bitmap
 import android.graphics.Color
 
 /**
- * QR codes for short texts (links), drawn here so that no library is needed: byte mode, error correction level L,
- * versions 1 to 5 (up to 106 bytes), which all fit one block of data. A fixed mask is used; readers do not mind.
+ * QR codes for short texts (links, a Wi-Fi), drawn here so that no library is needed: byte mode, error correction level L,
+ * versions 1 to 10 (up to 271 bytes; from version 6 the data is cut in blocks). A fixed mask is used; readers do not mind.
  */
 object Qr {
-    private val DATA = intArrayOf(19, 34, 55, 80, 108)                // data codewords per version, level L
-    private val EC = intArrayOf(7, 10, 15, 20, 26)                    // error correction codewords
+    private val DATA = intArrayOf(19, 34, 55, 80, 108, 136, 156, 194, 232, 274)   // data codewords per version, level L
+    private val BLOCKS = intArrayOf(1, 1, 1, 1, 1, 2, 2, 2, 2, 4)    // blocks the data is cut in
+    private val EC = intArrayOf(7, 10, 15, 20, 26, 18, 20, 24, 30, 18)   // error correction codewords per block
+    private val ALIGN = arrayOf(intArrayOf(), intArrayOf(6, 18), intArrayOf(6, 22), intArrayOf(6, 26), intArrayOf(6, 30), intArrayOf(6, 34),
+        intArrayOf(6, 22, 38), intArrayOf(6, 24, 42), intArrayOf(6, 26, 46), intArrayOf(6, 28, 50))   // centres of the alignment squares
+    private fun lenBits(v: Int) = if (v < 10) 8 else 16               // the length field grows at version 10
 
     /** The code as a picture, [scale] pixels per module, with the white margin readers need. null when [text] is too long. */
     fun bitmap(text: String, scale: Int): Bitmap? {
@@ -24,19 +28,31 @@ object Qr {
     /** The modules, true = dark, [row][column]. */
     fun modules(text: String): Array<BooleanArray>? {
         val bytes = text.toByteArray(Charsets.UTF_8)
-        val v = (1..5).firstOrNull { bytes.size + 2 <= DATA[it - 1] } ?: return null
+        val v = (1..10).firstOrNull { (4 + lenBits(it) + bytes.size * 8 + 7) / 8 <= DATA[it - 1] } ?: return null
         val cap = DATA[v - 1]
         // mode (4 bits: bytes), length (8 bits), the bytes, a terminator, then padding to the capacity
         val bits = ArrayList<Boolean>()
         fun put(value: Int, n: Int) { for (i in n - 1 downTo 0) bits.add((value ushr i) and 1 == 1) }
-        put(4, 4); put(bytes.size, 8)
+        put(4, 4); put(bytes.size, lenBits(v))
         for (b in bytes) put(b.toInt() and 0xff, 8)
         put(0, minOf(4, cap * 8 - bits.size))
         while (bits.size % 8 != 0) bits.add(false)
         var pad = 0xEC
         while (bits.size < cap * 8) { put(pad, 8); pad = if (pad == 0xEC) 0x11 else 0xEC }
         val data = IntArray(cap) { i -> (0 until 8).fold(0) { a, j -> (a shl 1) or (if (bits[i * 8 + j]) 1 else 0) } }
-        val all = data + remainder(data, EC[v - 1])
+        // the data in blocks (the last ones one longer when it does not divide), each with its own check codewords, then interleaved
+        val nb = BLOCKS[v - 1]; val short = cap / nb
+        val blocks = ArrayList<IntArray>(); val checks = ArrayList<IntArray>()
+        var at = 0
+        for (b in 0 until nb) {
+            val len = short + if (b >= nb - cap % nb) 1 else 0
+            val d = data.copyOfRange(at, at + len); at += len
+            blocks.add(d); checks.add(remainder(d, EC[v - 1]))
+        }
+        val allList = ArrayList<Int>()
+        for (i in 0..short) for (d in blocks) if (i < d.size) allList.add(d[i])
+        for (i in 0 until EC[v - 1]) for (c in checks) allList.add(c[i])
+        val all = allList.toIntArray()
 
         val size = 17 + 4 * v
         val dark = Array(size) { BooleanArray(size) }
@@ -45,7 +61,11 @@ object Qr {
         for (i in 0 until size) { set(6, i, i % 2 == 0); set(i, 6, i % 2 == 0) }
         for ((cx, cy) in listOf(3 to 3, size - 4 to 3, 3 to size - 4))    // the three corner squares, with their white border
             for (dy in -4..4) for (dx in -4..4) { val d = maxOf(Math.abs(dx), Math.abs(dy)); set(cx + dx, cy + dy, d != 2 && d != 4) }
-        if (v >= 2) { val c = size - 7; for (dy in -2..2) for (dx in -2..2) set(c + dx, c + dy, maxOf(Math.abs(dx), Math.abs(dy)) != 1) }
+        val cs = ALIGN[v - 1]
+        for (cy in cs) for (cx in cs) {
+            if ((cx == 6 && cy == 6) || (cx == 6 && cy == cs.last()) || (cy == 6 && cx == cs.last())) continue   // under a corner square
+            for (dy in -2..2) for (dx in -2..2) set(cx + dx, cy + dy, maxOf(Math.abs(dx), Math.abs(dy)) != 1)
+        }
         // format: level L (01) and mask 0, protected by a BCH code
         val f = 1 shl 3
         var rem = f
@@ -58,6 +78,12 @@ object Qr {
         for (i in 0..7) set(size - 1 - i, 8, bit(i))
         for (i in 8..14) set(8, size - 15 + i, bit(i))
         set(8, size - 8, true)
+        if (v >= 7) {                                                 // the version, twice, protected by a BCH code
+            var r = v
+            for (i in 0 until 12) r = (r shl 1) xor ((r ushr 11) * 0x1F25)
+            val info = (v shl 12) or r
+            for (i in 0 until 18) { val on = (info ushr i) and 1 == 1; val a = size - 11 + i % 3; val b = i / 3; set(a, b, on); set(b, a, on) }
+        }
         // the data, in a zigzag from the bottom right, two columns at a time, skipping the fixed modules
         var i = 0
         var right = size - 1

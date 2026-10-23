@@ -51,6 +51,7 @@ app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work
                          names, pictures and Caps, through Meta and Caps: Java in src/main/java, dexed into
                          assets/tvr-helper.jar by :shared:tvHelper, kept in git; app/shared/assets/README.md), ScreenOff, Sensors, Meminfo, Tailscale
   scenes/                Scenes (scenes + key names), Voice (spoken commands), RemoteSpec (remote.json)
+  (guard)                `app/shared/src/guard`: Guard.kt (every Android app: keeps the main looper alive, shows the error in a dialog; DECISIONS.md) + GuardLogic.kt (also the computer app); the page's is `js/errbox.js`
   (core itself)          Errors, Diagnose (the self-check when a TV cannot be reached: one conclusion + fix, `/api/diagnose`, `js/diagnose.js`, phone `Diagnosing.kt`), WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log,
                          `/api/wirelog`), Fleet (several saved TVs at once), SameTv (one TV saved under two addresses), B64, SelfSigned
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
@@ -67,7 +68,7 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
 app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI); HomeActivity (clock, dock,
                          grid, long-press menu), Widgets (system / usage / lunar / timer / note cards; usage, timer and CPU from TV
-                         Setup's HomeInfo provider, which answers only TV Home by its signing key), Lunar (the lunar calendar, offline), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
+                         Setup's HomeInfo provider, which answers only TV Home by its signing key; also its live tiles, `Tiles.kt` here / `HomeTiles.kt` there, keys `tile:<pkg>/<id>`), Lunar (the lunar calendar, offline), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
                          RulesReceiver). Its settings' shape is ONE file, `app/shared/src/home/kotlin/.../HomeConfig.kt`, compiled
                          into :shared, :desktop and :home; the clients' side is `core/ontv/Home.kt` + `/api/home` + `js/home.js`.
                          In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS

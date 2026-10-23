@@ -65,4 +65,12 @@
     <string name="your_lists">Danh sách của bạn</string>
     <string name="list_failed">Không đọc được danh sách này. Kiểm tra lại link, hoặc bấm Làm mới.</string>
     <string name="list_empty">Danh sách này không có kênh nào.</string>
+    <!-- bộ bắt lỗi (shared/src/guard/android/Guard.kt); cùng chữ với err.* trong shared/web/i18n -->
+    <string name="err_title">Có lỗi xảy ra</string>
+    <string name="err_last_time">Lần trước app bị lỗi</string>
+    <string name="err_copy">Sao chép</string>
+    <string name="err_copied">Đã chép</string>
+    <string name="err_close">Đóng</string>
+    <string name="err_share">Chia sẻ</string>
+    <string name="err_repeat">lặp lại %d lần</string>
 </resources>

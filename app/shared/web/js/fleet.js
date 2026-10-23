@@ -1,6 +1,6 @@
 // 📺 Several TVs (computer only, app/desktop Fleet.kt): every saved TV in one list to compare, the ones ticked get the same APK,
 // lose the same app, or restart, each with its own progress line. The card sits under the saved TVs on the picker, once there are two.
-let fleetTvs = [], fleetPick = new Set(), fleetRow = {};
+let fleetTvs = [], fleetPick = new Set(), fleetRow = {}, fleetBlocked = [];   // fleetBlocked: apps Check-out never clears (the computer's hard list)
 const FLEET_STEP = { waiting: T('fleet.step_waiting'), connecting: T('fleet.step_connecting'), 'installing on TV': T('fleet.step_installing'), 'checking the TV kept it': T('fleet.step_checking'),
   installed: T('fleet.step_installed'), 'launcher download': T('fleet.step_ldownload'), 'launcher install': T('fleet.step_linstall'),
   'launcher swap': T('fleet.step_lswap'), 'launcher kept': T('fleet.step_lkept'), uninstalled: T('fleet.step_removed'), restarting: T('fleet.step_restarting'), set: T('fleet.step_welcome_set'), off: T('fleet.step_welcome_off'), done: T('fleet.step_done') };
@@ -14,7 +14,7 @@ function fleetCheck(n) {                                              // called 
 async function fleetLoad() {
   $('#fleetlist').replaceChildren(el('div', { className: 'muted', textContent: T('fleet.asking_each') }));
   const r = await api('/api/fleet'); if (!r) return;
-  fleetTvs = r.tvs;
+  fleetTvs = r.tvs; fleetBlocked = r.blocked || [];
   if (!fleetPick.size) fleetTvs.forEach((t) => { if (t.state === 'ready') fleetPick.add(t.host); });   // the ones that can do it, to start with
   fleetDraw();
 }
@@ -62,7 +62,7 @@ async function fleetFollowing(j) {
       const s = fleetRow[host]; if (!s) continue;
       s.className = 'fleetstep ' + p.status;
       s.textContent = p.status === 'cancelled' ? T('fleet.stopped_line') : p.status === 'error' ? '✗ ' + (/^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg))
-        : (/^uninstalled \d+$/.test(p.msg) ? T('fleet.step_removed_n', { n: +p.msg.slice(12) }) : FLEET_STEP[p.msg] || p.msg) + (p.status === 'running' && p.pct ? ' ' + p.pct + '%' : '');
+        : (fleetCheckoutWords(p.msg) || (/^uninstalled \d+$/.test(p.msg) ? T('fleet.step_removed_n', { n: +p.msg.slice(12) }) : FLEET_STEP[p.msg] || p.msg)) + (p.status === 'running' && p.pct ? ' ' + p.pct + '%' : '');
     }
     if (j.status === 'cancelled') { toast(T('fleet.stopped')); return; }   // every part says "Đã dừng" above
     if (j.status === 'done') {
@@ -102,6 +102,7 @@ $('#fleetwelcomeoff').addEventListener('click', () => fleetDo('welcome_off', '',
 $('#fleetremove').addEventListener('click', () => fleetUninstall());
 $('#fleetlaunch').addEventListener('click', () => fleetLauncher());
 $('#fleetreboot').addEventListener('click', () => fleetDo('reboot', '', T('fleet.ask_restart')));
+$('#fleetcheckout').addEventListener('click', () => fleetCheckout());
 $('#fleetreread').addEventListener('click', () => fleetLoad());
 $('#fleetall').addEventListener('click', () => {
   const every = fleetTvs.length && fleetTvs.every((t) => fleetPick.has(t.host));
@@ -208,5 +209,50 @@ async function fleetLauncher() {
     launchGrid(list, (l) => launchRow(l,   // the gallery's own card (launchers.js): picture, name, Source
       el('button', { type: 'button', className: 'small primary', textContent: l.kind === 'play' ? T('launcher.use') : T('fleet.launcher_use'), onclick: () => { $('#infodlg').close(); fleetDo('launcher', l.id, T(l.kind === 'play' ? 'fleet.launcher_ask_play' : 'fleet.launcher_ask', { name: l.name })); } }))),
     el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() })));
+  $('#infodlg').showModal();
+}
+
+// 🧹 Check-out (Trả phòng, core/ontv/Checkout.kt): on every TV ticked, clear the data of the apps picked here (the last guest is signed out),
+// set the volume, sign out every browser paired with the TV's page, go Home. Irreversible, so one question first. The apps and the
+// volume are kept on the computer (tvs.json) for next time; with none kept, the suggestions that are installed come ticked.
+const fleetCheckoutWords = (msg) => {                                  // a TV's line while it runs, and the result when it is done
+  const pieces = checkoutPieces(msg), step = checkoutStep(msg);
+  if (pieces) return '✓ ' + pieces.map(([id, a]) => T(id, a)).join(' · ');
+  return step ? T(step[0], step[1]) : null;
+};
+async function fleetCheckout() {
+  const tvs = fleetChosen(), withApps = tvs.filter((t) => t.apps);
+  if (!tvs.length) { toast(T('fleet.pick_one')); return; }
+  const cfg = await api('/api/fleet/checkout', null, true); if (!cfg) return;
+  const apps = checkoutRows(withApps, fleetBlocked, cfg.apps, cfg.suggest);
+  const picked = new Set(apps.filter((a) => a.on).map((a) => a.pkg));
+  let volume = cfg.volume;
+  const go = el('button', { className: 'danger', type: 'button', textContent: T('fleet.co_go', { n: tvs.length }) });
+  const row = (a) => {
+    const icon = appIcon(a.pkg), name = el('span', { textContent: appName(a.pkg) }), sub = el('small');
+    const info = (m) => {
+      const named = m && m.label && m.label !== a.pkg && m.label !== a.pkg.split('.').pop();
+      put(name, 'textContent', appName(a.pkg)); sub.textContent = T('fleet.on_tvs', { n: a.count, total: withApps.length }) + (named ? '' : ' · ' + a.pkg);
+    };
+    info(META.get(a.pkg)); onMeta(a.pkg, (m) => { icon.fill(m); info(m); });
+    const box = el('input', { type: 'checkbox', checked: a.on, onchange: (e) => { e.target.checked ? picked.add(a.pkg) : picked.delete(a.pkg); r.classList.toggle('on', e.target.checked); } });
+    const r = el('label', { className: 'item pick' + (a.on ? ' on' : ''), title: a.pkg }, icon, el('div', { className: 'name' }, name, sub), box);
+    return r;
+  };
+  const chips = UI.chips([10, 25, 40, 60].map((v) => ({ label: v + '%', on: v === volume, fn: (ev) => {
+    volume = v; const c = ev.currentTarget; c.parentNode.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b === c)); } })));
+  go.onclick = async () => {
+    $('#infodlg').close();
+    const ok = await ask(T('fleet.co_ask', { n: tvs.length, apps: picked.size }) + '\n\n' + tvs.map((t) => '• ' + (t.name || t.host)).join('\n'));
+    if (!ok) return;
+    const r = await api('/api/fleet/checkout', { hosts: tvs.map((t) => t.host), apps: [...picked], volume });
+    if (r) fleetFollow(r);
+  };
+  put('#infotitle', 'textContent', T('fleet.co_title'));
+  $('#infobody').replaceChildren(
+    UI.note(T('fleet.co_note')),
+    UI.group(T('fleet.co_apps'), apps.length ? el('div', { className: 'list fleetapps' }, ...apps.map(row)) : UI.empty(T('fleet.co_none'))),
+    UI.group(T('fleet.co_volume'), chips),
+    el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go));
   $('#infodlg').showModal();
 }

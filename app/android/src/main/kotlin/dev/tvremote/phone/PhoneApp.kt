@@ -9,5 +9,6 @@ class PhoneApp : Application() {
         super.onCreate()
         Words.open = { name -> try { assets.open(name) } catch (e: java.io.IOException) { null } }
         loadLang(this)
+        dev.tvremote.guard.Guard.install(this, { dev.tvremote.core.guardWords() }, share = true)
     }
 }

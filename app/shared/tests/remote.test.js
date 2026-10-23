@@ -115,3 +115,8 @@ test('a guest from a shared QR: "remote" opens apps but sends no files and share
   assert.ok(p.remoteCan(more.find((e) => e.do === 'shot')), 'a screenshot only looks');
   assert.ok(!p.remoteCan(more.find((e) => e.do === 'draw')));
 });
+
+test('every menu entry has an action: a bare "key" entry in a menu crashed the phone (its menus run e.do)', () => {
+  for (const [name, list] of Object.entries(spec.menus))
+    for (const e of list) assert.ok(e.do || e.expand, `menus.${name}: ${e.id} has no "do" (use "do": "key", "arg": …)`);
+});

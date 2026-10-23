@@ -38,7 +38,7 @@ android {
     lint { checkReleaseBuilds = false }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
-    sourceSets["main"].java.srcDirs("../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin")   // Ed25519: providers.json is signed; Release + SelfUpdate: its own updates
+    sourceSets["main"].java.srcDirs("../shared/src/guard/kotlin", "../shared/src/guard/android", "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin")   // Ed25519: providers.json is signed; Release + SelfUpdate: its own updates
     sourceSets["main"].assets.srcDirs("../../docs/channels")          // providers.json + .sig: the copy used until the site's is read
 }
 
