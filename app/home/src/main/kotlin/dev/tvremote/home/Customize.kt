@@ -41,40 +41,48 @@ object Customize {
      * "rows" or "cols" with the remote: rows ◀ ▶ a tenth, ▲ ▼ a whole row; columns ◀ ▶ ▲ ▼ one. OK or Back done. The panel steps
      * aside ([panel] hidden) and the number sits in the clock's corner with no dim, so each step shows on the home screen at once
      * (saved a moment after the last press: holding a key does not rebuild it every repeat). Then the panel is back as it was.
-     * Rows below 1 are "by itself"; the most is what fits under the clock or the cards ([rowsFit]).
+     * Rows below 1 are "by itself"; the most is what fits under the clock or the cards ([rowsFit]). "shade" in percent (◀ ▶ 5,
+     * ▲ ▼ 10) with a bar under it, as a slider: the veil changes behind it as it moves.
      */
     private fun stepper(a: Activity, panel: Dialog, key: String, done: () -> Unit) {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val rows = key == "rows"
-        var v = if (rows) Store.get(a).optDouble("rows", 0.0) else Store.get(a).optInt("cols", HomeConfig.COLS_DEFAULT).toDouble()
-        val most = if (!rows) HomeConfig.COLS_MAX.toDouble() else if (rowsFit >= 1) rowsFit else HomeConfig.ROWS_MAX
+        val shade = key == "shade"
+        var v = if (rows) Store.get(a).optDouble("rows", 0.0) else if (shade) Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT).toDouble() else Store.get(a).optInt("cols", HomeConfig.COLS_DEFAULT).toDouble()
+        val most = if (shade) 100.0 else if (!rows) HomeConfig.COLS_MAX.toDouble() else if (rowsFit >= 1) rowsFit else HomeConfig.ROWS_MAX
+        val bar = android.widget.ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100; progressTintList = ColorStateList.valueOf(ACCENT); progressBackgroundTintList = ColorStateList.valueOf(GLASS_FOCUS)
+            visibility = if (shade) View.VISIBLE else View.GONE
+        }
         val dialog = Dialog(a, R.style.Menu)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val num = Font.on(TextView(a)).apply { textSize = 44f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = Font.light }
         val note = Font.on(TextView(a)).apply { textSize = 13f; setTextColor(DIM); gravity = Gravity.CENTER }
         fun say() {
-            num.text = if (rows) rowsWord(a, v) else v.toInt().toString()
-            note.text = a.getString(if (rows && v >= 1 && v >= most - 0.05) R.string.c_rows_most else if (rows) R.string.c_rows_keys else R.string.c_cols_keys)
+            num.text = if (rows) rowsWord(a, v) else if (shade) "${v.toInt()}%" else v.toInt().toString()
+            bar.progress = v.toInt()
+            note.text = a.getString(if (shade) R.string.c_shade_keys else if (rows && v >= 1 && v >= most - 0.05) R.string.c_rows_most else if (rows) R.string.c_rows_keys else R.string.c_cols_keys)
         }
         val save = Runnable { Store.change(a, JSONObject().put(key, if (rows) v else v.toInt())) }
         val box = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; isFocusable = true; isFocusableInTouchMode = true   // opened by a touch (a mouse, adb), it still takes the keys
             setPadding(dp(28), dp(18), dp(28), dp(18))
             background = GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(STEP_FILL); setStroke(dp(1), ACCENT) }
-            addView(Font.on(TextView(a)).apply { text = a.getString(if (rows) R.string.c_rows else R.string.c_cols); textSize = 15f; setTextColor(DIM); gravity = Gravity.CENTER })
+            addView(Font.on(TextView(a)).apply { text = a.getString(if (shade) R.string.c_shade else if (rows) R.string.c_rows else R.string.c_cols); textSize = 15f; setTextColor(DIM); gravity = Gravity.CENTER })
             addView(num, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+            addView(bar, LinearLayout.LayoutParams(-1, dp(6)).apply { topMargin = dp(6) })
             addView(note, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
         }
         box.setOnKeyListener { _, code, e ->
             if (e.action != android.view.KeyEvent.ACTION_DOWN) return@setOnKeyListener false
             val step = when (code) {
-                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> if (rows) -0.1 else -1.0; android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> if (rows) 0.1 else 1.0
-                android.view.KeyEvent.KEYCODE_DPAD_UP -> 1.0; android.view.KeyEvent.KEYCODE_DPAD_DOWN -> -1.0
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> if (rows) -0.1 else if (shade) -5.0 else -1.0; android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> if (rows) 0.1 else if (shade) 5.0 else 1.0
+                android.view.KeyEvent.KEYCODE_DPAD_UP -> if (shade) 10.0 else 1.0; android.view.KeyEvent.KEYCODE_DPAD_DOWN -> if (shade) -10.0 else -1.0
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER, android.view.KeyEvent.KEYCODE_ENTER -> { dialog.dismiss(); return@setOnKeyListener true }
                 else -> return@setOnKeyListener false
             }
-            v = if (!rows) (v + step).coerceIn(HomeConfig.COLS_MIN.toDouble(), most)
+            v = if (shade) (v + step).coerceIn(0.0, most) else if (!rows) (v + step).coerceIn(HomeConfig.COLS_MIN.toDouble(), most)
                 else if (v < 1) (if (step > 0) 1.0 else 0.0) else (v + step).let { if (it < 0.95) 0.0 else HomeConfig.rows(minOf(it, most)) }
             say(); box.removeCallbacks(save); box.postDelayed(save, 200); true
         }
@@ -276,7 +284,7 @@ object Customize {
                 col.addView(pair, LinearLayout.LayoutParams(-1, -2).apply { if (inRow == 2) topMargin = gap }); inRow = 0
             }
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
-            var on = if (choices != null || key == "rows") pick > 0 || key == "cols" || key == "rows" else conf.optBoolean(key, true)
+            var on = if (choices != null || key == "rows" || key == "shade") pick > 0 || key == "cols" || key == "rows" || key == "shade" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
             val t = LinearLayout(a).apply {
@@ -296,13 +304,13 @@ object Customize {
                 }
                 ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
                 val word = a.getString(if (on) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
+                state.text = if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else if (key == "shade") "${Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT)}%" else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
                 state.setTextColor(if (on) ACCENT else DIM)
             }
             paint()
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             t.setOnClickListener {
-                if (key == "rows" || key == "cols") {
+                if (key == "rows" || key == "cols" || key == "shade") {
                     stepper(a, dialog, key) { pick = choices?.indexOfFirst { it.first == Store.get(a).optString(key) }?.coerceAtLeast(0) ?: 0; paint() }
                     return@setOnClickListener
                 }
@@ -318,8 +326,7 @@ object Customize {
             inRow++
         }
         // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
-        tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade",
-            HomeConfig.SHADES.zip(listOf(R.string.c_shade_0, R.string.c_shade_50, R.string.c_shade_100, R.string.c_shade_150, R.string.c_shade_200)) { v, r -> "$v" to a.getString(r) })
+        tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
         pair = null                                                    // the next section starts its own row
         section(a.getString(R.string.c_look))
         tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")

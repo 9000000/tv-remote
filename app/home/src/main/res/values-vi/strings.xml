@@ -178,11 +178,7 @@
     <string name="c_focus">Ô đang chọn</string>
     <string name="c_focus_glass">Kính</string>
     <string name="c_shade">Phủ tối hình nền</string>
-    <string name="c_shade_0">Không</string>
-    <string name="c_shade_50">Nhẹ</string>
-    <string name="c_shade_100">Vừa</string>
-    <string name="c_shade_150">Đậm</string>
-    <string name="c_shade_200">Rất đậm</string>
+    <string name="c_shade_keys">◀ ▶ ±5% · ▲ ▼ ±10% · OK xong</string>
     <string name="c_focus_ring">Viền xanh</string>
     <string name="c_lang_tv">Theo TV</string>
     <string name="w_offline">mất mạng</string>

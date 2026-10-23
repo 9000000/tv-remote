@@ -46,7 +46,7 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
             copy.shader.setLocalMatrix(place)
             c.drawRoundRect(box, radius, radius, copy)
             c.drawRoundRect(box, radius, radius, DARK)                // as dark as the band's copy: white words stay white
-        }
+        } else if (live) c.drawRoundRect(box, radius, radius, SOLID)
         glass.draw(c)
     }
 
@@ -56,6 +56,10 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
 
     companion object {
         private val DARK = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x70000000 }
+        private val SOLID = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB8101218.toInt() }
+        // a live page has no still copy to blur: one taken again and again (drawing the WebView to a bitmap) or a real blur
+        // (RenderEffect: Android 12+, a BRAVIA is 9) costs every frame on these chips; a nearly opaque card is free and as readable
+        private var live = false
         private val views = WeakHashMap<View, Boolean>()
         @JvmStatic var soft: Bitmap? = null; private set
         private var screenW = 0f
@@ -67,7 +71,7 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
         /** The wallpaper's blurred copy (null: none), for a screen of [w] x [h]. */
         // every card redrawn, also when the copy goes (a gradient now): through moved() a card that never redraws by itself (the
         // top right capsule) kept the last photo's colours
-        fun show(b: Bitmap?, w: Int, h: Int) { soft = b; screenW = w.toFloat(); screenH = h.toFloat(); for (v in views.keys.toList()) v.invalidate() }
+        fun show(b: Bitmap?, w: Int, h: Int, live: Boolean = false) { soft = b; this.live = live; screenW = w.toFloat(); screenH = h.toFloat(); for (v in views.keys.toList()) v.invalidate() }
 
         /** The cards moved on the screen (a scroll): each draws its part of the copy again. */
         fun moved() { if (soft != null) for (v in views.keys.toList()) v.invalidate() }

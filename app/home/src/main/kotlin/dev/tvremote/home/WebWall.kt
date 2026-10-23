@@ -67,7 +67,7 @@ object WebWall {
         }
     } catch (e: Throwable) { null }
 
-    /** The same shade a photo gets, over the page ([user]: the person's "shade" / 100): the words of the home screen stay readable. */
+    /** The same shade a photo gets, over the page ([user]: as [Backdrop.shade]'s): the words of the home screen stay readable. */
     fun dim(c: Context, user: Float) = View(c).apply { background = veil(user) }
     fun veil(user: Float) = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, Backdrop.shade(1f, user))
 

@@ -17,9 +17,10 @@ import org.json.JSONObject
  *           at most [WURL_MAX]; anything else is dropped. "web" with no good wurl is an unknown wall: the default gradient. "web" is
  *           never turned through: choosing it makes [walls] just that one, and a set sent with it elsewhere loses it
  *   photo   when a photo last changed, so the launcher reads it again
- *   shade   how dark the veil over a photo, a drawn scene or the web page is, in percent of the usual one ([SHADES], default
- *           [SHADE_DEFAULT]): 0 none, 200 nearly black. A busy page or photo fights the words of the home screen at 100. A TV Home
- *           that has this reports "shadeOk": true
+ *   shade   how dark the veil over a photo, a drawn scene or the web page is, 0..100 % in steps of [SHADE_STEP]: 0 none,
+ *           [SHADE_DEFAULT] the usual one (darker at the top and the bottom, where the clock and the names are), 100 an even veil
+ *           nearly black. A busy page or photo fights the words of the home screen at the usual one. A TV Home that has this
+ *           reports "shadeOk": true
  *   walls   the set the background turns through (any of the above, [WALLS_MAX]); never empty, [wall] is what shows now
  *   wevery  how often it moves on to the next of [walls] ([EVERY]): "off", "30m", "1h", "6h", "day" (the first time Home is seen on a
  *           new day), "show" (each time Home comes back on screen). Only while Home is on screen or when it comes back: nothing
@@ -81,8 +82,8 @@ object HomeConfig {
     const val WEB = "web"
     const val WURL_MAX = 500
     val WMODES = listOf("live", "snap")
-    val SHADES = listOf(0, 50, 100, 150, 200)
-    const val SHADE_DEFAULT = 100
+    const val SHADE_DEFAULT = 50
+    const val SHADE_STEP = 5
     val WSNAPS = listOf(1, 5, 15, 30, 60)
     const val WSNAP_DEFAULT = 5
     private val WURL = Regex("https?://[^\\s/?#]+\\S*", RegexOption.IGNORE_CASE)
@@ -207,7 +208,7 @@ object HomeConfig {
             .put("wkeep", o.optBoolean("wkeep", false))
             .put("wevery", o.optString("wevery").takeIf { it in EVERY } ?: "off")
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
-            .put("shade", o.optInt("shade", SHADE_DEFAULT).takeIf { it in SHADES } ?: SHADE_DEFAULT)
+            .put("shade", o.optInt("shade", SHADE_DEFAULT).coerceIn(0, 100) / SHADE_STEP * SHADE_STEP)
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))

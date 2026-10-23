@@ -20,7 +20,7 @@ class Backdrop(private val target: View) {
     /** What is painted: a gradient, a drawn scene ([art], WallArt) or a photo over [colors] (any size: cropped to cover, like CENTER_CROP). */
     class Look(val colors: IntArray, val photo: Bitmap? = null, val art: String? = null)
 
-    /** The person's veil ([HomeConfig] "shade" / 100), for the next [show]. */
+    /** The person's veil ([HomeConfig] "shade" / its default: 1 the usual one), for the next [show]. */
     var strength = 1f
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     private var made: Bitmap? = null
@@ -61,7 +61,7 @@ class Backdrop(private val target: View) {
         val SHADE = intArrayOf(0xB0000000.toInt(), 0x40000000, 0x90000000.toInt())
         /**
          * [SHADE] at [k] of its strength (a drawn scene is made dark enough already, a photo is not), then the person's [user]
-         * ("shade" / 100): under 1 lighter, over 1 each stop goes towards [DARKEST], so the middle (light at 1, where a busy page
+         * ("shade" / its default, 0..2): under 1 lighter, over 1 each stop goes towards [DARKEST], so the middle (light at 1, where a busy page
          * shows most) darkens most and 2 is an even veil.
          */
         fun shade(k: Float, user: Float = 1f) = IntArray(SHADE.size) {

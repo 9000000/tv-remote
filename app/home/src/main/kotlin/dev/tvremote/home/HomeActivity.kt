@@ -753,7 +753,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    private fun shadeK() = conf.optInt("shade", HomeConfig.SHADE_DEFAULT) / 100f
+    private fun shadeK() = conf.optInt("shade", HomeConfig.SHADE_DEFAULT).toFloat() / HomeConfig.SHADE_DEFAULT   // Backdrop.shade's: 1 the usual veil
 
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
@@ -781,7 +781,7 @@ class HomeActivity : Activity() {
         backdrop.strength = shadeK()
         if (id == HomeConfig.WEB && !snap) {                          // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
             picture = null; soft = null
-            Frost.show(null, dm.widthPixels, dm.heightPixels)
+            Frost.show(null, dm.widthPixels, dm.heightPixels, live = true)
             backdrop.show(Backdrop.Look(colors))                      // the gradient is what shows while the page loads, and if it never does
             attachWeb()
             webDim?.background = WebWall.veil(shadeK())               // the same page, a new strength: attachWeb kept the page as it was

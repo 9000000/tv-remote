@@ -219,8 +219,15 @@ async function homeOpen() {
   const webKeepBox = el('input', { type: 'checkbox', onchange: () => send({ wkeep: webKeepBox.checked }) });
   const webKeep = el('label', { className: 'check' }, webKeepBox, el('span', { textContent: T('home.web_keep') }));
   const webModeNote = el('p', { className: 'note' });
-  // the veil over a photo, a scene or the page (HomeConfig "shade", percent; HomeConfig.SHADES): a busy one fights Home's words
-  const shadeHead = el('h3', { textContent: T('home.shade') }), shade = el('div', { className: 'fchips' });
+  // the veil over a photo, a scene or the page (HomeConfig "shade", 0..100 % by 5, 50 the usual one): a busy one fights Home's
+  // words; the TV follows the slider while it moves (its last place a moment after), as the dimmer does
+  const shadeOut = el('output');
+  let shadeWait = 0;
+  const shadeIn = el('input', { type: 'range', min: 0, max: 100, step: 5, ariaLabel: T('home.shade'), oninput: () => {
+    shadeOut.textContent = shadeIn.value + '%';
+    clearTimeout(shadeWait); shadeWait = setTimeout(() => send({ shade: +shadeIn.value }), 150);
+  } });
+  const shadeHead = el('h3', { textContent: T('home.shade') }), shade = el('div', { className: 'vol boost' }, shadeIn, shadeOut);
   const shadeNote = el('p', { className: 'note', textContent: T('home.shade_note') });
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
@@ -261,8 +268,7 @@ async function homeOpen() {
     motion.replaceChildren(...[['', 'home.motion_auto'], ['calm', 'home.motion_calm'], ['full', 'home.motion_full']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.motion || '') === k ? 'on' : '', onclick: () => send({ motion: k }) }, T(id))));
     shadeHead.hidden = shade.hidden = shadeNote.hidden = !c.shadeOk;
-    shade.replaceChildren(...[[0, 'home.shade_0'], [50, 'home.shade_50'], [100, 'home.shade_100'], [150, 'home.shade_150'], [200, 'home.shade_200']].map(([n, id]) =>
-      el('button', { type: 'button', className: (c.shade ?? 100) === n ? 'on' : '', 'aria-pressed': String((c.shade ?? 100) === n), onclick: () => send({ shade: n }) }, T(id))));
+    if (document.activeElement !== shadeIn) { shadeIn.value = String(c.shade ?? 50); shadeOut.textContent = (c.shade ?? 50) + '%'; }
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
