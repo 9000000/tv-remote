@@ -745,7 +745,7 @@
  "fleet.co_volume": "Âm lượng sau khi trả phòng",
  "fleet.co_none": "Các TV này chưa có app nào của bạn để chọn.",
  "fleet.co_go": "Trả phòng ({n} TV)",
- "fleet.co_ask": "Trả phòng {n} TV? Dữ liệu {apps} app sẽ bị xoá, khách cũ bị đăng xuất và không điều khiển được TV nữa. Không hoàn lại được.",
+ "fleet.co_ask": "Trả phòng {n} TV? Khách cũ được đăng xuất khỏi {apps} app, và điện thoại của khách không điều khiển TV được nữa. TV vẫn dùng bình thường cho khách sau. Không hoàn lại được.",
  "fleet.co_cleared": {
   "one": "đã xoá dữ liệu {n} app",
   "other": "đã xoá dữ liệu {n} app"

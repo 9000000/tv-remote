@@ -789,7 +789,7 @@
  "fleet.co_volume": "Volume after check-out",
  "fleet.co_none": "These TVs have none of your apps to pick.",
  "fleet.co_go": "Check out ({n} TV)",
- "fleet.co_ask": "Check out {n} TV? The data of {apps} apps will be cleared and the last guest signed out, and can no longer control the TV. This cannot be undone.",
+ "fleet.co_ask": "Check out {n} TV? The last guest is signed out of {apps} apps, and the guest's phone can no longer control the TV. The TV works as usual for the next guest. This cannot be undone.",
  "fleet.co_cleared": {
   "one": "cleared {n} app",
   "other": "cleared {n} apps"
