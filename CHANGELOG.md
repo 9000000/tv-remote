@@ -25,6 +25,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: màn "Trang web làm hình nền" và "Quản lý từ điện thoại" chia 2 cột, mã QR to hơn nhiều (FPT: 100 → ~250 dp), dễ quét. Nút Đóng không còn bị mất chữ trên TV màn thấp.
 - TV Channels, TV Games: hộp thoại dài (danh sách nhóm, ngôn ngữ…) cuộn được, nút cuối không còn bị ép mất chữ.
 - TV Home: menu Cài đặt/Nguồn ở thanh trên nằm sát thanh và làm tối Home rõ hơn. Bảng Tùy chỉnh làm tối y như vậy (mở từ menu không còn chớp sáng); các trang xem trước trên Home (Hình nền, Giao diện, Bố cục, Widget) bỏ tối để thấy đúng thay đổi.
+- TV Home: các trang Tùy chỉnh để mỗi mục một hàng (2 cột làm tên dài xuống dòng, hai ô lệch nhau). Trang Widget đưa phần Kết quả lên đầu. Rút gọn các dòng hướng dẫn dài (đổi chỗ/cỡ thẻ, Màn hình chính, Phím nhanh, Thêm vào màn hình chính).
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -45,6 +46,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: the "Web page as the background" and "Manage from phone" screens are in two columns with a much bigger QR (FPT box: 100 → ~250 dp), easier to scan. The Close button no longer loses its word on short TVs.
 - TV Channels, TV Games: long dialogs (groups, languages…) scroll; the last button is no longer squashed.
 - TV Home: the Settings/Power menus of the top bar sit right under it and dim Home more. Customize dims the same (no flash of light when opened from the menu); its pages that preview on Home (Background, Look, Layout, Widgets) lift the dim so the change is seen as it is.
+- TV Home: Customize pages put one item per row (two columns wrapped long names and left the pair uneven). The Widgets page shows its Result first. Long hints cut short (moving / sizing cards, Home screen, quick keys, add to home screen).
 
 ## 0.20.0 - 2026-10-23
 

@@ -166,7 +166,7 @@
     <string name="wx_rain">Rain</string>
     <string name="wx_snow">Snow</string>
     <string name="wx_storm">Thunderstorm</string>
-    <string name="w_order_hint">The button on the right of a card moves it: press it, then Up / Down, then OK.</string>
+    <string name="w_order_hint">The ⌃⌄ button moves a card, Big / Small sets its size.</string>
     <string name="c_move">Move</string>
     <string name="c_moving">Up / Down, then OK</string>
     <string name="w_layout">Result</string>
@@ -174,7 +174,6 @@
     <string name="c_size_small">Small</string>
     <string name="c_size">Size</string>
     <string name="c_waits">not shown yet</string>
-    <string name="c_size_hint">The Big / Small button sets how large a card is. Big cards get a column, two small ones share one.</string>
     <string name="c_lang">Language</string>
     <string name="c_motion">Motion level</string>
     <string name="c_motion_auto">Auto</string>
@@ -239,7 +238,7 @@
     <string name="power_keep">Keep it on</string>
     <string name="power_missing">Needs the latest TV Setup on this TV</string>
     <string name="c_home_screen">Home screen</string>
-    <string name="c_home_screen_sub">Use another launcher: TV Setup turns the TV\'s own one off and watches the switch</string>
+    <string name="c_home_screen_sub">Use another launcher (needs TV Setup)</string>
     <string name="c_home_screen_need">Needs the TV Setup app · Downloader code %1$s</string>
     <string name="power_needs_setup">The power button needs the TV Setup app</string>
     <string name="power_setup_code">Install with Downloader: code %1$s</string>
@@ -278,7 +277,7 @@
     <string name="k_none">None</string>
     <string name="k_need_setup">Works only while on TV Home. Install TV Setup to use it everywhere.</string>
     <string name="k_need_adb">TV Setup needs ADB (USB debugging) to use keys outside TV Home.</string>
-    <string name="k_everywhere">Colour keys and dead remote buttons work in every app. 0-9 only on TV Home.</string>
+    <string name="k_everywhere">Colour keys, dead buttons: every app. 0-9: TV Home only.</string>
     <string name="k_auto_need_setup">Needs TV Setup on this TV. Install it to use this.</string>
     <string name="k_auto_note">Once per power-on. Not if the TV woke into another app.</string>
     <string name="k_red">Red key</string>
@@ -315,7 +314,7 @@
     <string name="pk_live">Live</string>
     <string name="pk_none">None</string>
     <string name="pk_none_found">Nothing found</string>
-    <string name="pk_grid_hint">Press a tile to put it on the home screen or take it off.</string>
+    <string name="pk_grid_hint">Add or remove tiles on the home screen.</string>
     <string name="pk_target_hint">Pick what this opens: an app, one of its shortcuts or a live tile.</string>
     <string name="pk_pins_need_home">Shortcuts can be read only while TV Home is the home app.</string>
     <string name="c_add_home">Add to home screen</string>

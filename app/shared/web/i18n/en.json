@@ -2736,7 +2736,7 @@
  "home.qk_none": "None",
  "home.qk_power": "At power-on",
  "home.qk_no_key": "not on this remote",
- "home.qk_grid_hint": "Press a tile to put it on the home screen or take it off.",
+ "home.qk_grid_hint": "Add or remove tiles on the home screen.",
  "home.qk_target_hint": "Pick what this opens: an app, one of its shortcuts or a live tile.",
  "home.tiles_note": "A tile shows something live (RAM in use, the channel you were watching, the sleep timer); pressing it does that job. Provided by TV Setup and TV Channels, shown in the app grid like an app.",
  "home.tiles_missing": "Live tiles need a newer TV Setup on the TV: install or update TV Setup (the Keep watching tile needs TV Channels).",

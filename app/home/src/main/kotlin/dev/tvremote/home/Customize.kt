@@ -237,15 +237,9 @@ object Customize {
         val everyWords = EVERY_WORDS
         val chips = ArrayList<Pair<String, TextView>>()
         fun markEvery() { val e = Store.get(a).optString("wevery"); for ((k, v) in chips) v.isSelected = k == e }
-        // switches as tiles, two to a row: an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
-        var pair: LinearLayout? = null
-        var inRow = 0
+        // switches as tiles, one to a row (two side by side were ~200 dp each: a name on two lines left its neighbour short): an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
         // with [choices] (value to its words) the tile steps through them on each press instead of switching on / off; on = not the first
         fun tile(res: Int, text: String, sub: String?, key: String, choices: List<Pair<String, String>>? = null) {
-            if (pair == null || inRow == 2) {
-                pair = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
-                col.addView(pair, LinearLayout.LayoutParams(-1, -2).apply { if (col.childCount > 0) topMargin = gap }); inRow = 0   // below anything, not only a row of its own (the veil after the photo row)
-            }
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
             var on = if (choices != null || key == "rows" || key == "shade") pick > 0 || key == "cols" || key == "rows" || key == "shade" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
@@ -285,10 +279,8 @@ object Customize {
                 try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
                 paint()
             }
-            pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (inRow == 1) leftMargin = gap })
-            inRow++
+            col.addView(t, LinearLayout.LayoutParams(-1, -2).apply { if (col.childCount > 0) topMargin = gap })   // below anything: the veil after the photo row too
         }
-        fun endRow() { if (inRow == 1) pair!!.addView(View(a), LinearLayout.LayoutParams(0, 0, 1f).apply { leftMargin = gap }); pair = null; inRow = 0 }   // a lone tile keeps half the width
 
         // each page is filled when it is first opened, or once the panel has slid in: all seven built before it showed took
         // ~650 ms on the FPT box, which held its first frame for a second
@@ -309,7 +301,6 @@ object Customize {
             }, LinearLayout.LayoutParams(-1, -2))
             // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
             tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
-            endRow()
             col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
             var chipRow: LinearLayout? = null
             HomeConfig.EVERY.forEachIndexed { i, k ->
@@ -417,18 +408,17 @@ object Customize {
                 listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))
             tile(R.drawable.ic_eye, a.getString(R.string.c_focus), null, "focus",
                 listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
-            endRow()
         }
         groups[2].fill = {
             tile(R.drawable.ic_apps, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
             tile(R.drawable.ic_updown, a.getString(R.string.c_rows), null, "rows")
-            endRow()
         }
         groups[3].fill = {
             val preview = PackGlyph(a)
+            // the result first, where it is seen as the cards below change (at the end it took scrolling past every card)
+            col.addView(label(a.getString(R.string.w_layout).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(10) })
+            col.addView(preview, LinearLayout.LayoutParams(-1, (64 * a.resources.displayMetrics.density).toInt()).apply { bottomMargin = dp(16) })
             widgetRows(a, col, gap, ::glass, ::label, preview)
-            section(a.getString(R.string.w_layout))
-            col.addView(preview, LinearLayout.LayoutParams(-1, (64 * a.resources.displayMetrics.density).toInt()))
             val note = conf.optString("note")
             if (note.isNotEmpty()) {                                       // written on the phone; here it can only be taken down
                 val sub = label(a.getString(R.string.c_note_clear), 12f, DIM).apply { maxLines = 1 }
@@ -453,7 +443,6 @@ object Customize {
         groups[4].fill = {
             tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
             tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
-            endRow()
             // another launcher as the home screen: TV Home has no ADB to turn the TV's own one off (without that Home goes on landing on it,
             // a BRAVIA on Android 9), so TV Setup's picker does it, opened on that screen; without TV Setup the row says how to get it
             val setup = a.packageManager.getLaunchIntentForPackage("dev.tvremote.setup")?.putExtra("open", "launchers")
@@ -506,7 +495,7 @@ object Customize {
         groups[0].start = { tiles.firstOrNull { it.second.isSelected }?.second ?: tiles.firstOrNull()?.second }
         fun build(g: Group) {
             val f = g.fill ?: return
-            g.fill = null; conf = Store.get(a); col = g.col; pair = null; inRow = 0   // as it is now: another page may have changed it
+            g.fill = null; conf = Store.get(a); col = g.col   // as it is now: another page may have changed it
             f()
         }
         // the rest, one page a message once the panel is in place, so a key pressed meanwhile waits for one page at most
@@ -762,7 +751,7 @@ object Customize {
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(box, LinearLayout.LayoutParams(-1, -2))
-        col.addView(label(a.getString(R.string.w_order_hint) + " " + a.getString(R.string.c_size_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 4 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        col.addView(label(a.getString(R.string.w_order_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 2 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         var moving: String? = null; var building = false
         fun fill(focus: String? = null, focusMove: Boolean = false, focusSize: Boolean = false) {
             building = true                                            // taking the rows down loses their focus: not a wander
