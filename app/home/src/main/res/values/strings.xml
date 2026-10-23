@@ -33,7 +33,6 @@
     <string name="clock24">24-hour clock</string>
     <string name="greet">Greeting</string>
     <string name="motion">Motion effects</string>
-    <string name="more">Favourites, hidden apps and more pictures: on the phone or computer, Setup tab → TV Home.</string>
     <string name="done">Done</string>
     <string name="wall_night">Night</string>
     <string name="wall_ocean">Ocean</string>
@@ -303,7 +302,7 @@
     <string name="err_share">Share</string>
     <string name="err_repeat">repeated %d times</string>
     <string name="mg_row">Manage from phone</string>
-    <string name="mg_row_sub">One code for every setting</string>
+    <string name="mg_row_sub">Favourites, hidden apps, photos and every setting</string>
     <string name="mg_title">Manage from phone</string>
     <string name="mg_step">1. Point the phone\'s camera at the code\n2. Change any setting in the page that opens</string>
     <string name="mg_connected">A phone is connected</string>

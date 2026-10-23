@@ -575,7 +575,6 @@ object Customize {
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        top.addView(label(a.getString(R.string.more), 12f, 0x8CFFFFFF.toInt()), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(22) })
         val done = Font.on(TextView(a)).apply {
             text = a.getString(R.string.done); textSize = 16f; setTextColor(0xFF111318.toInt()); gravity = Gravity.CENTER
             typeface = Font.medium

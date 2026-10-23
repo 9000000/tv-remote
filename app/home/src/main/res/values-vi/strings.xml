@@ -31,7 +31,6 @@
     <string name="clock24">Đồng hồ 24 giờ</string>
     <string name="greet">Lời chào</string>
     <string name="motion">Hiệu ứng chuyển động</string>
-    <string name="more">Ứng dụng yêu thích, ứng dụng ẩn và thêm hình nền: trên điện thoại hoặc máy tính, tab Thiết lập → TV Home.</string>
     <string name="done">Xong</string>
     <string name="wall_night">Đêm</string>
     <string name="wall_ocean">Biển</string>
@@ -301,7 +300,7 @@
     <string name="err_share">Chia sẻ</string>
     <string name="err_repeat">lặp lại %d lần</string>
     <string name="mg_row">Quản lý từ điện thoại</string>
-    <string name="mg_row_sub">Một mã cho mọi cài đặt</string>
+    <string name="mg_row_sub">App yêu thích, app ẩn, ảnh và mọi cài đặt</string>
     <string name="mg_title">Quản lý từ điện thoại</string>
     <string name="mg_step">1. Mở camera điện thoại, quét mã này\n2. Đổi cài đặt bất kỳ trong trang vừa mở</string>
     <string name="mg_connected">Đã có điện thoại kết nối</string>
