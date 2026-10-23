@@ -30,6 +30,8 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     private val lift = dp(14).toFloat()
     /** False: the tile's own ring, never the gliding glass, whatever the setting (a picker over Home: the glass's layer cost a frame there). */
     open val glassy get() = Motion.glass
+    /** False: focus is the ring and the name only, the card stays its size (a full-screen page of tiles, where the growth cost most). */
+    open val grows get() = true
     private val across = w.toFloat()
     val pane: View get() = face                                     // where the glass goes
     val corner = dp(TvUi.R_TILE).toFloat()
@@ -90,6 +92,7 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
      */
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
+        if (!grows) { ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; return }
         if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
             val s = if (on) GROW else 1f
             card.translationX = 0f; card.translationY = 0f

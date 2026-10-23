@@ -40,6 +40,9 @@ import dev.tvremote.home.wall.Walls
  * rest (favourites, hidden apps, pictures from the gallery) stays on the phone or computer: the gallery's signature check lives there.
  */
 object Customize {
+    // a row's focus is its lighter background alone, no 1.06 growth: the growth's animation re-drew the panel every frame,
+    // 24 moves cost ~5.3 s of CPU on the FPT box
+    private fun lit(v: View, f: Boolean) { v.animate().cancel(); v.scaleX = 1f; v.scaleY = 1f }
     private const val ACCENT = 0xFF8AB4F8.toInt()
     private const val STEP_FILL = 0xF0161A24.toInt()                   // the rows stepper: nearly opaque, its number read over any background
     private const val DIM = 0xA6FFFFFF.toInt()
@@ -265,7 +268,7 @@ object Customize {
                 state.setTextColor(if (on) ACCENT else DIM)
             }
             paint()
-            t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             t.setOnClickListener {
                 if (key == "rows" || key == "cols" || key == "shade") {
                     stepper(a, dialog, key) { pick = choices?.indexOfFirst { it.first == Store.get(a).optString(key) }?.coerceAtLeast(0) ?: 0; paint() }
@@ -296,7 +299,7 @@ object Customize {
                     addView(label(a.getString(R.string.wall_phone), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     addView(label(a.getString(R.string.wall_phone_sub), 12f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                 setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
             }, LinearLayout.LayoutParams(-1, -2))
             // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
@@ -313,7 +316,7 @@ object Customize {
                         addState(intArrayOf(android.R.attr.state_selected), glass(14, 0x268AB4F8, ACCENT))
                         addState(intArrayOf(), glass(14, 0x12FFFFFF, 0x1FFFFFFF))
                     }
-                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener { Store.change(a, JSONObject().put("wevery", k)); markEvery(); markAll() }
                 }
                 chips.add(k to chip)
@@ -352,7 +355,7 @@ object Customize {
                         background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
                         val (iv, s) = icon(R.drawable.ic_check, 0xFF0B1020.toInt(), dp(14)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
                     }, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         val c = Store.get(a)
                         if (k == HomeConfig.WEB) {                                // the link is pasted on a phone (a QR), how it updates is picked there with the D-pad
@@ -435,7 +438,7 @@ object Customize {
                         addView(label(note, 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                         addView(sub)
                     }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener { Store.change(a, JSONObject().put("note", "")); sub.text = a.getString(R.string.c_note_gone); alpha = 0.6f }
                 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
             }
@@ -459,7 +462,7 @@ object Customize {
                     addView(label(a.getString(R.string.c_home_screen), 15f, Color.WHITE))
                     addView(label(if (setup != null) a.getString(R.string.c_home_screen_sub) else a.getString(R.string.c_home_screen_need, HomeActivity.SETUP_CODE), 12f, DIM))
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                 setOnClickListener {
                     val go = setup ?: a.packageManager.getLaunchIntentForPackage("com.esaba.downloader") ?: return@setOnClickListener
                     try { a.startActivity(go.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)); dialog.dismiss() } catch (e: Exception) { }
@@ -485,7 +488,7 @@ object Customize {
                         if (k.isEmpty()) addView(label(sys.getDisplayLanguage(sys).replaceFirstChar { it.uppercase() }, 12f, DIM))   // which one that is now
                     }, LinearLayout.LayoutParams(0, -2, 1f))
                     if (k == now) { val (iv, sz) = icon(R.drawable.ic_check, ACCENT, dp(20)); addView(iv, LinearLayout.LayoutParams(sz, sz)) }
-                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener { if (k != Store.get(a).optString("lang")) Store.change(a, JSONObject().put("lang", k)) }   // Home is built again in it
                 }
                 if (k == now) groups[6].start = { row }
@@ -577,7 +580,7 @@ object Customize {
                     addView(g.sum!!)
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
                 addView(chevron, LinearLayout.LayoutParams(dp(22), dp(22)))
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f); chevron.imageTintList = ColorStateList.valueOf(if (f) Color.WHITE else DIM) }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f); chevron.imageTintList = ColorStateList.valueOf(if (f) Color.WHITE else DIM) }
                 setOnClickListener { enter(g) }
                 setOnKeyListener { _, code, e -> if (code == android.view.KeyEvent.KEYCODE_DPAD_RIGHT && e.action == android.view.KeyEvent.ACTION_DOWN) { enter(g); true } else false }
             }
@@ -594,7 +597,7 @@ object Customize {
                 }
                 addView(ImageView(a).apply { setImageResource(R.drawable.ic_left); imageTintList = ColorStateList.valueOf(g.tint) }, LinearLayout.LayoutParams(dp(24), dp(24)))
                 addView(label(a.getString(g.name), 20f, Color.WHITE).apply { typeface = Font.medium }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                 setOnClickListener { leave() }
             }
             g.page.addView(g.head, LinearLayout.LayoutParams(-2, -2).apply { setMargins(dp(18), dp(20), 0, dp(4)) })
@@ -617,7 +620,7 @@ object Customize {
                 addView(label(a.getString(R.string.mg_row), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
                 addView(label(a.getString(R.string.mg_row_sub), 13f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
             }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
-            onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         val done = Font.on(TextView(a)).apply {
@@ -628,7 +631,7 @@ object Customize {
                 addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(Color.WHITE) })
                 addState(intArrayOf(), GradientDrawable().apply { cornerRadius = dp(24).toFloat(); setColor(0xFFB8C7E6.toInt()) })
             }
-            onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             setOnClickListener { dialog.dismiss() }
         }
         top.addView(done, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
@@ -669,7 +672,6 @@ object Customize {
             groups.firstOrNull { it.key == at }?.let { enter(it); still = false; slid = true; buildRest(); return@setOnShowListener }
             groups[0].row?.let {
                 it.requestFocus()
-                it.animate().cancel(); if (Motion.on) { it.scaleX = 1.06f; it.scaleY = 1.06f }   // already large as it slides in: its spring re-drew the whole panel for 400 ms
             }
             if (Motion.on) {                                           // on a layer: drawn once, then only moved and faded (drawn each frame it took 40-57 ms on the FPT box)
                 panel.animate().translationX(0f).alpha(1f).setDuration(260).setInterpolator(Motion.glide).withLayer().withEndAction {
@@ -708,7 +710,7 @@ object Customize {
                     addView(label(title, 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     addView(line)
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                 setOnClickListener { open() }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
@@ -788,7 +790,7 @@ object Customize {
                         addView(label(if (qr != null) a.getString(R.string.w_qr_named, qr.optString("cap").ifEmpty { qrKind(a, qr) }) else a.getString(r[2] as Int), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                         addView(state)
                     }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         moving = null
                         Store.putList(a, "widgets", if (isOn) on - k else on + k)
@@ -807,7 +809,7 @@ object Customize {
                             addState(intArrayOf(), glass(16, if (isBig) 0x268AB4F8 else 0x12FFFFFF, if (isBig) ACCENT else 0x1FFFFFFF))
                         }
                         addView(sz)
-                        onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                        onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                         setOnClickListener {
                             moving = null
                             val now = (conf.optJSONObject("wsize") ?: JSONObject()).let { JSONObject(it.toString()) }
@@ -829,7 +831,7 @@ object Customize {
                         }
                         for (res in intArrayOf(R.drawable.ic_up, R.drawable.ic_down)) addView(ImageView(a).apply { setImageResource(res); imageTintList = ColorStateList.valueOf(if (live) ACCENT else DIM) }, LinearLayout.LayoutParams(dp(18), dp(18)))
                         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
-                            Motion.pop(v, f)
+                            lit(v, f)
                             if (!f && !building && moving == k) { moving = null; v.postDelayed({ if (v.isAttachedToWindow) fill() }, 0) }   // wandered off: back to plain
                         }
                         setOnClickListener { moving = if (moving == k) null else k; fill(k, true) }

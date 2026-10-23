@@ -63,6 +63,7 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
     private val tagView = Font.on(TextView(c)).apply { textSize = 11f; setTextColor(Color.WHITE); maxLines = 1; setPadding(dpx(7), dpx(2), dpx(7), dpx(2))
         background = GradientDrawable().apply { cornerRadius = dpx(9).toFloat(); setColor(PK_TAG) }; visibility = View.GONE }
     private val h = w * 9 / 16
+    override val grows get() = false                                  // the ring alone: growing, 24 moves cost ~8.4 s of CPU and ~610 frames on the FPT box, ~1.2 s and ~27 without
     override val glassy get() = false                                 // a window over Home: the glass's layer, composed over two see-through windows, made half the frames late (emulator: 50% janky, 48 ms median)
     var dead = false
         set(v) { field = v; isFocusable = !v; isClickable = !v; alpha = if (v) 0.38f else 1f }
@@ -175,6 +176,7 @@ object Picker {
             }
             hiddenNow = Store.list(a, "hidden"); tilesNow = Store.list(a, "tiles")
             tiles[it.key]?.mark(on(it.key))
+            if (Target.kind(it.key) == Target.Kind.APP) tiles[it.key]?.tag(if (it.key in hiddenNow) a.getString(R.string.pk_hidden) else "")   // "Hidden" stayed on an app shown again
         }
 
         fun tileFor(it: Item): PickTile = tiles.getOrPut(it.key) {

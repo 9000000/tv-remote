@@ -312,3 +312,8 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - Now the cleaned copy is kept until the text in prefs changes (string compare: any writer, even another process's prefs, is seen). `list` reads it without `effective` (dock, hidden, order, tiles, widgets are all saved keys): ~0.1 ms. `get` still returns a fresh copy with the reports, so callers may change it.
 - The picker also reuses Home's loaded apps and banners (copies via `constantState`, so the Home grid's drawables keep their bounds).
 - The picker's tiles cost ~10 ms each to make on the FPT box. The first three rows are made on the picker's thread (views not yet on a window, as AsyncLayoutInflater does) and drawn alone; the rest is added a frame later, focus kept. Making all of them off the UI thread (~180 ms) took longer than the wait it saved. First rows on screen: ~0.25–0.3 s, from 0.75–1 s.
+
+## Focus without growth on the Customize pages (`Customize.kt`, `PickTile`)
+- Measured on the FPT box, 24 D-pad moves: the picker's growing tiles 8.3–8.5 s of CPU, ~615 frames (50th 32 ms); the ring alone 1.1–1.3 s, ~27 frames. Customize's rows (1.06 pop) 5.3–5.5 s, ~533 frames; the lighter background alone 0.7–1.1 s, ~29 frames. Idle: 0 frames, 60 ms in 10 s.
+- So these pages show focus by colour and ring only. Home's grid keeps its growth (the look of the launcher, one tile at a time over a still page).
+
