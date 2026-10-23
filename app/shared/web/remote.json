@@ -21,9 +21,9 @@
     "nav": [
       [
         { "id": "apps", "icon": "apps", "t": "rkey.apps", "do": "apps" },
-        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" },
+        { "id": "back", "icon": "back", "t": "rkey.back", "key": "BACK" },
         { "id": "home", "icon": "home", "t": "rkey.home", "key": "HOME" },
-        { "id": "back", "icon": "back", "t": "rkey.back", "key": "BACK" }
+        { "id": "settings", "icon": "settings", "t": "rkey.settings", "key": "SETTINGS" }
       ]
     ],
     "media": [

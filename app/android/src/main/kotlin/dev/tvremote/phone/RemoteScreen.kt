@@ -365,7 +365,7 @@ internal fun MainActivity.buildRemote() {
     sp2.gravity = Gravity.CENTER_HORIZONTAL
     sp2.topMargin = dp(8)
     controls.addView(chips, sp2)
-    controls.addView(remoteRow("nav", 0, 52, 0), gap(10))                    // Apps, Settings, Home, Back (nearest the right thumb) across the width, close under the D-pad
+    controls.addView(remoteRow("nav", 0, 52, 0), gap(10))                    // Apps, Back, Home, Settings (Home and Back in the middle, for either thumb) across the width, close under the D-pad
     // the same rows, in the same order, as the two web remotes: remote.json
     // Volume on the left, channels on the right, each one tall bar for the thumb; the media keys between them.
     // The same block, in the same order, as the two web remotes.

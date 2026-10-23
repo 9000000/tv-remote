@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - Google TV không cho tắt riêng màn hình Home của trình cài đặt ban đầu (setupwraith): giờ tắt cả app đó như cleanyourtv, nên đổi launcher được trên các TV trước đây luôn bị trả về. Chỉ làm khi mạng Wi-Fi đã lưu không thuộc app đó (không thì TV mất mạng); nếu thuộc, TV Setup giữ nguyên và chỉ cách: Quên mạng rồi kết nối lại. Chromecast và Google TV Streamer giữ nguyên để cast vẫn chạy.
+- Remote: hàng dưới D-pad đổi thành Ứng dụng · Quay lại · Home · Cài đặt, Home và Quay lại nằm giữa, tay trái hay tay phải đều dễ bấm.
 
 **English**
 - Google TV won't turn off just the Home screen of its first-run setup app (setupwraith): the whole app now goes off, as cleanyourtv does, so a new launcher sticks on TVs where it was always put back. Only when no saved Wi-Fi network belongs to that app (it would take the TV offline); otherwise TV Setup changes nothing and says how: forget the network and join it again. A Chromecast or Google TV Streamer is left as is so casting keeps working.
+- Remote: the row under the D-pad is now Apps · Back · Home · Settings, with Home and Back in the middle, easy to reach with either thumb.
 
 ## 0.20.0 - 2026-10-23
 
