@@ -107,6 +107,12 @@ if (window.ONTV) (() => {
       else if (ev.key === 'Enter' && cur && cur.matches(TEXT) && cur.inputMode === 'none') {   // OK on a field: now the keyboard
         ev.preventDefault(); cur.inputMode = cur.dataset.im === '-' ? '' : cur.dataset.im; delete cur.dataset.im; cur.blur(); cur.focus();
       }
+      // Done / Enter in a field (the keyboard's or a phone's): the page acts on it first, then the keyboard goes and the focus
+      // steps out, to the button beside it (Use, Set) or below; the keyboard up kept the arrows and the person was stuck in it
+      else if (ev.key === 'Enter' && cur && cur.matches(TEXT)) {
+        const f = cur;
+        setTimeout(() => { if (document.activeElement === f) { if (!go(next(f, [1, 0]) || next(f, [0, 1]))) { quiet(f); f.blur(); f.focus(); } } }, 0);
+      }
       return;
     }
     const typing = cur && (cur.matches('textarea') || (cur.matches('input') && !cur.matches('[type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=file]')));

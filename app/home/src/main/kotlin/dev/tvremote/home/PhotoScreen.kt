@@ -41,13 +41,15 @@ object PhotoScreen {
         val dialog = Dialog(a, R.style.Menu)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
-        val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(32), dp(20), dp(32), dp(20)) }
+        val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(32), dp(20), dp(32), dp(20)); clipToPadding = false; clipChildren = false }   // a focused chip grows past the edge
         col.addView(label(a.getString(if (web) R.string.pq_web_title else R.string.pq_title), 22f, Color.WHITE).apply { typeface = Font.medium })
         val status = label(" ", 15f, SOFT)                        // a line kept free: the result must not push Close down
         val addr = label("", 18f, Color.WHITE).apply { typeface = Font.medium }
         val qr = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
         var changed = false
 
+        // typed on the TV itself: faster than the QR when a phone's remote app can type into the TV's field
+        val field = if (web) typeUrl(a, col, status, { changed = true }, ::dp) else null
         var firstChip: View? = null
         val s = PhotoServer.start(a) {
             changed = true
@@ -57,14 +59,19 @@ object PhotoScreen {
         if (s == null) {
             col.addView(label(a.getString(R.string.pq_none), 16f, BAD), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
         } else {
-            val side = minOf(a.resources.displayMetrics.heightPixels * 36 / 100, dp(280))   // at most: shrunk below if the panel would not fit
+            val side = if (web) dp(150) else minOf(a.resources.displayMetrics.heightPixels * 36 / 100, dp(280))   // at most: shrunk below if the panel would not fit
             qr.setImageBitmap(Qr.bitmap(s.url, 8))
-            col.addView(qr, LinearLayout.LayoutParams(side, side).apply { topMargin = dp(16) })
-            col.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.pq_step), 15f, SOFT), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
-            col.addView(label(a.getString(R.string.pq_addr), 13f, DIM), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            addr.text = "http://${s.shown}/?k=${s.token}"
-            col.addView(addr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
-            col.addView(label(a.getString(R.string.pq_time), 12f, FAINT), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+            // the web page's screen has the typed link above: the QR goes beside its words, or Close fell off a 1080p TV at 2x
+            val beside = if (web) LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL }.also { col.addView(it, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) }) } else null
+            val words = if (beside == null) col else LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+            if (beside == null) col.addView(qr, LinearLayout.LayoutParams(side, side).apply { topMargin = dp(16) })
+            else { beside.addView(qr, LinearLayout.LayoutParams(side, side)); beside.addView(words, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(20) }) }
+            val align = if (web) Gravity.START else Gravity.CENTER
+            words.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.pq_step), 15f, SOFT).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (web) 0 else 14) })
+            words.addView(label(a.getString(R.string.pq_addr), 13f, DIM).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+            addr.text = "http://${s.shown}/?k=${s.token}"; addr.gravity = align
+            words.addView(addr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
+            if (!web) words.addView(label(a.getString(R.string.pq_time), 12f, FAINT), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })   // web: no room under the typed link and its choices
             if (web) firstChip = options(a, col, { changed = true; status.text = a.getString(R.string.pq_done); status.setTextColor(GOOD) }, ::dp)
             col.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         }
@@ -89,30 +96,74 @@ object PhotoScreen {
         // the panel keeps 40dp of screen above and below (it touched both edges of a 1080p TV at 2x): the QR gives up what is missing
         col.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
         val over = col.measuredHeight - (a.resources.displayMetrics.heightPixels - dp(80))
-        if (over > 0 && qr.parent != null) qr.layoutParams = qr.layoutParams.apply { width = maxOf(dp(120), height - over); height = width }
+        if (over > 0 && qr.parent != null) qr.layoutParams = qr.layoutParams.apply { width = maxOf(dp(if (web) 100 else 120), height - over); height = width }
         dialog.setContentView(panel, ViewGroup.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT))
         dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT); setDimAmount(0.6f) }
         // closing this screen (OK, Back, or the activity going away) is what stops the server
         dialog.setOnDismissListener { PhotoServer.stop(); if (changed) onSet() }
-        dialog.setOnShowListener { (firstChip ?: close).requestFocus() }
+        dialog.setOnShowListener { (field ?: firstChip ?: close).requestFocus() }
+        // the field takes the focus but the keyboard waits for OK: a phone's remote types into it without one
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
         dialog.show()
         return dialog
     }
 
     private fun glass(r: Int, fill: Int, stroke: Int, d: (Number) -> Int) = GradientDrawable().apply { cornerRadius = d(r).toFloat(); setColor(fill); setStroke(d(1), stroke) }
 
+    /** The link typed on the TV (a phone's remote types into it; OK raises the TV's keyboard), [Use] beside it or the keyboard's Done. No scheme: https://. The same rules as the phone page ([HomeConfig.wurl]). */
+    private fun typeUrl(a: Activity, col: LinearLayout, status: TextView, set: () -> Unit, dp: (Number) -> Int): android.widget.EditText {
+        val box = android.widget.EditText(a).apply {
+            Font.on(this); textSize = 16f; setTextColor(Color.WHITE); setHintTextColor(FAINT); hint = a.getString(R.string.pq_web_hint)
+            isSingleLine = true; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            setText(Store.get(a).optString("wurl")); setSelection(text.length)
+            setPadding(dp(14), dp(10), dp(14), dp(10))
+            background = android.graphics.drawable.StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
+                addState(intArrayOf(), glass(14, CHIP_FILL, CHIP_EDGE, dp))
+            }
+        }
+        fun use() {
+            val t = box.text.toString().trim()
+            val url = HomeConfig.wurl(if (t.isEmpty() || Regex("^[a-z]+://", RegexOption.IGNORE_CASE).containsMatchIn(t)) t else "https://$t")
+            if (url.isEmpty()) { status.text = a.getString(R.string.pq_web_bad); status.setTextColor(BAD); return }
+            Store.change(a, JSONObject().put("wall", HomeConfig.WEB).put("wurl", url)); set()
+            box.setText(url); box.setSelection(url.length)
+            status.text = a.getString(R.string.pq_done); status.setTextColor(GOOD)
+        }
+        val go = Font.on(TextView(a)).apply {
+            text = a.getString(R.string.pq_web_use); textSize = 15f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; typeface = Font.medium
+            isFocusable = true; isClickable = true; setPadding(dp(20), dp(10), dp(20), dp(10))
+            background = android.graphics.drawable.StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
+                addState(intArrayOf(), glass(14, CHIP_FILL, CHIP_EDGE, dp))
+            }
+            setOnClickListener { use() }
+        }
+        dev.tvremote.tvui.TvField.wire(box, { go }) { use() }   // Done closes the keyboard and steps out to Use
+        val row = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL }
+        row.addView(box, LinearLayout.LayoutParams(0, -2, 1f))
+        row.addView(go, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
+        col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+        col.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pq_web_or); textSize = 13f; setTextColor(DIM); gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        return box
+    }
+
     /**
      * How the page updates, as three chips the D-pad steps through (the same Store keys the Manage page writes): live or snapshot; with
      * snapshots, how often and whether the page stays open between them. Plus "use the saved page" when one is kept and not on. Returns the first.
      */
     private fun options(a: Activity, col: LinearLayout, used: () -> Unit, dp: (Number) -> Int): View {
+        // the chosen way looks chosen when the focus is elsewhere (a light edge and a ✓): one lone chip read as a label
+        fun look(on: Boolean) = android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
+            addState(intArrayOf(), if (on) glass(14, CHIP_FOCUS, SOFT, dp) else glass(14, CHIP_FILL, CHIP_EDGE, dp))
+        }
         fun chip(onClick: (TextView) -> Unit) = Font.on(TextView(a)).apply {
             textSize = 14f; gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
             setTextColor(Color.WHITE); isFocusable = true; isClickable = true; setPadding(dp(10), dp(11), dp(10), dp(11))
-            background = android.graphics.drawable.StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), glass(14, CHIP_FOCUS, Color.WHITE, dp))
-                addState(intArrayOf(), glass(14, CHIP_FILL, CHIP_EDGE, dp))
-            }
+            background = look(false)
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
             setOnClickListener { onClick(this) }
         }
@@ -124,26 +175,34 @@ object PhotoScreen {
             col.addView(use, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) }); first.add(use)
         }
         val note = Font.on(TextView(a)).apply { textSize = 12f; setTextColor(FAINT); gravity = Gravity.CENTER }
-        lateinit var mode: TextView; lateinit var every: TextView; lateinit var keep: TextView
+        lateinit var live: TextView; lateinit var shot: TextView; lateinit var every: TextView; lateinit var keep: TextView
         fun paint() {
             val c = Store.get(a)
             val snap = c.optString("wmode") == "snap"
-            mode.text = a.getString(if (snap) R.string.pq_mode_snap else R.string.pq_mode_live)
+            live.text = (if (snap) "" else "✓ ") + a.getString(R.string.pq_mode_live); live.background = look(!snap)
+            shot.text = (if (snap) "✓ " else "") + a.getString(R.string.pq_mode_snap); shot.background = look(snap)
             every.text = a.getString(R.string.pq_every, c.optInt("wsnap", HomeConfig.WSNAP_DEFAULT))
             keep.text = a.getString(if (c.optBoolean("wkeep")) R.string.pq_keep_on else R.string.pq_keep_off)
-            every.visibility = if (snap) View.VISIBLE else View.GONE; keep.visibility = every.visibility
+            every.visibility = if (snap) View.VISIBLE else View.INVISIBLE; keep.visibility = every.visibility   // kept in place: the panel does not grow under Close
             note.text = a.getString(if (!snap) R.string.pq_note_live else if (c.optBoolean("wkeep")) R.string.pq_note_keep else R.string.pq_note_snap)
         }
-        mode = chip { val snap = Store.get(a).optString("wmode") == "snap"; Store.change(a, JSONObject().put("wmode", if (snap) "live" else "snap")); paint() }
+        live = chip { Store.change(a, JSONObject().put("wmode", "live")); paint() }
+        shot = chip { Store.change(a, JSONObject().put("wmode", "snap")); paint() }
         every = chip { val i = HomeConfig.WSNAPS.indexOf(Store.get(a).optInt("wsnap")); Store.change(a, JSONObject().put("wsnap", HomeConfig.WSNAPS[(i + 1) % HomeConfig.WSNAPS.size])); paint() }
         keep = chip { Store.change(a, JSONObject().put("wkeep", !Store.get(a).optBoolean("wkeep"))); paint() }
+        // "How it updates:" then the two ways side by side, one chosen; a snapshot's own settings on a row of their own
+        col.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pq_mode_head); textSize = 13f; setTextColor(DIM); gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (first.isEmpty()) 14 else 10) })
         val row = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
-        row.addView(mode, LinearLayout.LayoutParams(0, -2, 1f))
-        row.addView(every, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(8) })
-        row.addView(keep, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(8) })
-        col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (first.isEmpty()) 14 else 8) })
+        row.addView(live, LinearLayout.LayoutParams(0, -2, 1f))
+        row.addView(shot, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(8) })
+        col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+        val more = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
+        more.addView(every, LinearLayout.LayoutParams(0, -2, 1f))
+        more.addView(keep, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(8) })
+        col.addView(more, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         col.addView(note, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         paint()
-        return first.firstOrNull() ?: mode
+        return first.firstOrNull() ?: live
     }
 }
