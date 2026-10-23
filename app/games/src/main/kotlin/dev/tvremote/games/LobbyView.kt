@@ -15,6 +15,8 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.tvremote.tvui.dp
+import dev.tvremote.tvui.label
 
 /**
  * The lobby the TV shows before a game starts, in the game's own colours: its picture blurred behind everything, an accent taken from
@@ -204,7 +206,7 @@ class LobbyView(
 
     override fun onDetachedFromWindow() { pulse.cancel(); super.onDetachedFromWindow() }
 
-    private fun pill(c: Int, r: Int = 99) = GradientDrawable().apply { setColor(c); cornerRadius = act.dp(r).toFloat() }
+    private fun capsule(c: Int, r: Int = 99) = GradientDrawable().apply { setColor(c); cornerRadius = act.dp(r).toFloat() }
 
     /** Seats from the server: who is in, their names, pings and Ready. */
     fun render() {
@@ -234,8 +236,8 @@ class LobbyView(
             r.ping.setTextColor(if (ms < 30) 0xFF34D399.toInt() else if (ms < 80) 0xFFFBBF24.toInt() else 0xFFF87171.toInt())
             r.state.text = act.getString(if (p.ready) R.string.lobby_ready else R.string.lobby_joined)
             r.state.setTextColor(if (p.ready) LobbyTheme.onAccent(accent) else 0xFFD5DAE6.toInt())
-            r.state.background = pill(if (p.ready) accent else 0x40FFFFFF)
-            r.lit.background = pill(c, 10); lit(i)
+            r.state.background = capsule(if (p.ready) accent else 0x40FFFFFF)
+            r.lit.background = capsule(c, 10); lit(i)
         }
     }
 

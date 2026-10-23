@@ -1,21 +1,24 @@
 package dev.tvremote.games
 
 import android.os.Bundle
+import android.view.Gravity
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
 import com.swordfish.libretrodroid.Variable
+import dev.tvremote.tvui.dp
+import dev.tvremote.tvui.label
+import dev.tvremote.tvui.menuButton
 import java.io.File
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 // One console game: the TV remote is player 1's directions (OK = A, Enter = Start), phones come in through GameServer, physical pads
 // take the next free slot by device id. The cards (start, pause) are GameCards.

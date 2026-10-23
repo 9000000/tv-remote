@@ -16,9 +16,9 @@ const RAW = {
     'PinActivity.kt': 8, 'WarnActivity.kt': 6 },
   home: { 'Customize.kt': 42, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 59, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
     'Widgets.kt': 41, 'Zoom.kt': 3 },
-  channels: { 'BrowseActivity.kt': 13, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1, 'Ui.kt': 2 },
-  games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 39, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,
-    'Ui.kt': 4, 'WebGameActivity.kt': 4 },
+  channels: { 'BrowseActivity.kt': 4, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1 },
+  games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 34, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,
+    'WebGameActivity.kt': 4 },
 };
 const COLOUR = /0x[0-9A-Fa-f]{8}\b|Color\.(rgb|argb|parseColor)\(/g;
 const NAMED = /^\s*(private |internal |public )?(const )?va[lr] [A-Z][A-Z0-9_]*\s*[:=]/;
@@ -56,9 +56,41 @@ test('no new hand-drawn view: build from the components (DESIGN-TV.md §3, phone
   assert.deepEqual(bad, []);
 });
 
-test('tv_style.xml is the same in every TV app that has one', () => {
-  const copies = ['tv', 'channels', 'games'].map((a) => fs.readFileSync(path.join(ROOT, 'app', a, 'src/main/res/values/tv_style.xml'), 'utf8'));
-  copies.forEach((c, i) => assert.strictEqual(c, copies[0], `app/${['tv', 'channels', 'games'][i]} tv_style.xml differs from app/tv's`));
+// The shared look (app/shared/src/tvui): tv_style.xml and Tv.kt are the ONE copy; channels and games build them in (res.srcDirs / srcDirs).
+const TVUI = path.join(ROOT, 'app', 'shared', 'src', 'tvui');
+
+test('tv_style.xml: one copy in tvui; app/tv keeps an identical one until it moves; channels and games have none of their own', () => {
+  const one = fs.readFileSync(path.join(TVUI, 'res/values/tv_style.xml'), 'utf8');
+  assert.strictEqual(fs.readFileSync(path.join(ROOT, 'app/tv/src/main/res/values/tv_style.xml'), 'utf8'), one, 'app/tv tv_style.xml differs from tvui\'s');
+  for (const a of ['channels', 'games']) {
+    assert.ok(!fs.existsSync(path.join(ROOT, 'app', a, 'src/main/res/values/tv_style.xml')), `app/${a} has its own tv_style.xml: delete it, tvui's is built in`);
+    assert.match(fs.readFileSync(path.join(ROOT, 'app', a, 'build.gradle.kts'), 'utf8'), /res\.srcDirs\("\.\.\/shared\/src\/tvui\/res"\)/, `${a} must build tvui/res in`);
+  }
+});
+
+test('Tv.kt\'s colours are tv_style.xml\'s, and it holds no raw colour outside a named constant', () => {
+  const xml = fs.readFileSync(path.join(TVUI, 'res/values/tv_style.xml'), 'utf8');
+  const kt = fs.readFileSync(path.join(TVUI, 'kotlin/dev/tvremote/tvui/Tv.kt'), 'utf8');
+  const kv = (n) => (kt.match(new RegExp('const val ' + n + ' = 0x([0-9A-Fa-f]{8})')) || [])[1];
+  for (const [xmlName, k] of [['tv_bg', 'BG'], ['tv_card', 'CARD'], ['tv_ink', 'TEXT'], ['tv_dim', 'DIM'], ['tv_ring_accent', 'RING_ACCENT']]) {
+    const x = (xml.match(new RegExp('name="' + xmlName + '">#([0-9A-Fa-f]{8})')) || [])[1];
+    assert.ok(x && kv(k), xmlName + ' / ' + k + ' missing');
+    assert.strictEqual(kv(k).toUpperCase(), x.toUpperCase(), `${k} in Tv.kt is not ${xmlName} of tv_style.xml`);
+  }
+  for (const f of walk(TVUI)) assert.strictEqual(raw(f), 0, `${path.basename(f)}: a raw colour: name it in Tv.kt`);
+});
+
+// The components live in tvui and nowhere else: a hand-built look-alike row / sheet / panel is how the apps drifted (DECISIONS.md, 2026-10-23).
+test('channels and games define no component tvui already has', () => {
+  const names = ['row', 'sheet', 'sheetTitle', 'sheetNote', 'states', 'ring', 'field', 'panel', 'panelBg', 'scrim', 'menuButton', 'withIcon',
+    'pill', 'pillText', 'focusBg', 'heading', 'label'];   // (a game's own initials() / a pad button() are other things)
+  const bad = [];
+  for (const a of ['channels', 'games']) for (const f of walk(path.join(ROOT, 'app', a, 'src', 'main'))) {
+    const src = fs.readFileSync(f, 'utf8');
+    for (const n of names) if (new RegExp('fun (\\w+\\.)?' + n + '\\(').test(src)) bad.push(`app/${a}/.../${path.basename(f)}: fun ${n}( : use tvui's`);
+    if (/object Ui\b/.test(src)) bad.push(`app/${a}/.../${path.basename(f)}: object Ui: the look is tvui's TvUi`);
+  }
+  assert.deepStrictEqual(bad, []);
 });
 
 test('every word of TV Home, TV Channels and TV Games is in English and Vietnamese', () => {

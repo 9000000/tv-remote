@@ -5,6 +5,10 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.widget.FrameLayout
+import dev.tvremote.tvui.dp
+import dev.tvremote.tvui.label
+import dev.tvremote.tvui.panel
+import dev.tvremote.tvui.scrim
 
 /**
  * The console buttons a TV remote lacks (Start, Select, B), given to keys it has. Remotes differ (numbers, colours, ⏯, none of

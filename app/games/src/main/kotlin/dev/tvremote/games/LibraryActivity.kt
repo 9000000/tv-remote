@@ -28,9 +28,18 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import java.io.File
+import dev.tvremote.tvui.dp
+import dev.tvremote.tvui.focusBg
+import dev.tvremote.tvui.label
+import dev.tvremote.tvui.menuButton
+import dev.tvremote.tvui.panel
+import dev.tvremote.tvui.pill
+import dev.tvremote.tvui.pillText
+import dev.tvremote.tvui.scrim
+import dev.tvremote.tvui.withIcon
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
+import java.io.File
 
 /**
  * The launcher screen, Apple TV style: clean pictures in rows (favourites, the person's folders, all games, suggestions), the focused one
@@ -73,7 +82,6 @@ class LibraryActivity : ComponentActivity() {
     private var sections: LinearLayout? = null
     private var searchBox: EditText? = null
     private var updFilters: (() -> Unit)? = null
-    private val pills = ArrayList<Pair<() -> Boolean, TextView>>()
     private val tileKeys = HashMap<String, View>()                    // "<section>|<id>" -> its tile
     private var focusedKey: String? = null
     private var lastFocus: View? = null
@@ -302,7 +310,7 @@ class LibraryActivity : ComponentActivity() {
         overlay = null
         val keepY = scroller?.scrollY ?: 0                            // built again: it opens where it was, not at the top scrolling down
         jump = true
-        root.removeAllViews(); pills.clear(); tileKeys.clear()
+        root.removeAllViews(); tileKeys.clear()
         buildItems()
         if (lib.isEmpty() && sugs.isEmpty()) {
             root.addView(LinearLayout(this).apply {
@@ -372,17 +380,17 @@ class LibraryActivity : ComponentActivity() {
         }
         searchBox = f
         var rb: TextView? = null                                      // an icon alone: it turns while the site is asked
-        rb = pill("", 15f, lead = R.drawable.ic_refresh) { rb?.let { refreshNow(it) } }.apply { contentDescription = getString(R.string.refresh_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
+        rb = pill("", 15f, lead = R.drawable.ic_refresh, animate = { animOn }, focused = ::centreFocused) { rb?.let { refreshNow(it) } }.apply { contentDescription = getString(R.string.refresh_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
         addView(rb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
         var cb: TextView? = null                                      // 4, 5 or 6 games a row: smaller tiles, more of them on the screen
-        cb = pill(cols.toString(), 15f, lead = R.drawable.ic_grid) {
+        cb = pill(cols.toString(), 15f, lead = R.drawable.ic_grid, animate = { animOn }, focused = ::centreFocused) {
             cols = if (cols >= 6) 4 else cols + 1
             getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
-            cb?.let { setPill(it, cols.toString()); it.post { it.requestFocus() } }
+            cb?.let { it.pillText(cols.toString()); it.post { it.requestFocus() } }
             renderSections()
         }.apply { contentDescription = getString(R.string.cols_pill, cols) }
         addView(cb, LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) })
-        val gb = pill("", 15f, lead = R.drawable.ic_globe) { languages() }.apply { contentDescription = getString(R.string.lang_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
+        val gb = pill("", 15f, lead = R.drawable.ic_globe, animate = { animOn }, focused = ::centreFocused) { languages() }.apply { contentDescription = getString(R.string.lang_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
         addView(gb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
         if (refocusLang) { refocusLang = false; gb.post { gb.requestFocus() } }   // after the rebuild in the new language the focus is back on the globe
         addView(f, LinearLayout.LayoutParams(dp(280), dp(40)))
@@ -406,32 +414,6 @@ class LibraryActivity : ComponentActivity() {
         return null
     }
 
-    /** A pill: a choice you can switch on and off; selected = white, focused = lighter, like the segmented controls on Apple TV. */
-    private fun pill(text: String, sp: Float = 16f, selected: (() -> Boolean)? = null, lead: Int? = null, trail: Int? = null, onClick: () -> Unit): TextView = TextView(this).apply {
-        this.text = text; textSize = sp; gravity = Gravity.CENTER; isFocusable = true; isClickable = true; maxLines = 1
-        setPadding(dp(16), 0, dp(16), 0)
-        minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36)     // wraps its words; the measure alone came a pixel short in a scroller
-        fun d(c: Int) = GradientDrawable().apply { setColor(c); cornerRadius = dp(30).toFloat() }
-        background = StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_selected), d(0xF2FFFFFF.toInt()))
-            addState(intArrayOf(android.R.attr.state_focused), d(0x73FFFFFF))
-            addState(intArrayOf(), d(0x24FFFFFF))
-        }
-        val ink = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()), intArrayOf(0xFF0B0D12.toInt(), 0xFFE5E9F2.toInt()))
-        setTextColor(ink)
-        if (lead != null || trail != null) {
-            fun ic(r: Int?) = r?.let { getDrawable(it)!!.mutate().also { d -> d.setBounds(0, 0, dp((sp + 3).toInt()), dp((sp + 3).toInt())); d.setTintList(ink) } }
-            setCompoundDrawablesRelative(ic(lead), null, ic(trail), null); compoundDrawablePadding = dp(8)
-            setPadding(dp(if (lead != null) 14 else 16), 0, dp(if (trail != null) 12 else 16), 0)
-        }
-        minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36) + compoundDrawables.sumOf { (it?.bounds?.width() ?: 0) + (if (it != null) dp(8) else 0) }
-        setOnFocusChangeListener { v, on -> v.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(if (animOn) 200 else 0).withLayer().start(); if (on) centreFocused(v) }
-        setOnClickListener { onClick() }
-        layoutParams = LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) }   // one height and gap for every pill, the header's too
-        if (selected != null) { isSelected = selected(); pills += selected to this }
-    }
-
-    private fun setPill(p: TextView, t: String) { p.text = t; p.minWidth = Math.ceil(p.paint.measureText(t).toDouble()).toInt() + dp(36) + p.compoundDrawablesRelative.sumOf { (it?.bounds?.width() ?: 0) + (if (it != null) dp(8) else 0) } }
 
     /** Players, system, genre: one dropdown button each, showing the chosen value; a kind with one value only is left out; "Clear" while any is on. */
     private fun filterRow(): View {
@@ -452,17 +434,16 @@ class LibraryActivity : ComponentActivity() {
         val buttons = ArrayList<Pair<Kind, TextView>>()
         var clear: TextView? = null
         fun upd() {
-            buttons.forEach { (k, b) -> val v = k.get(); setPill(b, k.values.firstOrNull { it.first == v }?.second ?: k.label); b.isSelected = v != null }
+            buttons.forEach { (k, b) -> val v = k.get(); b.pillText(k.values.firstOrNull { it.first == v }?.second ?: k.label); b.isSelected = v != null }
             clear?.visibility = if (fPlayers != null || fSystem != null || fGenre != null) View.VISIBLE else View.GONE
         }
         kinds.forEach { k ->
             var b: TextView? = null
-            b = pill(k.label, 15f, lead = k.icon, trail = R.drawable.ic_down) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get(), k.icons) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
+            b = pill(k.label, 15f, lead = k.icon, trail = R.drawable.ic_down, animate = { animOn }, focused = ::centreFocused) { b?.let { anchor -> dropdown(anchor, k.label, listOf<Pair<String?, String>>(null to allW) + k.values, k.get(), k.icons) { v -> k.set(v); upd(); renderSections(); anchor.post { anchor.requestFocus() } } } }
             buttons += k to b; row.addView(b)
         }
-        clear = pill(getString(R.string.f_clear), 15f, lead = R.drawable.ic_close) { fPlayers = null; fSystem = null; fGenre = null; buttons.firstOrNull()?.second?.requestFocus(); upd(); renderSections() }       // the pill goes away: focus moves to the first dropdown
+        clear = pill(getString(R.string.f_clear), 15f, lead = R.drawable.ic_close, animate = { animOn }, focused = ::centreFocused) { fPlayers = null; fSystem = null; fGenre = null; buttons.firstOrNull()?.second?.requestFocus(); upd(); renderSections() }       // the pill goes away: focus moves to the first dropdown
         row.addView(clear)
-        pills.clear()
         updFilters = { upd() }
         upd()
         return row
@@ -561,15 +542,15 @@ class LibraryActivity : ComponentActivity() {
             addView(label(title, 22f, 0xFFAAB0C0.toInt()).apply { gravity = Gravity.START; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(560) })
             if (add) {
                 addView(View(context), LinearLayout.LayoutParams(dp(16), 1))
-                addView(pill(getString(R.string.grp_new_pill), 15f) { newGroup() })
+                addView(pill(getString(R.string.grp_new_pill), 15f, animate = { animOn }, focused = ::centreFocused) { newGroup() })
             }
             if (group != null) {
                 val sp = { View(context).also { v -> v.layoutParams = LinearLayout.LayoutParams(dp(16), 1) } }
                 addView(sp())
-                val rn = pill(getString(R.string.grp_rename), 15f, lead = R.drawable.ic_pen) { askName(getString(R.string.grp_rename), group.name) { n -> Shelf.change(context) { it.rename(group.id, n) }; Pins.renamed(context, group.id, n); renderSections() } }
+                val rn = pill(getString(R.string.grp_rename), 15f, lead = R.drawable.ic_pen, animate = { animOn }, focused = ::centreFocused) { askName(getString(R.string.grp_rename), group.name) { n -> Shelf.change(context) { it.rename(group.id, n) }; Pins.renamed(context, group.id, n); renderSections() } }
                 addView(rn)
-                addView(pill(getString(R.string.grp_delete), 15f, lead = R.drawable.ic_trash) { confirm(getString(R.string.grp_delete_q, group.name)) { Shelf.change(context) { it.delete(group.id) }; Pins.deleted(context, group.id); renderSections() } })
-                if (Pins.can(context)) addView(pill(getString(R.string.m_pin), 15f, lead = R.drawable.ic_pin) { pinGroup(group, items) })
+                addView(pill(getString(R.string.grp_delete), 15f, lead = R.drawable.ic_trash, animate = { animOn }, focused = ::centreFocused) { confirm(getString(R.string.grp_delete_q, group.name)) { Shelf.change(context) { it.delete(group.id) }; Pins.deleted(context, group.id); renderSections() } })
+                if (Pins.can(context)) addView(pill(getString(R.string.m_pin), 15f, lead = R.drawable.ic_pin, animate = { animOn }, focused = ::centreFocused) { pinGroup(group, items) })
                 groupHeads[key] = rn
             }
         })

@@ -11,16 +11,18 @@ The shared values are copied into each app's `res/values/tv_style.xml` (this fil
 |---|---|---|---|
 | TV Setup | `:shared` (`tv/build.gradle.kts:50`) | `T("id")`: `app/shared/web/i18n/<lang>.json` (`core/Words.kt`); **no strings.xml** | `values/tv_style.xml` + constants in `MainActivity.kt:62-70` |
 | TV Home | none (only `shared/src/home` HomeConfig) | `res/values{,-vi}/strings.xml` | constants in `HomeActivity.kt` (**no tv_style.xml**) |
-| TV Channels | none (only `shared/src/sign`) | `res/values{,-vi}/strings.xml`, own language picker (`Lang.kt`) | `values/tv_style.xml` + `Ui.kt:16-21` |
-| TV Games | none (only `Qr.kt` copied, `shared/src/sign`) | `res/values{,-vi}/strings.xml` | `values/tv_style.xml` (no colors.xml) + `Ui.kt` |
+| TV Channels | **`tvui`** (`shared/src/tvui`: `Tv.kt` + `res/`), `shared/src/sign` | `res/values{,-vi}/strings.xml`, own language picker (`Lang.kt`) | `tvui` `TvUi` constants (= `tv_style.xml`, built in from `tvui/res`) |
+| TV Games | **`tvui`**, `Qr.kt` copied, `shared/src/sign` | `res/values{,-vi}/strings.xml` | `tvui` (`TvUi`, `tv_style.xml` built in; no colors.xml) |
 
-- No code is shared between them, so the rule is **copy the values, not the look-alike**: take the number from the reference
-  and give it the same name (`tv_card`, `tv_dim`, …).
-- `tv_style.xml` is byte-identical in tv / channels / games: change a value in all three and here together.
-- When the apps disagree, the reference is:
+- **`app/shared/src/tvui` is the reference** for what the apps have in common, and the one copy: `Tv.kt` (`TvUi`: tokens, `row`, `sheet`, `button`,
+  `field` (TvField), `states`, `ring`, `initials`, `TvState`; Games-style `panel`, `scrim`, `menuButton`, `withIcon`, `pill`, `heading`) and
+  `res/values/tv_style.xml`. Channels and Games build it in (`srcDirs` / `res.srcDirs`); TV Home compiles `TvField` only; TV Setup keeps
+  its own until phase 2 (`dev/DECISIONS.md`). Use a component from there, never a look-alike; a look it lacks is added there first.
+  Components take words and drawable ids, not string ids: strings and generated icons stay per app. `tv_design.test.js` fails when
+  channels / games define a component tvui has, or Tv.kt's colours differ from tv_style.xml.
+- Until phase 2, `app/tv/.../tv_style.xml` is byte-identical to `tvui/res`'s: change a value in both, in `TvUi`, and here together.
   - **TV Home** for focus on tiles: ring, glass, grow, motion (`HomeActivity.kt:857-1012`, `Glass.kt`);
-  - **TV Channels' `Ui.kt`** for rows, lists, fields and dialogs;
-  - **TV Games' `Ui.kt`** (`panel()` / `scrim()`) for full-screen popups.
+  - **`tvui`** for rows, lists, fields, dialogs, buttons, pills and full-screen popups (`panel()` / `scrim()`): it was Channels' and Games' `Ui.kt`.
 
 ## 1. Principles (10-foot UI)
 
@@ -136,21 +138,21 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 | Component | Reuse | App | Notes |
 |---|---|---|---|
 | **Header** (icon + app name) | `buildRail()` head (`BrowseActivity.kt:210-220`), Setup header (`MainActivity.kt:158-165`), Games (`LibraryActivity.kt:306`) | Channels, Setup, Games | Home has none (clock + date). Name: 24 sp bold `tv_ink`, never the accent |
-| **List row** | `Ui.row(c, icon, label, count) { go }` | Channels | icon tinted `TEXT`, count in `DIM`; `isActivated` = the one in use |
-| **Dialog sheet** (choices) | `sheet(w)` + `heading()` + `Ui.row`s (`BrowseActivity.kt:457-469`), theme `R.style.Dialog` | Channels | 380-420 dp wide; Back closes it |
-| **Popup on a scrim** | `scrim(panel(title).apply { addView(menuButton(...).withIcon(R.drawable.ic_x)) })` (`games/Ui.kt:57-89`, used `LibraryActivity.kt:588`) | Games | always add a Close button; Back closes; first entry focused |
+| **List row** | `TvUi.row(c, icon, label, count) { go }` (`tvui/Tv.kt`) | Channels | icon tinted `TEXT`, count in `DIM`; `isActivated` = the one in use |
+| **Dialog sheet** (choices) | `TvUi.sheet(c, R.style.Dialog, w)` + `TvUi.sheetTitle()` + `TvUi.row`s (`tvui/Tv.kt`) | Channels | 380-420 dp wide; Back closes it |
+| **Popup on a scrim** | `scrim(panel(title).apply { addView(menuButton(...).withIcon(R.drawable.ic_x)) })` (`tvui/Tv.kt`, used `LibraryActivity.kt` `popup()`) | Games | always add a Close button; Back closes; first entry focused |
 | **System list menu** | `AlertDialog.Builder(this, R.style.Menu)` / `Theme_DeviceDefault_Dialog_Alert` | Home (`:744`), Setup (`:293`) | for plain lists of actions only |
 | **Drop-down from a head button** | `Drop.show(a, anchor, rows)` | Home | a Dialog: Home and Back close it |
 | **App / game tile** | Home `Tile` (`HomeActivity.kt:857`); Games `shell()` | Home, Games | 16:9; rings outside the face; name under it, in the row gap |
 | **Action tile** (icon, title, one line) | Setup `Tile` (`MainActivity.kt:73`): `say()`, `work(on)` spinner, `enable()` | Setup | |
 | **Channel card** | `Cards` adapter (`BrowseActivity.kt:694`) | Channels | logo on `LogoFit` light/dark tile; initials when no logo (`Ui.initials`) |
-| **Button** | Setup `smallButton()` (`:1075`); Games `menuButton()`; Channels `button` (bold 16 sp on `Ui.states(CARD, 22)`, `:124`) | per app | a verb, short; `isAllCaps = false` |
-| **Chip / choice** | Games `pill()` | Games | `isSelected` = chosen |
-| **Text field** | `EditText` with `Ui.states(c, CARD or 0x14FFFFFF, 22 / 18)`, `isSingleLine`, `IME_FLAG_NO_EXTRACT_UI` + `IME_ACTION_SEARCH` / `DONE` | Channels | see the Back pattern below |
+| **Button** | Setup `smallButton()` (`:1075`); Games `menuButton()`; `TvUi.button` (bold 16 sp on `states(CARD, 22)`, tvui) | per app | a verb, short; `isAllCaps = false` |
+| **Chip / choice** | `pill()` (`tvui/Tv.kt`) | Games | `isSelected` = chosen |
+| **Text field** | `TvUi.field(...)`: a `TvField` on `states(c, CARD or FIELD_REST, 22 / 18)`, `isSingleLine`, `IME_FLAG_NO_EXTRACT_UI` + `IME_ACTION_SEARCH` / `DONE`; `raise()` for a field that opens in front of the person; `first` for the Back pattern | Channels | see the Back pattern below |
 | **Toast** | `Toast.makeText(...)`: one-line results only (`pin_refused`, `guide_none`, Home `toast()` `:836`) | all | never the only way to report an error the person must act on |
 | **Notice over other apps** | `NotifyLayer` (corner card, `#F2202124` r20, 22 sp) ; `WarnActivity` (scrim + card + countdown + buttons) | Setup | corner / seconds clamped in shared `Notify.kt` |
 | **Update question** | `SelfUpdate` (`app/shared/src/selfupdate`): `check { askUpdate(it) }` on open, then the app's own popup with Update now / Later / Skip this version (`upd_*` words), the download with Cancel, Android's installer last | Home, Channels, Games | at most every 12 h; Later = a day; Back = later; never over a game or a dialog already open |
-| **Loading / empty / error** | Channels `chrome()` (`BrowseActivity.kt:373`): one full-screen state (spinner tinted accent, then the words + Retry, Retry focused); in-grid note `say()` (`:370`); Setup `Tile.work()`; Games download bar (Back cancels) (`LibraryActivity.kt:696`) | | words say what to do next (`offline`, `none_here`, `no_match`); a long wait shows progress and can be cancelled |
+| **Loading / empty / error** | `TvState` (`tvui/Tv.kt`, Channels `chrome()`): one full-screen state (spinner tinted accent, then the words + buttons, the first focused); in-grid note `say()` (`:370`); Setup `Tile.work()`; Games download bar (Back cancels) (`LibraryActivity.kt:696`) | | words say what to do next (`offline`, `none_here`, `no_match`); a long wait shows progress and can be cancelled |
 
 **Text field + keyboard + Back** (`BrowseActivity.kt:562-620`, `countries()`): the keyboard eats Back, so
 

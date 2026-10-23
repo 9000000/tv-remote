@@ -21,6 +21,7 @@ import android.widget.EditText
 class TvField(c: Context) : EditText(c) {
     var after: () -> View? = { null }
     var done: () -> Unit = {}
+    var first: (Int, KeyEvent) -> Boolean = { _, _ -> false }       // the app's look at a key before anything (Back with the keyboard up); true = taken
     private var typing = false                                       // the keyboard is up: it has the keys
 
     init {
@@ -31,6 +32,9 @@ class TvField(c: Context) : EditText(c) {
             finish(); true
         }
     }
+
+    /** The keyboard up now, as OK does: for a field that opens in front of the person (search, a name), not one the D-pad passes. */
+    fun raise() { typing = true; keys().showSoftInput(this, 0) }
 
     private fun keys() = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
@@ -44,6 +48,7 @@ class TvField(c: Context) : EditText(c) {
     private fun leave(dir: Int) { focusSearch(dir)?.requestFocus() }
 
     override fun onKeyPreIme(k: Int, e: KeyEvent): Boolean {
+        if (first(k, e)) return true
         if (typing) {
             if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_UP) typing = false
             return super.onKeyPreIme(k, e)

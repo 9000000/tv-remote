@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import dev.tvremote.tvui.TvUi
 
 /** A channel's shows as a list, a day's title before each day; the one on now marked, gone ones dimmed. The player and the list share it. */
 class GuideList(private val c: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -35,14 +36,14 @@ class GuideList(private val c: Context) : RecyclerView.Adapter<RecyclerView.View
     override fun getItemViewType(i: Int) = if (rows[i] is String) 0 else 1
 
     override fun onCreateViewHolder(p: ViewGroup, type: Int): RecyclerView.ViewHolder {
-        val d = { v: Number -> Ui.dp(c, v).toInt() }
-        val v: View = if (type == 0) Ui.text(c, "", 13f, Ui.ACCENT, true).apply { setPadding(d(12), d(14), d(12), d(6)) }
+        val d = { v: Number -> TvUi.dp(c, v).toInt() }
+        val v: View = if (type == 0) TvUi.text(c, "", 13f, TvUi.ACCENT, true).apply { setPadding(d(12), d(14), d(12), d(6)) }
         else LinearLayout(c).apply {
             gravity = Gravity.CENTER_VERTICAL; isFocusable = true
             setPadding(d(12), d(9), d(12), d(9))
-            background = Ui.states(c, Color.TRANSPARENT, Ui.dp(c, 12), edge = false)
-            addView(Ui.text(c, "", 15f, Ui.DIM).apply { minWidth = d(62) })
-            addView(Ui.text(c, "", 15f).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(0, -2, 1f))
+            background = TvUi.states(c, Color.TRANSPARENT, TvUi.dp(c, 12), edge = false)
+            addView(TvUi.text(c, "", 15f, TvUi.DIM).apply { minWidth = d(62) })
+            addView(TvUi.text(c, "", 15f).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(0, -2, 1f))
         }
         v.layoutParams = RecyclerView.LayoutParams(-1, -2)
         return object : RecyclerView.ViewHolder(v) {}
@@ -54,7 +55,7 @@ class GuideList(private val c: Context) : RecyclerView.Adapter<RecyclerView.View
         val s = r as Show
         val row = h.itemView as LinearLayout
         val on = i == onNow
-        (row.getChildAt(0) as TextView).apply { text = Guide.hm(s.start); setTextColor(if (on) Ui.ACCENT else Ui.DIM) }
+        (row.getChildAt(0) as TextView).apply { text = Guide.hm(s.start); setTextColor(if (on) TvUi.ACCENT else TvUi.DIM) }
         val bell = Reminders.mark(c, s.ch?.id.orEmpty(), s.start)
         (row.getChildAt(1) as TextView).text = bell + s.title
         row.setOnClickListener { remind(s, i) }                       // OK on a programme still to come: a reminder, OK again takes it away
@@ -90,7 +91,7 @@ class GuideList(private val c: Context) : RecyclerView.Adapter<RecyclerView.View
 
         fun focusOn(r: RecyclerView, at: Int) {
             if (at < 0) return
-            (r.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at, Ui.dp(r.context, 90).toInt())
+            (r.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at, TvUi.dp(r.context, 90).toInt())
             r.post { r.findViewHolderForAdapterPosition(at)?.itemView?.requestFocus() }
         }
     }

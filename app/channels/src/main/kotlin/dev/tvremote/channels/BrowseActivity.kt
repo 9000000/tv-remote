@@ -25,6 +25,9 @@ import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import dev.tvremote.tvui.TvField
+import dev.tvremote.tvui.TvState
+import dev.tvremote.tvui.TvUi
 import java.text.Normalizer
 import java.util.concurrent.Executors
 import dev.tvremote.update.Release
@@ -43,16 +46,11 @@ class BrowseActivity : Activity() {
     private lateinit var grid: RecyclerView
     private lateinit var title: TextView
     private lateinit var note: TextView
-    private lateinit var retry: TextView
     private lateinit var content: View                                 // sidebar + grid: hidden while the one full-screen state (loading / error) shows
-    private lateinit var wait: View
-    private lateinit var spin: View
     private val last = HashMap<String, Int>()                          // per group: the card that had focus, for OK on the group
     private var loading = true
-    private lateinit var overlay: View
-    private lateinit var waitText: TextView
-    private lateinit var waitButtons: View
-    private lateinit var find: EditText
+    private lateinit var state: TvState                                // the one full-screen state: loading, offline, nothing here
+    private lateinit var find: TvField
     private val cards = Cards()
 
     private var cc = ""
@@ -72,7 +70,7 @@ class BrowseActivity : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
-        val d = { v: Number -> Ui.dp(this, v).toInt() }
+        val d = { v: Number -> TvUi.dp(this, v).toInt() }
         val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // app/DESIGN-TV.md
         val root = LinearLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }
 
@@ -82,21 +80,14 @@ class BrowseActivity : Activity() {
 
         val right = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(d(8), my, mx, 0) }
         val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        title = Ui.text(this, "", 22f, bold = true)
+        title = TvUi.text(this, "", 22f, bold = true)
         head.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        find = object : EditText(this) {
-            override fun onKeyPreIme(k: Int, e: KeyEvent): Boolean {         // Back with the keyboard up: it closes, and the focus goes on to the results
+        find = TvUi.field(this, getString(R.string.search_hint), 15f, EditorInfo.IME_ACTION_SEARCH, TvUi.CARD, TvUi.R_BUTTON, 18, 8, R.drawable.ic_search).apply {
+            first = { k, e ->                                         // Back with the keyboard up: it closes, and the focus goes on to the results
                 if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_UP && text.isNotEmpty() && group == SEARCH) { post { firstCard() } }
-                return super.onKeyPreIme(k, e)
+                false
             }
-        }.apply {
-            setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); textSize = 15f; isSingleLine = true
-            imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
-            background = Ui.states(this@BrowseActivity, Ui.CARD, Ui.dp(this@BrowseActivity, 22))
-            setPadding(d(18), d(8), d(18), d(8))
-            setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0); compoundDrawablePadding = d(8)
             visibility = View.GONE                                    // only in search mode (the first row of the side list)
-            hint = getString(R.string.search_hint)
             setOnEditorActionListener { v, _, _ -> hideKeys(v); firstCard(); true }
             addTextChangedListener(object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) { if (group == SEARCH) scheduleOthers(); filter() }
@@ -120,13 +111,7 @@ class BrowseActivity : Activity() {
         }
         body.addView(grid, FrameLayout.LayoutParams(-1, -1))
         val empty = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-        note = Ui.text(this, "", 17f, Ui.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }   // an empty group / no match, inside the grid's area
-        val say2 = Ui.text(this, "", 17f, Ui.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }
-        val button = { label: String, go: () -> Unit -> Ui.text(this, label, 16f, bold = true).apply {
-            setPadding(d(24), d(10), d(24), d(10)); isFocusable = true; isClickable = true
-            background = Ui.states(this@BrowseActivity, Ui.CARD, Ui.dp(this@BrowseActivity, 22))
-            setOnClickListener { go() }
-        } }
+        note = TvUi.text(this, "", 17f, TvUi.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }   // an empty group / no match, inside the grid's area
         empty.addView(note, LinearLayout.LayoutParams(d(520), -2))
         body.addView(empty, FrameLayout.LayoutParams(-1, -1))
         right.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -134,23 +119,10 @@ class BrowseActivity : Activity() {
         content = root
 
         // the whole screen's own state, centred on the screen (not on the grid): loading, or no list and why
-        val screen = FrameLayout(this).apply { setBackgroundColor(0xFF0E1116.toInt()) }
-        wait = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
-        spin = android.widget.ProgressBar(this).apply { isIndeterminate = true; indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.ACCENT) }
-        retry = button(getString(R.string.retry)) { load(true) }
-        val pickCountry = button(getString(R.string.country)) { countries() }
-        (wait as LinearLayout).apply {
-            addView(spin, LinearLayout.LayoutParams(d(44), d(44)).apply { bottomMargin = d(16) })
-            addView(say2, LinearLayout.LayoutParams(d(520), -2))
-            addView(LinearLayout(this@BrowseActivity).apply {
-                gravity = Gravity.CENTER
-                addView(retry); addView(pickCountry, LinearLayout.LayoutParams(-2, -2).apply { marginStart = d(12) })
-            }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = d(16) })
-        }
-        waitText = say2; waitButtons = (wait as LinearLayout).getChildAt(2)
-        screen.addView(wait, FrameLayout.LayoutParams(-1, -1))
-        setContentView(FrameLayout(this).apply { addView(root, FrameLayout.LayoutParams(-1, -1)); addView(screen, FrameLayout.LayoutParams(-1, -1)) })
-        overlay = screen
+        state = TvState(this)
+        state.add(TvUi.button(this, getString(R.string.retry)) { load(true) })
+        state.add(TvUi.button(this, getString(R.string.country)) { countries() })
+        setContentView(FrameLayout(this).apply { addView(root, FrameLayout.LayoutParams(-1, -1)); addView(state, FrameLayout.LayoutParams(-1, -1)) })
         cc = countryOf(intent) ?: Store.country(this)
         groupOf(intent)?.let { group = it }
         keepGroup?.let { group = it; keepGroup = null }                // the language changed: the same group, not the first
@@ -229,7 +201,7 @@ class BrowseActivity : Activity() {
         val hadFocus = rail.hasFocus()
         val at = (0 until rail.childCount).firstOrNull { rail.getChildAt(it).hasFocus() } ?: -1
         rail.removeAllViews()
-        val dp = { n: Int -> Ui.dp(this, n).toInt() }
+        val dp = { n: Int -> TvUi.dp(this, n).toInt() }
         rail.addView(LinearLayout(this).apply {                       // the app's own tile beside its name
             gravity = Gravity.CENTER_VERTICAL; setPadding(0, 0, 0, dp(18))
             val ic = resources.getDimension(R.dimen.tv_head_icon).toInt(); val rad = resources.getDimension(R.dimen.tv_head_radius)
@@ -238,36 +210,36 @@ class BrowseActivity : Activity() {
                 outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, rad) } }
                 clipToOutline = true
             }, LinearLayout.LayoutParams(ic, ic).apply { marginEnd = resources.getDimension(R.dimen.tv_head_gap).toInt() })
-            addView(Ui.text(this@BrowseActivity, getString(R.string.app_name), 0f, Ui.TEXT, true).apply {
+            addView(TvUi.text(this@BrowseActivity, getString(R.string.app_name), 0f, TvUi.TEXT, true).apply {
                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.tv_head_name)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         })
-        add(Ui.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
+        add(TvUi.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
         val favs = Store.favourites(this).byChannel().size
-        add(Ui.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
+        add(TvUi.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
         val rem = Reminders.all(this).size
-        if (rem > 0) add(Ui.row(this, R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }, false)   // only while there are reminders
+        if (rem > 0) add(TvUi.row(this, R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }, false)   // only while there are reminders
         for (g in Store.groups(this)) {
             val n = g.channels.byChannel().size
-            add(Ui.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
+            add(TvUi.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
         }
         val lists = Store.playlists(this)
         if (lists.isNotEmpty()) {                                     // the person's own m3u links (set from a phone or computer), one row each
-            rail.addView(Ui.text(this, getString(R.string.your_lists), 13f, Ui.DIM).apply { setPadding(dp(12), dp(10), 0, dp(4)) })
+            rail.addView(TvUi.text(this, getString(R.string.your_lists), 13f, TvUi.DIM).apply { setPadding(dp(12), dp(10), 0, dp(4)) })
             for (l in lists) {
                 val n = plData[l.id]?.channels?.byChannel()?.size
-                add(Ui.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }, group == PL + l.id, PL + l.id)
+                add(TvUi.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }, group == PL + l.id, PL + l.id)
             }
         }
-        add(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
-        add(Ui.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
-        add(Ui.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
-        add(Ui.row(this, R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() }, false)
+        add(TvUi.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
+        add(TvUi.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
+        add(TvUi.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
+        add(TvUi.row(this, R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() }, false)
         rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
-            val m = Ui.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
+            val m = TvUi.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
         if (all.isNotEmpty()) {
-        add(Ui.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL, ALL)
+        add(TvUi.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL, ALL)
         all.groupingBy { it.first().group }.eachCount().entries.sortedByDescending { it.value }.forEach { (g, n) ->
-            add(Ui.row(this, 0, groupName(g), "$n") { pick(g) }, group == g, g)
+            add(TvUi.row(this, 0, groupName(g), "$n") { pick(g) }, group == g, g)
         }
         }
         if (hadFocus && at in 0 until rail.childCount) rail.getChildAt(at).requestFocus()   // a rebuilt list keeps the person's place
@@ -310,7 +282,7 @@ class BrowseActivity : Activity() {
         val pl = if (isList(group)) group.removePrefix(PL) else null
         if (pl != null) loadList(pl, false)
         val searching = group == SEARCH
-        Ui.show(find, searching)
+        TvUi.show(find, searching)
         if (!searching) {
             GlobalIndex.release(); main.removeCallbacks(globalRun); gseq++
             if (find.text.isNotEmpty()) { find.setText(""); return }  // its watcher comes back here
@@ -372,7 +344,7 @@ class BrowseActivity : Activity() {
         find.setText("")
         buildRail(); filter()
         find.requestFocus()
-        find.post { getSystemService(android.view.inputmethod.InputMethodManager::class.java).showSoftInput(find, 0) }
+        find.post { find.raise() }
     }
 
     /** The text changed: ask the global index after a pause (the first time it is downloaded, and the card says so). */
@@ -400,16 +372,14 @@ class BrowseActivity : Activity() {
         }
     }
 
-    private fun say(s: String, again: Boolean) { note.text = s; Ui.show(note, s.isNotEmpty()) }
+    private fun say(s: String, again: Boolean) { note.text = s; TvUi.show(note, s.isNotEmpty()) }
 
     /** One state for the whole screen while there is no list to show: loading (a spinner), offline or empty (the words, Retry, Country). */
     private fun chrome() {
         val on = loading || all.isEmpty() && mine(group) == null && !isList(group) && group != SEARCH
-        Ui.show(overlay, on); Ui.show(content, !on)
+        TvUi.show(state, on); TvUi.show(content, !on)
         if (!on) return
-        Ui.show(spin, loading); Ui.show(waitButtons, !loading)
-        waitText.text = if (loading) getString(R.string.loading) else getString(if (failed) R.string.offline else R.string.none_here)
-        if (!loading && !overlay.hasFocus()) retry.post { retry.requestFocus() }
+        if (loading) state.loading(getString(R.string.loading)) else state.message(getString(if (failed) R.string.offline else R.string.none_here))
     }
 
 
@@ -421,21 +391,16 @@ class BrowseActivity : Activity() {
     /** What can be done with one channel: on a TV the Menu key or a long OK, on a phone a long press. */
     fun actions(ch: List<Channel>) {
         val c = ch.first()
-        val dlg = Dialog(this, R.style.Dialog)
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
-            background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
-        }
-        box.addView(Ui.text(this, c.name, 18f, bold = true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) })
-        box.addView(Ui.row(this, R.drawable.ic_play, getString(R.string.play)) { dlg.dismiss(); play(ch) })
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog)
+        TvUi.sheetTitle(box, c.name)
+        box.addView(TvUi.row(this, R.drawable.ic_play, getString(R.string.play)) { dlg.dismiss(); play(ch) })
         val fav = Store.isFavourite(this, c.id)
-        box.addView(Ui.row(this, R.drawable.ic_star, getString(if (fav) R.string.remove_fav else R.string.add_fav)) {
+        box.addView(TvUi.row(this, R.drawable.ic_star, getString(if (fav) R.string.remove_fav else R.string.add_fav)) {
             dlg.dismiss(); Store.toggleFavourite(this, ch); buildRail(); filter()
         })
-        box.addView(Ui.row(this, R.drawable.ic_folder, getString(R.string.to_group)) { dlg.dismiss(); groupsFor(ch) })
-        box.addView(Ui.row(this, R.drawable.ic_guide, getString(R.string.guide)) { dlg.dismiss(); guideOf(ch) })
-        if (Pins.can(this)) box.addView(Ui.row(this, R.drawable.ic_home, getString(R.string.pin)) {
+        box.addView(TvUi.row(this, R.drawable.ic_folder, getString(R.string.to_group)) { dlg.dismiss(); groupsFor(ch) })
+        box.addView(TvUi.row(this, R.drawable.ic_guide, getString(R.string.guide)) { dlg.dismiss(); guideOf(ch) })
+        if (Pins.can(this)) box.addView(TvUi.row(this, R.drawable.ic_home, getString(R.string.pin)) {
             dlg.dismiss()
             io.execute {
                 val logo = c.logo.takeIf { it.isNotEmpty() }?.let { try { Logos.load(it, 280) } catch (e: Throwable) { null } }
@@ -446,9 +411,8 @@ class BrowseActivity : Activity() {
         val why = listOfNotNull(c.quality.takeIf { it.isNotEmpty() }, groupName(c.group),
             getString(R.string.geo).takeIf { c.geo }, getString(R.string.not_always).takeIf { c.notAlways },
             getString(R.string.down).takeIf { Store.alive(this, c.url) == false && ch.size == 1 })
-        box.addView(Ui.text(this, why.joinToString(" · "), 13f, Ui.DIM).apply {
-            setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 10).toInt(), 0, 0) })
-        dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 380).toInt(), -2))
+        box.addView(TvUi.text(this, why.joinToString(" · "), 13f, TvUi.DIM).apply {
+            setPadding(TvUi.dp(this@BrowseActivity, 12).toInt(), TvUi.dp(this@BrowseActivity, 10).toInt(), 0, 0) })
         dlg.show()
     }
 
@@ -459,10 +423,10 @@ class BrowseActivity : Activity() {
             main.post {
                 if (isDestroyed) return@post
                 if (shows.isEmpty()) { Toast.makeText(this, R.string.guide_none, Toast.LENGTH_SHORT).show(); return@post }
-                val (dlg, box) = sheet(480)
-                heading(box, "${getString(R.string.guide)} · ${ch.first().name}")
+                val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 480)
+                TvUi.sheetTitle(box, "${getString(R.string.guide)} · ${ch.first().name}")
                 val list = GuideList.view(this, shows)
-                box.addView(list, LinearLayout.LayoutParams(-1, Ui.dp(this, 440).toInt()))
+                box.addView(list, LinearLayout.LayoutParams(-1, TvUi.dp(this, 440).toInt()))
                 dlg.show()
                 cards.notifyDataSetChanged()                          // the cards' "on now" lines, now known
             }
@@ -473,10 +437,10 @@ class BrowseActivity : Activity() {
 
     /** Three choices, the one in use marked; a new one is saved and the screen made again in it, on the same group. */
     private fun languages() {
-        val (dlg, box) = sheet(320)
-        heading(box, getString(R.string.lang_title))
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 320)
+        TvUi.sheetTitle(box, getString(R.string.lang_title))
         val now = Lang.pref(this)
-        for (l in Lang.CHOICES) box.addView(Ui.row(this, R.drawable.ic_check, langName(l)) {
+        for (l in Lang.CHOICES) box.addView(TvUi.row(this, R.drawable.ic_check, langName(l)) {
             dlg.dismiss()
             if (l == now) return@row
             Lang.set(this, l); keepGroup = if (group == SEARCH) ALL else group
@@ -490,22 +454,22 @@ class BrowseActivity : Activity() {
 
     /** A newer TV Channels in the latest release (SelfUpdate): Update now / Later / Skip this version; Back is a later too. */
     private fun askUpdate(r: Release) {
-        val (dlg, box) = sheet(420)
-        heading(box, getString(R.string.upd_title, r.version))
-        sheetNote(box, getString(R.string.upd_note, upd.version()))
-        box.addView(Ui.row(this, R.drawable.ic_download, getString(R.string.upd_now)) { dlg.dismiss(); updating(r) })
-        box.addView(Ui.row(this, R.drawable.ic_clock, getString(R.string.upd_later)) { upd.later(); dlg.dismiss() })
-        box.addView(Ui.row(this, R.drawable.ic_eye_off, getString(R.string.upd_skip)) { upd.skip(r); dlg.dismiss() })
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 420)
+        TvUi.sheetTitle(box, getString(R.string.upd_title, r.version))
+        TvUi.sheetNote(box, getString(R.string.upd_note, upd.version()))
+        box.addView(TvUi.row(this, R.drawable.ic_download, getString(R.string.upd_now)) { dlg.dismiss(); updating(r) })
+        box.addView(TvUi.row(this, R.drawable.ic_clock, getString(R.string.upd_later)) { upd.later(); dlg.dismiss() })
+        box.addView(TvUi.row(this, R.drawable.ic_eye_off, getString(R.string.upd_skip)) { upd.skip(r); dlg.dismiss() })
         dlg.show()
         box.post { box.getChildAt(2)?.requestFocus() }
     }
 
     /** Its download, with Cancel (and Back); at 100 % Android's installer takes over with its own question. */
     private fun updating(r: Release) {
-        val (dlg, box) = sheet(420)
-        heading(box, getString(R.string.upd_title, r.version))
-        val line = sheetNote(box, getString(R.string.upd_loading, 0))
-        box.addView(Ui.row(this, R.drawable.ic_close, getString(R.string.upd_cancel)) { dlg.dismiss() })
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 420)
+        TvUi.sheetTitle(box, getString(R.string.upd_title, r.version))
+        val line = TvUi.sheetNote(box, getString(R.string.upd_loading, 0))
+        box.addView(TvUi.row(this, R.drawable.ic_close, getString(R.string.upd_cancel)) { dlg.dismiss() })
         dlg.setOnDismissListener { upd.cancel() }
         dlg.show()
         box.post { box.getChildAt(2)?.requestFocus() }
@@ -514,40 +478,22 @@ class BrowseActivity : Activity() {
             if (pct >= 100) { dlg.setOnDismissListener(null); dlg.dismiss() }
         }, { m ->
             dlg.setOnDismissListener(null); dlg.dismiss()
-            val (d2, b2) = sheet(420)
-            heading(b2, getString(R.string.upd_title, r.version))
-            sheetNote(b2, getString(R.string.upd_failed, m))
-            b2.addView(Ui.row(this, R.drawable.ic_check, getString(R.string.ok)) { d2.dismiss() })
+            val (d2, b2) = TvUi.sheet(this, R.style.Dialog, 420)
+            TvUi.sheetTitle(b2, getString(R.string.upd_title, r.version))
+            TvUi.sheetNote(b2, getString(R.string.upd_failed, m))
+            b2.addView(TvUi.row(this, R.drawable.ic_check, getString(R.string.ok)) { d2.dismiss() })
             d2.show(); b2.post { b2.getChildAt(2)?.requestFocus() }
         })
         if (!started) { dlg.setOnDismissListener(null); dlg.dismiss() }  // Android's "install unknown apps" first: back from it, onResume goes on
     }
 
-    /** A dialog box, the look all of them share. */
-    private fun sheet(w: Int = 380): Pair<Dialog, LinearLayout> {
-        val dlg = Dialog(this, R.style.Dialog)
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
-            background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
-        }
-        dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, w).toInt(), -2))
-        return dlg to box
-    }
-
-    /** A line under a sheet's title, in line with it. */
-    private fun sheetNote(box: LinearLayout, s: String) = Ui.text(this, s, 15f, Ui.DIM).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) }.also { box.addView(it) }
-
-    private fun heading(box: LinearLayout, s: String) =
-        box.addView(Ui.text(this, s, 18f, bold = true).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), 0, 0, Ui.dp(this@BrowseActivity, 10).toInt()) })
-
     /** Which of the person's groups [ch] is in: a tick on each, OK puts it in or takes it out; and a new group with it in. */
     private fun groupsFor(ch: List<Channel>) {
-        val (dlg, box) = sheet()
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog)
         val id = ch.first().id
-        heading(box, ch.first().name)
+        TvUi.sheetTitle(box, ch.first().name)
         for (g in Store.groups(this)) {
-            val row = Ui.row(this, if (Store.has(this, g.id, id)) R.drawable.ic_check else R.drawable.ic_folder, g.name) {}
+            val row = TvUi.row(this, if (Store.has(this, g.id, id)) R.drawable.ic_check else R.drawable.ic_folder, g.name) {}
             row.setOnClickListener {
                 val on = Store.toggle(this, g.id, ch)
                 (row.getChildAt(0) as ImageView).setImageResource(if (on) R.drawable.ic_check else R.drawable.ic_folder)
@@ -555,7 +501,7 @@ class BrowseActivity : Activity() {
             }
             box.addView(row)
         }
-        box.addView(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) {
+        box.addView(TvUi.row(this, R.drawable.ic_plus, getString(R.string.new_group)) {
             dlg.dismiss()
             ask(getString(R.string.new_group), "") { name -> Store.toggle(this, Store.addGroup(this, name), ch); buildRail(); filter() }
         })
@@ -567,12 +513,12 @@ class BrowseActivity : Activity() {
     private fun remindList() {
         val items = Reminders.all(this).sortedBy { it.start }
         if (items.isEmpty()) { buildRail(); return }
-        val (dlg, box) = sheet(560)
-        heading(box, getString(R.string.remind_list))
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 560)
+        TvUi.sheetTitle(box, getString(R.string.remind_list))
         var left = items.size
         for (r in items) {
             lateinit var row: View
-            row = Ui.row(this, R.drawable.ic_close, "${Guide.hm(r.start)}  ${r.title} · ${r.name}") {
+            row = TvUi.row(this, R.drawable.ic_close, "${Guide.hm(r.start)}  ${r.title} · ${r.name}") {
                 Reminders.remove(this, r); buildRail()
                 val at = box.indexOfChild(row)                        // only this row goes; the focus moves to its neighbour, not back to the top
                 val to = box.getChildAt(at + 1)?.takeIf { it.isFocusable } ?: box.getChildAt(at - 1)?.takeIf { it.isFocusable }
@@ -581,18 +527,18 @@ class BrowseActivity : Activity() {
             }
             box.addView(row)
         }
-        box.addView(Ui.text(this, getString(R.string.remind_list_hint), 14f, Ui.DIM).apply { setPadding(Ui.dp(this@BrowseActivity, 12).toInt(), Ui.dp(this@BrowseActivity, 8).toInt(), 0, 0) })
+        box.addView(TvUi.text(this, getString(R.string.remind_list_hint), 14f, TvUi.DIM).apply { setPadding(TvUi.dp(this@BrowseActivity, 12).toInt(), TvUi.dp(this@BrowseActivity, 8).toInt(), 0, 0) })
         dlg.show()
         box.post { box.getChildAt(1)?.requestFocus() }
     }
 
     /** One group's menu: pin it to the Home screen; the person's own groups can also be renamed and deleted. */
     private fun groupMenu(gid: String) {
-        val (dlg, box) = sheet()
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog)
         val name = mineName(gid)
-        heading(box, name)
-        box.addView(Ui.row(this, R.drawable.ic_play, getString(R.string.open)) { dlg.dismiss(); pick(if (gid == Store.FAV) FAVS else MINE + gid) })
-        if (Pins.can(this)) box.addView(Ui.row(this, R.drawable.ic_home, getString(R.string.pin)) {
+        TvUi.sheetTitle(box, name)
+        box.addView(TvUi.row(this, R.drawable.ic_play, getString(R.string.open)) { dlg.dismiss(); pick(if (gid == Store.FAV) FAVS else MINE + gid) })
+        if (Pins.can(this)) box.addView(TvUi.row(this, R.drawable.ic_home, getString(R.string.pin)) {
             dlg.dismiss()
             val logos = Store.channels(this, gid).byChannel().map { it.first().logo }.filter { it.isNotEmpty() }.take(4)
             io.execute {
@@ -602,16 +548,16 @@ class BrowseActivity : Activity() {
             }
         })
         if (gid != Store.FAV) {
-            box.addView(Ui.row(this, R.drawable.ic_pen, getString(R.string.rename)) {
+            box.addView(TvUi.row(this, R.drawable.ic_pen, getString(R.string.rename)) {
                 dlg.dismiss()
                 ask(getString(R.string.rename), name) { Store.renameGroup(this, gid, it); Pins.renamed(this, gid, it); buildRail(); filter() }
             })
-            box.addView(Ui.row(this, R.drawable.ic_trash, getString(R.string.delete_group)) {
+            box.addView(TvUi.row(this, R.drawable.ic_trash, getString(R.string.delete_group)) {
                 dlg.dismiss()
-                val (sure, b) = sheet()                               // asked again, Keep first: a stray OK loses nothing
-                heading(b, getString(R.string.delete_ask, name))
-                b.addView(Ui.row(this, R.drawable.ic_close, getString(R.string.keep)) { sure.dismiss() })
-                b.addView(Ui.row(this, R.drawable.ic_trash, getString(R.string.delete_group)) {
+                val (sure, b) = TvUi.sheet(this, R.style.Dialog)                               // asked again, Keep first: a stray OK loses nothing
+                TvUi.sheetTitle(b, getString(R.string.delete_ask, name))
+                b.addView(TvUi.row(this, R.drawable.ic_close, getString(R.string.keep)) { sure.dismiss() })
+                b.addView(TvUi.row(this, R.drawable.ic_trash, getString(R.string.delete_group)) {
                     sure.dismiss()
                     Store.deleteGroup(this, gid); Pins.deleted(this, gid)
                     if (group == MINE + gid) group = ALL
@@ -625,47 +571,33 @@ class BrowseActivity : Activity() {
 
     /** A name, typed: OK keeps it (not when empty), Back leaves it. */
     private fun ask(title: String, now: String, done: (String) -> Unit) {
-        val (dlg, box) = sheet(420)
-        heading(box, title)
-        val f = EditText(this).apply {
-            setText(now); setSelection(now.length); hint = getString(R.string.group_name); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT)
-            isSingleLine = true; textSize = 16f; imeOptions = EditorInfo.IME_ACTION_DONE or EditorInfo.IME_FLAG_NO_EXTRACT_UI
-            background = Ui.states(this@BrowseActivity, 0x14FFFFFF, Ui.dp(this@BrowseActivity, 18))
-            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p / 2, p, p / 2)
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 420)
+        TvUi.sheetTitle(box, title)
+        val f = TvUi.field(this, getString(R.string.group_name), 16f, EditorInfo.IME_ACTION_DONE, TvUi.FIELD_REST, TvUi.R_FIELD, 14, 7).apply {
+            setText(now); setSelection(now.length)
         }
         val ok = { val t = f.text.toString().trim(); if (t.isNotEmpty()) { dlg.dismiss(); done(t.take(40)) } }
         f.setOnEditorActionListener { _, _, _ -> ok(); true }
-        box.addView(f, LinearLayout.LayoutParams(-1, Ui.dp(this, 46).toInt()).apply { bottomMargin = Ui.dp(this@BrowseActivity, 8).toInt() })
-        box.addView(Ui.row(this, R.drawable.ic_check, getString(R.string.ok)) { ok() })
+        box.addView(f, LinearLayout.LayoutParams(-1, TvUi.dp(this, 46).toInt()).apply { bottomMargin = TvUi.dp(this@BrowseActivity, 8).toInt() })
+        box.addView(TvUi.row(this, R.drawable.ic_check, getString(R.string.ok)) { ok() })
         dlg.show()
-        f.requestFocus()
+        f.requestFocus(); f.post { f.raise() }
     }
 
     private fun countries() {
-        val dlg = Dialog(this, R.style.Dialog)
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p, p, p)
-            background = Ui.round(0xF21B2028.toInt(), Ui.dp(this@BrowseActivity, 20), 1, 0x40FFFFFF)
-        }
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 420)
         var preBack: () -> Boolean = { false }
         var swallowUp = false                                      // the Back that left the field must not close the modal on its key-up
-        val q = object : EditText(this) {                         // Back while the keyboard is up goes to the keyboard first: caught here, before it
-            override fun onKeyPreIme(k: Int, e: KeyEvent) = if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_DOWN && preBack()) true else super.onKeyPreIme(k, e)
-        }.apply {
-            hint = getString(R.string.country); setHintTextColor(Ui.DIM); setTextColor(Ui.TEXT); isSingleLine = true; textSize = 15f
-            imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI
-            background = Ui.states(this@BrowseActivity, 0x14FFFFFF, Ui.dp(this@BrowseActivity, 18))
-            val p = Ui.dp(this@BrowseActivity, 14).toInt(); setPadding(p, p / 2, p, p / 2)
+        val q = TvUi.field(this, getString(R.string.country), 15f, EditorInfo.IME_ACTION_SEARCH, TvUi.FIELD_REST, TvUi.R_FIELD, 14, 7).apply {
+            first = { k, e -> k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_DOWN && preBack() }   // Back while the keyboard is up goes to the keyboard first: caught here, before it
         }
-        box.addView(q, LinearLayout.LayoutParams(-1, Ui.dp(this, 42).toInt()).apply { bottomMargin = Ui.dp(this@BrowseActivity, 8).toInt() })
+        box.addView(q, LinearLayout.LayoutParams(-1, TvUi.dp(this, 42).toInt()).apply { bottomMargin = TvUi.dp(this@BrowseActivity, 8).toInt() })
         val list = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@BrowseActivity) }
-        val none = Ui.text(this, getString(R.string.country_loading), 17f, Ui.DIM).apply { gravity = Gravity.CENTER }   // until the list comes
+        val none = TvUi.text(this, getString(R.string.country_loading), 17f, TvUi.DIM).apply { gravity = Gravity.CENTER }   // until the list comes
         val lh = (resources.displayMetrics.heightPixels * 0.62).toInt()
         box.addView(FrameLayout(this).apply {
             addView(list, FrameLayout.LayoutParams(-1, -1)); addView(none, FrameLayout.LayoutParams(-1, -1))
         }, LinearLayout.LayoutParams(-1, lh))
-        dlg.setContentView(box, ViewGroup.LayoutParams(Ui.dp(this, 420).toInt(), -2))
         io.execute {
             val every = Catalog.countries(this)
             main.post {
@@ -676,7 +608,7 @@ class BrowseActivity : Activity() {
                 val ad = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     override fun getItemCount() = now.size
                     override fun onCreateViewHolder(p: ViewGroup, t: Int) = object : RecyclerView.ViewHolder(
-                        Ui.row(this@BrowseActivity, 0, "") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }) {}
+                        TvUi.row(this@BrowseActivity, 0, "") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }) {}
                     override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
                         val k = now[i]; val row = h.itemView as LinearLayout
                         (row.getChildAt(0) as TextView).text = "${k.flag}  ${k.name}"
@@ -777,8 +709,8 @@ class BrowseActivity : Activity() {
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
         val LINE = "line"
-        private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
-        private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
+        private val lightTile by lazy { TvUi.round(LogoFit.LIGHT_TILE, TvUi.dp(this@BrowseActivity, 12)) }   // lazy: the activity has no resources yet while its fields are built
+        private val darkTile by lazy { TvUi.round(LogoFit.DARK_TILE, TvUi.dp(this@BrowseActivity, 12)) }   // lighter than the card, so its edge shows
         init { setHasStableIds(true) }
         override fun getItemViewType(i: Int) = if (shown[i].first().id == HDR) 1 else 0
         override fun getItemId(i: Int) = shown[i].first().let { if (it.id == HDR) -1L else it.id.hashCode().toLong() }   // one card per id ([byChannel])
@@ -795,16 +727,16 @@ class BrowseActivity : Activity() {
 
         override fun onCreateViewHolder(p: ViewGroup, t: Int): H {
             val c = this@BrowseActivity
-            if (t == 1) return H(Ui.text(c, "", 15f, Ui.DIM, true).apply {
-                tag = "hdr"; layoutParams = RecyclerView.LayoutParams(-1, -2); setPadding(Ui.dp(c, 8).toInt(), Ui.dp(c, 14).toInt(), 0, Ui.dp(c, 4).toInt())
+            if (t == 1) return H(TvUi.text(c, "", 15f, TvUi.DIM, true).apply {
+                tag = "hdr"; layoutParams = RecyclerView.LayoutParams(-1, -2); setPadding(TvUi.dp(c, 8).toInt(), TvUi.dp(c, 14).toInt(), 0, TvUi.dp(c, 4).toInt())
             })
-            val d = { v: Number -> Ui.dp(c, v).toInt() }
+            val d = { v: Number -> TvUi.dp(c, v).toInt() }
             val card = object : LinearLayout(c) {
                 override fun hasOverlappingRendering() = false           // a dimmed (dead) card is not drawn into an off-screen layer
             }.apply {
                 orientation = LinearLayout.VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
                 setPadding(d(6), d(6), d(6), d(8))
-                background = Ui.states(c, Color.TRANSPARENT, Ui.dp(c, 16))
+                background = TvUi.states(c, Color.TRANSPARENT, TvUi.dp(c, 16))
                 setOnFocusChangeListener { v, has ->
                     if (has) grid.getChildAdapterPosition(v).let { if (it >= 0) last[group] = it }
                     v.animate().scaleX(if (has) 1.06f else 1f).scaleY(if (has) 1.06f else 1f).setDuration(120).start() }
@@ -814,7 +746,7 @@ class BrowseActivity : Activity() {
                     val w = MeasureSpec.getSize(wm)
                     super.onMeasure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(w * 9 / 16, MeasureSpec.EXACTLY))
                 }
-            }.apply { background = Ui.round(Ui.TILE, Ui.dp(c, 12)) }
+            }.apply { background = TvUi.round(TvUi.TILE, TvUi.dp(c, 12)) }
             tile.addView(TextView(c).apply {
                 tag = "letters"; gravity = Gravity.CENTER; textSize = 26f; setTextColor(0xFF5F6368.toInt())
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -822,12 +754,12 @@ class BrowseActivity : Activity() {
             tile.addView(LogoView(c).apply { tag = "logo" }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(ImageView(c).apply { tag = "star"; setImageResource(R.drawable.ic_star); imageTintList = android.content.res.ColorStateList.valueOf(0xFFF9AB00.toInt()) },
                 FrameLayout.LayoutParams(d(18), d(18), Gravity.TOP or Gravity.END).apply { topMargin = d(6); rightMargin = d(6) })
-            tile.addView(Ui.text(c, "", 12f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
-                tag = "q"; setPadding(d(4), d(1), d(4), d(1)); background = Ui.round(0x8C000000.toInt(), Ui.dp(c, 4))
+            tile.addView(TvUi.text(c, "", 12f, Color.WHITE, true).apply {                // a corner: logos sit in the middle
+                tag = "q"; setPadding(d(4), d(1), d(4), d(1)); background = TvUi.round(0x8C000000.toInt(), TvUi.dp(c, 4))
             }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { topMargin = d(5); leftMargin = d(5) })
             card.addView(tile, LinearLayout.LayoutParams(-1, -2))
-            card.addView(Ui.text(c, "", 14f).apply { tag = "name"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(8), d(4), 0) })
-            card.addView(Ui.text(c, "", 12f, Ui.DIM).apply { tag = "sub"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(4), d(4), 0) })
+            card.addView(TvUi.text(c, "", 14f).apply { tag = "name"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(8), d(4), 0) })
+            card.addView(TvUi.text(c, "", 12f, TvUi.DIM).apply { tag = "sub"; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(d(4), d(4), d(4), 0) })
             card.layoutParams = RecyclerView.LayoutParams(-1, -2).apply { val m = d(6); setMargins(m, m, m, m) }
             return H(card)
         }
@@ -836,7 +768,7 @@ class BrowseActivity : Activity() {
             val ch = shown[i]; val c = ch.first()
             if (c.id == HDR) { (h.itemView as TextView).text = c.name; return }
             h.name.text = c.name
-            h.letters.text = Ui.initials(c.name)
+            h.letters.text = TvUi.initials(c.name)
             Logos.into(h.logo, c.logo, 280) { got ->
                 h.letters.visibility = if (got) View.INVISIBLE else View.VISIBLE
                 val dark = got && Logos.isLight(c.logo)                // pale lettering would vanish on the light tile
@@ -844,8 +776,8 @@ class BrowseActivity : Activity() {
             }
             line(h, ch)
             h.q.text = c.quality.removeSuffix("p").let { if (it.isEmpty()) "" else if (it.toIntOrNull()?.let { n -> n >= 720 } == true) if (it == "2160") "4K" else "HD" else "SD" }
-            Ui.show(h.q, c.quality.isNotEmpty())
-            Ui.show(h.star, group != FAVS && Store.isFavourite(this@BrowseActivity, c.id))
+            TvUi.show(h.q, c.quality.isNotEmpty())
+            TvUi.show(h.star, group != FAVS && Store.isFavourite(this@BrowseActivity, c.id))
             h.itemView.setOnClickListener { play(ch) }
             h.itemView.setOnLongClickListener { actions(ch); true }
             ch.forEach { s -> Probe.check(this@BrowseActivity, s) { val at = shown.indexOf(ch); if (at >= 0) notifyItemChanged(at, LINE) } }
@@ -867,7 +799,7 @@ class BrowseActivity : Activity() {
             val from = if (group == SEARCH && c.country.isNotEmpty() && c.country != cc) names[c.country] ?: c.group else null   // a flag and the country, for the other countries' cards
             h.sub.text = (on?.title ?: from ?: groupName(c.group)).let { if (dead) "● $it" else it }
             if (on == null && Guide.known(c.id) == null) guideFor(ch)
-            h.sub.setTextColor(if (dead) Ui.BAD else Ui.DIM)
+            h.sub.setTextColor(if (dead) TvUi.BAD else TvUi.DIM)
             h.itemView.alpha = if (dead) 0.6f else 1f
         }
     }

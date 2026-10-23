@@ -22,6 +22,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import dev.tvremote.tvui.TvUi
 import java.lang.ref.WeakReference
 
 /** The error guard's words from strings.xml (no :shared here, so no i18n files). */
@@ -90,16 +91,16 @@ object ReminderNotice {
 
     /** The card: bell, "Starting soon", the programme, its time and channel, and the keys. */
     private fun card(c: Context, item: Reminders.Item): LinearLayout {
-        val d = { v: Number -> Ui.dp(c, v).toInt() }
+        val d = { v: Number -> TvUi.dp(c, v).toInt() }
         return LinearLayout(c).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(d(22), d(16), d(22), d(16))
-            background = Ui.round(0xFF202124.toInt(), Ui.dp(c, 16), d(2), Ui.ACCENT)
+            background = TvUi.round(0xFF202124.toInt(), TvUi.dp(c, 16), d(2), TvUi.ACCENT)
             isFocusable = true; isFocusableInTouchMode = true
-            addView(Ui.text(c, "🔔 " + c.getString(R.string.remind_head), 14f, Ui.ACCENT, true))
-            addView(Ui.text(c, item.title, 22f, Color.WHITE, true).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, d(4), 0, 0) })
-            addView(Ui.text(c, c.getString(R.string.remind_title, Guide.hm(item.start), item.name), 16f, Ui.TEXT).apply { setPadding(0, d(2), 0, d(8)) })
-            addView(Ui.text(c, c.getString(R.string.remind_hint), 13f, Ui.DIM))
+            addView(TvUi.text(c, "🔔 " + c.getString(R.string.remind_head), 14f, TvUi.ACCENT, true))
+            addView(TvUi.text(c, item.title, 22f, Color.WHITE, true).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, d(4), 0, 0) })
+            addView(TvUi.text(c, c.getString(R.string.remind_title, Guide.hm(item.start), item.name), 16f, TvUi.TEXT).apply { setPadding(0, d(2), 0, d(8)) })
+            addView(TvUi.text(c, c.getString(R.string.remind_hint), 13f, TvUi.DIM))
             minimumWidth = d(300)
         }
     }
@@ -122,7 +123,7 @@ object ReminderNotice {
         val root = a.window.decorView as FrameLayout
         val was = a.currentFocus
         val card = card(a, item)
-        val m = Ui.dp(a, 32).toInt()
+        val m = TvUi.dp(a, 32).toInt()
         root.addView(card, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply { setMargins(m, m, m, m) })
         val end = Runnable { dismiss?.invoke() }
         dismiss = {
@@ -143,7 +144,7 @@ object ReminderNotice {
         // focusable only while it is there: it takes the keys (OK / Back) and gives them back when it goes
         val lp = WindowManager.LayoutParams(-2, -2, type, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT)
         lp.gravity = Gravity.BOTTOM or Gravity.END
-        lp.x = Ui.dp(c, 32).toInt(); lp.y = lp.x
+        lp.x = TvUi.dp(c, 32).toInt(); lp.y = lp.x
         val end = Runnable { dismiss?.invoke() }
         try { wm.addView(card, lp) } catch (e: Exception) { notify(c, item); return }
         dismiss = { ui.removeCallbacks(end); dismiss = null; try { wm.removeView(card) } catch (e: Exception) {} }

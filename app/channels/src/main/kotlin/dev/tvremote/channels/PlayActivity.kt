@@ -33,6 +33,7 @@ import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import dev.tvremote.tvui.TvUi
 import java.util.concurrent.Executors
 
 /**
@@ -79,7 +80,7 @@ class PlayActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val d = { v: Number -> Ui.dp(this, v).toInt() }
+        val d = { v: Number -> TvUi.dp(this, v).toInt() }
         frame = object : FrameLayout(this) {
             override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, bt: Int) { super.onLayout(changed, l, t, r, bt); fit() }
         }.apply { setBackgroundColor(Color.BLACK) }
@@ -87,37 +88,37 @@ class PlayActivity : Activity() {
         frame.addView(surface, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
         spin = ProgressBar(this).apply { isIndeterminate = true }
         frame.addView(spin, FrameLayout.LayoutParams(d(56), d(56), Gravity.CENTER))
-        problem = Ui.text(this, "", 18f).apply {
+        problem = TvUi.text(this, "", 18f).apply {
             gravity = Gravity.CENTER; setLineSpacing(0f, 1.25f); setPadding(d(28), d(20), d(28), d(20))
-            background = Ui.round(0xD91B2028.toInt(), Ui.dp(this@PlayActivity, 18)); visibility = View.GONE
+            background = TvUi.round(0xD91B2028.toInt(), TvUi.dp(this@PlayActivity, 18)); visibility = View.GONE
         }
         frame.addView(problem, FrameLayout.LayoutParams(d(560), -2, Gravity.CENTER))
-        digits = Ui.text(this, "", 44f, bold = true).apply {
-            setPadding(d(22), d(10), d(22), d(10)); background = Ui.round(0xB3000000.toInt(), Ui.dp(this@PlayActivity, 16)); visibility = View.GONE
+        digits = TvUi.text(this, "", 44f, bold = true).apply {
+            setPadding(d(22), d(10), d(22), d(10)); background = TvUi.round(0xB3000000.toInt(), TvUi.dp(this@PlayActivity, 16)); visibility = View.GONE
         }
         frame.addView(digits, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { topMargin = d(32); rightMargin = d(40) })
 
         info = LinearLayout(this).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(d(20), d(16), d(28), d(16)); visibility = View.GONE
-            background = Ui.round(0xD91B2028.toInt(), Ui.dp(this@PlayActivity, 20), 1, 0x33FFFFFF)
+            background = TvUi.round(0xD91B2028.toInt(), TvUi.dp(this@PlayActivity, 20), 1, 0x33FFFFFF)
         }
-        infoNum = Ui.text(this, "", 30f, Ui.ACCENT, true).apply { minWidth = d(60) }
+        infoNum = TvUi.text(this, "", 30f, TvUi.ACCENT, true).apply { minWidth = d(60) }
         info.addView(infoNum)
-        val tile = FrameLayout(this).apply { background = Ui.round(Ui.TILE, Ui.dp(this@PlayActivity, 10)) }
+        val tile = FrameLayout(this).apply { background = TvUi.round(TvUi.TILE, TvUi.dp(this@PlayActivity, 10)) }
         infoTile = tile
         infoLogo = ImageView(this).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
         tile.addView(infoLogo, FrameLayout.LayoutParams(-1, -1).apply { val m = d(8); setMargins(m, m, m, m) })
         info.addView(tile, LinearLayout.LayoutParams(d(112), d(63)).apply { leftMargin = d(12); rightMargin = d(18) })
         val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        infoName = Ui.text(this, "", 22f, bold = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
-        infoSub = Ui.text(this, "", 14f, Ui.DIM).apply { maxLines = 1; setPadding(0, d(6), 0, 0) }
+        infoName = TvUi.text(this, "", 22f, bold = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+        infoSub = TvUi.text(this, "", 14f, TvUi.DIM).apply { maxLines = 1; setPadding(0, d(6), 0, 0) }
         words.addView(infoName); words.addView(infoSub)
-        infoNow = Ui.text(this, "", 16f).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, d(12), 0, 0) }
+        infoNow = TvUi.text(this, "", 16f).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(0, d(12), 0, 0) }
         infoBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 1000; progressTintList = android.content.res.ColorStateList.valueOf(Ui.ACCENT)
+            max = 1000; progressTintList = android.content.res.ColorStateList.valueOf(TvUi.ACCENT)
             progressBackgroundTintList = android.content.res.ColorStateList.valueOf(0x33FFFFFF)
         }
-        infoNext = Ui.text(this, "", 14f, Ui.DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+        infoNext = TvUi.text(this, "", 14f, TvUi.DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
         words.addView(infoNow); words.addView(infoBar, LinearLayout.LayoutParams(-1, d(4)).apply { topMargin = d(8); bottomMargin = d(8) }); words.addView(infoNext)
         info.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         frame.addView(info, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply { setMargins(d(48), 0, d(48), d(36)) })
@@ -125,18 +126,18 @@ class PlayActivity : Activity() {
         val mx = resources.getDimensionPixelSize(R.dimen.tv_margin_x); val my = resources.getDimensionPixelSize(R.dimen.tv_margin_y)
         side = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(mx, my, d(12), my); visibility = View.GONE           // text inside the overscan margins; the panel itself runs to the edge
-            background = Ui.round(0xEB14171D.toInt(), 0f)
+            background = TvUi.round(0xEB14171D.toInt(), 0f)
         }
-        side.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, 0, d(12)); maxLines = 1 })
+        side.addView(TvUi.text(this, "", 16f, TvUi.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, 0, d(12)); maxLines = 1 })
         sideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = SideList(); itemAnimator = null }
         side.addView(sideList, LinearLayout.LayoutParams(-1, 0, 1f))
         frame.addView(side, FrameLayout.LayoutParams(d(442) + mx - d(12), -1, Gravity.START))
 
         guide = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(d(12), my, mx, my); visibility = View.GONE
-            background = Ui.round(0xEB14171D.toInt(), 0f)
+            background = TvUi.round(0xEB14171D.toInt(), 0f)
         }
-        guide.addView(Ui.text(this, "", 16f, Ui.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, d(12), d(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+        guide.addView(TvUi.text(this, "", 16f, TvUi.ACCENT, true).apply { tag = "title"; setPadding(d(12), 0, d(12), d(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         guideList = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@PlayActivity); adapter = GuideList(this@PlayActivity); itemAnimator = null }
         guide.addView(guideList, LinearLayout.LayoutParams(-1, 0, 1f))
         frame.addView(guide, FrameLayout.LayoutParams(d(400) + mx - d(12), -1, Gravity.END))
@@ -311,7 +312,7 @@ class PlayActivity : Activity() {
         infoNum.text = "${at + 1}"
         infoName.text = c.name
         infoSub.text = listOfNotNull(c.quality.ifEmpty { null }, c.group.takeUnless { it.isEmpty() || it.equals("undefined", true) }?.let { BrowseActivity.groupName(it) }, Lineup.title.ifEmpty { null }).joinToString(" · ")
-        Logos.into(infoLogo, c.logo, 200) { got -> infoTile.background = Ui.round(if (got && Logos.isLight(c.logo)) LogoFit.DARK_TILE else LogoFit.LIGHT_TILE, Ui.dp(this, 10)) }
+        Logos.into(infoLogo, c.logo, 200) { got -> infoTile.background = TvUi.round(if (got && Logos.isLight(c.logo)) LogoFit.DARK_TILE else LogoFit.LIGHT_TILE, TvUi.dp(this, 10)) }
         info.visibility = View.VISIBLE
         main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 5000)
         val ch = streams
@@ -323,7 +324,7 @@ class PlayActivity : Activity() {
     /** The banner's programme lines: what is on, how far in, what comes next ("▶ guide" when there is one). */
     private fun showNow(shows: List<Show>) {
         val on = Guide.now(shows); val then = Guide.after(shows)
-        Ui.show(infoNow, on != null); Ui.show(infoBar, on != null); Ui.show(infoNext, then != null)
+        TvUi.show(infoNow, on != null); TvUi.show(infoBar, on != null); TvUi.show(infoNext, then != null)
         if (on != null) {
             infoNow.text = "${Guide.hm(on.start)} – ${Guide.hm(on.end)}   ${on.title}"
             infoBar.progress = ((System.currentTimeMillis() - on.start) * 1000 / (on.end - on.start)).toInt()
@@ -365,7 +366,7 @@ class PlayActivity : Activity() {
         side.visibility = if (on) View.VISIBLE else View.GONE
         if (!on) return
         side.findViewWithTag<TextView>("title").text = Lineup.title
-        (sideList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at.coerceAtLeast(0), Ui.dp(this, 120).toInt())
+        (sideList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at.coerceAtLeast(0), TvUi.dp(this, 120).toInt())
         sideList.post { sideList.findViewHolderForAdapterPosition(at)?.itemView?.requestFocus() ?: sideList.getChildAt(0)?.requestFocus() }
     }
 
@@ -417,18 +418,18 @@ class PlayActivity : Activity() {
 
     private inner class SideList : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         override fun getItemCount() = Lineup.channels.size
-        private val lightTile by lazy { Ui.round(LogoFit.LIGHT_TILE, Ui.dp(this@PlayActivity, 6)) }   // lazy: no resources while the activity's fields are built
-        private val darkTile by lazy { Ui.round(LogoFit.DARK_TILE, Ui.dp(this@PlayActivity, 6)) }
+        private val lightTile by lazy { TvUi.round(LogoFit.LIGHT_TILE, TvUi.dp(this@PlayActivity, 6)) }   // lazy: no resources while the activity's fields are built
+        private val darkTile by lazy { TvUi.round(LogoFit.DARK_TILE, TvUi.dp(this@PlayActivity, 6)) }
         /** A row's children: 0 the logo tile (letters under a [LogoView]), 1 the name, 2 the quality. */
         override fun onCreateViewHolder(p: ViewGroup, t: Int): RecyclerView.ViewHolder {
             val c = this@PlayActivity
-            val row = Ui.row(c, 0, "", " ") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }
+            val row = TvUi.row(c, 0, "", " ") {}.apply { layoutParams = RecyclerView.LayoutParams(-1, -2) }
             val tile = FrameLayout(c)
             tile.addView(TextView(c).apply {
                 tag = "letters"; gravity = Gravity.CENTER; textSize = 14f; setTextColor(0xFF5F6368.toInt()); typeface = android.graphics.Typeface.DEFAULT_BOLD
             }, FrameLayout.LayoutParams(-1, -1))
             tile.addView(LogoView(c), FrameLayout.LayoutParams(-1, -1))
-            row.addView(tile, 0, LinearLayout.LayoutParams(Ui.dp(c, 72).toInt(), Ui.dp(c, 40).toInt()).apply { rightMargin = Ui.dp(c, 12).toInt() })
+            row.addView(tile, 0, LinearLayout.LayoutParams(TvUi.dp(c, 72).toInt(), TvUi.dp(c, 40).toInt()).apply { rightMargin = TvUi.dp(c, 12).toInt() })
             return object : RecyclerView.ViewHolder(row) {}
         }
         override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
@@ -436,7 +437,7 @@ class PlayActivity : Activity() {
             val c = Lineup.channels[i].first()
             val tile = row.getChildAt(0) as FrameLayout
             val letters = tile.getChildAt(0) as TextView
-            letters.text = Ui.initials(c.name)
+            letters.text = TvUi.initials(c.name)
             Logos.into(tile.getChildAt(1) as ImageView, c.logo, 160) { got ->        // the same disk-cached logos and tile choice as the grid
                 letters.visibility = if (got) View.INVISIBLE else View.VISIBLE
                 tile.background = if (got && Logos.isLight(c.logo)) darkTile else lightTile

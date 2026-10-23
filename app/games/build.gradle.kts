@@ -37,7 +37,8 @@ android {
     }
     packaging { jniLibs { useLegacyPackaging = true } }                // the core must be a real file: LibretroDroid dlopen()s a path
     lint { checkReleaseBuilds = false }
-    sourceSets["main"].java.srcDirs(layout.buildDirectory.dir("generated/qr"), "../shared/src/guard/kotlin", "../shared/src/guard/android", "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin")   // Ed25519: games.json is signed; Release + SelfUpdate: its own updates
+    sourceSets["main"].java.srcDirs(layout.buildDirectory.dir("generated/qr"), "../shared/src/guard/kotlin", "../shared/src/guard/android", "../shared/src/tvui/kotlin", "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin")   // Ed25519: games.json is signed; Release + SelfUpdate: its own updates
+    sourceSets["main"].res.srcDirs("../shared/src/tvui/res")                 // tv_style.xml: ONE copy for the TV apps (app/DESIGN-TV.md)
     sourceSets["main"].assets.srcDirs("../../docs/games")             // games.json + .sig: the copy used until the site's is read
     androidResources { ignoreAssetsPattern = "!roms" }                // the site's docs/games/roms are not packed
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }

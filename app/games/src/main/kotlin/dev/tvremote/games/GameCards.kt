@@ -8,6 +8,13 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import dev.tvremote.tvui.dp
+import dev.tvremote.tvui.heading
+import dev.tvremote.tvui.label
+import dev.tvremote.tvui.menuButton
+import dev.tvremote.tvui.panelBg
+import dev.tvremote.tvui.scrim
+import dev.tvremote.tvui.withIcon
 
 /**
  * The cards both kinds of game share: the start card (QR, who is in), the chip that stays a few seconds, the pause card.
