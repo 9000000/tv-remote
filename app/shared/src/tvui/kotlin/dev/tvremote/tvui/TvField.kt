@@ -48,6 +48,9 @@ class TvField(c: Context) : EditText(c) {
             if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_UP) typing = false
             return super.onKeyPreIme(k, e)
         }
+        // in touch mode (a tap, a phone's touchpad) only the field can hold the focus: the buttons beside it are not found. The
+        // key goes on as Android's own, and its first one leaves touch mode, after the keyboard app's turn, where it is decided
+        if (isInTouchMode && k in NAV) return super.onKeyPreIme(k, e)
         val down = e.action == KeyEvent.ACTION_DOWN
         when (k) {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> if (down) {
@@ -62,6 +65,10 @@ class TvField(c: Context) : EditText(c) {
             else -> return super.onKeyPreIme(k, e)
         }
         return true
+    }
+
+    private companion object {
+        val NAV = setOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)
     }
 
     override fun onFocusChanged(focused: Boolean, dir: Int, prev: Rect?) {
