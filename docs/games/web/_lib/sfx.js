@@ -10,6 +10,7 @@
     if (ac && ac.state === 'suspended') ac.resume().catch(() => { });
     return ac || null;
   };
+  document.addEventListener('visibilitychange', () => { if (ac && document.hidden) ac.suspend().catch(() => { }); });   // a hidden page makes no sound and costs no audio thread; the next sound resumes it
   // at most a dozen voices at once: a weak TV stutters long before it runs out of nodes
   const tone = (f, d, type, v, slide, delay) => {
     const a = audio(); if (!a || live > 12) return;

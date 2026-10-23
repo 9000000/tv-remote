@@ -78,6 +78,7 @@
     id: 'hockey', title: { vi: 'Air Hockey', en: 'Air Hockey' }, tag: { vi: 'Đẩy puck vào khung thành đối thủ — ai ghi 7 bàn trước thắng', en: 'Slam the puck into their goal — first to 7 wins' },
     help: { vi: ['Rê ngón tay trên bàn di của điện thoại để kéo cây vợt', 'Tay cầm thật: cần analog / D-pad', 'Chơi một mình sẽ đấu với máy'], en: ['Drag on the phone\'s touchpad to move your mallet', 'A real pad: stick / D-pad', 'On your own you play the CPU'] },
     total: [2, 2], buttons: [],
+    seat(s) { if (s.human && mal) { const a = aim(s.i); a.x = a.px = mal[s.i].x; a.y = a.py = mal[s.i].y; } },                  // a phone (re)taking a mallet: its aim starts on it, not where the last hand left it
     start() { over = false; last = -1; serve(Math.random() < 0.5 ? 0 : 1); },
     update(dt) {
       K.updateParts(dt); flash *= 0.92; Ptr.update(dt);
@@ -125,10 +126,11 @@
       if (flash > 0.05) { c.fillStyle = 'rgba(255,255,255,' + flash * 0.25 + ')'; c.fillRect(0, 0, 1280, 720); }
       K.hud(c, K.slots);
       if (phase === 'goal' && !over) K.text(c, K.VI ? 'BÀN THẮNG!' : 'GOAL!', MID, 395, 110, K.slots[last].color, 'center', 900);
-      if (phase === 'serve' && !over) K.text(c, Math.ceil(ptimer) + '', MID, 395, 90, 'rgba(255,255,255,.55)');
+      if (phase === 'serve' && !over) { K.text(c, Math.ceil(ptimer) + '', MID, 270, 90, 'rgba(255,255,255,.6)'); if (a.score + b.score === 0) for (let i = 0; i < 2; i++) K.nameTag(c, K.slots[i], mal[i].x, mal[i].y - MR - 28); }   // who is on which side, before the first serve
     },
   };
   var G;
+  Ptr.stick = false;                                                    // the mallet follows the stick itself (moveMallet)
   Ptr.use({ buttons: [], side: (i) => (i ? 'right' : 'left'), aspect: (MID - R.l) / (R.b - R.t) });   // the touchpad while playing, on the side of your mallet and
                                                                        // shaped like your half; no Fire: the mallet itself hits
   K.run(G);

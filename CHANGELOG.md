@@ -41,6 +41,15 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - Android và iPhone dùng chung một địa chỉ IP (qua repeater hay điểm phát) không còn đá nhau ra.
 - Desktop: mở trang bằng link có mã từ app khác không còn bị từ chối (cookie SameSite=Lax).
 - Lõi: đóng socket bị bỏ quên khi kết nối Android TV thất bại. Trang điều khiển không vẽ lại khi tab bị ẩn.
+- Game web:
+  - Mọi game hành động có tiếng tích tắc đếm ngược, thẻ tên màu từng người chơi, và chữ to hơn.
+  - Điện thoại rớt giữa ván thì CPU chơi thay, quay lại thì lấy lại ghế.
+  - Tia lửa của balloons, moles, slice không còn đứng yên trên màn.
+  - Âm thanh tạm dừng khi trang bị ẩn.
+  - Bida không vẽ liên tục khi bàn đứng yên.
+  - Caro, Mèo nổ: người rời ván không còn làm game đứng.
+  - Quiz trộn câu hỏi đều hơn.
+  - Tỷ phú: tên ô không tràn chữ, và ván kết thúc khi không còn người thật.
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -77,6 +86,15 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - An Android and an iPhone behind one IP address (a repeater or hotspot) no longer kick each other out.
 - Desktop: a link with the key opened from another app is no longer refused (SameSite=Lax cookie).
 - Core: sockets left open when an Android TV connect failed are now closed. The remote page stops redrawing while its tab is hidden.
+- Web games:
+  - Every action game has a countdown tick, a name tag in each player's colour, and larger text.
+  - A phone that drops mid-round is played by the CPU until it comes back and takes the seat again.
+  - The sparks in balloons, moles and slice no longer freeze on screen.
+  - Sound pauses while the page is hidden.
+  - Pool no longer redraws while the table is still.
+  - Caro and Exploding Cats: a player leaving no longer stalls the game.
+  - Quiz shuffles questions evenly.
+  - Tycoon: square names no longer overflow, and the game ends when no real players are left.
 
 ## 0.20.0 - 2026-10-23
 

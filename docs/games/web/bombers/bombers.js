@@ -2,7 +2,7 @@
 // Bombers: 2-4 players in a grid of pillars and crates drop bombs that burn in a cross; last one alive takes the round, first to 3 wins.
 // The rules and the bots are in rules.js (no screen, tested in node); this file reads the pads, draws, and makes the sounds and sparks.
 (function () {
-  const K = window.Kit, B = window.BM, CS = 52, COLS = B.COLS, ROWS = B.ROWS, OX = (1280 - COLS * CS) / 2, OY = 100, WIN = 3, N = B.N;
+  const K = window.Kit, B = window.BM, CS = 50, COLS = B.COLS, ROWS = B.ROWS, OX = (1280 - COLS * CS) / 2, OY = 108, WIN = 3, N = B.N;
   const NUM = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];                    // so the score row builds no strings per frame
   const SD_WORD = K.VI ? 'THU HẸP!' : 'SUDDEN DEATH';
   const W2 = 640;
@@ -49,7 +49,7 @@
   }
   function newRound() {
     round++; w = B.createWorld(K.slots.length, K.slots.map((s) => s.human)); hooks(); w.frozen = true; paintFloor(); paintBlocks();
-    phase = 'ready'; ptimer = 1.6; sdShow = 0; leftN = -1;
+    phase = 'ready'; ptimer = 1.6; sdShow = 0; leftN = -1; K.sfx.tick();
   }
 
   function readPads() {                                                                 // the sticks and A of the human seats
@@ -65,6 +65,7 @@
     tag: { vi: 'Đặt bom phá thùng, né lửa — còn sống cuối cùng thắng ván, 3 ván thắng trận', en: 'Blow up crates, dodge the fire — last one alive takes the round, first to 3 wins' },
     help: { vi: ['Cần analog / D-pad: di chuyển', 'Nút A: đặt bom (nổ sau 2,5 giây, nổ dây chuyền)', 'Thùng vỡ có thể rơi: thêm bom, tầm nổ, tốc độ'], en: ['Stick / D-pad: move', 'A: drop a bomb (blows after 2.5 s, sets off others)', 'Crates may drop: more bombs, longer flame, speed'] },
     total: [2, 4], buttons: ['A'],
+    seat(s) { if (w && w.players[s.i]) w.players[s.i].human = s.human; },                       // a phone dropping out or taking a seat: the bot (or the pad) drives from the next step
     start() { round = 0; over = false; newRound(); },
     update(dt) {
       K.updateParts(dt);
@@ -119,9 +120,9 @@
       K.hud(c, K.slots, (s) => (w.players[s.i] && !w.players[s.i].alive ? 'out' : ''));
       drawStats(c);
       // time to the shrink, and the shrink
-      if (sd) K.text(c, SD_WORD, W2, 703, 15, '#f87171', 'center', 800);
-      else if (phase !== 'ready') { const n = Math.max(0, Math.ceil(B.SD_AT - w.T)); if (n !== leftN) { leftN = n; left = (K.VI ? 'Thu hẹp sau ' : 'Shrinks in ') + n + 's'; } K.text(c, left, W2, 703, 15, '#64748b', 'center', 600); }
-      if (phase === 'ready') K.banner(c, (K.VI ? 'Ván ' : 'Round ') + NUM[round % 10], null, '#fff');
+      if (sd) K.text(c, SD_WORD, W2, 696, 20, '#f87171', 'center', 800);
+      else if (phase !== 'ready') { const n = Math.max(0, Math.ceil(B.SD_AT - w.T)); if (n !== leftN) { leftN = n; left = (K.VI ? 'Thu hẹp sau ' : 'Shrinks in ') + n + 's'; } K.text(c, left, W2, 696, 20, '#8a9bb5', 'center', 600); }
+      if (phase === 'ready') { K.banner(c, (K.VI ? 'Ván ' : 'Round ') + NUM[round % 10], null, '#fff'); for (const p of w.players) K.nameTag(c, K.slots[p.i], px(p.x), py(p.y) + (p.y < ROWS / 2 ? 40 : -40)); }
       else if (phase === 'end' && !over) K.banner(c, roundWin >= 0 ? K.slots[roundWin].name : (K.VI ? 'Hòa' : 'Draw'), roundWin >= 0 ? (K.VI ? 'thắng ván này' : 'takes the round') : null, roundWin >= 0 ? K.slots[roundWin].color : '#fff');
       else if (sdShow > 0) K.banner(c, SD_WORD, null, '#f87171');
     },
@@ -152,10 +153,10 @@
     const n = K.slots.length, cw = Math.min(290, (1280 - 60) / n - 14), gx = 640 - (n * cw + (n - 1) * 14) / 2;
     K.slots.forEach((s, i) => {
       const p = w.players[i], x = gx + i * (cw + 14) + 14, y = 86; c.globalAlpha = p.alive ? 1 : 0.4;
-      c.fillStyle = '#e8eefc'; c.beginPath(); c.arc(x + 5, y, 5.5, 0, 6.283); c.fill(); K.text(c, NUM[p.maxB], x + 18, y, 16, '#e8eefc', 'left', 700);
-      c.fillStyle = '#fb923c'; c.fillRect(x + 54, y - 1.5, 12, 3); c.fillRect(x + 58.5, y - 6, 3, 12); K.text(c, NUM[p.range], x + 72, y, 16, '#e8eefc', 'left', 700);
+      c.fillStyle = '#e8eefc'; c.beginPath(); c.arc(x + 5, y, 5.5, 0, 6.283); c.fill(); K.text(c, NUM[p.maxB], x + 18, y, 20, '#e8eefc', 'left', 700);
+      c.fillStyle = '#fb923c'; c.fillRect(x + 54, y - 1.5, 12, 3); c.fillRect(x + 58.5, y - 6, 3, 12); K.text(c, NUM[p.range], x + 72, y, 20, '#e8eefc', 'left', 700);
       c.strokeStyle = '#22d3ee'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(x + 106, y - 5); c.lineTo(x + 112, y); c.lineTo(x + 106, y + 5); c.moveTo(x + 113, y - 5); c.lineTo(x + 119, y); c.lineTo(x + 113, y + 5); c.stroke();
-      K.text(c, NUM[Math.round((p.speed - 3.4) / 0.5)], x + 126, y, 16, '#e8eefc', 'left', 700); c.globalAlpha = 1;
+      K.text(c, NUM[Math.round((p.speed - 3.4) / 0.5)], x + 126, y, 20, '#e8eefc', 'left', 700); c.globalAlpha = 1;
     });
   }
   K.run(G);

@@ -42,7 +42,7 @@ const W = Object.assign({}, Table.W, Table.VI ? {
   },
   bombs: (k) => `💣 ${k} left in the pile`, pile: 'Draw pile', first: (n) => `${n} starts`,
 });
-const TURN = 40, NOPE_MS = 3500, NOPE_QUICK = 1500, HOLD_BOOM = 2400, HOLD_DEFUSE = 1400;
+const TURN = 40, NOPE_MS = 3500, NOPE_HUMAN = 5000, NOPE_QUICK = 1500, HOLD_BOOM = 2400, HOLD_DEFUSE = 1400;
 const KD = {                                                    // each kind of card: its picture (emoji) and colour; no copied art
   attack: { e: '⚔️', bg: '#ea580c' }, skip: { e: '⏭️', bg: '#2563eb' }, favor: { e: '🤝', bg: '#db2777' }, shuffle: { e: '🔀', bg: '#7c3aed' },
   future: { e: '🔮', bg: '#0891b2' }, nope: { e: '🚫', bg: '#475569' }, defuse: { e: '🛡️', bg: '#16a34a' }, bomb: { e: '💣', bg: '#dc2626' },
@@ -68,11 +68,12 @@ const table = Table({
     if (g.hold || G.phase !== 'play' || G.turn !== s) return;
     const m = MK.botMove(G, s);
     if (m.act === 'draw') MK.draw(G, s); else MK.play(G, s, m.ids);
+    if (G.evn === g.seen) Sfx.play(m.act === 'draw' ? 'pickup' : 'card');   // a bot's play was silent; a boom / defuse has its own sound in after()
     after(t);
   },
   timeUp(t, s) {                                                  // a player away from the phone: draw (sub-phases have their own timers)
     const G = g.G;
-    if (!g.hold && G.phase === 'play' && G.turn === s) { MK.draw(G, s); after(t); } else t.left = TURN;
+    if (!g.hold && G.phase === 'play' && G.turn === s) { MK.draw(G, s); Sfx.play('pickup'); after(t); } else t.left = TURN;
   },
   tick: clock,
   act(t, s, m) {
@@ -89,7 +90,7 @@ const table = Table({
     else if (a.startsWith('n:')) e = MK.name(G, s, a.slice(2));
     else if (a.startsWith('ins:')) e = MK.insert(G, s, { 0: 0, 1: 1, 2: 2, r: -1, b: 99 }[a.slice(4)]);
     if (e) return W.err[e] || W.err.turn;
-    Sfx.play(a === 'draw' ? 'pickup' : a === 'play' ? 'card' : 'ui'); t.say(s, ''); after(t); return '';
+    Sfx.play(a === 'draw' ? 'pickup' : a === 'play' ? 'card' : a === 'nope' ? 'hit' : 'ui'); t.say(s, ''); after(t); return '';
   },
   view: (t, s) => view(t, s), draw,
 });
@@ -121,12 +122,13 @@ function after(t) {
   g.pt = after0(t.human(a) ? (G.phase === 'peek' ? 12000 : 25000) : 900 + Math.random() * 700, () => { MK.auto(g.G); after(t); });
 }
 function armNope(t) {
-  const G = g.G, anyone = t.seats.some((x) => G.alive[x] && MK.has(G, x, 'nope')), ms = anyone ? NOPE_MS : NOPE_QUICK;
+  const G = g.G, anyone = t.seats.some((x) => G.alive[x] && MK.has(G, x, 'nope')), mine = t.seats.some((x) => t.human(x) && G.alive[x] && MK.has(G, x, 'nope'));
+  const ms = mine ? NOPE_HUMAN : anyone ? NOPE_MS : NOPE_QUICK;   // a person must read the card on the TV and reach the button: longer than bots need
   g.nopeMs = ms; g.nopeKey++; t.changed();
   g.pt = after0(ms, () => { MK.settle(g.G); after(t); });
   t.seats.forEach((x) => {
     if (t.human(x) || !G.alive[x] || !MK.has(G, x, 'nope')) return;
-    g.nb.push(after0(700 + Math.random() * Math.max(0, ms - 1300), () => { if (g.G.phase === 'nope' && MK.botNope(g.G, x)) { MK.nope(g.G, x); after(t); } }));
+    g.nb.push(after0(700 + Math.random() * Math.max(0, ms - 1300), () => { if (g.G.phase === 'nope' && MK.botNope(g.G, x)) { MK.nope(g.G, x); Sfx.play('hit'); after(t); } }));
   });
 }
 
@@ -249,4 +251,13 @@ function draw(t) {
     }), h('p', '', W.newg));
   }
 }
-if (table.ok) table.go(); else draw(table);
+if (table.ok) {
+  table.go();
+  // Table hands a leaving phone's seat to a bot, but a bot is woken only in the play phase: in a sub-phase (pick a victim, a card,
+  // a place for the bomb) the game would sit out the phone's 25 s. Re-arm it with the bot's short pause instead.
+  const rearm = () => {
+    const G = g.G;
+    if (!table.done && !g.hold && !['play', 'nope', 'over'].includes(G.phase) && !table.human(MK.actor(G))) after(table);
+  };
+  table.pad.on('leave', rearm);
+} else draw(table);

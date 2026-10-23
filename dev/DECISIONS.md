@@ -317,3 +317,13 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - Measured on the FPT box, 24 D-pad moves: the picker's growing tiles 8.3–8.5 s of CPU, ~615 frames (50th 32 ms); the ring alone 1.1–1.3 s, ~27 frames. Customize's rows (1.06 pop) 5.3–5.5 s, ~533 frames; the lighter background alone 0.7–1.1 s, ~29 frames. Idle: 0 frames, 60 ms in 10 s.
 - So these pages show focus by colour and ring only. Home's grid keeps its growth (the look of the launcher, one tile at a time over a still page).
 
+## Phone pads: why links dropped and lagged (`GameServer.kt`, `pad.js`)
+- iPhone drops: iOS freezes a page's timers and socket (screen dimmed, locked, other app, Low Power Mode). On waking, "no pong for 5 s" was true of the page, not the link, so a healthy link was closed every wake. A gap between ticks now means "slept": ping, fresh window, dead only after 8 s.
+- Lag: a frame was 3-4 writes (one TLS record / TCP segment each) and a broadcast wrote phones in turn on one thread. Now one write per frame from a writer thread per phone (256-frame queue). The TV holds a Wi-Fi lock while serving (power save parks frames ~100 ms).
+- Same IP is one phone only if the same kind (iOS / Android / other): a repeater or hotspot puts both behind one address.
+- Emulator loopback cannot show the gain (p50 1-2 ms before and after); real Wi-Fi is the test.
+
+## Session cookies from a QR are SameSite=Lax (`ManageServer.kt`, desktop `Pass.kt`)
+- A QR or link opened by another app (camera, Lens, a desktop app) is a cross-site navigation: a Strict cookie set on the 302 is not sent on the redirect, so the phone got 401. Lax is sent on top-level GETs; changes stay protected (X-Tvh header in Home; Sec-Fetch-Site / Origin / localhost checks on desktop).
+- The key in the QR works while the QR is on screen (a scanner's preview opens it first), at most 8 sessions.
+

@@ -86,6 +86,7 @@ const table = Table({
 });
 
 function post(t) {
+  if (!G.over && !t.seats.some((s) => t.human(s) && TY.alive(G, s))) { G.over = true; G.reason = 'rounds'; }   // every person is bankrupt: no sitting through bots playing on
   if (G.over) { finish(t); return; }
   t.turnTo(G.p);
   if (afk[G.p]) t.left = 10;
@@ -143,7 +144,7 @@ function build() {
     const e = h('div', `tile ${side} k-${T.t}`); e.style.gridRow = r; e.style.gridColumn = c;
     if (T.t === 'prop') e.style.setProperty('--g', TY.GROUP_COLORS[T.g]);
     const band = h('i', 'band'), inn = h('div', 'in'), tk = h('span', 'tk');
-    inn.append(h('b', 'nm', tname(id)));
+    inn.append(h('b', 'nm', T.t === 'prop' && (side === 'sl' || side === 'sr') ? T.sh : tname(id)));   // the side tiles are narrow (a band takes one edge): the short name keeps 3 lines from spilling out
     if (ICON[T.t]) inn.append(h('u', 'ic', ICON[T.t]));
     if (T.price) inn.append(h('small', 'pr', k(T.price)));
     if (T.t === 'tax') inn.append(h('small', 'pr', k(T.n)));

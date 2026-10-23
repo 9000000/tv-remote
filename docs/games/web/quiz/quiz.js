@@ -31,7 +31,7 @@ function pick(n) {
   let seen = store.get('quiz.seen') || [];
   let fresh = pool.filter((q) => !seen.includes(q.id));
   if (fresh.length < n) { seen = seen.filter((id) => !pool.some((q) => q.id === id)); fresh = pool.slice(); }
-  fresh.sort(() => Math.random() - 0.5);
+  for (let i = fresh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = fresh[i]; fresh[i] = fresh[j]; fresh[j] = x; }   // sort(random) is biased
   const out = [], per = {}, cap = cat ? n : 2;
   for (const q of fresh) { if (out.length >= n) break; if ((per[q.cat] || 0) < cap) { per[q.cat] = (per[q.cat] || 0) + 1; out.push(q); } }
   for (const q of fresh) { if (out.length >= n) break; if (!out.includes(q)) out.push(q); }
@@ -70,6 +70,7 @@ function bestBox(list, mine, n) {
 }
 
 function drawBoard() {
+  if (st.mode === 'lobby') { board.replaceChildren(); return; }   // the lobby already lists who joined
   board.replaceChildren(...seats().map((p) => { const e = who(p, ' · ' + (score[p] || 0)); return e; }));
 }
 
@@ -114,8 +115,9 @@ function tickUi() {
   const b = stage.querySelector('.bar i'), t = stage.querySelector('.timer');
   if (b) b.style.width = (st.left / SECS * 100) + '%';
   if (t) { const n = Math.ceil(st.left); if (t.textContent !== String(n) && n <= 3 && st.mode === 'ask') Sfx.play('tick'); t.textContent = String(n); }   // the last three seconds tick
-  const got = document.getElementById('got');      // who has answered: a dot per player, not what
-  if (got) got.replaceChildren(...Object.keys(st.ans).map((p) => { const d = h('span', 'dot'); d.style.setProperty('--pc', col(p)); return d; }));
+  const got = document.getElementById('got');      // who has answered: a dot per player, not what (rebuilt only when it changes: this runs 10 times a second)
+  const key = Object.keys(st.ans).join();
+  if (got && got.dataset.k !== key) { got.dataset.k = key; got.replaceChildren(...Object.keys(st.ans).map((p) => { const d = h('span', 'dot'); d.style.setProperty('--pc', col(p)); return d; })); }
 }
 
 function focusOpt() { stage.querySelectorAll('.opt').forEach((e, k) => e.classList.toggle('f', k === st.f)); }
@@ -174,7 +176,11 @@ function finish() {
 }
 
 if (pad) {
-  pad.on('join', ({ player }) => { score[player] = score[player] || 0; if (st.mode === 'lobby') lobby(); else if (!st.solo) drawBoard(); });
+  pad.on('join', ({ player }) => {
+    score[player] = score[player] || 0;
+    if (st.mode === 'lobby') lobby();
+    else if (!st.solo) { pad.layout(player, st.mode === 'end' ? { buttons: ['START'], dpad: false } : { choices: KEYS }); drawBoard(); }   // a phone joining mid-game gets the game's buttons, not the default pad
+  });
   pad.on('leave', () => { if (st.solo) { if (st.mode === 'lobby') lobby(); return; }       // a phone that came and went: the remote plays on
     if (!players().length && st.mode !== 'lobby') lobby(); else if (st.mode === 'lobby') lobby(); else { drawBoard(); if (st.mode === 'ask' && players().length && players().every((x) => st.ans[x] != null)) reveal(); } });
   pad.on('button', ({ player, btn, down }) => {

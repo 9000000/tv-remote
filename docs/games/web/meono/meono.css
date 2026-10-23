@@ -5,9 +5,9 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 #felt{position:absolute;inset:0;border-radius:40vh;background:radial-gradient(ellipse at center,var(--felt),var(--felt2));box-shadow:inset 0 0 0 .5vw #0004,0 1vh 4vh #0008}
 #msg{position:absolute;left:0;right:0;top:5%;text-align:center}
 #msg b{font-size:2.2vw;color:#fff}#msg span{color:var(--dim);font-size:2vw}
-#evt{position:absolute;left:8%;right:8%;bottom:5%;text-align:center;color:#ddd6fe;font-size:1.7vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#evt{position:absolute;left:8%;right:8%;bottom:5%;text-align:center;color:#ddd6fe;font-size:2vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #deck{position:absolute;left:11%;top:56%;transform:translateY(-52%);display:flex;flex-direction:column;align-items:center;gap:.4vh}
-#deck b{font-size:3vw}#deck span{color:var(--dim);font-size:1.4vw}
+#deck b{font-size:3vw}#deck span{color:var(--dim);font-size:1.7vw}
 .stack{position:relative;width:8vw;height:11.2vw;margin-bottom:.8vh}
 .stack i{position:absolute;inset:0;border-radius:.9vw;border:.25vw solid #ede9fe;background:repeating-linear-gradient(45deg,#6d28d9 0 .5vw,#5b21b6 .5vw 1vw);box-shadow:0 .3vw .6vw #0007}
 .stack i:nth-child(1){transform:translate(-.5vw,.5vw)}.stack i:nth-child(2){transform:translate(-.25vw,.25vw)}
@@ -41,7 +41,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 .backs{display:flex;height:4.6vh;max-width:15vw}
 .backs i{width:2vh;height:4.6vh;margin-left:-1.1vh;border-radius:.4vh;background:repeating-linear-gradient(45deg,#6d28d9 0 .4vh,#5b21b6 .4vh .8vh);border:.15vh solid #ede9fe;flex:none}
 .backs i:first-child{margin-left:0}
-.info{display:flex;gap:1vw;align-items:center;font-size:1.6vw;color:var(--dim)}
+.info{display:flex;gap:1vw;align-items:center;font-size:1.8vw;color:var(--dim)}
 .info .n{color:var(--ink);font-size:2vw}
 .info .owe{padding:.1vh .7vw;border-radius:99px;background:#ea580c;color:#fff;font-weight:800}
 .info .place{padding:.2vh .8vw;border-radius:99px;background:#334155;color:#fff}

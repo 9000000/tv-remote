@@ -51,7 +51,7 @@
     update(dt) {
       Ptr.update(dt);
       if (K.mode === 'over') return;
-      left -= dt; spawnT -= dt; flash = Math.max(0, flash - dt);
+      left -= dt; spawnT -= dt; flash = Math.max(0, flash - dt); K.timeTick(left);
       if (spawnT <= 0) { const n = Math.random() < 0.35 ? 3 : Math.random() < 0.5 ? 2 : 1; for (let i = 0; i < n; i++) throwOne(Math.random() < 0.13); spawnT = K.rnd(1.1, 1.8) - (TIME - left) / TIME * 0.4; }
       for (const f of F) { f.vy += G0 * dt; f.x += f.vx * dt; f.y += f.vy * dt; f.a += f.va * dt; }
       F = F.filter((f) => !f.dead && f.y < H + 120);
