@@ -162,7 +162,7 @@
     if (w[0] === 'hello') join(sl, w.slice(2).join(' '));
     else if (w[0] === 'p') raw(sl, 'p ' + w[1] + ' ' + Date.now());
     else if (w[0] === 'd' || w[0] === 'u') emit('button', { player: sl, btn: w[1], down: w[0] === 'd', lat: null, at: performance.now() });
-    else if (w[0] === 'n') { var k = { UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', OK: 'ok', HOLD: 'ok', BACK: 'back', HOME: 'home' }[w[1]];   // HOLD: the demo's library has no tile menu if (k) TVKit.handler(k); }
+    else if (w[0] === 'n') { var k = { UP: 'up', DOWN: 'down', LEFT: 'left', RIGHT: 'right', OK: 'ok', HOLD: 'ok', BACK: 'back', HOME: 'home' }[w[1]]; if (k) TVKit.handler(k); }   // HOLD: the demo's library has no tile menu
     else if (w[0] === 'name') { if (P[sl]) { P[sl].name = w.slice(1).join(' '); emit('rename', { player: sl, name: P[sl].name }); } }
   });
   // what the quiz asks of window.tvpad lands here (see the shim in startQuiz)
