@@ -1,0 +1,20 @@
+/* log.html: where a person pastes the app's log and sends it on (a GitHub issue or a Facebook message); site.css + apps.css' .am boxes */
+.lg{max-width:760px}
+.lg .box h2{display:flex;align-items:center;gap:10px}
+.lg .num{width:30px;height:30px;border-radius:9px;display:inline-grid;place-items:center;background:var(--card2);border:1px solid var(--line2);font-size:15px;flex:none}
+.lg .note{color:var(--muted);font-size:15px;margin:0 0 12px}
+.lg textarea{width:100%;box-sizing:border-box;background:var(--bg2);color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:12px;font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;resize:vertical}
+.lg textarea:focus{outline:2px solid var(--blue);outline-offset:1px}
+.lg #log{min-height:220px}
+.lg #what{min-height:90px;font-family:inherit;font-size:15px}
+.lg .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.lg .state{color:var(--muted);font-size:14px;margin:10px 0 0;min-height:1.6em}
+.lg .state.ok{color:var(--green)}
+.lg .state.bad{color:var(--red)}
+.lg .ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lg .way{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.lg .way h3{margin:0;font-size:17px}
+.lg .way p{margin:0;color:var(--muted);font-size:14px;flex:1}
+.lg .way .btn{align-self:flex-start}
+.lg .priv{color:var(--muted);font-size:14px;margin-top:18px}
+@media (max-width:640px){.lg .ways{grid-template-columns:1fr}}

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gửi nhật ký · TV Remote</title>
+<meta name="description" content="Dán nhật ký của app TV Remote rồi gửi cho tác giả qua GitHub hoặc Facebook. / Paste the TV Remote app's log and send it to the author on GitHub or Facebook.">
+<meta name="theme-color" content="#0a0d14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gửi nhật ký / Send the log">
+<meta property="og:image" content="https://tvremote.pages.dev/img/og-vi.jpg">
+<meta property="og:url" content="https://tvremote.pages.dev/log">
+<meta property="og:site_name" content="TV Remote">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://tvremote.pages.dev/log">
+<link rel="alternate" hreflang="vi" href="https://tvremote.pages.dev/log?lang=vi">
+<link rel="alternate" hreflang="en" href="https://tvremote.pages.dev/log?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tvremote.pages.dev/log">
+<script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})()</script>
+<link rel="icon" href="img/icon.png">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/apps.css">
+<link rel="stylesheet" href="css/log.css">
+<meta name="robots" content="noindex">
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="./"><img src="img/icon.png" width="32" height="32" alt="">TV Remote</a>
+    <div class="navlinks">
+      <a href="guide"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 21.5V5.5M8 7h8"/></svg><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a>
+      <a href="apps"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.500"/><rect x="14" y="3" width="7" height="7" rx="1.500"/><rect x="3" y="14" width="7" height="7" rx="1.500"/><path d="M14 17.500h7M17.500 14v7"/></svg><span class="vi">Các app</span><span class="en">The apps</span></a>
+      <a href="demo/"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z"/></svg><span class="vi">Dùng thử</span><span class="en">Live demo</span></a>
+    </div>
+    <div class="navtools">
+      <a class="btn btn-primary btn-sm navcta" href="./#install"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Cài đặt</span><span class="en">Install</span></a>
+      <div class="lang" role="group" aria-label="Language">
+        <button data-set="vi" aria-pressed="true">VI</button>
+        <button data-set="en" aria-pressed="false">EN</button>
+      </div>
+      <button class="menubtn" type="button" aria-expanded="false" aria-controls="navsheet" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path class="m1" d="M4 7h16"/><path class="m2" d="M4 12h16"/><path class="m3" d="M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <div class="navsheet" id="navsheet" hidden><div class="wrap">
+    <a href="./#install"><span class="vi">Cài đặt</span><span class="en">Install</span></a>
+    <a href="guide"><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a>
+    <a href="apps"><span class="vi">Các app</span><span class="en">The apps</span></a>
+    <a href="demo/"><span class="vi">Dùng thử</span><span class="en">Live demo</span></a>
+  </div></div>
+</nav>
+
+<main class="wrap am lg">
+  <span class="eyebrow"><span class="vi">Gửi nhật ký</span><span class="en">Send the log</span></span>
+  <h1><span class="vi">Gửi nhật ký cho tác giả</span><span class="en">Send the log to the author</span></h1>
+  <p class="lead"><span class="vi">App vừa chép nhật ký vào bộ nhớ tạm (clipboard). Dán vào đây, viết thêm vài dòng, rồi chọn một cách gửi bên dưới.</span><span class="en">The app has just copied its log to the clipboard. Paste it here, add a few words, then pick a way to send it below.</span></p>
+
+  <div class="box">
+    <h2><span class="num">1</span><span class="vi">Dán nhật ký</span><span class="en">Paste the log</span></h2>
+    <p class="note"><span class="vi">Bấm giữ ô bên dưới rồi chọn Dán (máy tính: Ctrl+V hoặc ⌘V), hoặc bấm nút "Dán từ clipboard".</span><span class="en">Long-press the box below and choose Paste (computer: Ctrl+V or ⌘V), or press "Paste from clipboard".</span></p>
+    <textarea id="log" spellcheck="false" autocomplete="off" aria-label="Log" data-ph-vi="Nhật ký bắt đầu bằng dòng &quot;TV Remote …&quot; hoặc &quot;TV Setup …&quot;" data-ph-en="The log starts with a line &quot;TV Remote …&quot; or &quot;TV Setup …&quot;"></textarea>
+    <div class="row"><button class="btn btn-ghost btn-sm" id="paste" type="button"><span class="vi">Dán từ clipboard</span><span class="en">Paste from clipboard</span></button></div>
+    <p class="state" id="logstate" aria-live="polite"></p>
+  </div>
+
+  <div class="box">
+    <h2><span class="num">2</span><span class="vi">Chuyện gì đã xảy ra?</span><span class="en">What happened?</span></h2>
+    <p class="note"><span class="vi">Bạn bấm gì, mong thấy gì, mà thấy gì. Hãng và đời TV nếu biết.</span><span class="en">What you pressed, what you expected, what you saw instead. The TV's brand and model if you know them.</span></p>
+    <textarea id="what" aria-label="What happened" data-ph-vi="Ví dụ: bấm Tắt màn hình trên TV Sony thì TV không tắt" data-ph-en="E.g. pressing Screen off on a Sony TV did nothing"></textarea>
+  </div>
+
+  <div class="box">
+    <h2><span class="num">3</span><span class="vi">Gửi đi</span><span class="en">Send it</span></h2>
+    <div class="ways">
+      <div class="way">
+        <h3>GitHub issue</h3>
+        <p><span class="vi">Mở trang báo lỗi với nhật ký và lời bạn viết điền sẵn; bấm "Submit new issue" ở đó (cần tài khoản GitHub). Nhật ký dài thì chỉ phần cuối được điền sẵn: nó đã nằm trong clipboard, dán thêm vào nếu muốn.</span><span class="en">Opens the issue form with the log and your words filled in; press "Submit new issue" there (a GitHub account is needed). A long log is filled in only by its end: it is in the clipboard, paste the rest if you like.</span></p>
+        <button class="btn btn-primary btn-sm" id="gh" type="button"><span class="vi">Mở issue trên GitHub</span><span class="en">Open a GitHub issue</span></button>
+      </div>
+      <div class="way">
+        <h3>Facebook</h3>
+        <p><span class="vi">Chép nhật ký và lời bạn viết vào clipboard, rồi mở Facebook của tác giả: bấm Nhắn tin và dán vào.</span><span class="en">Copies the log and your words to the clipboard, then opens the author's Facebook: press Message and paste.</span></p>
+        <button class="btn btn-ghost btn-sm" id="fb" type="button"><span class="vi">Chép và mở Facebook</span><span class="en">Copy and open Facebook</span></button>
+      </div>
+    </div>
+    <p class="state" id="sendstate" aria-live="polite"></p>
+  </div>
+
+  <p class="priv"><span class="vi">Trang này không gửi gì đi đâu: nhật ký chỉ ở trong trình duyệt của bạn cho tới khi bạn bấm gửi trên GitHub hoặc Facebook. Nhật ký không có mã ghép đôi, địa chỉ MAC hay chữ bạn đã gõ.</span><span class="en">This page sends nothing anywhere: the log stays in your browser until you send it on GitHub or Facebook. The log holds no pairing codes, MAC addresses or words you typed.</span></p>
+</main>
+
+<script>
+(function(){
+  var root = document.documentElement, T = { vi: "Gửi nhật ký · TV Remote", en: "Send the log · TV Remote" };
+  var $ = function(id){ return document.getElementById(id); };
+  var log = $("log"), what = $("what");
+  var W = {
+    vi: { pasted: "Đã dán nhật ký.", noread: "Trình duyệt không cho đọc clipboard: bấm giữ ô trên rồi chọn Dán.", empty: "Clipboard đang trống: bấm Gửi nhật ký trong app lần nữa.",
+          notlog: "Chữ này không giống nhật ký của app (nhật ký bắt đầu bằng \"TV Remote\" hoặc \"TV Setup\"); vẫn gửi được.", need: "Dán nhật ký vào ô 1 trước đã.",
+          copied: "Đã chép vào clipboard. Trên Facebook bấm Nhắn tin rồi dán vào.", nocopy: "Không chép được: chọn hết ô 1 rồi chép tay.",
+          cut: "Nhật ký dài: issue chỉ điền sẵn phần cuối; dán cả nhật ký vào nếu được.", describe: "Chuyện gì đã xảy ra?", logh: "Nhật ký" },
+    en: { pasted: "The log is pasted.", noread: "The browser will not let the page read the clipboard: long-press the box above and choose Paste.", empty: "The clipboard is empty: press Send the log in the app again.",
+          notlog: "This does not look like the app's log (it starts with \"TV Remote\" or \"TV Setup\"); it can still be sent.", need: "Paste the log in box 1 first.",
+          copied: "Copied. On Facebook press Message and paste.", nocopy: "Could not copy: select all of box 1 and copy it by hand.",
+          cut: "A long log: the issue holds only its end; paste the whole log in if you can.", describe: "What happened?", logh: "Log" }
+  };
+  var w = function(k){ return W[root.dataset.lang][k]; };
+  function setLang(l){
+    root.dataset.lang = l; root.lang = l; document.title = T[l];
+    document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
+    document.querySelectorAll("[data-ph-" + l + "]").forEach(function(e){ e.placeholder = e.getAttribute("data-ph-" + l); });
+    try { localStorage.setItem("lang", l); } catch(e){}
+  }
+  setLang(root.dataset.lang);
+  document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
+  var m = document.querySelector(".menubtn"), sh = $("navsheet");
+  m.onclick = function(){ var o = sh.hidden; sh.hidden = !o; m.setAttribute("aria-expanded", o); };
+
+  function say(el, text, kind){ el.textContent = text; el.className = "state" + (kind ? " " + kind : ""); }
+  function check(){                                                   // the log opens with "TV Remote <version>" or "TV Setup <version>" (WireLog.report)
+    var t = log.value.trim();
+    if (!t) return say($("logstate"), "");
+    say($("logstate"), /^TV (Remote|Setup)\b/.test(t) ? w("pasted") : w("notlog"), /^TV (Remote|Setup)\b/.test(t) ? "ok" : "");
+  }
+  log.addEventListener("input", check);
+  $("paste").onclick = function(){
+    if (!navigator.clipboard || !navigator.clipboard.readText) return say($("logstate"), w("noread"), "bad");
+    navigator.clipboard.readText().then(function(t){
+      if (!t.trim()) return say($("logstate"), w("empty"), "bad");
+      log.value = t; check();
+    }, function(){ say($("logstate"), w("noread"), "bad"); });
+  };
+  function whole(){ return (what.value.trim() ? what.value.trim() + "\n\n" : "") + log.value.trim(); }
+  function copy(text){
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function(){ return true; }, legacy);
+    return Promise.resolve(legacy());
+    function legacy(){ var a = document.createElement("textarea"); a.value = text; document.body.append(a); a.select(); var ok = false; try { ok = document.execCommand("copy"); } catch(e){} a.remove(); return ok; }
+  }
+  // GitHub takes the issue in the link: kept well under its ~8 KB, the log's first block (app, phone, TV) and its last lines
+  $("gh").onclick = function(){
+    var text = log.value.trim();
+    if (!text) { log.focus(); return say($("sendstate"), w("need"), "bad"); }
+    var head = text.split("\n\n")[0], tail = text.slice(-5000), cut = tail.length < text.length;
+    var body = "### " + w("describe") + "\n\n" + (what.value.trim() || "") + "\n\n### " + w("logh") + "\n\n```\n"
+      + (cut ? head + "\n…\n" + tail.slice(tail.indexOf("\n") + 1) : text) + "\n```";
+    window.open("https://github.com/HoangTran0410/tv-remote/issues/new?title=" + encodeURIComponent((what.value.trim().split("\n")[0] || head.split("\n")[0]).slice(0, 120))
+      + "&body=" + encodeURIComponent(body), "_blank", "noopener");
+    say($("sendstate"), cut ? w("cut") : "");
+  };
+  $("fb").onclick = function(){
+    if (!log.value.trim()) { log.focus(); return say($("sendstate"), w("need"), "bad"); }
+    var done = copy(whole());
+    window.open("https://fb.com/99.hoangtran", "_blank", "noopener");   // in the press itself: Safari blocks a window opened after a wait
+    done.then(function(ok){ say($("sendstate"), ok ? w("copied") : w("nocopy"), ok ? "ok" : "bad"); });
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,9 +1,17 @@
-// Cloudflare Pages: every request is the static files', except a guide link with ?t=<topic>. A chat app's link preview
-// (Messenger, Zalo) never sees the #topic, so it showed the whole guide's title; here that topic's own name and first lines
-// go into the page's title and og: tags. guide.js writes ?t= into the address, so a copied link carries it.
+// Cloudflare Pages: every request is the static files', except two.
+// /dl/<file>: the latest release's file on GitHub, behind a link short enough to read out, type and fit a small QR (the apps
+// show these; their own updates still go to GitHub, checked by SHA256SUMS). Only the release's names: no open redirect.
+// A guide link with ?t=<topic>: a chat app's link preview (Messenger, Zalo) never sees the #topic, so it showed the whole
+// guide's title; here that topic's own name and first lines go into the page's title and og: tags. guide.js writes ?t= into
+// the address, so a copied link carries it.
+const FILES = new Set(["tv-remote.apk", "tv-setup.apk", "tv-home.apk", "tv-channels.apk", "tv-games.apk",
+  "TV-Remote-mac.zip", "TV-Remote-windows-x64.zip", "TV-Remote-linux-x64.tar.gz", "TV-Remote-linux-arm64.tar.gz"]);
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
+    const dl = /^\/dl\/([A-Za-z0-9.-]+)$/.exec(url.pathname);
+    if (dl && FILES.has(dl[1])) return Response.redirect("https://github.com/HoangTran0410/tv-remote/releases/latest/download/" + dl[1], 302);
     const id = url.searchParams.get("t");
     const res = await env.ASSETS.fetch(req);
     if (!id || !/^\/guide(\.html)?$/.test(url.pathname) || !/^[a-z0-9-]{1,60}$/.test(id) || !res.ok) return res;

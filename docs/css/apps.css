@@ -1,5 +1,5 @@
 /* the apps map page: one column on the site's dark theme; the map scrolls sideways inside its box on a phone */
-.am{padding:40px 0 64px}
+.am{padding-top:40px;padding-bottom:64px}   /* top and bottom only: the sides are .wrap's gutter (16px on a phone) */
 .am h1{font-size:clamp(28px,4vw,40px);font-weight:800;margin:10px 0 12px}
 .am h2{font-size:22px;font-weight:800;margin:0 0 12px}
 .am .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-top:24px;min-width:0}
