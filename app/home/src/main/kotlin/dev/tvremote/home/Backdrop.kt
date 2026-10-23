@@ -20,6 +20,8 @@ class Backdrop(private val target: View) {
     /** What is painted: a gradient, a drawn scene ([art], WallArt) or a photo over [colors] (any size: cropped to cover, like CENTER_CROP). */
     class Look(val colors: IntArray, val photo: Bitmap? = null, val art: String? = null)
 
+    /** The person's veil ([HomeConfig] "shade" / 100), for the next [show]. */
+    var strength = 1f
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     private var made: Bitmap? = null
 
@@ -40,7 +42,7 @@ class Backdrop(private val target: View) {
         val art = l.art
         if (art != null && WallArt.has(art)) {
             WallArt.paint(c, w, h, art)
-            gradient(GradientDrawable.Orientation.TOP_BOTTOM, shade(WallArt.shade(art)), w, h).draw(c)
+            gradient(GradientDrawable.Orientation.TOP_BOTTOM, shade(WallArt.shade(art), strength), w, h).draw(c)
         } else if (p == null) {
             if (l.colors.all { it == l.colors[0] }) c.drawColor(l.colors[0])
             else gradient(GradientDrawable.Orientation.TL_BR, l.colors, w, h).draw(c)
@@ -48,7 +50,7 @@ class Backdrop(private val target: View) {
             val k = maxOf(w.toFloat() / p.width, h.toFloat() / p.height)
             val sw = (w / k).toInt(); val sh = (h / k).toInt()
             c.drawBitmap(p, Rect((p.width - sw) / 2, (p.height - sh) / 2, (p.width + sw) / 2, (p.height + sh) / 2), Rect(0, 0, w, h), pic)
-            gradient(GradientDrawable.Orientation.TOP_BOTTOM, SHADE, w, h).draw(c)   // words stay readable over any photo
+            gradient(GradientDrawable.Orientation.TOP_BOTTOM, shade(1f, strength), w, h).draw(c)   // words stay readable over any photo
         }
     }
 
@@ -57,7 +59,16 @@ class Backdrop(private val target: View) {
 
     companion object {
         val SHADE = intArrayOf(0xB0000000.toInt(), 0x40000000, 0x90000000.toInt())
-        /** [SHADE] at [k] of its strength (a drawn scene is made dark enough already, a photo is not). */
-        fun shade(k: Float) = IntArray(SHADE.size) { (((SHADE[it] ushr 24) * k).toInt() shl 24) }
+        /**
+         * [SHADE] at [k] of its strength (a drawn scene is made dark enough already, a photo is not), then the person's [user]
+         * ("shade" / 100): under 1 lighter, over 1 each stop goes towards [DARKEST], so the middle (light at 1, where a busy page
+         * shows most) darkens most and 2 is an even veil.
+         */
+        fun shade(k: Float, user: Float = 1f) = IntArray(SHADE.size) {
+            val a = (SHADE[it] ushr 24) * k
+            val u = if (user <= 1f) a * user else a + (DARKEST - a).coerceAtLeast(0f) * minOf(user - 1f, 1f)
+            u.toInt().coerceIn(0, 255) shl 24
+        }
+        private const val DARKEST = 0xE0.toFloat()
     }
 }

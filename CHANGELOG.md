@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - App điện thoại: bấm cập nhật lần đầu, Android hỏi quyền "Cài ứng dụng không rõ nguồn"; bật quyền rồi quay lại thì app báo "Đã hủy cập nhật" dù không ai hủy, phải bấm lại lần nữa. Giờ app hỏi quyền này trước khi tải (nút Mở cài đặt), quay lại là tự cập nhật tiếp.
 - App điện thoại: cập nhật không cài được thì hiện nút "Tải bằng trình duyệt" để tải file rồi tự bấm cài; máy Samsung có thêm hướng dẫn tắt Trình chặn tự động (nó chặn mọi app ngoài Play Store và Galaxy Store).
+- TV Home: chọn mức phủ tối hình nền (Không / Nhẹ / Vừa / Đậm / Rất đậm) cho ảnh, cảnh vẽ và trang web, để chữ trên Home dễ đọc khi nền nhiều màu. Có ở Tùy chỉnh TV Home trên TV và trong Quản lý TV Home.
 
 **English**
 - Phone app: on the first update Android asks to allow "Install unknown apps"; after allowing it and coming back, the app said "Update cancelled" though nobody cancelled, and had to be tapped again. The app now asks for it before the download (Open settings), and the update goes on by itself on return.
 - Phone app: when an update cannot be installed, a "Download in browser" button gets the file to install by hand; on a Samsung it also says how to turn off Auto Blocker (it refuses any app from outside the Play Store and Galaxy Store).
+- TV Home: choose how much the background is dimmed (None / Light / Medium / Strong / Very strong) for photos, drawn scenes and the web page, so Home's words stay readable over a busy one. In Customize TV Home on the TV and in Manage TV Home.
 
 ## 0.19.0 - 2026-10-23
 

@@ -219,6 +219,9 @@ async function homeOpen() {
   const webKeepBox = el('input', { type: 'checkbox', onchange: () => send({ wkeep: webKeepBox.checked }) });
   const webKeep = el('label', { className: 'check' }, webKeepBox, el('span', { textContent: T('home.web_keep') }));
   const webModeNote = el('p', { className: 'note' });
+  // the veil over a photo, a scene or the page (HomeConfig "shade", percent; HomeConfig.SHADES): a busy one fights Home's words
+  const shadeHead = el('h3', { textContent: T('home.shade') }), shade = el('div', { className: 'fchips' });
+  const shadeNote = el('p', { className: 'note', textContent: T('home.shade_note') });
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
@@ -257,6 +260,9 @@ async function homeOpen() {
     motionHead.hidden = motion.hidden = c.motion === undefined || c.anim === false;
     motion.replaceChildren(...[['', 'home.motion_auto'], ['calm', 'home.motion_calm'], ['full', 'home.motion_full']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.motion || '') === k ? 'on' : '', onclick: () => send({ motion: k }) }, T(id))));
+    shadeHead.hidden = shade.hidden = shadeNote.hidden = !c.shadeOk;
+    shade.replaceChildren(...[[0, 'home.shade_0'], [50, 'home.shade_50'], [100, 'home.shade_100'], [150, 'home.shade_150'], [200, 'home.shade_200']].map(([n, id]) =>
+      el('button', { type: 'button', className: (c.shade ?? 100) === n ? 'on' : '', 'aria-pressed': String((c.shade ?? 100) === n), onclick: () => send({ shade: n }) }, T(id))));
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
@@ -358,7 +364,7 @@ async function homeOpen() {
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
-    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webNote, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, file,
+    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webNote, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, file,
     galHead, gal, credit,
     langHead, langs, focusHead, focus, colsHead, cols, rowsHead, rowsLine, rowsNote, motionHead, motion,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),

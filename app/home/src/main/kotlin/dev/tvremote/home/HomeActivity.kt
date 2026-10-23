@@ -753,10 +753,12 @@ class HomeActivity : Activity() {
         }
     }
 
+    private fun shadeK() = conf.optInt("shade", HomeConfig.SHADE_DEFAULT) / 100f
+
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "")   // a photo put over the old file, another day's Bing picture: a new one
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
         if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
@@ -776,11 +778,13 @@ class HomeActivity : Activity() {
         val snap = id == HomeConfig.WEB && conf.optString("wmode") == "snap"   // the page as a picture: read and painted like a photo
         val again = snap && lastWall == HomeConfig.WEB                // the next picture of the page: the one on screen stays until it is read (no flash of the gradient every few minutes)
         lastWall = id
+        backdrop.strength = shadeK()
         if (id == HomeConfig.WEB && !snap) {                          // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
             picture = null; soft = null
             Frost.show(null, dm.widthPixels, dm.heightPixels)
             backdrop.show(Backdrop.Look(colors))                      // the gradient is what shows while the page loads, and if it never does
             attachWeb()
+            webDim?.background = WebWall.veil(shadeK())               // the same page, a new strength: attachWeb kept the page as it was
             return
         }
         if (snap) attachSnap() else {
@@ -818,7 +822,7 @@ class HomeActivity : Activity() {
         detachWeb()
         val root = scroll.parent as? ViewGroup ?: return
         val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) }) ?: return
-        val dim = WebWall.dim(this)
+        val dim = WebWall.dim(this, shadeK())
         root.addView(v, 0, FrameLayout.LayoutParams(-1, -1))
         root.addView(dim, 1, FrameLayout.LayoutParams(-1, -1))
         web = v; webDim = dim; webOf = url

@@ -25,6 +25,7 @@ object Store {
             .put("wstyles", HomeConfig.styles())                  // the looks of the cards that have some (an older one has none)
             .put("wweb", true)                                    // the background can be a web page (an older one would clean it away)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
+            .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
     }
 
     /** The first start: a dock of the well-known apps this TV has, so the screen is not empty before anyone sets it up. */

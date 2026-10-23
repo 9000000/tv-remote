@@ -67,8 +67,9 @@ object WebWall {
         }
     } catch (e: Throwable) { null }
 
-    /** The same shade a photo gets, over the page: the words of the home screen stay readable. */
-    fun dim(c: Context) = View(c).apply { background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, Backdrop.SHADE) }
+    /** The same shade a photo gets, over the page ([user]: the person's "shade" / 100): the words of the home screen stay readable. */
+    fun dim(c: Context, user: Float) = View(c).apply { background = veil(user) }
+    fun veil(user: Float) = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, Backdrop.shade(1f, user))
 
     // pauseTimers() is the whole process's (the screensaver's page runs in it too, while Home is stopped under it): timers stop only when every page here sleeps
     private val alive = java.util.Collections.newSetFromMap(java.util.WeakHashMap<WebView, Boolean>())

@@ -317,6 +317,10 @@ object Customize {
             pair!!.addView(t, LinearLayout.LayoutParams(0, -2, 1f).apply { if (inRow == 1) leftMargin = gap })
             inRow++
         }
+        // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
+        tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade",
+            HomeConfig.SHADES.zip(listOf(R.string.c_shade_0, R.string.c_shade_50, R.string.c_shade_100, R.string.c_shade_150, R.string.c_shade_200)) { v, r -> "$v" to a.getString(r) })
+        pair = null                                                    // the next section starts its own row
         section(a.getString(R.string.c_look))
         tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
         tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")

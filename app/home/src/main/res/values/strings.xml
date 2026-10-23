@@ -179,6 +179,12 @@
     <string name="c_rows_most">The most that fits · OK done</string>
     <string name="c_focus">Focus</string>
     <string name="c_focus_glass">Glass</string>
+    <string name="c_shade">Dim the background</string>
+    <string name="c_shade_0">None</string>
+    <string name="c_shade_50">Light</string>
+    <string name="c_shade_100">Medium</string>
+    <string name="c_shade_150">Strong</string>
+    <string name="c_shade_200">Very strong</string>
     <string name="c_focus_ring">Blue ring</string>
     <string name="c_lang_tv">Same as the TV</string>
     <string name="w_offline">offline</string>
