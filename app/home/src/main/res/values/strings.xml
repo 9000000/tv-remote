@@ -319,9 +319,12 @@
     <string name="pk_pins_need_home">Shortcuts can be read only while TV Home is the home app.</string>
     <string name="c_add_home">Add to home screen</string>
     <string name="qk_title">Quick keys</string>
-    <string name="qk_on">Keys on</string>
-    <string name="qk_auto_on">Open at power-on</string>
+    <string name="qk_on">Quick keys: %1$s</string>
+    <string name="qk_auto_on">Open an app when the TV turns on: %1$s</string>
+    <string name="qk_yes">On</string>
+    <string name="qk_no">Off</string>
     <string name="qk_power">At power-on</string>
     <string name="qk_no_key">not on this remote</string>
     <string name="c_quickkeys">Quick keys</string>
+    <string name="pk_loading">Loading apps…</string>
 </resources>

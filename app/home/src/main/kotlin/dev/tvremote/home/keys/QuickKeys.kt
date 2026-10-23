@@ -50,25 +50,27 @@ object QuickKeys {
 
         fun line(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply { text = t; textSize = size; setTextColor(color) }
         val hint = line("", 13f, PK_DIM).apply { setPadding(dp(34), 0, dp(34), dp(4)) }
-        val keysOn = a.pill(a.getString(R.string.qk_on), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
-        val autoOn = a.pill(a.getString(R.string.qk_auto_on), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoon", !Store.get(a).optBoolean("autoon"))) }
+        // the switch and its state in its words: "Bật phím" alone did not say whether the keys were on, nor what pressing would do
+        val keysOn = a.pill(a.getString(R.string.qk_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
+        val autoOn = a.pill(a.getString(R.string.qk_auto_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoon", !Store.get(a).optBoolean("autoon"))) }
         val head = LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(26), dp(34), dp(12))
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(12))   // 32 dp above the panel before, now inside it
+            clipChildren = false; clipToPadding = false                // a focused pill grows past the row: clipped, its top and bottom were cut
             addView(line(a.getString(R.string.qk_title), 26f, Color.WHITE).apply { typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
             addView(keysOn); addView(autoOn)
         }
         val panel = LinearLayout(a).apply {
-            orientation = LinearLayout.VERTICAL
+            orientation = LinearLayout.VERTICAL; clipChildren = false
             addView(head); addView(hint); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         }
-        dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, dm.heightPixels - dp(64), Gravity.CENTER)) })   // centred: a bare content view sat at the left
+        dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, -1, Gravity.CENTER_HORIZONTAL)) })   // centred: a bare content view sat at the left; to the bottom edge: 64 dp short, the last row stopped on an empty band
         dialog.window?.let(::solidPage)
 
         val keyOrder = (HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()) + HomeConfig.KEY_COLOURS + POWER + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD }   // 1..9, 0, the colours, power-on, then keys the stock launcher answered
         val tiles = HashMap<Int, PickTile>()
         var seq = 0                                                   // a redraw superseded by a newer one (two changes in a row) is dropped
 
-        fun targetOf(code: Int): String = if (code == POWER) Store.get(a).optString("autoapp") else HomeConfig.keyApps(Store.get(a).optJSONObject("keyapps"))[code].orEmpty()
+        fun targetOf(code: Int, c: JSONObject = Store.get(a)): String = if (code == POWER) c.optString("autoapp") else HomeConfig.keyApps(c.optJSONObject("keyapps"))[code].orEmpty()
         fun words(code: Int) = if (code == POWER) a.getString(R.string.qk_power) else Keys.name(a, code)
         fun choose(code: Int) {
             Picker.show(a, Picker.Mode.TARGET, words(code), targetOf(code)) { t ->
@@ -83,6 +85,8 @@ object QuickKeys {
         fun paintHead() {
             val c = Store.get(a)
             keysOn.isSelected = c.optBoolean("keyon"); autoOn.isSelected = c.optBoolean("autoon")
+            fun said(on: Boolean) = a.getString(if (on) R.string.qk_yes else R.string.qk_no)
+            keysOn.pillText(a.getString(R.string.qk_on, said(keysOn.isSelected))); autoOn.pillText(a.getString(R.string.qk_auto_on, said(autoOn.isSelected)))
             hint.text = a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere)
         }
 
@@ -90,8 +94,9 @@ object QuickKeys {
             val mine = ++seq
             val have = Keys.have(a)?.let { arr -> List(arr.length()) { arr.getInt(it) } }
             Thread({
+                val conf = Store.get(a)                                // once: read per key (twice each, 16 keys) it was ~400 ms on the FPT box
                 val pics = HashMap<Int, App?>()
-                for (code in keyOrder) targetOf(code).takeIf { it.isNotEmpty() }?.let { pics[code] = Targets.app(a, it) }
+                for (code in keyOrder) targetOf(code, conf).takeIf { it.isNotEmpty() }?.let { pics[code] = Targets.app(a, it) }
                 a.runOnUiThread {
                     if (mine != seq || !dialog.isShowing) return@runOnUiThread
                     paintHead()
@@ -100,7 +105,7 @@ object QuickKeys {
                     keyOrder.forEachIndexed { i, code ->
                         if (i % cols == 0) { row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
                             grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
-                        val target = targetOf(code)
+                        val target = targetOf(code, conf)
                         val art = pics[code]
                         val missing = target.isNotEmpty() && art == null                    // the app is gone: the slot shows it, to be cleared or changed
                         val t = PickTile(a, tileW, ::dp, "k$code", if (art != null) art.label else if (missing) Targets.label(a, target) else if (code != POWER && have != null && code !in have) a.getString(R.string.qk_no_key) else "", art, "k$code",
@@ -110,7 +115,7 @@ object QuickKeys {
                         tiles[code] = t
                         row!!.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
                     }
-                    (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: tiles.values.firstOrNull { it.isFocusable })?.requestFocus()
+                    (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: keyOrder.firstNotNullOfOrNull { k -> tiles[k]?.takeIf { it.isFocusable } })?.requestFocus()   // key 1 first: a HashMap's order put it on any slot (the power-on one)
                 }
             }, "home-quickkeys").apply { isDaemon = true }.start()
         }

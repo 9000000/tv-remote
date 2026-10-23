@@ -663,6 +663,8 @@ object Customize {
             setDimAmount(Drop.MENU_DIM)                                     // as the menu it came from: no flash of light between them
             setWindowAnimations(0)                                     // its own slide below, or none when motion is off
         }
+        // a window of its own on top (the app picker, quick keys, a stepper, a QR) takes the dim off: the stepper's Home is then seen as it is
+        panel.viewTreeObserver.addOnWindowFocusChangeListener { has -> dialog.window?.setDimAmount(if (has && cur?.key !in PREVIEW) Drop.MENU_DIM else 0f) }
         dialog.setOnShowListener {
             groups.firstOrNull { it.key == at }?.let { enter(it); still = false; slid = true; buildRest(); return@setOnShowListener }
             groups[0].row?.let {

@@ -20,8 +20,18 @@ object Store {
      * system says (the screensaver can be changed in its own settings too), neither kept in the saved copy.
      */
     fun get(c: Context): JSONObject {
-        val saved = prefs(c).getString("conf", null) ?: return first(c)
-        return effective(c, HomeConfig.clean(try { JSONObject(saved) } catch (e: Exception) { JSONObject() }))
+        val saved = saved(c) ?: return first(c)
+        return effective(c, JSONObject(saved.toString()))           // a copy: callers change what they get
+    }
+
+    // the saved copy cleaned once, again only when the text in prefs changes: parsed and cleaned on every call it was ~7 ms on the
+    // FPT box, and [list] (a dozen calls building one screen) paid that and [effective]'s ~6 ms for one array
+    private var raw: String? = null
+    private var clean = JSONObject()
+    @Synchronized private fun saved(c: Context): JSONObject? {
+        val now = prefs(c).getString("conf", null) ?: return null
+        if (now != raw) { clean = HomeConfig.clean(try { JSONObject(now) } catch (e: Exception) { JSONObject() }); raw = now }
+        return clean
     }
 
     private fun effective(c: Context, conf: JSONObject): JSONObject {
@@ -89,9 +99,10 @@ object Store {
     /** Whether [walls] has anything to turn to: two or more, or Bing alone with several days kept. */
     fun turns(c: Context, walls: List<String>) = walls.size >= 2 || (walls.singleOrNull() == HomeConfig.BING && Online.count(c) > 1)
 
-    fun list(c: Context, key: String): MutableList<String> {
-        val a = get(c).getJSONArray(key)
-        return MutableList(a.length()) { a.getString(it) }
+    /** One of the saved lists (dock, hidden, tiles, order, widgets): from the cleaned copy, none of [effective]'s reports needed. */
+    fun list(c: Context, key: String): MutableList<String> = synchronized(this) {
+        val a = (saved(c) ?: return get(c).getJSONArray(key).let { a -> MutableList(a.length()) { a.getString(it) } }).getJSONArray(key)
+        MutableList(a.length()) { a.getString(it) }
     }
 
     fun putList(c: Context, key: String, l: List<String>) { change(c, JSONObject().put(key, org.json.JSONArray(l))) }

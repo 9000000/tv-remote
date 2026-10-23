@@ -27,6 +27,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: menu Cài đặt/Nguồn ở thanh trên nằm sát thanh và làm tối Home rõ hơn. Bảng Tùy chỉnh làm tối y như vậy (mở từ menu không còn chớp sáng); các trang xem trước trên Home (Hình nền, Giao diện, Widget) bỏ tối để thấy đúng thay đổi.
 - TV Home: các trang Tùy chỉnh để mỗi mục một hàng (2 cột làm tên dài xuống dòng, hai ô lệch nhau). Trang Widget đưa phần Kết quả lên đầu. Rút gọn các dòng hướng dẫn dài (đổi chỗ/cỡ thẻ, Màn hình chính, Phím nhanh, Thêm vào màn hình chính).
 - TV Home: "Thêm vào màn hình chính" và "Phím nhanh" mở ra là thấy danh sách app, không focus vào ô tìm kiếm và không có bàn phím che. Ô nhập chữ ở các app TV tự đóng bàn phím khi focus rời đi.
+- TV Home: "Thêm vào màn hình chính" mở nhanh hơn (FPT: 3 hàng đầu hiện sau ~0,25–0,3 giây, trước là 0,75–1 giây), có dòng "Đang tải ứng dụng…" trong lúc chờ, danh sách kéo tới đáy màn hình (trước bị hụt một khoảng). Đọc cài đặt nhanh hơn ~100 lần (FPT: ~14 ms còn ~0,1 ms mỗi lần), mọi màn đọc danh sách app đều nhẹ hơn. "Phím nhanh": hai nút ghi rõ trạng thái ("Phím nhanh: Tắt", "Mở app khi bật TV: Bật"), nút phóng to khi chọn không còn bị cắt, mở ra là ở phím 1.
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -49,6 +50,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: the Settings/Power menus of the top bar sit right under it and dim Home more. Customize dims the same (no flash of light when opened from the menu); its pages that preview on Home (Background, Look, Widgets) lift the dim so the change is seen as it is.
 - TV Home: Customize pages put one item per row (two columns wrapped long names and left the pair uneven). The Widgets page shows its Result first. Long hints cut short (moving / sizing cards, Home screen, quick keys, add to home screen).
 - TV Home: "Add to home screen" and "Quick keys" open on the app list instead of the search, with no keyboard over it. The TV apps' text fields close the keyboard when the focus leaves them.
+- TV Home: "Add to home screen" opens faster (FPT box: the first three rows show after ~0.25–0.3 s, it was 0.75–1 s), shows "Loading apps…" while it waits, and its list reaches the bottom of the screen (it stopped short). Settings are read ~100× faster (FPT box: ~14 ms to ~0.1 ms a read), so every screen that reads the app lists is lighter. "Quick keys": the two buttons say their state ("Quick keys: Off", "Open an app when the TV turns on: On"), a focused button grows without being cut, and the screen opens on key 1.
 
 ## 0.20.0 - 2026-10-23
 

@@ -306,3 +306,9 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - First load after an update was 1,232,711 bytes (79 requests, browser, cache off); with `Content-Encoding: gzip` it is 413,903. Per file: core.js 49,975 -> 17,433, i18n/en.json 183,393 -> 54,359, index.html 87,894 -> 21,328.
 - Compressed once per file and kept next to the plain bytes (a weak TV must not gzip per request); png and files under 1 KB stay plain; `Vary: Accept-Encoding` on the rest. Default gzip level: -9 would save ~100 KB more for a one-time cost not worth it on a TV.
 - TV Home's `ManageServer` is a separate server and does not do this yet.
+
+## Settings are cleaned once (`Store.kt`)
+- `Store.get` parsed and cleaned the saved JSON (~7 ms on the FPT box) and added the live reports (`effective`, ~6 ms) on every call; `Store.list` paid both for one array. The picker called it per tile (~370 ms of UI thread), Quick keys per key (~400 ms).
+- Now the cleaned copy is kept until the text in prefs changes (string compare: any writer, even another process's prefs, is seen). `list` reads it without `effective` (dock, hidden, order, tiles, widgets are all saved keys): ~0.1 ms. `get` still returns a fresh copy with the reports, so callers may change it.
+- The picker also reuses Home's loaded apps and banners (copies via `constantState`, so the Home grid's drawables keep their bounds).
+- The picker's tiles cost ~10 ms each to make on the FPT box. The first three rows are made on the picker's thread (views not yet on a window, as AsyncLayoutInflater does) and drawn alone; the rest is added a frame later, focus kept. Making all of them off the UI thread (~180 ms) took longer than the wait it saved. First rows on screen: ~0.25–0.3 s, from 0.75–1 s.

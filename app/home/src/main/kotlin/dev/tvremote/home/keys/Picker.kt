@@ -73,13 +73,13 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
         val banner = art?.banner
         faceColor(if (banner != null) PK_BANNER_BACK else if (color != 0) color else shade(hue))
         if (banner != null) {
-            fill(ImageView(c).apply { setImageDrawable(banner); scaleType = ImageView.ScaleType.CENTER_CROP })
+            fill(ImageView(c).apply { setImageDrawable(banner.constantState?.newDrawable(c.resources) ?: banner); scaleType = ImageView.ScaleType.CENTER_CROP })
             name.text = label
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dpx(6), dpx(if (tag.isEmpty()) 4 else 22), dpx(6), dpx(4)) }   // a tag sits on the top edge: the picture starts under it
             val pic = art?.icon
             inner.addView(ImageView(c).apply {
-                if (pic != null) setImageDrawable(pic)
+                if (pic != null) setImageDrawable(pic.constantState?.newDrawable(c.resources) ?: pic)   // a copy: the grid's tile has the same picture
                 else { setImageResource(if (plus) R.drawable.ic_plus else icon.takeIf { it != 0 } ?: R.drawable.ic_apps); imageTintList = android.content.res.ColorStateList.valueOf(if (plus) PK_FAINT else Color.WHITE) }
             }, LayoutParams(h * 42 / 100, h * 42 / 100))
             if (label.isNotEmpty()) inner.addView(Font.on(TextView(c)).apply {
@@ -134,7 +134,7 @@ object Picker {
         val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(area) }
         val search = TvUi.field(a, a.getString(R.string.pk_search), 16f, EditorInfo.IME_ACTION_SEARCH, TvUi.FIELD_REST, TvUi.R_BUTTON, 18, 10, R.drawable.ic_search)
         val head = LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(26), dp(34), dp(10))
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(10))   // 32 dp above the panel before, now inside it
             addView(Font.on(TextView(a)).apply { text = title; textSize = 26f; setTextColor(Color.WHITE); typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
             addView(search, LinearLayout.LayoutParams(dp(300), dp(46)))
         }
@@ -143,20 +143,23 @@ object Picker {
             orientation = LinearLayout.VERTICAL
             addView(head); addView(note); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         }
-        dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, dm.heightPixels - dp(64), Gravity.CENTER)) })   // centred: a bare content view sat at the left
+        dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, -1, Gravity.CENTER_HORIZONTAL)) })   // centred: a bare content view sat at the left; to the bottom edge: 64 dp short, the list stopped on an empty band
         dialog.window?.let(::solidPage)
         dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)   // the list first; the keyboard only on OK in the search
         search.isFocusable = false                                     // not the first thing focused while the list loads (it took the keyboard up with it)
+        list.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pk_loading); textSize = 15f; setTextColor(PK_DIM); setPadding(0, dp(24), 0, 0) })   // until the first redraw: an empty page read as stuck
 
         val items = ArrayList<Item>()
         val tiles = HashMap<String, PickTile>()
         val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_tiles)
 
+        // read once, kept as presses change them: read per tile (~15 ms each on the FPT box) it was ~250 ms before the list showed
+        var hiddenNow = Store.list(a, "hidden"); var tilesNow = Store.list(a, "tiles")
         fun on(k: String): Boolean {
             return when {
                 mode == Mode.TARGET -> k == now
-                Target.kind(k) == Target.Kind.APP -> k !in Store.list(a, "hidden")
-                else -> k in Store.list(a, "tiles")
+                Target.kind(k) == Target.Kind.APP -> k !in hiddenNow
+                else -> k in tilesNow
             }
         }
         fun press(it: Item) {
@@ -170,6 +173,7 @@ object Picker {
                 if (it.key in t) Store.change(a, JSONObject().put("tiles", JSONArray(t - it.key)).put("dock", JSONArray(Store.list(a, "dock") - it.key)).put("order", JSONArray(Store.list(a, "order") - it.key)))
                 else if (t.size < HomeConfig.TILES_MAX) Store.change(a, JSONObject().put("tiles", JSONArray(t + it.key)))
             }
+            hiddenNow = Store.list(a, "hidden"); tilesNow = Store.list(a, "tiles")
             tiles[it.key]?.mark(on(it.key))
         }
 
@@ -181,10 +185,12 @@ object Picker {
         }
 
         fun heading(t: String) = Font.on(TextView(a)).apply { text = t.uppercase(); textSize = 12f; setTextColor(PK_DIM); letterSpacing = 0.12f; setPadding(0, dp(18), 0, dp(14)) }
-        fun redraw() {
+        fun redraw(limit: Int = Int.MAX_VALUE) {                     // [limit] tiles at most: the first screen, the rest a frame later
             val q = fold(search.text.toString().trim())
             list.removeAllViews()
+            var left = limit
             for (s in sections.indices) {
+                if (left <= 0) break
                 val here = items.filter { it.section == s && (q.isEmpty() || fold(it.label).contains(q) || fold(it.tag).contains(q)) }
                 val empty = when {
                     s == 1 && !Pins.can(a) -> a.getString(R.string.pk_pins_need_home)
@@ -195,7 +201,7 @@ object Picker {
                 list.addView(heading(a.getString(sections[s])))
                 if (here.isEmpty()) { list.addView(Font.on(TextView(a)).apply { text = empty; textSize = 14f; setTextColor(PK_DIM) }); continue }
                 var row: LinearLayout? = null
-                here.forEachIndexed { i, it ->
+                here.take(left).also { left -= it.size }.forEachIndexed { i, it ->
                     if (i % cols == 0) { row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
                         list.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
                     val t = tileFor(it)
@@ -215,12 +221,14 @@ object Picker {
 
         // what there is, read off the main thread: every app's picture, then each app's shortcuts (a binder call per app)
         bg.execute {
-            val apps = Apps.list(a).onEach { it.load(a) }
+            // the grid's apps with their pictures when Home has them: loading every banner again was ~230-400 ms on the FPT box
+            val apps = (a as? dev.tvremote.home.HomeActivity)?.loaded()?.takeIf { it.isNotEmpty() }?.onEach { if (it.banner == null && it.icon == null) it.load(a) }
+                ?: Apps.list(a).onEach { it.load(a) }
             val hidden = Store.list(a, "hidden").toSet()
             val got = ArrayList<Item>()
             if (mode == Mode.TARGET) got.add(Item("", a.getString(R.string.pk_none), null, "", 0))
             for (p in apps) got.add(Item(p.pkg, p.label, p, if (p.pkg in hidden && mode == Mode.GRID) a.getString(R.string.pk_hidden) else "", 0))
-            Pins.refresh(a)
+            Pins.refresh(a, apps)
             val avail = try { JSONArray(a.getSharedPreferences("pins", Context.MODE_PRIVATE).getString("avail", "[]")) } catch (e: Exception) { JSONArray() }
             val names = apps.associate { it.pkg to it.label }
             for (i in 0 until avail.length()) {
@@ -229,9 +237,17 @@ object Picker {
                 got.add(Item(o.getString("key"), o.getString("title"), app, names[o.getString("app")] ?: "", 1))
             }
             for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 2, R.drawable.ic_gauge))
+            // the tiles made here too, not yet on a window (as AsyncLayoutInflater does): ~10 ms each on the FPT box's UI thread
+            for (it in got.take(cols * 3)) tileFor(it)                    // the first screen only: all of them took ~180 ms there, longer than the wait they saved
             a.runOnUiThread {
                 if (!dialog.isShowing) return@runOnUiThread
-                items.addAll(got); redraw(); search.isFocusable = true
+                // three rows first: built and drawn whole (~30 tiles) it was ~400 ms on the FPT box before anything showed
+                items.addAll(got); redraw(cols * 3)
+                list.post { if (dialog.isShowing && search.text.isEmpty()) {
+                    val f = list.findFocus(); val was = tiles[now]?.parent != null; redraw()
+                    (tiles[now]?.takeIf { mode == Mode.TARGET && !was && f is PickTile && it.isFocusable } ?: f)?.requestFocus()   // the key's own choice, if it was further down
+                } }
+                search.isFocusable = true
                 val inOrder = (0 until list.childCount).mapNotNull { (list.getChildAt(it) as? LinearLayout)?.getChildAt(0) as? PickTile }.firstOrNull { it.isFocusable }   // the first on the screen, not a map's first
                 val first = (if (mode == Mode.TARGET) tiles[now]?.takeIf { it.isFocusable && it.parent != null } else null) ?: inOrder
                 (first ?: search).requestFocus()

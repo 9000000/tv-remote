@@ -97,9 +97,9 @@ object Pins {
      * Every shortcut of the apps TV Home lists, as [{key, title, app}] in app order: what the picker offers. A stored copy ([report]
      * reads it), made when the settings are read or Home comes back: asking each app is a binder call, not for every [Store.get].
      */
-    fun refresh(c: Context) {
+    fun refresh(c: Context, apps: List<App> = Apps.list(c)) {
         val out = JSONArray()
-        if (can(c)) for (a in Apps.list(c)) for (s in of(c, a.pkg).sortedBy { it.rank })
+        if (can(c)) for (a in apps) for (s in of(c, a.pkg).sortedBy { it.rank })
             out.put(JSONObject().put("key", key(s)).put("title", (s.shortLabel ?: s.longLabel ?: s.id).toString()).put("app", a.pkg))
         prefs(c).edit().putString("avail", out.toString()).putBoolean("can", can(c)).apply()
     }

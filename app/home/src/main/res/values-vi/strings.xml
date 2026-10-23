@@ -317,9 +317,12 @@
     <string name="pk_pins_need_home">Chỉ đọc được lối tắt khi TV Home là màn hình chính.</string>
     <string name="c_add_home">Thêm vào màn hình chính</string>
     <string name="qk_title">Phím nhanh</string>
-    <string name="qk_on">Bật phím</string>
-    <string name="qk_auto_on">Mở khi bật TV</string>
+    <string name="qk_on">Phím nhanh: %1$s</string>
+    <string name="qk_auto_on">Mở app khi bật TV: %1$s</string>
+    <string name="qk_yes">Bật</string>
+    <string name="qk_no">Tắt</string>
     <string name="qk_power">Khi bật TV</string>
     <string name="qk_no_key">remote không có</string>
     <string name="c_quickkeys">Phím nhanh</string>
+    <string name="pk_loading">Đang tải ứng dụng…</string>
 </resources>
