@@ -33,7 +33,8 @@ class Shelves(private val a: Activity, private val host: Host) {
     }
 
     /** One shelf. [id] is stable (a link to a group finds its shelf by it). */
-    class Row(val id: String, val title: String, val items: List<List<Channel>>)
+    /** [icon]: the person's own rows (favourites, a group) carry the side column's picture: a group named like a category ("VTV") read as the category twice. */
+    class Row(val id: String, val title: String, val items: List<List<Channel>>, val icon: Int = 0)
 
     private val d = { v: Number -> TvUi.dp(a, v).toInt() }
     private val tileW = d(176); private val tileH = tileW * 9 / 16
@@ -209,6 +210,8 @@ class Shelves(private val a: Activity, private val host: Host) {
         override fun onBindViewHolder(h: RowH, i: Int) {
             val r = rows[i]
             h.title.text = r.title; h.count.text = "${r.items.size}"
+            h.title.setCompoundDrawablesRelative(if (r.icon == 0) null else a.getDrawable(r.icon)?.mutate()?.apply { setTint(TvUi.DIM); setBounds(0, 0, d(22), d(22)) }, null, null, null)
+            h.title.compoundDrawablePadding = d(10)
             h.cards.row = r; h.cards.notifyDataSetChanged()
             val lm = h.inner.layoutManager as LinearLayoutManager
             val s = saved[r.id]

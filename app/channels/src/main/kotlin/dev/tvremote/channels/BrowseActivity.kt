@@ -173,8 +173,8 @@ class BrowseActivity : Activity() {
     private fun homeRows(): List<Shelves.Row> {
         val res = catRes ?: return emptyList()
         val out = ArrayList<Shelves.Row>()
-        Store.favourites(this).byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("fav", getString(R.string.favourites), it)) }
-        for (g in Store.groups(this)) g.channels.byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("g:${g.id}", g.name, it)) }
+        Store.favourites(this).byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("fav", getString(R.string.favourites), it, R.drawable.ic_star)) }
+        for (g in Store.groups(this)) g.channels.byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("g:${g.id}", g.name, it, R.drawable.ic_folder)) }
         val lang = Lang.code()
         res.sections.forEach { out.add(Shelves.Row("c:${it.cat.id}", it.cat.title(lang), it.items)) }
         if (res.others.isNotEmpty()) out.add(Shelves.Row("other", getString(R.string.others), res.others))

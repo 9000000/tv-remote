@@ -168,6 +168,7 @@
     <string name="c_move">Đổi chỗ</string>
     <string name="c_moving">Lên / Xuống, rồi OK</string>
     <string name="w_layout">Kết quả</string>
+    <string name="w_layout_empty">Chưa bật widget nào: bật ở bên dưới</string>
     <string name="c_size_big">To</string>
     <string name="c_size_small">Nhỏ</string>
     <string name="c_size">Cỡ</string>

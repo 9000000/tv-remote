@@ -871,6 +871,15 @@ object Customize {
             val p = HomeConfig.pack(Store.list(context, "widgets"), big, conf.optString("note").isNotEmpty())
             val g = resources.displayMetrics.density * 4f
             val sum = maxOf(HomeConfig.FLOOR, p.cols.sumOf { it.weight })
+            if (p.cols.isEmpty()) {                                         // nothing on: the frame of an empty row and why, not a bare title over nothing
+                paint.style = Paint.Style.STROKE; paint.strokeWidth = g / 2; paint.color = DOOR_EDGE
+                paint.pathEffect = android.graphics.DashPathEffect(floatArrayOf(g * 2, g * 1.5f), 0f)
+                cv.drawRoundRect(g / 2, g / 2, width - g / 2, height - g / 2, g * 2, g * 2, paint)
+                paint.style = Paint.Style.FILL; paint.pathEffect = null; paint.color = DIM; paint.textSize = 14 * resources.displayMetrics.scaledDensity
+                paint.textAlign = Paint.Align.CENTER
+                cv.drawText(context.getString(R.string.w_layout_empty), width / 2f, height / 2f - (paint.descent() + paint.ascent()) / 2, paint)
+                return
+            }
             val room = width - g * (p.cols.size - 1)
             var x = 0f
             for (col in p.cols) {
