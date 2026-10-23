@@ -342,3 +342,18 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - Pills (tvui `pill`) change colour only on focus: a scale needs a hardware layer per focus, ~7x the CPU on the FPT box (same finding as Customize).
 - Lobby layout: QR card 320 dp (~614 px at 1080p) left, title/players/start right, one Back hint; the web games' in-page lobby mirrors it.
 - Still slow: typing in search (4 letters: 129 ticks, 95% janky); not yet measured on the FPT box.
+
+## TV Home scroll: tiles at rest are layers (`TvTile.card`, TV Setup `DimLayer`)
+
+Measured on the FPT box (Mali-G31, Android 14, 50 Hz, the person's 25% Dim on), DOWN/UP between the dock row and the next, focus on a tile:
+the app delivered a frame every vsync, but SurfaceFlinger held a frame (2 vsyncs, then one skipped) in 3-10 presses of 8, always in the first
+6 frames, where the scroll is fastest. Sideways moves (same focus animation, no scroll): 0-1 in 8. The box composes every layer with the GPU
+(`CLIENT` in `dumpsys SurfaceFlinger`, even a lone app), so the Dim window's full-screen blend shares the GPU with the app; with the Dim
+hidden for a minute the same scroll held 0-1 in 8. The Dim stays (the person chose it): the app had to cost less.
+App GPU per scroll frame (framestats `GpuCompleted`), p50 / p90 ms: as it was 17 / 38; Frost not invalidated, no text shadows, no widget
+layer, the web wall: no change; one layer for the whole grid 48 / 70 (re-rendered every frame by the focus animation inside); the
+wallpaper a solid colour 15 / 27 (at half or quarter size: no change, the cost is the full-screen pass, not the bitmap); no rounded
+clip on the faces 15.5 / 28; **a hardware layer per card 12 / 16** (presses with a held frame: 1 in 8). The focused card has none: a
+layer scaled by GROW is soft, and its animation runs `withLayer()` as before. Cost: about 11 MB of render targets for TV Home's 27.
+`DimLayer` on a TV is MATCH_PARENT now: twice the long side each way (for phones that turn) was a 3840 x 3840 buffer for one colour; it
+did not change the composition (`CLIENT` either way) nor did moving its alpha into the colour.

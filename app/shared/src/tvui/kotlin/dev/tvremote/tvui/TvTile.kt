@@ -58,6 +58,10 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
             override fun getOutline(v: View, out: android.graphics.Outline) { out.setRoundRect(o, o, o + w, o + h, corner) }
         }
         addView(card, LayoutParams(w + 2 * o, h + 2 * o).apply { setMargins(-o, -o, -o, -o) })
+        // a card at rest is a texture: a page scroll then pastes it, not the picture through its rounded clip again. On the FPT
+        // box (Mali-G31, a 25% tint over the screen) TV Home's scroll took 17 ms of GPU a frame (p90 38) and held a frame
+        // 5 presses in 8; with this 12 ms (p90 16). The focused card has none: a layer grown by GROW would be soft ([focus])
+        card.setLayerType(LAYER_TYPE_HARDWARE, null)
         name.apply {
             textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
             alpha = 0f; setPadding(0, 0, 0, 0); setShadowLayer(dp(5).toFloat(), 0f, dp(1).toFloat(), NAME_SHADOW)
@@ -88,10 +92,11 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
 
     /**
      * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
-     * with motion off only the ring and the name change, at once. Hardware layers only while it moves.
+     * with motion off only the ring and the name change, at once. A card at rest keeps its layer; the focused one draws itself.
      */
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
+        if (grows) card.setLayerType(if (on) LAYER_TYPE_NONE else LAYER_TYPE_HARDWARE, null)   // before withLayer(), which puts this back after
         if (!grows) { ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; return }
         if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
             val s = if (on) GROW else 1f

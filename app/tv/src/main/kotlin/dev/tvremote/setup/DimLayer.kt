@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
@@ -51,12 +52,15 @@ internal object DimLayer {
         if (view != null) { val lp = v.layoutParams as WindowManager.LayoutParams; lp.alpha = alpha; try { wm.updateViewLayout(v, lp) } catch (e: Exception) { }; return }
         val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-        val size = maxOf(c.resources.displayMetrics.widthPixels, c.resources.displayMetrics.heightPixels) * 2   // past every edge, whichever way the screen turns
+        // a TV never turns: the screen exactly. Twice the long side each way was a 3840 x 3840 buffer (59 MB) for one colour
+        val tv = c.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        val size = if (tv) WindowManager.LayoutParams.MATCH_PARENT
+            else maxOf(c.resources.displayMetrics.widthPixels, c.resources.displayMetrics.heightPixels) * 2   // past every edge, whichever way the screen turns
         val lp = WindowManager.LayoutParams(size, size, type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT)
-        lp.x = -size / 4; lp.y = -size / 4
+        if (!tv) { lp.x = -size / 4; lp.y = -size / 4 }
         lp.alpha = alpha
         try { wm.addView(v, lp); view = v } catch (e: Exception) { Log.w("DimLayer", "no window over other apps: $e") }
     }
