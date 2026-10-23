@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.20.0 - 2026-10-23
+
+Web 0.20.0 · app điện thoại 0.20.0 · app TV 0.20.0 · TV Home 0.7.0 · TV Channels 0.4.0 · TV Games 0.4.0
 
 **Tiếng Việt**
 - Xiaomi (PatchWall) và Android TV đời cũ (leanback launcher): đổi sang TV Home hay launcher khác giờ tắt luôn launcher gốc, nên phím Home không còn quay về PatchWall. TV Setup vẫn canh chừng và tự bật lại nếu lỗi; Undo không bật lại PatchWall mà bạn tự tắt.
