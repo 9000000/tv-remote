@@ -108,7 +108,7 @@
 
   // ---- money, houses, mortgages
   const hmax = (G, id) => Math.max(...groupOf(id).map((x) => G.h[x])), hmin = (G, id) => Math.min(...groupOf(id).map((x) => G.h[x]));
-  const mortValue = (id) => B[id].price / 2, redeemCost = (id) => Math.ceil(B[id].price * 0.55);
+  const mortValue = (id) => B[id].price / 2, redeemCost = (id) => Math.ceil(B[id].price * 11 / 20);   // mortgage value + 10%; integer maths: price * 0.55 is 770.0000000000001 for 1400, which rounded up to 771
   function canBuild(G, p, id) {
     const T = B[id];
     if (!T || T.t !== 'prop' || G.owner[id] !== p) return 'notowner';

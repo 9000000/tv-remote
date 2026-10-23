@@ -98,13 +98,20 @@ const Caro = (() => {
         seen.add(j); out.push(j);
       }
     }
-    return out.length ? out : [(N >> 1) * N + (N >> 1)];
+    if (out.length) return out;
+    // none near a stone: the middle on an empty board, else any empty cell (never an occupied one: a full board has none, so bestMove gives -1)
+    if (!b.some((v) => v)) return [(N >> 1) * N + (N >> 1)];
+    return b.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
   }
   // The bot's move for p: win > block a win > open four > block an open four / three > double threat > the best sum. Mine counts a bit more than the enemy's,
   // so a win beats a block; ties are broken at random so games differ. -1 when the board is full.
   function bestMove(b, p, rnd = Math.random) {
     const q = 3 - p; let best = -1, top = -1;
-    for (const i of candidates(b)) {
+    // A five of my own, then a five of the enemy's to stop, come before any score: the sums below can add up to more for a
+    // block that also builds the enemy's lines than for my winning stone (a crowded late-game board did exactly that).
+    const cs = candidates(b), fives = (x) => cs.filter((i) => { b[i] = x; const w = !!winLine(b, i); b[i] = 0; return w; });
+    const mine = fives(p), theirs = mine.length ? [] : fives(q), forced = mine.length ? mine : theirs;
+    for (const i of forced.length ? forced : cs) {
       const mid = 1 - (Math.abs((i % N) - 7) + Math.abs(((i / N) | 0) - 7)) / 100;   // a little pull to the middle
       const s = gain(b, i, p) + gain(b, i, q) * 0.95 + mid + rnd() * 0.5;
       if (s > top) { top = s; best = i; }
