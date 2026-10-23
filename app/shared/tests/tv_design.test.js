@@ -12,7 +12,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
 // Raw colours outside a named constant (`val CARD = 0xFF1B2028.toInt()`), per file, as they were when the rule came in
 // (DESIGN-TV.md "Known drift"). A count may only go down: lower it here when a file is cleaned.
 const RAW = {
-  tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 5, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
+  tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 3, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
     'PinActivity.kt': 8, 'WarnActivity.kt': 6 },
   home: { 'Customize.kt': 36, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 55, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
     'Widgets.kt': 41, 'Zoom.kt': 3 },

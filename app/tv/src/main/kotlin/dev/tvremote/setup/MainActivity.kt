@@ -64,6 +64,7 @@ class MainActivity : Activity() {
 
     private val TILE = Color.rgb(34, 39, 47)
     private val MUTED = Color.rgb(140, 150, 163)
+    private val SCRIM = Color.argb(215, 5, 7, 10)                     // behind a popup: the screen dimmed, still there
     private val ACCENT = Color.rgb(59, 115, 246)
     private val OK = Color.rgb(70, 210, 131)
     private val WARN = Color.rgb(240, 179, 74)
@@ -723,7 +724,7 @@ class MainActivity : Activity() {
     private fun showOptimize(plan: org.json.JSONObject) {
         val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         val root = android.widget.FrameLayout(this)
-        root.setBackgroundColor(Color.argb(215, 5, 7, 10))
+        root.setBackgroundColor(SCRIM)
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
         card.background = box(TvUi.CARD, 22, 0)
@@ -871,7 +872,7 @@ class MainActivity : Activity() {
     private fun launcherWait(): Triple<android.app.Dialog, TextView, ProgressBar> {
         val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         val root = android.widget.FrameLayout(this)
-        root.setBackgroundColor(Color.argb(215, 5, 7, 10))
+        root.setBackgroundColor(SCRIM)
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
         card.background = box(TvUi.CARD, 22, 0)
@@ -914,7 +915,7 @@ class MainActivity : Activity() {
                               pics: Map<String, android.graphics.Bitmap?>) {
         val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         val root = android.widget.FrameLayout(this)
-        root.setBackgroundColor(Color.argb(215, 5, 7, 10))
+        root.setBackgroundColor(SCRIM)
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
         card.background = box(TvUi.CARD, 22, 0)
