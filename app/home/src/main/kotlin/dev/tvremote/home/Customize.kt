@@ -202,7 +202,7 @@ object Customize {
                     addState(intArrayOf(), ring(d, 1, 0x33FFFFFF))
                 }
                 if (k == HomeConfig.WEB) { val (iv, s) = icon(R.drawable.ic_globe, ACCENT, dp(26)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
-                if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_globe, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
+                if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
                 addView(FrameLayout(a).apply {                            // the ✓, shown on the chosen one (mark)
                     tag = "check"
                     background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }

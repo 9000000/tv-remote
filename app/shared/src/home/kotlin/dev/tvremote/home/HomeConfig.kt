@@ -92,8 +92,8 @@ object HomeConfig {
     const val PHOTO_MAX = 10
     /** The person's photos, one file each: "photo" is the first and the only one older TV Homes know. */
     val PHOTOS = listOf("photo") + (2..PHOTO_MAX).map { "photo$it" }
-    /** In the order the pickers list them: scenes first, then the pictures, the plain colours last. */
-    val WALLS = ART + BING + WEB + PHOTOS + PLAIN
+    /** In the order the pickers list them: Bing, the web page and the person's photos first (the ones people come to change), then the scenes, the plain colours last. */
+    val WALLS = listOf(BING, WEB) + PHOTOS + ART + PLAIN
     const val WALLS_MAX = 40
     val EVERY = listOf("off", "30m", "1h", "6h", "day", "show")
     /** Where a client puts the first photo (the shell may write there; the app reads it with no permission). */

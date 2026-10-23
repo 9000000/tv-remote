@@ -14,7 +14,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
 const RAW = {
   tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 5, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
     'PinActivity.kt': 8, 'WarnActivity.kt': 6 },
-  home: { 'Customize.kt': 42, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 60, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
+  home: { 'Customize.kt': 42, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 59, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
     'Widgets.kt': 41, 'Zoom.kt': 3 },
   channels: { 'BrowseActivity.kt': 13, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1, 'Ui.kt': 2 },
   games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 39, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,

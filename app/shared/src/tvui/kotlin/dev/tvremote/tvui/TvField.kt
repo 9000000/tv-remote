@@ -1,6 +1,7 @@
 package dev.tvremote.tvui
 
 import android.content.Context
+import android.graphics.Rect
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -8,30 +9,64 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 
 /**
- * A text field the D-pad can always leave. The TV's keyboard took the arrows while it was up (Gboard on an FPT box), and
- * Done that ran the field's action without closing it looked like nothing happened: the person was stuck in the field.
- * - the keyboard does not rise on focus: a phone's remote app types into the field without one; OK on the field raises it
- * - Done / Search / Go on the keyboard, or Enter from a phone, closes the keyboard, runs [done] once (TextView calls the
- *   listener on Enter's down and up) and takes the focus out of the field, to [after] or whatever is below
+ * A text field the D-pad can always leave. On the FPT box Gboard took the arrows before the field saw them, with its
+ * keyboard down too: the person was stuck in the field, and OK did not raise the keyboard either.
+ * - the keys are read before the keyboard app gets them ([onKeyPreIme]), while the keyboard is down: left / right move the
+ *   caret, and past either end of the words go to the control that way (Use beside a link); up / down leave; OK raises
+ *   the keyboard; Enter (a phone's remote typing into the field, no keyboard needed) is Done
+ * - while the keyboard is up it has every key; Done / Search / Go closes it, runs [done] once and takes the focus to
+ *   [after] or whatever is below; Back only closes it
  * The web page's fields do the same in js/ontv.js.
  */
-object TvField {
-    fun wire(f: EditText, after: () -> View? = { null }, done: () -> Unit) {
-        f.showSoftInputOnFocus = false
-        f.setOnKeyListener { v, k, e ->
-            if (k != KeyEvent.KEYCODE_DPAD_CENTER) return@setOnKeyListener false
-            if (e.action == KeyEvent.ACTION_UP) keys(v).showSoftInput(v, InputMethodManager.SHOW_IMPLICIT)
-            true
-        }
-        f.setOnEditorActionListener { v, id, e ->
-            if (e != null && e.action != KeyEvent.ACTION_DOWN) return@setOnEditorActionListener true
+class TvField(c: Context) : EditText(c) {
+    var after: () -> View? = { null }
+    var done: () -> Unit = {}
+    private var typing = false                                       // the keyboard is up: it has the keys
+
+    init {
+        showSoftInputOnFocus = false
+        setOnEditorActionListener { _, id, e ->
+            if (e != null && e.action != KeyEvent.ACTION_DOWN) return@setOnEditorActionListener true   // called on Enter's down and up
             if (e == null && id == EditorInfo.IME_ACTION_NONE) return@setOnEditorActionListener false
-            keys(v).hideSoftInputFromWindow(v.windowToken, 0)
-            done()
-            (after() ?: v.focusSearch(View.FOCUS_DOWN))?.requestFocus()
-            true
+            finish(); true
         }
     }
 
-    private fun keys(v: View) = v.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    private fun keys() = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+    private fun finish() {
+        typing = false
+        keys().hideSoftInputFromWindow(windowToken, 0)
+        done()
+        (after() ?: focusSearch(View.FOCUS_DOWN))?.requestFocus()
+    }
+
+    private fun leave(dir: Int) { focusSearch(dir)?.requestFocus() }
+
+    override fun onKeyPreIme(k: Int, e: KeyEvent): Boolean {
+        if (typing) {
+            if (k == KeyEvent.KEYCODE_BACK && e.action == KeyEvent.ACTION_UP) typing = false
+            return super.onKeyPreIme(k, e)
+        }
+        val down = e.action == KeyEvent.ACTION_DOWN
+        when (k) {
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> if (down) {
+                val left = k == KeyEvent.KEYCODE_DPAD_LEFT
+                val at = if (left) selectionStart else selectionEnd
+                if (if (left) at > 0 else at < length()) setSelection(at + if (left) -1 else 1)
+                else leave(if (left) View.FOCUS_LEFT else View.FOCUS_RIGHT)
+            }
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> if (down) leave(if (k == KeyEvent.KEYCODE_DPAD_UP) View.FOCUS_UP else View.FOCUS_DOWN)
+            KeyEvent.KEYCODE_DPAD_CENTER -> if (!down) { typing = true; keys().showSoftInput(this, 0) }   // 0: asked for, not implicit (refused)
+            KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> if (!down) finish()
+            else -> return super.onKeyPreIme(k, e)
+        }
+        return true
+    }
+
+    override fun onFocusChanged(focused: Boolean, dir: Int, prev: Rect?) {
+        super.onFocusChanged(focused, dir, prev)
+        if (focused) setSelection(length())                         // at the end: one press right reaches the button beside
+        else typing = false
+    }
 }

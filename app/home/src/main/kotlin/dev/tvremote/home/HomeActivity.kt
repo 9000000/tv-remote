@@ -62,6 +62,7 @@ class HomeActivity : Activity() {
     private lateinit var glass: Glass
     private lateinit var clock: TextClock
     private lateinit var dateLine: TextView
+    private lateinit var greetLine: TextView
     private lateinit var netPill: BarBtn
     private lateinit var inputsPill: BarBtn
     private lateinit var settingsPill: BarBtn
@@ -146,15 +147,20 @@ class HomeActivity : Activity() {
         scroll.addView(content, FrameLayout.LayoutParams(-1, -2))
         root.addView(scroll, FrameLayout.LayoutParams(-1, -1))
 
-        // the clock and the day on the left, the three buttons on the right
-        head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP; clipChildren = false; clipToPadding = false }  // a focused button grows past its row
-        val left = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false }
+        // the clock, then the greeting (small, above: it is read once) and the day beside it (one row: under the clock they took
+        // the room of the cards), the three buttons on the right
+        head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false }  // a focused button grows past its row
+        val left = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false }
         clock = TextClock(this).apply {
             textSize = 60f; setTextColor(Color.WHITE); typeface = Font.light
             includeFontPadding = false; shadow(this)
         }
-        dateLine = text(18f, 0xD9FFFFFF.toInt()).apply { setPadding(dp(2), dp(4), 0, 0) }
-        left.addView(clock); left.addView(dateLine)
+        greetLine = text(16f, HEAD_DIM).apply { setPadding(0, 0, 0, dp(2)) }
+        dateLine = text(22f, Color.WHITE).apply { typeface = Font.medium }
+        val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(greetLine); addView(dateLine) }
+        left.addView(clock)
+        left.addView(View(this).apply { setBackgroundColor(HEAD_RULE) }, LinearLayout.LayoutParams(dp(1), dp(56)).apply { leftMargin = dp(28); rightMargin = dp(28) })
+        left.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
         bar = TopBar(this, ::dp)
         inputsPill = BarBtn(this, R.drawable.ic_input, getString(R.string.inputs), ::dp) { inputs() }
@@ -888,7 +894,9 @@ class HomeActivity : Activity() {
             .replaceFirstChar { it.uppercase() }
         val hour = now.get(Calendar.HOUR_OF_DAY)
         val greet = getString(if (hour in 4..11) R.string.morning else if (hour in 12..17) R.string.afternoon else R.string.evening)
-        dateLine.text = if (conf.optBoolean("greet", true)) "$greet  ·  $day" else day
+        dateLine.text = day
+        greetLine.text = greet
+        greetLine.visibility = if (conf.optBoolean("greet", true)) View.VISIBLE else View.GONE
         @Suppress("DEPRECATION") val net = (getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo
         val (label, off) = @Suppress("DEPRECATION") when {
             net == null || !net.isConnected -> getString(R.string.offline) to true
@@ -1179,6 +1187,8 @@ const val DIM = 0.35f                                                 // the til
 
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 const val RING_OUT = 3                                                // dp the ring reaches past the face
+private const val HEAD_DIM = 0xB3FFFFFF.toInt()                       // the greeting over the day
+private const val HEAD_RULE = 0x40FFFFFF                             // the line between the clock and the day
 const val RING_ACCENT = 0xFF2F7DF6.toInt()                          // 3.7:1 on white; with the dark edge it shows on any banner
 
 /**

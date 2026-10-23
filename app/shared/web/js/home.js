@@ -361,7 +361,7 @@ async function homeOpen() {
       return cell;
     });
     holdNote.hidden = !(window.ONTV && photos.length);
-    walls.replaceChildren(...photos, ...art, bing, ...webTile, ...plain);         // the person's own first
+    walls.replaceChildren(bing, ...webTile, ...photos, ...art, ...plain);         // as on the TV (HomeConfig.WALLS): what changes by itself and the person's own first
     every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
     put(everyNote, 'textContent', multi ? T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
     everyNote.hidden = !multi;

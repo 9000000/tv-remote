@@ -517,7 +517,11 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                     addView(text(sky.year, 13f, DIM), LayoutParams(-2, -2).apply { topMargin = dp(2) })
                 }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
                 addView(MoonFace(a, sky.phase), LayoutParams(dp(44), dp(44)))
-            }, 0, LayoutParams(-1, -2))
+            }, 0, LayoutParams(-1, -2).apply { topMargin = dp(6) })
+            // a title and the top edge like the big cards beside it (weather, system): centred and untitled it sat off their lines
+            p.addView(head(a.getString(R.string.w_lunar), ""), 0)
+            p.gravity = Gravity.START or Gravity.TOP
+            p.setPadding(dp(20), dp(12), dp(20), dp(14))
         }
         words.layoutParams = LayoutParams(-1, -2).apply { topMargin = dp(14) }
         (p.tag as? Night)?.takeIf { it.counts.isNotEmpty() }?.let { n ->

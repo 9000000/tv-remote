@@ -112,7 +112,7 @@ object PhotoScreen {
 
     /** The link typed on the TV (a phone's remote types into it; OK raises the TV's keyboard), [Use] beside it or the keyboard's Done. No scheme: https://. The same rules as the phone page ([HomeConfig.wurl]). */
     private fun typeUrl(a: Activity, col: LinearLayout, status: TextView, set: () -> Unit, dp: (Number) -> Int): android.widget.EditText {
-        val box = android.widget.EditText(a).apply {
+        val box = dev.tvremote.tvui.TvField(a).apply {
             Font.on(this); textSize = 16f; setTextColor(Color.WHITE); setHintTextColor(FAINT); hint = a.getString(R.string.pq_web_hint)
             isSingleLine = true; inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
             imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
@@ -140,7 +140,7 @@ object PhotoScreen {
             }
             setOnClickListener { use() }
         }
-        dev.tvremote.tvui.TvField.wire(box, { go }) { use() }   // Done closes the keyboard and steps out to Use
+        box.after = { go }; box.done = ::use                         // Done closes the keyboard and steps out to Use
         val row = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL }
         row.addView(box, LinearLayout.LayoutParams(0, -2, 1f))
         row.addView(go, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
