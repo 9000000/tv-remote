@@ -215,12 +215,12 @@
     if (el && el.classList.contains("ggroup")) el = el.querySelector(".topic");
     return el && el.classList.contains("topic") ? el : topics[0];
   }
-  // the address carries the topic twice: #id for the page, ?t=id for a chat app's link preview, which never sees the # (_worker.js)
+  // the topic goes in ?t=id, not #id: a chat app's link preview never sees a # (_worker.js); a #id written by hand still opens it
   function here(){ return location.hash.slice(1) || new URLSearchParams(location.search).get("t") || ""; }
-  function addr(id){ return location.pathname + "?t=" + encodeURIComponent(id) + "#" + id; }
+  function addr(id){ return location.pathname + "?t=" + encodeURIComponent(id); }
   function go(id){
     var t = find1(id);
-    if (location.hash !== "#" + t.id) history.pushState(null, "", addr(t.id));
+    if (location.hash || here() !== t.id) history.pushState(null, "", addr(t.id));
     show(t.id); scrollTo(0, 0);
   }
   function show(id){
