@@ -244,6 +244,20 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - **Manage keeps its port** (`prefs "managePort"`): the WebView's localStorage belongs to the origin, port included; a new random port each start lost Notify's corner and the tab.
 - **Wireless pairing stays native** (`AdbHelp.wirelessPair`): the page's `/api/adb/pair` reconnects only Manage's own link; the native remote watches port 5555 alone (`watchAdb`), and a Wireless-debugging TV listens on another port, so after a pair on the page the remote would stay on keys only. Moving it needs a phone route that runs `pairedAt()`, and it cannot be tried on the emulators (the phone emulator reaches only the TV's 5555). Do it with a real Android 11+ TV at hand.
 
+## Opening an app from TV Home (`Zoom.kt`) and updating the apps under it
+
+- Measured on the Google TV emulator (screenrecord, brightness per frame): opening TV Games cold showed ~0.6 s of black.
+  It was our own plate: it darkened to near black and the tile's picture faded after 150 ms, then the app's starting window
+  (`Theme.Black` there, black in most TV apps) took over. Now the picture keeps its size, glides to the middle and pulses
+  until the app draws. YouTube still shows ~0.3 s of its own black starting window over it: a launcher cannot cover
+  another app's window. `SPLASH_SCREEN_STYLE_ICON` (Android 13+) is asked for but changed nothing on the emulator.
+- "Zoomed, then the zoom went, Home showed, then TV Games": `left` (Home paused since the launch) was reset when the
+  growth ended (380 ms), after Home had already paused (~250 ms). On an app that takes >3.4 s to show (a cold start after
+  an update, a slow TV), the 3 s guard took it for a failed launch and shrank the plate. Reset before the launch now.
+- TV Games closed under the person a moment after opening: TV Setup's AutoUpdate checked that it was not on the screen,
+  then pushed and installed for several seconds; opened in between, the install closed it. TV Channels and TV Games are
+  now updated by it only while the TV is in standby (their own SelfUpdate still asks in the app).
+
 ## The stock launcher wins over the HOME choice (BRAVIA, Android 9)
 
 - **Measured on a BRAVIA 4K GB ATV3 (Android 9), 2026-10-23:** with `com.google.android.tvlauncher` on, `cmd package set-home-activity dev.tvremote.home/.HomeActivity` prints `Success`, yet the HOME resolver still names tvlauncher and the Home key opens it (twice in a row). With tvlauncher off, Home lands on TV Home. Google TV's launcherx does the same (a Coocaa, the GTV emulator).

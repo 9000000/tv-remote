@@ -92,22 +92,23 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
 
     /**
      * TV Home, TV Channels and TV Games put up to date when installed and a newer one is out (each checked against the signed
-     * SHA256SUMS, their data kept). An install closes the app, so only one that is not on the screen, or with the TV in standby,
-     * asked again once downloaded (opened meanwhile: the file is dropped, next time). TV Home on the home screen waits for an app
-     * to be opened or the TV to sleep. False when one had to wait.
+     * SHA256SUMS, their data kept). An install closes the app: TV Channels and TV Games only while the TV is in standby (one
+     * checked as not on the screen was opened during the push and install and closed under the person), asked again once
+     * downloaded. TV Home waits for an app to be opened or the TV to sleep. False when one had to wait.
      */
     private fun ownApps(a: Adb): Boolean {
         val sh: (String) -> String = { a.shell(it) }
         var waited = false
-        fun free(pkg: String): Boolean {
+        fun free(pkg: String, asleep: Boolean = false): Boolean {
             if (!sh("dumpsys power | grep -m1 mWakefulness=").contains("Awake")) return true
+            if (asleep) { waited = true; return false }
             val top = sh("dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'")
             return (!top.contains("$pkg/")).also { if (!it) waited = true }
         }
         for ((pkg, state, install) in listOf(
-            Triple(Channels.PKG, { Channels.state(sh) }, { Channels.install(a, dir, Words.lang) { free(Channels.PKG) } }),
-            Triple(Games.PKG, { Games.state(sh) }, { Games.install(a, dir, Words.lang) { free(Games.PKG) } }))) {
-            try { val s = state(); if (s.optBoolean("installed") && s.has("latest") && free(pkg)) install() } catch (e: Exception) { }   // next time
+            Triple(Channels.PKG, { Channels.state(sh) }, { Channels.install(a, dir, Words.lang) { free(Channels.PKG, true) } }),
+            Triple(Games.PKG, { Games.state(sh) }, { Games.install(a, dir, Words.lang) { free(Games.PKG, true) } }))) {
+            try { val s = state(); if (s.optBoolean("installed") && s.has("latest") && free(pkg, true)) install() } catch (e: Exception) { }   // next time
         }
         try { if (free(HomeConfig.PKG)) Home.update(a, dir, Words.lang) { free(HomeConfig.PKG) } } catch (e: Exception) { }   // not on this TV ("home:missing"), offline: next time
         return !waited
