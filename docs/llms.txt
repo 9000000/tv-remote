@@ -30,7 +30,7 @@ Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google
 
 ## Setup in short
 
-1. On the TV: Settings → Device Preferences → About → Build, press OK 7 times; then Developer options → ADB debugging on.
+1. On the TV: Settings → Device Preferences (Google TV, Chromecast: System) → About → Build ("Android TV OS build"), press OK 7 times; then Developer options in the same list → ADB debugging on.
 2. Install the app for your device (links above). The first time, the TV asks "Allow USB debugging?": choose Always allow.
 3. Easiest with only the TV remote: install Downloader (AFTVnews) from the Play Store on the TV, type code 2397346, install TV Setup, scan its QR code with the phone and type the 6-digit code.
 

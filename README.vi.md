@@ -223,8 +223,8 @@ Chơi game retro và game web trên TV, dùng điện thoại làm tay cầm.
 
 Làm một lần, bằng remote của TV. Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
 
-1. **Bật Tùy chọn nhà phát triển:** Cài đặt → Tùy chọn thiết bị → Giới thiệu → **Bản dựng** → bấm OK 7 lần.
-2. **Bật ADB:** Cài đặt → Tùy chọn thiết bị → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** (có TV ghi "Gỡ lỗi USB").
+1. **Bật Tùy chọn nhà phát triển:** Cài đặt → Tùy chọn thiết bị (Google TV, Chromecast: Hệ thống) → Giới thiệu → **Bản dựng** (“Bản dựng Android TV OS”) → bấm OK 7 lần.
+2. **Bật ADB:** Cài đặt → Tùy chọn thiết bị (Google TV, Chromecast: Hệ thống) → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** (có TV ghi "Gỡ lỗi USB").
 3. **Nên bật đánh thức từ xa:** Cài đặt → Mạng và Internet → **Khởi động từ xa**. Thiếu bước này thì không bật lại được TV từ xa khi nó đã tắt hẳn.
 
 Lần đầu mỗi máy kết nối, TV hỏi "Cho phép gỡ lỗi USB?": tích **Luôn cho phép** rồi OK. Cần một người ở cạnh TV cho việc này. Lúc đó cả ba nơi đều hiện một màn hình lớn "Nhìn lên TV" và tự đóng khi TV đã cho phép.

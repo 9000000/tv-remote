@@ -223,7 +223,7 @@ Plays retro and web games on the TV, with phones as pads.
 
 **1. On the TV, turn on ADB** (once; menu names are Sony's, others differ a little)
 
-Settings → Device Preferences → About → press OK on **Build** seven times → go back → Developer options → **ADB debugging** (some TVs say "USB debugging"). Recommended: Settings → Network & Internet → **Remote start**, so the TV can be woken later.
+Settings → Device Preferences (Google TV, Chromecast: System) → About → press OK on **Build** (“Android TV OS build”) seven times → go back → Developer options in the same list → **ADB debugging** (some TVs say "USB debugging"). Recommended: Settings → Network & Internet → **Remote start**, so the TV can be woken later.
 
 > ADB cannot be turned on (an operator box hides Settings)? Skip to step 2 with the Downloader route: TV Setup opens the right place for you. The Computer app has **Turn ADB on for me**, and the Phone app a similar assistant.
 
