@@ -252,3 +252,11 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - Android 9's Apps key / long-press Home goes to the system-only HOME resolver (`PhoneWindowManager.launchAllAppsAction`, MATCH_SYSTEM_ONLY): tvlauncher's apps view while it is on, whatever the home. Turning it off covers that too.
 - **The Apps key (284) with nobody answering `ACTION_ALL_APPS` is a dead key** (`KeyFix.keyMap` / `withAllApps`): it is not in `global_keys.xml`, so the table could not tell; it gets the HOME rule (TV Home) and joins TV Home's free keys. Checked by asking the package manager, not by brand: with tvlauncher on, its apps view keeps the key. Long-press Home is left alone (on Google TV it is the dashboard). `input keyevent` is injected after the key filter, so on the emulator it was checked through TV Home's Quick keys list ("All apps key" offered), not by a press.
 - **TV Home cannot change the home screen itself**: it has no ADB, `HOME_SETTINGS` / `MANAGE_DEFAULT_APPS_SETTINGS` are stubs on the BRAVIA and the emulator, the role dialog is Android 10+, and a stock launcher left on wins anyway. Its "Home screen" entry starts TV Setup with `open=launchers`, which opens the picker once ADB is up.
+- **setupwraith goes off whole where its Home screen cannot (cleanyourtv's way, 2026-10-23).** Real Google TVs refuse `pm disable` of one
+  component from the shell, so every swap there used to roll back ("home"). Now `LauncherSwap.take` turns the whole package off, first
+  in the record (rollback turns it on last: back before launcherx, its RecoveryActivity takes Home; a reboot there factory-reset a
+  Xiaomi MiTV-MOSR4), but only when `WIFI_OWNERS` names no network of its own (`cname=<pkg or its uid>`): an FPT Play box lost its
+  network and ADB that way. Measured: a BRAVIA (Android 9) prints `ID: n SSID` lines + `cname=android.uid.system:1000`, the FPT box
+  (Android 14) the same `cname=` form; both emulators only the `WifiConfigManager` header (no saved network, no setupwraith). No dump,
+  or networks without owners → "wifi_unknown", never a guess. Cast hosts (`ro.product.device` sabrina / boreal / kirkwood) → "cast"
+  (phones' casts fail "Untrusted device" there). Not run on a device with setupwraith yet: LauncherTest's fake TV covers the paths.

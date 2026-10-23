@@ -8,8 +8,9 @@ import java.io.IOException
  * use this one code). What it does, in the order that kept TVs working (dev/bloat-sources.md):
  *  1. the new launcher is opened once, so Home is never empty;
  *  2. the TV's own home screens that are on go off, the setup wizard's Home first (with launcherx off alone Home lands on the wizard's
- *     RecoveryActivity and Google TV restarts about every minute). Only that one screen, and only where the wizard answers Home: turning
- *     the wizard's whole app off made Android delete the Wi-Fi network it had saved (an FPT Play box, Android 14: no network, no ADB);
+ *     RecoveryActivity and Google TV restarts about every minute). That one screen where the shell may; where it may not (every Google
+ *     TV seen: "Shell cannot change component state") the wizard's whole app, as cleanyourtv does, but only when no saved Wi-Fi network
+ *     is its own: Android deletes those with it (an FPT Play box, Android 14: no network, no ADB), see [wifiSafe];
  *  3. it is made the home LAST (Android forgets that choice whenever the set of home screens changes);
  *  4. Home is asked where it goes: anywhere else and everything is put back at once.
  * What was turned off, and the home before, are kept ON THE TV in [REC] before anything is touched, so a way back exists even if the
@@ -41,6 +42,27 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
          * the Google TV logo (a Kalley 43G200 by MOKA, Android 14: no ADB, a USB reflash; cleanyourtv). Home is never taken there.
          */
         val NO_SWAP = setOf("moka", "kalley")
+
+        /** The words (their id) for why a swap was put back ([Rec.why]): one table for TV Setup, the page and the computer's settings. */
+        fun whyId(why: String): String =
+            if (why in setOf("crash", "home", "timeout", "interrupted", "wifi", "wifi_unknown", "cast")) "launcher.why_$why" else "launcher.why_user"
+
+        /** The saved Wi-Fi networks and who saved each (`cname=<name>:<uid>`), one shell call: the same lines on Android 9 and 14. */
+        const val WIFI_OWNERS = "dumpsys wifi 2>/dev/null | grep -oE 'cname=[^ ]*|ID: [0-9]+ SSID|WifiConfigManager' | sort -u"
+        /** Google's own players, where a phone's cast says "Untrusted device" once the wizard is off (cleanyourtv): Home is not taken there. */
+        val CAST_HOSTS = setOf("sabrina", "boreal", "kirkwood")
+
+        /**
+         * Whether the wizard ([uid] its uid) can go off without the TV going offline: false when a saved network is its own (saved during
+         * the first setup: forgetting and joining it again in Settings gives it to the system), null when [WIFI_OWNERS] said too little to tell.
+         */
+        fun wifiSafe(out: String, uid: String): Boolean? {
+            val l = out.split("\n").map { it.trim() }
+            if (l.none { it == "WifiConfigManager" }) return null       // no dump: never guessed
+            val owners = l.filter { it.startsWith("cname=") }
+            if (l.any { it.startsWith("ID: ") } && owners.isEmpty()) return null   // networks with no owner shown
+            return owners.none { "setupwraith" in it || (uid.isNotEmpty() && it.endsWith(":$uid")) }
+        }
 
         fun last(out: String): String = out.split("\n").dropLastWhile { it.isBlank() }.lastOrNull()?.trim() ?: ""
 
@@ -126,8 +148,23 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         save(Rec(pkg, ours, prev, gone, now, "swapping", 0, ""))      // before the first thing goes off
         for (c in wizard) {
             sh("pm disable --user 0 $c 2>&1")
-            if (homes().contains(c)) { log("wizard home stays"); rollback("home", gone); return false }   // never the wizard's whole app (see 2.)
-            sh("grep -qx '$c' ${Setup.OFF_LIST} 2>/dev/null || echo '$c' >> ${Setup.OFF_LIST}")   // for Optimize TV's Undo
+            if (!homes().contains(c)) sh("grep -qx '$c' ${Setup.OFF_LIST} 2>/dev/null || echo '$c' >> ${Setup.OFF_LIST}")   // for Optimize TV's Undo
+        }
+        val stuck = homes().filter { it in wizard }.map { it.substringBefore('/') }.distinct()
+        if (stuck.isNotEmpty()) {                                     // the shell may not turn one screen off: the whole app, if it is safe (see 2.)
+            val no = when {
+                sh("getprop ro.product.device").trim().lowercase() in CAST_HOSTS -> "cast"
+                else -> when (wifiSafe(sh(WIFI_OWNERS), sh("pm list packages -U ${stuck[0]}").substringAfter("uid:", "").trim().substringBefore(','))) {
+                    true -> null; false -> "wifi"; null -> "wifi_unknown"
+                }
+            }
+            if (no != null) { log("wizard stays: $no"); rollback(no, gone); return false }
+            // first in the record, so a rollback turns it on last: back on before launcherx, its RecoveryActivity takes Home, and a reboot
+            // there factory-reset a Xiaomi MiTV-MOSR4 (cleanyourtv)
+            val off = stuck + gone
+            save(Rec(pkg, ours, prev, off, now, "swapping", 0, ""))
+            for (p in stuck) turnOff(p)
+            if (homes().any { it.substringBefore('/') in stuck }) { log("wizard home stays"); rollback("home", off); return false }
         }
         for (p in gone - wizard) turnOff(p)
         sh("cmd package set-home-activity $ours 2>/dev/null")
@@ -179,8 +216,8 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
 
     /** A setup wizard Home turned off by [r] that is on again: some firmware turns it back on at every boot. One shell call. */
     fun wizardBack(r: Rec): Boolean {
-        val wiz = r.off.filter { it.contains('/') && it.substringBefore('/') in Setup.WIZARD }
-        return wiz.isNotEmpty() && homes().any { it in wiz }
+        val wiz = r.off.filter { it.substringBefore('/') in Setup.WIZARD }   // its Home screen, or its whole app
+        return wiz.isNotEmpty() && homes().any { h -> h in wiz || h.substringBefore('/') in wiz }
     }
 
     /** What Undo of Optimize TV leaves behind: nothing kept about a home swap. */

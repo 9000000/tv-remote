@@ -19,6 +19,9 @@ class LauncherTest {
         val homes = linkedMapOf("com.new.home" to 0, Setup.LAUNCHERX to 2, WIZ to 1, "com.google.android.tvlauncher" to 2)
         var forgot = false                                             // Android 9 after a new launcher went in: no choice, its picker
         var wizardLocked = false                                       // a TV that refuses to turn one screen of a system app off
+        var wifi = "WifiConfigManager\nID: 0 SSID\ncname=android.uid.system:1000"   // WIFI_OWNERS' answer: the network re-joined in Settings
+        var device = "sabrina_not"                                     // ro.product.device
+        val enabledOrder = mutableListOf<String>()
         var chosen: String? = null
         var focus: String? = null                                      // what the Home key really opens, when not the home (a Google TV Streamer)
         var maker = "Google\nGoogle"
@@ -37,7 +40,7 @@ class LauncherTest {
             said += cmd
             Regex("^pm disable-user --user 0 (\\S+)$").find(cmd)?.let { disabled += it.groupValues[1]; chosen = null; return "" }
             Regex("^pm disable --user 0 (\\S+) 2>&1$").find(cmd)?.let { if (!wizardLocked) disabled += it.groupValues[1]; chosen = null; return "" }
-            Regex("^pm enable --user 0 (\\S+)$").find(cmd)?.let { disabled -= it.groupValues[1]; chosen = null; return "" }
+            Regex("^pm enable --user 0 (\\S+)$").find(cmd)?.let { disabled -= it.groupValues[1]; enabledOrder += it.groupValues[1]; chosen = null; return "" }
             Regex("^cmd package set-home-activity (\\S+)").find(cmd)?.let { chosen = it.groupValues[1]; return "" }
             Regex("^echo '(.*)' > ${LauncherSwap.REC}$").find(cmd)?.let { rec = it.groupValues[1]; return "" }
             return when {
@@ -46,6 +49,9 @@ class LauncherTest {
                 cmd.contains("DIRECT_BOOT_AWARE") -> bootAware ?: ""
                 cmd.startsWith("input keyevent 3") -> "  mFocusedApp=ActivityRecord{4f1 u0 ${focus ?: home()} t7}"
                 cmd == "date +%s" -> (clock).toString()
+                cmd == LauncherSwap.WIFI_OWNERS -> wifi
+                cmd == "getprop ro.product.device" -> device
+                cmd.startsWith("pm list packages -U ") -> "package:${cmd.substringAfterLast(' ')} uid:10039"
                 cmd == "pm list packages -e" -> (installed - disabled).joinToString("\n") { "package:$it" }
                 cmd.startsWith("pm list packages -d") -> disabled.joinToString("\n") { "package:$it" }
                 cmd.startsWith("cmd package query-activities") ->
@@ -106,11 +112,56 @@ class LauncherTest {
         assertEquals("rolledback", s.state()!!.state)
     }
 
-    @Test fun aWizardHomeThatCannotGoOffStopsTheSwap() {
+    @Test fun aWizardWhoseHomeCannotGoOffGoesWholeWhenTheWifiIsNotItsOwn() {   // every Google TV: the shell may not turn one screen off
         val tv = Tv().apply { wizardLocked = true }; val s = LauncherSwap({ tv.sh(it) })
-        assertFalse(s.take("com.new.home", 30))
+        assertTrue(s.take("com.new.home", 30))
+        assertTrue(WIZ in tv.disabled && Setup.LAUNCHERX in tv.disabled)
+        assertTrue(tv.said.indexOf("pm disable-user --user 0 $WIZ") < tv.said.indexOf("pm disable-user --user 0 ${Setup.LAUNCHERX}"))   // the wizard first
+        assertEquals(WIZ, s.state()!!.off.first())
+        s.rollback("user")
         assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
-        assertFalse(tv.said.any { it == "pm disable-user --user 0 $WIZ" })
+        assertTrue(tv.enabledOrder.indexOf(Setup.LAUNCHERX) < tv.enabledOrder.indexOf(WIZ))   // launcherx back before the wizard can take Home
+        assertEquals(Setup.LAUNCHERX, tv.home().substringBefore('/'))
+    }
+
+    @Test fun aWizardHoldingTheWifiStaysAndTheSwapSaysWhy() {
+        for ((wifi, why) in listOf("WifiConfigManager\nID: 0 SSID\ncname=$WIZ:10039" to "wifi",
+                "WifiConfigManager\nID: 0 SSID\ncname=com.google.uid.shared:10039" to "wifi",   // its uid under a shared name
+                "" to "wifi_unknown", "WifiConfigManager\nID: 0 SSID" to "wifi_unknown")) {
+            val tv = Tv().apply { wizardLocked = true; this.wifi = wifi }; val s = LauncherSwap({ tv.sh(it) })
+            assertFalse(s.take("com.new.home", 30))
+            assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
+            assertFalse(tv.said.any { it == "pm disable-user --user 0 $WIZ" })
+            assertEquals(why, s.state()!!.why)
+        }
+    }
+
+    @Test fun aChromecastKeepsItsWizardForCasting() {
+        val tv = Tv().apply { wizardLocked = true; device = "sabrina" }; val s = LauncherSwap({ tv.sh(it) })
+        assertFalse(s.take("com.new.home", 30))
+        assertEquals("cast", s.state()!!.why)
+        assertTrue(tv.said.none { it.startsWith("pm disable-user") })
+    }
+
+    @Test fun wifiOwners() {
+        assertEquals(true, LauncherSwap.wifiSafe("WifiConfigManager", "10039"))                    // Ethernet: nothing saved, nothing to lose
+        assertEquals(true, LauncherSwap.wifiSafe("WifiConfigManager\nID: 0 SSID\nID: 1 SSID\ncname=android.uid.system:1000", "10039"))   // the BRAVIA
+        assertEquals(false, LauncherSwap.wifiSafe("WifiConfigManager\nID: 0 SSID\ncname=android.uid.system:1000\ncname=$WIZ:10039", "10039"))
+        assertEquals(null, LauncherSwap.wifiSafe("", "10039"))
+    }
+
+    @Test fun theWizardWholeBackOnAfterABootRollsBack() {           // an Acer's firmware turns it on at every cold boot (cleanyourtv)
+        val tv = Tv().apply { wizardLocked = true }; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 0))
+        assertNull(LauncherWatch { tv.sh(it) }.check())
+        tv.disabled -= WIZ
+        assertEquals("home", LauncherWatch { tv.sh(it) }.check())
+    }
+
+    @Test fun everyReasonHasWords() {
+        val vi = java.io.File("web/i18n/vi.json").readText(); val en = java.io.File("web/i18n/en.json").readText()
+        for (w in listOf("crash", "home", "timeout", "interrupted", "user", "wifi", "wifi_unknown", "cast", "?"))
+            assertTrue(w, "\"${LauncherSwap.whyId(w)}\"" in vi && "\"${LauncherSwap.whyId(w)}\"" in en)
     }
 
     @Test fun aSwapThatOutlivedTheWatchdogIsUndoneAgain() {

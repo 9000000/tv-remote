@@ -631,7 +631,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 sh("c=\$(cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep -m1 '$pkg/'); " +
                     "[ -n \"\$c\" ] && cmd package set-home-activity \$c >/dev/null 2>&1")
         } else if (pkg !in Setup.LAUNCHER && (swapped || stockOn())) {
-            if (!swap.take(pkg)) return HttpServer.Response.json(JSONObject().put("text", "home " + Words.get(lang, "tvset.home_refused")))
+            if (!swap.take(pkg)) {
+                val why = swap.state()?.why ?: ""                     // the Wi-Fi or casting the wizard holds: what to do about it, not only "refused"
+                val say = if (why in setOf("wifi", "wifi_unknown", "cast")) Words.get(lang, LauncherSwap.whyId(why)) else Words.get(lang, "tvset.home_refused")
+                return HttpServer.Response.json(JSONObject().put("text", "home $say"))
+            }
         } else return text(TvShell.tvset("home", value), 60000)
         val now = swap.homeNow()
         return HttpServer.Response.json(JSONObject().put("text", "home " + if (now.substringBefore('/') == pkg) value else now))

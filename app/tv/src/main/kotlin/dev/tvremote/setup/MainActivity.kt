@@ -930,9 +930,7 @@ class MainActivity : Activity() {
         fun why(e: Exception): String {
             val m = e.message ?: ""
             val w = m.substringAfter("launcher:rolledback:", "")
-            return if (w.isNotEmpty()) T("core.fr_launcher_back", "why" to when (w) {
-                "crash" -> T("launcher.why_crash"); "home" -> T("launcher.why_home"); "timeout" -> T("launcher.why_timeout")
-                "interrupted" -> T("launcher.why_interrupted"); else -> T("launcher.why_user") })
+            return if (w.isNotEmpty()) T("core.fr_launcher_back", "why" to T(dev.tvremote.core.ontv.LauncherSwap.whyId(w)))
             else reason(e)
         }
         fun install(e: dev.tvremote.core.ontv.Launchers.Entry) {

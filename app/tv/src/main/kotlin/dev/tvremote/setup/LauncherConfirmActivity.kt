@@ -42,7 +42,7 @@ class LauncherConfirmActivity : Activity() {
         }
         card.addView(text(if (notice.isEmpty()) "🏠" else "↩️", 48, false))
         card.addView(text(if (notice.isEmpty()) T("launcher.keep_title", "name" to name) else T("launcher.went_back"), 28, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
-        card.addView(text(if (notice.isEmpty()) T("launcher.keep_note") else T(when (notice) { "crash" -> "launcher.why_crash"; "home" -> "launcher.why_home"; "timeout" -> "launcher.why_timeout"; "interrupted" -> "launcher.why_interrupted"; else -> "launcher.why_user" }), 16, false).apply { setTextColor(Color.rgb(170, 178, 189)); maxWidth = dp(560) },
+        card.addView(text(if (notice.isEmpty()) T("launcher.keep_note") else T(dev.tvremote.core.ontv.LauncherSwap.whyId(notice)), 16, false).apply { setTextColor(Color.rgb(170, 178, 189)); maxWidth = dp(560) },
             LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         count = text("", 22, true)
         if (notice.isEmpty()) card.addView(count, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
