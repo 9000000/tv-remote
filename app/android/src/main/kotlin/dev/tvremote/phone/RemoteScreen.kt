@@ -322,7 +322,7 @@ internal fun MainActivity.buildRemote() {
         if (kbd.visibility != View.VISIBLE) kbdGo(textBox)
         else { kbdWatch.closedByPerson(); slide(controls); showKbd(false) }
     }
-    kbdOpen = { on -> if (on) kbdGo(textBox) else if (kbd.visibility == View.VISIBLE) { textBox.clearFocus(); slide(controls); showKbd(false) } }
+    kbdOpen = { on -> if (on) kbdGo(textBox) else if (kbd.visibility == View.VISIBLE) { slide(controls); showKbd(false) } }   // showKbd hides the phone keyboard by the focus
     controls.addView(more)
     controls.addView(kbd)
     // The remote's middle, one of three: the arrows; a touchpad of keys (swipes become arrow keys, a tap is OK: lists, a pointer
