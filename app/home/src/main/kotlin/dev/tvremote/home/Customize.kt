@@ -277,7 +277,7 @@ object Customize {
                 if (HomeConfig.isPhoto(k)) setOnLongClickListener {
                     android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.photo_del_q).setMessage(R.string.photo_del_note)
                         .setPositiveButton(R.string.photo_del) { _, _ ->
-                            HomeReceiver.drop(a, k)
+                            HomeApi.drop(a, k)
                             thumbs.keys.removeAll { it.startsWith("$k:") }
                             // the focus to its neighbour: the hidden tile's focus fell to the panel's first control, far up
                             val at = tiles.indexOfFirst { it.first == k }
@@ -523,6 +523,27 @@ object Customize {
             stack.addView(g.page, FrameLayout.LayoutParams(-1, -1))
         }
         refresh()
+        // one QR for every setting: the same page as TV Setup's settings, served by TV Home itself (ManageServer)
+        top.addView(LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+            setPadding(dp(10), dp(8), dp(14), dp(8))
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), glass(18, GLASS_FOCUS, Color.WHITE))
+                addState(intArrayOf(), glass(18, GLASS_FILL, GLASS_EDGE))
+            }
+            addView(FrameLayout(a).apply {
+                background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(ACCENT); alpha = 51 }
+                val (iv, s) = icon(R.drawable.ic_qr, ACCENT, dp(24))
+                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
+            }, LinearLayout.LayoutParams(dp(42), dp(42)))
+            addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(label(a.getString(R.string.mg_row), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
+                addView(label(a.getString(R.string.mg_row_sub), 13f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         top.addView(label(a.getString(R.string.more), 12f, 0x8CFFFFFF.toInt()), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(22) })
         val done = Font.on(TextView(a)).apply {
             text = a.getString(R.string.done); textSize = 16f; setTextColor(0xFF111318.toInt()); gravity = Gravity.CENTER

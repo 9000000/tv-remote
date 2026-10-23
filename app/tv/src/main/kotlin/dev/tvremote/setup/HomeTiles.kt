@@ -15,6 +15,7 @@ import org.json.JSONObject
  * Live tiles TV Home draws in its app grid at the size of an app tile, provided here through the HomeInfo provider:
  *   "tiles"    the list [{id, title, icon, kind}] (the key in TV Home's config is "tile:dev.tvremote.setup/<id>")
  *   "tile"     one tile's state now (arg = id): {id, mode: live|working|done|failed, big, small, progress 0..1, accent: ok|warn|bad,
+ *              icon?, tone? (how TV Home draws it), note? (a shorter line than small, for the outcome),
  *              result?: {before, after, freed_mb, none, text}}; answers at once, a binder call never waits on ADB
  *   "tile_do"  runs its action (arg = id) on a thread of its own and answers {started}; the outcome shows in "tile" as mode done / failed
  * The only tile now is "ram": RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the
@@ -42,6 +43,10 @@ internal object HomeTiles {
         if (freedMb < MIN_FREED_MB) Words.get(lang, "tile.ram_nothing", "pct" to after.pct)
         else Words.get(lang, "tile.ram_done", "from" to before.pct, "to" to after.pct, "mb" to freedMb)
 
+    /** The short line the tile shows for the press's outcome instead of its live line: "−37 MB", or "Already lean" when nothing came back. */
+    fun noteText(lang: String, freedMb: Long): String =
+        if (freedMb < MIN_FREED_MB) Words.get(lang, "tile.ram_lean") else Words.get(lang, "tile.ram_freed", "mb" to freedMb)
+
     /** The outcome of one press. */
     class Result(val before: Mem, val after: Mem, val at: Long) {
         val freedMb get() = (after.avail - before.avail).coerceAtLeast(0)
@@ -53,12 +58,13 @@ internal object HomeTiles {
         val o = JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title"))
         val live = o.put("big", "${now.pct}%").put("small", Words.get(lang, "tile.ram_free", "mb" to now.avail))
             .put("progress", now.pct / 100.0).put("accent", accent(now.pct)).put("mode", "live")
+            .put("icon", "memory").put("tone", "clean")            // how TV Home draws it: a drawable name of its own and the gradient family
         if (working) return live.put("mode", "working").put("small", Words.get(lang, "tile.ram_working"))
         if (failed) return live.put("mode", "failed").put("small", Words.get(lang, "tile.ram_noadb"))
         if (last != null && at - last.at in 0..DONE_MS) {
             val text = doneText(lang, last.before, last.after, last.freedMb)
             return live.put("mode", "done").put("big", "${last.after.pct}%").put("small", text).put("progress", last.after.pct / 100.0)
-                .put("accent", accent(last.after.pct))
+                .put("accent", accent(last.after.pct)).put("note", noteText(lang, last.freedMb))
                 .put("result", JSONObject().put("before", last.before.pct).put("after", last.after.pct).put("freed_mb", last.freedMb)
                     .put("none", last.none).put("text", text).put("at", last.at))
         }

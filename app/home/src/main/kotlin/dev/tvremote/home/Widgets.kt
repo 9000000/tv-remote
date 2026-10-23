@@ -51,7 +51,7 @@ import java.util.Locale
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
  *   timer   the sleep timer or bedtime and the time left (TV Setup's rules, through the same provider); none while neither is set
  *   note    the family's note (HomeConfig "note"), while there is one
- *   qr1..4  QR cards (HomeConfig "qrs", [QrCard]): big by default, white with dark modules whatever the wallpaper
+ *   qr1..4  QR cards (HomeConfig "qrs", [QrCard]): big by default, the glass card with only the code on white
  */
 class Widgets(private val a: Activity, private val dp: (Number) -> Int) : LinearLayout(a) {
     private var cpuMiss = 0
@@ -225,7 +225,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
                             else -> usageHalf(c, f, label)
                         }
                     }
-                } else plain(k, alone)!!.also { if (alone && k != "clock") stand(it) }
+                } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
@@ -238,8 +238,8 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
         val f = c.getJSONObject("f")
         val grid = Qr.modules(HomeQr.payload(c.getString("tpl"), f))
         val pass = f.optString("pass")
-        val secret = if (c.optBoolean("show") && pass.isNotEmpty()) a.getString(R.string.qr_pass, pass) else ""
-        return if (grid != null) QrCard(a, grid, c.optString("cap"), secret)
+        val secret = if (c.optBoolean("show") && pass.isNotEmpty()) pass else ""
+        return if (grid != null) card().apply { setPadding(dp(14), dp(14), dp(16), dp(14)); addView(QrCard(a, grid, c.optString("cap"), a.getString(R.string.qr_pass), secret, a.getString(R.string.qr_scan)), LayoutParams(-1, -1)) }   // the same 14 dp on every side: at 8 the white square crowded the 22 dp corners
             else pill(tile(AMBER, R.drawable.ic_message), c.optString("cap"), "", 2)         // too long for any code: cleaned away before it gets here
     }
 

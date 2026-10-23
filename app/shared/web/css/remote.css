@@ -218,3 +218,5 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homeask .item .acts { flex:none; gap:6px; }
 .homeask .item .acts button { min-width:0; padding:0 12px; }
 .homeask .item .acts .iconbtn { padding:0; }
+.homeask.page { position:static; display:block; width:100%; max-width:none; max-height:none; margin:0; padding:16px; box-sizing:border-box; }   /* TV Home's own page: the settings are the page */
+.homeask.page .card { width:min(760px, 100%); margin:0 auto; }

@@ -16,8 +16,8 @@ import dev.tvremote.core.web.Qr
 import org.json.JSONObject
 
 /**
- * The QR screen of "Your photo from a phone": the code, the short address for a phone that cannot scan, and what to do. The server
- * ([PhotoServer]) lives exactly as long as this dialog (and at most 10 minutes); [onSet] runs when this screen closes after a photo became the background (the settings panel behind it closes too, to show it).
+ * The QR screen of "Manage from phone" (and of the web-page background): the code, the short address for a phone that cannot scan, and what to do. The server
+ * ([ManageServer]) lives exactly as long as this dialog (and at most 10 minutes); [onSet] runs when this screen closes after a photo became the background (the settings panel behind it closes too, to show it).
  */
 object PhotoScreen {
     private val PANEL_TOP = 0xFF161B2B.toInt()                        // the same panel as Customize's
@@ -42,7 +42,7 @@ object PhotoScreen {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(32), dp(20), dp(32), dp(20)); clipToPadding = false; clipChildren = false }   // a focused chip grows past the edge
-        col.addView(label(a.getString(if (web) R.string.pq_web_title else R.string.pq_title), 22f, Color.WHITE).apply { typeface = Font.medium })
+        col.addView(label(a.getString(if (web) R.string.pq_web_title else R.string.mg_title), 22f, Color.WHITE).apply { typeface = Font.medium })
         val status = label(" ", 15f, SOFT)                        // a line kept free: the result must not push Close down
         val addr = label("", 18f, Color.WHITE).apply { typeface = Font.medium }
         val qr = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
@@ -51,10 +51,11 @@ object PhotoScreen {
         // typed on the TV itself: faster than the QR when a phone's remote app can type into the TV's field
         val field = if (web) typeUrl(a, col, status, { changed = true }, ::dp) else null
         var firstChip: View? = null
-        val s = PhotoServer.start(a) {
-            changed = true
-            status.text = a.getString(R.string.pq_done); status.setTextColor(GOOD)
-            Toast.makeText(a, R.string.pq_toast, Toast.LENGTH_LONG).show()
+        val s = ManageServer.start(a)
+        ManageServer.listener = object : ManageServer.Listener {
+            override fun connected(phones: Int) { status.text = a.getString(R.string.mg_connected); status.setTextColor(GOOD) }
+            override fun changed() { changed = true; status.text = a.getString(R.string.mg_changed); status.setTextColor(GOOD) }
+            override fun stopped() { dialog.dismiss() }
         }
         if (s == null) {
             col.addView(label(a.getString(R.string.pq_none), 16f, BAD), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
@@ -67,9 +68,9 @@ object PhotoScreen {
             if (beside == null) col.addView(qr, LinearLayout.LayoutParams(side, side).apply { topMargin = dp(16) })
             else { beside.addView(qr, LinearLayout.LayoutParams(side, side)); beside.addView(words, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(20) }) }
             val align = if (web) Gravity.START else Gravity.CENTER
-            words.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.pq_step), 15f, SOFT).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (web) 0 else 14) })
+            words.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.mg_step), 15f, SOFT).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (web) 0 else 14) })
             words.addView(label(a.getString(R.string.pq_addr), 13f, DIM).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            addr.text = "http://${s.shown}/?k=${s.token}"; addr.gravity = align
+            addr.text = s.url; addr.gravity = align
             words.addView(addr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
             if (!web) words.addView(label(a.getString(R.string.pq_time), 12f, FAINT), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })   // web: no room under the typed link and its choices
             if (web) firstChip = options(a, col, { changed = true; status.text = a.getString(R.string.pq_done); status.setTextColor(GOOD) }, ::dp)
@@ -100,7 +101,7 @@ object PhotoScreen {
         dialog.setContentView(panel, ViewGroup.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT))
         dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT); setDimAmount(0.6f) }
         // closing this screen (OK, Back, or the activity going away) is what stops the server
-        dialog.setOnDismissListener { PhotoServer.stop(); if (changed) onSet() }
+        dialog.setOnDismissListener { ManageServer.listener = null; ManageServer.stop(); if (changed) onSet() }
         dialog.setOnShowListener { (field ?: firstChip ?: close).requestFocus() }
         // the field takes the focus but the keyboard waits for OK: a phone's remote types into it without one
         dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)

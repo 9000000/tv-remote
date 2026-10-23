@@ -102,7 +102,8 @@ class CheckoutTest {
         assertTrue("$clear1 $clear2 $vol $web $home", clear1 in 0 until clear2 && clear2 < vol && vol < web && web < home)
         assertEquals(-1, tv.ran("pm clear dev.tvremote"))                             // our own apps are never cleared, even asked for
         assertEquals(listOf("checkout clear 1/2", "checkout clear 2/2", "checkout volume", "checkout web", "checkout home"), said)
-        assertEquals("checkout:c=2,f=0,v=25,w=ok,n=2,h=1", r.token())
+        assertEquals("checkout:c=2,f=0,v=25,w=ok,n=2,h=1,a=com.google.android.youtube.tv+com.netflix.ninja", r.token())
+        assertEquals(listOf("com.google.android.youtube.tv", "com.netflix.ninja"), Checkout.Result.parse(r.token())!!.apps)
     }
 
     @Test fun runWithOldTvSetupSaysSoAndNeverCallsIt() {
@@ -111,7 +112,7 @@ class CheckoutTest {
         assertEquals(1, r.cleared); assertEquals("old", r.web); assertTrue(r.home)
         assertEquals(-1, tv.ran("RulesReceiver"))
         assertEquals(6, tv.vol)
-        assertEquals("checkout:c=1,f=0,v=40,w=old,n=0,h=1", r.token())
+        assertEquals("checkout:c=1,f=0,v=40,w=old,n=0,h=1,a=com.netflix.ninja", r.token())
     }
 
     @Test fun runWithoutTvSetup() {

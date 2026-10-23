@@ -66,7 +66,7 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits, the full memory notice), DnsWatch (turns off a
                          DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), NotifyLayer + NotifyReceiver (the message card in a corner; `Notify.kt` in the shared code is the one place its corner / seconds are clamped), Nightly (2-5 am in standby: caches, `cmd package compile` of the apps used, `stats/nightly.json` for Health), KeepAdb (ADB debugging
                          back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
-app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI); HomeActivity (clock, dock,
+app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI; its "Manage from phone" page is packed from app/shared/web by packHomeWeb and served by ManageServer); HomeActivity (clock, dock,
                          grid, long-press menu), Widgets (system / usage / lunar / timer / note cards; usage, timer and CPU from TV
                          Setup's HomeInfo provider, which answers only TV Home by its signing key; also its live tiles, `Tiles.kt` here / `HomeTiles.kt` there, keys `tile:<pkg>/<id>`), Lunar (the lunar calendar, offline), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
                          RulesReceiver). Its settings' shape is ONE file, `app/shared/src/home/kotlin/.../HomeConfig.kt`, compiled

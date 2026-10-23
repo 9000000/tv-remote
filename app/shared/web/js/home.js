@@ -2,6 +2,9 @@
 // their order, apps left off its grid, the background (a built-in one or a photo from this device), the clock. Each change
 // is sent at once and shows on the TV's screen as it comes.
 let homeNow = null;
+// Where the settings are read and written (js/home_link.js): through the app that serves this page, over ADB, or straight to TV Home's own
+// page (home.html sets HOME_DIRECT). Everything below asks homeLink, so both ways are the same page.
+const homeLink = homeLinkFor(!!window.HOME_DIRECT, (path, data, quiet) => api(path, data, quiet), homeSend);
 onTvChange(() => { homeNow = null; homeCard(); });
 
 // the gradients TV Home draws (HomeActivity.wallColors), small enough to tell them apart
@@ -84,7 +87,7 @@ function layGlyph(k) {
 async function homeCard() {
   const line = $('#homestate'), btn = $('#homeopen');
   if (!line) return;
-  const r = ADB.state === 'ready' ? await api('/api/home', null, true) : null;
+  const r = ADB.state === 'ready' ? await homeLink.read(false, true) : null;
   homeNow = r && r.installed ? r : null;
   line.hidden = btn.hidden = !homeNow;
   if (homeNow) put(line, 'textContent', T(homeNow.home ? 'home.state_on' : 'home.state_off', { v: homeNow.version }));
@@ -96,24 +99,24 @@ async function homeCard() {
 
 // a newer TV Home from the latest release, put over the one on the TV: its settings stay
 async function homeUpdate() {
-  const n = await api('/api/home/update', {});
+  const n = await homeLink.update();
   if (n && n.installed) toast(T('home.updated', { v: n.version }));
   homeCard();
 }
 
 async function homeOpen() {
-  if (await needAdbSoon()) return;
-  let r = await api('/api/home?thumbs=1'); if (!r) return;
+  if (!homeLink.direct && await needAdbSoon()) return;                // TV Home's own page has no ADB to wait for
+  let r = await homeLink.read(true); if (!r) return;
   const keepThumbs = (n) => { for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
   keepThumbs(r);
   if (!r.installed) { homeCard(); toast(T('home.missing')); goTo('tv', 'launchcard'); return; }   // from the remote's More: where to get it
   const apps = () => r.apps.map((a) => a.pkg);
   const send = async (change) => {
-    const n = await api('/api/home', change);
+    const n = await homeLink.write(change);
     if (n && n.installed) { r = n; homeNow = n; draw(); }
   };
-  const after = async (n) => { r = n; homeNow = n; draw(); const t = await api('/api/home?thumbs=1'); if (t && t.installed) { keepThumbs(t); r = t; homeNow = t; draw(); } };   // a photo came or went: its small picture
-  const dropPhoto = async (id) => { const n = await api('/api/home/photo/drop', { id }); if (n && n.installed) await after(n); };
+  const after = async (n) => { r = n; homeNow = n; draw(); const t = await homeLink.read(true); if (t && t.installed) { keepThumbs(t); r = t; homeNow = t; draw(); } };   // a photo came or went: its small picture
+  const dropPhoto = async (id) => { const n = await homeLink.drop(id); if (n && n.installed) await after(n); };
   // on the TV itself (TV Setup's page) there is no ✕ to aim at with the D-pad: OK held on a photo asks, then deletes, as on TV Home
   const holdDrop = (b, id) => {
     let t = 0, held = false;
@@ -154,7 +157,7 @@ async function homeOpen() {
   const walls = el('div', { className: 'fchips homewalls' }), holdNote = el('p', { className: 'note', textContent: T('home.photo_hold'), hidden: true });
   // right over the pictures, filled: a tile among thirty went unseen, and in the head over "Change automatically" nobody
   // looked back up for it (eyes go down to the pictures)
-  const upload = el('button', { type: 'button', className: 'primary', textContent: T('home.upload'), onclick: () => window.ONTV ? api('/api/home/photo/qr', {}) : file.click() });   // on the TV: TV Home's QR, a photo comes from a phone
+  const upload = el('button', { type: 'button', className: 'primary', textContent: T('home.upload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : file.click() });   // on the TV: TV Home's QR, a photo comes from a phone
   const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
     // one at a time (the TV takes a photo per ADB push); a TV Home without rotation has room for one only
@@ -188,7 +191,7 @@ async function homeOpen() {
   // the cards over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
   const wTurnOn = async (w) => {
-    if ((w === 'usage' || w === 'timer') && !await setupFor('home_usage')) return false;
+    if ((w === 'usage' || w === 'timer') && !await homeLink.setup('home_usage')) return false;
     send({ widgets: [...r.config.widgets, w] });
     return true;
   };
@@ -270,7 +273,7 @@ async function homeOpen() {
     const keys = [...new Set([...have, ...offer.map((t) => t.key)])];       // one on the grid whose provider is away stays, to take off
     tilesList.replaceChildren(...keys.map((k) => row(k, [have.includes(k)
       ? tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))
-      : tool('+', T('home.tiles_head'), () => send({ tiles: [...have, k] }))])));
+      : tool('+', T('home.tile_add'), () => send({ tiles: [...have, k] }))])));
   }
   function draw() {
     const c = r.config, d = c.dock;
@@ -437,8 +440,10 @@ async function homeOpen() {
     everyNote.hidden = !multi;
   }
 
-  const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
-    el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
+  // TV Home's own page (home.html) has nothing else to show: the settings are the page itself, not a box over an empty one
+  const page = homeLink.direct;
+  const d = el('dialog', { className: 'ask homeask' + (page ? ' page' : '') }, el('div', { className: 'card' },
+    el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), page ? null : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
     el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webNote, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, file,
     galHead, gal, credit,
@@ -454,15 +459,16 @@ async function homeOpen() {
     wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine,
     noteHead, noteLine, qrHead, qrList, qrNote,
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden));
-  d.addEventListener('close', () => { d.remove(); homeCard(); });
+  d.addEventListener('close', () => { d.remove(); if (page) put('main', 'hidden', false); homeCard(); });
   draw();
-  document.body.append(d); d.showModal();
+  document.body.append(d);
+  if (page) { put('main', 'hidden', true); d.show(); } else d.showModal();
 }
 
 // The wallpaper gallery (docs/home/wallpapers.json, signed): small pictures to choose from; the one chosen is downloaded here,
 // checked against the list and sent to the TV like a photo of the person's own. The credit shows under the pictures.
 async function homeGallery(box, credit, head, done) {
-  const g = await api('/api/home/walls', null, true);
+  const g = await homeLink.walls(true);                              // none on TV Home's own page: the hosts download the gallery
   if (!g || !g.walls || !g.walls.length) { box.hidden = credit.hidden = head.hidden = true; return; }   // no list (offline): no empty heading either
   const lang = (document.documentElement.lang || 'en').slice(0, 2);
   const note = (w) => T('home.credit', { name: w.name[lang] || w.name.en, credit: w.credit, license: w.license, kb: w.kb });
@@ -471,7 +477,7 @@ async function homeGallery(box, credit, head, done) {
     const b = el('button', { type: 'button', title: note(w), onclick: async () => {
       if (box.dataset.busy) return;
       box.dataset.busy = '1'; box.classList.add('busy'); toast(T('home.sending_photo'));
-      const n = await api('/api/home/wall', { id: w.id });
+      const n = await homeLink.wall(w.id);
       delete box.dataset.busy; box.classList.remove('busy');
       if (n && n.installed) { done(n); toast(T('home.photo_done')); }
     } }, pic, el('span', { textContent: w.name[lang] || w.name.en }));
@@ -491,12 +497,19 @@ async function homePhoto(f, done) {
     if (!view) return false;                                          // cancelled: nothing sent, nothing said
     toast(T('home.sending_photo'));
     const blob = await photoBlob(img, W, H, view, 0.85);
-    const x = await fetch('/api/home/photo', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
-    const n = await x.json().catch(() => ({}));
-    if (!x.ok) throw new Error(n.error || x.statusText);
+    const n = await homeLink.photo(blob);
     done(n); toast(T('home.photo_done'));
     return true;
   } catch (e) { toast(T('common.error_msg', { msg: friendly(e.message) })); return false; }
+}
+
+// A picture put to [path] (the JPEG the crop made); the answer is TV Home's settings. The X-Tvh header is what a page of another site
+// cannot send without a preflight: TV Home's own page takes no cross-site post.
+async function homeSend(path, blob) {
+  const x = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Tvh': '1' }, body: blob });
+  const n = await x.json().catch(() => ({}));
+  if (!x.ok) throw new Error(n.error || x.statusText);
+  return n;
 }
 
 // The photo in the TV's shape, to move and widen before it is sent; resolves with the crop's view, or null when cancelled.
@@ -515,5 +528,5 @@ function homeCropAsk(img, W, H) {
   });
 }
 
-$('#homeopen').addEventListener('click', homeOpen);
-$('#homeupd').addEventListener('click', homeUpdate);
+$('#homeopen')?.addEventListener('click', homeOpen);                  // the hosts' page has the buttons; TV Home's own opens the settings at once (homeweb.js)
+$('#homeupd')?.addEventListener('click', homeUpdate);

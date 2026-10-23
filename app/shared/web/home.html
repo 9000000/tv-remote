@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TV Home</title>
+<!-- TV Home's own page: the settings of the TV Home launcher, the same home.js as the app pages. Served by app/home (ManageServer); the Gradle
+     task packHomeWeb copies it with the files below from app/shared/web, so there is one copy of the UI. __ICONS__ is the line icons' sprite of index.html. -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/page.css">
+<link rel="stylesheet" href="css/apps.css">
+<link rel="stylesheet" href="css/remote.css">
+<link rel="stylesheet" href="css/auto.css">
+<link rel="stylesheet" href="css/kit.css">
+<meta name="theme-color" content="#111418">
+<script src="js/theme.js"></script>
+</head>
+<body>
+<main>
+  <section class="card">
+    <div class="card-head"><h2 data-i18n="homeweb.title">🏠 TV Home</h2></div>
+    <p class="note" id="hwnote" data-i18n="homeweb.note">Cài đặt TV Home ngay trên trình duyệt này. TV tự đóng cửa sổ này sau 10 phút không dùng.</p>
+    <div class="actions"><button id="hwopen" class="primary" data-i18n="homeweb.open">🎛️ Mở cài đặt</button></div>
+  </section>
+</main>
+<div id="toast" role="status" popover="manual"></div>
+__ICONS__
+<script src="js/i18n.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/base.js"></script>
+<script src="js/home_link.js"></script>
+<script src="js/homeweb.js"></script>
+<script src="js/appicon.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/home_walls.js"></script>
+<script src="js/home_qr.js"></script>
+<script src="js/photofit.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>

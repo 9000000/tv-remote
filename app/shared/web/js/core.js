@@ -6,11 +6,9 @@
 // What one core cannot do is marked data-for="..." in index.html and hidden by css/page.css; the few differences in behaviour are asked here.
 const CORE = document.documentElement.dataset.core || 'pc';
 document.documentElement.dataset.core = CORE;
-const $ = (s) => document.querySelector(s);
 // icon + words as separate spans, so narrow screens can show the icon alone (see .lbl in css/page.css)
 // asks: its handler asks before doing anything, so the icon-only question below is not asked as well
 const setLabel = (b, icon, text, asks) => { if (asks) b.dataset.asks = ''; b.replaceChildren(el('span', { className: 'ico', textContent: icon }), el('span', { className: 'lbl', textContent: ' ' + text })); if (!b.title) b.title = text; return b; };
-const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); kids.forEach((k) => k != null && e.append(k)); return e; };
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n > 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n > 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B';
 const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
 // the tap a key gives under the finger, on a touch screen that can vibrate (Settings: Vibrate on key press, on by default)
@@ -18,16 +16,6 @@ const CAN_BUZZ = CORE !== 'phone' && !!navigator.vibrate && matchMedia('(pointer
 const buzzOn = () => { try { return localStorage.getItem('buzz') !== '0'; } catch { return true; } };
 const kbdAutoOn = () => { try { return localStorage.getItem('kbdauto') !== '0'; } catch { return true; } };   // the TV's keyboard opens the typing box (remote.js)
 const buzz = () => { if (CAN_BUZZ && buzzOn()) try { navigator.vibrate(15); } catch {} };
-// over a modal dialog too (TV Home's settings said nothing under it): a popover shown again goes to the top of the top layer;
-// a WebView without popovers (an older TV's) gets it inside the open dialog, which is in the top layer itself
-const toastEl = $('#toast');                                         // kept: a dialog that removes itself takes it along
-function toTop(t) {
-  if (t.showPopover) { if (t.classList.contains('up')) t.hidePopover(); t.showPopover(); t.classList.add('up'); return; }
-  const d = [...document.querySelectorAll('dialog[open]')].pop() || document.body;
-  if (t.parentNode !== d) d.append(t);
-}
-let toastT;
-function toast(m) { const t = toastEl; t.textContent = m; t.classList.add('show'); toTop(t); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), Math.min(10000, Math.max(2500, 70 * m.length))); }   // time to read it: a long message with the next step stays longer
 // Questions asked in the page, not with confirm() / prompt(): they look the same everywhere, and the computer app's window
 // (a bare web view) has no dialogs of its own. ask(text) → true / false; ask(text, { value }) → the typed text, or null.
 // { ok, danger }: the words and colour of the yes button. One question at a time; the button that asked keeps its spinner.
@@ -304,13 +292,6 @@ const ADB_TEXT = {
   error: ['bad', T('core.adb_error_short'), T('core.adb_error_long')],
   unknown: ['', 'ADB ...', 'ADB: ...'],
 };
-// Every write to the page that may repeat goes through here (tests/page.test.js): only when it changes. The same value
-// written again is still a change, for the page's observers (icons, running lines, i18n) and WebKit's styles: the now
-// playing bar did it 5 times a second, a running line wrapped itself 20 times a second.
-function put(e, k, v) {
-  if (typeof e === 'string') e = $(e);
-  if (e && e[k] !== v) e[k] = v;
-}
 // Where an install / update button would be when GitHub could not be asked (the core says `offline`): one small line that is also the
 // retry, so a missing button never reads as "nothing to update". [btn] the button, [off] whether to show it, [retry] asks again.
 function lookOffline(btn, off, retry) {

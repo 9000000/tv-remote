@@ -3,7 +3,9 @@ package dev.tvremote.home
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Shader
+import android.graphics.drawable.Drawable
 import android.graphics.Paint
 import android.graphics.RectF
 import android.net.Uri
@@ -131,75 +133,152 @@ object Tiles {
     private const val FOLLOW_TRY = 40
 }
 
+
 /**
- * The face of a live tile: its title, a big value, a line under it and a bar, in the accent the provider names. A press shows the
- * outcome as the bar dropping and the number counting down (about a second), once per outcome; with motion off or calm (a weak
- * box) the numbers just change.
+ * The face of a live tile, a sibling of the app banners next to it: a bright gradient, an icon and the name on the left, a ring
+ * gauge with its value in the middle on the right, and one short line under the name. Any provider's state fits it: title, big
+ * (the value), small (the line), progress (the ring; none = the value alone), accent (ok / warn / bad: the ring's tint, and the
+ * gradient turns amber / red), and optionally icon (a drawable name, "memory"), tone (the gradient family, "clean") and note (a
+ * shorter line shown instead of small, e.g. "-37 MB" after a press). A press shows the outcome as the ring running down to the
+ * new value (about a second, once per outcome) and, while the provider works, a spinner turning on the ring; with motion off or
+ * calm (a weak box) the numbers just change.
  */
 class LiveFace(c: Context, private val w: Int, private val h: Int, private val title: String, private val say: (String) -> String) : View(c) {
     private companion object {
-        const val TITLE_INK = 0xB3FFFFFF.toInt(); const val LINE_INK = 0xCCFFFFFF.toInt(); const val TRACK = 0x33FFFFFF   // white at 70 / 80 / 20 %
-        const val GOOD = 0xFF4CC38A.toInt(); const val WARN = 0xFFF2B84B.toInt(); const val BAD = 0xFFE5646B.toInt()    // the accents a provider names
-        const val FACE_TOP = 0xFF1B2538.toInt(); const val FACE_BOTTOM = 0xFF111827.toInt()                          // the tile's dark glass
+        const val INK = 0xFFFFFFFF.toInt(); const val LINE_INK = 0xE6FFFFFF.toInt(); const val TRACK = 0x40FFFFFF       // white at 100 / 90 / 25 %
+        const val RING_OK = 0xFFFFFFFF.toInt(); const val RING_WARN = 0xFFFFF1BF.toInt(); const val RING_BAD = 0xFFFFD9D6.toInt()   // light tints: readable on every gradient below
+        val CLEAN = intArrayOf(0xFF16A34A.toInt(), 0xFF0D6B73.toInt())                                                  // clean / memory: green into teal
+        val BLUE = intArrayOf(0xFF3B73F6.toInt(), 0xFF1E3A8A.toInt())                                                   // TV Setup's family, for a tone nobody named
+        val AMBER = intArrayOf(0xFFD97706.toInt(), 0xFF9A3412.toInt())
+        val RED = intArrayOf(0xFFDC2626.toInt(), 0xFF9F1239.toInt())
+        val IDLE = intArrayOf(0xFF2A3446.toInt(), 0xFF171E2B.toInt())                                                   // no answer from the provider
+        const val SPIN_MS = 1100L
     }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
-    private var big = ""; private var small = ""; private var mode = "live"; private var accent = "ok"
-    private var progress = 0f                                           // what the bar shows now (moves during the animation)
-    private var shownPct = -1f                                          // what the number shows now
+    private var big = ""; private var small = ""; private var mode = "live"; private var accent = "ok"; private var tone = ""
+    private var hasRing = true
+    private var icon: Drawable? = null; private var iconName = ""
+    private var progress = 0f                                           // what the ring shows now (moves during the animation)
     private var seenAt = 0L                                             // the outcome already animated
     private var anim: ValueAnimator? = null
+    private var spin: ValueAnimator? = null
+    private var turn = 0f                                               // the spinner's angle
+    private var motion = false
+    private var gradient: LinearGradient? = null; private var gradientFor: IntArray? = null
     private val u = h / 100f
 
     /** Shows [s] (a provider's state; none = not answered); [animate]: motion is on and not calm. [say] gives the line for a provider that is missing or untrusted. */
     fun set(s: JSONObject?, animate: Boolean) {
+        motion = animate
         val m = s?.optString("mode").orEmpty()
         if (s == null || m == Tiles.MISSING || m == Tiles.UNTRUSTED || m.isEmpty()) {
-            anim?.cancel(); mode = m.ifEmpty { Tiles.MISSING }; big = "—"; small = say(mode); progress = 0f; shownPct = -1f; invalidate(); return
+            anim?.cancel(); spinning(false)
+            mode = m.ifEmpty { Tiles.MISSING }; big = "—"; small = say(mode); progress = 0f; hasRing = true; tone = "idle"; invalidate(); return
         }
-        accent = s.optString("accent", "ok"); small = s.optString("small"); mode = m
+        accent = s.optString("accent", "ok"); mode = m; tone = s.optString("tone")
+        small = s.optString("note").ifEmpty { s.optString("small") }
+        hasRing = s.has("progress")
+        icon(s.optString("icon"))
+        spinning(m == "working" && animate)
         val p = s.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f)
         val r = s.optJSONObject("result")
         if (m == "done" && r != null && r.optLong("at") != seenAt) {
             seenAt = r.optLong("at")
-            val from = r.optInt("before") / 100f
-            if (animate && r.optInt("before") != r.optInt("after")) { drop(from, p); return }
+            if (animate && r.optInt("before") != r.optInt("after")) { drop(r.optInt("before") / 100f, p); return }
         }
         if (anim?.isRunning == true) return                             // the count-down is on: it ends on the same numbers
-        progress = p; shownPct = p * 100f; big = s.optString("big"); invalidate()
+        progress = p; big = s.optString("big"); invalidate()
+    }
+
+    private fun icon(name: String) {
+        if (name == iconName) return
+        iconName = name
+        val id = if (name.isEmpty()) 0 else resources.getIdentifier("ic_$name", "drawable", context.packageName)
+        icon = if (id == 0) null else context.getDrawable(id)?.mutate()?.also { it.setTint(INK) }
     }
 
     private fun drop(from: Float, to: Float) {
         anim?.cancel()
         anim = ValueAnimator.ofFloat(from, to).apply {
             duration = 1100; interpolator = android.view.animation.DecelerateInterpolator(1.6f)
-            addUpdateListener { progress = it.animatedValue as Float; shownPct = progress * 100f; big = "${Math.round(shownPct)}%"; invalidate() }
+            addUpdateListener { progress = it.animatedValue as Float; big = "${Math.round(progress * 100f)}%"; invalidate() }
             start()
         }
     }
 
-    private fun tint(): Int = when (accent) { "bad" -> BAD; "warn" -> WARN; else -> GOOD }
+    /** The spinner turns only while the provider works (and motion is on); one animator, stopped when the tile goes. */
+    private fun spinning(on: Boolean) {
+        if (on == (spin?.isRunning == true)) return
+        spin?.cancel(); spin = null
+        if (!on) { turn = 0f; return }
+        spin = ValueAnimator.ofFloat(0f, 360f).apply {
+            duration = SPIN_MS; repeatCount = ValueAnimator.INFINITE; interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener { turn = it.animatedValue as Float; invalidate() }
+            start()
+        }
+    }
 
-    override fun onDetachedFromWindow() { anim?.cancel(); super.onDetachedFromWindow() }
+    private fun ringTint(): Int = when (accent) { "bad" -> RING_BAD; "warn" -> RING_WARN; else -> RING_OK }
+
+    private fun colours(): IntArray = when {
+        tone == "idle" -> IDLE
+        accent == "bad" -> RED
+        accent == "warn" -> AMBER
+        tone == "clean" -> CLEAN
+        else -> BLUE
+    }
+
+    override fun onDetachedFromWindow() { anim?.cancel(); spin?.cancel(); spin = null; super.onDetachedFromWindow() }
 
     override fun onDraw(cv: Canvas) {
         val r = 10f * u
+        val col = colours()
+        if (gradientFor !== col) { gradientFor = col; gradient = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), col[0], col[1], Shader.TileMode.CLAMP) }
         box.set(0f, 0f, w.toFloat(), h.toFloat())
-        paint.shader = android.graphics.LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), FACE_TOP, FACE_BOTTOM, android.graphics.Shader.TileMode.CLAMP)
+        paint.shader = gradient; paint.style = Paint.Style.FILL
         cv.drawRoundRect(box, r, r, paint); paint.shader = null
-        val pad = 7f * u
-        paint.typeface = Font.medium; paint.color = TITLE_INK; paint.textSize = 11f * u
-        cv.drawText(fit(title, w - 2 * pad), pad, pad + 10f * u, paint)
-        paint.color = Color.WHITE; paint.textSize = 36f * u; paint.typeface = Font.bold
-        cv.drawText(big, pad, pad + 54f * u, paint)
-        paint.typeface = Font.medium; paint.textSize = 11f * u
-        paint.color = if (mode == "done" || mode == "working") tint() else LINE_INK
-        cv.drawText(fit(small, w - 2 * pad), pad, h - pad - 12f * u, paint)
-        val by = h - pad - 5f * u
-        paint.color = TRACK
-        box.set(pad, by, w - pad, by + 5f * u); cv.drawRoundRect(box, 3f * u, 3f * u, paint)
-        paint.color = tint()
-        box.set(pad, by, pad + (w - 2 * pad) * progress, by + 5f * u); cv.drawRoundRect(box, 3f * u, 3f * u, paint)
+
+        val pad = 12f * u
+        val ring = if (hasRing) 29f * u else 0f                         // the ring's outer radius; a state without progress gives the room to the words
+        val ringX = w - pad - ring
+        val textW = if (hasRing) ringX - ring - pad - 6f * u else w - 2 * pad - 40f * u
+        // left block: icon, name, line: centred in the tile's height as a whole
+        val ic = if (icon != null) 24f * u else 0f
+        val gap = if (ic > 0f) 7f * u else 0f
+        val lineH = 12f * u
+        val block = ic + gap + 17f * u + 4f * u + lineH
+        var y = (h - block) / 2f
+        icon?.let { it.setBounds(pad.toInt(), y.toInt(), (pad + ic).toInt(), (y + ic).toInt()); it.draw(cv) }
+        y += ic + gap
+        paint.typeface = Font.bold; paint.textSize = 16f * u; paint.color = INK
+        cv.drawText(fit(title, textW), pad, y + 14f * u, paint)
+        y += 17f * u + 4f * u
+        paint.typeface = Font.medium; paint.textSize = 11.5f * u; paint.color = LINE_INK
+        cv.drawText(fit(small, textW + (if (hasRing) 0f else 40f * u)), pad, y + 10f * u, paint)
+
+        val cy = h / 2f
+        if (!hasRing) {                                                 // no progress: the value alone, big, on the right
+            paint.typeface = Font.bold; paint.textSize = 30f * u; paint.color = INK; paint.textAlign = Paint.Align.RIGHT
+            cv.drawText(big, w - pad, cy + 10f * u, paint); paint.textAlign = Paint.Align.LEFT
+            return
+        }
+        val sw = 7f * u
+        val rr = ring - sw / 2f
+        box.set(ringX - rr, cy - rr, ringX + rr, cy + rr)
+        paint.style = Paint.Style.STROKE; paint.strokeWidth = sw; paint.strokeCap = Paint.Cap.ROUND
+        paint.color = TRACK; cv.drawArc(box, 0f, 360f, false, paint)
+        val working = mode == "working"
+        paint.color = ringTint()
+        if (working) paint.alpha = if (spin != null) 90 else 160         // the value fades back while the spinner (or, calm, a plain dim) says "busy"
+        if (progress > 0f) cv.drawArc(box, -90f, 360f * progress, false, paint)
+        if (working && spin != null) { paint.alpha = 255; cv.drawArc(box, turn - 90f, 70f, false, paint) }
+        paint.style = Paint.Style.FILL; paint.strokeCap = Paint.Cap.BUTT; paint.alpha = 255
+        paint.typeface = Font.bold; paint.color = INK; paint.textAlign = Paint.Align.CENTER
+        paint.textSize = 17f * u
+        val room = 2f * (rr - sw / 2f) - 2f * u
+        while (paint.measureText(big) > room && paint.textSize > 8f * u) paint.textSize -= u
+        cv.drawText(big, ringX, cy + paint.textSize * 0.36f, paint); paint.textAlign = Paint.Align.LEFT
     }
 
     private fun fit(t: String, room: Float): String {

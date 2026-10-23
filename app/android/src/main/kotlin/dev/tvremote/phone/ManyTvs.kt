@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.view.Gravity
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -29,6 +30,7 @@ private const val PARALLEL = 3                                        // an APK 
 /** One TV in a run: what its line shows, read by the ticker on the UI thread. */
 private class Part(val ip: String, val line: TextView) {
     @Volatile var step = ""
+    @Volatile var raw = ""                                            // what the work answered (the check-out's result token)
     @Volatile var state = 0                                           // 0 working, 1 done, 2 failed, 3 stopped by the person
     val cancel = dev.tvremote.core.web.Cancel()                           // the Stop button of the run reaches every TV through this
     @Volatile var link: AdbLink? = null
@@ -140,6 +142,7 @@ private fun MainActivity.fleetCheckout(ips: List<String>) {
         ui.post {
             wait.dismiss()
             if (isFinishing) return@post
+            checkoutNames = HashMap(names)
             val saved = try { prefs.getString("checkout", null)?.let { JSONObject(it) } } catch (e: Exception) { null }
             val cfg = Checkout.Config.of(saved)
             val want = (cfg.apps ?: Checkout.SUGGEST.keys.toList()).toSet()
@@ -148,8 +151,9 @@ private fun MainActivity.fleetCheckout(ips: List<String>) {
             val labels = list.map { (names[it] ?: it.substringAfterLast('.')) + "  ·  " + T("fleet.on_tvs", "n" to (apps[it] ?: 0), "total" to answered.size) }.toTypedArray()
             val on = BooleanArray(list.size) { list[it] in want }
             val pickVolume = { chosen: List<String> ->
-                menu(T("fleet.co_volume"), 0, listOf(10, 25, 40, 60).map { v ->
-                    Triple("@vol_up|$v%" + if (v == cfg.volume) "  ✓" else "", "") { fleetCheckoutAsk(ips, Checkout.Config(chosen, v)) }
+                val levels = listOf(10, 25, 40, 60)
+                menu(T("fleet.co_volume"), levels.indexOf(cfg.volume), levels.map { v ->   // the filled one is the level kept from last time, as the page's chosen chip
+                    Triple("@vol_up|$v%", "") { fleetCheckoutAsk(ips, Checkout.Config(chosen, v)) }
                 })
             }
             val box = Popup.Builder(this).setTitle(T("fleet.co_apps"))
@@ -165,9 +169,9 @@ private fun MainActivity.fleetCheckoutAsk(ips: List<String>, cfg: Checkout.Confi
         .setMessage(T("fleet.co_ask", "n" to ips.size, "apps" to (cfg.apps?.size ?: 0)) + "\n\n" + ips.joinToString("\n") { "• " + title(it) })
         .setPositiveButton(T("fleet.co_go", "n" to ips.size)) { _, _ ->
             prefs.edit().putString("checkout", cfg.json().toString()).apply()   // remembered for the next check-out
-            fleetRun(T("fleet.menu_checkout"), ips) { link, p ->
+            fleetRun(T("fleet.menu_checkout"), ips, checkout = true) { link, p ->
                 val adb = link.get()
-                Checkout.run({ adb.shell(it) }, cfg) { p.step = checkoutStep(it) }.let { checkoutLine(it) }
+                Checkout.run({ adb.shell(it) }, cfg) { p.step = checkoutStep(it) }.token()   // the result card reads it; the line is made from it
             }
         }.setNegativeButton(T("common.cancel"), null).show()
 }
@@ -482,7 +486,7 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
 }
 
 /** One line per TV under its name, until every TV is done; the work goes on if the box is closed. */
-private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: Boolean = false, work: (AdbLink, Part) -> String) {
+private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: Boolean = false, checkout: Boolean = false, work: (AdbLink, Part) -> String) {
     val list = col()
     list.setPadding(dp(20), dp(8), dp(20), dp(8))
     val parts = ips.map { ip ->
@@ -495,8 +499,9 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: B
     }
     val sv = ScrollView(this)
     sv.addView(list)
-    val box = Popup.Builder(this).setTitle(title).setView(sv).setPositiveButton(T("common.close"), null)
+    val box = Popup.Builder(this).setTitle(title).setView(sv).setPositiveButton(if (checkout) T("fleet.co_r_done") else T("common.close"), null)
         .setNeutralButton(T("page.stop"), null).show()
+    if (checkout) box.getButton(Popup.BUTTON_POSITIVE).isEnabled = false       // Done once every TV has answered (its result card)
     val stopAll = box.getButton(Popup.BUTTON_NEUTRAL)            // set after show(): the dialog must stay open while the TVs wind down
     if (!stoppable) stopAll.visibility = android.view.View.GONE   // a removal or a restart has no half way to stop at
     stopAll.setOnClickListener { parts.forEach { it.cancel.stop() }; stopAll.isEnabled = false }
@@ -509,7 +514,8 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: B
         try {
             try { link.get() } catch (e: Exception) { throw Unreachable(T("many_tvs.tv_off_on_another")) }
             p.step = T("many_tvs.working")
-            p.step = "✓ " + work(link, p)
+            p.raw = work(link, p)
+            p.step = "✓ " + (if (checkout) Checkout.Result.parse(p.raw)?.let { checkoutLine(it) } ?: p.raw else p.raw)
             p.state = 1
         } catch (e: Exception) {
             if (p.cancel.stopped) { p.step = "■ " + T("files.stopped"); p.state = 3 }
@@ -533,10 +539,83 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: B
             if (parts.all { it.state != 0 }) {
                 val bad = parts.count { it.state == 2 }
                 stopAll.visibility = android.view.View.GONE
-                box.setTitle(if (parts.any { it.state == 3 }) T("files.stopped") else if (bad == 0) T("many_tvs.done_on_all_tvs", "n" to parts.size)
+                box.setTitle(if (parts.any { it.state == 3 }) T("files.stopped") else if (checkout) T("fleet.co_title")   // the report's own head says how it went, as on the page
+                    else if (bad == 0) T("many_tvs.done_on_all_tvs", "n" to parts.size)
                     else T("many_tvs.done_tvs_tvs", "ok" to parts.size - bad, "bad" to bad))
+                if (checkout && parts.none { it.state == 3 }) { checkoutReport(box, list, parts); box.getButton(Popup.BUTTON_POSITIVE).isEnabled = true }
             } else if (!isFinishing) ui.postDelayed(this, 500)
         }
     }
     ui.post(tick)
+}
+
+/** The package names the check-out was asked about, as the TVs named them (set when the apps were listed), for the result card. */
+private var checkoutNames: Map<String, String> = emptyMap()
+
+private class CoRow(val state: Int, val icon: String, val text: String, val fix: String? = null)    // state 0 ok, 1 warn, 2 bad
+
+/** One TV's result as rows, one per step: the same rows, in the same words, as js/checkout.js checkoutReport (kept in step by hand). */
+private fun checkoutRows(r: Checkout.Result): List<CoRow> {
+    val name = { p: String -> checkoutNames[p] ?: p.substringAfterLast('.') }
+    val rows = ArrayList<CoRow>()
+    if (r.apps.isNotEmpty()) rows += CoRow(0, "eraser", T("fleet.co_r_clear", "apps" to r.apps.joinToString(", ", transform = name)))
+    else if (r.cleared > 0) rows += CoRow(0, "eraser", T("fleet.co_cleared", "n" to r.cleared).replaceFirstChar { it.uppercase() })
+    else if (r.failed.isEmpty()) rows += CoRow(0, "eraser", T("fleet.co_r_clear_none"))
+    if (r.failed.isNotEmpty()) rows += CoRow(2, "eraser", if (r.failed.none { it == "?" }) T("fleet.co_r_failed", "apps" to r.failed.joinToString(", ", transform = name))
+        else T("fleet.co_failed", "n" to r.failed.size).replaceFirstChar { it.uppercase() })
+    rows += CoRow(0, "vol_up", T("fleet.co_r_vol", "v" to r.volume))
+    rows += when (r.web) {
+        "ok" -> CoRow(0, "globe", if (r.forgot > 0) T("fleet.co_r_web_ok", "n" to r.forgot) else T("fleet.co_r_web_0"))
+        "old" -> CoRow(1, "globe", T("fleet.co_r_web_old"), "update")
+        "missing" -> CoRow(1, "globe", T("fleet.co_r_web_missing"), "install")
+        else -> CoRow(1, "globe", T("fleet.co_r_web_failed"))
+    }
+    if (r.home) rows += CoRow(0, "home", T("fleet.co_r_home"))
+    return rows
+}
+
+/**
+ * The end of a check-out, in the box the run was in: a header (all well / some TV needs a look), a card per TV with a row per step,
+ * and the box's Done. Built from Ui.kt's helpers and the box's colours; a TV Setup too old gets its Update button, which opens that TV's
+ * Manage screen on the update, as [offerSetup] does.
+ */
+private fun MainActivity.checkoutReport(dlg: Popup, list: LinearLayout, parts: List<Part>) {
+    val tvs = parts.map { p ->
+        val r = if (p.state == 1) Checkout.Result.parse(p.raw) else null
+        Triple(p, r, if (r != null) checkoutRows(r) else listOf(CoRow(2, "close", p.step.removePrefix("✗ "))))
+    }
+    val bad = tvs.count { it.first.state == 2 }
+    val odd = tvs.any { t -> t.third.any { it.state != 0 } }
+    fun tint(state: Int) = when (state) { 0 -> OK_TEXT; 1 -> HELD; else -> ERR_TEXT }
+    fun glyph(name: String, color: Int, size: Int) = android.widget.ImageView(this).apply {
+        val id = resources.getIdentifier("ic_$name", "drawable", packageName)
+        setImageResource(id); imageTintList = android.content.res.ColorStateList.valueOf(color)
+        layoutParams = LinearLayout.LayoutParams(dp(size), dp(size))
+    }
+    list.removeAllViews()
+    val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+    val badge = FrameLayout(this).apply { background = oval(SEL) }
+    badge.addView(glyph(if (odd) "alert" else "check", tint(if (odd) 1 else 0), 24), FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER))
+    head.addView(badge, LinearLayout.LayoutParams(dp(44), dp(44)))
+    val words = col().apply { setPadding(dp(12), 0, 0, 0) }
+    words.addView(label(T("fleet.co_r_title", "ok" to tvs.size - bad, "n" to tvs.size), 17, TEXT).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD })
+    words.addView(label(if (odd) T("fleet.co_r_sub_bad", "bad" to tvs.count { t -> t.third.any { it.state != 0 } }) else T("fleet.co_r_sub_ok"), 13, MUTED))
+    head.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+    list.addView(head)
+    for ((p, _, rows) in tvs) {
+        val card = col().apply { background = box(BTN, 14); setPadding(dp(14), dp(12), dp(14), dp(10)) }
+        card.addView(label(title(p.ip), 16, TEXT).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD })
+        for (r in rows) {
+            val line = LinearLayout(this).apply { gravity = Gravity.TOP }
+            line.addView(glyph(r.icon, MUTED, 20).apply { (layoutParams as LinearLayout.LayoutParams).topMargin = dp(2) })
+            val text = label(r.text, 14, if (r.state == 2) ERR_TEXT else TEXT).apply { setPadding(dp(10), 0, dp(8), 0) }
+            line.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
+            line.addView(glyph(when (r.state) { 0 -> "check"; 1 -> "alert"; else -> "close" }, tint(r.state), 20).apply { (layoutParams as LinearLayout.LayoutParams).topMargin = dp(2) })
+            card.addView(line, gap(8))
+            if (r.fix != null) card.addView(button(T(if (r.fix == "update") "fleet.co_r_fix_update" else "fleet.co_r_fix_install"), CARD).apply {
+                setOnClickListener { dlg.dismiss(); managing.open(p.ip, then = if (r.fix == "update") "updateSetup()" else "installSetupApk()") }
+            }, gap(8).apply { height = dp(40) })
+        }
+        list.addView(card, gap(12))
+    }
 }

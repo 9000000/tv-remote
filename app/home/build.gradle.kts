@@ -22,7 +22,7 @@ android {
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
     sourceSets["main"].java.srcDirs("../shared/src/home/kotlin", "../shared/src/guard/kotlin", "../shared/src/guard/android", "../shared/src/tvui/kotlin", "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin", layout.buildDirectory.dir("generated/qr"))   // Release + SelfUpdate: its own updates
-    sourceSets["main"].assets.srcDirs(layout.buildDirectory.dir("generated/assets"))   // photofit.js, copied below
+    sourceSets["main"].assets.srcDirs(layout.buildDirectory.dir("generated/assets"))   // homeweb/ (the settings page), packed below
     signingConfigs {
         create("release") {
             storeFile = keystore
@@ -50,14 +50,31 @@ dependencies {
     testImplementation("org.json:json:20240303")
 }
 
-// The phone-photo page (assets/photo.html) crops with the SAME photofit.js as the web UI, and the QR screen draws with Qr.kt: both are
-// copied from :shared at build time (a srcDir of their folders would pull the web page / server in), so there is one copy of each.
+// The QR screen draws with Qr.kt, copied from :shared at build time (a srcDir of its folder would pull the web page / server in).
 val copyQr = tasks.register<Copy>("copyQr") {
     from("../shared/src/main/kotlin/dev/tvremote/core/web/Qr.kt")
     into(layout.buildDirectory.dir("generated/qr/dev/tvremote/core/web"))
 }
-val copyFit = tasks.register<Copy>("copyFit") {
-    from("../shared/web/js/photofit.js")
-    into(layout.buildDirectory.dir("generated/assets"))
+// "Manage from phone": TV Home serves TV Home's own settings page (home.html and what it loads) from assets/homeweb. The files are the
+// ones TV Setup's web UI uses, copied from app/shared/web at build time, so the UI has ONE source; only the words the page needs travel.
+val webDir = file("../shared/web")
+val homeWebJs = listOf("theme", "i18n", "qr", "base", "home_link", "homeweb", "appicon", "ui", "home_walls", "home_qr", "photofit", "home")
+val homeWebCss = listOf("base", "page", "apps", "remote", "auto", "kit")
+val homeWebWords = listOf("home.", "homeweb.", "common.", "core.", "apps.")
+val packHomeWeb = tasks.register("packHomeWeb") {
+    val out = layout.buildDirectory.dir("generated/assets/homeweb")
+    inputs.dir(webDir); outputs.dir(out)
+    doLast {
+        val dir = out.get().asFile
+        dir.deleteRecursively(); File(dir, "js").mkdirs(); File(dir, "css").mkdirs(); File(dir, "i18n").mkdirs()
+        homeWebJs.forEach { File(webDir, "js/$it.js").copyTo(File(dir, "js/$it.js")) }
+        homeWebCss.forEach { File(webDir, "css/$it.css").copyTo(File(dir, "css/$it.css")) }
+        for (l in listOf("vi", "en")) {
+            @Suppress("UNCHECKED_CAST") val all = groovy.json.JsonSlurper().parse(File(webDir, "i18n/$l.json")) as Map<String, Any?>
+            File(dir, "i18n/$l.json").writeText(groovy.json.JsonOutput.toJson(all.filterKeys { k -> homeWebWords.any { k.startsWith(it) } }))
+        }
+        val icons = File(webDir, "index.html").readText().substringAfter("<!-- icons:start -->").substringBefore("<!-- icons:end -->")
+        File(dir, "home.html").writeText(File(webDir, "home.html").readText().replace("__ICONS__", icons))
+    }
 }
-tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(copyQr, copyFit) }
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(copyQr, packHomeWeb) }

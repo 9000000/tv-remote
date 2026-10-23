@@ -88,7 +88,7 @@ const kotlin = () => {                                          // the apps' Kot
 };
 
 test('every id is used', () => {
-  const src = [html, read('stats.js'), read('remote.json').replace(/"/g, "'"), ...fs.readdirSync(path.join(web, 'js')).filter((f) => f !== 'i18n.js').map((f) => read('js/' + f))].join('\n');
+  const src = [html, read('home.html'), read('stats.js'), read('remote.json').replace(/"/g, "'"), ...fs.readdirSync(path.join(web, 'js')).filter((f) => f !== 'i18n.js').map((f) => read('js/' + f))].join('\n');
   const kt = kotlin();
   // an id is named on an element, or as a string in a script: T('a.b'), T(x ? 'a.b' : 'a.c'), a table of ids; in Kotlin T("a.b"),
   // Words.get(lang, "a.b"), t("a.b"), or any quoted "a.b" that is an id

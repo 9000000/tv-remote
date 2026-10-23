@@ -77,14 +77,18 @@ object Checkout {
     }
 
     /** What happened on one TV; [token] is the line's text in the form the clients turn into words (js/checkout.js, ManyTvs.kt). */
-    class Result(val cleared: Int, val failed: List<String>, val volume: Int, val web: String, val forgot: Int, val home: Boolean) {
-        /** `checkout:c=3,f=1,v=25,w=ok,n=2,h=1` — w: ok, old, missing, failed. */
-        fun token() = "checkout:c=$cleared,f=${failed.size},v=$volume,w=$web,n=$forgot,h=${if (home) 1 else 0}"
+    class Result(val cleared: Int, val failed: List<String>, val volume: Int, val web: String, val forgot: Int, val home: Boolean,
+                 val apps: List<String> = emptyList()) {                // the packages cleared, so the result can name them
+        /** `checkout:c=3,f=1,v=25,w=ok,n=2,h=1` — w: ok, old, missing, failed; then, when known, `,a=pkg+pkg` (cleared) and `,x=pkg+pkg` (not cleared). */
+        fun token() = "checkout:c=$cleared,f=${failed.size},v=$volume,w=$web,n=$forgot,h=${if (home) 1 else 0}" +
+            (if (apps.isNotEmpty()) ",a=" + apps.joinToString("+") else "") + (if (failed.isNotEmpty() && failed.none { it == "?" }) ",x=" + failed.joinToString("+") else "")
         companion object {
             fun parse(t: String): Result? {
                 if (!t.startsWith("checkout:")) return null
                 val kv = t.substring(9).split(',').mapNotNull { it.split('=').takeIf { p -> p.size == 2 } }.associate { it[0] to it[1] }
-                return Result(kv["c"]?.toIntOrNull() ?: 0, List(kv["f"]?.toIntOrNull() ?: 0) { "?" }, kv["v"]?.toIntOrNull() ?: 0, kv["w"] ?: "", kv["n"]?.toIntOrNull() ?: 0, kv["h"] == "1")
+                val x = kv["x"]?.split('+')?.filter { it.isNotEmpty() }
+                return Result(kv["c"]?.toIntOrNull() ?: 0, x ?: List(kv["f"]?.toIntOrNull() ?: 0) { "?" }, kv["v"]?.toIntOrNull() ?: 0, kv["w"] ?: "", kv["n"]?.toIntOrNull() ?: 0, kv["h"] == "1",
+                    kv["a"]?.split('+')?.filter { it.isNotEmpty() } ?: emptyList())
             }
         }
     }
@@ -106,14 +110,14 @@ object Checkout {
         val setup = SetupNeed.have(sh)
         val home = LauncherSwap.last(sh(LauncherSwap.RESOLVE_HOME))
         val steps = plan(installed, setup, cfg.apps ?: preselect(installed))
-        var cleared = 0; val failed = ArrayList<String>(); var web = "ok"; var forgot = 0; var wentHome = false
+        var cleared = 0; val failed = ArrayList<String>(); val done = ArrayList<String>(); var web = "ok"; var forgot = 0; var wentHome = false
         val total = steps.count { it.kind == "clear" }
         for (s in steps) when (s.kind) {
             "clear" -> {
                 say("checkout clear ${cleared + failed.size + 1}/$total")
                 if (home.startsWith(s.pkg + "/")) { failed += s.pkg; continue }       // the TV's home screen: never wiped
                 val out = sh("pm clear ${s.pkg} 2>&1")
-                if (out.contains("Success")) cleared++ else failed += s.pkg
+                if (out.contains("Success")) { cleared++; done += s.pkg } else failed += s.pkg
             }
             "volume" -> {
                 say("checkout volume")
@@ -131,6 +135,6 @@ object Checkout {
                 wentHome = true
             }
         }
-        return Result(cleared, failed, cfg.volume, web, forgot, wentHome)
+        return Result(cleared, failed, cfg.volume, web, forgot, wentHome, done)
     }
 }

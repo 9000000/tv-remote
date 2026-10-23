@@ -201,3 +201,16 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - Honest numbers: before/after are used% from `/proc/meminfo` 1.5 s after the kill; under 16 MB freed is shown as "nothing more to free". Part of the freed RAM returns as services restart: the tile reports the moment, not a promise.
 - Low-RAM TV Home (calm motion) skips the count-down animation and just changes the number.
 - Not done: other tiles/providers (the list is ready for them), a tile bigger than one app tile, the shared "Add to home screen" browser (Customize has a minimal on/off list).
+
+## TV Home "Manage from phone" (its own settings page)
+- One QR in Customize opens TV Home's settings in the phone's browser; the UI is TV Setup's `home.js`, with one source: Gradle `packHomeWeb` copies the needed js/css, an i18n subset (`home.` `homeweb.` `common.` `core.` `apps.`) and home.html (icons sprite from index.html) into `assets/homeweb`. TV Home still has no :shared and no dependency on TV Setup.
+- `home.js` asks `homeLink` (js/home_link.js): host = `/api/home*` over ADB, direct = TV Home's `/h/*` (config, photo, photo/drop, app/meta, app/icon). Same HomeConfig rules run on the TV either way (`HomeApi`, shared with `HomeReceiver`). Direct has no wallpaper gallery and no update button (null routes), and `dream` still needs the ADB grant (SecurityException: applied without it).
+- `ManageServer` (ServerSocket, port 8790 or any free) runs only while the QR screen is open. `Access`: key in the QR works once, then a cookie session (60 min, HttpOnly, Strict); no session = 401; 30 wrong keys void the key; posts need `X-Tvh`; the server stops after 10 min with no authorised request (one Handler timer, the page does not poll) or on close. Clocks are `nanoTime`.
+- Replaced `PhotoServer`/photo.html: the photo and web-page QR screens now use the same server and page.
+
+## One shared UI set for the TV apps (`app/shared/src/tvui`)
+- Why (2026-10-23): the four TV apps copied "the same" row, dialog sheet, panel, pill and tv_style.xml by hand, and they drifted: the RAM tile shipped with its own hand-built frame, dialogs and tiles were rebuilt per screen. A text rule (DESIGN-TV.md "copy the values") did not stop it, so the components now exist ONCE and an app calls them.
+- `Tv.kt` (`TvUi` tokens + row / sheet / button / field / `TvState`, and the Games-style `panel` / `scrim` / `menuButton` / `pill` extensions) and `res/values/tv_style.xml` are compiled into TV Channels and TV Games (`srcDirs` / `res.srcDirs`). Components take words and drawable ids, never string ids: strings and generated icons stay per app. The tokens are Kotlin constants (the file cannot name an app's `R`); `tv_design.test.js` checks them against tv_style.xml and fails when channels / games define a component tvui has.
+- Phase 1 moved Channels and Games. Phase 2 (not done): TV Setup (its own `ring()`, `smallButton`, `Tile`, and a `tv_style.xml` copy kept identical until then) and TV Home (tiles / Drop / its constants; no tv_style.xml).
+- TV Channels' fields are `TvField` now: the keyboard no longer rises by itself on focus (`raise()` does it where a field opens in front of the person: search, a name); OK raises it elsewhere; the D-pad can leave the field.
+

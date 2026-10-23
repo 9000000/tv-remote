@@ -6,7 +6,7 @@ const path = require('node:path');
 const { checkoutParse, checkoutPieces, checkoutStep, checkoutRows } = require('../web/js/checkout.js');
 
 test('the result token is read as Checkout.Result.token() writes it', () => {
-  assert.deepEqual(checkoutParse('checkout:c=3,f=1,v=25,w=old,n=0,h=1'), { cleared: 3, failed: 1, volume: 25, web: 'old', forgot: 0, home: true });
+  assert.deepEqual(checkoutParse('checkout:c=3,f=1,v=25,w=old,n=0,h=1'), { cleared: 3, failed: 1, volume: 25, web: 'old', forgot: 0, home: true, apps: [], failedApps: [] });
   assert.equal(checkoutParse('uninstalled 2'), null);
   assert.equal(checkoutParse(undefined), null);
 });

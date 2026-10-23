@@ -7,6 +7,7 @@ const FLEET_STEP = { waiting: T('fleet.step_waiting'), connecting: T('fleet.step
 const FLEET_ADB = { closed: T('fleet.adb_closed'), unauthorized: T('fleet.adb_unauthorized'),
   offline: T('fleet.adb_offline'), error: T('fleet.adb_error') };
 
+
 function fleetCheck(n) {                                              // called by loadTvs with the number of saved TVs
   put('#fleet', 'hidden', n < 2); put('#fleetcount', 'textContent', n ? T('fleet.count', { n }) : '');
   if (n >= 2 && $('#fleet').open) fleetLoad();
@@ -67,6 +68,7 @@ async function fleetFollowing(j) {
     if (j.status === 'cancelled') { toast(T('fleet.stopped')); return; }   // every part says "Đã dừng" above
     if (j.status === 'done') {
       const parts = Object.values(j.tvs), bad = parts.filter((p) => p.status === 'error').length;
+      if (j.title === 'checkout') { fleetCheckoutReport(j); return; }   // its own result: one card per TV, a row per step
       toast(bad ? T('fleet.done_some', { ok: parts.length - bad, bad }) : T('fleet.done_all', { n: parts.length }));
       return;
     }
@@ -254,5 +256,26 @@ async function fleetCheckout() {
     UI.group(T('fleet.co_apps'), apps.length ? el('div', { className: 'list fleetapps' }, ...apps.map(row)) : UI.empty(T('fleet.co_none'))),
     UI.group(T('fleet.co_volume'), chips),
     el('div', { className: 'acts fleetgo' }, el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => $('#infodlg').close() }), go));
+  $('#infodlg').showModal();
+}
+
+// The check-out's result in the page's own dialog: a header (all well, or some TV needs a look), a card per TV with a row per step
+// (its icon, its words, ✓ / ⚠ / ✗), and Done. The rows come from checkoutReport (js/checkout.js, tested); a TV that could not be
+// reached is one ✗ row with the reason. A TV Setup too old says so in its row: the page updates the TV it is connected to, not every TV.
+function fleetCheckoutReport(j) {
+  const hostName = (h) => { const t = fleetTvs.find((x) => x.host === h); return (t && t.name) || h; };
+  const tvs = Object.entries(j.tvs).map(([host, p]) => ({ host, p, rows: p.status === 'error' ? [{ state: 'bad', icon: 'close', text: /^adb:/.test(p.msg) ? FLEET_ADB[p.msg.slice(4)] || p.msg : friendly(p.msg) }]
+    : (checkoutReport(p.msg, appName) || []).map((r) => ({ ...r, text: (r.cap ? T(r.id, r.args).replace(/^./, (c) => c.toUpperCase()) : T(r.id, r.args)) })) }));
+  const bad = tvs.filter((t) => t.p.status === 'error').length, odd = tvs.some((t) => t.rows.some((r) => r.state !== 'ok'));
+  const ico = (state, name) => { const i = UI.icon(name); i.classList.add('coico', state); return i; };
+  const card = (t) => el('div', { className: 'cotv' }, el('b', { textContent: hostName(t.host) }),
+    ...t.rows.map((r) => el('div', { className: 'item co ' + r.state }, ico(r.state, r.icon), el('div', { className: 'name', textContent: r.text }),
+      ico(r.state, r.state === 'ok' ? 'check' : r.state === 'warn' ? 'alert' : 'close'))));
+  const head = el('div', { className: 'cohead ' + (odd ? 'warn' : 'ok') }, ico(odd ? 'warn' : 'ok', odd ? 'alert' : 'check'),
+    el('div', {}, el('b', { textContent: T('fleet.co_r_title', { ok: tvs.length - bad, n: tvs.length }) }),
+      el('small', { textContent: odd ? T('fleet.co_r_sub_bad', { bad: tvs.filter((t) => t.rows.some((r) => r.state !== 'ok')).length }) : T('fleet.co_r_sub_ok') })));
+  put('#infotitle', 'textContent', T('fleet.co_title'));
+  $('#infobody').replaceChildren(head, ...tvs.map(card),
+    el('div', { className: 'acts fleetgo' }, el('button', { className: 'primary', type: 'button', textContent: T('fleet.co_r_done'), onclick: () => $('#infodlg').close() })));
   $('#infodlg').showModal();
 }

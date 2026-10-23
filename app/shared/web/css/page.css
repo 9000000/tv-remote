@@ -148,8 +148,20 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 .fleetapps input[type=checkbox] { width:18px; height:18px; flex:none; accent-color:var(--accent); }
 .fleetapps .item.pick.off { opacity:.6; cursor:default; }   /* listed so it is clear why it stays: no box (recents.js) */
 .fleetpick { margin-bottom:8px; }
+.cohead { display:flex; align-items:center; gap:12px; padding:4px 0 2px; }   /* the check-out's result (fleet.js fleetCheckoutReport) */
+.cohead small { display:block; color:var(--muted); font-size:13px; }
+.coico { margin:0; } .coico .ic { width:100%; height:100%; }
+.cohead .coico { width:40px; height:40px; padding:9px; border-radius:50%; flex:none; }
+.cohead.ok .coico { background:var(--ok-bg); } .cohead.warn .coico { background:var(--warn-bg); }
+.cotv { margin-top:12px; padding:10px 12px 4px; border:1px solid var(--line); border-radius:12px; }
+.cotv > b { display:block; padding-bottom:4px; }
+.item.co { align-items:flex-start; flex-wrap:nowrap; padding:8px 0; }
+.item.co .name { flex:1 1 0; }
+.coico.ok { color:var(--ok); } .coico.warn { color:var(--warn); } .coico.bad { color:var(--bad); }
+.item.co > .coico:first-child { color:var(--muted); }   /* the step's own icon is quiet; the state's, at the end, carries the colour */
+.item.co > .coico { width:20px; height:20px; flex:none; }
 .fleetpick input[type=search] { flex:1 1 0; min-width:0; }
-.fleetgo { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+.fleetgo { display:flex; justify-content:flex-end; gap:8px; margin:12px 0 4px; }   /* 4px: the button sat on the dialog's edge */
 .fleetgo button { padding:0 18px; }
 .permrow { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px solid var(--line); }
 .permrow > span { flex:1; min-width:0; }
