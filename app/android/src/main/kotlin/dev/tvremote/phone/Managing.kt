@@ -218,7 +218,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
 
     override fun handle(r: HttpServer.Request): HttpServer.Response {
         if (token != r.cookie("tvr")) return HttpServer.Response.error(403, "this page belongs to the TV Remote app")
-        webPage.serve(r.path)?.let { return it }
+        webPage.serve(r.path, r.headers["accept-encoding"].orEmpty())?.let { return it }
         if (r.path == "/api/state" || r.path == "/api/about")      // the page only needs to know it may show itself, and for which TV
             return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", a.name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
                 .put("adb", JSONObject().put("state", manage?.adbState() ?: "unknown")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))

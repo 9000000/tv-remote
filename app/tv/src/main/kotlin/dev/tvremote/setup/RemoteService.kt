@@ -456,7 +456,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val host = r.headers["host"].toString().replaceFirst(Regex(":\\d+$"), "")
         if (!host.matches(Regex("[0-9.]+|localhost|\\[[0-9a-fA-F:]+\\]"))) return HttpServer.Response.error(403, "open this page by the TV's IP address")
 
-        page.serve(r.path)?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
+        page.serve(r.path, r.headers["accept-encoding"].orEmpty())?.let { return it }                        // the page and its scripts need no pairing: they hold no secrets
         hook.handle(r)?.let { return it }                            // its own token instead of a pairing (Hook.kt); off until switched on
         if (r.path == "/api/pair/start" && r.method == "POST") return pairStart(r.peer, r.lang)
         if (r.path == "/api/pair/finish" && r.method == "POST") return pairFinish(r)
