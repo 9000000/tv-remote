@@ -12,23 +12,57 @@ function showFrame(blob) {
   if (screenUrl) URL.revokeObjectURL(screenUrl); screenUrl = u; frames++;
 }
 function stopScreen(msg) {
+  snapTimers.forEach(clearTimeout); if (snapCtl) snapCtl.abort(); snapCtl = null;
   if (typeof drawing !== 'undefined' && drawing) drawStop();         // no picture to draw on
   screenOn = false; screenGen++; if (streamCtl) streamCtl.abort(); if (player) { player.destroy(); player = null; }
   $('#screencard').classList.remove('on'); if (msg && matchMedia('(max-width:899px)').matches) toast(msg);   // on a phone the box is folded away: say it where it is seen
   setLabel($('#screenbtn'), '▶', T('remote.watch')); setScreenPlaceholder(msg); setScreenInfo(''); dockScreen(); put('#watchers', 'hidden', true);
 }
-async function snapOnce() {
+// Screenshot mode ("Ảnh chụp", level snap): no stream, a still that refreshes by itself after each key (snapKey, called by api() in
+// core.js), every 10 s while visible, and on demand (snapNow). One request in flight: a newer shot aborts the older.
+const SNAP_AFTER = [250, 700, 1500, 3000, 5000], SNAP_SLOW = 10000;   // ms after the last key; animations and app launches take 0.3-3 s
+let snapCtl = null, snapSig = null, snapTimers = [], snapAt = 0;
+async function snapOnce(signal) {
   try {
-    const r = await fetch('/api/screen');
-    if (r.ok) { const b = await r.blob(); return b; }
+    const r = await fetch('/api/screen', { signal });
+    if (r.ok) return await r.blob();
     let e = r.statusText; try { e = (await r.json()).error || e; } catch {} return friendly(adbWords(r.status, e));
-  } catch { return T('screen.cannot_reach_server'); }
+  } catch (e) { return e && e.name === 'AbortError' ? null : T('screen.cannot_reach_server'); }
+}
+// Same length and a cheap hash of every 16th byte: equal means the screen did not change between two shots.
+async function snapSign(b) {
+  const u = new Uint8Array(await b.arrayBuffer()); let h = 2166136261;
+  for (let i = 0; i < u.length; i += 16) h = Math.imul(h ^ u[i], 16777619);
+  return u.length + ':' + (h >>> 0);
+}
+// One shot, shown unless a newer one took over. Returns true when it equals the shot before (the screen has settled).
+async function snapShot(gen) {
+  if (snapCtl) snapCtl.abort();
+  const ctl = snapCtl = new AbortController(); snapAt = Date.now();
+  const b = await snapOnce(ctl.signal); if (b === null || gen !== screenGen || snapCtl !== ctl) return false;
+  snapCtl = null;
+  if (!(b instanceof Blob)) { setScreenPlaceholder(b); return false; }
+  const sig = await snapSign(b); if (gen !== screenGen) return false;
+  const same = sig === snapSig; snapSig = sig; if (!same || !screenEl()) showFrame(b);
+  setScreenInfo(T('screen.snap_info'));
+  return same;
+}
+function snapNow() { if (screenOn && $('#screenmode').value === 'snap') snapShot(screenGen); }
+// After the last key: shoot at 250 ms, then at 0.7, 1.5, 3 and 5 s; two shots in a row that are identical mean the screen has
+// settled (no point shooting the TV again, a screencap is a full PNG), so the rest are dropped. A new key starts over.
+function snapKey() {
+  if (!screenOn || $('#screenmode').value !== 'snap') return;
+  snapTimers.forEach(clearTimeout); snapSig = null; const gen = screenGen;   // null: the first shot cannot "match" the picture from before the key
+  snapTimers = SNAP_AFTER.map((ms) => setTimeout(async () => {
+    if (document.hidden || gen !== screenGen) return;
+    if (await snapShot(gen)) snapTimers.forEach(clearTimeout);
+  }, ms));
 }
 async function snapLoop(gen) {
-  setScreenInfo(T('screen.snap_info'));
+  setScreenInfo(T('screen.snap_info')); snapSig = null; snapShot(gen);
   while (screenOn && gen === screenGen) {
-    const b = await snapOnce(); if (gen !== screenGen) return;
-    if (b instanceof Blob) { showFrame(b); await sleep(1000); }   // screencap is a full PNG on the TV: back to back it kept the TV busy else { setScreenPlaceholder(b); await sleep(3000); }
+    await sleep(1000);
+    if (!document.hidden && Date.now() - snapAt >= SNAP_SLOW) snapShot(gen);
   }
 }
 // Every core sends H.264 as scrcpy makes it. Packets: 1 byte kind (0 size, 1 codec config, 2 key frame, 3 frame, 4 nothing
@@ -197,13 +231,16 @@ function picDialog() {
     if (screenOn && $('#screenmode').value !== 'snap') startScreen();
   });
   const levels = [...$('#screenmode').options].map((o) => [o.value, o.textContent]), sized = (v) => /^\d+$/.test(v);
-  const pickLevel = (v) => { $('#screenmode').value = v; $('#screenmode').dispatchEvent(new Event('change')); d.querySelectorAll('.fchips.level').forEach((c) => c.redraw()); };
-  const level = (list) => { const c = chips(list, () => $('#screenmode').value, pickLevel); c.classList.add('level'); return c; };   // two rows, one choice: each on one line
+  const pickLevel = (v) => { if (v !== 'snap') { try { localStorage.setItem('liveLevel', v); } catch {} } $('#screenmode').value = v; $('#screenmode').dispatchEvent(new Event('change')); d.querySelectorAll('.fchips.level').forEach((c) => c.redraw()); };
+  const liveLevel = () => { try { const q = localStorage.getItem('liveLevel'); if (q && levels.some(([v]) => v === q)) return q; } catch {} return '960'; };   // the size Live returns to
+  const level = (list, now, pick) => { const c = chips(list, now || (() => $('#screenmode').value), pick || pickLevel); c.classList.add('level'); return c; };   // two rows, one choice: each on one line
   const d = el('dialog', { className: 'ask menu' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('screen.picture_quality') }), el('button', { className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
+    el('h3', { textContent: T('screen.mode') }), level([['live', T('screen.mode_live')], ['snap', T('screen.mode_snap')]], () => $('#screenmode').value === 'snap' ? 'snap' : 'live', (v) => pickLevel(v === 'live' ? liveLevel() : 'snap')),
+    el('p', { className: 'note', textContent: T('screen.mode_note') }),
     el('h3', { textContent: T('screen.size') }), level(levels.filter(([v]) => sized(v))),
     el('p', { className: 'note', textContent: T('screen.largest_size_note') }),
-    el('h3', { textContent: T('screen.or') }), level(levels.filter(([v]) => !sized(v))),
+    el('h3', { textContent: T('screen.or') }), level(levels.filter(([v]) => !sized(v) && v !== 'snap')),
     el('h3', { textContent: T('screen.frames_per_second') }), tune('fps', PIC_FPS),
     el('h3', { textContent: T('screen.bit_rate') }), tune('rate', PIC_RATE),
     el('h3', { textContent: T('screen.encoder') }), tune('enc', [0, 'hw', 'sw'], picEnc),
@@ -213,7 +250,7 @@ function picDialog() {
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal();
 }
-function picLevelSay() { const o = $('#screenmode').selectedOptions[0]; $('#screenmodebtn').replaceChildren(el('span', { textContent: o ? o.textContent : '' }), ' ▾'); }
+function picLevelSay() { put('#screennow', 'hidden', $('#screenmode').value !== 'snap'); const o = $('#screenmode').selectedOptions[0]; $('#screenmodebtn').replaceChildren(el('span', { textContent: o ? o.textContent : '' }), ' ▾'); }
 function loadScript(src) { return new Promise((ok, no) => document.head.append(el('script', { src, onload: ok, onerror: no }))); }
 async function h264Loop(gen) {
   setScreenInfo(T('screen.opening_live'), true);
@@ -323,6 +360,7 @@ setInterval(() => {
   blackFor = black ? blackFor + 1 : 0;
   put($('#screenblack'), 'hidden', blackFor < 4);
 }, 1000);
+$('#screennow').addEventListener('click', snapNow);
 $('#screenbtn').addEventListener('click', () => { if (screenOn) stopScreen(); else startScreen(); });
 try { const q = localStorage.getItem('quality'); if (q && [...$('#screenmode').options].some((o) => o.value === q)) $('#screenmode').value = q; } catch {}   // the level picked last time
 picChosen = $('#screenmode').value;
@@ -339,6 +377,7 @@ document.addEventListener('visibilitychange', () => {
   clearTimeout(picAwayT);
   if (document.hidden) { if (screenOn) picAwayT = setTimeout(() => { if (document.hidden && screenOn) { picBack = true; stopScreen(); } }, 15000); }
   else if (picBack) { picBack = false; if (!screenOn && !picking) startScreen(); }
+  else snapNow();                                                     // back in view: one fresh shot
 });
 setScreenPlaceholder();
 

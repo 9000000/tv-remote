@@ -192,7 +192,7 @@ function touch(a, p, extra) {
   }, { passive: false });
   scr.addEventListener('contextmenu', (e) => { e.preventDefault(); api('/api/key', { key: 'BACK' }); });   // right click = Back
 });
-$('#kbdbtn').addEventListener('click', () => { if ($('#kbdbtn').classList.contains('on')) setKbd(false); else kbdGo(); });
+$('#kbdbtn').addEventListener('click', () => { if ($('#kbdbtn').classList.contains('on')) { kbdFollow.closed(); setKbd(false); } else kbdGo(); });
 // The computer keyboard is the TV's keyboard on the Remote tab, no need to click into the box first:
 // letters go to the TV's text field, Backspace/Delete erase, arrows move, Enter confirms, Esc = Back.
 const keymap = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT', Escape:'BACK', Home:'HOME' };
@@ -281,3 +281,33 @@ function kbdGo(at) {
     else kbdGo('#ask');
   });
 }
+
+// ---------- the TV's own keyboard came up (someone focused a search box there): the typing box opens here, once a second ----------
+// Same rule as the phone app's (TvKeyboard.Follow in Kotlin): open on the edge, shut when it goes if nothing was typed, never
+// reopen in one keyboard session once the person shut the box. Needs ADB (the TV's input method is read through it).
+const kbdFollow = (() => {
+  let was = false, shut = false, ours = false, typedIn = false;
+  return {
+    read(shown) {                                                     // 'open' | 'close' | ''
+      const edge = shown !== was; was = shown;
+      if (!edge) return '';
+      if (shown) { shut = false; typedIn = false; ours = true; return 'open'; }
+      const close = ours && !typedIn && !shut; ours = false;
+      return close ? 'close' : '';
+    },
+    closed() { shut = true; ours = false; },
+    typed() { typedIn = true; },
+  };
+})();
+txt.addEventListener('input', () => kbdFollow.typed());
+let kbdAsking = false;
+setInterval(async () => {
+  if (kbdAsking || window.ONTV || document.hidden || currentTab !== 'remote' || picking || ADB.state !== 'ready' || !kbdAutoOn()) return;
+  kbdAsking = true;
+  const r = await fetch('/api/tvkbd').then((x) => x.ok ? x.json() : null).catch(() => null);
+  kbdAsking = false;
+  if (!r) return;
+  const d = kbdFollow.read(!!r.shown);
+  if (d === 'open') { if ($('#kbd').disabled) return; setKbd(true); $('#text').focus({ preventScroll: true }); }
+  else if (d === 'close' && $('#kbdbtn').classList.contains('on')) { $('#text').blur(); setKbd(false); }
+}, 1000);

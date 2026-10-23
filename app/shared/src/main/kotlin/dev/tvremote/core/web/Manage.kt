@@ -202,6 +202,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
                     return HttpServer.Response.json(JSONObject().put("fingerprint", p?.fingerprint ?: ""))
                 }
+                "tvkbd" -> {                                          // is the TV's own keyboard up (the page opens its typing box)
+                    val up = link.state() == "ready" && try { dev.tvremote.core.adb.TvKeyboard.shown(link.get().shell(dev.tvremote.core.adb.TvKeyboard.CMD)) } catch (e: Exception) { false }
+                    return HttpServer.Response.json(JSONObject().put("shown", up))
+                }
                 "adb/discover" -> if (canPair) return discoverPairing()     // the phone and computer only: the TV web page has its TV on localhost
                 "space" -> return HttpServer.Response.json(space(r.q("path"), r.q("size").toLongOrNull() ?: 0L, r.q("apk") == "1"))
                 "job" -> {

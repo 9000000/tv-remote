@@ -264,6 +264,7 @@ internal fun MainActivity.buildRemote() {
     playing = PlayingBar(this)
     controls.addView(playing.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     nowApp = NowApp(this)                                             // NowApp.kt
+    kbdWatch = KbdWatch(this).also { it.start() }                    // KbdWatch.kt
     controls.addView(nowApp.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
     val first = LinearLayout(this)
     val power = icon("@power", T("remote.power"), BTN)
@@ -319,8 +320,9 @@ internal fun MainActivity.buildRemote() {
     val kbdGo = { at: android.widget.EditText -> if (kbd.visibility != View.VISIBLE) { slide(controls); showKbd(true) }; at.requestFocus(); ime.showSoftInput(at, 0) }
     kbdBtn.setOnClickListener {
         if (kbd.visibility != View.VISIBLE) kbdGo(textBox)
-        else { slide(controls); showKbd(false) }
+        else { kbdWatch.closedByPerson(); slide(controls); showKbd(false) }
     }
+    kbdOpen = { on -> if (on) kbdGo(textBox) else if (kbd.visibility == View.VISIBLE) { textBox.clearFocus(); slide(controls); showKbd(false) } }
     controls.addView(more)
     controls.addView(kbd)
     // The remote's middle, one of three: the arrows; a touchpad of keys (swipes become arrow keys, a tap is OK: lists, a pointer
@@ -395,7 +397,10 @@ internal fun MainActivity.buildRemote() {
     textBox.addTextChangedListener(object : android.text.TextWatcher {
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        override fun afterTextChanged(s: android.text.Editable?) = typedLive(s.toString())
+        override fun afterTextChanged(s: android.text.Editable?) {
+            if (!quiet && !s.isNullOrEmpty()) kbdWatch.typedByPerson()    // then the TV's keyboard going away must not take the box with it
+            typedLive(s.toString())
+        }
     })
     line.addView(textBox, LinearLayout.LayoutParams(0, dp(48), 1f))
     val send = icon("@send", T("notify.send"), ACCENT)

@@ -16,6 +16,7 @@ const sleep = (ms) => new Promise((z) => setTimeout(z, ms));
 // the tap a key gives under the finger, on a touch screen that can vibrate (Settings: Vibrate on key press, on by default)
 const CAN_BUZZ = CORE !== 'phone' && !!navigator.vibrate && matchMedia('(pointer: coarse)').matches;   // the phone app has its own switch (Settings)
 const buzzOn = () => { try { return localStorage.getItem('buzz') !== '0'; } catch { return true; } };
+const kbdAutoOn = () => { try { return localStorage.getItem('kbdauto') !== '0'; } catch { return true; } };   // the TV's keyboard opens the typing box (remote.js)
 const buzz = () => { if (CAN_BUZZ && buzzOn()) try { navigator.vibrate(15); } catch {} };
 // over a modal dialog too (TV Home's settings said nothing under it): a popover shown again goes to the top of the top layer;
 // a WebView without popovers (an older TV's) gets it inside the open dialog, which is in the top layer itself
@@ -125,6 +126,7 @@ const STALE = T('core.stale');
 let clicked = null, clickedAt = Infinity;
 document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);
 async function api(path, data, quiet) {
+  if (path === '/api/key' && typeof snapKey === 'function') snapKey();   // every key of every button comes through here: screenshot mode looks again soon after
   const b = clicked && !clicked.dataset.busy && !clicked.ownRing && performance.now() - clickedAt < 1000 ? clicked : null;
   if (b) { b.classList.add('busy'); b.busyN = (b.busyN || 0) + 1; }
   try { return await call(path, data, quiet); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }

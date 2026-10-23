@@ -13,7 +13,7 @@ object Store {
     private fun p(c: Context) = c.getSharedPreferences("channels", Context.MODE_PRIVATE)
 
     /** [f] runs when the favourites or groups change (ChannelsReceiver wrote them while the list is open); keep the returned listener until [unwatch]. */
-    fun watch(c: Context, f: () -> Unit) = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, k -> if (k == "favs" || k == "groups") f() }
+    fun watch(c: Context, f: () -> Unit) = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, k -> if (k == "favs" || k == "groups" || k == "lists") f() }
         .also { p(c).registerOnSharedPreferenceChangeListener(it) }
     fun unwatch(c: Context, l: android.content.SharedPreferences.OnSharedPreferenceChangeListener) = p(c).unregisterOnSharedPreferenceChangeListener(l)
 
@@ -86,6 +86,21 @@ object Store {
     }
     fun renameGroup(c: Context, id: String, name: String) = saveGroups(c, groups(c).map { if (it.id == id) Group(id, name.trim(), it.channels) else it })
     fun deleteGroup(c: Context, id: String) = saveGroups(c, groups(c).filter { it.id != id })
+
+    /** A playlist of the person's own (an m3u link, see [Playlists]); [id] comes from the link, so a cached copy is found again. */
+    class Playlist(val id: String, val name: String, val url: String)
+
+    fun playlists(c: Context): List<Playlist> {
+        val a = try { JSONArray(p(c).getString("lists", "[]")) } catch (e: Exception) { JSONArray() }
+        return (0 until a.length()).mapNotNull { a.optJSONObject(it) }.map { Playlist(it.optString("id"), it.optString("name"), it.optString("url")) }
+            .filter { it.id.isNotEmpty() && Edit.validUrl(it.url) }
+    }
+    fun playlist(c: Context, id: String) = playlists(c).firstOrNull { it.id == id }
+    fun setPlaylists(c: Context, l: List<Playlist>) {
+        val gone = playlists(c).filter { o -> l.none { it.id == o.id } }
+        p(c).edit().putString("lists", JSONArray().apply { l.forEach { put(JSONObject().put("id", it.id).put("name", it.name).put("url", it.url)) } }.toString()).apply()
+        gone.forEach { Playlists.forget(c, it) }                      // a removed link's copy (it may hold a token) goes with it
+    }
 
     /** A small string of a feature that keeps its own format (Reminders). */
     fun raw(c: Context, k: String): String? = p(c).getString(k, null)

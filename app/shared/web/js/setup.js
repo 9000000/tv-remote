@@ -61,6 +61,9 @@ put('#buzzgroup', 'hidden', !CAN_BUZZ);
 const showBuzz = () => $('#buzzpick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === (buzzOn() ? '1' : '0')));
 showBuzz();
 $('#buzzpick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; try { localStorage.setItem('buzz', b.dataset.v); } catch {} showBuzz(); buzz(); });
+const showKbdAuto = () => $('#kbdautopick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === (kbdAutoOn() ? '1' : '0')));
+showKbdAuto();
+$('#kbdautopick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; try { localStorage.setItem('kbdauto', b.dataset.v); } catch {} showKbdAuto(); });
 $('#langpick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.v !== LANG) setLang(b.dataset.v); });
 showPicks();
 if (window.LANG_KEEP && window.LANG_KEEP.settings) setTimeout(() => $('#aboutbtn').click(), 0);   // it reloaded for the new language: back where it was

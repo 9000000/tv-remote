@@ -99,4 +99,37 @@ class EditTest {
         val big = (1..Edit.MAX_IMPORT + 50).joinToString(",") { """{"id":"c$it.vn"}""" }
         assertTrue(imp("""{"favourites":[$big]}""").favs.size <= Edit.MAX_CHANNELS)
     }
+
+    // ---- the person's own playlists
+
+    private fun lists(s: String) = Edit.cleanLists(JSONObject(s))
+
+    @Test fun listsAbsentStayAbsent() = assertNull(lists("""{"favs":[]}"""))
+
+    @Test fun onlyHttpLinksWithAHostPass() {
+        val l = lists("""{"lists":[{"name":"a","url":"https://x.vn/a.m3u"},{"name":"b","url":"http://y.com:8080/p?t=1"},
+            {"name":"c","url":"ftp://z/c.m3u"},{"name":"d","url":"file:///sdcard/a.m3u"},{"name":"e","url":"javascript:alert(1)"},
+            {"name":"f","url":"https:///nohost"},{"name":"g","url":"https://x.vn/has space.m3u"},{"name":"h","url":""}]}""")!!
+        assertEquals(listOf("https://x.vn/a.m3u", "http://y.com:8080/p?t=1"), l.map { it.url })
+    }
+
+    @Test fun listsAreCappedDedupedAndNamed() {
+        val many = (1..9).joinToString(",") { """{"name":"n$it","url":"https://h$it.com/l.m3u"}""" }
+        assertEquals(Edit.MAX_LISTS, lists("""{"lists":[$many]}""")!!.size)
+        val l = lists("""{"lists":[{"name":"  ","url":"https://www.tv.vn/a.m3u"},{"name":"again","url":"https://www.tv.vn/a.m3u"},
+            {"name":"${"x".repeat(80)}","url":"https://b.vn/b.m3u"}]}""")!!
+        assertEquals(2, l.size)
+        assertEquals("tv.vn", l[0].name)                              // no name: the host
+        assertEquals(Edit.MAX_NAME, l[1].name.length)
+    }
+
+    @Test fun listIdIsStableAndShort() {
+        assertEquals(Edit.listId("https://a.vn/x.m3u"), Edit.listId("https://a.vn/x.m3u"))
+        assertTrue(Edit.listId("https://a.vn/x.m3u").matches(Regex("[a-z0-9]{1,7}")))
+    }
+
+    @Test fun playlistTextIsRecognised() {
+        assertTrue(Playlists.looksLikeM3u("#EXTM3U\n#EXTINF:-1,A\nhttp://a/1"))
+        assertTrue(!Playlists.looksLikeM3u("<html>login</html>"))
+    }
 }

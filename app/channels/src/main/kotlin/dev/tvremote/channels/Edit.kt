@@ -34,6 +34,33 @@ object Edit {
         return favs to groups
     }
 
+    // ---------------------------------------------------------------- the person's own playlists (m3u links)
+
+    const val MAX_LISTS = 5
+    class ListPlan(val name: String, val url: String)
+
+    /** One http(s) link, no spaces, a host: what a playlist may be (the TV fetches it, so nothing else is let in). */
+    fun validUrl(u: String): Boolean {
+        if (u.length > 500 || u.any { it.isWhitespace() || it.isISOControl() }) return false
+        if (!u.startsWith("http://", true) && !u.startsWith("https://", true)) return false
+        return try { !java.net.URI(u).host.isNullOrEmpty() } catch (e: Exception) { false }
+    }
+
+    /** The request's "lists" cleaned: null when absent (kept as they are); a bad link is dropped, a repeat too, the name falls back to the host. */
+    fun cleanLists(req: JSONObject): List<ListPlan>? {
+        val a = req.optJSONArray("lists") ?: return null
+        val seen = HashSet<String>()
+        return (0 until a.length()).mapNotNull { a.optJSONObject(it) }.mapNotNull { o ->
+            val url = o.optString("url").trim()
+            if (!validUrl(url) || !seen.add(url)) return@mapNotNull null
+            val name = o.optString("name").trim().take(MAX_NAME).ifEmpty { java.net.URI(url).host.removePrefix("www.") }
+            ListPlan(name, url)
+        }.take(MAX_LISTS)
+    }
+
+    /** A short stable id from the link, so the playlist keeps its cached copy and its place when the name is edited. */
+    fun listId(url: String) = java.lang.Long.toString(url.hashCode().toLong() and 0xffffffffL, 36)
+
     private fun ids(a: JSONArray) = (0 until a.length()).map { a.optString(it) }.filter { it.isNotEmpty() && it.length <= 200 }.distinct().take(MAX_CHANNELS)
 
     /** The streams of each id in order: [have] first (what is kept now), else [resolve]. */

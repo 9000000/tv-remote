@@ -61,4 +61,7 @@
     <string name="upd_loading">Đang tải… %1$d%%</string>
     <string name="upd_cancel">Hủy</string>
     <string name="upd_failed">Không cập nhật được (%1$s). App TV Remote trên điện thoại cũng cập nhật được.</string>
+    <string name="your_lists">Danh sách của bạn</string>
+    <string name="list_failed">Không đọc được danh sách này. Kiểm tra lại link, hoặc bấm Làm mới.</string>
+    <string name="list_empty">Danh sách này không có kênh nào.</string>
 </resources>

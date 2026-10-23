@@ -63,6 +63,7 @@ class BrowseActivity : Activity() {
     private var group = ALL
     private var watching: android.content.SharedPreferences.OnSharedPreferenceChangeListener? = null   // favourites / groups edited from a phone or computer
     private var failed = false
+    private val plData = HashMap<String, Playlists.Result?>()         // playlist id -> its channels (null: being read), kept while the screen lives
     private var countryName = ""
     private var others: List<List<Channel>> = emptyList()           // search: matches in other countries (GlobalIndex)
     private var otherState = IDLE
@@ -160,6 +161,9 @@ class BrowseActivity : Activity() {
         watching = Store.watch(this) { runOnUiThread {
             val g = mine(group)
             if (g != null && g != Store.FAV && Store.group(this, g) == null) group = ALL      // the open group was deleted
+            if (isList(group) && Store.playlist(this, group.removePrefix(PL)) == null) group = ALL
+            val known = Store.playlists(this).map { it.id }.toSet()
+            plData.keys.retainAll(known)                               // an edited list (same id) keeps its channels until read again
             buildRail(); filter()
         } }
     }
@@ -181,6 +185,22 @@ class BrowseActivity : Activity() {
 
     /** The group of the person's that [g] shows ([Store.FAV] for the favourites), or null for a category of the country. */
     private fun mine(g: String) = if (g == FAVS) Store.FAV else if (g.startsWith(MINE)) g.removePrefix(MINE) else null
+    private fun isList(g: String) = g.startsWith(PL)
+
+    /** A playlist's channels, read off the main thread the first time it is opened (or [fresh]); the grid and the rail follow when it lands. */
+    private fun loadList(id: String, fresh: Boolean) {
+        val p = Store.playlist(this, id) ?: return
+        if (!fresh && plData.containsKey(id)) return
+        plData[id] = null
+        io.execute {
+            val r = Playlists.channels(this, p, fresh)
+            main.post {
+                if (isDestroyed) return@post
+                plData[id] = r
+                buildRail(); if (group == PL + id) filter()
+            }
+        }
+    }
     private fun mineName(gid: String) = if (gid == Store.FAV) getString(R.string.favourites) else Store.group(this, gid)?.name ?: ""
 
     private fun countryOf(i: Intent?) = i?.data?.takeIf { it.scheme == "tvchannels" && it.host == "country" }
@@ -190,6 +210,7 @@ class BrowseActivity : Activity() {
 
     private fun load(fresh: Boolean) {
         Store.setCountry(this, cc)
+        if (fresh && isList(group)) loadList(group.removePrefix(PL), true)   // Refresh on a playlist reads that link again too
         all = emptyList(); failed = false; loading = true
         chrome()
         io.execute {
@@ -199,7 +220,7 @@ class BrowseActivity : Activity() {
             main.post {
                 if (isDestroyed) return@post
                 all = list.byChannel(); failed = !ok; countryName = name; loading = false
-                if (mine(group) == null && group != ALL && group != SEARCH && all.none { it.first().group == group }) group = ALL
+                if (mine(group) == null && !isList(group) && group != ALL && group != SEARCH && all.none { it.first().group == group }) group = ALL
                 buildRail(); filter()
                 if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
             }
@@ -231,6 +252,14 @@ class BrowseActivity : Activity() {
         for (g in Store.groups(this)) {
             val n = g.channels.byChannel().size
             add(Ui.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
+        }
+        val lists = Store.playlists(this)
+        if (lists.isNotEmpty()) {                                     // the person's own m3u links (set from a phone or computer), one row each
+            rail.addView(Ui.text(this, getString(R.string.your_lists), 13f, Ui.DIM).apply { setPadding(dp(12), dp(10), 0, dp(4)) })
+            for (l in lists) {
+                val n = plData[l.id]?.channels?.byChannel()?.size
+                add(Ui.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }, group == PL + l.id, PL + l.id)
+            }
         }
         add(Ui.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
         add(Ui.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
@@ -285,6 +314,8 @@ class BrowseActivity : Activity() {
 
     private fun filter() {
         val gid = mine(group)
+        val pl = if (isList(group)) group.removePrefix(PL) else null
+        if (pl != null) loadList(pl, false)
         val searching = group == SEARCH
         Ui.show(find, searching)
         if (!searching) {
@@ -304,6 +335,7 @@ class BrowseActivity : Activity() {
                 }
             }
             gid != null -> Store.channels(this, gid).byChannel()
+            pl != null -> plData[pl]?.channels?.byChannel().orEmpty()
             group == ALL -> all
             else -> all.filter { it.first().group == group }
         }
@@ -311,12 +343,16 @@ class BrowseActivity : Activity() {
         title.text = when (group) {
             SEARCH -> getString(R.string.search)
             ALL -> countryName
-            else -> if (gid != null) mineName(gid) else "$countryName · ${groupName(group)}"
+            else -> if (gid != null) mineName(gid) else if (pl != null) Store.playlist(this, pl)?.name.orEmpty() else "$countryName · ${groupName(group)}"
         }
         chrome()
         when {
             searching && q.isEmpty() -> say(getString(R.string.search_hint), false)
             searching && otherState == DONE && shown.isEmpty() -> say(getString(R.string.no_match), false)
+            pl != null && shown.isEmpty() -> say(getString(when {
+                !plData.containsKey(pl) || plData[pl] == null -> R.string.loading
+                plData[pl]?.ok != true -> R.string.list_failed
+                else -> R.string.list_empty }), false)
             shown.isNotEmpty() || all.isEmpty() && gid == null -> say("", false)
             q.isNotEmpty() -> say(getString(R.string.no_match), false)
             gid == Store.FAV -> say(getString(R.string.no_favs), false)
@@ -376,7 +412,7 @@ class BrowseActivity : Activity() {
 
     /** One state for the whole screen while there is no list to show: loading (a spinner), offline or empty (the words, Retry, Country). */
     private fun chrome() {
-        val on = loading || all.isEmpty() && mine(group) == null && group != SEARCH
+        val on = loading || all.isEmpty() && mine(group) == null && !isList(group) && group != SEARCH
         Ui.show(overlay, on); Ui.show(content, !on)
         if (!on) return
         Ui.show(spin, loading); Ui.show(waitButtons, !loading)
@@ -853,6 +889,7 @@ class BrowseActivity : Activity() {
         private const val HDR = "\u0000hdr"                        // a section line in the grid (a Channel whose name is its words)
         private const val IDLE = 0; private const val LOADING = 1; private const val OFFLINE = 2; private const val DONE = 3
         const val FAVS = "\u0000favs"
+        const val PL = "\u0000p:"                                    // + a playlist's id: one of the person's m3u links on show
         const val MINE = "\u0000g:"                                  // + a group's id: one of the person's groups on show
 
         fun fold(s: String) = Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").trim()

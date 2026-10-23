@@ -16,7 +16,7 @@ const CHM_CATS = { animation: 'chm.cat_animation', auto: 'chm.cat_auto', busines
   relax: 'chm.cat_relax', religious: 'chm.cat_religious', science: 'chm.cat_science', series: 'chm.cat_series', shop: 'chm.cat_shop',
   sports: 'chm.cat_sports', travel: 'chm.cat_travel', undefined: 'chm.cat_undefined', weather: 'chm.cat_weather', xxx: 'chm.cat_xxx' };
 const chmCat = (g) => String(g || '').split(/\s*[;,]\s*/).filter(Boolean).map((k) => CHM_CATS[k.toLowerCase()] ? T(CHM_CATS[k.toLowerCase()]) : k).join(', ');
-const chmCopy = (c) => JSON.parse(JSON.stringify({ favs: c.favs, groups: c.groups }));
+const chmCopy = (c) => JSON.parse(JSON.stringify({ favs: c.favs, groups: c.groups, pls: c.pls }));
 const chmFold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
 
 async function chanManage() {
@@ -27,7 +27,7 @@ async function chanManage() {
     else if (!r.latest) toast(T('chm.old_none'));
     return;
   }
-  chm = { favs: r.favs, groups: r.groups, view: 'find', cc: r.country, countries: r.countries || [], lists: {}, q: '', cat: '', saving: false, dlg: null, sync: null };
+  chm = { favs: r.favs, groups: r.groups, pls: r.lists || [], plsOk: Array.isArray(r.lists), view: 'find', cc: r.country, countries: r.countries || [], lists: {}, q: '', cat: '', saving: false, dlg: null, sync: null };
   chm.base = chmCopy(chm);
   chmDialog();
   chmLoad(chm.cc, false);
@@ -110,7 +110,9 @@ function chmPending() {
     const o = b.groups.find((x) => x.id === g.id);
     n += o ? chmListDiff(o.ch, g.ch) + (o.name !== g.name ? 1 : 0) : 1 + g.ch.length;
   }
-  return n + b.groups.filter((o) => !c.groups.some((g) => g.id === o.id)).length;
+  n += b.groups.filter((o) => !c.groups.some((g) => g.id === o.id)).length;
+  const key = (l) => l.url + '\n' + l.name;           // a renamed link counts as one change
+  return n + chmSet(b.pls.map(key), c.pls.map(key));
 }
 function chmChanged() { if (chm.view === 'find') chmRefresh(); else chmDraw(); }
 function chmBar() {
@@ -123,8 +125,8 @@ function chmBar() {
 }
 function chmDiscard(c) {
   const b = JSON.parse(JSON.stringify(c.base));
-  c.favs = b.favs; c.groups = b.groups; c.failed = false;
-  if (c.view !== 'find' && c.view !== 'fav' && !chmGroup(c.view)) c.view = 'fav';
+  c.favs = b.favs; c.groups = b.groups; c.pls = b.pls; c.failed = false;
+  if (c.view !== 'find' && c.view !== 'fav' && c.view !== 'lists' && !chmGroup(c.view)) c.view = 'fav';
   chmDraw();
 }
 async function chmSave(c) {                         // true once the TV holds it; what it answers (it leaves out a channel it cannot find) becomes the state
@@ -132,14 +134,14 @@ async function chmSave(c) {                         // true once the TV holds it
   c.saving = true; c.failed = false; chmBar();
   const sent = [...c.favs, ...c.groups.flatMap((g) => g.ch)];
   // "from": the countries the channels were picked from (a feed's id can name another country than the list it is in)
-  const r = await api('/api/channels/manage', { favs: c.favs.map((x) => x.id), groups: c.groups.map((g) => ({ id: g.id, name: g.name, ch: g.ch.map((x) => x.id) })), from: Object.keys(c.lists) });
+  const r = await api('/api/channels/manage', { favs: c.favs.map((x) => x.id), groups: c.groups.map((g) => ({ id: g.id, name: g.name, ch: g.ch.map((x) => x.id) })), from: Object.keys(c.lists), lists: c.pls.map((x) => ({ name: x.name, url: x.url })) });
   c.saving = false;
   if (!r || !r.receiver) { c.failed = true; chmBar(); return false; }   // the error is shown already (friendly()); the edits stay
-  c.favs = r.favs; c.groups = r.groups; c.base = chmCopy(c);
+  c.favs = r.favs; c.groups = r.groups; if (Array.isArray(r.lists)) c.pls = r.lists; c.base = chmCopy(c);
   const kept = new Set([...c.favs, ...c.groups.flatMap((g) => g.ch)].map((x) => x.id));   // what the TV could not find is said, not lost silently
   const lost = [...new Map(sent.filter((x) => !kept.has(x.id)).map((x) => [x.id, x.n])).values()];
   c.sum = lost.length ? { text: T('chm.lost', { n: lost.length, names: lost.slice(0, 5).join(', ') + (lost.length > 5 ? '…' : '') }) } : null;
-  if (c.view !== 'find' && c.view !== 'fav' && !chmGroup(c.view)) c.view = 'fav';
+  if (c.view !== 'find' && c.view !== 'fav' && c.view !== 'lists' && !chmGroup(c.view)) c.view = 'fav';
   if (chm === c) { toast(T('chm.saved')); chmDraw(); }
   return true;
 }
@@ -160,6 +162,7 @@ function chmTabs() {
     { label: T('chm.find'), on: c.view === 'find', fn: () => { c.view = 'find'; chmDraw(); } },
     { label: T('chm.fav_chip', { n: c.favs.length }), on: c.view === 'fav', title: T('chm.favourites'), fn: () => { c.view = 'fav'; chmDraw(); } },
     ...c.groups.map((g) => ({ label: g.name + ' (' + g.ch.length + ')', on: c.view === g.id, fn: () => { c.view = g.id; chmDraw(); } })),
+    ...(c.plsOk ? [{ label: T('chm.lists_chip', { n: c.pls.length }), on: c.view === 'lists', title: T('chm.lists'), fn: () => { c.view = 'lists'; chmDraw(); } }] : []),
     { label: T('chm.new_group_btn'), fn: async () => { const g = await chmNewGroup(null); if (g) { c.view = g.id; chmDraw(); } } },
   ]);
 }
@@ -175,13 +178,40 @@ function chmDraw() {
   const top = c.card.scrollTop, moved = c.shown !== c.view; c.shown = c.view;
   c.sync = null;
   c.tabs = chmTabs();
-  c.body.replaceChildren(c.tabs, ...(c.view === 'find' ? chmFind() : chmMine()), ...chmFile());
+  c.body.replaceChildren(c.tabs, ...(c.view === 'find' ? chmFind() : c.view === 'lists' ? chmLists() : chmMine()), ...chmFile());
   const on = c.body.querySelector('.places .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   c.card.scrollTop = moved ? 0 : top;
   chmBar();
 }
 
 const chmLogo = (ch) => el('span', { className: 'chlogo' }, ch.l ? el('img', { src: ch.l, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null);
+
+// the person's own m3u links (max 5): the TV reads each one itself and shows it as a row of its own; a link is shown by its host
+// only (it may carry a token). Edits are local like the rest and go with Save.
+const CHM_MAX_LISTS = 5;
+const chmHost = (u) => { try { return new URL(u).host; } catch (e) { return ''; } };
+const chmUrlOk = (u) => /^https?:\/\/[^\s]+$/i.test(u) && u.length <= 500 && !!chmHost(u);
+function chmAddList(name, url) {
+  const c = chm, u = url.trim();
+  if (!chmUrlOk(u)) { toast(T('chm.list_bad')); return false; }
+  if (c.pls.some((x) => x.url === u)) { toast(T('chm.list_dup')); return false; }
+  if (c.pls.length >= CHM_MAX_LISTS) { toast(T('chm.list_max', { n: CHM_MAX_LISTS })); return false; }
+  c.pls.push({ id: '', name: name.trim().slice(0, 40) || chmHost(u).replace(/^www\./, ''), url: u });
+  chmDraw();
+  return true;
+}
+function chmLists() {
+  const c = chm;
+  const name = el('input', { type: 'text', autocomplete: 'off', spellcheck: false, maxLength: 40, placeholder: T('chm.list_name') });
+  const url = el('input', { type: 'url', autocomplete: 'off', spellcheck: false, placeholder: T('chm.list_url') });
+  const add = () => chmAddList(name.value, url.value);
+  url.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+  const rows = c.pls.map((l, i) => UI.item({ icon: el('span', { className: 'chlogo', textContent: '🔗' }), name: l.name, sub: chmHost(l.url),
+    acts: [el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('chm.remove'), 'aria-label': T('chm.remove'),
+      onclick: () => { c.pls.splice(i, 1); chmDraw(); } })] }));
+  return [el('div', { className: 'card-head' }, el('h3', { textContent: T('chm.lists') })), UI.note(T('chm.lists_note', { n: CHM_MAX_LISTS })),
+    UI.list(rows, T('chm.lists_none')), name, UI.line(url, UI.btn(T('chm.list_add'), add, 'primary'))];
+}
 
 // a favourites list or one group: in order, with up / down / take out
 function chmMine() {

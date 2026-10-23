@@ -155,6 +155,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // ---- Typing.kt. Two ways to type. Send: write here, then send it in one go. Live (⚡): the TV follows every letter and
     // every deletion as it happens, so one wrong letter is fixed by fixing it here.
     internal lateinit var textBox: EditText
+    internal lateinit var kbdWatch: KbdWatch                         // KbdWatch.kt: the TV's keyboard comes up, the box opens
+    internal var kbdOpen: (Boolean) -> Unit = {}                      // the typing box shown (with the phone keyboard) or shut (RemoteScreen.kt)
     internal var askBox: () -> Unit = {}                              // the "Hỏi TV" box opened and focused (RemoteScreen.kt)
     internal lateinit var liveBtn: IconButton
     internal var live = false
@@ -304,6 +306,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         managing.destroy()
         Popup.closeAll(this)                                           // or the window leaks, in the old colours
         if (::nowApp.isInitialized) nowApp.close()
+        if (::kbdWatch.isInitialized) kbdWatch.close()
         // recreated (dark mode at sunset, a font size, the language): this instance's session, sound and keys end with it, or
         // they would go on beside the new one's, with nothing left on screen that can stop them
         ui.removeCallbacksAndMessages(null)

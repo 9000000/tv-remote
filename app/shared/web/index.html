@@ -130,6 +130,7 @@
             <div class="tools">
               <button class="small" id="screenmodebtn" aria-haspopup="dialog" title="Chất lượng hình: số nhỏ thì nhẹ cho TV và mạng" data-i18n-title="remote.picture_quality_a_smaller"></button>
               <select id="screenmode" hidden aria-hidden="true"><option value="240">240p</option><option value="360">360p</option><option value="480">480p</option><option value="720">720p</option><option value="960" selected>960p</option><option value="hd" data-for="pc" data-i18n="remote.sharpest">Nét nhất</option><option value="snap" data-i18n="remote.screenshots">Ảnh chụp</option></select>
+              <button class="small iconbtn" id="screennow" hidden aria-label="Chụp lại ngay" title="Chụp lại ngay" data-i18n-title="screen.snap_now" data-i18n-aria-label="screen.snap_now">↻</button>
               <button class="small" id="listen" data-adb-gated title="Nghe tiếng TV trên máy này" data-i18n-title="remote.hear_the_tv_on"><span class="ico">🎧</span><span class="lbl" data-i18n="remote.listen"> Nghe</span></button>
               <button class="small iconbtn" id="screenfull" aria-label="Toàn màn hình" title="Toàn màn hình" data-i18n-title="remote.full_screen" data-i18n-aria-label="remote.full_screen">⛶</button>
               <button class="small primary" id="screenbtn"><span class="ico">▶</span><span class="lbl" data-i18n="remote.watch"> Xem</span></button>
@@ -433,6 +434,7 @@
     <div class="group"><h3 data-i18n="about.theme">Giao diện</h3><div class="places" id="themepick"><button data-v="auto" data-i18n="about.system">🖥️ Theo máy</button><button data-v="light" data-i18n="about.light">☀️ Sáng</button><button data-v="dark" data-i18n="about.dark">🌙 Tối</button></div></div>
     <div class="group"><h3 data-i18n="about.language">Ngôn ngữ</h3><div class="places" id="langpick"></div></div>
     <div class="group" id="buzzgroup" hidden><h3 data-i18n="about.when_pressing_a_key">Khi bấm nút</h3><div class="places" id="buzzpick"><button data-v="1" data-i18n="about.vibrate">Rung</button><button data-v="0" data-i18n="about.no_vibration">Không rung</button></div></div>
+    <div class="group" id="kbdgroup" data-needs="adb"><h3 data-i18n="about.tv_keyboard">Bàn phím của TV</h3><div class="places" id="kbdautopick"><button data-v="1" data-i18n="about.tv_keyboard_auto">Tự mở ô gõ</button><button data-v="0" data-i18n="about.tv_keyboard_manual">Không tự mở</button></div></div>
     <div class="group" data-for="pc"><h3 data-i18n="about.app_on_this_computer">App trên máy tính</h3>
       <div class="actions"><button class="small" id="updcheck" data-i18n="about.check_for_a_new">🔄 Kiểm tra bản mới</button><button class="small danger" id="quit" data-asks title="Dừng chương trình trên máy tính này (TV không bị ảnh hưởng)" data-i18n-title="about.stop_the_program_on" data-i18n="about.quit">⏻ Tắt</button></div>
       <p class="note" id="updcheckmsg"></p></div>

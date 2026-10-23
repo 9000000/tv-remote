@@ -80,6 +80,16 @@ internal fun MainActivity.buildSettings(): View {
     buzzLabel()
     box.addView(buzzRow)
 
+    box.addView(head(T("info_screens.tv_keyboard")), gap(18))
+    lateinit var kbdRow: Button
+    val kbdLabel = { kbdRow.setLabel((if (prefs.getBoolean("kbdAuto", true)) "@check|" else "@close|") + T("about.tv_keyboard_auto")) }
+    kbdRow = row("") {
+        prefs.edit().putBoolean("kbdAuto", !prefs.getBoolean("kbdAuto", true)).apply()
+        kbdLabel()
+    }
+    kbdLabel()
+    box.addView(kbdRow)
+
     box.addView(head(T("info_screens.updates")), gap(18))
     lateinit var auto: Button
     val autoLabel = { auto.setLabel((if (prefs.getBoolean("autoUpdate", true)) "@check|" else "@close|") + T("info_screens.check_for_updates_automatically")) }

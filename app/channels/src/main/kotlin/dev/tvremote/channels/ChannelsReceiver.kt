@@ -10,7 +10,7 @@ import org.json.JSONObject
 
 /**
  * Favourites and groups for a phone or computer that has ADB on this TV (core/ontv/Channels.kt). Only the shell can send this
- * broadcast (the manifest asks for DUMP). Extras: "set" (base64 JSON, [Edit]: the whole state, saved first), "list" (a country
+ * broadcast (the manifest asks for DUMP). Extras: "set" (base64 JSON, [Edit]: the whole state, saved first; "lists": [{name, url}], the person's m3u playlists), "list" (a country
  * code: its channels too, from the catalog; "fresh" reads them from the network again), "countries" (the names of countries).
  * The answer, base64 JSON in the result data: {version, country, favs: [brief], groups: [{id, name, ch: [brief]}], list: {cc,
  * path (a file of [brief]), n, empty}, countries: [{cc, name, flag}]} (a channel once, however many streams it has),
@@ -32,6 +32,7 @@ class ChannelsReceiver : BroadcastReceiver() {
         val imported = i.getStringExtra("import")?.takeIf { it.isNotEmpty() }?.let { importFile(c, JSONObject(String(Base64.decode(it, Base64.DEFAULT), Charsets.UTF_8))) }
         val out = JSONObject().put("version", c.packageManager.getPackageInfo(c.packageName, 0).versionName).put("country", Store.country(c))
             .put("favs", briefs(Store.favourites(c)))
+            .put("lists", JSONArray().apply { Store.playlists(c).forEach { put(JSONObject().put("id", it.id).put("name", it.name).put("url", it.url)) } })
             .put("groups", JSONArray().apply { Store.groups(c).forEach { g -> put(JSONObject().put("id", g.id).put("name", g.name).put("ch", briefs(g.channels))) } })
         imported?.let { out.put("imported", it) }
         if (i.getBooleanExtra("export", false)) out.put("export", Edit.export(Store.favourites(c), Store.groups(c).map { Edit.G(it.id, it.name, it.channels) },
@@ -54,6 +55,7 @@ class ChannelsReceiver : BroadcastReceiver() {
 
     private fun apply(c: Context, req: JSONObject) {
         val (favIds, groupPlans) = Edit.clean(req) { java.lang.Long.toString(System.nanoTime(), 36).takeLast(8) }
+        Edit.cleanLists(req)?.let { l -> Store.setPlaylists(c, l.map { Store.Playlist(Edit.listId(it.url), it.name, it.url) }) }
         val haveFavs = Store.favourites(c)
         val haveGroups = Store.groups(c)
         val have = HashMap<String, List<Channel>>()

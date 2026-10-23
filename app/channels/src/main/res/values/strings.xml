@@ -62,4 +62,7 @@
     <string name="upd_loading">Downloading… %1$d%%</string>
     <string name="upd_cancel">Cancel</string>
     <string name="upd_failed">Could not update (%1$s). The TV Remote app on a phone can update it too.</string>
+    <string name="your_lists">Your lists</string>
+    <string name="list_failed">This list could not be read. Check the link, or try Refresh.</string>
+    <string name="list_empty">This list has no channels.</string>
 </resources>
