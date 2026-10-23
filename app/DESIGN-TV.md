@@ -191,7 +191,10 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 4. **Motion off** (`settings put global animator_duration_scale 0`): the end states are right with no animation.
 5. Text fields: open the keyboard, press Back, check the focus lands on the results and the dialog stays.
 6. `node --test app/shared/tests/` (`tv_design.test.js`: no new raw colour outside a named constant, one `tv_style.xml`, words in both languages, generated icons); unit tests of the app (`./gradlew :<app>:testDebugUnitTest`); TV Setup words: `node --test app/shared/tests/` (`i18n.test.js`).
-7. Report what was checked where, and what was not (a real 1 GB box, a real remote's long press, overscan on a real panel).
+7. **Visual check against a neighbour**, on the screenshots, before calling it done: inner padding = the tokens (§2.3), not 0;
+   same size, corner and focus as the siblings in the same row or list; built from a §3 component (a new `onDraw` view fails
+   `DRAWN` in `tv_design.test.js`). "It works" is not "it looks right": the Free RAM tile shipped glued to its edges (2026-10-23).
+8. Report what was checked where, and what was not (a real 1 GB box, a real remote's long press, overscan on a real panel).
 
 ## 7. Known drift (documented, not fixed: don't copy it, don't add more)
 

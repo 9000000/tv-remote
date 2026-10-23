@@ -35,6 +35,27 @@ test('no new raw colour in the TV apps\' views: a colour is a named constant or 
   assert.deepStrictEqual(bad, [], 'name it beside the others (Channels Ui, Setup BG…BAD, Home\'s consts) or use tv_style.xml:\n' + bad.join('\n'));
 });
 
+// Views that draw themselves (onDraw / dispatchDraw), per file: a hand-drawn view is how a new screen drifts from the
+// components (DESIGN-TV.md §3): the RAM tile and its own frame, 2026-10-23. A count may only go down; a new one needs a reason here.
+const DRAWN = {
+  tv: { 'DrawLayer.kt': 1 },                                          // drawing over the TV: strokes, nothing to reuse
+  home: { 'Widgets.kt': 8, 'HomeActivity.kt': 1, 'QrCard.kt': 1, 'Glass.kt': 1, 'Zoom.kt': 1, 'Customize.kt': 1, 'Tiles.kt': 1 },
+  android: { 'RemoteScreen.kt': 1, 'IconButton.kt': 1, 'AirMouse.kt': 2, 'Drawing.kt': 1 },
+};
+
+test('no new hand-drawn view: build from the components (DESIGN-TV.md §3, phone: Ui.kt)', () => {
+  const bad = [];
+  for (const a of ['tv', 'home', 'channels', 'games', 'android']) {
+    for (const f of walk(path.join(ROOT, 'app', a, 'src', 'main'))) {
+      const n = (fs.readFileSync(f, 'utf8').match(/override fun (onDraw|dispatchDraw)\(/g) || []).length;
+      const allowed = (DRAWN[a] || {})[path.basename(f)] || 0;
+      if (n > allowed) bad.push(`app/${a}/.../${path.basename(f)}: ${n} drawn view(s), ${allowed} allowed: reuse a component, or add it to DRAWN with why`);
+      if (n < allowed) bad.push(`app/${a}/.../${path.basename(f)}: down to ${n}: lower DRAWN in tv_design.test.js`);
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
 test('tv_style.xml is the same in every TV app that has one', () => {
   const copies = ['tv', 'channels', 'games'].map((a) => fs.readFileSync(path.join(ROOT, 'app', a, 'src/main/res/values/tv_style.xml'), 'utf8'));
   copies.forEach((c, i) => assert.strictEqual(c, copies[0], `app/${['tv', 'channels', 'games'][i]} tv_style.xml differs from app/tv's`));
