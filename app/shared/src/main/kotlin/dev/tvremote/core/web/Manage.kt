@@ -65,6 +65,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     private val privacy = dev.tvremote.core.ontv.Privacy.Job(link)   // Privacy check: one scan at a time, its rows kept for the page
     private val playing = helper?.let { NowPlaying({ link.get() }, it) }      // the now playing bar: null where tvr-helper.jar is not at hand
+    private val kbdReader = dev.tvremote.core.adb.TvKeyboard.Reader()   // /api/tvkbd: the proto, or the text dump on a TV without it
     private val draw = Draw { link.get() }                           // strokes for TV Setup to draw over the screen
     private val jobs: MutableMap<String, JSONObject> = Collections.synchronizedMap(LinkedHashMap<String, JSONObject>())
     private val nextJob = java.util.concurrent.atomic.AtomicInteger(1)
@@ -203,7 +204,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     return HttpServer.Response.json(JSONObject().put("fingerprint", p?.fingerprint ?: ""))
                 }
                 "tvkbd" -> {                                          // is the TV's own keyboard up (the page opens its typing box)
-                    val up = link.state() == "ready" && try { dev.tvremote.core.adb.TvKeyboard.shown(link.get().shell(dev.tvremote.core.adb.TvKeyboard.CMD)) } catch (e: Exception) { false }
+                    val up = link.state() == "ready" && try { kbdReader.ask { link.get().shell(it) } } catch (e: Exception) { false }
                     return HttpServer.Response.json(JSONObject().put("shown", up))
                 }
                 "adb/discover" -> if (canPair) return discoverPairing()     // the phone and computer only: the TV web page has its TV on localhost

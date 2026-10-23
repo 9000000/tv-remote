@@ -14,7 +14,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: giờ và ngày nằm cùng một hàng (lời chào nhỏ ở trên ngày), chừa chỗ cho thẻ và app; thẻ Lịch âm có tiêu đề như các thẻ khác nên thẳng hàng với chúng.
 - Hình nền: Bing, Trang web và ảnh của bạn đứng đầu danh sách (TV Home và trang Quản lý); Bing có icon riêng, không còn giống Trang web.
 - TV Home: chọn mức phủ tối hình nền từ 0 đến 100% cho ảnh, cảnh vẽ và trang web, để chữ trên Home dễ đọc khi nền nhiều màu (50% là mức cũ). Trên TV: Tùy chỉnh TV Home → Phủ tối hình nền mở một ô nhỏ, bảng tùy chỉnh ẩn đi để thấy nền đổi ngay khi bấm ◀ ▶. Trong Quản lý TV Home là một thanh kéo. Khi nền là trang web chạy thật, các thẻ widget có nền đặc để chữ vẫn đọc được.
-- Bàn phím TV bật lên (bấm vào ô tìm kiếm trên TV) thì app điện thoại và trang web tự mở ô gõ cùng bàn phím điện thoại; TV tắt bàn phím mà chưa gõ gì thì ô gõ tự đóng. Cần ADB; tắt được ở mục "Bàn phím của TV".
+- Chọn một ô nhập chữ trên TV (ô tìm kiếm, ô link ở TV Home), hoặc bàn phím TV bật lên, thì app điện thoại và trang web tự mở ô gõ cùng bàn phím điện thoại trong chưa tới 1 giây; rời ô đó mà chưa gõ gì thì ô gõ tự đóng. Cần ADB; tắt được ở mục "Bàn phím của TV".
 - TV Channels: thêm link m3u của riêng bạn (tối đa 5) ở tab "Link của bạn" trong Quản lý kênh; TV tải về mỗi ngày và hiện thành mục "Danh sách của bạn", mỗi link một hàng.
 - Xem màn hình TV: chọn "Trực tiếp" hoặc "Ảnh chụp". Ảnh chụp tự chụp lại sau mỗi phím bấm, chụp tiếp tới khi màn hình đứng yên (hết hiệu ứng, app mở xong), và mỗi 10 giây; có nút ↻ chụp ngay. Nhẹ cho Wi-Fi yếu và iPhone.
 
@@ -26,7 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: the clock and the day share one row (a small greeting above the day), leaving room for the cards and apps; the Lunar calendar card has a title like the others, so it lines up with them.
 - Backgrounds: Bing, Web page and your photos come first in the list (TV Home and the Manage page); Bing has its own icon, no longer the same as Web page.
 - TV Home: choose how much the background is dimmed, 0 to 100 %, for photos, drawn scenes and the web page, so Home's words stay readable over a busy one (50 % is the old look). On the TV, Customize TV Home → Dim the background opens a small box and hides the panel, so the background changes as ◀ ▶ are pressed. In Manage TV Home it is a slider. Over a live web page the widget cards get a solid back so their words stay readable.
-- When the TV's keyboard comes up (a search box focused on the TV), the phone app and the web page open their typing box with the phone's keyboard; if the TV's keyboard goes away before anything was typed, the box closes. Needs ADB; can be turned off under "TV keyboard".
+- When a text field on the TV gets the focus (a search box, the link field in TV Home) or the TV's keyboard comes up, the phone app and the web page open their typing box with the phone's keyboard within a second; leaving the field before anything was typed closes it. Needs ADB; can be turned off under "TV keyboard".
 - TV Channels: add your own m3u links (up to 5) in the "Your links" tab of Manage channels; the TV fetches them each day and shows them under "Your lists", a row per link.
 - Seeing the TV's screen: choose "Live" or "Screenshots". Screenshots refresh after each key press, again until the screen stops changing (an animation, an app opening), and every 10 s; a ↻ button shoots now. Light on weak Wi-Fi and iPhones.
 

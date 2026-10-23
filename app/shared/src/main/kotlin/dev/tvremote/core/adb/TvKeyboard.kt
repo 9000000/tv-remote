@@ -1,17 +1,66 @@
 package dev.tvremote.core.adb
 
 /**
- * Is the TV's on-screen keyboard up? Someone focused a search box there, so the remotes open their own typing box. Read
- * over ADB from the input method service (`mInputShown`, true from Android 11 to 14 as measured on a Google TV with Gboard).
- * Not `mIsInputViewShown`: that line stays true while the keyboard is hidden.
+ * Is someone about to type on the TV? Its on-screen keyboard is up, or a text field has the focus with the keyboard still
+ * down (TV Home's fields raise it only on OK, so the remote down the room can type at once). The remotes then open their own
+ * typing box. Read over ADB from the input method service, measured on the FPT box (Android 14, Gboard):
+ * - `dumpsys input_method --proto`, some 450 bytes in 0.1 s: the text dump is half a megabyte and took 2.4 s there (the
+ *   keyboard app's own dump is in it), so the box followed the TV 3 to 4 s late. Sent as hex by `od`, the shell's output being
+ *   text; the TV's service message is field 3, in it `input_shown` (12) and the focused field (7) with its `input_type` (1)
+ * - the text dump where there is no proto (older Androids): `mInputShown=true`, and the last start of input
+ *   (`inputType=0x11 ... fieldId=...`); not `mIsInputViewShown`, which stays true while the keyboard is hidden, nor the
+ *   keyboard app's own `inputType=` lines, which have no `fieldId=`
+ * An input type of 0 is no text field (a button, a list).
  */
 object TvKeyboard {
-    /** One cheap line instead of the whole dump (it is some 3000 lines), asked about once a second. */
-    const val CMD = "dumpsys input_method | grep -m1 mInputShown"
+    const val PROTO = "dumpsys input_method --proto 2>/dev/null | od -An -tx1 -v"
+    const val CMD = "dumpsys input_method | grep -E 'mInputShown=|inputType=.*fieldId='"
 
     private val SHOWN = Regex("""\bmInputShown=true\b""")
+    private val FIELD = Regex("""\binputType=0x([0-9a-fA-F]+)\b.*\bfieldId=""")
 
-    fun shown(dump: String): Boolean = SHOWN.containsMatchIn(dump)
+    /** From the text dump. */
+    fun shown(dump: String): Boolean =
+        SHOWN.containsMatchIn(dump) || FIELD.findAll(dump).lastOrNull()?.groupValues?.get(1)?.toLongOrNull(16)?.let { it != 0L } == true
+
+    /** From the proto's hex; null when it is not one (no proto on this TV). */
+    fun fromProto(hex: String): Boolean? {
+        val b = hex.split(Regex("\\s+")).filter { it.isNotEmpty() }.map { it.toIntOrNull(16) ?: return null }
+        val top = fields(b, 0, b.size) ?: return null
+        val ims = top[3]?.let { it as? IntRange }?.let { fields(b, it.first, it.last + 1) } ?: top
+        if (ims[1] !is IntRange) return null                           // cur_method_id: not the service's message
+        val type = (ims[7] as? IntRange)?.let { fields(b, it.first, it.last + 1) }?.get(1) as? Long ?: 0L
+        return ims[12] == 1L || type != 0L
+    }
+
+    // one message's fields: a number for a varint, the bytes' range for a length; null if it does not read as one
+    private fun fields(b: List<Int>, from: Int, to: Int): Map<Int, Any>? {
+        val out = HashMap<Int, Any>()
+        var i = from
+        fun varint(): Long? { var v = 0L; var sh = 0; while (i < to && sh < 64) { val x = b[i++]; v = v or ((x and 0x7f).toLong() shl sh); if (x < 0x80) return v; sh += 7 }; return null }
+        while (i < to) {
+            val key = varint() ?: return null
+            val n = (key ushr 3).toInt()
+            when ((key and 7).toInt()) {
+                0 -> out[n] = varint() ?: return null
+                1 -> i += 8
+                2 -> { val len = varint() ?: return null; if (len < 0 || i + len > to) return null; out[n] = i until i + len.toInt(); i += len.toInt() }
+                5 -> i += 4
+                else -> return null
+            }
+        }
+        return if (i == to) out else null
+    }
+
+    /** Asks the TV, the proto first; a TV without it is asked by the text dump from then on (one [Reader] per TV link). */
+    class Reader {
+        private var proto = true
+        fun ask(shell: (String) -> String): Boolean {
+            if (proto) fromProto(shell(PROTO))?.let { return it }
+            proto = false
+            return shown(shell(CMD))
+        }
+    }
 
     /** What to do with the typing box when the TV keyboard's state is read; see [Follow]. */
     enum class Do { NONE, OPEN, CLOSE }

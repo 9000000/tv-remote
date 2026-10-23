@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
  */
 internal class KbdWatch(private val a: MainActivity) {
     private val follow = TvKeyboard.Follow()
+    private val reader = TvKeyboard.Reader()
     private val work = Executors.newSingleThreadExecutor()
     private var asking = false
 
@@ -28,7 +29,7 @@ internal class KbdWatch(private val a: MainActivity) {
                 || !a.prefs.getBoolean("kbdAuto", true)) return
             asking = true
             work.execute {
-                val shown = try { TvKeyboard.shown(tv.shell(TvKeyboard.CMD)) } catch (e: Exception) { null }
+                val shown = try { reader.ask { tv.shell(it) } } catch (e: Exception) { null }
                 a.ui.post {
                     asking = false
                     if (shown == null) return@post
