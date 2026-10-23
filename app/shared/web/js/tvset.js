@@ -84,7 +84,7 @@ function drawTvset(t) {
   // the screensaver comes on after this long without a key; "never" is how some TVs (Sony) say off
   const saverOn = t.saver && t.saverAfter !== null && t.saverAfter < 86400000;
   const savers = [['off', T('tvset.none')], [5 * MIN, fmtWait(5 * MIN)], [15 * MIN, fmtWait(15 * MIN)], [30 * MIN, fmtWait(30 * MIN)]];
-  if (saverOn && !savers.some(([v]) => v === t.saverAfter)) savers.push([t.saverAfter, fmtWait(t.saverAfter)]);
+  if (saverOn && !savers.some(([v]) => v === t.saverAfter)) savers.push([t.saverAfter, fmtWait(t.saverAfter)]), savers.sort((a, b) => (a[0] === 'off' ? -1 : b[0] === 'off' ? 1 : a[0] - b[0]));   // 10 min between Off and 15, not after 30
   rows.push(row(T('tvset.saver_title'), savers.map(([v, label]) => choice(label, v === 'off' ? !saverOn : saverOn && t.saverAfter === v, () => setTv('saver', v, T('tvset.saver_set', { label }))))));
 
   const sizes = densityChoices(t.physical);

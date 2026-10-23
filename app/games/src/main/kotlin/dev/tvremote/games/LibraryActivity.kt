@@ -362,6 +362,7 @@ class LibraryActivity : ComponentActivity() {
         val f = EditText(context).apply {
             hint = getString(R.string.search_hint); setHintTextColor(0x99FFFFFF.toInt()); setTextColor(Color.WHITE); textSize = 16f
             setText(query); setSingleLine(true); imeOptions = EditorInfo.IME_ACTION_SEARCH; inputType = android.text.InputType.TYPE_CLASS_TEXT
+            id = View.generateViewId(); nextFocusRightId = id                // the last of the header row: Right stays (Android's search took the wide tile of the grid, its far edge being past ours)
             setPadding(dp(18), 0, dp(20), 0); gravity = Gravity.CENTER_VERTICAL
             setCompoundDrawablesRelative(getDrawable(R.drawable.ic_search)!!.mutate().also { d -> d.setBounds(0, 0, dp(22), dp(22)); d.setTint(0x99FFFFFF.toInt()) }, null, null, null); compoundDrawablePadding = dp(12)
             background = StateListDrawable().apply {
