@@ -26,6 +26,7 @@ path is `docs/*` (Cloudflare's `*` spans folders; `docs/**` matches nothing and 
 | `demo/` (`index.html`, `sw.js`, `mock.js`) | the live demo at `/demo/`, see below |
 | `llms.txt` | the app in plain words for AI agents: keep it true when features or download links change |
 | `robots.txt`, `sitemap.xml` | for search engines |
+| `_worker.js` | Cloudflare Pages worker: passes every request to the static files, except `/guide?t=<topic>`, whose title and og: tags it sets from that topic (a chat app's link preview never sees `#topic`). Not served as a file |
 | `_headers` | Cloudflare Pages response headers: images 1 week, GSAP 30 days (css/js keep the default: revalidated, as their names have no version) |
 | `img/` | screenshots (`dev/shots/shots.py`) and the link previews `og-<lang>.jpg` (1200×630, TV Home from `tvhome-widgets-<lang>.webp`: `dev/shots/shots.py og`) |
 

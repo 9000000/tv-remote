@@ -215,9 +215,12 @@
     if (el && el.classList.contains("ggroup")) el = el.querySelector(".topic");
     return el && el.classList.contains("topic") ? el : topics[0];
   }
+  // the address carries the topic twice: #id for the page, ?t=id for a chat app's link preview, which never sees the # (_worker.js)
+  function here(){ return location.hash.slice(1) || new URLSearchParams(location.search).get("t") || ""; }
+  function addr(id){ return location.pathname + "?t=" + encodeURIComponent(id) + "#" + id; }
   function go(id){
     var t = find1(id);
-    if (location.hash !== "#" + t.id) history.pushState(null, "", "#" + t.id);
+    if (location.hash !== "#" + t.id) history.pushState(null, "", addr(t.id));
     show(t.id); scrollTo(0, 0);
   }
   function show(id){
@@ -243,8 +246,8 @@
     var a = e.target.closest("a[data-t]"); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
     e.preventDefault(); go(a.dataset.t);
   });
-  addEventListener("popstate", function(){ show(location.hash.slice(1)); });
-  addEventListener("hashchange", function(){ show(location.hash.slice(1)); scrollTo(0, 0); });   // a link written by hand
+  addEventListener("popstate", function(){ show(here()); });
+  addEventListener("hashchange", function(){ history.replaceState(null, "", addr(find1(here()).id)); show(here()); scrollTo(0, 0); });   // a link written by hand: ?t= follows it
 
   /* ---------- the header's narrow-screen menu (same as the home page) ---------- */
   (function(){
@@ -272,7 +275,8 @@
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();
-  show(location.hash.slice(1)); root.classList.add("gr");
+  if (here()) history.replaceState(null, "", addr(find1(here()).id));   // an old #id link copied from here previews its topic too
+  show(here()); root.classList.add("gr");
   if (location.hash) addEventListener("load", function(){ setTimeout(function(){ if (scrollY < 200) scrollTo(0, 0); }, 50); });   // the browser jumps to #topic, under the bar
   setLang(root.dataset.lang);
 })();
