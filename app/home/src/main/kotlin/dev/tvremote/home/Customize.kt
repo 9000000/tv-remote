@@ -66,7 +66,7 @@ object Customize {
         val scroll = ScrollView(c).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
         val page = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
         var row: View? = null; var head: View? = null; var sum: TextView? = null; var last: View? = null
-        var start: (() -> View?)? = null                                 // where a first visit lands (the background in use), else the first control
+        var start: (() -> View?)? = null                                 // where a first visit lands, else the first control (Background: its first control, not the photo in use further down)
         var fill: (() -> Unit)? = null                                 // puts the controls in [col]; dropped once it ran
     }
 
@@ -495,7 +495,6 @@ object Customize {
                 col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (col.childCount > 0) topMargin = dp(8) })
             }
         }
-        groups[0].start = { tiles.firstOrNull { it.second.isSelected }?.second ?: tiles.firstOrNull()?.second }
         fun build(g: Group) {
             val f = g.fill ?: return
             g.fill = null; conf = Store.get(a); col = g.col   // as it is now: another page may have changed it
@@ -538,8 +537,8 @@ object Customize {
             (g.last?.takeIf { it.isShown } ?: g.start?.invoke() ?: firstFocusable(g.col))?.requestFocus()
             if (slides()) {
                 g.page.translationX = shift; g.page.alpha = 0f
-                g.page.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer().start()
-                topScroll.animate().translationX(-shift / 2).alpha(0f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer()
+                g.page.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(120)).setInterpolator(Motion.glide).withLayer().start()
+                topScroll.animate().translationX(-shift / 2).alpha(0f).setDuration(Motion.ms(120)).setInterpolator(Motion.glide).withLayer()
                     .withEndAction { if (n == gen) topScroll.visibility = View.GONE }.start()
             } else { g.page.translationX = 0f; g.page.alpha = 1f; topScroll.visibility = View.GONE }
         }
@@ -554,8 +553,8 @@ object Customize {
             g.row?.requestFocus()                                      // back on the group just left
             if (slides()) {
                 topScroll.translationX = -shift / 2; topScroll.alpha = 0f
-                topScroll.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer().start()
-                g.page.animate().translationX(shift).alpha(0f).setDuration(Motion.ms(220)).setInterpolator(Motion.glide).withLayer()
+                topScroll.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(120)).setInterpolator(Motion.glide).withLayer().start()
+                g.page.animate().translationX(shift).alpha(0f).setDuration(Motion.ms(120)).setInterpolator(Motion.glide).withLayer()
                     .withEndAction { if (n == gen) g.page.visibility = View.GONE }.start()
             } else { topScroll.translationX = 0f; topScroll.alpha = 1f; g.page.visibility = View.GONE }
             return true
@@ -674,7 +673,7 @@ object Customize {
                 it.requestFocus()
             }
             if (Motion.on) {                                           // on a layer: drawn once, then only moved and faded (drawn each frame it took 40-57 ms on the FPT box)
-                panel.animate().translationX(0f).alpha(1f).setDuration(260).setInterpolator(Motion.glide).withLayer().withEndAction {
+                panel.animate().translationX(0f).alpha(1f).setDuration(130).setInterpolator(Motion.glide).withLayer().withEndAction {
                     slid = true; for ((v, b) in waiting) v.setImageBitmap(b); waiting.clear()
                     buildRest()
                 }.start()

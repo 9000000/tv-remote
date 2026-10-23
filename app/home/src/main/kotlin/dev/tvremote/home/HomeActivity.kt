@@ -800,10 +800,10 @@ class HomeActivity : Activity() {
 
     /** The press: the provider does its job and the tile follows it until it is done (the count-down is the tile's). */
     private fun pressTile(a: App) {
-        bg.execute {
+        Thread {                                                  // its own thread: the follow-up polls for up to 14 s, and on [bg] the wallpaper, widgets and apps waited behind it
             val ok = Tiles.press(this, a.pkg) { s -> runOnUiThread { tileShow(a.pkg, s) } }
-            if (!ok) runOnUiThread { toast(if (Tiles.status(this) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.tile_need_setup_long) }
-        }
+            if (!ok) runOnUiThread { if (!isDestroyed) toast(if (Tiles.status(this) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.tile_need_setup_long) }
+        }.start()
     }
 
     /** The tiles in the config ([HomeConfig] "tiles") are among the apps, so move, hide and the order work on them as on any app. */

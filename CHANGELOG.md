@@ -32,6 +32,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: trong bảng Tùy chỉnh, "Thêm vào màn hình chính" và "Phím nhanh", mục được chọn chỉ sáng nền và có viền, không phóng to nữa. Trên FPT, 24 lần di chuyển tốn ~0,7–1,2 giây CPU thay vì 5,3–8,4 giây, và vẽ ~30 frame thay vì 530–610. Nhãn "Đã ẩn" mất ngay khi hiện lại app.
 - TV Home: quét mã QR "Quản lý từ điện thoại" không còn ra trang chỉ có chữ "401". Ứng dụng camera hoặc trình quét QR tự mở link trước (để xem trước) nên dùng mất mã, vì trước đây mỗi mã chỉ dùng được 1 lần. Giờ mã dùng được nhiều lần trong lúc màn QR còn mở, tối đa 8 phiên. Mã đã hết hạn thì hiện trang hướng dẫn quét lại.
 - TV Home: quét QR bằng camera hoặc Google Lens giờ vào được trang quản lý. Trước đây link mở từ app khác bị trình duyệt coi là từ trang ngoài, nên không gửi cookie đăng nhập (SameSite=Strict) và trang báo mã hết hạn. Giờ dùng SameSite=Lax; lệnh thay đổi vẫn cần header riêng.
+- TV Home: vào Tùy chỉnh → Hình nền, focus đặt ở nút đầu trang thay vì nhảy xuống ảnh nền đang dùng. Bảng Tùy chỉnh trượt ra nhanh hơn (130 ms thay vì 260 ms, trang con 120 ms thay vì 220 ms). Bấm ô widget (như hẹn giờ tắt) không còn làm hình nền, widget và danh sách app chờ tới 14 giây.
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -59,6 +60,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: in Customize, "Add to home screen" and "Quick keys" the focused item is a lighter background and a ring, no longer grown. On the FPT box 24 moves cost ~0.7–1.2 s of CPU instead of 5.3–8.4 s and draw ~30 frames instead of 530–610. "Hidden" goes away as soon as an app is shown again.
 - TV Home: scanning the "Manage from phone" QR no longer gives a page that only says "401". The camera or QR app opened the address first (a preview) and used up the one-time key. The key now works while its QR is on screen, up to 8 sessions. An expired key shows a page saying to scan again.
 - TV Home: scanning the QR with the camera or Google Lens now opens the manage page. A link opened from another app is cross-site to the browser, so it left off the SameSite=Strict login cookie and the page said the code had expired. Now SameSite=Lax; changes still need the custom header.
+- TV Home: Customize → Background now focuses the first button of the page, not the background in use further down. The Customize panel slides in faster (130 ms instead of 260 ms, pages 120 ms instead of 220 ms). Pressing a live tile (such as the sleep timer) no longer holds up the wallpaper, widgets and app list for up to 14 s.
 
 ## 0.20.0 - 2026-10-23
 
