@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.19.0 - 2026-10-23
+
+Web 0.19.0 · app điện thoại 0.19.0 · app TV 0.19.0 · TV Home 0.6.0 · TV Channels 0.3.1 · TV Games 0.3.0
 
 **Tiếng Việt**
 - TV Home: trên TV ít RAM (Coocaa), thoát YouTube về đôi khi hình nền bị mờ và mất hết logo app cho tới lần mở lại sau; giờ tự hiện lại đủ. Tắt chuyển động: ô app đang chọn vẫn phóng to (trước chỉ thấy tấm kính quanh logo nhỏ); TV Games cũng vậy.
