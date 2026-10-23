@@ -145,6 +145,8 @@ object Picker {
         }
         dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, dm.heightPixels - dp(64), Gravity.CENTER)) })   // centred: a bare content view sat at the left
         dialog.window?.let(::solidPage)
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)   // the list first; the keyboard only on OK in the search
+        search.isFocusable = false                                     // not the first thing focused while the list loads (it took the keyboard up with it)
 
         val items = ArrayList<Item>()
         val tiles = HashMap<String, PickTile>()
@@ -229,7 +231,7 @@ object Picker {
             for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 2, R.drawable.ic_gauge))
             a.runOnUiThread {
                 if (!dialog.isShowing) return@runOnUiThread
-                items.addAll(got); redraw()
+                items.addAll(got); redraw(); search.isFocusable = true
                 val inOrder = (0 until list.childCount).mapNotNull { (list.getChildAt(it) as? LinearLayout)?.getChildAt(0) as? PickTile }.firstOrNull { it.isFocusable }   // the first on the screen, not a map's first
                 val first = (if (mode == Mode.TARGET) tiles[now]?.takeIf { it.isFocusable && it.parent != null } else null) ?: inOrder
                 (first ?: search).requestFocus()
