@@ -72,8 +72,8 @@ nav .navtools{margin-left:auto}
   .steps4{grid-template-columns:1fr}
   .steps4 .th{height:100px}
 }
-@media (min-width:561px){nav .menubtn{display:none}}                /* Live demo and Guide fit as buttons up to here */
-@media (max-width:560px){nav .navtools .navdemo,nav .navtools .btn-ghost[href="guide"]{display:none}}  /* in the menu */
+@media (min-width:861px){nav .menubtn{display:none}}                /* the four buttons (Live demo, Guide, The apps, Install) fit from here up */
+@media (max-width:860px){nav .navtools .navdemo,nav .navtools .btn-ghost[href="guide"],nav .navtools .btn-ghost[href="apps"]{display:none}}  /* in the menu */
 
 /* ---- And more: a scroll-snap row, native swipe, no autoplay ---- */
 .h-more2{padding:56px 0 24px;overflow-x:clip}

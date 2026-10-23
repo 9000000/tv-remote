@@ -28,7 +28,7 @@ h2{font-size:clamp(30px,4.2vw,46px);font-weight:800;margin:14px 0 16px}
 /* nav */
 nav{position:sticky;top:0;z-index:50;background:rgba(10,13,20,.72);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.06)}
 nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
-.brand{white-space:nowrap;display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.brand{flex:none;white-space:nowrap;display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
 .brand img{width:32px;height:32px;border-radius:9px}
 .navlinks{display:flex;gap:4px;margin-left:auto}
 .navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500;white-space:nowrap}
