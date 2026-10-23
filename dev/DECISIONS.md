@@ -335,3 +335,10 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - Coverage 2026-10-24: 285 of 298 real names (iptv-org vn + TV360 + VieON) land in a category; the rest (radio, VBS TV) go to "Others".
 - The page cannot read the site (no CORS header), so the TV/desktop server proxies it: `GET /api/channels/categories?cc=`, a day's cache per country, `{}` for a 404.
 - Focus on the rows is a ring only (no scale): 24 D-pad moves on the emulator 307 frames, 7.8% janky, p99 34 ms, vs the old grid's 10.2% / 65 ms.
+
+## TV Games: lobby and columns cost (`GameActivity.still()`, `LobbyView.kt`, `LibraryActivity.kt`)
+- The ROM lobby was slow because libretro's GLThread kept drawing every vsync behind it, plus a pulse and a spinner always running: emulator 589 CPU ticks / 239 frames → 38 / 23 with RENDERMODE_WHEN_DIRTY while waiting and no pulse. The QR takes 1-6 ms: not the cause; it is cached anyway.
+- Changing columns rebuilt every tile: now the same views are re-measured in place (215 → 34-41 ticks).
+- Pills (tvui `pill`) change colour only on focus: a scale needs a hardware layer per focus, ~7x the CPU on the FPT box (same finding as Customize).
+- Lobby layout: QR card 320 dp (~614 px at 1080p) left, title/players/start right, one Back hint; the web games' in-page lobby mirrors it.
+- Still slow: typing in search (4 letters: 129 ticks, 95% janky); not yet measured on the FPT box.

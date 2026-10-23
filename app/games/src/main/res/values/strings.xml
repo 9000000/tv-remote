@@ -149,4 +149,8 @@
     <string name="sc_lib_short">Games</string>        <!-- launcher shortcuts (TV Home picker) -->
     <string name="sc_lib_long">Game library</string>
     <string name="sc_pad_short">Pad test</string>
+    <plurals name="need_more">
+        <item quantity="one">Needs %1$d more player</item>
+        <item quantity="other">Needs %1$d more players</item>
+    </plurals>
 </resources>

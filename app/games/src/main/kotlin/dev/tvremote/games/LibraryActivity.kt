@@ -386,8 +386,8 @@ class LibraryActivity : ComponentActivity() {
         cb = pill(cols.toString(), 15f, lead = R.drawable.ic_grid, animate = { animOn }, focused = ::centreFocused) {
             cols = if (cols >= 6) 4 else cols + 1
             getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
-            cb?.let { it.pillText(cols.toString()); it.post { it.requestFocus() } }
-            renderSections()
+            cb?.let { it.pillText(cols.toString()); it.contentDescription = getString(R.string.cols_pill, cols) }
+            resizeTiles()                                              // the same views, a new size: no rebuild, no picture work (it took ~0.7 s on the test box)
         }.apply { contentDescription = getString(R.string.cols_pill, cols) }
         addView(cb, LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) })
         val gb = pill("", 15f, lead = R.drawable.ic_globe, animate = { animOn }, focused = ::centreFocused) { languages() }.apply { contentDescription = getString(R.string.lang_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
@@ -796,6 +796,28 @@ class LibraryActivity : ComponentActivity() {
     private class Ref(val card: FrameLayout, val face: FrameLayout, val ring: View, val shine: View, val content: View, val below: LinearLayout, val nameV: TextView)
     private val refs = java.util.WeakHashMap<View, Ref>()
     private val itemOf = java.util.WeakHashMap<View, Item>()
+    private val sizers = java.util.WeakHashMap<View, () -> Unit>()        // a tile -> what re-sizes it to the column count
+    private val texts = java.util.WeakHashMap<View, () -> Unit>()         // a tile -> what re-sizes its words
+
+    /** 4 / 5 / 6 a row: every tile and row is kept and only its size changes (one layout pass), the focus stays on its tile and the row stays centred.
+     *  It used to rebuild every tile (views, drawables, pictures from disk, a decode each), ~9 ms a tile. */
+    private fun resizeTiles() {
+        val box = sections ?: return
+        fun walk(v: View) {
+            if (v is GridLayout) {                                   // 6 a row -> 4: a GridLayout refuses fewer columns while its children hold cells it worked out, so
+                val kids = (0 until v.childCount).map { v.getChildAt(it) }        // the same views come out and go back in (focus is on the pill, not on a tile)
+                v.removeAllViews(); v.columnCount = cols
+                kids.forEach { t ->
+                    (t.layoutParams as? GridLayout.LayoutParams)?.let { it.rowSpec = GridLayout.spec(GridLayout.UNDEFINED); it.columnSpec = GridLayout.spec(GridLayout.UNDEFINED) }
+                    sizers[t]?.invoke(); texts[t]?.invoke(); v.addView(t)
+                }
+            }
+            else if (v is ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
+        }
+        walk(box)
+        box.requestLayout()
+        lastFocus?.let { f -> jump = true; centreFocused(f) }
+    }
 
     /** The ring round a focused tile: TV Home's accent from [ringOut] dp outside the face to 1 dp over it, then a thin white line. */
     private fun ringDrawable(r: Float): Drawable {
@@ -818,7 +840,7 @@ class LibraryActivity : ComponentActivity() {
             clipChildren = false
             addView(face, FrameLayout.LayoutParams(w, h).apply { setMargins(o, o, o, o) })
             addView(ring, FrameLayout.LayoutParams(-1, -1))
-            outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, out: android.graphics.Outline) { out.setRoundRect(o, o, o + w, o + h, r) } }
+            outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, out: android.graphics.Outline) { out.setRoundRect(o, o, v.width - o, v.height - o, r) } }   // from the view: a resize needs no new provider
         }
         outer.addView(card, FrameLayout.LayoutParams(w + 2 * o, h + 2 * o).apply { setMargins(-o, -o, -o, -o) })
         val nameV = TextView(this).apply { textSize = 18f; setTextColor(Color.WHITE); typeface = android.graphics.Typeface.DEFAULT_BOLD; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER; setShadowLayer(dp(5).toFloat(), 0f, dp(1).toFloat(), 0xCC000000.toInt()) }
@@ -827,24 +849,37 @@ class LibraryActivity : ComponentActivity() {
         outer.addView(below, FrameLayout.LayoutParams(w + dp(24), dp(60)).apply { leftMargin = -dp(12); topMargin = h + (h * (GROW - 1f) / 2f).toInt() + o + dp(3) })
         outer.layoutParams = GridLayout.LayoutParams().apply { width = w; height = h; setMargins(dp(12), dp(8), dp(12), dp(58)) }
         refs[outer] = Ref(card, face, ring, shine, content, below, nameV)
+        sizers[outer] = {                                              // the tile at the current column count: only layout params change
+            val w2 = tileW; val h2 = tileH
+            (outer.layoutParams as? GridLayout.LayoutParams)?.let { it.width = w2; it.height = h2 }
+            (card.layoutParams as FrameLayout.LayoutParams).let { it.width = w2 + 2 * o; it.height = h2 + 2 * o }
+            (face.layoutParams as FrameLayout.LayoutParams).let { it.width = w2; it.height = h2 }
+            (shine.layoutParams as FrameLayout.LayoutParams).height = h2 * 2 / 3
+            (below.layoutParams as FrameLayout.LayoutParams).let { it.width = w2 + dp(24); it.topMargin = h2 + (h2 * (GROW - 1f) / 2f).toInt() + o + dp(3) }
+        }
         outer.setOnFocusChangeListener { v, on -> focusTile(v, on) }
         return outer
     }
 
     private fun gameTile(i: Item, section: String): View {
         val dl = i.rom != null
+        var iniTexts: () -> Unit = {}
         val outer = shell(0xFF1E2230.toInt()) { face ->
             val dark = Color.rgb(Color.red(i.color) * 45 / 100, Color.green(i.color) * 45 / 100, Color.blue(i.color) * 45 / 100)
             val fb = FrameLayout(this).apply { background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(i.color, dark)) }
-            fb.addView(TextView(this).apply {                                // the designed picture: initials, and the name, until (or without) the real one
+            val ini = TextView(this)
+            fb.addView(ini.apply {                                // the designed picture: initials, and the name, until (or without) the real one
                 text = ThumbNames.initials(i.name); textSize = 144f / cols; typeface = android.graphics.Typeface.DEFAULT_BOLD; setTextColor(0xE6FFFFFF.toInt()); gravity = Gravity.CENTER; setPadding(0, 0, 0, dp(16))
             }, FrameLayout.LayoutParams(-1, -1))
-            fb.addView(TextView(this).apply {
+            val nm = TextView(this)
+            fb.addView(nm.apply {
                 text = if (dl) getString(R.string.get_rom, i.name) else i.name; textSize = if (cols > 5) 12f else 14f; setTextColor(Color.WHITE); maxLines = 2; gravity = Gravity.CENTER; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(8), 0, dp(8), dp(8)); setShadowLayer(4f, 0f, 1f, Color.BLACK)
             }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
             face.addView(fb, FrameLayout.LayoutParams(-1, -1))
+            iniTexts = { ini.textSize = 144f / cols; nm.textSize = if (cols > 5) 12f else 14f }
             fb
         }
+        texts[outer] = iniTexts
         itemOf[outer] = i
         val ref = refs[outer]!!
         ref.below.addView(TextView(this).apply { text = meta(i); textSize = 14f; setTextColor(0xFFC5CCDB.toInt()); maxLines = 1; gravity = Gravity.CENTER; ellipsize = android.text.TextUtils.TruncateAt.END; setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0xCC000000.toInt()) }, LinearLayout.LayoutParams(-1, -2))
@@ -906,14 +941,16 @@ class LibraryActivity : ComponentActivity() {
     }
 
     private fun addTile(): View {
+        var plus: TextView? = null; var add: TextView? = null
         val outer = shell(0xFF1A1F2B.toInt()) { face ->
             val c = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-                addView(TextView(context).apply { text = "+"; textSize = 208f / cols; setTextColor(Color.WHITE); includeFontPadding = false; gravity = Gravity.CENTER; typeface = android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL) })
-                addView(label(getString(R.string.add_game), if (cols > 5) 13f else 15f).apply { setTextColor(0xFFC9CFDD.toInt()) })
+                addView(TextView(context).also { plus = it }.apply { text = "+"; textSize = 208f / cols; setTextColor(Color.WHITE); includeFontPadding = false; gravity = Gravity.CENTER; typeface = android.graphics.Typeface.create("sans-serif-light", android.graphics.Typeface.NORMAL) })
+                addView(label(getString(R.string.add_game), if (cols > 5) 13f else 15f).also { add = it }.apply { setTextColor(0xFFC9CFDD.toInt()) })
             }
             face.addView(c, FrameLayout.LayoutParams(-1, -1)); c
         }
+        texts[outer] = { plus?.textSize = 208f / cols; add?.textSize = if (cols > 5) 13f else 15f }
         outer.setOnClickListener { showOverlay() }
         return outer
     }

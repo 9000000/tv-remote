@@ -22,10 +22,14 @@ fun Context.dot(slot: Int, size: Int) = View(this).apply {
     layoutParams = LinearLayout.LayoutParams(dp(size), dp(size)).apply { marginEnd = dp(size / 2); gravity = Gravity.CENTER_VERTICAL }
 }
 
-fun Context.qrView(url: String, sizeDp: Int) = ImageView(this).apply {
+/** The join code, [scale] px per module: made once per address (the cards and the lobby ask for the same one), and drawn without smoothing so
+ *  an enlarged module stays a sharp square (a smoothed QR blurs at the edges and reads worse from the sofa). */
+private val qrCache = HashMap<String, android.graphics.Bitmap>()
+fun Context.qrView(url: String, sizeDp: Int, scale: Int = 8) = ImageView(this).apply {
     layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
     scaleType = ImageView.ScaleType.FIT_XY
-    setImageBitmap(Qr.bitmap(url, 8))
+    val b = synchronized(qrCache) { qrCache[url + "|" + scale] ?: Qr.bitmap(url, scale)?.also { qrCache[url + "|" + scale] = it } }
+    if (b != null) setImageDrawable(android.graphics.drawable.BitmapDrawable(resources, b).apply { isFilterBitmap = false })
 }
 
 /** The "scan to add games" block: a big QR, the link under it and where else to put files. */

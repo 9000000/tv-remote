@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Games: phòng chờ làm lại: mã QR to bên trái (~614px ở 1080p) kèm "Quét để chơi" và địa chỉ; bên phải là tên game, thẻ người chơi gọn, nút "OK Bắt đầu" chỉ nổi khi đủ người, thiếu thì báo "Cần thêm N người". Mở phòng chờ game ROM nhẹ hơn ~15 lần CPU (máy ảo: 589 → 38 tick): game không còn vẽ mỗi khung hình khi đang chờ. Đổi số cột không dựng lại lưới (215 → ~40 tick). Nút dạng pill trên TV chỉ đổi màu khi focus, không phóng to.
 - TV Channels: nước nào có danh mục dựng sẵn (hiện là Việt Nam: VTV, HTV, VTVcab, SCTV, VTC, Địa phương, Thể thao, Phim truyện, Thiếu nhi, Âm nhạc, Giải trí, Tin tức, Quốc tế) thì màn chính là các hàng kênh theo danh mục; tìm kiếm, nhóm, playlist, quốc gia nằm trong nút ⋯. Trang web trên điện thoại và máy tính cũng vậy. Danh mục là file `docs/channels/categories/<mã nước>.json`, thêm nước mới không cần bản app mới.
 - Game web: Tỷ phú chuộc đất tính đúng (1400 → 770, trước là 771); bot Caro không còn đi vào ô đã có quân và luôn đi nước thắng trước khi chặn. Thêm test thử ngẫu nhiên cho 8 bộ luật.
 - Trang web (TV Setup, App điện thoại, App máy tính) gửi file nén gzip: lần mở đầu sau mỗi bản cập nhật tải ~0,41 MB thay vì 1,23 MB.
@@ -54,6 +55,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - Tỷ phú: tên ô không tràn chữ, và ván kết thúc khi không còn người thật.
 
 **English**
+- TV Games: a new lobby: a big QR on the left (~614 px at 1080p) with "Scan to play" and the address; on the right the game, compact player chips, and "OK Start" lit only with enough players, else "N more needed". Opening a ROM's lobby takes ~15x less CPU (emulator: 589 → 38 ticks): the game no longer draws every frame while waiting. Changing the column count no longer rebuilds the grid (215 → ~40 ticks). TV pills change colour on focus instead of growing.
 - TV Channels: a country with ready-made categories (now Vietnam: VTV, HTV, VTVcab, SCTV, VTC, local, sports, movies, kids, music, entertainment, news, international) opens on rows of channels by category; search, groups, playlists and country sit behind ⋯. The phone and computer page do the same. Categories are `docs/channels/categories/<cc>.json`: a new country needs no new app.
 - Web games: Ty phu redeems at the right price (1400 → 770, was 771); the Caro bot never picks a taken cell and takes its own five before blocking. Seeded fuzz tests for 8 rule engines.
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.

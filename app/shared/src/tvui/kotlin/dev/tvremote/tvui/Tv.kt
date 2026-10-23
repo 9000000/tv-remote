@@ -301,8 +301,8 @@ fun Context.pill(text: String, sp: Float = 16f, lead: Int? = null, trail: Int? =
     }
     minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36)   // the words alone: icons are not counted at first (as before the move), pillText() counts them when the words change
     setOnFocusChangeListener { v, on ->
-        val g = if (on) TvUi.PILL_GROW else 1f
-        v.animate().scaleX(g).scaleY(g).setDuration(if (animate()) TvUi.MS_PILL else 0).withLayer().start(); if (on) focused(v)
+        // colour only (the state list above): a scale needs a hardware layer built on every focus, ~7x the CPU of a colour change on the target box
+        if (on) focused(v)
     }
     setOnClickListener { onClick() }
     layoutParams = LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) }

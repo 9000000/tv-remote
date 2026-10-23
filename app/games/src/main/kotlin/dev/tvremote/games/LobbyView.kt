@@ -19,28 +19,31 @@ import dev.tvremote.tvui.dp
 import dev.tvremote.tvui.label
 
 /**
- * The lobby the TV shows before a game starts, in the game's own colours: its picture blurred behind everything, an accent taken from
- * it, the picture framed large on the left, the join QR on a white card, a seat per player (avatar, name, state, ping, the button being
- * tried) and a hint bar of remote keys. Drawn on a fixed canvas of [DW] x [DH] dp scaled to 90 % of the screen (5 % overscan on each
- * side), so a 720p TV with a big density clips nothing. GameCards owns the rules; this only draws what it is told. The blur and the
- * accent are computed once, on a 64 x 36 copy; the only thing that moves is a slow fade on empty seats (not at all when the system's
- * animations are off).
+ * The lobby the TV shows before a game starts, in the game's own colours (its picture blurred behind, an accent taken from it).
+ * One glance says what to do from the sofa: on the left the join QR is the hero (a white card, 320 dp square = ~615 px at 1080p,
+ * drawn without smoothing so every module stays sharp), "Scan to play" and the address as text; on the right the game (small picture,
+ * title, players needed), the seats as compact chips that fill as phones join, ONE primary action (OK: Start, lit only when enough
+ * players are in, else "Needs N more"), and the Back hint small at the bottom. Drawn on a fixed canvas of [DW] x [DH] dp scaled to 90 %
+ * of the screen (5 % overscan each side), so a 720p TV with a big density clips nothing (1 canvas dp = 1.92 px at 1080p).
+ * Cheap to draw: nothing loops (the old pulse on empty seats re-drew the whole scaled panel every frame; a join gets one short pop),
+ * the blur and accent come from a 64 x 36 copy once, the QR bitmap is cached ([qrView]). GameCards owns the rules; this draws.
  */
 class LobbyView(
     private val act: Activity, private val server: GameServer, title: String, art: Thumbs.Src?,
     private val max: Int, private val min: Int, private val kind: String? = null,
 ) : FrameLayout(act) {
-    private class Row(val box: LinearLayout, val avatar: TextView, val name: TextView, val lit: TextView, val ping: TextView, val state: TextView)
+    private class Chip(val box: LinearLayout, val avatar: TextView, val name: TextView, val sub: TextView)
 
     private val panel = FrameLayout(act)
-    private val rows = ArrayList<Row>()
+    private val chips = ArrayList<Chip>()
+    private val joined = HashSet<Int>()
     private val held = Array(4) { LinkedHashSet<String>() }
-    private val watchTv = act.label("", 20f, 0xFF9AA3B8.toInt())
-    private val warnTv = act.label("", 20f, 0xFFFBBF24.toInt())
-    private val loadTv = act.label("", 20f).apply { setTextColor(watchTv.currentTextColor) }
+    private val watchTv = act.label("", 16f, 0xFF9AA3B8.toInt())
+    private val warnTv = act.label("", 18f, 0xFFFBBF24.toInt())
+    private val loadTv = act.label("", 16f).apply { setTextColor(watchTv.currentTextColor) }
     private val loadRow = LinearLayout(act).apply {                  // a spinner and the page's progress while it loads behind the lobby
         gravity = Gravity.CENTER_VERTICAL; visibility = View.GONE
-        addView(android.widget.ProgressBar(act).apply { isIndeterminate = true }, LinearLayout.LayoutParams(act.dp(24), act.dp(24)).apply { marginEnd = act.dp(10) })
+        addView(android.widget.ProgressBar(act).apply { isIndeterminate = true }, LinearLayout.LayoutParams(act.dp(18), act.dp(18)).apply { marginEnd = act.dp(8) })
         addView(loadTv)
     }
     private val countBox = FrameLayout(act)
@@ -49,11 +52,12 @@ class LobbyView(
     private val countCaption = act.label(act.getString(R.string.lobby_count), 32f, 0xFFD5DAE6.toInt())
     private val backdrop = ImageView(act).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
     private val heroFrame = FrameLayout(act)
-    private val qrCard = LinearLayout(act)
-    private val seatsTv = act.label("", 24f, 0xFF9AA3B8.toInt())
-    private val grey = 0xFFAAB0C0.toInt()
+    private val qrCard = FrameLayout(act)
+    private val action = LinearLayout(act)                           // the one primary action: OK + what it does, or what is missing
+    private val actionKey = act.label(act.getString(R.string.key_ok), 22f)
+    private val actionTv = act.label("", 26f)
+    private val subHint = act.label("", 16f, 0xFF9AA3B8.toInt())
     private var accent = LobbyTheme.DEFAULT
-    private val pulse = ValueAnimator.ofFloat(0.45f, 1f).apply { duration = 1400; repeatMode = ValueAnimator.REVERSE; repeatCount = ValueAnimator.INFINITE }
     private val animOn = try { Settings.Global.getFloat(act.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f } catch (e: Exception) { true }
     private val shapeR = act.dp(14).toFloat()
 
@@ -70,90 +74,87 @@ class LobbyView(
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0x8C080A10.toInt(), 0xB8080A10.toInt(), 0xE6080A10.toInt()))
         }, LayoutParams(-1, -1))
 
-        // ---- left: the picture, title, system and players
+        // ---- left: the QR is the hero
+        qrCard.apply {
+            setPadding(act.dp(14), act.dp(14), act.dp(14), act.dp(14))
+            addView(act.qrView(server.url(), QR - 28, 16), LayoutParams(act.dp(QR - 28), act.dp(QR - 28)))
+        }
+        val addr = server.url().substringAfter("//").substringBefore('/')
+        val left = LinearLayout(act).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
+            addView(qrCard, LinearLayout.LayoutParams(act.dp(QR), act.dp(QR)))
+            addView(bold(act.label(act.getString(R.string.scan_play), 30f)), LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(14) })
+            addView(act.label(addr, 22f, 0xFFD5DAE6.toInt()).apply { maxLines = 1 }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(2) })
+        }
+
+        // ---- right: the game, the seats, the action
         val img = ImageView(act).apply { scaleType = ImageView.ScaleType.CENTER_CROP; setBackgroundColor(0xFF1A1F2B.toInt()) }
-        val ph = act.label(title.trim().take(1).uppercase(), 80f, 0xFF4B556B.toInt())   // until (or without) a picture
+        val ph = act.label(title.trim().take(1).uppercase(), 36f, 0xFF4B556B.toInt())   // until (or without) a picture
         val inner = FrameLayout(act).apply {
             addView(img, LayoutParams(-1, -1)); addView(ph, LayoutParams(-1, -1))
             clipToOutline = true
-            outlineProvider = object : ViewOutlineProvider() { override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, act.dp(15).toFloat()) } }
+            outlineProvider = object : ViewOutlineProvider() { override fun getOutline(v: View, o: Outline) { o.setRoundRect(0, 0, v.width, v.height, act.dp(10).toFloat()) } }
         }
         heroFrame.addView(inner, LayoutParams(act.dp(HERO_W), act.dp(HERO_H)))
-        heroFrame.setPadding(act.dp(3), act.dp(3), act.dp(3), act.dp(3))
+        heroFrame.setPadding(act.dp(2), act.dp(2), act.dp(2), act.dp(2))
         if (art != null) Thumbs.load(act, art) { b, _ ->
             if (act.isDestroyed) return@load
             img.setImageBitmap(b); ph.visibility = View.GONE
             accent = LobbyTheme.accent(b); backdrop.setImageBitmap(LobbyTheme.backdrop(b)); applyAccent()
         }
-        val metaLine = listOfNotNull(kind, need()).joinToString("  ·  ")
-        val left = LinearLayout(act).apply {
+        val metaLine = listOfNotNull(kind, need()).joinToString("  \u00B7  ")
+        val titles = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
-            addView(heroFrame, LinearLayout.LayoutParams(-2, -2))
-            addView(bold(act.label(title, 34f)).apply {
-                maxLines = 2; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.START
-                (layoutParams as LinearLayout.LayoutParams).apply { topMargin = act.dp(16) }
-            })
-            addView(act.label(metaLine, 22f, 0xFFD5DAE6.toInt()).apply { gravity = Gravity.START; (layoutParams as LinearLayout.LayoutParams).topMargin = act.dp(4) })
-            addView(loadRow, LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(10) })
+            addView(bold(act.label(title, 30f)).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.START })
+            addView(act.label(metaLine, 20f, 0xFFD5DAE6.toInt()).apply { gravity = Gravity.START; maxLines = 1 })
+            addView(loadRow, LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(4) })
         }
-
-        // ---- right: QR card, the seats
-        val addr = server.url().substringAfter("//").substringBefore('/')
-        qrCard.apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(12), act.dp(12), act.dp(22), act.dp(12))
-            addView(act.qrView(server.url(), 100).apply { (layoutParams as LinearLayout.LayoutParams).marginEnd = act.dp(18) })
-            addView(LinearLayout(act).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(bold(act.label(act.getString(R.string.scan_play), 26f, 0xFF0B0D12.toInt())).apply { gravity = Gravity.START })
-                addView(act.label(addr, 20f, 0xFF3B4254.toInt()).apply { gravity = Gravity.START; maxLines = 1; (layoutParams as LinearLayout.LayoutParams).topMargin = act.dp(4) })
-            }, LinearLayout.LayoutParams(0, -2, 1f))
+        val header = LinearLayout(act).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(heroFrame, LinearLayout.LayoutParams(-2, -2).apply { marginEnd = act.dp(16) })
+            addView(titles, LinearLayout.LayoutParams(0, -2, 1f))
         }
         val seats = max.coerceIn(1, 4)
-        val rowH = when (seats) { 1, 2 -> 84; 3 -> 64; else -> 48 }
-        val list = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL }
+        val grid = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL }
+        var rowBox: LinearLayout? = null
         for (p in 1..seats) {
-            val avatar = bold(act.label(p.toString(), 24f, Color.WHITE)).apply { minWidth = act.dp(44); minHeight = act.dp(44); background = GradientDrawable().apply { shape = GradientDrawable.OVAL } }
-            val name = act.label("", 24f).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER_VERTICAL or Gravity.START }
-            val lit = act.label("", 20f).apply { setPadding(act.dp(10), act.dp(2), act.dp(10), act.dp(2)); minWidth = act.dp(44); visibility = View.INVISIBLE }
-            val ping = act.label("", 18f).apply { setPadding(act.dp(10), 0, act.dp(10), 0) }
-            val state = bold(act.label("", 20f)).apply { setPadding(act.dp(16), act.dp(6), act.dp(16), act.dp(6)); minWidth = act.dp(140) }
+            if (rowBox == null || (p - 1) % 2 == 0) { rowBox = LinearLayout(act); grid.addView(rowBox, LinearLayout.LayoutParams(-1, act.dp(CHIP_H)).apply { topMargin = if (p > 2) act.dp(8) else 0 }) }
+            val avatar = bold(act.label(p.toString(), 20f, Color.WHITE)).apply { background = GradientDrawable().apply { shape = GradientDrawable.OVAL } }
+            val name = bold(act.label("", 20f)).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.START }
+            val sub = act.label("", 15f).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.START }
             val box = LinearLayout(act).apply {
-                gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(16), 0, act.dp(14), 0)
-                addView(avatar, LinearLayout.LayoutParams(act.dp(44), act.dp(44)).apply { marginEnd = act.dp(16) })
-                addView(name, LinearLayout.LayoutParams(0, -2, 1f)); addView(lit); addView(ping); addView(state)
+                gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(10), 0, act.dp(10), 0)
+                addView(avatar, LinearLayout.LayoutParams(act.dp(AVATAR), act.dp(AVATAR)).apply { marginEnd = act.dp(10) })
+                addView(LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; addView(name); addView(sub) }, LinearLayout.LayoutParams(0, -2, 1f))
             }
-            list.addView(box, LinearLayout.LayoutParams(-1, act.dp(rowH)).apply { bottomMargin = act.dp(6) })
-            rows += Row(box, avatar, name, lit, ping, state)
+            rowBox.addView(box, LinearLayout.LayoutParams(0, -1, 1f).apply { if ((p - 1) % 2 == 1) marginStart = act.dp(8) })
+            chips += Chip(box, avatar, name, sub)
         }
-        val head = LinearLayout(act).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            addView(bold(act.label(act.getString(R.string.lobby_title), 32f)).apply { gravity = Gravity.START }, LinearLayout.LayoutParams(0, -2, 1f))
-            addView(seatsTv)
+        if (seats % 2 == 1) rowBox?.addView(View(act), LinearLayout.LayoutParams(0, -1, 1f).apply { marginStart = act.dp(8) })   // an odd last chip keeps the width of the others
+        action.apply {
+            gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(14), 0, act.dp(22), 0)
+            addView(bold(actionKey).apply { setPadding(act.dp(12), act.dp(2), act.dp(12), act.dp(2)); background = round(0x30000000, 8, 2, 0x66000000) }, LinearLayout.LayoutParams(-2, -2).apply { marginEnd = act.dp(14) })
+            addView(bold(actionTv))
         }
         val right = LinearLayout(act).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(qrCard, LinearLayout.LayoutParams(-1, -2))
-            addView(head, LinearLayout.LayoutParams(-1, -2).apply { topMargin = act.dp(12); bottomMargin = act.dp(6) })
-            addView(list, LinearLayout.LayoutParams(-1, 0, 1f))
-            addView(watchTv, LinearLayout.LayoutParams(-2, -2))
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
+            addView(header, LinearLayout.LayoutParams(-1, -2))
+            addView(grid, LinearLayout.LayoutParams(-1, -2).apply { topMargin = act.dp(24) })
+            addView(action, LinearLayout.LayoutParams(-2, act.dp(56)).apply { topMargin = act.dp(24) })
+            addView(subHint, LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(8) })
+            addView(warnTv, LinearLayout.LayoutParams(-2, -2).apply { topMargin = act.dp(4) })
         }
         val top = LinearLayout(act).apply {
-            addView(left, LinearLayout.LayoutParams(act.dp(HERO_W + 6), -1))
-            addView(right, LinearLayout.LayoutParams(0, -1, 1f).apply { leftMargin = act.dp(40) })
+            addView(left, LinearLayout.LayoutParams(act.dp(QR), -1))
+            addView(right, LinearLayout.LayoutParams(0, -1, 1f).apply { leftMargin = act.dp(36) })
         }
 
-        // ---- foot: the remote keys
+        // ---- foot: Back, small, and who is watching
         val foot = LinearLayout(act).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            addView(warnTv)
-            addView(LinearLayout(act).apply {
-                gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(24), act.dp(8), act.dp(24), act.dp(8))
-                background = round(0xB3080A10.toInt(), 30, 1, 0x33FFFFFF)
-                addView(keyCap(act.getString(R.string.key_ok))); addView(hintText(R.string.hint_remote).also { startTv = it })
-                addView(keyCap(act.getString(R.string.key_back))); addView(hintText(R.string.hint_exit))
-                addView(act.label("|", 24f, 0x55FFFFFF).apply { setPadding(act.dp(14), 0, act.dp(14), 0) })
-                addView(hintText(R.string.hint_ready))
-            })
+            gravity = Gravity.CENTER_VERTICAL or Gravity.END
+            addView(watchTv, LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = act.dp(16) })
+            addView(bold(act.label(act.getString(R.string.key_back), 15f, 0xFFD5DAE6.toInt())).apply { setPadding(act.dp(8), act.dp(1), act.dp(8), act.dp(1)); background = round(0x30FFFFFF, 6, 1, 0x66FFFFFF) }, LinearLayout.LayoutParams(-2, -2).apply { marginEnd = act.dp(8) })
+            addView(act.label(act.getString(R.string.hint_exit), 15f, 0xFFAAB0C0.toInt()))
         }
         panel.addView(top, LayoutParams(act.dp(DW), act.dp(DH - FOOT), Gravity.TOP))
         panel.addView(foot, LayoutParams(act.dp(DW), act.dp(FOOT), Gravity.BOTTOM))
@@ -174,23 +175,15 @@ class LobbyView(
         render()
     }
 
-    private fun keyCap(t: String) = bold(act.label(t, 22f)).apply {
-        setPadding(act.dp(14), act.dp(4), act.dp(14), act.dp(4)); background = round(0x40FFFFFF, 8, 2, 0x80FFFFFF.toInt())
-        (layoutParams as LinearLayout.LayoutParams).apply { marginEnd = act.dp(10) }
-    }
-    private var startTv: TextView? = null
-
-    private fun hintText(id: Int) = act.label(act.getString(id), 22f, 0xFFE5E9F2.toInt()).apply { (layoutParams as LinearLayout.LayoutParams).marginEnd = act.dp(22); maxLines = 1 }
-
     private fun need() = when { max == 1 -> act.getString(R.string.need_one); min >= max -> act.getString(R.string.need_n, min); else -> act.getString(R.string.need_range, min, max) }
 
     /** The accent changed (the picture arrived): everything that wears it. */
     private fun applyAccent() {
-        heroFrame.background = round((accent and 0x00FFFFFF) or 0x59000000, 18, 1, (accent and 0x00FFFFFF) or 0x80000000.toInt())   // a soft halo, not an outline
-        qrCard.background = round(Color.WHITE, 20, 2, (accent and 0x00FFFFFF) or 0x66000000)
+        heroFrame.background = round((accent and 0x00FFFFFF) or 0x59000000, 14, 1, (accent and 0x00FFFFFF) or 0x80000000.toInt())   // a soft halo, not an outline
+        qrCard.background = round(Color.WHITE, 22, 3, (accent and 0x00FFFFFF) or 0x99000000.toInt())
         countN.setTextColor(accent); countCaption.setTextColor(0xFFD5DAE6.toInt())
         countRing.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0x14FFFFFF); setStroke(act.dp(8), accent) }
-        if (rows.isNotEmpty()) render()
+        if (chips.isNotEmpty()) render()
     }
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
@@ -199,57 +192,52 @@ class LobbyView(
         panel.scaleX = s; panel.scaleY = s
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (animOn) { pulse.addUpdateListener { v -> val a = v.animatedValue as Float; rows.forEach { if (it.box.tag == EMPTY) { it.avatar.alpha = a; it.name.alpha = a; it.state.alpha = a } } }; pulse.start() }
-    }
-
-    override fun onDetachedFromWindow() { pulse.cancel(); super.onDetachedFromWindow() }
-
     private fun capsule(c: Int, r: Int = 99) = GradientDrawable().apply { setColor(c); cornerRadius = act.dp(r).toFloat() }
 
-    /** Seats from the server: who is in, their names, pings and Ready. */
+    /** Seats from the server: who is in, their names, pings and Ready; and the one action. */
     fun render() {
         val ps = server.lobbyPlayers().associateBy { it.slot }
-        startTv?.text = act.getString(if (ps.isEmpty()) R.string.hint_remote else R.string.hint_start)   // nobody in: OK plays with the remote, no QR needed
         val w = server.watching(); watchTv.text = if (w > 0) act.getString(R.string.lobby_watch, w) else ""
-        seatsTv.text = act.getString(R.string.lobby_seats, ps.size.coerceAtMost(rows.size), rows.size)
-        rows.forEachIndexed { i, r ->
+        val ok = !LobbyRule.tooFew(ps.values.toList(), min)
+        if (ok) {
+            action.background = capsule(accent); actionKey.setTextColor(LobbyTheme.onAccent(accent)); actionTv.setTextColor(LobbyTheme.onAccent(accent))
+            actionTv.text = act.getString(if (ps.isEmpty()) R.string.hint_remote else R.string.hint_start)   // nobody in: OK plays with the remote, no QR needed
+        } else {
+            val missing = min - maxOf(ps.size, 1)
+            action.background = round(0x26FFFFFF, 99, 2, 0x55FFFFFF); actionKey.setTextColor(0xFF8892A6.toInt()); actionTv.setTextColor(0xFFFBBF24.toInt())
+            actionTv.text = act.resources.getQuantityString(R.plurals.need_more, missing, missing)
+        }
+        subHint.text = if (ps.isEmpty()) act.getString(R.string.hint_ready) else ""
+        chips.forEachIndexed { i, r ->
             val p = ps[i + 1]; val c = PLAYER_COLORS[i]
-            r.avatar.text = (server.nameOf(i + 1)?.trim()?.take(1)?.uppercase()?.ifEmpty { null } ?: (i + 1).toString())
             if (p == null) {
-                r.box.tag = EMPTY
-                r.box.background = GradientDrawable().apply { setColor(0x4D10141D); cornerRadius = shapeR; setStroke(act.dp(1), 0x33FFFFFF) }
+                joined.remove(i + 1)
+                r.box.background = GradientDrawable().apply { setColor(CHIP_EMPTY); cornerRadius = shapeR; setStroke(act.dp(1), 0x33FFFFFF) }
                 (r.avatar.background as GradientDrawable).setColor(c and 0x00FFFFFF or 0x55000000); r.avatar.setTextColor(0x99FFFFFF.toInt()); r.avatar.text = (i + 1).toString()
                 r.name.text = act.getString(R.string.player_plain, i + 1); r.name.setTextColor(0xFF8892A6.toInt())
-                r.state.text = act.getString(R.string.lobby_waiting); r.state.setTextColor(0xFF8892A6.toInt()); r.state.background = null
-                r.ping.text = ""; r.lit.visibility = View.INVISIBLE
-                if (!animOn) { r.avatar.alpha = 0.7f; r.name.alpha = 0.7f; r.state.alpha = 0.7f }
+                r.sub.text = act.getString(R.string.lobby_waiting); r.sub.setTextColor(0xFF6B7385.toInt())
                 return@forEachIndexed
             }
-            r.box.tag = null; r.avatar.alpha = 1f; r.name.alpha = 1f; r.state.alpha = 1f
-            r.box.background = GradientDrawable().apply { setColor(if (p.ready) (accent and 0x00FFFFFF) or 0x40000000 else 0xCC151A25.toInt()); cornerRadius = shapeR; setStroke(act.dp(2), if (p.ready) accent else (c and 0x00FFFFFF) or 0x66000000) }
+            r.avatar.text = (server.nameOf(i + 1)?.trim()?.take(1)?.uppercase()?.ifEmpty { null } ?: (i + 1).toString())
+            r.box.background = GradientDrawable().apply { setColor(if (p.ready) (accent and 0x00FFFFFF) or 0x40000000 else 0xCC151A25.toInt()); cornerRadius = shapeR; setStroke(act.dp(2), if (p.ready) accent else (c and 0x00FFFFFF) or 0x99000000.toInt()) }
             (r.avatar.background as GradientDrawable).setColor(c); r.avatar.setTextColor(Color.WHITE)
             r.name.text = server.nameOf(p.slot) ?: act.getString(R.string.player_plain, p.slot); r.name.setTextColor(Color.WHITE)
             val ms = server.pingOf(p.slot)
-            r.ping.text = if (ms < 0) "" else "$ms ms"
-            r.ping.setTextColor(if (ms < 30) 0xFF34D399.toInt() else if (ms < 80) 0xFFFBBF24.toInt() else 0xFFF87171.toInt())
-            r.state.text = act.getString(if (p.ready) R.string.lobby_ready else R.string.lobby_joined)
-            r.state.setTextColor(if (p.ready) LobbyTheme.onAccent(accent) else 0xFFD5DAE6.toInt())
-            r.state.background = capsule(if (p.ready) accent else 0x40FFFFFF)
-            r.lit.background = capsule(c, 10); lit(i)
+            val h = held[i]
+            val sb = android.text.SpannableStringBuilder()
+            if (h.isNotEmpty()) sb.append(h.toList().takeLast(3).joinToString(" ") { glyph(it) })      // the button being tried
+            else {
+                sb.append(act.getString(if (p.ready) R.string.lobby_ready else R.string.lobby_joined))
+                if (ms >= 0) { val a = sb.length; sb.append("  $ms ms"); sb.setSpan(android.text.style.ForegroundColorSpan(if (ms < 30) 0xFF34D399.toInt() else if (ms < 80) 0xFFFBBF24.toInt() else 0xFFF87171.toInt()), a, sb.length, 0) }
+            }
+            r.sub.text = sb; r.sub.setTextColor(if (p.ready) accent else 0xFFD5DAE6.toInt())
+            if (joined.add(p.slot) && animOn) r.avatar.animate().cancel().also { r.avatar.scaleX = 1.35f; r.avatar.scaleY = 1.35f; r.avatar.animate().scaleX(1f).scaleY(1f).setDuration(260).start() }   // one pop when a phone joins
         }
     }
 
-    private fun glyph(b: String) = mapOf("UP" to "▲", "DOWN" to "▼", "LEFT" to "◀", "RIGHT" to "▶")[b] ?: b
+    private fun glyph(b: String) = mapOf("UP" to "\u25B2", "DOWN" to "\u25BC", "LEFT" to "\u25C0", "RIGHT" to "\u25B6")[b] ?: b
 
-    private fun lit(i: Int) {
-        val r = rows[i]; val h = held[i]
-        r.lit.text = h.toList().takeLast(3).joinToString(" ") { glyph(it) }
-        r.lit.visibility = if (h.isEmpty()) View.INVISIBLE else View.VISIBLE
-    }
-
-    /** A player presses (or lets go of) a button to try it: the seat lights it, the game gets nothing. */
+    /** A player presses (or lets go of) a button to try it: the seat shows it, the game gets nothing. */
     fun press(player: Int, button: String, down: Boolean) {
         if (player !in 1..4) return
         if (down) held[player - 1].add(button) else held[player - 1].remove(button)
@@ -272,5 +260,7 @@ class LobbyView(
         loadRow.visibility = if (text.isNotEmpty()) View.VISIBLE else if (loadRow.visibility == View.GONE) View.GONE else View.INVISIBLE
     }
 
-    companion object { const val DW = 900; const val DH = 520; const val FOOT = 84; const val HERO_W = 394; const val HERO_H = 222; private const val EMPTY = "empty" }
+    /** Sizes in canvas dp (x 1.92 = px at 1080p): QR card 320 square (~615 px), 2 x 2 chips 56 high, one 56 high action, Back 15 sp. */
+    companion object { const val DW = 900; const val DH = 520; const val FOOT = 36; const val QR = 320; const val HERO_W = 128; const val HERO_H = 72; const val CHIP_H = 56; const val AVATAR = 36
+        val CHIP_EMPTY = 0x3310141D }   // the seat nobody took: a dark veil, not a player colour
 }
