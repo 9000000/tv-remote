@@ -131,7 +131,7 @@ class VidaaTest {
         v.connect {}
         assertTrue(v.ready())
         assertTrue(logins.last().endsWith(" ACC1"))
-        waitFor { v.model.isNotEmpty() && v.volume != null && v.app.isNotEmpty() }
+        waitFor { v.model.isNotEmpty() && v.volume != null && v.app.isNotEmpty() && v.mac.isNotEmpty() }   // the MAC comes on its own reply: under load it was still empty
         assertEquals("65U8K", v.model); assertEquals(17, v.volume!!.first); assertEquals("Netflix", v.app); assertEquals(true, v.isOn)
         assertEquals("AA:BB:CC:00:11:22", v.mac)
         v.key(19, Atv.DOWN); v.key(19, Atv.UP); v.key(7, Atv.SHORT); v.key(999, Atv.SHORT)

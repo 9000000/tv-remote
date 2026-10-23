@@ -76,7 +76,7 @@ $('#nameform').addEventListener('submit', (e) => { e.preventDefault(); setName($
 $('#nm').addEventListener('blur', () => { if (!$('#nameform').hidden) { setName($('#nm').value, true); editName(false); } });
 
 // ---- connection
-let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 400, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0, replaced = false, quick = [];
+let away = false, canOpen = false, closed = false, first_hello = true, ws = null, retry = 150, layout = null, sysName = 'nes', mode = 'nav', lastPong = 0, gaveUp = false, downSince = 0, replaced = false, quick = [];
 // Two modes: the pad (a game is running) and navigate (a remote for TV Games itself: library, start / pause cards). It follows
 // the TV (a game starts -> pad, back to the library -> navigate); the 🎮 / 🧭 button flips it by hand.
 function setMode(m) {
@@ -247,7 +247,7 @@ function connect() {
   // a socket can stay CONNECTING for good, no error, no close (an iPhone's Chrome over https, the TV saw no request at all): the check
   // above then refused every new try and the pad said "Connecting…" until the page was reloaded
   const w = ws; setTimeout(() => { if (w === ws && w.readyState === 0) { w.onclose = null; w.close(); ws = null; lost(); } }, 5000);
-  ws.onopen = () => { opened = Date.now(); retry = 400; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
+  ws.onopen = () => { opened = Date.now(); retry = 150; downSince = 0; lastPong = Date.now(); send('hello ' + cid + (myName ? ' ' + myName : '')); held.forEach((b) => send('d ' + b)); };
   ws.onmessage = (e) => {
     const t = String(e.data);
     if (t[0] === 'p') { pong(t); return; }
@@ -295,12 +295,30 @@ function pong(t) {
 let lastPing = 0;
 function pingNow() { lastPing = Date.now(); send('p ' + lastPing); }
 function pingIfStale() { if (Date.now() - lastPing > 700) pingNow(); }       // any input, the stick's 60 moves a second included, keeps the chip live
+// A page the phone froze (iPhone: screen dimmed or locked, another app in front, Low Power Mode) stops its timers AND cannot read its socket, so
+// when it wakes "no answer for 5 s" is true of the page, not of the link: closing then dropped a healthy connection on every wake-up (the
+// "often drops" of the iPhone, each one a new hello and a seat re-take). A gap between two ticks says it slept: give the link a fresh window
+// and a ping now; only a link that stays silent after that is dead. 8 s, not 5: a Wi-Fi in power save or a busy TV can hold an answer back.
+let lastTick = Date.now();
+function alive() {                                              // the page is awake again: is the socket still good?
+  lastTick = Date.now();
+  if (!ws || ws.readyState > 1) { if (!gaveUp && !replaced) { retry = 150; connect(); } return; }
+  lastPong = Date.now(); pingNow();                             // silent for 3 s after this one = dead (below)
+  clearTimeout(alive.t); alive.t = setTimeout(() => { if (ws && ws.readyState === 1 && Date.now() - lastPong > 2900) dead(); }, 3000);
+}
+function dead() { const w = ws; if (w) { w.onclose = null; try { w.close(); } catch (e) {} } lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
 setInterval(() => {
+  const now = Date.now(), slept = now - lastTick > 2500; lastTick = now;
+  if (slept) { alive(); return; }
   pingNow();
-  if (ws && ws.readyState === 1 && Date.now() - lastPong > 5000) { const w = ws; w.onclose = null; try { w.close(); } catch (e) {} lost(); }     // a link that died without a close (Wi-Fi gone, TV off)
+  if (ws && ws.readyState === 1 && now - lastPong > 8000) dead();
 }, 1000);
-// the phone woke up: do not wait for the next retry
-document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && !replaced && (!ws || ws.readyState > 1)) { retry = 400; connect(); } });
+// the phone woke up: do not wait for the next retry. pageshow: Safari's back-forward cache gives the page back with a dead socket and no
+// visibilitychange; online: Wi-Fi came back; focus: an iPhone's tab switch
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !gaveUp && !replaced) alive(); });
+window.addEventListener('pageshow', () => { if (!gaveUp && !replaced) alive(); });
+window.addEventListener('online', () => { if (!gaveUp && !replaced) alive(); });
+window.addEventListener('focus', () => { if (!gaveUp && !replaced && !document.hidden) alive(); });
 
 // ---- presses
 function press(b, on) {
@@ -371,7 +389,7 @@ const ACT = {
   stick() { const on = !wantStick(); store.set(stickKey(), on ? '1' : '0'); relayout(); buzz(12); },
   ready() { if (!lobbyOn) return; iReady = !iReady; send('ready ' + (iReady ? 1 : 0)); syncReady(); buzz(iReady ? 20 : 10); },
   reopen() { send('open'); buzz(20); $('#reopen').disabled = true; setTimeout(() => { $('#reopen').disabled = false; }, 2000); },
-  take() { if (!replaced) return; replaced = false; quick = []; delete $('#off').dataset.act; $('#off').hidden = true; retry = 400; connect(); },
+  take() { if (!replaced) return; replaced = false; quick = []; delete $('#off').dataset.act; $('#off').hidden = true; retry = 150; connect(); },
   recenter() { send('pc'); buzz(15); },
   gyro() { gyroTap(); },
   tipx() { $('#tip').hidden = true; store.set('tvg-tip', '1'); },

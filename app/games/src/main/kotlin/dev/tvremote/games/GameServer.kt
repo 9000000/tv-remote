@@ -94,7 +94,7 @@ class GameServer private constructor(private val ctx: Context) {
     fun rotateToken() {
         token = newToken(); prefs.edit().putString("padToken", token).apply(); publish()
         val cs = synchronized(slots) { slots.mapNotNull { it.conn } }
-        cs.forEach { it.text("{\"rescan\":true}"); it.close() }
+        cs.forEach { it.text("{\"rescan\":true}"); it.bye() }
     }
 
     /** The name a player typed, null = the default. Player 1..4. */
@@ -123,6 +123,7 @@ class GameServer private constructor(private val ctx: Context) {
         if (port > 0) prefs.edit().putInt("padPort", port).apply()
         val s = server ?: return Unit.also { Log.w(TAG, "no free port") }
         (ctx as? android.app.Application)?.registerActivityLifecycleCallbacks(tracker)
+        wifiOn()
         tls.start { c -> serve(c) }; presence.attach(); PadService.start(ctx); publish()
         Log.i(TAG, "listening ${url()}")
         Thread({ while (!s.isClosed) try { val c = s.accept(); Thread({ serve(c) }, "pad-conn").apply { isDaemon = true }.start() } catch (e: Exception) { } }, "pad-accept")
@@ -172,12 +173,28 @@ class GameServer private constructor(private val ctx: Context) {
         }
     }
 
+    /**
+     * Wi-Fi power save on the TV: the chip sleeps between beacons and parks a frame for up to ~100 ms (more with a long DTIM), on top of
+     * every phone's own round trip. The lock keeps it awake while pads are served (low latency mode where Android has it: 10+).
+     */
+    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
+    @Suppress("DEPRECATION")
+    private fun wifiOn() {
+        if (wifiLock != null) return                                  // started again before a stop: a second lock would leave the first held for good
+        try {
+            val wm = ctx.getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager ?: return
+            val mode = if (android.os.Build.VERSION.SDK_INT >= 29) android.net.wifi.WifiManager.WIFI_MODE_FULL_LOW_LATENCY else android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF
+            wifiLock = wm.createWifiLock(mode, "tvgames:pad").apply { setReferenceCounted(false); acquire() }
+        } catch (e: Exception) { Log.w(TAG, "wifi lock: $e") }          // no permission or no Wi-Fi (ethernet): nothing to keep awake
+    }
+    private fun wifiOff() { try { wifiLock?.takeIf { it.isHeld }?.release() } catch (e: Exception) { }; wifiLock = null }
+
     fun stop() {
         (ctx as? android.app.Application)?.unregisterActivityLifecycleCallbacks(tracker)
-        presence.detach(); PadService.stop(ctx)
+        presence.detach(); PadService.stop(ctx); wifiOff()
         val cs = synchronized(slots) { slots.mapNotNull { it.conn } }
         try { server?.close() } catch (e: Exception) { }; tls.stop()
-        offMain { cs.forEach { it.text("{\"closed\":true}"); it.close() } }     // the pads say "closed" and retry quietly until TV Games is back
+        offMain { cs.forEach { it.text("{\"closed\":true}"); it.bye() } }     // the pads say "closed" and retry quietly until TV Games is back
     }
 
     /** The link the QR holds: the TV's Wi-Fi address, the port and the token. */
@@ -225,11 +242,12 @@ class GameServer private constructor(private val ctx: Context) {
             // is its own. It takes that seat over, as the same id would, instead of a second player (an iPhone's Edge and Chrome were
             // P2 and P3). Two phones behind one address would kick each other: a guest network that isolates phones cannot reach the TV anyway
             val ip = c.sock.inetAddress
-            val twin = if (slots.any { it.cid == cid && it.conn != null }) -1 else slots.indexOfFirst { o -> o.conn.let { it != null && it !== c && it.sock.inetAddress == ip } }
+            // ... but only of the same kind of phone: an Android and an iPhone behind one address (a repeater in NAT mode, a hotspot) are two players
+            val twin = if (slots.any { it.cid == cid && it.conn != null }) -1 else slots.indexOfFirst { o -> o.conn.let { it != null && it !== c && it.sock.inetAddress == ip && it.kind == c.kind } }
             val i = if (twin >= 0) twin else PadNames.pick(slots.map { PadNames.S(it.cid, it.conn != null, it.dev >= 0, reserved(it, now)) }, cid)
             if (i < 0) return -1
             val s = slots[i]
-            if (s.cid == cid || i == twin) s.conn?.takeIf { it !== c }?.let { it.text("{\"replaced\":true}"); it.close() } else s.name = null    // a new phone in a seat: not the last one's name
+            if (s.cid == cid || i == twin) s.conn?.takeIf { it !== c }?.let { it.text("{\"replaced\":true}"); it.bye() } else s.name = null    // a new phone in a seat: not the last one's name
             if (s.conn !== c) release(i)                   // a reconnect before the old socket was seen dead: what it held went up (the phone sends what it still holds)
             Log.i(TAG, "assign slot ${i + 1}"); s.cid = cid; s.conn = c; s.ready = false
             if (name != null) s.name = name
@@ -331,16 +349,37 @@ class GameServer private constructor(private val ctx: Context) {
     // ---- HTTP + WebSocket ----------------------------------------------------------------------------------------------
 
     private inner class Conn(val sock: Socket) {
+        @Volatile var kind = ""                                // "ios" / "android" / "other", from the upgrade request's User-Agent
         val out: OutputStream = sock.getOutputStream()
-        fun close() { try { sock.close() } catch (e: Exception) { } }
+        // One writer thread per phone with its own queue, and every frame leaves in ONE write. Before, a frame went out as 3-4 tiny writes
+        // (a TLS record each on the https port, a lone TCP segment each on http) and a broadcast wrote to the phones one after the other on
+        // one thread: an iPhone that stopped reading (page frozen, bad Wi-Fi) held up the Android's ping answers and the game's messages.
+        private val q = java.util.concurrent.LinkedBlockingQueue<ByteArray>(QUEUE)
+        @Volatile private var writer: Thread? = null
+        fun close() { try { sock.close() } catch (e: Exception) { }; q.offer(END) }
+        /** Closes once what was queued (a "replaced", "closed", "rescan" the phone must read) has been written. */
+        fun bye() { if (writer == null || !q.offer(END)) close() }
         fun text(s: String) = frame(1, s.toByteArray())
-        @Synchronized fun frame(op: Int, b: ByteArray) {
-            try {
-                out.write(0x80 or op)
-                when { b.size < 126 -> out.write(b.size); b.size < 65536 -> { out.write(126); out.write(b.size shr 8); out.write(b.size) }
-                    else -> { out.write(127); for (k in 7 downTo 0) out.write((b.size.toLong() shr (8 * k)).toInt()) } }
-                out.write(b); out.flush()
-            } catch (e: Exception) { close() }
+        fun startWriter() {
+            writer = Thread({
+                val buf = java.io.ByteArrayOutputStream()
+                try {
+                    var end = false
+                    while (!end) {
+                        buf.reset(); var f = q.take()
+                        while (true) { if (f === END) { end = true; break }; buf.write(f); f = q.poll() ?: break }   // what piled up meanwhile goes in one write
+                        if (buf.size() > 0) { out.write(buf.toByteArray()); out.flush() }
+                    }
+                } catch (e: Exception) { }
+                close()
+            }, "pad-out").apply { isDaemon = true; start() }
+        }
+        fun frame(op: Int, b: ByteArray) {
+            val h = when { b.size < 126 -> byteArrayOf((0x80 or op).toByte(), b.size.toByte())
+                b.size < 65536 -> byteArrayOf((0x80 or op).toByte(), 126, (b.size shr 8).toByte(), b.size.toByte())
+                else -> ByteArray(10).also { it[0] = (0x80 or op).toByte(); it[1] = 127; for (k in 0 until 8) it[2 + k] = (b.size.toLong() shr (8 * (7 - k))).toByte() } }
+            if (writer == null) { try { out.write(h + b); out.flush() } catch (e: Exception) { close() }; return }
+            if (!q.offer(h + b)) close()                   // 256 frames behind: that phone is gone, let go of it rather than hold memory
         }
     }
 
@@ -362,7 +401,7 @@ class GameServer private constructor(private val ctx: Context) {
             if (q["k"] != token && !(path.startsWith("/webgames/") && cookie == token)) return reply(conn, 403, "text/plain", "forbidden".toByteArray())
             if (parts[0] == "POST") return when (path) { "/upload" -> upload(conn, inp, h, q); "/weblink" -> weblink(conn, q); else -> reply(conn, 404, "text/plain", "no".toByteArray()) }
             if (path.startsWith("/webgames/")) return webfile(conn, path.removePrefix("/webgames/"), q["k"] == token)
-            if (path == "/ws" && h["upgrade"]?.lowercase() == "websocket") return socket(conn, inp, h["sec-websocket-key"] ?: return)
+            if (path == "/ws" && h["upgrade"]?.lowercase() == "websocket") { conn.kind = kindOf(h["user-agent"]); return socket(conn, inp, h["sec-websocket-key"] ?: return) }
             val name = when (path) { "/", "/index.html" -> "index.html"; "/pad.css" -> "pad.css"; "/pad.js" -> "pad.js"; "/add" -> "add.html"; "/layouts.json" -> "layouts.json"; "/manifest.webmanifest" -> "manifest.webmanifest"; "/icon.png" -> "icon.png"; else -> null }
                 ?: return reply(conn, 404, "text/plain", "not found".toByteArray())
             var body = if (name == "layouts.json") Catalog.layouts(ctx).toByteArray() else ctx.assets.open("pad/$name").use { it.readBytes() }   // the catalog's pad overrides
@@ -425,9 +464,9 @@ class GameServer private constructor(private val ctx: Context) {
 
     private fun socket(c: Conn, inp: InputStream, key: String) {
         val acc = Base64.encodeToString(MessageDigest.getInstance("SHA-1").digest((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").toByteArray()), Base64.NO_WRAP)
-        c.out.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: $acc\r\n\r\n".toByteArray()); c.out.flush()
+        c.out.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: $acc\r\n\r\n".toByteArray()); c.out.flush(); c.startWriter()
         c.sock.soTimeout = 75_000; c.sock.keepAlive = true           // a phone gone (battery, Wi-Fi) frees its seat: it pings every second, a hidden tab once a minute
-        var slot = -1
+        var slot = -1; var full = false
         try {
             while (true) {
                 val b0 = inp.read(); if (b0 < 0) break
@@ -449,7 +488,7 @@ class GameServer private constructor(private val ctx: Context) {
                             msg.startsWith("hello ") -> {
                                 val rest = msg.substring(6).trim()                 // "hello <client id> [name]"
                                 val i = assign(rest.substringBefore(' ').take(40), if (' ' in rest) PadNames.clean(rest.substringAfter(' ')) else null, c)
-                                if (i < 0) { c.text("{\"full\":true}"); break }
+                                if (i < 0) { c.text("{\"full\":true}"); full = true; break }
                                 slot = i
                                 c.text("{\"slot\":${i + 1},\"game\":$inGame,\"btns\":[${buttons.joinToString(",") { "\"$it\"" }}],\"sys\":\"$system\",\"name\":${org.json.JSONObject.quote(nameOf(i + 1) ?: "")},\"lobby\":$lobby,\"web\":$webMode,\"max\":$lobbyMax,\"ready\":false}")
                                 (synchronized(slots) { (if (lobby) null else layouts[i]) ?: defaultLayout })?.let { c.text("{\"layout\":$it}") }
@@ -477,7 +516,7 @@ class GameServer private constructor(private val ctx: Context) {
             }
         } catch (e: Exception) { Log.w(TAG, "socket p${slot + 1} ended: $e") }
         if (slot >= 0) drop(slot, c)
-        c.close()
+        if (full) c.bye() else c.close()
     }
 
     /** A phone's own measure: median round trip and clock offset. */
@@ -499,7 +538,10 @@ class GameServer private constructor(private val ctx: Context) {
         private const val PORT = 8780
         private const val MAX = 4
         private const val MAX_UPLOAD = 64L * 1024 * 1024
+        private const val QUEUE = 256
+        private val END = ByteArray(0)
         private const val KEEP_MS = 30_000L
+        fun kindOf(ua: String?): String = when { ua == null -> "other"; Regex("iPhone|iPad|iPod|Macintosh").containsMatchIn(ua) -> "ios"; ua.contains("Android") -> "android"; else -> "other" }
         private val DPAD = setOf("UP", "DOWN", "LEFT", "RIGHT")
 
         /**

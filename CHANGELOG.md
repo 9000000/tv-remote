@@ -33,6 +33,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: quét mã QR "Quản lý từ điện thoại" không còn ra trang chỉ có chữ "401". Ứng dụng camera hoặc trình quét QR tự mở link trước (để xem trước) nên dùng mất mã, vì trước đây mỗi mã chỉ dùng được 1 lần. Giờ mã dùng được nhiều lần trong lúc màn QR còn mở, tối đa 8 phiên. Mã đã hết hạn thì hiện trang hướng dẫn quét lại.
 - TV Home: quét QR bằng camera hoặc Google Lens giờ vào được trang quản lý. Trước đây link mở từ app khác bị trình duyệt coi là từ trang ngoài, nên không gửi cookie đăng nhập (SameSite=Strict) và trang báo mã hết hạn. Giờ dùng SameSite=Lax; lệnh thay đổi vẫn cần header riêng.
 - TV Home: vào Tùy chỉnh → Hình nền, focus đặt ở nút đầu trang thay vì nhảy xuống ảnh nền đang dùng. Bảng Tùy chỉnh trượt ra nhanh hơn (130 ms thay vì 260 ms, trang con 120 ms thay vì 220 ms). Bấm ô widget (như hẹn giờ tắt) không còn làm hình nền, widget và danh sách app chờ tới 14 giây.
+- TV Games: chơi nhiều điện thoại mượt hơn, iPhone hết rớt kết nối.
+  - Mỗi gói tin gửi đi trong 1 lần ghi thay vì 3–4 lần.
+  - Mỗi điện thoại có luồng gửi riêng: một máy bị đứng không còn làm máy khác chờ.
+  - TV giữ Wi-Fi luôn thức trong lúc chơi.
+  - iPhone mở lại màn hình hoặc quay lại app thì giữ kết nối, không còn tự ngắt.
+  - Android và iPhone dùng chung một địa chỉ IP (qua repeater hay điểm phát) không còn đá nhau ra.
+- Desktop: mở trang bằng link có mã từ app khác không còn bị từ chối (cookie SameSite=Lax).
+- Lõi: đóng socket bị bỏ quên khi kết nối Android TV thất bại. Trang điều khiển không vẽ lại khi tab bị ẩn.
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -61,6 +69,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: scanning the "Manage from phone" QR no longer gives a page that only says "401". The camera or QR app opened the address first (a preview) and used up the one-time key. The key now works while its QR is on screen, up to 8 sessions. An expired key shows a page saying to scan again.
 - TV Home: scanning the QR with the camera or Google Lens now opens the manage page. A link opened from another app is cross-site to the browser, so it left off the SameSite=Strict login cookie and the page said the code had expired. Now SameSite=Lax; changes still need the custom header.
 - TV Home: Customize → Background now focuses the first button of the page, not the background in use further down. The Customize panel slides in faster (130 ms instead of 260 ms, pages 120 ms instead of 220 ms). Pressing a live tile (such as the sleep timer) no longer holds up the wallpaper, widgets and app list for up to 14 s.
+- TV Games: smoother multiplayer, and iPhones no longer drop.
+  - Each frame goes out in one write instead of 3–4.
+  - Each phone has its own writer, so one stuck phone no longer holds up the others.
+  - The TV keeps its Wi-Fi awake while pads are served.
+  - An iPhone waking its screen or coming back to the tab keeps its link instead of closing it.
+  - An Android and an iPhone behind one IP address (a repeater or hotspot) no longer kick each other out.
+- Desktop: a link with the key opened from another app is no longer refused (SameSite=Lax cookie).
+- Core: sockets left open when an Android TV connect failed are now closed. The remote page stops redrawing while its tab is hidden.
 
 ## 0.20.0 - 2026-10-23
 

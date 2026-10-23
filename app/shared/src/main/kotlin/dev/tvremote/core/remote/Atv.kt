@@ -75,10 +75,12 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
             send(s, Pb().int(1, 2).int(2, 200).msg(field, body).bytes())
             answer(s, expect)
         }
-        step(10, Pb().str(1, "atvremote").str(2, "TV Remote").bytes(), 11)
-        val hex6 = Pb().int(1, 3).int(2, 6).bytes()                    // the code: 6 hexadecimal characters
-        step(20, Pb().msg(1, hex6).int(3, 1).bytes(), 20)
-        step(30, Pb().msg(1, hex6).int(2, 1).bytes(), 31)
+        try {
+            step(10, Pb().str(1, "atvremote").str(2, "TV Remote").bytes(), 11)
+            val hex6 = Pb().int(1, 3).int(2, 6).bytes()                    // the code: 6 hexadecimal characters
+            step(20, Pb().msg(1, hex6).int(3, 1).bytes(), 20)
+            step(30, Pb().msg(1, hex6).int(2, 1).bytes(), 31)
+        } catch (e: Exception) { try { s.close() } catch (ignored: Exception) { }; throw e }   // refused: the TV waits on a dead attempt otherwise
     }
 
     /** Throws when the code is wrong; the TV then drops the attempt and [startPairing] has to be run again. */
@@ -122,6 +124,7 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
                 try { while (true) handle(s, frame(s.inputStream) ?: break) } catch (e: Exception) { WireLog.all.add("·", "remote $host $e") }
                 WireLog.all.add("·", "remote $host dropped, dialling again")
                 live = false
+                try { s.close() } catch (ignored: Exception) { }   // the dropped link, or its descriptor stays until the GC
                 var again: SSLSocket? = null
                 for (i in 0 until 4) {
                     if (closed) break
@@ -306,9 +309,11 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
         val ctx = SSLContext.getInstance("TLS").apply { init(km.keyManagers, arrayOf(anyTv), null) }
         val plain = dev.tvremote.core.Lan.connect(host, port, 5000)
         val s = ctx.socketFactory.createSocket(plain, host, port, true) as SSLSocket
-        s.soTimeout = 15000
-        s.startHandshake()
-        s.soTimeout = 0
+        try {
+            s.soTimeout = 15000
+            s.startHandshake()
+            s.soTimeout = 0
+        } catch (e: Exception) { try { s.close() } catch (ignored: Exception) { }; throw e }   // a refused handshake (not paired) must not leave the socket open
         return s
     }
 

@@ -76,7 +76,7 @@ class ServerTest {
         assertEquals(302, r.status)
         assertEquals("/?lang=en", r.headers["Location"])
         val cookie = r.headers["Set-Cookie"]!!
-        assertTrue(cookie, cookie.startsWith("${Pass.COOKIE}=${pass.key};") && "HttpOnly" in cookie && "SameSite=Strict" in cookie)
+        assertTrue(cookie, cookie.startsWith("${Pass.COOKIE}=${pass.key};") && "HttpOnly" in cookie && "SameSite=Lax" in cookie)
     }
 
     @Test fun theKeyIsKeptOnDiskForASecondStart() {
