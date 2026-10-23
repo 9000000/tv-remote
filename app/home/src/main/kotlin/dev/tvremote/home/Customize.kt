@@ -56,7 +56,7 @@ object Customize {
     private const val CHIP_ALPHA = 0x33000000                           // OR-ed into a tint
 
     /** One group of settings: a row on the first level and a page of controls behind it. [last] is where the focus was when it was left. */
-    private val PREVIEW = setOf("bg", "look", "layout", "widgets")    // pages seen on Home as they change: no dim over it
+    private val PREVIEW = setOf("bg", "look", "widgets")              // pages seen on Home as they change: no dim over it (layout opens its own stepper, the panel hidden)
 
     private class Group(c: Context, val key: String, val name: Int, val icon: Int, val tint: Int) {
         val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
