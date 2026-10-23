@@ -113,7 +113,7 @@ private fun MainActivity.download(r: Release) {
             }
             updating = false
             showUpdate()
-            message(T("updater.could_not_update", "error" to err), true)
+            failed(r, T("updater.could_not_update", "error" to err))
         }
     }.start()
 }
@@ -155,7 +155,24 @@ internal fun MainActivity.installResult(i: Intent): Boolean {
     if (status == PackageInstaller.STATUS_SUCCESS) return true    // the app is restarted by the install anyway
     updating = false
     showUpdate()
-    message(if (status == PackageInstaller.STATUS_FAILURE_ABORTED) T("updater.update_cancelled")
-    else T("updater.could_not_install_the", "error" to i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)), true)
+    if (status == PackageInstaller.STATUS_FAILURE_ABORTED && !samsung()) message(T("updater.update_cancelled"), true)
+    else failed(update, if (status == PackageInstaller.STATUS_FAILURE_ABORTED) T("updater.update_cancelled")
+        else T("updater.could_not_install_the", "error" to i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)))
     return true
+}
+
+private fun samsung() = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
+
+/**
+ * The install failed: the same file from the browser, opened and installed by hand, still works where only this app's
+ * install is refused (a maker's installer, a broken download). A Samsung's Auto Blocker refuses both, and may say only
+ * "cancelled": there the way to turn it off is added, and the popup shows on a cancel too.
+ */
+private fun MainActivity.failed(r: Release?, text: String) {
+    if (r == null) { message(text, true); return }
+    Popup.Builder(this).setTitle(T("updater.failed_title"))
+        .setMessage(text + "\n\n" + T("updater.failed_body") + if (samsung()) "\n\n" + T("updater.failed_samsung") else "")
+        .setPositiveButton(T("updater.failed_browser")) { _, _ ->
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.url))) } catch (e: Exception) { message(r.url, true) }
+        }.setNegativeButton(T("common.later"), null).show()
 }
