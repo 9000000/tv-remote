@@ -24,6 +24,9 @@ import dev.tvremote.home.R
  * groups, the focused row white like the buttons. A Dialog, so the home's Home press and Back close it as they close the others.
  */
 object Drop {
+    /** Home dimmed behind a menu: 0.15 left it as bright as the menu, which did not stand out. Customize's first level the same. */
+    const val MENU_DIM = 0.45f
+
     /** [on]: the state on the right with a green dot ("Connected"); [group]: rows of another group get a line above them. */
     class Row(val icon: Int, val label: String, val on: String? = null, val group: Int = 0, val go: () -> Unit)
 
@@ -80,7 +83,7 @@ object Drop {
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setGravity(Gravity.TOP or Gravity.START)
-            setDimAmount(0.45f)                                        // 0.15 left Home as bright as the menu: it did not stand out
+            setDimAmount(MENU_DIM)
             attributes = attributes.apply {
                 x = (if (at[0] > sw / 2) at[0] + anchor.width - w else minOf(at[0], sw - w - dp(32))).coerceIn(dp(16), sw - w - dp(16)); y = at[1] + anchor.height + dp(8)
                 width = w; height = WindowManager.LayoutParams.WRAP_CONTENT

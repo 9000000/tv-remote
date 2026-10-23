@@ -27,6 +27,7 @@ import dev.tvremote.home.manage.HomeApi
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.wall.Online
 import dev.tvremote.home.manage.PhotoScreen
+import dev.tvremote.home.ui.Drop
 import dev.tvremote.home.keys.Picker
 import dev.tvremote.home.keys.QuickKeys
 import dev.tvremote.home.wall.WallArt
@@ -55,6 +56,8 @@ object Customize {
     private const val CHIP_ALPHA = 0x33000000                           // OR-ed into a tint
 
     /** One group of settings: a row on the first level and a page of controls behind it. [last] is where the focus was when it was left. */
+    private val PREVIEW = setOf("bg", "look", "layout", "widgets")    // pages seen on Home as they change: no dim over it
+
     private class Group(c: Context, val key: String, val name: Int, val icon: Int, val tint: Int) {
         val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         val scroll = ScrollView(c).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
@@ -535,6 +538,8 @@ object Customize {
         fun enter(g: Group) {
             build(g)
             cur = g; val n = ++gen
+            // a page whose change shows on Home (background, veil, look, layout, widgets) lifts the dim: it is seen as it is
+            if (g.key in PREVIEW) dialog.window?.setDimAmount(0f)
             topScroll.animate().cancel(); g.page.animate().cancel()
             topScroll.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS   // while it fades the keys already belong to the page
             g.page.visibility = View.VISIBLE
@@ -549,6 +554,7 @@ object Customize {
         fun leave(): Boolean {
             val g = cur ?: return false
             cur = null; val n = ++gen
+            dialog.window?.setDimAmount(Drop.MENU_DIM)
             g.last = g.page.findFocus()
             topScroll.animate().cancel(); g.page.animate().cancel()
             topScroll.visibility = View.VISIBLE; topScroll.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
@@ -665,7 +671,7 @@ object Customize {
             setLayout(panelW, height)
             setGravity(Gravity.END or Gravity.CENTER_VERTICAL)
             attributes = attributes.apply { x = edge }
-            setDimAmount(0f)
+            setDimAmount(Drop.MENU_DIM)                                     // as the menu it came from: no flash of light between them
             setWindowAnimations(0)                                     // its own slide below, or none when motion is off
         }
         dialog.setOnShowListener {
