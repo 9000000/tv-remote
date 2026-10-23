@@ -7,6 +7,10 @@
 <meta name="description" content="Try TV Remote, TV Home, TV Channels and TV Games in the browser with a made-up TV. Dùng thử TV Remote, TV Home, TV Channels và TV Games ngay trên trình duyệt.">
 <meta name="theme-color" content="#0a0d14">
 <link rel="icon" href="../img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../css/nav.css">
 <script>
   // the site's choice (docs/js/site.js keeps it in localStorage "lang"); the pages in the frames read the same key
   (function () {
@@ -17,7 +21,8 @@
   })();
 </script>
 <style>
-  :root { --bg:#0a0d14; --card:#141924; --line:#232a3a; --text:#e9edf5; --muted:#9aa4b8; --blue:#5b8cff; --fill:#2f5fd6; --sel:#162447; }
+  :root { --bg:#0a0d14; --card:#141924; --line:#232a3a; --text:#e9edf5; --muted:#9aa4b8; --blue:#5b8cff; --fill:#2f5fd6; --sel:#162447;
+    --card2:#1a2030; --line2:#2f3850; --orange:#ffa31a; --prog-a:var(--blue); --prog-b:var(--orange); --sheet-bg:#0e121b; --max:1160px; }   /* the rest are the header's (css/nav.css) */
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body { background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -27,28 +32,26 @@
   svg { width: 17px; height: 17px; flex: none; }
   #top { position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line); }
   .bar { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; padding: 7px 16px; min-height: 52px; }
-  .bar > .pk { font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
-  .btn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; border-radius: 10px; padding: 6px 12px; min-height: 36px; border: 1px solid var(--line); background: transparent; font-weight: 600; cursor: pointer; white-space: nowrap; }
-  .btn:hover { filter: brightness(1.25); }
+  #demobar .dbtn { display: inline-flex; align-items: center; gap: 7px; text-decoration: none; border-radius: 10px; padding: 6px 12px; min-height: 36px; border: 1px solid var(--line); background: transparent; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  #demobar .dbtn:hover { filter: brightness(1.25); }
   .sw { display: flex; gap: 4px; }
   .sw a { display: grid; place-items: center; width: 40px; height: 36px; border-radius: 10px; border: 1px solid transparent; }
   .sw a img { width: 26px; height: 26px; border-radius: 7px; display: block; }
   .sw a:hover { background: #0e121b; }
   .sw a[aria-current="page"] { background: var(--sel); border-color: var(--blue); }
   /* the site's name top left, as on every page of the site; it is the way home */
-  .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; font-size: 17px; text-decoration: none; color: var(--text); white-space: nowrap; margin-right: 6px; }
-  .brand img { width: 28px; height: 28px; border-radius: 8px; display: block; }
-  .bar > .pk { padding-left: 12px; border-left: 1px solid var(--line); }
+  #demobar .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; font-size: 17px; text-decoration: none; color: var(--text); white-space: nowrap; margin-right: 6px; }
+  #demobar .brand img { width: 28px; height: 28px; border-radius: 8px; display: block; }
   .tools { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-  .lang button { border: 0; background: transparent; padding: 6px 10px; min-height: 34px; color: var(--muted); font-weight: 600; cursor: pointer; }
-  html[data-lang="vi"] .lang [data-l="vi"], html[data-lang="en"] .lang [data-l="en"] { background: var(--sel); color: var(--text); }
+  #demobar .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  #demobar .lang button { border: 0; background: transparent; padding: 6px 10px; min-height: 34px; color: var(--muted); font-weight: 600; cursor: pointer; }
+  html[data-lang="vi"] #demobar .lang [data-l="vi"], html[data-lang="en"] #demobar .lang [data-l="en"] { background: var(--sel); color: var(--text); }
   #dl { background: var(--fill); border-color: var(--fill); color: #fff; }
   #stage { position: relative; }
   #stage iframe { display: block; width: 100%; border: 0; background: var(--bg); }
   #stage iframe[hidden] { display: none; }
   #stage.fill iframe { height: calc(100vh - var(--hh, 52px)); height: calc(100dvh - var(--hh, 52px)); min-height: 420px; }
-  body.pick #stage, body.pick #demobar, body:not(.pick) #pickbar { display: none; }
+  body.pick #stage, body.pick #top, body:not(.pick) > nav { display: none; }   /* the picker has the site header, an app the demo bar */
   body:not(.pick) #picker { display: none; }
   /* the picker: four big cards */
   #picker { max-width: 1040px; margin: 0 auto; padding: 28px 16px 48px; }
@@ -72,22 +75,16 @@
 </style>
 </head>
 <body class="pick">
+<script src="../js/nav.js" data-page="demo" data-root="../"></script>
 <div id="top">
-  <div class="bar" id="pickbar">
-    <a class="brand" href="../"><img src="../img/icon.png" width="28" height="28" alt="">TV Remote</a>
-    <span class="pk"><span class="vi">Dùng thử</span><span class="en">Live demo</span></span>
-    <div class="tools">
-      <span class="lang" role="group" aria-label="Language"><button type="button" data-l="vi">VI</button><button type="button" data-l="en">EN</button></span>
-    </div>
-  </div>
   <div class="bar" id="demobar">
     <a class="brand" href="../"><img src="../img/icon.png" width="28" height="28" alt="">TV Remote</a>
-    <a class="btn back" id="back" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6l-6 6 6 6"/></svg><span class="l"><span class="vi">Tất cả app</span><span class="en">All apps</span></span></a>
-    <nav class="sw" id="sw" aria-label="Apps"></nav>
+    <a class="dbtn back" id="back" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6l-6 6 6 6"/></svg><span class="l"><span class="vi">Tất cả app</span><span class="en">All apps</span></span></a>
+    <div class="sw" id="sw" role="navigation" aria-label="Apps"></div>
     <div class="tools">
       <span class="lang" role="group" aria-label="Language"><button type="button" data-l="vi">VI</button><button type="button" data-l="en">EN</button></span>
-      <button type="button" class="btn" id="again" title="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="vi">Làm lại</span><span class="en">Reset</span></button>
-      <a class="btn" id="dl" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="t" id="dlt"></span></a>
+      <button type="button" class="dbtn" id="again" title="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="vi">Làm lại</span><span class="en">Reset</span></button>
+      <a class="dbtn" id="dl" href="#" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="t" id="dlt"></span></a>
     </div>
   </div>
 </div>
@@ -162,11 +159,14 @@
   });
 
   $('#again').addEventListener('click', function () { var f = frames[cur]; if (f) { f.src = 'about:blank'; setTimeout(function () { f.src = srcOf(cur); }, 30); } });
-  document.querySelectorAll('.lang [data-l]').forEach(function (b) {
+  // two sets of buttons: the demo bar's (data-l) and the site header's (data-set, from js/nav.js, which marks the chosen one with aria-pressed)
+  function pressed() { document.querySelectorAll('.lang [data-set]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.set === lang()); }); }
+  pressed();
+  document.querySelectorAll('.lang [data-l], .lang [data-set]').forEach(function (b) {
     b.addEventListener('click', function () {
-      var l = b.dataset.l; if (l === lang()) return;
+      var l = b.dataset.l || b.dataset.set; if (l === lang()) return;
       try { localStorage.setItem('lang', l); } catch (e) {}
-      document.documentElement.dataset.lang = l; document.documentElement.lang = l;
+      document.documentElement.dataset.lang = l; document.documentElement.lang = l; pressed();
       Object.keys(frames).forEach(drop); route();
     });
   });

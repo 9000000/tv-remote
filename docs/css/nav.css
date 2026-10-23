@@ -1,0 +1,70 @@
+/* The header every page of the site shares (drawn by js/nav.js), the demo's picker included: its own file so demo/ can load it
+   without site.css (which would restyle that page). Anything the bar reads (--card, --line, --blue...) is a token of :root. */
+@font-face{font-family:"Be Vietnam Pro Fallback";src:local("Arial"),local("Arimo"),local("Helvetica Neue");size-adjust:108%;ascent-override:93%;descent-override:24%;line-gap-override:0%}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+/* nav */
+nav,nav *{margin:0;padding:0}                                    /* what site.css's reset gives; demo/ has no reset, nor the page font */
+nav{font:16px/1.6 "Be Vietnam Pro","Be Vietnam Pro Fallback",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:110%}   /* the same bump site.css gives the page on phones */
+nav a{text-decoration:none}
+nav img{display:block;max-width:100%;height:auto}
+nav{position:sticky;top:0;z-index:50;background:rgba(10,13,20,.72);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.06)}
+nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.brand{flex:none;white-space:nowrap;display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.brand img{width:32px;height:32px;border-radius:9px}
+.navlinks{display:flex;gap:4px;margin-left:auto}
+.navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500;white-space:nowrap}
+.navlinks a,.navsheet a,.navcta{display:inline-flex;align-items:center;gap:7px}
+.ni{width:17px;height:17px;flex:none;opacity:.85}
+.navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.navlinks a.on{color:var(--text);background:rgba(91,140,255,.14);box-shadow:inset 0 -2px 0 var(--blue)}
+.navtools{display:flex;gap:8px;align-items:center}
+.navprog{position:absolute;left:0;right:0;bottom:-1px;height:2px;pointer-events:none;background:linear-gradient(90deg,var(--prog-a),var(--prog-b));transform:scaleX(var(--p,0));transform-origin:0 50%;will-change:transform}
+.menubtn,.navsheet{display:none}
+.menubtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);align-items:center;justify-content:center;cursor:pointer;flex:none}
+.menubtn svg{width:20px;height:20px}
+.menubtn path{transform-box:fill-box;transform-origin:center;transition:transform .2s,opacity .2s}
+.menubtn[aria-expanded="true"] .m1{transform:translateY(5px) rotate(45deg)}
+.menubtn[aria-expanded="true"] .m2{opacity:0}
+.menubtn[aria-expanded="true"] .m3{transform:translateY(-5px) rotate(-45deg)}
+.menubtn:focus-visible,.navsheet a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.navsheet a{display:flex;align-items:center;padding:12px 14px;min-height:44px;border-radius:10px;color:var(--muted);font-size:16px;font-weight:600}
+.navsheet a:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.navsheet a.on{color:var(--text);background:rgba(91,140,255,.14);box-shadow:inset 3px 0 0 var(--blue)}
+@keyframes sheetin{from{opacity:0;transform:translateY(-6px)}}
+.lang{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px}
+.lang button{all:unset;cursor:pointer;padding:4px 10px;border-radius:7px;font-size:13px;font-weight:700;color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--card2);color:var(--text)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border-radius:14px;font-weight:700;font-size:16px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .15s,border-color .15s;white-space:nowrap}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--fill);color:#fff;box-shadow:0 8px 30px -8px rgba(91,140,255,.7)}   /* white on --fill 5.6:1; dark on --blue read muddy */
+.btn-primary:hover{background:#3366e0}
+.btn-ghost{background:rgba(255,255,255,.04);border-color:var(--line2);color:var(--text)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.btn-sm{padding:8px 14px;font-size:14px;border-radius:10px}
+.btn svg{width:20px;height:20px;flex:none}
+
+@media (max-width:1180px){                                       /* seven links just fit: tighter, GitHub as its icon */
+  .navlinks{gap:0}
+  .navlinks a{padding:8px 9px;font-size:14.5px}
+  nav .gh-label{display:none}
+}
+@media (max-width:980px){
+  .navlinks{display:none}
+  .menubtn{display:inline-flex}
+  .navsheet{position:absolute;top:100%;left:0;right:0;background:var(--sheet-bg);border-bottom:1px solid var(--line);box-shadow:0 18px 30px rgba(0,0,0,.35);animation:sheetin .16s ease-out}
+  .navsheet:not([hidden]){display:block}
+  .navsheet .wrap{display:grid;height:auto;grid-template-columns:1fr 1fr;gap:4px;padding-top:10px;padding-bottom:12px}
+  .navtools{margin-left:auto}
+}
+@media (max-width:620px){
+  .wrap{padding:0 16px}
+  .gh-label{display:none}
+}
+@media (max-width:420px){.navsheet .wrap{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.navsheet{animation:none}.menubtn path{transition:none}.navprog{transition:none}}
+@media (max-width:560px){nav .navcta{display:none}}                  /* the hero and the menu have Install; the bar would overflow */
+@media (max-width:440px){nav .wrap{gap:10px}nav .navtools a[aria-label="GitHub"]{display:none}}  /* the footer links the repo */
+@media (max-width:370px){nav .brand{font-size:0;gap:0}}             /* the logo alone: Live demo and VI/EN still fit at 320 */
