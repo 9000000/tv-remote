@@ -87,6 +87,10 @@ QR modal closes itself after 30 s (`credit.js:41`); bots think 0.9-1.5 s (`table
 | Toasts / events | no shared toast | Private (a refusal) -> `t.say(seat, words)` + vibrate 250 ms on that phone (`table.js:246`); the pad shows it 6 s (`pad.js:169`). Public -> the `#msg` line, or a dim event line (meono `#evt`, typhu `#log`). Never `alert()`. |
 | Join QR | TV Games' lobby shows it | A page shows its own only when it is its own lobby: `tvpad.qr(px)`, white plate, pixelated (`kit.js:196-198`). |
 
+### Sound
+
+Every page loads `_lib/sfx.js` (right after `nopad.js`): no audio files, tones and noise made with one shared WebAudio context, at most a dozen voices at once, `?mute` silences it. Kit games reach it as `K.tone` / `K.noise` / `K.sfx.x()`; table, card, board and quiz pages call `Sfx.play('name')`. The set: `ui ok tick go win lose` (menus, countdown, result), `hit boom bounce shoot dash fall goal` (arcade), `move place card pickup dice` (board and cards), `score right bad turn` (points, answers, refusals, your move). Each name has a minimum gap (30-80 ms), so ten collisions in one frame sound once. `table.js` plays `turn` (a human's turn), `bad` (a refused move) and `win` / `lose` itself; a game adds only its own events. Keep new sounds short and quiet (gain <= 0.15), and tune them in `sfx.js`, not per game.
+
 ## 4. Phone pad
 
 The pad is one page for every game; a game only chooses a layout. Its look: `--bg #0b0d12`, keys `--key #1a1f2b`,

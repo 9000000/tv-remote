@@ -182,19 +182,8 @@ const bg = document.createElement('canvas'); bg.width = 1280; bg.height = 720;
   }
 })();
 
-// ---------------------------------------------------------------------------------------------- sound (a click per frame at most, made on the spot)
-let AC = null;
-const MUTE = /[?&]mute/.test(location.search);
-function click(f, v, d) {
-  if (MUTE) return;
-  try {
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state === 'suspended') AC.resume();
-    const o = AC.createOscillator(), a = AC.createGain(), t = AC.currentTime;
-    o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.55, t + d);
-    a.gain.setValueAtTime(v, t); a.gain.exponentialRampToValueAtTime(0.001, t + d); o.connect(a); a.connect(AC.destination); o.start(t); o.stop(t + d + 0.02);
-  } catch (e) { AC = null; }
-}
+// ---------------------------------------------------------------------------------------------- sound (a click per frame at most)
+function click(f, v, d) { Sfx.tone(f, d, 'triangle', v, 0.55); }   // Sfx owns the AudioContext and ?mute
 function sounds(g) {
   const e = g.ev; let ball = 0, rail = 0, pk = 0;
   for (let i = 0; i < e.n; i++) { if (e.k[i] === 0) ball = Math.max(ball, e.s[i]); else if (e.k[i] === 1) rail = Math.max(rail, e.s[i]); else pk = 1; }

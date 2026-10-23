@@ -133,6 +133,8 @@ function view(t, s) {
 const POS = (id) => (id <= 10 ? [11, 11 - id] : id <= 20 ? [21 - id, 1] : id <= 30 ? [1, id - 19] : [id - 29, 11]);
 const ICON = { go: '➡', jail: '🔒', park: '🅿', gojail: '👮', chance: '❓', chest: '🎁', tax: '💸', rail: '🚆', util: '💡' };
 const tiles = [], tcache = [];
+const SND = { roll: 'dice', buy: 'score', build: 'pickup', salary: 'pickup', freecard: 'pickup', rent: 'hit', tax: 'bad', fine: 'bad', jail: 'bad', dbl3: 'bad', card: 'card', sell: 'ui', mort: 'ui', redeem: 'ui', broke: 'boom' };
+const PRIO = ['ui', 'card', 'dice', 'pickup', 'score', 'hit', 'bad', 'boom'];      // later = louder news
 function build() {
   const board = $('#board');
   for (let id = 0; id < 40; id++) {
@@ -201,6 +203,8 @@ function draw(t) {
   const last = G.log.slice(-5).reverse();
   $('#say').textContent = t.done ? '' : last.length ? W.ev[last[0].k](last[0], nm, T) : '';
   $('#log').replaceChildren(...last.slice(1).map((e, i) => h('div', 'l' + i, W.ev[e.k](e, nm, T))));
+  const fresh = G.log.filter((e) => e.seq > lastSeq).map((e) => SND[e.k]).filter(Boolean);   // one sound per redraw: the most important new event
+  if (fresh.length && !t.done) Sfx.play(fresh.sort((x, y) => PRIO.indexOf(y) - PRIO.indexOf(x))[0]);
   lastSeq = G.seq;
   $('#msg').replaceChildren();
   const ov = $('#over');

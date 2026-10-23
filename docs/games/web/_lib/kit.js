@@ -61,44 +61,9 @@
   K.shake = (a) => { K.shakeAmt = Math.max(K.shakeAmt, a); };
   K.shakeApply = (c) => { if (K.shakeAmt > 0.3) c.translate(K.rnd(-K.shakeAmt, K.shakeAmt), K.rnd(-K.shakeAmt, K.shakeAmt)); };
 
-  // ---------------- sound: tones and noise made on the spot, at most a dozen at once
-  let ac = null, live = 0;
-  const audio = () => {
-    if (Q.has('mute')) return null;
-    if (ac === null) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } }
-    if (ac && ac.state === 'suspended') ac.resume().catch(() => { });
-    return ac || null;
-  };
-  K.tone = (f, d, type, v, slide, delay) => {
-    const a = audio(); if (!a || live > 12) return;
-    const t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
-    o.type = type || 'square'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + d);
-    g.gain.setValueAtTime(v == null ? 0.08 : v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g); g.connect(a.destination); live++; o.onended = () => { live--; }; o.start(t); o.stop(t + d + 0.02);
-  };
-  let nbuf = null;
-  K.noise = (d, v, f0, f1) => {
-    const a = audio(); if (!a || live > 12) return;
-    if (!nbuf) { nbuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const b = nbuf.getChannelData(0); for (let i = 0; i < b.length; i++) b[i] = Math.random() * 2 - 1; }
-    const t = a.currentTime, s = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain();
-    s.buffer = nbuf; fl.type = 'lowpass'; fl.frequency.setValueAtTime(f0 || 2000, t); fl.frequency.exponentialRampToValueAtTime(f1 || 200, t + d);
-    g.gain.setValueAtTime(v || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    s.connect(fl); fl.connect(g); g.connect(a.destination); live++; s.onended = () => { live--; }; s.start(t); s.stop(t + d + 0.02);
-  };
-  K.sfx = {
-    ui: () => K.tone(660, 0.07, 'triangle', 0.1),
-    ok: () => { K.tone(520, 0.09, 'square', 0.07); K.tone(780, 0.14, 'square', 0.07, 0, 0.08); },
-    tick: () => K.tone(880, 0.06, 'sine', 0.1),
-    go: () => { K.tone(440, 0.12, 'sawtooth', 0.08); K.tone(880, 0.3, 'sawtooth', 0.08, 0, 0.1); },
-    hit: (v) => K.tone(180 + (v || 0) * 140, 0.09, 'triangle', 0.18, 0.6),
-    goal: () => { K.noise(0.5, 0.25, 1800, 120); [523, 659, 784, 1046].forEach((f, i) => K.tone(f, 0.18, 'square', 0.07, 0, i * 0.09)); },
-    shoot: () => K.tone(520, 0.12, 'sawtooth', 0.07, 0.35),
-    bounce: () => K.tone(300, 0.05, 'square', 0.05, 0.8),
-    boom: () => { K.noise(0.55, 0.3, 2500, 90); K.tone(110, 0.4, 'sawtooth', 0.12, 0.3); },
-    dash: () => K.noise(0.18, 0.12, 3500, 600),
-    fall: () => K.tone(600, 0.6, 'sine', 0.12, 0.12),
-    win: () => [523, 659, 784, 1046, 1318].forEach((f, i) => K.tone(f, 0.22, 'triangle', 0.1, 0, i * 0.11)),
-  };
+  // ---------------- sound: _lib/sfx.js owns the AudioContext and the sounds; the games keep calling K.tone / K.noise / K.sfx.x()
+  const audio = Sfx.wake;
+  K.tone = Sfx.tone; K.noise = Sfx.noise; K.sfx = Sfx.s;
 
   // ---------------- input: phones, pads, keyboard -> K.pad(n) = { x, y, held{}, hit{} } for pad player n (1..4)
   const S = {};

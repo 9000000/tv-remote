@@ -50,13 +50,13 @@ function newGame() {
 function endTurnOrGame(i) {
   const s = g.ts;
   g.wl = Caro.winLine(g.b, i);
-  if (g.wl) { g.over = true; g.wins[s]++; players().forEach((p) => buzz(p, g.seat[s] === p ? 600 : 150)); }
-  else if (Caro.isFull(g.b)) { g.over = true; g.draw = true; }
+  if (g.wl) { g.over = true; g.wins[s]++; Sfx.play(g.seat[s] ? 'win' : 'lose'); players().forEach((p) => buzz(p, g.seat[s] === p ? 600 : 150)); }
+  else if (Caro.isFull(g.b)) { g.over = true; g.draw = true; Sfx.play('bad'); }
   if (!g.over) { g.ts ^= 1; buzz(g.seat[g.ts], 80); }
   tell(); render(); maybeBot();
 }
 function place(i) {
-  g.b[i] = markOf(g.ts); g.last = i;
+  g.b[i] = markOf(g.ts); g.last = i; Sfx.play('place');
   endTurnOrGame(i);
 }
 function maybeBot() {
@@ -70,7 +70,7 @@ function maybeBot() {
 }
 
 function move(s, dx, dy) {
-  const c = g.cur[s]; c.x = Math.max(0, Math.min(N - 1, c.x + dx)); c.y = Math.max(0, Math.min(N - 1, c.y + dy)); render();
+  const c = g.cur[s]; c.x = Math.max(0, Math.min(N - 1, c.x + dx)); c.y = Math.max(0, Math.min(N - 1, c.y + dy)); Sfx.play('move'); render();
 }
 const DIR = { LEFT: [-1, 0], RIGHT: [1, 0], UP: [0, -1], DOWN: [0, 1] };
 function hold(s, btn, down, noStep) {      // a held D-pad repeats; noStep: the key already took the first step
@@ -86,7 +86,7 @@ function press(s, btn, down, noStep) {
   if (DIR[btn]) { hold(s, btn, down, noStep); return; }
   if (btn !== 'A' || !down || g.over || g.wait || g.ts !== s || !g.seat[s]) return;
   const c = g.cur[s], i = c.y * N + c.x;
-  if (g.b[i]) buzz(g.seat[s], 40); else place(i);
+  if (g.b[i]) { buzz(g.seat[s], 40); Sfx.play('bad'); } else place(i);
 }
 
 if (pad) {

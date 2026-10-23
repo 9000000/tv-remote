@@ -43,7 +43,7 @@
       for (let j = 0; j < res.nc; j += 2) K.burst(px(res.cells[j] % COLS + 0.5), py(((res.cells[j] / COLS) | 0) + 0.5), '#fb923c', 2, 150, 0.45, 5);
       if (res.nbr) dirty = true;
     };
-    w.on.pick = (p) => { K.sfx.tick(); K.burst(px(p.x), py(p.y), '#fff', 8, 160, 0.4, 4); };
+    w.on.pick = (p) => { K.sfx.pickup(); K.burst(px(p.x), py(p.y), '#fff', 8, 160, 0.4, 4); };
     w.on.die = (p) => { K.sfx.hit(1); K.shake(8); K.burst(px(p.x), py(p.y), K.slots[p.i].color, 30, 360, 0.8, 7); K.burst(px(p.x), py(p.y), '#fff', 10, 260, 0.45, 5); };
     w.on.sd = (i) => { dirty = true; K.burst(px(i % COLS + 0.5), py(((i / COLS) | 0) + 0.5), '#94a3b8', 3, 120, 0.4, 4); if (i % 6 === 0) K.tone(140, 0.07, 'square', 0.05); };
   }

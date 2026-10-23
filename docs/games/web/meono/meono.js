@@ -89,7 +89,7 @@ const table = Table({
     else if (a.startsWith('n:')) e = MK.name(G, s, a.slice(2));
     else if (a.startsWith('ins:')) e = MK.insert(G, s, { 0: 0, 1: 1, 2: 2, r: -1, b: 99 }[a.slice(4)]);
     if (e) return W.err[e] || W.err.turn;
-    t.say(s, ''); after(t); return '';
+    Sfx.play(a === 'draw' ? 'pickup' : a === 'play' ? 'card' : 'ui'); t.say(s, ''); after(t); return '';
   },
   view: (t, s) => view(t, s), draw,
 });
@@ -105,6 +105,7 @@ function after(t) {
     const E = W.e, k = ev.card ? W.kn[ev.card] : '', n = ev.name ? W.kn[ev.name] : '';
     g.evt = ev.type === 'steal' ? E.steal(a, b, k) : ev.type === 'miss' ? E.miss(a, b, n) : ev.type === 'favor' ? E.favor(a, b) : ev.type === 'noped' ? E.noped()
       : ev.type === 'defuse' ? E.defuse(a) : ev.type === 'boom' ? E.boom(a) : '';
+    const snd = { steal: 'hit', miss: 'bad', favor: 'pickup', noped: 'bad', defuse: 'score', boom: 'boom' }[ev.type]; if (snd) Sfx.play(snd);   // plain plays already clicked in act
     if (ev.type === 'boom' || ev.type === 'defuse') {            // a moment: nothing else moves while the screen shows it
       g.hold = true; t.buzz(ev.seat, ev.type === 'boom' ? 600 : 150); g.boom = ev; t.turn = G.turn; t.changed();
       g.pt = after0(ev.type === 'boom' ? HOLD_BOOM : HOLD_DEFUSE, () => { g.hold = false; g.boom = null; after(t); });

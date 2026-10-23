@@ -93,7 +93,7 @@ function begin(remote) {
   seats().forEach((p) => { score[p] = 0; });
   st.qs = pick(ROUNDS); st.i = 0;
   if (pad) pad.layout('all', { choices: KEYS });
-  ask();
+  Sfx.play('go'); ask();
 }
 
 function ask() {
@@ -113,7 +113,7 @@ function ask() {
 function tickUi() {
   const b = stage.querySelector('.bar i'), t = stage.querySelector('.timer');
   if (b) b.style.width = (st.left / SECS * 100) + '%';
-  if (t) t.textContent = String(Math.ceil(st.left));
+  if (t) { const n = Math.ceil(st.left); if (t.textContent !== String(n) && n <= 3 && st.mode === 'ask') Sfx.play('tick'); t.textContent = String(n); }   // the last three seconds tick
   const got = document.getElementById('got');      // who has answered: a dot per player, not what
   if (got) got.replaceChildren(...Object.keys(st.ans).map((p) => { const d = h('span', 'dot'); d.style.setProperty('--pc', col(p)); return d; }));
 }
@@ -121,7 +121,7 @@ function tickUi() {
 function focusOpt() { stage.querySelectorAll('.opt').forEach((e, k) => e.classList.toggle('f', k === st.f)); }
 function answer(p, k) {
   if (st.mode !== 'ask' || st.ans[p] != null || !seats().includes(p)) return;
-  st.ans[p] = { k, left: st.left };
+  st.ans[p] = { k, left: st.left }; Sfx.play('ui');
   if (pad && p !== ME) pad.say(p, T.wait);
   tickUi();
   if (seats().every((x) => st.ans[x] != null)) reveal();
@@ -136,6 +136,7 @@ function reveal() {
     if (a && a.k === right) { st.gain[p] = 100 + Math.round(a.left / SECS * 100); score[p] = (score[p] || 0) + st.gain[p]; if (pad && p !== ME) { pad.say(p, T.right + st.gain[p]); pad.vibrate(p, 120); } }
     else { st.gain[p] = 0; if (pad && p !== ME) { pad.say(p, a ? T.wrong : T.late); pad.vibrate(p, 450); } }
   });
+  Sfx.play(seats().some((p) => st.gain[p]) ? 'right' : 'bad');          // one sound for the whole table
   stage.querySelectorAll('.opt').forEach((e) => e.classList.add(e.dataset.k === right ? 'right' : 'wrong'));
   const t = stage.querySelector('.timer'); if (t) t.remove();
   const rows = h('div', 'who');
@@ -153,7 +154,7 @@ function next() {
 }
 
 function finish() {
-  st.mode = 'end';
+  st.mode = 'end'; Sfx.play('win');
   const ps = seats().slice().sort((a, b) => (score[b] || 0) - (score[a] || 0));
   const top = ps.length ? score[ps[0]] || 0 : 0, tied = ps.filter((p) => (score[p] || 0) === top).length > 1;
   const rank = h('div', 'rank');
@@ -189,7 +190,7 @@ document.addEventListener('keydown', (e) => {
   if (e.repeat && e.key === 'Enter') return;                        // a held OK must not answer, then start again
   if (st.solo && st.mode === 'ask') {
     const m = MOVE[e.key], k = (e.key || '').toUpperCase();
-    if (m) { const x = (st.f % 2 + m[0] + 2) % 2, y = ((st.f >> 1) + m[1] + 2) % 2; st.f = y * 2 + x; focusOpt(); e.preventDefault(); }
+    if (m) { const x = (st.f % 2 + m[0] + 2) % 2, y = ((st.f >> 1) + m[1] + 2) % 2; st.f = y * 2 + x; Sfx.play('move'); focusOpt(); e.preventDefault(); }
     else if (e.key === 'Enter') answer(ME, KEYS[st.f]);
     else if (KEYS.includes(k)) answer(ME, k);
     return;
