@@ -327,3 +327,11 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - A QR or link opened by another app (camera, Lens, a desktop app) is a cross-site navigation: a Strict cookie set on the 302 is not sent on the redirect, so the phone got 401. Lax is sent on top-level GETs; changes stay protected (X-Tvh header in Home; Sec-Fetch-Site / Origin / localhost checks on desktop).
 - The key in the QR works while the QR is on screen (a scanner's preview opens it first), at most 8 sessions.
 
+
+## Ready-made channel categories are data, per country (`Categories.kt`, `Shelves.kt`, `chancat.js`)
+- Users mostly in Vietnam could not find channels among iptv-org's groups and built their own slowly. The apps now open on rows by category when the site has `docs/channels/categories/<cc>.json`; no country is named in code, so a new one is a file and a push.
+- Matching is by normalized channel NAME (NFD, no marks, đ→d, [a-z0-9], trailing hd/fhd/uhd/sd/4k stripped; `re:` = regex), never by stream URL: links die weekly, names do not. Shared vectors: `app/shared/tests/fixtures/norm.json`.
+- Not signed (unlike providers.json): it holds names only, so a tampered copy can only misfile channels.
+- Coverage 2026-10-24: 285 of 298 real names (iptv-org vn + TV360 + VieON) land in a category; the rest (radio, VBS TV) go to "Others".
+- The page cannot read the site (no CORS header), so the TV/desktop server proxies it: `GET /api/channels/categories?cc=`, a day's cache per country, `{}` for a 404.
+- Focus on the rows is a ring only (no scale): 24 D-pad moves on the emulator 307 frames, 7.8% janky, p99 34 ms, vs the old grid's 10.2% / 65 ms.

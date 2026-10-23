@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Channels: nước nào có danh mục dựng sẵn (hiện là Việt Nam: VTV, HTV, VTVcab, SCTV, VTC, Địa phương, Thể thao, Phim truyện, Thiếu nhi, Âm nhạc, Giải trí, Tin tức, Quốc tế) thì màn chính là các hàng kênh theo danh mục; tìm kiếm, nhóm, playlist, quốc gia nằm trong nút ⋯. Trang web trên điện thoại và máy tính cũng vậy. Danh mục là file `docs/channels/categories/<mã nước>.json`, thêm nước mới không cần bản app mới.
+- Game web: Tỷ phú chuộc đất tính đúng (1400 → 770, trước là 771); bot Caro không còn đi vào ô đã có quân và luôn đi nước thắng trước khi chặn. Thêm test thử ngẫu nhiên cho 8 bộ luật.
 - Trang web (TV Setup, App điện thoại, App máy tính) gửi file nén gzip: lần mở đầu sau mỗi bản cập nhật tải ~0,41 MB thay vì 1,23 MB.
 - TV Games có mã Downloader riêng: **2294968** (luôn trỏ tới bản mới nhất), ghi trong README, trang giới thiệu và danh sách mã có chữ ký.
 - Lịch mở app (⏰ Tự động → 📅 Lịch mở app): đặt cho từng app các ngày trong tuần và khung giờ được mở (ví dụ thứ Hai đến thứ Sáu, 16:00 đến 18:00), có thể kèm số phút tối đa trong khung giờ, hoặc chặn hẳn. Ngoài giờ app bị đóng và TV hiện thông báo; trong giờ không hỏi PIN (app đã khóa PIN vẫn hỏi). Chạy ngay trên TV; cần TV Setup bản mới.
@@ -52,6 +54,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - Tỷ phú: tên ô không tràn chữ, và ván kết thúc khi không còn người thật.
 
 **English**
+- TV Channels: a country with ready-made categories (now Vietnam: VTV, HTV, VTVcab, SCTV, VTC, local, sports, movies, kids, music, entertainment, news, international) opens on rows of channels by category; search, groups, playlists and country sit behind ⋯. The phone and computer page do the same. Categories are `docs/channels/categories/<cc>.json`: a new country needs no new app.
+- Web games: Ty phu redeems at the right price (1400 → 770, was 771); the Caro bot never picks a taken cell and takes its own five before blocking. Seeded fuzz tests for 8 rule engines.
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
 - App schedule (⏰ Automation → 📅 App schedule): give an app the days of the week and the window of the day it may open (say Monday to Friday, 16:00 to 18:00), optionally with a cap on minutes inside the window, or block it entirely. Outside the window the app is closed and the TV says why; inside it no PIN is asked (an app that also has a PIN lock still asks). Runs on the TV itself; needs a recent TV Setup.
 - TV Games now has its own Downloader code: **2294968** (always the latest release), listed in the READMEs, the tour page and the signed code list.
