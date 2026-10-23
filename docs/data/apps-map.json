@@ -82,7 +82,7 @@
     { "app": "setup", "code": "2397346", "other": { "vi": "App điện thoại hoặc máy tính (có ADB) đẩy APK đã ký sang TV; chưa có ADB thì app điện thoại điều khiển Downloader trên TV", "en": "The phone or computer app (with ADB) pushes the signed APK to the TV; without ADB the phone app drives Downloader on the TV" } },
     { "app": "home", "code": "4356026", "other": { "vi": "Tab TV trên trang web, hoặc kho launcher trong TV Setup", "en": "The TV tab on the web page, or the launcher store in TV Setup" } },
     { "app": "channels", "code": "8135635", "other": { "vi": "Tab TV: “Cài TV Channels” (tự cấp quyền hiện trên app khác)", "en": "The TV tab: “Install TV Channels” (grants the draw-over-apps permission itself)" } },
-    { "app": "games", "code": null, "other": { "vi": "Chỉ từ thẻ “TV games” trong tab TV, cần ADB", "en": "Only from the “TV games” card in the TV tab, which needs ADB" } },
+    { "app": "games", "code": "2294968", "other": { "vi": "Chỉ từ thẻ “TV games” trong tab TV, cần ADB", "en": "Only from the “TV games” card in the TV tab, which needs ADB" } },
     { "app": "desktop", "code": null, "other": { "vi": "Tệp zip ở trang tải về", "en": "The zip on the download page" } }
   ]
 }

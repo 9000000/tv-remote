@@ -112,7 +112,7 @@ NOTES="$NOTES
 | Android | [tv-remote.apk]($D/tv-remote.apk) · Downloader \`2973135\` |
 | TV Home (launcher) | [tv-home.apk]($D/tv-home.apk) · Downloader \`4356026\` |
 | TV Channels | [tv-channels.apk]($D/tv-channels.apk) · Downloader \`8135635\` |
-| TV Games | [tv-games.apk]($D/tv-games.apk) |
+| TV Games | [tv-games.apk]($D/tv-games.apk) · Downloader \`2294968\` |
 | Mac (Apple Silicon + Intel) | [TV-Remote-mac.zip]($D/TV-Remote-mac.zip) |
 | Windows 10/11 | [TV-Remote-windows-x64.zip]($D/TV-Remote-windows-x64.zip) |
 | Linux x64 / arm64 | [TV-Remote-linux-x64.tar.gz]($D/TV-Remote-linux-x64.tar.gz) · [TV-Remote-linux-arm64.tar.gz]($D/TV-Remote-linux-arm64.tar.gz) |"

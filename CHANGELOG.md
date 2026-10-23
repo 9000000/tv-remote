@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Games có mã Downloader riêng: **2294968** (luôn trỏ tới bản mới nhất), ghi trong README, trang giới thiệu và danh sách mã có chữ ký.
 - Lịch mở app (⏰ Tự động → 📅 Lịch mở app): đặt cho từng app các ngày trong tuần và khung giờ được mở (ví dụ thứ Hai đến thứ Sáu, 16:00 đến 18:00), có thể kèm số phút tối đa trong khung giờ, hoặc chặn hẳn. Ngoài giờ app bị đóng và TV hiện thông báo; trong giờ không hỏi PIN (app đã khóa PIN vẫn hỏi). Chạy ngay trên TV; cần TV Setup bản mới.
 - Google TV không cho tắt riêng màn hình Home của trình cài đặt ban đầu (setupwraith): giờ tắt cả app đó như cleanyourtv, nên đổi launcher được trên các TV trước đây luôn bị trả về. Chỉ làm khi mạng Wi-Fi đã lưu không thuộc app đó (không thì TV mất mạng); nếu thuộc, TV Setup giữ nguyên và chỉ cách: Quên mạng rồi kết nối lại. Chromecast và Google TV Streamer giữ nguyên để cast vẫn chạy.
 - Remote: hàng dưới D-pad đổi thành Ứng dụng · Quay lại · Home · Cài đặt, Home và Quay lại nằm giữa, tay trái hay tay phải đều dễ bấm.
@@ -20,6 +21,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 - App schedule (⏰ Automation → 📅 App schedule): give an app the days of the week and the window of the day it may open (say Monday to Friday, 16:00 to 18:00), optionally with a cap on minutes inside the window, or block it entirely. Outside the window the app is closed and the TV says why; inside it no PIN is asked (an app that also has a PIN lock still asks). Runs on the TV itself; needs a recent TV Setup.
+- TV Games now has its own Downloader code: **2294968** (always the latest release), listed in the READMEs, the tour page and the signed code list.
 - Google TV won't turn off just the Home screen of its first-run setup app (setupwraith): the whole app now goes off, as cleanyourtv does, so a new launcher sticks on TVs where it was always put back. Only when no saved Wi-Fi network belongs to that app (it would take the TV offline); otherwise TV Setup changes nothing and says how: forget the network and join it again. A Chromecast or Google TV Streamer is left as is so casting keeps working.
 - Remote: the row under the D-pad is now Apps · Back · Home · Settings, with Home and Back in the middle, easy to reach with either thumb.
 - TV Home: no more black screen when opening an app: the app's logo glides to the middle and pulses until the app shows; a slow app no longer loses its zoom and flashes Home first. TV Setup updates TV Channels / TV Games only while the TV is in standby, so an app you just opened is no longer closed under you.
