@@ -23,7 +23,7 @@
 .appsoff summary { cursor:pointer; font-weight:600; color:var(--muted); padding:6px 0; }
 .appsoff > p { margin:4px 0 6px; font-size:12px; }
 .appicon.placeholder { color:#fff; font-weight:700; font-size:20px; display:flex; align-items:center; justify-content:center; }
-.fchips button { flex:none; min-height:var(--chip); padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; white-space:nowrap; color:var(--muted); }
+.fchips button { flex:none; min-height:var(--chip); min-width:var(--chip); padding:0 12px; border-radius:999px; font-size:13px; font-weight:600; white-space:nowrap; color:var(--muted); }
 /* one colour per kind of app, the same on its chip and on the tags in the list */
 .fchips button, .tag { --c:var(--accent-text); }
 :is(.fchips button, .tag).boot { --c:var(--boot); }

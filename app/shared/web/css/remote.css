@@ -171,7 +171,7 @@ section.card:not(.rc):not(.playing) > *, dialog .card > * { margin:0; }
 :is(section.card:not(.rc):not(.playing), dialog .card) > div:empty { display:none !important; }   /* a slot with nothing in it yet leaves no gap */
 section.card:not(.rc):not(.playing) > :is(button, label.filebtn) { align-self:flex-start; }
 section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* js/old.js: browsers before flex gap (Chrome 84) */
-#quickq { width:100%; }
+#quickq { width:100%; min-height:var(--ctl); height:var(--ctl); }   /* a field in a card, not a key: the --ctl size of every other tab */
 .empty.pad { padding:14px 0; }
 .fchips.dimc { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; overflow:visible; }
 .fchips.dimc button { display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; min-width:0; }

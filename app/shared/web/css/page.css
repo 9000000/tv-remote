@@ -212,7 +212,7 @@ dialog.ask .fields label { flex:1; display:flex; align-items:center; gap:8px; }
 dialog.ask .fields input { flex:1; min-width:0; text-align:center; font-size:18px; }
 dialog.ask .acts { display:flex; justify-content:flex-end; gap:8px; }
 dialog.ask .card > .actions:last-child { justify-content:flex-end; }   /* a dialog's closing row, made with UI.actions: on the right as .acts, not where a card's buttons sit */
-dialog.ask .acts button { min-width:88px; padding:0 18px; }
+dialog.ask .acts button { min-width:88px; padding:0 18px; min-height:var(--ctl); font-size:14px; }   /* as tall as the closing row of the dialogs made with UI.actions */
 dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
 .aboutbox { max-width:480px; margin:0; }
 .aboutbox p { font-size:14px; line-height:1.5; }   /* every part a .group: one left edge */
