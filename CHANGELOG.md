@@ -17,6 +17,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chọn một ô nhập chữ trên TV (ô tìm kiếm, ô link ở TV Home), hoặc bàn phím TV bật lên, thì app điện thoại và trang web tự mở ô gõ cùng bàn phím điện thoại trong chưa tới 1 giây; rời ô đó mà chưa gõ gì thì ô gõ tự đóng. Cần ADB; tắt được ở mục "Bàn phím của TV".
 - TV Channels: thêm link m3u của riêng bạn (tối đa 5) ở tab "Link của bạn" trong Quản lý kênh; TV tải về mỗi ngày và hiện thành mục "Danh sách của bạn", mỗi link một hàng.
 - Xem màn hình TV: chọn "Trực tiếp" hoặc "Ảnh chụp". Ảnh chụp tự chụp lại sau mỗi phím bấm, chụp tiếp tới khi màn hình đứng yên (hết hiệu ứng, app mở xong), và mỗi 10 giây; có nút ↻ chụp ngay. Nhẹ cho Wi-Fi yếu và iPhone.
+- TV Channels: lướt danh sách bên trái chỉ di chuyển focus, không còn mở từng nhóm (hết giật khi lướt nhanh); bấm OK hoặc ▶ mới mở nhóm. Nhóm đang mở có chữ màu xanh ngọc, dòng đang focus có nền sáng.
 
 **English**
 - Phone app: on the first update Android asks to allow "Install unknown apps"; after allowing it and coming back, the app said "Update cancelled" though nobody cancelled, and had to be tapped again. The app now asks for it before the download (Open settings), and the update goes on by itself on return.
@@ -29,6 +30,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - When a text field on the TV gets the focus (a search box, the link field in TV Home) or the TV's keyboard comes up, the phone app and the web page open their typing box with the phone's keyboard within a second; leaving the field before anything was typed closes it. Needs ADB; can be turned off under "TV keyboard".
 - TV Channels: add your own m3u links (up to 5) in the "Your links" tab of Manage channels; the TV fetches them each day and shows them under "Your lists", a row per link.
 - Seeing the TV's screen: choose "Live" or "Screenshots". Screenshots refresh after each key press, again until the screen stops changing (an animation, an app opening), and every 10 s; a ↻ button shoots now. Light on weak Wi-Fi and iPhones.
+- TV Channels: moving through the side list only moves the focus, no longer opening each group on the way (no lag on a fast scroll); OK or ▶ opens one. The open group has its words in teal, the focused row a light fill.
 
 ## 0.19.0 - 2026-10-23
 

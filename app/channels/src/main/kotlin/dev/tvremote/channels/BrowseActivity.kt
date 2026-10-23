@@ -52,8 +52,6 @@ class BrowseActivity : Activity() {
     private lateinit var overlay: View
     private lateinit var waitText: TextView
     private lateinit var waitButtons: View
-    private val autoOpen = Runnable { pending?.let { if (it != group) select(it) } }
-    private var pending: String? = null
     private lateinit var find: EditText
     private val cards = Cards()
 
@@ -230,7 +228,6 @@ class BrowseActivity : Activity() {
     private fun buildRail() {
         val hadFocus = rail.hasFocus()
         val at = (0 until rail.childCount).firstOrNull { rail.getChildAt(it).hasFocus() } ?: -1
-        main.removeCallbacks(autoOpen)
         rail.removeAllViews()
         val dp = { n: Int -> Ui.dp(this, n).toInt() }
         rail.addView(LinearLayout(this).apply {                       // the app's own tile beside its name
@@ -279,21 +276,18 @@ class BrowseActivity : Activity() {
     /** A row of one of the person's groups: Menu or a long press opens [groupMenu]. */
     private fun View.held(gid: String) = apply { tag = "grp:$gid"; isLongClickable = true; setOnLongClickListener { groupMenu(gid); true } }
 
-    /** [g] set: a group or category, opened by moving onto it (after a pause); null: an action, only on OK. */
+    /**
+     * [g] set: a group or category, opened on OK or Right (it is then the selected row, its channels on the right); moving
+     * through the list only moves the focus. Opening on the focus redrew the grid on every row passed: lag on a fast scroll.
+     */
     private fun add(v: View, on: Boolean, g: String? = null) {
         v.isActivated = on
-        if (g != null) {
-            v.setTag(TAG_GROUP, g)
-            v.setOnFocusChangeListener { _, has ->
-                if (has) { pending = g; main.removeCallbacks(autoOpen); if (g != group) main.postDelayed(autoOpen, 250) }
-            }
-        }
+        if (g != null) v.setTag(TAG_GROUP, g)
         rail.addView(v, LinearLayout.LayoutParams(-1, -2))
     }
 
     /** Opens [g] with the list's focus where it is: only the grid and the marked row change, nothing is rebuilt. */
     private fun select(g: String) {
-        main.removeCallbacks(autoOpen)
         group = g
         for (i in 0 until rail.childCount) rail.getChildAt(i).let { v -> (v.getTag(TAG_GROUP) as? String)?.let { v.isActivated = it == g } }
         filter(); grid.scrollToPosition(0)
@@ -301,7 +295,6 @@ class BrowseActivity : Activity() {
 
     private fun pick(g: String) {
         group = g; buildRail(); filter()
-        main.removeCallbacks(autoOpen)
         intoGrid()
     }
 
@@ -375,7 +368,6 @@ class BrowseActivity : Activity() {
 
     /** The first row of the side list: the field gets the focus and the keyboard, and results come from every country. */
     private fun enterSearch() {
-        main.removeCallbacks(autoOpen)
         group = SEARCH; others = emptyList(); otherState = IDLE
         find.setText("")
         buildRail(); filter()
@@ -780,7 +772,7 @@ class BrowseActivity : Activity() {
 
     override fun onStop() { GlobalIndex.release(); super.onStop() }
 
-    override fun onDestroy() { main.removeCallbacks(autoOpen); main.removeCallbacks(globalRun); searcher.shutdownNow(); GlobalIndex.release(); watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { main.removeCallbacks(globalRun); searcher.shutdownNow(); GlobalIndex.release(); watching?.let { Store.unwatch(this, it) }; io.shutdownNow(); guides.shutdownNow(); super.onDestroy() }
 
     /** Stable ids: a list drawn again (a favourite or a group changed) keeps the focus on the same channel, not on whatever card took its place. */
     private inner class Cards : RecyclerView.Adapter<Cards.H>() {
