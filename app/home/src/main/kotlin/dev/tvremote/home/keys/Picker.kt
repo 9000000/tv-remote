@@ -124,8 +124,8 @@ object Picker {
         val dialog = Dialog(a, R.style.Menu)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val panelW = minOf(dm.widthPixels - dp(64), dp(1180))
-        val cols = if (panelW >= dp(1000)) 5 else 4
-        val gap = dp(26)
+        val cols = Store.get(a).optInt("cols", HomeConfig.COLS_DEFAULT)   // the grid's own: a tile here looks like the one it puts there
+        val gap = dp(dev.tvremote.home.GRID_GAP)                      // Home's: a focused tile's name shows under it, 26 put it under the next row
         val tileW = (panelW - dp(2 * 34) - (cols - 1) * gap) / cols
 
         val area = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
@@ -222,7 +222,7 @@ object Picker {
         // what there is, read off the main thread: every app's picture, then each app's shortcuts (a binder call per app)
         bg.execute {
             // the grid's apps with their pictures when Home has them: loading every banner again was ~230-400 ms on the FPT box
-            val apps = (a as? dev.tvremote.home.HomeActivity)?.loaded()?.takeIf { it.isNotEmpty() }?.onEach { if (it.banner == null && it.icon == null) it.load(a) }
+            val apps = (a as? dev.tvremote.home.HomeActivity)?.loaded()?.filter { !it.grid }?.takeIf { it.isNotEmpty() }?.onEach { if (it.banner == null && it.icon == null) it.load(a) }   // Home's list has its live tiles and pins too: listed here as apps, their tile moved to its own section and left a hole
                 ?: Apps.list(a).onEach { it.load(a) }
             val hidden = Store.list(a, "hidden").toSet()
             val got = ArrayList<Item>()

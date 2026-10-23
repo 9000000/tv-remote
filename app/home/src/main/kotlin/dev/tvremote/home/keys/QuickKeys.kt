@@ -40,7 +40,7 @@ object QuickKeys {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val panelW = minOf(dm.widthPixels - dp(64), dp(1180))
         val cols = 5
-        val gap = dp(26)
+        val gap = dp(dev.tvremote.home.GRID_GAP)                      // Home's: a focused tile's name shows under it, 26 put it under the next row
         val tileW = (panelW - dp(2 * 34) - (cols - 1) * gap) / cols
 
         val area = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
@@ -115,6 +115,7 @@ object QuickKeys {
                         tiles[code] = t
                         row!!.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
                     }
+                    if (keysOn.hasFocus() || autoOn.hasFocus()) return@runOnUiThread   // a pill just switched: the focus stays on it, not on key 1
                     (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: keyOrder.firstNotNullOfOrNull { k -> tiles[k]?.takeIf { it.isFocusable } })?.requestFocus()   // key 1 first: a HashMap's order put it on any slot (the power-on one)
                 }
             }, "home-quickkeys").apply { isDaemon = true }.start()

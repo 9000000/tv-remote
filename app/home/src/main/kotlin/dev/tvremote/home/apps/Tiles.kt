@@ -433,9 +433,9 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
 
     private fun drawToggle(cv: Canvas, pad: Float) {
         drawHead(cv, pad, 15f * u)
-        paint.typeface = Font.bold; paint.textSize = 22f * u
-        val ph = 36f * u; val top = 33f * u                              // the pill, then what a press does under it: both get the whole width
-        val pw = Math.max(paint.measureText(big) + 24f * u, ph * 1.5f)
+        paint.typeface = Font.bold; paint.textSize = 17f * u               // 22 sp: "Tắt" outweighed the tile's name above it
+        val ph = 30f * u; val top = 36f * u                              // the pill, then what a press does under it: both get the whole width
+        val pw = Math.max(paint.measureText(big) + 22f * u, ph * 1.6f)
         val cx = pad + pw / 2f; val cy = top + ph / 2f
         cv.save(); cv.scale(pop, pop, cx, cy)
         box.set(pad, top, pad + pw, top + ph)
@@ -444,7 +444,7 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
         cv.drawRoundRect(box, ph / 2f, ph / 2f, paint)
         paint.style = Paint.Style.FILL
         paint.color = if (on) colours()[1] else INK; paint.textAlign = Paint.Align.CENTER
-        cv.drawText(big, cx, cy + 8f * u, paint); paint.textAlign = Paint.Align.LEFT
+        cv.drawText(big, cx, cy + 6f * u, paint); paint.textAlign = Paint.Align.LEFT
         cv.restore()
         paint.typeface = Font.medium; paint.textSize = 12.5f * u; paint.color = LINE_INK
         cv.drawText(fit(small, w - 2 * pad), pad, 90f * u, paint)

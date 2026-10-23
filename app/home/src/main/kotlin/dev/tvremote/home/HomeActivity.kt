@@ -578,6 +578,7 @@ class HomeActivity : Activity() {
     private fun show() {
         moving?.let { it.carry(false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = (currentFocus as? Tile)?.app?.pkg
+        val keepAt = tiles().indexOf(currentFocus)                    // its place: an app hidden or a live tile taken off leaves no tile to go back to
         Motion.read(this, conf)
         if (!Motion.glass) glass.hide()
         wall()
@@ -612,7 +613,8 @@ class HomeActivity : Activity() {
         ui.removeCallbacks(tileTick); if (!away && liveViews().isNotEmpty()) ui.post(tileTick)   // a new grid asks at once
 
         val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
-        if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
+        val near = if (again == null && keepAt >= 0) tiles().let { t -> t.getOrNull(minOf(keepAt, t.size - 1)) } else null   // the one now in its place (the last, if it was last): not the top of Home, a scroll away
+        if (again != null) again.requestFocus() else if (near != null) near.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
     }
 
     private fun fill(cells: List<View>, cols: Int, gap: Int) {
