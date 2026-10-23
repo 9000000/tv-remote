@@ -201,7 +201,7 @@ class HomeActivity : Activity() {
         netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for both settings, the TV's and TV Home's: two buttons side by side read as the same thing
         settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.settings), ::dp) {
-            open = Drop.show(this, bar, listOf(
+            open = Drop.show(this, bar.capsule, listOf(
                 Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) }) +
                 listOf(Settings.ACTION_DISPLAY_SETTINGS to (R.drawable.ic_monitor to R.string.picture), Settings.ACTION_SOUND_SETTINGS to (R.drawable.ic_vol_up to R.string.sound))
                     .filter { Intent(it.first).resolveActivity(packageManager) != null }          // a TV without that screen shows no dead row
@@ -210,12 +210,12 @@ class HomeActivity : Activity() {
         }
         // for a remote whose own power button is broken: three named actions TV Setup runs (Power.kt), the hard one asks again
         powerPill = BarBtn(this, R.drawable.ic_power, getString(R.string.power), ::dp) {
-            if (!setupThere()) { open = Drop.show(this, bar, needSetup()); return@BarBtn }
-            open = Drop.show(this, bar, listOf(
+            if (!setupThere()) { open = Drop.show(this, bar.capsule, needSetup()); return@BarBtn }
+            open = Drop.show(this, bar.capsule, listOf(
                 Drop.Row(R.drawable.ic_eye_off, getString(R.string.power_screen_off)) { Power.run(this, Power.SCREEN_OFF) },
                 Drop.Row(R.drawable.ic_moon, getString(R.string.power_standby)) { Power.run(this, Power.STANDBY) },
                 Drop.Row(R.drawable.ic_power, getString(R.string.power_off)) {
-                    open = Drop.show(this, bar, listOf(                // Cancel first: the focus lands on the safe choice
+                    open = Drop.show(this, bar.capsule, listOf(                // Cancel first: the focus lands on the safe choice
                         Drop.Row(R.drawable.ic_close, getString(R.string.power_keep)) { },
                         Drop.Row(R.drawable.ic_power, getString(R.string.power_off_now)) { Power.run(this, Power.POWER_OFF) }))
                 }))
@@ -255,7 +255,7 @@ class HomeActivity : Activity() {
         })
         loadApps()
         if (Motion.on) enter(true)
-        if (reopen) { reopen = false; ui.post { customize() } }
+        if (reopen) { reopen = false; ui.post { customize("lang") } }
     }
 
     /** A new language: the screen built again in it, the panel reopened if the change came from it (else it is closed). */
@@ -266,6 +266,7 @@ class HomeActivity : Activity() {
     }
 
     override fun onDestroy() {
+        Customize.forget(this)
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
         Store.onChange = null
         open?.dismiss()
@@ -297,6 +298,7 @@ class HomeActivity : Activity() {
         if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
         bingCheck()
         ui.postDelayed({ if (!isDestroyed) bg.execute { Customize.warm(this) } }, 3000)   // the panel's pictures made while nothing else goes on
+        ui.postDelayed({ Customize.prepare(this) }, 3500)                  // and the panel itself, on the main thread once it is idle
         upd.check({ r -> ui.postDelayed({ if (!isDestroyed && !away && open == null) askUpdate(r) }, 2500) }, { updating(it) })   // asked once the home has settled
     }
 
@@ -1046,7 +1048,7 @@ class HomeActivity : Activity() {
     }
 
     private var panel: android.app.Dialog? = null
-    private fun customize() { open = Customize.show(this).also { panel = it } }
+    private fun customize(at: String? = null) { open = Customize.show(this, at).also { panel = it } }
 
     /** The remote's Menu key anywhere but on an app (an app's own Menu opens its menu) opens the settings. */
     override fun onKeyUp(code: Int, e: KeyEvent): Boolean {
@@ -1095,7 +1097,7 @@ class HomeActivity : Activity() {
         }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
         if (rows.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }
         open?.dismiss()
-        open = Drop.show(this, bar, rows)
+        open = Drop.show(this, bar.capsule, rows)
     }
 
     /** "HDMI 2" before "HDMI 10". */

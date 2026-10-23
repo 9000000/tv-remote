@@ -293,6 +293,14 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - `Store.get` costs ~7–14 ms a call there; `refresh()` read it once per row, so it reads it once. A memo of the cleaned conf barely moved the total and was dropped.
 - The analog clock's smooth second hand redrew Home ~30 fps (125 frames in 5 s idle) on the same UI thread as any panel over it. Removed; the face redraws on the minute.
 - Panel 460 dp, not 600: the rows' text uses under half of 600. Tile titles take 2 lines so nothing is cut at the narrower width.
+- Still ~470 ms from the menu row's click to the slide (FPT, timestamps per step): building the top level ~300 ms (seven group rows ~100-190 ms, `Store.get` ~15 ms x2, the photo list ~17 ms), then window + first frame ~140 ms. Now `Customize.prepare` builds the panel on an idle handler 3.5 s after Home starts and 1.5 s after each close; the click only shows it: 170-240 ms. Pages still fill on first use and `refresh()` runs at show, so a change made meanwhile (a phone, a sent photo) is in it. The slide's start offset is set at show, not at build: motion may have been turned off since.
+- Reopened on a page (`show(at = "lang")` after a new language rebuilt Home): no slide, the page is simply there with its choice focused. Language is a list (each in its own words, the one in use ticked), not a tile that stepped through them and rebuilt Home on every press.
+
+## A dialog taller than the screen squashes its last row (`TvUi.sheet`, `PhotoScreen.kt`)
+- Android caps a WRAP_CONTENT dialog window at the screen height; the content is then laid out short and the last child (the Close/Done button) is squashed until its text vanishes. The FPT box is 540 dp tall; the web-page QR screen measured taller.
+- `TvUi.sheet` wraps its rows in a ScrollView (every TV Channels/Games sheet). `PhotoScreen` keeps Close outside the scroll, pinned under it, and lays out in two columns: the QR alone on the left (at most 45% of the width, shrunk to what the height leaves, min 160 dp), words and choices on the right. The QR is drawn unfiltered so the scaled squares stay sharp. On the FPT the QR went from 100 dp (web) / ~195 dp (manage) to ~250 dp.
+- Already scrolling: Customize, QuickKeys, Picker, TvGlass.menu, TV Setup's MainActivity. `ui/Drop.kt` has at most 6 rows: no scroll.
+- Top-bar menus (`Drop`) hang from the capsule, not from the whole bar: the bar's height includes the focused button's word under it, which left a 38 dp gap. Dim 0.45 (0.15 left Home as bright as the menu).
 
 ## The web page is served gzipped (`WebPage.kt`)
 - First load after an update was 1,232,711 bytes (79 requests, browser, cache off); with `Content-Encoding: gzip` it is 413,903. Per file: core.js 49,975 -> 17,433, i18n/en.json 183,393 -> 54,359, index.html 87,894 -> 21,328.

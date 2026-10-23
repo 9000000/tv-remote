@@ -80,7 +80,7 @@ object Drop {
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setGravity(Gravity.TOP or Gravity.START)
-            setDimAmount(0.15f)
+            setDimAmount(0.45f)                                        // 0.15 left Home as bright as the menu: it did not stand out
             attributes = attributes.apply {
                 x = (if (at[0] > sw / 2) at[0] + anchor.width - w else minOf(at[0], sw - w - dp(32))).coerceIn(dp(16), sw - w - dp(16)); y = at[1] + anchor.height + dp(8)
                 width = w; height = WindowManager.LayoutParams.WRAP_CONTENT

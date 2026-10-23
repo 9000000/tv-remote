@@ -159,7 +159,31 @@ object Customize {
         dialog.show()
     }
 
-    fun show(a: Activity): Dialog {
+    private var ready: Pair<Dialog, () -> Unit>? = null
+    private var readyFor: Activity? = null
+
+    /**
+     * The panel built while Home is idle, so MENU only shows it: built on the press it took ~300 ms on the FPT box before it began
+     * to slide in (seven rows of views, the settings read three times). Its pages still fill on first use, from the settings then.
+     */
+    fun prepare(a: Activity) {
+        android.os.Looper.myQueue().addIdleHandler {                 // between frames and keys: a key pressed meanwhile is not held
+            if (readyFor !== a && !a.isDestroyed && !a.isFinishing) { ready = make(a, null); readyFor = a }
+            false
+        }
+    }
+    fun forget(a: Activity) { if (readyFor === a) { ready = null; readyFor = null } }
+
+    /** [at] a page's key: the panel opens on it, without a slide (it reopens on Language after a new language built Home again). */
+    fun show(a: Activity, at: String? = null): Dialog {
+        val (dialog, before) = ready?.takeIf { at == null && readyFor === a } ?: make(a, at)
+        ready = null; readyFor = null
+        before()
+        dialog.show()
+        return dialog
+    }
+
+    private fun make(a: Activity, at: String?): Pair<Dialog, () -> Unit> {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val dm = a.resources.displayMetrics
@@ -186,12 +210,12 @@ object Customize {
 
         // backgrounds, five to a row, a ✓ on the one in use (rotation off) or on each of the set it turns through (rotation on)
         var conf = Store.get(a)
-        val have = Walls.photos(a)
-        val keys = HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have }
+        // read when the backgrounds' page fills, not when the panel is built ahead: a photo sent meanwhile is in it
+        val keys by lazy { val have = Walls.photos(a); HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have } }
         val tiles = ArrayList<Pair<String, View>>()
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
-        dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null }
+        dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
         val waiting = ArrayList<Pair<ImageView, Bitmap>>()
         var slid = !Motion.on
@@ -250,7 +274,7 @@ object Customize {
                     stepper(a, dialog, key) { pick = choices?.indexOfFirst { it.first == Store.get(a).optString(key) }?.coerceAtLeast(0) ?: 0; paint() }
                     return@setOnClickListener
                 }
-                if (choices != null) {                                 // a new language builds the screen again (HomeActivity), this panel with it
+                if (choices != null) {                                 // the next one in turn (motion, focus)
                     pick = (pick + 1) % choices.size; on = pick > 0 || key == "cols"; paint()
                     Store.change(a, JSONObject().put(key, choices[pick].first)); return@setOnClickListener
                 }
@@ -266,7 +290,24 @@ object Customize {
         // each page is filled when it is first opened, or once the panel has slid in: all seven built before it showed took
         // ~650 ms on the FPT box, which held its first frame for a second
         groups[0].fill = {
-            col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(8) })
+            // first, seen without scrolling past every background. A photo from a phone on the same Wi-Fi: a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background
+            col.addView(LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                background = TvGlass.rowBg(a, 16)
+                addView(ImageView(a).apply { setImageResource(R.drawable.ic_cast); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(label(a.getString(R.string.wall_phone), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    addView(label(a.getString(R.string.wall_phone_sub), 12f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
+                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
+            }, LinearLayout.LayoutParams(-1, -2))
+            // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
+            tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
+            endRow()
+            col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
             var chipRow: LinearLayout? = null
             HomeConfig.EVERY.forEachIndexed { i, k ->
                 if (i % 3 == 0) { chipRow = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(chipRow, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) }) }
@@ -364,24 +405,6 @@ object Customize {
             }
             markAll(); markEvery()
             if (keys.any { HomeConfig.isPhoto(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
-
-            // a photo from a phone on the same Wi-Fi: a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background
-            col.addView(LinearLayout(a).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-                background = TvGlass.rowBg(a, 16)
-                addView(ImageView(a).apply { setImageResource(R.drawable.ic_cast); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
-                addView(LinearLayout(a).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(label(a.getString(R.string.wall_phone), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-                    addView(label(a.getString(R.string.wall_phone_sub), 12f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
-                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
-                setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
-            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
-            // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
-            tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
-            endRow()
         }
         groups[1].fill = {
             tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
@@ -455,9 +478,27 @@ object Customize {
             launchPage(a, col, ::glass, ::label, gap)
         }
         groups[6].fill = {
-            tile(R.drawable.ic_globe, a.getString(R.string.c_lang), null, "lang",
-                listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English"))
-            endRow()
+            // every language at once, each in its own words, the one in use ticked: one tile stepping through them hid which
+            // there were, and each press built Home again before the next could be seen
+            val sys = android.content.res.Resources.getSystem().configuration.locales[0]
+            val now = Store.get(a).optString("lang")
+            for ((k, name) in listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English")) {
+                val row = LinearLayout(a).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                    setPadding(dp(16), dp(13), dp(16), dp(13))
+                    background = TvGlass.rowBg(a, 16)
+                    addView(LinearLayout(a).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(label(name, 16f, Color.WHITE))
+                        if (k.isEmpty()) addView(label(sys.getDisplayLanguage(sys).replaceFirstChar { it.uppercase() }, 12f, DIM))   // which one that is now
+                    }, LinearLayout.LayoutParams(0, -2, 1f))
+                    if (k == now) { val (iv, sz) = icon(R.drawable.ic_check, ACCENT, dp(20)); addView(iv, LinearLayout.LayoutParams(sz, sz)) }
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                    setOnClickListener { if (k != Store.get(a).optString("lang")) Store.change(a, JSONObject().put("lang", k)) }   // Home is built again in it
+                }
+                if (k == now) groups[6].start = { row }
+                col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (col.childCount > 0) topMargin = dp(8) })
+            }
         }
         groups[0].start = { tiles.firstOrNull { it.second.isSelected }?.second ?: tiles.firstOrNull()?.second }
         fun build(g: Group) {
@@ -488,7 +529,8 @@ object Customize {
         var cur: Group? = null                                         // the page open, null on the first level
         var gen = 0                                                    // a slide that was cut short by the next one does not finish its hiding
         val shift = panelW / 6f
-        fun slides() = Motion.on && !Motion.calm                       // calm and off: the page is simply there
+        var still = at != null                                        // reopened on a page: it is simply there
+        fun slides() = !still && Motion.on && !Motion.calm                       // calm and off: the page is simply there
         fun refresh() { val c = Store.get(a); for (g in groups) g.sum?.text = summary(a, g.key, c) }   // one read: ~7 ms each on the FPT box
         fun enter(g: Group) {
             build(g)
@@ -627,6 +669,7 @@ object Customize {
             setWindowAnimations(0)                                     // its own slide below, or none when motion is off
         }
         dialog.setOnShowListener {
+            groups.firstOrNull { it.key == at }?.let { enter(it); still = false; slid = true; buildRest(); return@setOnShowListener }
             groups[0].row?.let {
                 it.requestFocus()
                 it.animate().cancel(); if (Motion.on) { it.scaleX = 1.06f; it.scaleY = 1.06f }   // already large as it slides in: its spring re-drew the whole panel for 400 ms
@@ -638,9 +681,11 @@ object Customize {
                 }.start()
             } else buildRest()
         }
-        if (Motion.on) { panel.translationX = panelW / 3f; panel.alpha = 0f }   // before show: set in the show listener, the first frame had shown it in place
-        dialog.show()
-        return dialog
+        return dialog to {
+            refresh()                                                  // what changed since it was built (a phone, another panel)
+            // before show: set in the show listener, the first frame had shown it in place. Here, not when built: motion may have changed since
+            if (Motion.on && at == null) { panel.translationX = panelW / 3f; panel.alpha = 0f }
+        }
     }
 
     /**

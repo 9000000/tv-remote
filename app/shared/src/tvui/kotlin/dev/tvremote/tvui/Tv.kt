@@ -20,6 +20,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 
 /**
@@ -155,15 +156,23 @@ object TvUi {
             if (icon != 0) { setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0); compoundDrawablePadding = dp(c, 8).toInt() }
         }
 
-    /** A dialog box, the look all of them share: [theme] the app's transparent dialog style, [w] dp wide. Back closes it. */
+    /**
+     * A dialog box, the look all of them share: [theme] the app's transparent dialog style, [w] dp wide. Back closes it.
+     * The rows scroll once they are taller than the screen: Android caps the window there, and without the scroll the last
+     * rows (the buttons) were squashed until their words vanished (a group list of a big playlist, a 540 dp tall TV).
+     */
     fun sheet(c: Context, theme: Int, w: Int = 380): Pair<Dialog, LinearLayout> {
         val dlg = Dialog(c, theme)
         val box = LinearLayout(c).apply {
             orientation = LinearLayout.VERTICAL
             val p = dp(c, 14).toInt(); setPadding(p, p, p, p)
-            background = round(SHEET_FILL, dp(c, R_SHEET), 1, SHEET_EDGE)
         }
-        dlg.setContentView(box, ViewGroup.LayoutParams(dp(c, w).toInt(), -2))
+        val scroll = ScrollView(c).apply {
+            isVerticalScrollBarEnabled = false
+            background = round(SHEET_FILL, dp(c, R_SHEET), 1, SHEET_EDGE); clipToOutline = true   // the corners stay put while the rows scroll
+            addView(box, ViewGroup.LayoutParams(-1, -2))
+        }
+        dlg.setContentView(scroll, ViewGroup.LayoutParams(dp(c, w).toInt(), -2))
         return dlg to box
     }
 

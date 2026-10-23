@@ -49,8 +49,17 @@ object PhotoScreen {
         val qr = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
         var changed = false
 
+        // two columns: the QR alone on the left, as big as the height lets it be (scanned from the sofa), the words, the typed
+        // link and how the page updates on the right
+        val left = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
+        val right = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; gravity = Gravity.CENTER_VERTICAL }
+        col.addView(LinearLayout(a).apply {
+            clipChildren = false; clipToPadding = false; gravity = Gravity.CENTER_VERTICAL
+            addView(left, LinearLayout.LayoutParams(-2, -2))
+            addView(right, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(28) })
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         // typed on the TV itself: faster than the QR when a phone's remote app can type into the TV's field
-        val field = if (web) typeUrl(a, col, status, { changed = true }, ::dp) else null
+        val field = if (web) typeUrl(a, right, status, { changed = true }, ::dp) else null
         var firstChip: View? = null
         val s = ManageServer.start(a)
         ManageServer.listener = object : ManageServer.Listener {
@@ -59,23 +68,20 @@ object PhotoScreen {
             override fun stopped() { dialog.dismiss() }
         }
         if (s == null) {
-            col.addView(label(a.getString(R.string.pq_none), 16f, BAD), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+            right.addView(label(a.getString(R.string.pq_none), 16f, BAD), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
         } else {
-            val side = if (web) dp(150) else minOf(a.resources.displayMetrics.heightPixels * 36 / 100, dp(280))   // at most: shrunk below if the panel would not fit
-            qr.setImageBitmap(Qr.bitmap(s.url, 8))
-            // the web page's screen has the typed link above: the QR goes beside its words, or Close fell off a 1080p TV at 2x
-            val beside = if (web) LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL }.also { col.addView(it, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) }) } else null
-            val words = if (beside == null) col else LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
-            if (beside == null) col.addView(qr, LinearLayout.LayoutParams(side, side).apply { topMargin = dp(16) })
-            else { beside.addView(qr, LinearLayout.LayoutParams(side, side)); beside.addView(words, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(20) }) }
-            val align = if (web) Gravity.START else Gravity.CENTER
-            words.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.mg_step), 15f, SOFT).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (web) 0 else 14) })
-            words.addView(label(a.getString(R.string.pq_addr), 13f, DIM).apply { gravity = align }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
-            addr.text = s.url; addr.gravity = align
-            words.addView(addr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
-            if (!web) words.addView(label(a.getString(R.string.pq_time), 12f, FAINT), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })   // web: no room under the typed link and its choices
-            if (web) firstChip = options(a, col, { changed = true; status.text = a.getString(R.string.pq_done); status.setTextColor(GOOD) }, ::dp)
-            col.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+            val side = dp(400)                                         // at most: shrunk below to what fits
+            // drawn without smoothing: a QR stretched to fill its column keeps sharp squares, a blurred edge scans worse
+            qr.setImageDrawable(android.graphics.drawable.BitmapDrawable(a.resources, Qr.bitmap(s.url, 8)).apply { isFilterBitmap = false })
+            left.addView(qr, LinearLayout.LayoutParams(side, side))
+            right.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.mg_step), if (web) 14f else 16f, SOFT).apply { gravity = Gravity.START },
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+            left.addView(label(a.getString(R.string.pq_addr), 12f, DIM), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+            addr.text = s.url; addr.textSize = 14f
+            left.addView(addr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(2) })
+            if (web) firstChip = options(a, right, { changed = true; status.text = a.getString(R.string.pq_done); status.setTextColor(GOOD) }, ::dp)
+            else right.addView(label(a.getString(R.string.pq_time), 13f, FAINT).apply { gravity = Gravity.START }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+            right.addView(status, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         }
         val close = Font.on(TextView(a)).apply {
             text = a.getString(R.string.pq_close); textSize = 16f; setTextColor(INK); gravity = Gravity.CENTER; typeface = Font.medium
@@ -86,17 +92,25 @@ object PhotoScreen {
             }
             setOnClickListener { dialog.dismiss() }
         }
-        col.addView(close, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
-
-        val panel = android.widget.FrameLayout(a).apply {
-            background = TvGlass.panelBg(a)
-            addView(col, android.widget.FrameLayout.LayoutParams(-1, -2))
+        // Close under the scroll, not in it: on a 540 dp tall TV the web page's screen did not fit, the window stopped at the
+        // screen's edge and the last row, Close, was squashed until its word vanished
+        val scroll = android.widget.ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
+        val panel = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
+            background = TvGlass.panelBg(a); setPadding(0, 0, 0, dp(20))
+            addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))                   // weighted: it gives up what Close needs
+            addView(close, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(4) })
         }
-        val w = minOf(a.resources.displayMetrics.widthPixels - dp(64), dp(640))
-        // the panel keeps 40dp of screen above and below (it touched both edges of a 1080p TV at 2x): the QR gives up what is missing
-        col.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
-        val over = col.measuredHeight - (a.resources.displayMetrics.heightPixels - dp(80))
-        if (over > 0 && qr.parent != null) qr.layoutParams = qr.layoutParams.apply { width = maxOf(dp(if (web) 100 else 120), height - over); height = width }
+        val w = minOf(a.resources.displayMetrics.widthPixels - dp(64), dp(if (web) 900 else 760))
+        // the panel keeps 24dp of screen above and below: the QR gives up what is missing (its column too, so the words under it
+        // wrap to its width, which changes their height: twice). On the left it is also at most 45% of the width
+        if (qr.parent != null) repeat(2) {
+            val lp = qr.layoutParams
+            lp.width = minOf(lp.width, w * 45 / 100); lp.height = lp.width; left.layoutParams = left.layoutParams.apply { width = lp.width }
+            panel.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            val over = panel.measuredHeight - (a.resources.displayMetrics.heightPixels - dp(48))   // what still does not fit then scrolls
+            if (over > 0) { lp.width = maxOf(dp(160), lp.width - over); lp.height = lp.width; qr.layoutParams = lp }
+        }
         dialog.setContentView(panel, ViewGroup.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT))
         dialog.window?.apply { setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT); setDimAmount(0.6f) }
         // closing this screen (OK, Back, or the activity going away) is what stops the server
@@ -144,9 +158,9 @@ object PhotoScreen {
         val row = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL }
         row.addView(box, LinearLayout.LayoutParams(0, -2, 1f))
         row.addView(go, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
-        col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
-        col.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pq_web_or); textSize = 13f; setTextColor(DIM); gravity = Gravity.CENTER },
-            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        col.addView(row, LinearLayout.LayoutParams(-1, -2))
+        col.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pq_web_or); textSize = 13f; setTextColor(DIM); gravity = Gravity.START },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
         return box
     }
 

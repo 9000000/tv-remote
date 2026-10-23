@@ -19,6 +19,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Trò chơi web (TV Games): mọi game giờ có âm thanh riêng cho sự kiện của nó, ngắn và nhỏ: đặt quân/rút bài/đánh bài, xúc xắc, nhặt đồ, đúng/sai, đến lượt, thắng/thua... Cả bộ nằm trong một file dùng chung (`_lib/sfx.js`, tạo âm bằng WebAudio, không có file âm thanh), mỗi âm có khoảng nghỉ tối thiểu nên nhiều va chạm cùng lúc chỉ kêu một tiếng, không làm TV yếu bị giật. Thêm `?mute` vào địa chỉ để tắt.
 - TV Home: bảng Tùy chỉnh mở nhanh hơn khoảng 2,5 lần trên TV yếu (FPT: từ 0,9–1,6 giây còn 0,33–0,57 giây). Mỗi trang chỉ dựng khi cần, đồng hồ kim bỏ kim giây và chỉ vẽ lại mỗi phút (trước đó vẽ lại Home 30 lần/giây). Bảng hẹp hơn (460 dp), che ít Home hơn; tên dài xuống 2 dòng thay vì bị cắt; thêm khoảng cách giữa "Ảnh của bạn từ điện thoại" và "Phủ tối hình nền".
 - TV Home: bỏ dòng chú thích cuối bảng Tùy chỉnh ("Ứng dụng yêu thích, ứng dụng ẩn…: trên điện thoại hoặc máy tính"). "Quản lý từ điện thoại" ngay trên đã làm được những việc đó, nên dòng mô tả của nó giờ ghi rõ: app yêu thích, app ẩn, ảnh và mọi cài đặt.
+- TV Home: bảng Tùy chỉnh được dựng sẵn khi Home rảnh, bấm là trượt vào ngay (FPT: từ ~0,47 giây còn ~0,2 giây).
+- TV Home: Ngôn ngữ trong Tùy chỉnh là danh sách (Theo TV, Tiếng Việt, English), dấu ✓ ở ngôn ngữ đang dùng; đổi xong bảng mở lại đúng trang Ngôn ngữ thay vì phải vào lại từ đầu.
+- TV Home: "Ảnh của bạn từ điện thoại" và "Phủ tối hình nền" lên đầu trang Hình nền.
+- TV Home: màn "Trang web làm hình nền" và "Quản lý từ điện thoại" chia 2 cột, mã QR to hơn nhiều (FPT: 100 → ~250 dp), dễ quét. Nút Đóng không còn bị mất chữ trên TV màn thấp.
+- TV Channels, TV Games: hộp thoại dài (danh sách nhóm, ngôn ngữ…) cuộn được, nút cuối không còn bị ép mất chữ.
+- TV Home: menu Cài đặt/Nguồn ở thanh trên nằm sát thanh và làm tối Home rõ hơn.
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -33,6 +39,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Web games (TV Games): every game now has short, quiet sounds for its own events: placing a piece, drawing or playing a card, dice, pickups, right/wrong answers, your turn, win/lose... The whole set lives in one shared file (`_lib/sfx.js`, synthesised with WebAudio, no audio files); each sound has a minimum gap so many collisions at once make one sound and weak TVs don't stutter. Add `?mute` to the address to silence it.
 - TV Home: the Customize panel opens about 2.5× faster on weak TVs (FPT box: 0.9–1.6 s down to 0.33–0.57 s). Each page is built when needed, and the analog clock drops its second hand and redraws once a minute (it redrew Home 30 times a second). The panel is narrower (460 dp) and hides less of Home; long names wrap to 2 lines instead of being cut; "Your photo from a phone" and "Dim the background" no longer touch.
 - TV Home: the note at the foot of Customize ("Favourites, hidden apps and more pictures: on the phone or computer") is gone. "Manage from phone" right above already does all of that, and its line now says so: favourites, hidden apps, photos and every setting.
+- TV Home: the Customize panel is built ahead while Home is idle, so it slides in right away (FPT box: ~0.47 s down to ~0.2 s).
+- TV Home: Language in Customize is a list (Same as the TV, Tiếng Việt, English) with a ✓ on the one in use; after a change the panel reopens on Language instead of from the top.
+- TV Home: "Your photo from a phone" and "Dim the background" moved to the top of the Background page.
+- TV Home: the "Web page as the background" and "Manage from phone" screens are in two columns with a much bigger QR (FPT box: 100 → ~250 dp), easier to scan. The Close button no longer loses its word on short TVs.
+- TV Channels, TV Games: long dialogs (groups, languages…) scroll; the last button is no longer squashed.
+- TV Home: the Settings/Power menus of the top bar sit right under it and dim Home more.
 
 ## 0.20.0 - 2026-10-23
 
