@@ -401,21 +401,18 @@ function kindIntro(key) {
       el('span', { className: 'badge', textContent: kindWhy() })),
     el('ul', {}, ...items.map((t) => el('li', { textContent: t }))));
 }
-// What the TVs said and the errors shown (WireLog.kt): what a real TV did is what tells a bug apart. Copied whole (the GitHub
-// link holds only its end) and a new issue opened with it.
+// What the TVs said and the errors shown (WireLog.kt): what a real TV did is what tells a bug apart. Copied, then the site's
+// page where it is pasted and sent on (a GitHub issue or a message): no log in the link, it leaves only when the person sends it.
 async function sendWireLog() {
   let text;
   try { const r = await fetch('/api/wirelog'); if (!r.ok) throw 0; text = await r.text(); } catch { toast(T('core.log_unreadable')); return; }
   let ok = false;
   try { await navigator.clipboard.writeText(text); ok = true; } catch {}
   if (!ok) { const a = el('textarea', { value: text }); document.body.append(a); a.select(); try { ok = document.execCommand('copy'); } catch {} a.remove(); }
-  const head = text.split('\n\n')[0], tail = text.slice(-5000);
-  const cut = tail.length < text.length;
-  const body = '<!-- ' + T('core.issue_describe') + ' -->\n\n' + (cut && ok ? '<!-- ' + T('core.issue_long') + ' -->\n' : '')
-    + '```\n' + (cut ? head + '\n…\n' + tail.slice(tail.indexOf('\n') + 1) : text) + '\n```';
-  window.open('https://github.com/HoangTran0410/tv-remote/issues/new?title=' + encodeURIComponent(head.split('\n')[0]) + '&body=' + encodeURIComponent(body), '_blank');
+  window.open(LOG_PAGE, '_blank');
   toast(ok ? T('core.log_copied') : T('core.log_copy_failed'));
 }
+const LOG_PAGE = 'https://tvremote.pages.dev/log';
 function applyKind(s) {
   const scope = s.scope || 'full', kind = s.kind || 'android', sig = kind + '|' + scope + '|' + (s.caps || []).join() + '|' + (s.keys || []).join();
   if (sig === kindSig) return;

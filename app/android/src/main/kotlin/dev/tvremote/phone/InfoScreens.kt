@@ -10,7 +10,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import dev.tvremote.update.Release
+import android.widget.Toast
 
 // The Settings and About screens: plain pages over the picker.
 
@@ -147,7 +147,7 @@ internal fun MainActivity.buildAbout(): View {
     name.gravity = Gravity.CENTER
     box.addView(name, gap(10))
     // The app's own download link as a code: someone next to you scans it and has the app
-    val appLink = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
+    val appLink = "https://tvremote.pages.dev/dl/tv-remote.apk"         // the site sends it on to the latest release (docs/_worker.js): a smaller QR
     dev.tvremote.core.web.Qr.bitmap(appLink, 6)?.let { bmp ->
         val qr = ImageView(this)
         qr.setImageBitmap(bmp)
@@ -164,18 +164,19 @@ internal fun MainActivity.buildAbout(): View {
     box.addView(head(T("info_screens.author")), gap(22))
     box.addView(row("@user|Hoang Tran\n@HoangTran0410") { web("https://github.com/HoangTran0410") })
 
-    box.addView(head(T("info_screens.guide")), gap(18))
-    box.addView(row("@globe|tvremote.pages.dev") { web("https://tvremote.pages.dev/guide") })
-
-    box.addView(head(T("info_screens.source_code")), gap(18))
-    box.addView(row("@link|github.com/HoangTran0410/tv-remote") { web("https://github.com/" + Release.REPO) })
-    box.addView(row("@package|" + T("info_screens.releases")) { web("https://github.com/" + Release.REPO + "/releases") })
-    box.addView(row("@bug|" + T("about.report_a_problem")) { web("https://github.com/" + Release.REPO + "/issues") })
-    // what the TVs said and the errors shown (WireLog): what a real TV did is what tells a bug apart
+    // the site, not GitHub: a short address to read and tap, and where it leads can change without a new app
+    box.addView(head(T("info_screens.website")), gap(18))
+    box.addView(row("@globe|tvremote.pages.dev") { web("https://tvremote.pages.dev") })
+    box.addView(row("@info|" + T("info_screens.guide_link")) { web("https://tvremote.pages.dev/guide") })
+    box.addView(row("@package|" + T("about.releases")) { web("https://tvremote.pages.dev/#install") })
+    // what the TVs said and the errors shown (WireLog): what a real TV did is what tells a bug apart. Copied, then the
+    // site's page where it is pasted and sent on (a GitHub issue or a message), as on the page (js/core.js sendWireLog)
     box.addView(row("@clipboard|" + T("info_screens.send_the_log")) {
         val log = dev.tvremote.core.WireLog.all.report(basic?.takeIf { it.kind != dev.tvremote.core.remote.Remote.Kind.ANDROID })
-        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
-            .putExtra(Intent.EXTRA_SUBJECT, T("info_screens.tv_remote_log")).putExtra(Intent.EXTRA_TEXT, log), null))
+        (getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+            .setPrimaryClip(android.content.ClipData.newPlainText("TV Remote", log))
+        Toast.makeText(this, T("core.log_copied"), Toast.LENGTH_LONG).show()
+        web("https://tvremote.pages.dev/log")
     })
 
     box.addView(head(T("info_screens.credits")), gap(18))

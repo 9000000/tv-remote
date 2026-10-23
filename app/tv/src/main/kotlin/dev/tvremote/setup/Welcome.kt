@@ -103,6 +103,7 @@ internal object WelcomeState {
                 BitmapFactory.decodeFile(incoming.path, b)
                 if (b.outWidth <= 0) throw IllegalArgumentException("welcome:unreadable")
                 thumb = BitmapFactory.decodeFile(incoming.path, BitmapFactory.Options().apply { inSampleSize = sample(b.outWidth, 960) })
+                    ?.let { dev.tvremote.core.Upright.apply(it, dev.tvremote.core.Upright.read(incoming.path)) }   // the page's preview as the TV shows it
             } else {
                 val m = MediaMetadataRetriever()
                 try {

@@ -54,9 +54,12 @@ class WelcomeActivity : Activity() {
             val m = resources.displayMetrics
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(file.path, bounds)
+            val turn = dev.tvremote.core.Upright.read(file.path)               // an iPhone's portrait photo is stored lying down
+            val (bw, bh) = if (dev.tvremote.core.Upright.sideways(turn)) bounds.outHeight to bounds.outWidth else bounds.outWidth to bounds.outHeight
             var s = 1
-            while (bounds.outWidth / (s * 2) >= m.widthPixels && bounds.outHeight / (s * 2) >= m.heightPixels) s *= 2
+            while (bw / (s * 2) >= m.widthPixels && bh / (s * 2) >= m.heightPixels) s *= 2
             val bmp = BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = s })
+                ?.let { dev.tvremote.core.Upright.apply(it, turn) }
             if (bmp == null) { finish(); return }
             img.setImageBitmap(bmp)
             root.addView(img, FrameLayout.LayoutParams(-1, -1))

@@ -77,7 +77,7 @@ $('#aboutbtn').addEventListener('click', async () => {
   $('#qrs').replaceChildren(...[qrBlock(T('setup.qr_app'), T('setup.qr_app_long'), APP_APK),
     r && r.tv_web ? qrBlock(T('setup.qr_remote'), T('setup.qr_remote_note'), r.tv_web) : null].filter(Boolean));
 });
-const APP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk';
+const APP_APK = 'https://tvremote.pages.dev/dl/tv-remote.apk';         // the site sends it on to the latest release: short to read out, a small QR
 // a QR with its title and line; the link under it unless [hide] (an invite is for scanning, not for reading out)
 const qrBlock = (title, note, link, hide) => { const s = qrSvg(link, 170); return s ? el('div', { className: 'qr' }, s, el('b', { textContent: title }), ...[].concat(note).flatMap((n, i) => [i ? el('br') : null, el('span', { className: 'muted', textContent: n })]).filter(Boolean),   // note: one line, or several kept apart
   hide ? null : el('br'), hide ? null : el('a', { href: link, target: '_blank', rel: 'noopener', textContent: link.replace(/^https?:\/\//, '').replace(/^github\.com\/.*\//, '') })) : null; };   // the file's name: the whole release link is wider than the box

@@ -164,7 +164,7 @@ class MainActivity : Activity() {
         names.setPadding(resources.getDimension(R.dimen.tv_head_gap).toInt(), 0, 0, 0)
         names.addView(text("TV Setup", if (phone) 20 else 24, TvUi.TEXT, true))
         names.addView(text(T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" } +
-            "   ·   Hoang Tran   ·   github.com/HoangTran0410/tv-remote", 12, MUTED, false))
+            "   ·   Hoang Tran   ·   tvremote.pages.dev", 12, MUTED, false))
         head.addView(names)
         left.addView(head)
 
@@ -356,7 +356,7 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 
-    private val APP_LINK = "https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk"
+    private val APP_LINK = "https://tvremote.pages.dev/dl/tv-remote.apk"   // the site sends it on to the latest release (docs/_worker.js): a smaller QR
 
     /** This TV's address on the home network, read from the network interfaces (ADB not needed). */
     private fun wifiIp(): String = RemoteService.lanIp()

@@ -56,8 +56,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App điện thoại: Tiện ích có thêm "Quản lý TV" ở cuối, vì nút biểu tượng góc trên phải không có chữ, dễ bị bỏ qua.
 - App điện thoại: khung báo ADB trong Quản lý TV không còn nhắc "mở app TV Setup" (điện thoại nối thẳng vào TV), mà ghi cổng ADB đang đóng, kèm "Cách bật ADB trên TV" và "Thử kết nối lại".
 - App điện thoại: Quản lý TV dùng lại cổng cũ mỗi lần mở app, nên trang nhớ được lựa chọn (góc và thời gian của Thông báo...).
+- Trang: mở thẳng tab Thiết lập (hoặc TV Home từ Tiện ích trên điện thoại) bị báo lỗi "loadTvset is not defined"; tab đầu tiên giờ chờ đủ các script.
+- TV Home: chữ cái của ô sống trong các danh sách (Phím nhanh, ô sống) là chữ trắng trên ô tối ở mọi nơi, không còn gần như trắng trên nền sáng.
 - Hộp thoại Thông báo, Giảm độ sáng, Cắt ảnh nền, Lưu QR, Âm lượng nghe: hàng nút cuối canh phải như các hộp thoại khác; nút chính có icon.
 - TV Setup: thẻ thông báo trên TV không cảm ứng không còn mờ 80% (Android 12+ làm mờ lớp phủ cho chạm xuyên), chữ phía sau không lẫn vào nữa.
+- Màn hình chào: ảnh dọc chụp bằng iPhone (và nhiều điện thoại khác) không còn nằm ngang trên TV; ảnh được xoay theo thẻ EXIF, cả ảnh xem trước trên trang. Vẽ lên màn hình trên app điện thoại cũng vậy.
+- Gửi nhật ký: app chép nhật ký vào clipboard rồi mở trang tvremote.pages.dev/log để dán vào, gửi qua GitHub issue hoặc nhắn Facebook cho tác giả (không cần tài khoản GitHub).
+- Giới thiệu và các link tải trong app trỏ về trang chủ ngắn tvremote.pages.dev (tải app: tvremote.pages.dev/dl/…), không còn link GitHub dài.
 
 **English**
 - TV Home: one shared "open this" type for the key shortcuts, the app opened at power-on and the home grid: an app, one of an app's launcher shortcuts, or a live tile. Saved configs (plain package names) keep working. Customize > Keys & startup has two new screens built from the TV UI kit: "Add to home screen" (apps including hidden ones, each app's shortcuts, live tiles, with search) and a webOS-style "Quick keys" (0-9, the four colour keys and the power-on app, each slot the logo of what it opens; keys the remote lacks are greyed; the focus follows the glass/ring setting). The phone app, the computer app and TV Home's web page edit the same layout. A shortcut or live tile on a key runs only while on TV Home (keys through TV Setup open plain apps).
@@ -108,8 +113,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Phone app: Tools ends with "Manage the TV", since the top-right icon has no words and is easy to miss.
 - Phone app: the ADB notice in Manage no longer says "open TV Setup" (the phone reaches the TV itself): it says the ADB port is closed, with "How to turn on ADB" and "Retry".
 - Phone app: Manage keeps its port between launches, so the page remembers its choices (Notify's corner and time...).
+- Page: opened straight on the Setup tab (or TV Home from the phone's Tools) it showed "loadTvset is not defined"; the first tab now waits for every script.
+- TV Home: a live tile's letter in the lists (Quick keys, live tiles) is white on a dark tile everywhere, not near-white on a light one.
 - Notify, Dim, photo crop, QR save and listening loudness dialogs: the closing row sits on the right like the other dialogs; the main button has an icon.
 - TV Setup: on a TV with no touchscreen the notify card is no longer faded to 80% (Android 12+ fades an overlay that lets touches through), so the words behind no longer show through.
+- Welcome screen: a portrait photo taken on an iPhone (and many other phones) no longer lies on its side on the TV; it is turned by its EXIF tag, the page's preview too. So is a picture drawn on the screen from the Phone app.
+- Send the log: the app copies its log and opens tvremote.pages.dev/log to paste it, then send it as a GitHub issue or a Facebook message to the author (no GitHub account needed).
+- About and the apps' download links point at the short home page tvremote.pages.dev (downloads: tvremote.pages.dev/dl/…), not long GitHub links.
 
 ## 0.19.0 - 2026-10-23
 

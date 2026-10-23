@@ -208,6 +208,7 @@ internal fun MainActivity.drawPicked(uri: Uri) {
             while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1280) sample *= 2
             var bmp = contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
                 ?: throw IllegalArgumentException()
+            bmp = dev.tvremote.core.Upright.apply(bmp, contentResolver.openInputStream(uri)?.use { dev.tvremote.core.Upright.read(it) } ?: 1)   // a photo stored lying down
             val k = 1280f / maxOf(bmp.width, bmp.height)
             if (k < 1) bmp = Bitmap.createScaledBitmap(bmp, maxOf(1, (bmp.width * k).toInt()), maxOf(1, (bmp.height * k).toInt()), true)
             val out = ByteArrayOutputStream()
