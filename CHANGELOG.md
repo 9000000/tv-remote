@@ -31,6 +31,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: "Thêm vào màn hình chính", "Khi bật TV" và chọn app cho phím dùng đúng số cột của Home, hàng thẳng (trước có hàng hụt một ô), tên app hiện dưới ô được chọn không bị hàng dưới che. Ẩn app hoặc bỏ ô trực tiếp khỏi lưới: focus sang ô liền kề thay vì nhảy về đầu Home. Bật/tắt "Phím nhanh", "Mở app khi bật TV" giữ focus trên nút. Ô "Hẹn giờ tắt" (cần TV Setup mới): mỗi lần bấm thêm 15 phút, tới 120 phút thì tắt; chữ nhỏ lại.
 - TV Home: trong bảng Tùy chỉnh, "Thêm vào màn hình chính" và "Phím nhanh", mục được chọn chỉ sáng nền và có viền, không phóng to nữa. Trên FPT, 24 lần di chuyển tốn ~0,7–1,2 giây CPU thay vì 5,3–8,4 giây, và vẽ ~30 frame thay vì 530–610. Nhãn "Đã ẩn" mất ngay khi hiện lại app.
 - TV Home: quét mã QR "Quản lý từ điện thoại" không còn ra trang chỉ có chữ "401". Ứng dụng camera hoặc trình quét QR tự mở link trước (để xem trước) nên dùng mất mã, vì trước đây mỗi mã chỉ dùng được 1 lần. Giờ mã dùng được nhiều lần trong lúc màn QR còn mở, tối đa 8 phiên. Mã đã hết hạn thì hiện trang hướng dẫn quét lại.
+- TV Home: quét QR bằng camera hoặc Google Lens giờ vào được trang quản lý. Trước đây link mở từ app khác bị trình duyệt coi là từ trang ngoài, nên không gửi cookie đăng nhập (SameSite=Strict) và trang báo mã hết hạn. Giờ dùng SameSite=Lax; lệnh thay đổi vẫn cần header riêng.
 
 **English**
 - The web page (TV Setup, Phone app, Computer app) is sent gzipped: the first load after each update downloads ~0.41 MB instead of 1.23 MB.
@@ -57,6 +58,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: "Add to home screen", "When the TV turns on" and a key's app choice use Home's own column count, rows line up (one row was a tile short), and a focused tile's name is no longer hidden under the next row. Hiding an app or taking a live tile off the grid moves focus to the tile next to it instead of the top of Home. Switching "Quick keys" or "Open an app when the TV turns on" keeps the focus on that button. The "Sleep timer" tile (needs a recent TV Setup): each press adds 15 min, past 120 min it turns off; smaller text.
 - TV Home: in Customize, "Add to home screen" and "Quick keys" the focused item is a lighter background and a ring, no longer grown. On the FPT box 24 moves cost ~0.7–1.2 s of CPU instead of 5.3–8.4 s and draw ~30 frames instead of 530–610. "Hidden" goes away as soon as an app is shown again.
 - TV Home: scanning the "Manage from phone" QR no longer gives a page that only says "401". The camera or QR app opened the address first (a preview) and used up the one-time key. The key now works while its QR is on screen, up to 8 sessions. An expired key shows a page saying to scan again.
+- TV Home: scanning the QR with the camera or Google Lens now opens the manage page. A link opened from another app is cross-site to the browser, so it left off the SameSite=Strict login cookie and the page said the code had expired. Now SameSite=Lax; changes still need the custom header.
 
 ## 0.20.0 - 2026-10-23
 

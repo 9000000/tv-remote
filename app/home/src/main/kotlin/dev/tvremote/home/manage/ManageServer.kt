@@ -106,7 +106,9 @@ object ManageServer {
                 // the key in the QR: used once, it becomes the cookie, and the address goes back to a plain "/"
                 val id = if (req.method == "GET" && req.path == "/") a.redeem(req.query["k"]) else null
                 if (id == null) return@use reply(out, 401, "text/html; charset=utf-8", GONE)
-                reply(out, 302, "text/plain", "", "Location: /\r\nSet-Cookie: tvh=$id; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Access.SESSION_MS / 1000}\r\n")
+                // Lax, not Strict: the QR is opened by another app (camera, Lens), a cross-site start, so the browser left a Strict cookie off
+                // the redirect to "/" and the phone got 401. A post still needs X-Tvh, which no other site can send
+                reply(out, 302, "text/plain", "", "Location: /\r\nSet-Cookie: tvh=$id; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Access.SESSION_MS / 1000}\r\n")
                 touch(); main.post { listener?.connected(a.connected()) }
                 return@use
             }
