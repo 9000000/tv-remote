@@ -99,7 +99,9 @@ internal class Reoptimize(private val c: Context, private val adb: () -> Adb?) {
         val now = s.homeNow()
         if (now.substringBefore('/') == r.pkg || LauncherSwap.badHome(now)) return false   // already Home, or the guard's case
         sh("cmd package set-home-activity ${r.comp} 2>/dev/null")
-        return s.homeNow().substringBefore('/') == r.pkg
+        if (s.homeNow().substringBefore('/') == r.pkg) return true
+        // a stock launcher the update turned on wins over the role (a BRAVIA's tvlauncher, Android 9): the whole swap again
+        return try { s.take(r.pkg) } catch (e: java.io.IOException) { false }
     }
 
     private fun notice(n: Int, home: Boolean, sh: (String) -> String) {

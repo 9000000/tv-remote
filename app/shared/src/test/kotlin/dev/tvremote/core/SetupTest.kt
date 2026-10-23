@@ -156,6 +156,22 @@ class SetupTest {
         assertTrue(tv.disabled.isEmpty())
     }
 
+    @Test fun aXiaomiGivesHomeToFLauncherWithPatchWallOff() {          // PatchWall on took Home back whatever the role said
+        val tv = FakeTv(true, "com.mitv.tvhome", Setup.HOME_PKG)
+        tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
+        assertEquals(Setup.HOME_PKG, tv.home())
+        assertEquals(setOf("com.mitv.tvhome"), tv.disabled)
+        tv.setup().undo()
+        assertTrue(tv.disabled.isEmpty())
+    }
+
+    @Test fun undoNeverTurnsOnAPatchWallItDidNotTurnOff() {
+        val tv = FakeTv(true, "com.mitv.tvhome", "com.google.android.tvlauncher", Setup.HOME_PKG)
+        tv.disabled += listOf("com.mitv.tvhome", "com.google.android.tvlauncher")   // an older version's tvlauncher; PatchWall the person's
+        tv.setup().undo()
+        assertEquals(setOf("com.mitv.tvhome"), tv.disabled)
+    }
+
     @Test fun theHomeAndTheKeyboardInUseAreKept() {
         val tv = FakeTv(true, "com.brand.home", "com.brand.keys", "com.foo.game")
         tv.homes["com.brand.home"] = 5

@@ -29,8 +29,13 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             "com.sony.dtv.b2b.importexport", "com.sony.dtv.b2b.noderuntime.normal", "com.sony.dtv.b2b.noderuntime.privilege",
             "com.sony.dtv.b2b.webappruntimedrm", "com.sony.dtv.demomode", "com.sony.dtv.demosupport", "com.sony.dtv.multiscreendemo",
             "com.sony.dtv.sonyselect", "tv.samba.ssm")
-        /** Disabled last, and only once FLauncher is installed, or Home would have nowhere to go. launcherx: Google TV's. */
-        val LAUNCHER = arrayOf("com.google.android.tvrecommendations", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx")
+        /**
+         * Disabled last, and only once FLauncher is installed, or Home would have nowhere to go. launcherx: Google TV's; leanbacklauncher:
+         * the older Android TVs'; mitv.tvhome: Xiaomi's PatchWall. Any of them on wins Home over the HOME role (DECISIONS.md), so a swap
+         * turns off each one that is on (cleanyourtv's list, tried on their TVs).
+         */
+        val LAUNCHER = arrayOf("com.google.android.tvrecommendations", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx",
+            "com.google.android.leanbacklauncher", "com.mitv.tvhome")
         const val LAUNCHERX = "com.google.android.apps.tv.launcherx"
         /**
          * Google TV's setup wizard answers HOME too, above any installed app (RecoveryActivity, priority 1): with launcherx off
@@ -97,7 +102,8 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
      */
     private fun undoable(): List<String> {
         val mine = record()
-        val legacy = if (mine.none { it in LAUNCHER } && !has(LAUNCHERX)) LAUNCHER.toList() - LAUNCHERX else emptyList()
+        // the two that older versions turned off unrecorded: never a PatchWall the person turned off themselves
+        val legacy = if (mine.none { it in LAUNCHER } && !has(LAUNCHERX)) LAUNCHER.take(2) else emptyList()
         return (LAUNCHER.filter { it in mine } + legacy + GOOGLE + SONY + mine).distinct()
     }
 

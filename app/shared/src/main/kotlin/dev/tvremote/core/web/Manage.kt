@@ -615,9 +615,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     /**
-     * The Home key's screen. While Google TV's launcherx is on, the Home key opens it whatever the HOME role names (a Coocaa, and the
-     * Google TV emulator: role TV Home, Home -> launcherx), so another launcher there takes the whole swap (launcherx and the wizard's
-     * Home off, Home checked, the record and TV Setup's watch); the TV's own launcher picked again undoes it. Elsewhere the role is enough.
+     * The Home key's screen. While the TV's own launcher is on, Home opens it whatever the HOME role names: Google TV's launcherx (a
+     * Coocaa, the Google TV emulator: role TV Home, Home -> launcherx), and a BRAVIA's tvlauncher on Android 9, where set-home-activity
+     * says Success and changes nothing. So another launcher takes the whole swap (the TV's own launchers and the wizard's Home off, Home
+     * checked, the record and TV Setup's watch); the TV's own launcher picked again undoes it. With none of them on the role is enough.
      */
     private fun homeSet(value: String, lang: String): HttpServer.Response {
         val pkg = value.substringBefore('/')
@@ -629,11 +630,17 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (swap.homeNow().substringBefore('/') != pkg)            // rollback chose the one before, not the one picked
                 sh("c=\$(cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME | grep -m1 '$pkg/'); " +
                     "[ -n \"\$c\" ] && cmd package set-home-activity \$c >/dev/null 2>&1")
-        } else if (pkg !in Setup.LAUNCHER && (swapped || Setup.LAUNCHERX in sh("pm list packages -e ${Setup.LAUNCHERX}"))) {
+        } else if (pkg !in Setup.LAUNCHER && (swapped || stockOn())) {
             if (!swap.take(pkg)) return HttpServer.Response.json(JSONObject().put("text", "home " + Words.get(lang, "tvset.home_refused")))
         } else return text(TvShell.tvset("home", value), 60000)
         val now = swap.homeNow()
         return HttpServer.Response.json(JSONObject().put("text", "home " + if (now.substringBefore('/') == pkg) value else now))
+    }
+
+    /** Whether one of the TV's own launchers ([Setup.LAUNCHER]) is on: then it, not the HOME role, decides where Home lands. */
+    private fun stockOn(): Boolean {
+        val on = sh("pm list packages -e").split("\n").map { it.removePrefix("package:").trim() }
+        return Setup.LAUNCHER.any { it in on }
     }
 
     /** What a [TvShell] recipe printed, for the page to read. */
