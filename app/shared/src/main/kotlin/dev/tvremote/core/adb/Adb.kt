@@ -522,7 +522,14 @@ class Adb(private val dir: File) : Closeable {
 
     override fun close() {
         dead = true
-        try { sock?.close() } catch (ignored: IOException) { }
+        closeSock(sock)
+    }
+
+    /** TLS closing writes close_notify: on the app's main thread (StrictMode, NetworkOnMainThreadException) another thread does it. */
+    internal fun closeSock(s: Socket?) {
+        if (s == null) return
+        if (Thread.currentThread().name != "main") { try { s.close() } catch (ignored: IOException) { }; return }
+        Thread({ try { s.close() } catch (ignored: IOException) { } }, "adb-close").apply { isDaemon = true }.start()
     }
 
     @Synchronized

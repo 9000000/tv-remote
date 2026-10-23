@@ -1284,7 +1284,7 @@
  "setup.other_ways": "← Các cách khác",
  "setup.steps_title": "Bật Gỡ lỗi ADB trên TV",
  "setup.steps_use_keys": "Dùng các nút mũi tên và OK ở tab Remote, hoặc remote của TV:",
- "setup.adb_steps": "1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”.\n2. Quay lại, vào Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.",
+ "setup.adb_steps": "1. Trong Cài đặt: Tùy chọn thiết bị (hoặc Hệ thống) → Giới thiệu → bấm OK 7 lần vào “Bản dựng”. Chromecast với Google TV: Hệ thống → Giới thiệu → bấm OK 7 lần vào “Bản dựng Android TV OS”.\n2. Quay lại, vào (Hệ thống →) Tùy chọn nhà phát triển → bật “Gỡ lỗi USB” (hoặc “Gỡ lỗi ADB”).\n3. Trên TV tích “Luôn cho phép” rồi chọn OK.\n\nNếu TV đòi “mật khẩu ADB” khi bấm 7 lần: dùng cách “Tự động: cài TV Setup lên TV”.",
  "setup.tcl_hidden_adb": "TCL (bản Trung Quốc) không có Tùy chọn nhà phát triển: vào Cài đặt → Giới thiệu (Thông tin máy), bấm Lên, Xuống, Trái, Phải trên điều khiển, lặp nhiều vòng đến khi hiện khung ADB. Công tắc ẩn lại sau đó, lần nào cần cũng phải làm lại.",
  "setup.tcl_hidden_adb_short": "TCL Trung Quốc (không có mục này): ở Giới thiệu bấm Lên, Xuống, Trái, Phải nhiều vòng; lần nào cũng phải làm lại.",
  "setup.connect_now": "🔌 Đã bật, kết nối",

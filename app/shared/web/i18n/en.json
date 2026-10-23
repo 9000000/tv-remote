@@ -1335,7 +1335,7 @@
  "setup.other_ways": "← Other ways",
  "setup.steps_title": "Turn on ADB debugging on the TV",
  "setup.steps_use_keys": "Use the arrows and OK on the Remote tab, or the TV’s remote:",
- "setup.adb_steps": "1. In Settings: Device Preferences (or System) → About → press OK 7 times on “Build”.\n2. Go back, open Developer options → turn on “USB debugging” (or “ADB debugging”).\n3. On the TV tick “Always allow” and choose OK.\n\nIf the TV asks for an “ADB password” after the 7 presses: use the “Automatic: install TV Setup on the TV” way.",
+ "setup.adb_steps": "1. In Settings: Device Preferences (or System) → About → press OK 7 times on “Build”. Chromecast with Google TV: System → About → press OK 7 times on “Android TV OS build”.\n2. Go back, open (System →) Developer options → turn on “USB debugging” (or “ADB debugging”).\n3. On the TV tick “Always allow” and choose OK.\n\nIf the TV asks for an “ADB password” after the 7 presses: use the “Automatic: install TV Setup on the TV” way.",
  "setup.tcl_hidden_adb": "TCL (China) with no Developer options: in Settings → About (Local info), press Up, Down, Left, Right on the remote, round after round, until an ADB window appears. The switch hides again afterwards, so repeat it whenever you need it.",
  "setup.tcl_hidden_adb_short": "TCL China (no such menu): on About press Up, Down, Left, Right, round after round; needed again each time.",
  "setup.connect_now": "🔌 It is on, connect",
