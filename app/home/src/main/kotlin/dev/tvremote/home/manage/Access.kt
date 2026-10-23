@@ -4,10 +4,10 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 
 /**
- * Who may use [ManageServer]: the one-time key in the QR's address, then a session. Plain JVM (a clock and a source of randomness are
+ * Who may use [ManageServer]: the key in the QR's address, then a session. Plain JVM (a clock and a source of randomness are
  * handed in), so the rules are tested without a TV.
  *  - [issue] makes a key and cuts every session of the last one.
- *  - [redeem] takes the key once: a session id for the cookie, or null (wrong, used, or the key was voided by too many wrong guesses).
+ *  - [redeem] takes the key: a new session id for the cookie each time, or null (wrong, no key, or voided by too many wrong guesses).
  *  - [check] says whether a cookie is a live session: not past [sessionMs] since it was made, and the server not idle for [idleMs].
  *  - [idle] is true when nothing authorised came for [idleMs]: the server stops itself then.
  * Time is the monotonic clock, as every wait in the project: the TV setting its clock from the network must not end or extend a session.
@@ -19,7 +19,7 @@ class Access(
     val sessionMs: Long = SESSION_MS,
 ) {
     private var key: String? = null
-    private val sessions = HashMap<String, Long>()                     // session id -> when it was made
+    private val sessions = LinkedHashMap<String, Long>()               // session id -> when it was made, oldest first
     private var last = clock()
     private var wrong = 0
 
@@ -30,11 +30,15 @@ class Access(
         return k
     }
 
-    /** The key used once: a session id, and the key is gone. Null for anything else; [MAX_WRONG] wrong tries void the key. */
+    /**
+     * The key, while its QR is on screen: a new session each time (at most [MAX_SESSIONS]). Not once: a phone's camera or QR app opens
+     * the address itself (a preview, its own web view) before the browser does, and the browser then got only "401". Whoever can read
+     * the QR could scan it again anyway. Null for anything else; [MAX_WRONG] wrong tries void the key.
+     */
     @Synchronized fun redeem(given: String?): String? {
         val k = key ?: return null
         if (given != null && given.length == k.length && MessageDigest.isEqual(given.toByteArray(), k.toByteArray())) {   // constant time
-            key = null
+            if (sessions.size >= MAX_SESSIONS) sessions.remove(sessions.keys.first())
             val id = random(SESSION_LEN)
             sessions[id] = clock(); last = clock()
             return id
@@ -66,6 +70,7 @@ class Access(
         const val KEY_LEN = 12
         const val SESSION_LEN = 32
         const val MAX_WRONG = 30
+        const val MAX_SESSIONS = 8                                      // the oldest goes: a scanner's preview, then the browser, a second phone
         private val ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"         // no 0/o/1/l/i: it may be read aloud or typed
         private val rng = SecureRandom()
         fun randomText(n: Int) = String(CharArray(n) { ALPHABET[rng.nextInt(ALPHABET.length)] })

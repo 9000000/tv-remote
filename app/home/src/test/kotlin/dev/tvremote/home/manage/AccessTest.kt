@@ -14,12 +14,17 @@ class AccessTest {
     private var n = 0
     private fun access(idle: Long = 1000, session: Long = 5000) = Access({ now }, { len -> "x".repeat(len - 1) + (n++ % 10) }, idle, session)
 
-    @Test fun keyWorksOnceThenIsDead() {
+    @Test fun keyWorksAgainWhileShown() {                                // a QR app opens the address before the browser does
         val a = access(); val k = a.issue()
-        val s = a.redeem(k)
-        assertNotNull(s)
-        assertNull("a second use of the same key", a.redeem(k))
-        assertTrue(a.check(s))
+        val s = a.redeem(k); val t = a.redeem(k)
+        assertNotNull(s); assertNotNull("a second use of the same key", t); assertNotEquals(s, t)
+        assertTrue(a.check(s)); assertTrue(a.check(t))
+    }
+    @Test fun sessionsAreCapped() {
+        val a = access(session = 100_000); val k = a.issue()
+        val first = a.redeem(k)
+        repeat(Access.MAX_SESSIONS) { a.redeem(k) }
+        assertFalse("the oldest goes", a.check(first)); assertEquals(Access.MAX_SESSIONS, a.connected())
     }
 
     @Test fun noKeyNoSessionNoEntry() {

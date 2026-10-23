@@ -26,7 +26,7 @@ import dev.tvremote.home.HomeConfig
  * from app/shared/web by the Gradle task packHomeWeb) and answers it from [HomeApi], so the rules (HomeConfig.clean / merge) are the TV's
  * own whoever asks. No ADB, no TV Setup, no :shared.
  *
- * Who gets in ([Access]): the QR's address carries a key that works once; the first open exchanges it for a session cookie and the address
+ * Who gets in ([Access]): the QR's address carries a key that works while the QR is on screen; each open exchanges it for a session cookie and the address
  * is replaced by a plain "/" (the key never stays in the phone's history). Everyone else on the Wi-Fi gets 401 for every path. The server
  * stops after [Access.IDLE_MS] without an authorised request, or when [stop] is called (the owner closed the screen). A post needs
  * the X-Tvh header, which another site's page cannot send without a preflight this server does not answer.
@@ -36,6 +36,11 @@ object ManageServer {
     private const val MAX_JSON = 64 * 1024
     private const val MAX_PHOTO = 6_000_000                              // as Manage.kt's /api/home/photo: a 1920x1080 JPEG is 0.3-1.2 MB
     private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
+    // what a phone sees without a session: a bare "401" told nobody what to do
+    private const val GONE = "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>TV Home</title>" +
+        "<body style='font:17px/1.5 system-ui,sans-serif;max-width:30em;margin:3em auto;padding:0 16px'><h2>Mã QR đã hết hạn</h2>" +
+        "<p>Mở lại màn mã QR trên TV rồi quét mã mới.</p>" +
+        "<p lang=en>This QR code has expired. Open the QR screen on the TV again and scan the new code.</p>"
     private val STATIC = Regex("/(css|js|i18n)/[A-Za-z0-9_.-]+")        // the packed page, nothing else of the assets
 
     class Session(val url: String, val shown: String)
@@ -100,7 +105,7 @@ object ManageServer {
             if (!a.check(session)) {
                 // the key in the QR: used once, it becomes the cookie, and the address goes back to a plain "/"
                 val id = if (req.method == "GET" && req.path == "/") a.redeem(req.query["k"]) else null
-                if (id == null) return@use reply(out, 401, "text/plain; charset=utf-8", "401")
+                if (id == null) return@use reply(out, 401, "text/html; charset=utf-8", GONE)
                 reply(out, 302, "text/plain", "", "Location: /\r\nSet-Cookie: tvh=$id; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Access.SESSION_MS / 1000}\r\n")
                 touch(); main.post { listener?.connected(a.connected()) }
                 return@use
