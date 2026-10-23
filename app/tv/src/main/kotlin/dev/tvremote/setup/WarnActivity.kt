@@ -18,7 +18,7 @@ import kotlin.math.roundToInt
 
 /**
  * Shown over whatever is on the TV by [Guard]: the sleep timer is about to end (with +15 minutes, now, or cancel), bedtime
- * has come (the TV goes to standby in a minute), or an app's minutes for today are used up. Bedtime and limits offer no way
+ * has come (the TV goes to standby in a minute), or an app's minutes for today are used up, or an app was opened outside the days and hours set for it ("sched"). Bedtime and limits offer no way
  * out here, on purpose: more time is granted from a paired phone or computer. Or the memory has stayed nearly full: free it
  * (the apps waiting in the background closed), see what holds it (the Health tab, on the TV), or skip.
  */
@@ -43,24 +43,28 @@ class WarnActivity : Activity() {
         card.gravity = Gravity.CENTER_HORIZONTAL
         card.background = GradientDrawable().apply { setColor(Color.rgb(25, 29, 35)); cornerRadius = dp(20).toFloat() }
         card.setPadding(dp(40), dp(32), dp(40), dp(28))
-        val icon = when (kind) { "sleep" -> "😴"; "bed" -> "🌙"; "ram" -> "🧠"; else -> "⏳" }
+        val icon = when (kind) { "sleep" -> "😴"; "bed" -> "🌙"; "ram" -> "🧠"; "sched" -> "📅"; else -> "⏳" }
         val (total, avail) = Guard.memory()
         card.addView(text(icon, 48, false))
         card.addView(text(when (kind) {
             "sleep" -> T("warn.the_tv_is_turning")
             "bed" -> T("warn.it_is_bedtime")
             "ram" -> T("warn.the_tv_s_memory")
+            "sched" -> T("warn.sched_title", "name" to name)
             else -> T("warn.time_is_up_for", "name" to name)
         }, 28, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
+        val sched = Rules.load(this).optJSONObject("sched")?.optJSONObject(pkg)
         val bed = Rules.bedNow(Rules.load(this), System.currentTimeMillis())
         card.addView(text(when (kind) {
             "sleep" -> T("warn.the_sleep_timer_is")
             "ram" -> T("warn.in_use", "pct" to (total - avail) * 100 / maxOf(1L, total), "used" to total - avail, "total" to total)
             "bed" -> T("warn.bed_range", "from" to (bed?.optString("from") ?: ""), "to" to (bed?.optString("to") ?: ""))
+            "sched" -> if (sched == null || sched.optBoolean("block")) T("warn.sched_never")
+                else T("warn.sched_body", "days" to Rules.dayText(sched.optJSONArray("days")), "from" to sched.optString("from"), "to" to sched.optString("to"))
             else -> T("warn.the_app_was_closed")
         }, 16, false).apply { setTextColor(Color.rgb(170, 178, 189)); maxWidth = dp(560) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         count = text("", 22, true)
-        if (kind != "limit") card.addView(count, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
+        if (kind != "limit" && kind != "sched") card.addView(count, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
 
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER
@@ -89,7 +93,7 @@ class WarnActivity : Activity() {
     /** The countdown; the screen goes away by itself when the time is up, or the timer or bedtime was changed from a remote. */
     private val tick = object : Runnable {
         override fun run() {
-            if (kind == "limit" || kind == "ram") return
+            if (kind == "limit" || kind == "sched" || kind == "ram") return
             val left = until - System.currentTimeMillis()
             val o = Rules.load(this@WarnActivity)
             val off = kind == "sleep" && o.optLong("sleep_at") != until

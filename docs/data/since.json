@@ -45,6 +45,7 @@
   "bedtime": {"since": "0.1.0"},
   "limits": {"since": "0.1.0"},
   "lock": {"since": "0.13.0", "setup": "0.13.0"},
+  "schedule": {"since": "next"},
   "screen-dim": {"since": "0.13.0", "setup": "0.13.0"},
   "scenes": {"since": "0.1.0"},
   "hook": {"since": "0.9.0"},

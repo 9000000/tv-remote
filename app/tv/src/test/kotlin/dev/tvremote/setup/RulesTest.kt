@@ -128,4 +128,67 @@ class RulesTest {
         assertEquals(now + 20 * 60_000L, o.getLong("snooze_until"))
         bad(o, """{"do":"explode"}""")
     }
+
+    // ---- schedules: 2026-10-23 is a Friday
+    private fun at(day: Int, h: Int, m: Int) = java.util.Calendar.getInstance().apply { clear(); set(2026, java.util.Calendar.OCTOBER, day, h, m) }.timeInMillis
+    private fun sched(vararg json: String): JSONObject = JSONObject().also { o -> json.forEach { Rules.apply(o, d(it), now) } }
+    private val school = """{"do":"sched","pkg":"com.google.android.youtube.tv","days":[1,2,3,4,5],"from":"16:00","to":"18:00"}"""
+    private val yt = "com.google.android.youtube.tv"
+
+    @Test fun scheduleDaysAndWindow() {
+        val o = sched(school)
+        assertTrue(Rules.allowedNow(o, yt, at(23, 16, 0)))                        // Friday, the window opens
+        assertTrue(Rules.allowedNow(o, yt, at(23, 17, 59)))
+        assertFalse(Rules.allowedNow(o, yt, at(23, 18, 0)))                       // the end is outside
+        assertFalse(Rules.allowedNow(o, yt, at(23, 15, 59)))
+        assertFalse(Rules.allowedNow(o, yt, at(24, 17, 0)))                       // Saturday
+        assertFalse(Rules.allowedNow(o, yt, at(25, 17, 0)))                       // Sunday
+        assertTrue(Rules.allowedNow(o, yt, at(26, 17, 0)))                        // Monday
+        assertTrue(Rules.allowedNow(o, "com.netflix.ninja", at(24, 3, 0)))        // no schedule: always
+    }
+
+    @Test fun scheduleAcrossMidnightBelongsToTheDayItBeginsOn() {
+        val o = sched("""{"do":"sched","pkg":"$yt","days":[5],"from":"22:00","to":"02:00"}""")   // Fridays only
+        assertTrue(Rules.allowedNow(o, yt, at(23, 23, 0)))                        // Friday night
+        assertTrue(Rules.allowedNow(o, yt, at(24, 1, 30)))                        // still Friday's window, on Saturday
+        assertFalse(Rules.allowedNow(o, yt, at(24, 22, 30)))                      // Saturday night is not
+        assertFalse(Rules.allowedNow(o, yt, at(23, 1, 30)))                       // Friday 01:30 is Thursday's window
+        assertFalse(Rules.allowedNow(o, yt, at(24, 2, 0)))
+        val sun = sched("""{"do":"sched","pkg":"$yt","days":[7],"from":"23:00","to":"01:00"}""")   // Sunday into Monday: the week wraps
+        assertTrue(Rules.allowedNow(sun, yt, at(26, 0, 30)))
+    }
+
+    @Test fun scheduleMinutesCountOnlyInsideTheWindowAndMeetTheDailyLimit() {
+        val o = sched(school.replace("\"18:00\"}", "\"18:00\",\"max\":30}"))
+        assertEquals(30, Rules.budget(o, yt, at(23, 17, 0)))
+        assertEquals(null, Rules.budget(o, yt, at(24, 17, 0)))                    // closed anyway: Guard closes it, no minutes to count
+        Rules.apply(o, d("""{"do":"limit","pkg":"$yt","minutes":20}"""), now)
+        assertEquals(20, Rules.budget(o, yt, at(23, 17, 0)))                      // the lower of the two
+        assertEquals(20, Rules.budget(o, yt, at(24, 17, 0)))                      // outside the window only the daily limit is left
+        Rules.apply(o, d("""{"do":"limit","pkg":"$yt","minutes":90}"""), now)
+        assertEquals(30, Rules.budget(o, yt, at(23, 17, 0)))
+    }
+
+    @Test fun scheduleBlockAndRemoval() {
+        val o = sched("""{"do":"sched","pkg":"$yt","block":true,"days":[1],"from":"1:00","to":"2:00"}""")
+        assertEquals("""{"block":true}""", o.getJSONObject("sched").getJSONObject(yt).toString())   // days and window are dropped
+        assertFalse(Rules.allowedNow(o, yt, at(23, 17, 0)))
+        Rules.apply(o, d("""{"do":"sched","pkg":"$yt","on":false}"""), now)
+        assertTrue(Rules.allowedNow(o, yt, at(23, 17, 0)))
+        assertEquals(emptyList<String>(), Rules.schedApps(o))
+    }
+
+    @Test fun scheduleIsCheckedAndPadded() {
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","days":[],"from":"16:00","to":"18:00"}""")          // no days
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","days":[0],"from":"16:00","to":"18:00"}""")
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","days":[8],"from":"16:00","to":"18:00"}""")
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","days":[1],"from":"25:00","to":"18:00"}""")
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","days":[1],"from":"16:00","to":"16:00"}""")        // an empty window
+        bad(JSONObject(), """{"do":"sched","pkg":"dev.tvremote.setup","days":[1],"from":"16:00","to":"18:00"}""")
+        bad(JSONObject(), """{"do":"sched","pkg":"no spaces","days":[1],"from":"16:00","to":"18:00"}""")
+        val s = Rules.clean(d("""{"days":[5,1,1,3],"from":"6:05","to":"7:00","max":99999}"""))
+        assertEquals("[1,3,5]", s.getJSONArray("days").toString())
+        assertEquals("06:05", s.getString("from"))
+        assertEquals(1440, s.getInt("max"))
+    }
 }
