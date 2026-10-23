@@ -161,7 +161,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
             if (no != null) { log("wizard stays: $no"); rollback(no, gone); return false }
             // first in the record, so a rollback turns it on last: back on before launcherx, its RecoveryActivity takes Home, and a reboot
             // there factory-reset a Xiaomi MiTV-MOSR4 (cleanyourtv)
-            val off = stuck + gone
+            val off = stuck + gone.filter { it.substringBefore('/') !in stuck }   // its screens stayed on: nothing of theirs to turn back on
             save(Rec(pkg, ours, prev, off, now, "swapping", 0, ""))
             for (p in stuck) turnOff(p)
             if (homes().any { it.substringBefore('/') in stuck }) { log("wizard home stays"); rollback("home", off); return false }

@@ -117,7 +117,7 @@ class LauncherTest {
         assertTrue(s.take("com.new.home", 30))
         assertTrue(WIZ in tv.disabled && Setup.LAUNCHERX in tv.disabled)
         assertTrue(tv.said.indexOf("pm disable-user --user 0 $WIZ") < tv.said.indexOf("pm disable-user --user 0 ${Setup.LAUNCHERX}"))   // the wizard first
-        assertEquals(WIZ, s.state()!!.off.first())
+        assertEquals(WIZ, s.state()!!.off.first()); assertTrue(s.state()!!.off.none { it.startsWith("$WIZ/") })
         s.rollback("user")
         assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
         assertTrue(tv.enabledOrder.indexOf(Setup.LAUNCHERX) < tv.enabledOrder.indexOf(WIZ))   // launcherx back before the wizard can take Home
