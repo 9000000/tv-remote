@@ -883,7 +883,7 @@ class LibraryActivity : ComponentActivity() {
         texts[outer] = iniTexts
         itemOf[outer] = i
         val ref = refs[outer]!!
-        ref.below.addView(TextView(this).apply { text = meta(i); textSize = 14f; setTextColor(0xFFC5CCDB.toInt()); maxLines = 1; gravity = Gravity.CENTER; ellipsize = android.text.TextUtils.TruncateAt.END; setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0xCC000000.toInt()) }, LinearLayout.LayoutParams(-1, -2))
+        ref.below.addView(TextView(this).apply { text = meta(i); textSize = 14f; addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> val t = v as TextView; if ((t.layout?.getEllipsisCount(0) ?: 0) > 0 && t.text.length > meta(i, false).length) t.post { t.text = meta(i, false) } }; setTextColor(0xFFC5CCDB.toInt()); maxLines = 1; gravity = Gravity.CENTER; ellipsize = android.text.TextUtils.TruncateAt.END; setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), 0xCC000000.toInt()) }, LinearLayout.LayoutParams(-1, -2))
         ref.nameV.text = if (dl) getString(R.string.get_rom, i.name) else i.name
         ref.nameV.visibility = View.GONE                                     // shown once a picture covers the face: the face names itself until then
         i.src?.let { src ->
@@ -927,16 +927,16 @@ class LibraryActivity : ComponentActivity() {
         return Bitmap.createBitmap(b, m, 0, b.width - 2 * m, b.height)
     }
 
-    /** "2 players · Sports · NES". */
-    private fun meta(i: Item): CharSequence {
+    /** "2 players · Sports · NES"; without [sys] where the tile is too narrow for it (a cut "Party · W…" said less than "Party"). */
+    private fun meta(i: Item, sys: Boolean = true): CharSequence {
         val n = when { i.max <= 0 -> null; i.max == 1 -> "1"; i.min >= i.max -> "${i.max}"; else -> "${i.min}\u2013${i.max}" }
-        val rest = listOfNotNull(i.genre.takeIf { it != getString(R.string.genre_other) || n == null }, i.sysLabel).joinToString("  \u00B7  ")
+        val rest = listOfNotNull(i.genre.takeIf { it != getString(R.string.genre_other) || n == null }, i.sysLabel.takeIf { sys }).joinToString(" \u00B7 ")
         val sb = android.text.SpannableStringBuilder()
         if (n != null) {
             sb.append(" ")
             sb.setSpan(android.text.style.ImageSpan(getDrawable(R.drawable.ic_user)!!.mutate().also { d -> d.setBounds(0, 0, dp(15), dp(15)); d.setTint(0xFFC5CCDB.toInt()) }, android.text.style.ImageSpan.ALIGN_BASELINE), 0, 1, 0)
             sb.append(" ").append(n)
-            if (rest.isNotEmpty()) sb.append("  \u00B7  ")
+            if (rest.isNotEmpty()) sb.append(" \u00B7 ")
         }
         return sb.append(rest)
     }
