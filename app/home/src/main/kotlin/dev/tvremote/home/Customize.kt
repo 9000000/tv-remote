@@ -23,6 +23,14 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import org.json.JSONObject
+import dev.tvremote.home.manage.HomeApi
+import dev.tvremote.home.keys.Keys
+import dev.tvremote.home.wall.Online
+import dev.tvremote.home.manage.PhotoScreen
+import dev.tvremote.home.keys.Picker
+import dev.tvremote.home.keys.QuickKeys
+import dev.tvremote.home.wall.WallArt
+import dev.tvremote.home.wall.Walls
 
 /**
  * TV Home's own settings, on the TV with the D-pad: a glass panel from the right, the home screen still showing beside it so

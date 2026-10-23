@@ -41,7 +41,7 @@ test("direct: TV Home's own /h routes, and nothing for what only a host has", as
 
 test('every route TV Home answers is one its server has', () => {
   // ManageServer.kt (app/home) names each /h/ route in its `when`; a route the page asks and the TV lacks would be a 404 in the field
-  const kt = fs.readFileSync(path.join(__dirname, '../../home/src/main/kotlin/dev/tvremote/home/ManageServer.kt'), 'utf8');
+  const kt = fs.readFileSync(path.join(__dirname, '../../home/src/main/kotlin/dev/tvremote/home/manage/ManageServer.kt'), 'utf8');
   const d = HOME_PATHS.direct;
   for (const p of [d.read, d.drop, d.photo, d.app.meta.split('?')[0], d.app.icon.split('?')[0]]) assert.ok(kt.includes('"' + p + '"'), p + ' is not served by ManageServer.kt');
 });

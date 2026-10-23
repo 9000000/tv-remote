@@ -269,7 +269,7 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - The pickers over Home ("Add to home screen", "Quick keys") are a solid page, not a panel over a dimmed, see-through Home: the window
   over Home and the Customize panel was blended again on every frame of a focus move. Emulator, 12 D-pad moves, 3 runs: 14-26% late
   frames (median 31-36 ms) as before; dropping only the gliding glass changed nothing (48% → 48% in one run); solid window, no dim,
-  plain panel: 6-11% (25 ms). Home's own grid: 0.4% (16 ms). `solidPage()` in Picker.kt; `TvTile.glassy` false keeps the ring.
+  plain panel: 6-11% (25 ms). Home's own grid: 0.4% (16 ms). `solidPage()` in keys/Picker.kt; `TvTile.glassy` false keeps the ring.
 
 ## The stock launcher wins over the HOME choice (BRAVIA, Android 9)
 
@@ -288,7 +288,7 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   or networks without owners → "wifi_unknown", never a guess. Cast hosts (`ro.product.device` sabrina / boreal / kirkwood) → "cast"
   (phones' casts fail "Untrusted device" there). Not run on a device with setupwraith yet: LauncherTest's fake TV covers the paths.
 
-## Customize opens lazily; no second hand (`Customize.kt`, `Widgets.kt`)
+## Customize opens lazily; no second hand (`Customize.kt`, `widgets/Widgets.kt`)
 - Measured on the FPT box (217 MB free RAM, swap in use), key to first frame: all seven pages built in `show()` took 0.9–1.6 s; building only the top level and the rest one page a message after the slide-in takes 0.33–0.57 s (same logging, 5 runs each, 2026-10-23).
 - `Store.get` costs ~7–14 ms a call there; `refresh()` read it once per row, so it reads it once. A memo of the cleaned conf barely moved the total and was dropped.
 - The analog clock's smooth second hand redrew Home ~30 fps (125 frames in 5 s idle) on the same UI thread as any panel over it. Removed; the face redraws on the minute.

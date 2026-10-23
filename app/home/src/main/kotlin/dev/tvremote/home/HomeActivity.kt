@@ -51,6 +51,32 @@ import dev.tvremote.tvui.TvGlass
 import dev.tvremote.tvui.TvTile
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
+import dev.tvremote.home.apps.App
+import dev.tvremote.home.apps.Apps
+import dev.tvremote.home.wall.Backdrop
+import dev.tvremote.home.apps.Badges
+import dev.tvremote.home.ui.Drop
+import dev.tvremote.home.ui.Frost
+import dev.tvremote.home.apps.InputOpen
+import dev.tvremote.home.keys.Keys
+import dev.tvremote.home.manage.ManageServer
+import dev.tvremote.home.apps.Nav
+import dev.tvremote.home.wall.Online
+import dev.tvremote.home.manage.PhotoScreen
+import dev.tvremote.home.apps.Pins
+import dev.tvremote.home.widgets.sample
+import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveFace
+import dev.tvremote.home.ui.BarBtn
+import dev.tvremote.home.ui.TopBar
+import dev.tvremote.home.wall.Wall
+import dev.tvremote.home.wall.WallArt
+import dev.tvremote.home.wall.Walls
+import dev.tvremote.home.wall.WebWall
+import dev.tvremote.home.wall.WebSnap
+import dev.tvremote.home.wall.WebSnapper
+import dev.tvremote.home.widgets.Widgets
+import dev.tvremote.home.ui.Zoom
 
 /**
  * The home screen: the clock, three round buttons in one capsule (inputs, network, settings), and ONE grid of apps: the favourites

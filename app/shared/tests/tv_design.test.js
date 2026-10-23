@@ -15,7 +15,7 @@ const RAW = {
   tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 3, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
     'PinActivity.kt': 8, 'WarnActivity.kt': 6 },
   home: { 'Customize.kt': 35, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 55, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
-    'Widgets.kt': 4, 'CalendarWidget.kt': 7, 'ClockWidget.kt': 12, 'LunarWidget.kt': 2, 'SystemWidget.kt': 5, 'UsageWidget.kt': 3,
+    'Widgets.kt': 4, 'CalendarWidget.kt': 7, 'ClockWidget.kt': 12, 'LunarWidget.kt': 2, 'SystemWidget.kt': 2, 'UsageWidget.kt': 2,
     'WeatherWidget.kt': 6, 'WidgetViews.kt': 2, 'Zoom.kt': 3 },
   channels: { 'BrowseActivity.kt': 4, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1 },
   games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 34, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,
@@ -40,7 +40,7 @@ test('no new raw colour in the TV apps\' views: a colour is a named constant or 
 // components (DESIGN-TV.md §3): the RAM tile and its own frame, 2026-10-23. A count may only go down; a new one needs a reason here.
 const DRAWN = {
   tv: { 'DrawLayer.kt': 1 },                                          // drawing over the TV: strokes, nothing to reuse
-  home: { 'CalendarWidget.kt': 1, 'ClockWidget.kt': 1, 'LunarWidget.kt': 1, 'SystemWidget.kt': 1, 'UsageWidget.kt': 1, 'WeatherWidget.kt': 1,
+  home: { 'CalendarWidget.kt': 1, 'ClockWidget.kt': 1, 'LunarWidget.kt': 1, 'UsageWidget.kt': 1, 'WeatherWidget.kt': 1,
     'WidgetViews.kt': 2, 'HomeActivity.kt': 1, 'QrCard.kt': 1, 'Zoom.kt': 1, 'Customize.kt': 1, 'Tiles.kt': 1 },
   android: { 'RemoteScreen.kt': 1, 'IconButton.kt': 1, 'AirMouse.kt': 2, 'Drawing.kt': 1 },
 };
@@ -104,7 +104,7 @@ test('no app defines a component tvui already has', () => {
 test('TV Home and TV Setup colour RAM and storage through ONE level function (HomeConfig.level), not their own thresholds', () => {
   const cfg = fs.readFileSync(path.join(ROOT, 'app/shared/src/home/kotlin/dev/tvremote/home/HomeConfig.kt'), 'utf8');
   assert.match(cfg, /const val WARN_AT = 70/); assert.match(cfg, /const val BAD_AT = 85/);
-  const w = fs.readFileSync(path.join(ROOT, 'app/home/src/main/kotlin/dev/tvremote/home/Widgets.kt'), 'utf8');
+  const w = fs.readFileSync(path.join(ROOT, 'app/home/src/main/kotlin/dev/tvremote/home/widgets/Widgets.kt'), 'utf8');
   assert.match(w, /HomeConfig\.level\(/, 'the System card must colour its rings and bars by HomeConfig.level');
   assert.ok(!/availMem/.test(w.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/it\.totalMem - it\.availMem/, '')), 'the card reads MemAvailable (/proc/meminfo); availMem counts cached apps as free (only as a fallback)');
 });

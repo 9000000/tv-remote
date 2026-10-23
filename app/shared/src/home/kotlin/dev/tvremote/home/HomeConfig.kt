@@ -90,7 +90,7 @@ object HomeConfig {
     private const val ORDER_MAX = 800
     /** Plain gradients (HomeActivity.wallColors). */
     val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
-    /** Scenes TV Home draws itself, no picture file (WallSpec; app/home WallArt.kt). */
+    /** Scenes TV Home draws itself, no picture file (WallSpec; app/home wall/WallArt.kt). */
     val ART = listOf("dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon")
     /** Bing's pictures, downloaded by TV Home: the last 8 days kept, newest first, turned through by the rotation before the next of the set. */
     const val BING = "bing"

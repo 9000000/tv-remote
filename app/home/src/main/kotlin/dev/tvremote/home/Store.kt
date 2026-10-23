@@ -1,6 +1,12 @@
 package dev.tvremote.home
 
 import android.content.Context
+import dev.tvremote.home.apps.Apps
+import dev.tvremote.home.apps.Pins
+import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.keys.Keys
+import dev.tvremote.home.wall.Online
+import dev.tvremote.home.wall.Walls
 import org.json.JSONObject
 
 /** The settings ([HomeConfig]) in prefs; the screen is told of every change, whether it came from the phone or from the TV. */
