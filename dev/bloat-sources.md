@@ -5,16 +5,33 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-22**, upstream `Gathin23/cleanyourtv` at `0ed6c5bccc` (2026-10-22 07:27 UTC; no list changed since `0bb7f7edbf`,
+Last read: **2026-10-24**, upstream `Gathin23/cleanyourtv` at `f9f0c5353e` (2026-10-23 16:19 UTC, 252 lists, 1275 packages): no list
+disables what we suggest while its notes say keep; the ads / telemetry-like names in 2+ lists that we do not suggest are all in "Not
+taken" below (`exhibit`, Philips `nettvrecommender` / `recommendation`, Sony recommendation services, `remotecontrol.logging`).
+TROUBLESHOOTING (#1188): a batch is undone when the TV reboots within ~10 s of the last `pm` (package state is written lazily): wait
+15 s before a reboot. Before that: 2026-10-22 at `0ed6c5bccc` (2026-10-22 07:27 UTC; no list changed since `0bb7f7edbf`,
 only the CVTE home rule #741, kept in KEEP, and the Accounts page #304, in the guide's TV Home topic), PRs up to ~#883 (before that: 2026-10-22 at `0bb7f7edbf`, PRs ~#811, issues ~#833; 2026-10-21 at `9071ec8d2f`, PRs ~#573, issues ~#564; 2026-10-20 at `fd1ee0a94c`, PRs ~#398, issues ~#376; 2026-10-19 at `7377a9be8c`, PRs up to #125, issues up to #120, 388 forks). The project is days old:
 most reports are one TV, one day.
 
 UAD read 2026-10-22 (UAD-NG main): of our 142 suggestions 12 are in its list, one marked Expert: `com.xm.webcontent` ("app installing" messages and WebView), dropped in `bloat.json`. Its Unsafe / Expert TV packages that nothing kept yet went to keep: `com.google.android.tv` (Live Channels, the tuner), `tv.axel` (the IR service, volume setup), the `frameworkpackagestubs`. Taken as suggest: Sony `notificationcenter` (nags to use Sony's apps), `smarthelp`. Its TCL entries are phones (camera, compass, SOS): not taken.
 
+TV Slim read 2026-10-24 ([jolabs40/TVSlim](https://github.com/jolabs40/TVSlim) `19e72fb`, Apache-2.0; `TVSlim/core/src/main/assets/catalogue.json`,
+140 entries with a risk each + 61 "protected"; the list packed in `TVSlim-TV-1.1.0.apk`, unpacked with `rea extract-artifact`, is byte for
+byte the source's). Made from one TCL 65C89K and an NVIDIA Shield. 20 of its entries we suggest too; none of our suggestions is in its
+protected list. Its protected list that nothing kept went to keep: `location.fused` (boot loop when off; a cleanyourtv list says the
+same), `devicelockcontroller`, the Shield's core services (display, audio, remote and controller pairing, IR, `nvidia.ota`), Philips
+`tpvaudiomanager` / `tpvvideomanager` / `productfeatures` / `ui.strings*` / `bluetoothremote`; also `xiaomi.mitv.updateservice` (firmware
+updates, as `mitv.upgrade`). Taken as suggest (tested on its Shield): `nvidia.app.messaging`, `shield.registration`, `shield.welcome`.
+Not taken: what it turns off that we keep (TCL `dashboard`, `eva`, `guard`, `initsetup`, `interactive`, `ttvs`, `useragreement`,
+`factory.view`, Philips `eum`, `aurora`, `xtv`, `sunrise`, MediaTek AirPlay, the Shield's factory apps: the reasons are below), its own
+`waterfall.overseas` note agrees (one boot loop on a 55P635); streaming apps, keyboards, Google core and mainline modules (a choice, see
+below); Shizuku (a user's app: keep would stop the Apps tab removing it), `com.tpa.kb` (no reason given).
+
 ## Sources
 
 | Repo | What is in it |
 |---|---|
+| [jolabs40/TVSlim](https://github.com/jolabs40/TVSlim) (Apache-2.0, tvslim.app) | `TVSlim/core/src/main/assets/catalogue.json`: entries with a risk (aucun / faible / moyen / eleve) and side effect, `proteges` (never touch, with the reason), known launchers, a few settings |
 | [Gathin23/cleanyourtv](https://github.com/Gathin23/cleanyourtv) (was `tv-vibehack`, MIT) | `examples/<tv>/debloat.txt` for ~107 TVs (78 new or changed since 2026-10-19: Sony x15, TCL x15, Philips, Hisense / Vidda / Vu, Xiaomi, Haier, Panasonic, Skyworth, Hitachi, Freebox, JMGO / Wanbo projectors, Fire TV sticks, NVIDIA Shield, onn, CHiQ / AIWA / BenQ "AI PONT"), README "Troubleshooting", PRs and issues with owners' reports |
 | [pulgagr/tv-vibehack-firetv](https://github.com/pulgagr/tv-vibehack-firetv) | Fire OS: what can and cannot be turned off, why Home cannot be taken |
 | [itsmeterrylin/fire-tv-cleanup](https://github.com/itsmeterrylin/fire-tv-cleanup), FreedomFleming/tv-vibehack | Fire OS 8 |
