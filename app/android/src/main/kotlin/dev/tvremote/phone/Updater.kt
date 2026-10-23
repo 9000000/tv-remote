@@ -4,7 +4,9 @@ import dev.tvremote.core.T
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageInstaller
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.view.View
 import dev.tvremote.update.Release
 import java.io.File
@@ -70,8 +72,10 @@ internal fun MainActivity.askUpdate() {
         .setPositiveButton(T("setup.update_ok")) { _, _ -> startUpdate(r) }.setNegativeButton(T("common.later"), null).show()
 }
 
+internal fun MainActivity.startUpdate(r: Release) { if (installAllowed(r)) download(r) }
+
 /** Downloads the APK from the release, then hands it to Android, which asks the person to confirm the install. */
-internal fun MainActivity.startUpdate(r: Release) {
+private fun MainActivity.download(r: Release) {
     updating = true
     progress(T("updater.downloading_2", "version" to r.version))
     Thread {
@@ -112,6 +116,30 @@ internal fun MainActivity.startUpdate(r: Release) {
             message(T("updater.could_not_update", "error" to err), true)
         }
     }.start()
+}
+
+/**
+ * Android 8+ installs from this app only once "Install unknown apps" is on for it. Left to Android, it asks in the middle of
+ * the install and drops the install when the person comes back from allowing it (STATUS_FAILURE_ABORTED: "Update cancelled"
+ * though nobody cancelled, reported by a user; the same on the Android 14 emulator). So it is asked before the download, and
+ * the update goes on by itself on return ([resumeUpdate]).
+ */
+private fun MainActivity.installAllowed(r: Release): Boolean {
+    if (Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls()) return true
+    Popup.Builder(this).setTitle(T("updater.allow_title")).setMessage(T("updater.allow_body"))
+        .setPositiveButton(T("updater.allow_open")) { _, _ ->
+            updateAfterAllow = r
+            try { startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName"))) }
+            catch (e: Exception) { updateAfterAllow = null; download(r) }   // no such screen here: Android asks itself
+        }.setNegativeButton(T("common.later"), null).show()
+    return false
+}
+
+/** Back from the settings [installAllowed] opened: the update starts if installs are now allowed. */
+internal fun MainActivity.resumeUpdate() {
+    val r = updateAfterAllow ?: return
+    updateAfterAllow = null
+    if (Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls()) startUpdate(r)
 }
 
 /** Android reports back with the install's progress; true when this intent was that. */

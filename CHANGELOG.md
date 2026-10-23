@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- App điện thoại: bấm cập nhật lần đầu, Android hỏi quyền "Cài ứng dụng không rõ nguồn"; bật quyền rồi quay lại thì app báo "Đã hủy cập nhật" dù không ai hủy, phải bấm lại lần nữa. Giờ app hỏi quyền này trước khi tải (nút Mở cài đặt), quay lại là tự cập nhật tiếp.
+
+**English**
+- Phone app: on the first update Android asks to allow "Install unknown apps"; after allowing it and coming back, the app said "Update cancelled" though nobody cancelled, and had to be tapped again. The app now asks for it before the download (Open settings), and the update goes on by itself on return.
+
 ## 0.19.0 - 2026-10-23
 
 Web 0.19.0 · app điện thoại 0.19.0 · app TV 0.19.0 · TV Home 0.6.0 · TV Channels 0.3.1 · TV Games 0.3.0

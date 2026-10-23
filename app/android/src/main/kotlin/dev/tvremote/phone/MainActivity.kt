@@ -194,6 +194,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var updateNote: TextView
     internal var update: Release? = null                               // a newer release found on GitHub, or null
     internal var updating = false
+    internal var updateAfterAllow: Release? = null                     // sent to allow installs from this app: goes on when back
 
     internal fun pref(key: String): String = prefs.getString(key, "") ?: ""
 
@@ -807,7 +808,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Home or recents: with the picture floating it goes on in Android's PiP (Pip.kt). */
     override fun onUserLeaveHint() { super.onUserLeaveHint(); pipLeaveHint() }
 
-    override fun onResume() { super.onResume(); wasPip = false; airResume(); probe.run() }
+    override fun onResume() { super.onResume(); wasPip = false; airResume(); probe.run(); resumeUpdate() }
 
     override fun onPictureInPictureModeChanged(inPip: Boolean, c: Configuration) {
         super.onPictureInPictureModeChanged(inPip, c)
