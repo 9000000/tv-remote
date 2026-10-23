@@ -13,6 +13,9 @@ import org.json.JSONObject
  *   wall    the background on now: a gradient ([PLAIN]), a drawn scene ([ART]), "bing" (the day's Bing picture, kept by TV Home), or one
  *           of the person's photos ([PHOTOS]: "photo" is wall.jpg, "photo2" wall2.jpg ... in TV Home's external files folder, sent by
  *           the client; at most [PHOTO_MAX])
+ *   wurl    the page the "web" wall shows (an Immich Kiosk, a dashboard): only http:// or https:// (LAN pages are mostly plain http),
+ *           at most [WURL_MAX]; anything else is dropped. "web" with no good wurl is an unknown wall: the default gradient. "web" is
+ *           never turned through: choosing it makes [walls] just that one, and a set sent with it elsewhere loses it
  *   photo   when a photo last changed, so the launcher reads it again
  *   walls   the set the background turns through (any of the above, [WALLS_MAX]); never empty, [wall] is what shows now
  *   wevery  how often it moves on to the next of [walls] ([EVERY]): "off", "30m", "1h", "6h", "day" (the first time Home is seen on a
@@ -71,11 +74,20 @@ object HomeConfig {
     val ART = listOf("dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon")
     /** Bing's pictures, downloaded by TV Home: the last 8 days kept, newest first, turned through by the rotation before the next of the set. */
     const val BING = "bing"
+    /** A web page as the background and the screensaver (TV Home shows it in a WebView; [wurl]). */
+    const val WEB = "web"
+    const val WURL_MAX = 500
+    val WMODES = listOf("live", "snap")
+    val WSNAPS = listOf(1, 5, 15, 30, 60)
+    const val WSNAP_DEFAULT = 5
+    private val WURL = Regex("https?://[^\\s/?#]+\\S*", RegexOption.IGNORE_CASE)
+    /** [s] trimmed when it is an http(s) address with a host and fits [WURL_MAX]; else "". */
+    fun wurl(s: String): String = s.trim().takeIf { it.length <= WURL_MAX && WURL.matches(it) } ?: ""
     const val PHOTO_MAX = 10
     /** The person's photos, one file each: "photo" is the first and the only one older TV Homes know. */
     val PHOTOS = listOf("photo") + (2..PHOTO_MAX).map { "photo$it" }
     /** In the order the pickers list them: scenes first, then the pictures, the plain colours last. */
-    val WALLS = ART + BING + PHOTOS + PLAIN
+    val WALLS = ART + BING + WEB + PHOTOS + PLAIN
     const val WALLS_MAX = 40
     val EVERY = listOf("off", "30m", "1h", "6h", "day", "show")
     /** Where a client puts the first photo (the shell may write there; the app reads it with no permission). */
@@ -172,8 +184,11 @@ object HomeConfig {
     fun clean(o: JSONObject): JSONObject {
         val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS }.distinct()
         val dock = pkgs(o.optJSONArray("dock"), DOCK_MAX)
-        val wall = o.optString("wall").takeIf { it in WALLS } ?: "night"
-        var walls = o.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WALLS }.distinct().take(WALLS_MAX)
+        val wurl = wurl(o.optString("wurl"))
+        val wall = o.optString("wall").takeIf { it in WALLS && (it != WEB || wurl.isNotEmpty()) } ?: "night"
+        // the page is not a stop of the rotation (it never ends, and a turn away from it would not come back): it is the whole set or not in it
+        var walls = if (wall == WEB) listOf(WEB)
+            else o.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WALLS && it != WEB }.distinct().take(WALLS_MAX)
         if (walls.isEmpty()) walls = listOf(wall)
         return JSONObject()
             .put("dock", JSONArray(dock))
@@ -181,6 +196,10 @@ object HomeConfig {
             .put("order", JSONArray(pkgs(o.optJSONArray("order"), ORDER_MAX)))
             .put("wall", if (wall in walls) wall else walls[0])           // what shows is always one of the set
             .put("walls", JSONArray(walls))
+            .put("wurl", wurl)
+            .put("wmode", o.optString("wmode").takeIf { it in WMODES } ?: "live")
+            .put("wsnap", o.optInt("wsnap", WSNAP_DEFAULT).takeIf { it in WSNAPS } ?: WSNAP_DEFAULT)
+            .put("wkeep", o.optBoolean("wkeep", false))
             .put("wevery", o.optString("wevery").takeIf { it in EVERY } ?: "off")
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
             .put("clock24", o.optBoolean("clock24", true))

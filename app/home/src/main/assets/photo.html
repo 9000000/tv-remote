@@ -23,6 +23,9 @@
   .bar i { display:block; height:100%; width:0; background:var(--acc); transition:width .15s; }
   .msg { font-weight:600; }
   .msg.ok { color:var(--ok); } .msg.bad { color:var(--bad); }
+  h2 { font-size:16px; margin:0; }
+  input[type=url] { appearance:none; border:1px solid #ffffff2e; border-radius:14px; min-height:48px; padding:0 14px; font:inherit; background:#ffffff12; color:var(--ink); width:100%; }
+  input[type=url]:focus { outline:2px solid var(--acc); outline-offset:1px; }
   [hidden] { display:none !important; }
 </style>
 </head>
@@ -39,6 +42,13 @@
     <p class="msg" id="msg" hidden></p>
     <button class="primary" id="send" hidden></button>
   </div>
+  <div class="card">
+    <h2 id="webtitle"></h2>
+    <input type="url" id="weburl" inputmode="url" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="500">
+    <p id="webhint"></p>
+    <p class="msg" id="webmsg" hidden></p>
+    <button class="primary" id="websend"></button>
+  </div>
 </main>
 <!-- The words and the TV's picture size come from the TV (PhotoServer.page) in the phone's language. -->
 <script>window.CFG = __CFG__;</script>
@@ -51,6 +61,22 @@
   var img = null, view = null, busy = false;
   $('title').textContent = T.pg_title; $('hint').textContent = T.pg_hint; document.title = T.pg_title;
   $('picktext').textContent = T.pg_pick;
+  // a web page as the background: the same rules as the TV's settings (http or https, a host, at most 500 characters); the TV checks again
+  $('webtitle').textContent = T.pg_web_title; $('webhint').textContent = T.pg_web_hint; $('websend').textContent = T.pg_web_use;
+  $('weburl').placeholder = T.pg_web_ph; $('weburl').value = C.web || '';
+  function webSay(text, cls) { var m = $('webmsg'); m.textContent = text; m.className = 'msg ' + (cls || ''); m.hidden = !text; }
+  $('websend').onclick = function () {
+    var u = $('weburl').value.trim();
+    if (u.length > 500 || !/^https?:\/\/[^\s\/?#]+\S*$/i.test(u)) return webSay(T.pg_web_bad, 'bad');
+    var b = $('websend'); b.disabled = true; webSay('');
+    var x = new XMLHttpRequest();
+    x.open('POST', '/web?k=' + encodeURIComponent(key));
+    x.setRequestHeader('Content-Type', 'text/plain; charset=utf-8');
+    x.onload = function () { b.disabled = false; webSay(x.status === 200 ? T.pg_done : x.status === 403 ? T.pg_gone : x.status === 400 ? T.pg_web_bad : T.pg_err, x.status === 200 ? 'ok' : 'bad'); };
+    x.onerror = function () { b.disabled = false; webSay(T.pg_err, 'bad'); };
+    x.send(u);
+  };
+  $('weburl').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('websend').click(); });
   var cv = $('cv'); cv.height = Math.round(cv.width * H / W);
   function say(text, cls) { var m = $('msg'); m.textContent = text; m.className = 'msg ' + (cls || ''); m.hidden = !text; }
   var raw = null;                       // a photo this browser cannot open (HEIC, too many pixels): sent as it is, the TV cuts it

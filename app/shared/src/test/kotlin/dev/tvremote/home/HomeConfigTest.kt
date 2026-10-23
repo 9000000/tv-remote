@@ -143,7 +143,7 @@ class HomeConfigTest {
     }
 
     @Test fun everyBuiltInWallIsAccepted() {
-        for (w in HomeConfig.WALLS) assertEquals(w, HomeConfig.clean(JSONObject().put("wall", w)).getString("wall"))
+        for (w in HomeConfig.WALLS - HomeConfig.WEB) assertEquals(w, HomeConfig.clean(JSONObject().put("wall", w)).getString("wall"))
         assertEquals(true, HomeConfig.WALLS.size >= 16)
     }
 
@@ -156,7 +156,7 @@ class HomeConfigTest {
         val c = HomeConfig.clean(JSONObject().put("wall", "dawn").put("walls", JSONArray(listOf("peaks", "bogus", "peaks", "bing", "photo3", "; rm", "dunes"))))
         assertEquals(listOf("peaks", "bing", "photo3", "dunes"), walls(c))     // unknown ids and repeats go
         assertEquals("peaks", c.getString("wall"))                              // what shows is one of the set
-        assertEquals(HomeConfig.WALLS.size, walls(HomeConfig.clean(JSONObject().put("walls", JSONArray(HomeConfig.WALLS + HomeConfig.WALLS)))).size)   // twice the list: each once
+        assertEquals(HomeConfig.WALLS.size - 1, walls(HomeConfig.clean(JSONObject().put("walls", JSONArray(HomeConfig.WALLS + HomeConfig.WALLS)))).size)   // twice the list: each once, the web page never in a set
         assertEquals("off", HomeConfig.clean(JSONObject().put("wevery", "every second")).getString("wevery"))
         for (e in HomeConfig.EVERY) assertEquals(e, HomeConfig.clean(JSONObject().put("wevery", e)).getString("wevery"))
     }
@@ -170,6 +170,48 @@ class HomeConfigTest {
         assertEquals("peaks", set.getString("wall"))                           // the one showing left the set: the first of it shows
         val keep = HomeConfig.merge(old, JSONObject().put("wevery", "off"))
         assertEquals(listOf("dawn", "peaks"), walls(keep))                     // turning it off keeps the set for later
+    }
+
+    @Test fun aWebPageNeedsAGoodAddressAndIsNeverInTheRotation() {
+        fun web(u: String?, vararg extra: Pair<String, Any>) = HomeConfig.clean(JSONObject().put("wall", "web").apply { if (u != null) put("wurl", u) }.also { o -> extra.forEach { o.put(it.first, it.second) } })
+        val ok = web("http://192.168.1.10:2283/?a=b#c")
+        assertEquals("web", ok.getString("wall"))
+        assertEquals("http://192.168.1.10:2283/?a=b#c", ok.getString("wurl"))
+        assertEquals(listOf("web"), walls(ok))
+        assertEquals("HTTPS://x.io", web("  HTTPS://x.io  ").getString("wurl"))                      // trimmed, any case of the scheme
+        for (bad in listOf("", "x.io", "ftp://x.io", "javascript:alert(1)", "file:///sdcard/a.html", "http://", "http:///a", "http://a b", "http://x.io/" + "a".repeat(500))) {
+            val c = web(bad)
+            assertEquals(bad, "", c.getString("wurl"))                                              // dropped
+            assertEquals(bad, "night", c.getString("wall"))                                         // web with no good address: like an unknown wall
+        }
+        assertEquals("night", web(null).getString("wall"))
+        assertEquals("http://x.io/" + "a".repeat(488), web("http://x.io/" + "a".repeat(488)).getString("wurl"))   // exactly 500 stays
+        // it stays out of a set sent with others; the others are kept
+        val mixed = HomeConfig.clean(JSONObject().put("wall", "dawn").put("wurl", "http://x.io").put("walls", JSONArray(listOf("dawn", "web", "peaks"))))
+        assertEquals(listOf("dawn", "peaks"), walls(mixed))
+        assertEquals("http://x.io", mixed.getString("wurl"))                                         // the address is kept for when it is chosen again
+        // choosing it from a rotating set makes the set that one; choosing another leaves it
+        val old = HomeConfig.clean(JSONObject().put("walls", JSONArray(listOf("dawn", "peaks"))).put("wevery", "1h").put("wurl", "http://x.io"))
+        val on = HomeConfig.merge(old, JSONObject().put("wall", "web"))
+        assertEquals("web", on.getString("wall")); assertEquals(listOf("web"), walls(on))
+        assertEquals(listOf("waves"), walls(HomeConfig.merge(on, JSONObject().put("wall", "waves"))))
+        assertEquals("night", HomeConfig.merge(on, JSONObject().put("wurl", "nope")).getString("wall"))   // its address cleared while showing
+        assertEquals("http://x.io", HomeConfig.forward(on).getString("wurl"))
+    }
+
+    @Test fun webUpdateModeIsWhitelistedAndKeepsToday() {
+        val d = HomeConfig.clean(JSONObject())
+        assertEquals("live", d.getString("wmode")); assertEquals(5, d.getInt("wsnap")); assertEquals(false, d.getBoolean("wkeep"))   // today's behaviour
+        for (m in HomeConfig.WMODES) assertEquals(m, HomeConfig.clean(JSONObject().put("wmode", m)).getString("wmode"))
+        assertEquals("live", HomeConfig.clean(JSONObject().put("wmode", "SNAP")).getString("wmode"))   // exact words only
+        assertEquals("live", HomeConfig.clean(JSONObject().put("wmode", "; rm")).getString("wmode"))
+        for (m in HomeConfig.WSNAPS) assertEquals(m, HomeConfig.clean(JSONObject().put("wsnap", m)).getInt("wsnap"))
+        for (bad in listOf(0, 2, 3, -5, 61, 1440, Int.MAX_VALUE)) assertEquals(bad.toString(), 5, HomeConfig.clean(JSONObject().put("wsnap", bad)).getInt("wsnap"))
+        assertEquals(true, HomeConfig.clean(JSONObject().put("wkeep", true)).getBoolean("wkeep"))
+        val m = HomeConfig.merge(HomeConfig.clean(JSONObject().put("wmode", "snap").put("wsnap", 30).put("wkeep", true)), JSONObject().put("wall", "dawn"))
+        assertEquals("snap", m.getString("wmode")); assertEquals(30, m.getInt("wsnap")); assertEquals(true, m.getBoolean("wkeep"))   // kept when another wall is chosen
+        assertEquals(60, HomeConfig.merge(m, JSONObject().put("wsnap", 60)).getInt("wsnap"))
+        assertEquals("snap", HomeConfig.forward(m).getString("wmode"))
     }
 
     @Test fun photosAreFilesNamedByTheirNumber() {

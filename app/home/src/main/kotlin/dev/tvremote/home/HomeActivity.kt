@@ -71,6 +71,11 @@ class HomeActivity : Activity() {
     @Volatile private var pins: List<App> = emptyList()                // shortcuts other apps pinned here ([Pins])
     private var conf = JSONObject()
     private var wallShown = ""
+    private var lastWall = ""
+    private var web: android.webkit.WebView? = null                 // the "web" wall's page, behind the grid and over the window's gradient; null for every other wall
+    private var webDim: View? = null
+    private var webOf = ""                                          // the address [web] shows
+    private var snapper: WebSnapper? = null                         // "web" in snap mode: takes the pictures that are the background (no page on screen)
     private lateinit var head: LinearLayout
     private var scrollAnim: ObjectAnimator? = null
     private val zoom by lazy { Zoom(this) }
@@ -211,7 +216,8 @@ class HomeActivity : Activity() {
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
         Store.onChange = null
         open?.dismiss()
-        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick)
+        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(webRetry)
+        detachWeb()
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
         super.onDestroy()
@@ -268,9 +274,10 @@ class HomeActivity : Activity() {
         if (locked) return
         if (away) Store.advance(this, true)                           // Home is shown again: "each time" moves on here, and a timed one that fell due while away
         if (trimmed) untrim()
+        WebWall.wake(web); snapper?.resume()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
     }
 
-    override fun onStop() { away = true; PhotoServer.stop(); super.onStop() }   // the phone-photo page lives only while its QR screen is in front
+    override fun onStop() { away = true; PhotoServer.stop(); WebWall.sleep(web); snapper?.pause(); super.onStop() }   // the phone-photo page lives only while its QR screen is in front
 
     /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
     override fun onTrimMemory(level: Int) {
@@ -286,6 +293,7 @@ class HomeActivity : Activity() {
         trimmed = true
         picture = null
         val id = conf.optString("wall")
+        detachWeb()                                                   // a page costs the most memory of any wall: gone while away, made again by [untrim]
         if (WallArt.has(id)) backdrop.show(wallColors(id), null, id)      // a drawn scene costs nothing to keep: only the picture is repainted
         else backdrop.show(wallColors(id), soft)                          // the blurred copy stands in, so the return is not a blank
         val keep = firstRows()                                        // the logos seen first on return stay (~10 x 230 KB): a home without them is worse than the memory
@@ -299,7 +307,7 @@ class HomeActivity : Activity() {
     private fun untrim() {
         trimmed = false
         val dm = resources.displayMetrics
-        if (Walls.isPicture(conf.optString("wall"))) loadWall(conf.optString("wall"))
+        if (Walls.isPicture(conf.optString("wall")) || conf.optString("wall") == HomeConfig.WEB) loadWall(conf.optString("wall"))
         for (t in tiles().take(2 * conf.optInt("cols", HomeConfig.COLS_DEFAULT))) { t.app?.let { if (it.banner == null && it.icon == null) it.load(this) }; t.restore() }   // the favourites at once (kept by [trim] unless the list moved), the rest from the side
         bg.execute {
             for (a in apps) if (a.banner == null && a.icon == null) a.load(this)
@@ -748,7 +756,7 @@ class HomeActivity : Activity() {
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo")   // a photo put over the old file, another day's Bing picture: a new one
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
         if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
@@ -764,26 +772,79 @@ class HomeActivity : Activity() {
         val dm = resources.displayMetrics
         val colors = wallColors(id)
         val key = wallShown
-        if (!Walls.isPicture(id) && !WallArt.has(id)) {
+        val url = conf.optString("wurl")
+        val snap = id == HomeConfig.WEB && conf.optString("wmode") == "snap"   // the page as a picture: read and painted like a photo
+        val again = snap && lastWall == HomeConfig.WEB                // the next picture of the page: the one on screen stays until it is read (no flash of the gradient every few minutes)
+        lastWall = id
+        if (id == HomeConfig.WEB && !snap) {                          // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
+            picture = null; soft = null
+            Frost.show(null, dm.widthPixels, dm.heightPixels)
+            backdrop.show(Backdrop.Look(colors))                      // the gradient is what shows while the page loads, and if it never does
+            attachWeb()
+            return
+        }
+        if (snap) attachSnap() else {
+            detachWeb()
+            bg.execute { WebSnap.clear(this) }                        // not the web wall any more: its last picture is only a file taking room
+        }
+        if (!snap && !Walls.isPicture(id) && !WallArt.has(id)) {
             picture = null; soft = null
             Frost.show(null, dm.widthPixels, dm.heightPixels)
             val look = Backdrop.Look(colors)
             backdrop.show(look)
             return
         }
-        backdrop.show(Backdrop.Look(colors))                          // its colours stand in while it is made
+        if (!again) backdrop.show(Backdrop.Look(colors))              // its colours stand in while it is made
         bg.execute {
-            val big = Walls.bitmap(this, id, dm.widthPixels, dm.heightPixels)
-            val small = Walls.soft(this, id, big, dm.widthPixels, dm.heightPixels)
+            val big = if (snap) Wall.load(WebSnap.file(this, url), dm.widthPixels, dm.heightPixels) else Walls.bitmap(this, id, dm.widthPixels, dm.heightPixels)
+            val small = if (snap) big?.let { Wall.soft(it) } else Walls.soft(this, id, big, dm.widthPixels, dm.heightPixels)
             runOnUiThread {
                 if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread   // another choice came meanwhile: its own load shows
-                if (Walls.isPicture(id) && big == null) return@runOnUiThread
+                if ((snap || Walls.isPicture(id)) && big == null) return@runOnUiThread   // no picture yet: the gradient stays
                 picture = big; soft = small
                 val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
                 backdrop.show(look)
                 Frost.show(small, dm.widthPixels, dm.heightPixels)
             }
         }
+    }
+
+    private val webRetry = Runnable { if (!isDestroyed && !trimmed && web == null && conf.optString("wall") == HomeConfig.WEB && conf.optString("wmode") != "snap") attachWeb() }
+
+    /** The page of the "web" wall behind the grid; a page that cannot load is taken away (the gradient shows, no dialog) and tried again in 2 minutes. */
+    private fun attachWeb() {
+        val url = conf.optString("wurl")
+        if (web != null && webOf == url) return
+        detachWeb()
+        val root = scroll.parent as? ViewGroup ?: return
+        val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) }) ?: return
+        val dim = WebWall.dim(this)
+        root.addView(v, 0, FrameLayout.LayoutParams(-1, -1))
+        root.addView(dim, 1, FrameLayout.LayoutParams(-1, -1))
+        web = v; webDim = dim; webOf = url
+    }
+
+    /** The snapshots of the page every `wsnap` minutes; kept as it is while the choice is the same (a change of the wall does not start the wait again). */
+    private fun attachSnap() {
+        val url = conf.optString("wurl")
+        val every = conf.optInt("wsnap", HomeConfig.WSNAP_DEFAULT) * 60_000L
+        val keep = conf.optBoolean("wkeep", false)
+        detachWeb(snap = false)                                       // a live page gives way to the pictures
+        val now = snapper
+        if (now != null && now.sig == "$url|$every|$keep") return
+        now?.stop()
+        snapper = WebSnapper(this, url, every, keep, { scroll.parent as? ViewGroup }, ui, bg) {
+            if (!isDestroyed && !trimmed && conf.optString("wall") == HomeConfig.WEB) { wallShown = ""; wall() }   // a new picture: read and painted
+        }.also { if (!away) it.resume() }                             // away: [onStart] starts it
+    }
+
+    /** Everything of the web wall let go: the page (and its dim), the picture-taker and its page; [snap] false leaves the picture-taker. */
+    private fun detachWeb(snap: Boolean = true) {
+        webDim?.let { (it.parent as? ViewGroup)?.removeView(it) }
+        ui.removeCallbacks(webRetry)
+        WebWall.stop(web)
+        web = null; webDim = null; webOf = ""
+        if (snap) { snapper?.stop(); snapper = null }
     }
 
     // ---- turning through the set ----

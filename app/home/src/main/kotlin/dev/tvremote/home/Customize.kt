@@ -175,7 +175,7 @@ object Customize {
             val cell = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
             val t = FrameLayout(a).apply {
                 isFocusable = true; isClickable = true
-                val c = if (HomeConfig.isPhoto(k) || k == HomeConfig.BING) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
+                val c = if (HomeConfig.isPhoto(k) || k == HomeConfig.BING || k == HomeConfig.WEB) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
                 background = (if (c.all { it == c[0] }) GradientDrawable().apply { setColor(c[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, c))
                     .apply { cornerRadius = dp(12).toFloat() }                // rounded, so not [wallDrawable]'s ColorDrawable
                 if (WallArt.has(k) || Walls.isPicture(k)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
@@ -193,6 +193,7 @@ object Customize {
                     addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
                     addState(intArrayOf(), ring(d, 1, 0x33FFFFFF))
                 }
+                if (k == HomeConfig.WEB) { val (iv, s) = icon(R.drawable.ic_globe, ACCENT, dp(26)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
                 if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_globe, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
                 addView(FrameLayout(a).apply {                            // the ✓, shown on the chosen one (mark)
                     tag = "check"
@@ -202,6 +203,10 @@ object Customize {
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
                 setOnClickListener {
                     val c = Store.get(a)
+                    if (k == HomeConfig.WEB) {                                // the link is pasted on a phone (a QR), how it updates is picked there with the D-pad
+                        PhotoScreen.show(a, web = true) { dialog.dismiss() }
+                        return@setOnClickListener
+                    }
                     if (k == HomeConfig.BING && c.optString("wall") == k && c.optString("wevery") == "off" && Online.count(a) > 1) {   // Bing on already: its next (older) day, round to the newest
                         Online.step(a)
                         Store.change(a, JSONObject().put("wall", k))

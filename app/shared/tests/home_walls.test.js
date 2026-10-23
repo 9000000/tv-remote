@@ -33,6 +33,15 @@ test('every scene is in HomeConfig.ART, with its words in both languages and on 
   }
 });
 
+test('the web page wall: in the whitelist, with its words on the page (the TV panel tile opens the QR screen: the address is pasted on a phone)', () => {
+  assert.match(cfg, /val WALLS = [^\n]*\bWEB\b/);
+  assert.match(cfg, /const val WURL_MAX = 500/);
+  const vi = JSON.parse(fs.readFileSync(path.join(web, 'i18n/vi.json'), 'utf8')), en = JSON.parse(fs.readFileSync(path.join(web, 'i18n/en.json'), 'utf8'));
+  assert.match(cfg, /val WSNAPS = listOf\(1, 5, 15, 30, 60\)/);   // the page's chips (home.js) offer the same five
+  assert.match(fs.readFileSync(path.join(web, 'js/home.js'), 'utf8'), /\[1, 5, 15, 30, 60\]/);
+  for (const k of ['wall_web', 'web', 'web_ph', 'web_set', 'web_clear', 'web_bad', 'web_note', 'web_mode', 'web_mode_live', 'web_mode_snap', 'web_every', 'web_every_n', 'web_keep', 'web_mode_note_live', 'web_mode_note_snap', 'web_mode_note_keep']) assert.ok(vi['home.' + k] && en['home.' + k], k);
+});
+
 test('a scene stays readable: a veil factor and stops in order', () => {
   for (const [k, a] of Object.entries(art)) {
     assert.ok(a.shade >= 0.3 && a.shade <= 1, k + ' shade');

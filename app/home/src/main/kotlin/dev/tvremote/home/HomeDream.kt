@@ -37,6 +37,7 @@ class HomeDream : DreamService() {
     private var drift: ObjectAnimator? = null
     private var motion = true
     private var shown: Bitmap? = null
+    private var web: android.webkit.WebView? = null
     private val minute = object : Runnable { override fun run() { refresh(); moveClock(); ui.postDelayed(this, untilNextMinute()) } }
 
     override fun onAttachedToWindow() {
@@ -61,6 +62,10 @@ class HomeDream : DreamService() {
                 ui.post { if (b != null && shown == null && wall != null) { shown = b; v.setImageBitmap(b); v.animate().alpha(1f).setDuration(if (motion) 900 else 0).start(); startDrift(v) } }
             }
         }
+        if (id == HomeConfig.WEB) {                                   // the page, full-screen: no drift (it moves by itself); gone if it cannot load
+            web = WebWall.make(this, conf.optString("wurl"), { WebWall.stop(web); web = null })
+            web?.let { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
+        }
         root.addView(View(this).apply { setBackgroundColor(0x70000000) }, FrameLayout.LayoutParams(-1, -1))   // dim: night, and words stay readable over a photo
 
         val clock = TextClock(this).apply {
@@ -82,6 +87,7 @@ class HomeDream : DreamService() {
         ui.removeCallbacksAndMessages(null)
         drift?.cancel(); drift = null
         wall?.setImageDrawable(null); wall = null; shown = null
+        WebWall.stop(web); web = null
         bg.shutdownNow()
         super.onDetachedFromWindow()
     }

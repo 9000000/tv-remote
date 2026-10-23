@@ -11,6 +11,7 @@ const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', du
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
 // The scenes TV Home paints itself (HomeConfig.ART; recipes in home_walls.js), the day's Bing picture, the person's photos (photo, photo2..)
 Object.assign(HOME_WALL_WORDS, { dawn: 'home.wall_dawn', peaks: 'home.wall_peaks', dunes: 'home.wall_dunes', waves: 'home.wall_waves', candy: 'home.wall_candy', peach: 'home.wall_peach', meadow: 'home.wall_meadow', mist: 'home.wall_mist', bokeh: 'home.wall_bokeh', canyon: 'home.wall_canyon', bing: 'home.wall_bing' });
+const HOME_WEBMODE = { live: 'home.web_mode_live', snap: 'home.web_mode_snap' };   // HomeConfig.WMODES, with its words
 const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'home.every_1h', '6h': 'home.every_6h', 'day': 'home.every_day', 'show': 'home.every_show' };   // HomeConfig.EVERY, with its words
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
@@ -202,6 +203,22 @@ async function homeOpen() {
   place.addEventListener('keydown', (e) => { if (e.key === 'Enter') placeSet.click(); });
   const placeHead = el('h3', { textContent: T('home.place') }), placeLine = UI.line(place, placeSet, placeAuto);
   const noteHead = el('h3', { textContent: T('home.note') }), noteLine = UI.line(note, pin, unpin);
+  // a web page as the background and the screensaver (HomeConfig.wurl, http or https); the TV shows it, so a typo costs nothing but the gradient
+  const web = el('input', { type: 'url', maxLength: 500, placeholder: T('home.web_ph'), 'aria-label': T('home.web') });
+  const webSet = el('button', { type: 'button', className: 'primary', textContent: T('home.web_set'), onclick: () => {
+    const u = web.value.trim();
+    if (u && !/^https?:\/\/[^\s/?#]+\S*$/i.test(u)) return toast(T('home.web_bad'));
+    send(u ? { wurl: u, wall: 'web' } : { wurl: '' });
+  } });
+  const webOff = el('button', { type: 'button', textContent: T('home.web_clear'), onclick: () => { web.value = ''; send({ wurl: '' }); } });
+  web.addEventListener('keydown', (e) => { if (e.key === 'Enter') webSet.click(); });
+  const webHead = el('h3', { textContent: T('home.web') }), webLine = UI.line(web, webSet, webOff), webNote = el('p', { className: 'note', textContent: T('home.web_note') });
+  // how the page updates (HomeConfig wmode / wsnap / wkeep): live behind Home, or a picture taken every few minutes (frost and dim as on a photo)
+  const webModeHead = el('h3', { textContent: T('home.web_mode') }), webMode = el('div', { className: 'fchips' });
+  const webEveryHead = el('h3', { textContent: T('home.web_every') }), webEvery = el('div', { className: 'fchips' });
+  const webKeepBox = el('input', { type: 'checkbox', onchange: () => send({ wkeep: webKeepBox.checked }) });
+  const webKeep = el('label', { className: 'check' }, webKeepBox, el('span', { textContent: T('home.web_keep') }));
+  const webModeNote = el('p', { className: 'note' });
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
@@ -280,6 +297,16 @@ async function homeOpen() {
     put(layNote, 'textContent', T('home.layout_note', { n: places }));
     lay.replaceChildren(...Object.keys(HOME_LAYOUTS).filter((k) => (c.wlayouts || HOME_OLD_LAYOUTS).includes(k)).map((k) => el('button', { type: 'button', className: c.wlayout === k ? 'on' : '', onclick: () => send({ wlayout: k }) },
       layGlyph(k), el('span', { textContent: T(HOME_LAYOUTS[k]) }))));
+    webHead.hidden = webLine.hidden = webNote.hidden = !(c.wrotate && c.wweb);   // a TV Home older than the web page
+    const onWeb = c.wall === 'web' && c.wmode !== undefined, snap = c.wmode === 'snap';   // a TV Home older than the modes has none
+    webModeHead.hidden = webMode.hidden = webModeNote.hidden = !onWeb;
+    webEveryHead.hidden = webEvery.hidden = webKeep.hidden = !(onWeb && snap);
+    webMode.replaceChildren(...Object.keys(HOME_WEBMODE).map((m) => el('button', { type: 'button', className: c.wmode === m ? 'on' : '', 'aria-pressed': String(c.wmode === m), textContent: T(HOME_WEBMODE[m]), onclick: () => send({ wmode: m }) })));
+    webEvery.replaceChildren(...[1, 5, 15, 30, 60].map((n) => el('button', { type: 'button', className: c.wsnap === n ? 'on' : '', 'aria-pressed': String(c.wsnap === n), textContent: T('home.web_every_n', { n }), onclick: () => send({ wsnap: n }) })));   // HomeConfig.WSNAPS
+    webKeepBox.checked = !!c.wkeep;
+    webModeNote.textContent = T(!snap ? 'home.web_mode_note_live' : c.wkeep ? 'home.web_mode_note_keep' : 'home.web_mode_note_snap');
+    if (document.activeElement !== web) web.value = c.wurl || '';
+    webOff.disabled = !c.wurl;
     placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the card is on
     if (document.activeElement !== place) place.value = c.place || '';
     placeAuto.disabled = !c.place;
@@ -294,6 +321,8 @@ async function homeOpen() {
     const multi = c.wevery !== 'off', set = c.walls || [c.wall];
     const isOn = (k) => multi ? set.includes(k) : c.wall === k;
     const pick = (k) => {
+      if (k === 'web') return c.wurl ? send({ wall: 'web', wurl: c.wurl }) : web.focus();   // the page is never in a set; the address goes along because the client cleans a change alone (web without one is Night); none yet: ask for it
+      if (set.includes('web')) return send({ wall: k });                // leaving the page: the set starts again from this one
       if (!multi) return send({ wall: k });
       const n = set.includes(k) ? set.filter((x) => x !== k) : [...set, k];
       if (n.length) send({ walls: n });
@@ -311,6 +340,7 @@ async function homeOpen() {
       return tile(k, dot, T(HOME_WALL_WORDS[k]));
     });
     const bing = tile('bing', el('i', { className: 'add', textContent: '🌐' }), T('home.wall_bing'));
+    const webTile = c.wweb ? [tile('web', el('i', { className: 'add', textContent: '🖥️' }), T('home.wall_web'))] : [];
     const photos = (r.photos || []).map((p, i) => {
       const t = homeThumbs[p.id + ':' + p.v], face = el('i', {}, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : '🖼️');
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.photo_remove'), 'aria-label': T('home.photo_remove'), onclick: () => dropPhoto(p.id) });
@@ -319,7 +349,7 @@ async function homeOpen() {
       return cell;
     });
     holdNote.hidden = !(window.ONTV && photos.length);
-    walls.replaceChildren(...photos, ...art, bing, ...plain);         // the person's own first
+    walls.replaceChildren(...photos, ...art, bing, ...webTile, ...plain);         // the person's own first
     every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
     put(everyNote, 'textContent', multi ? T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
     everyNote.hidden = !multi;
@@ -328,7 +358,7 @@ async function homeOpen() {
   const d = el('dialog', { className: 'ask homeask' }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, el('h2', { textContent: T('home.title') }), el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() })),
     el('div', { className: 'card-head' }, el('h3', { textContent: T('home.dock') }), addDock), dock,
-    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, file,
+    el('h3', { textContent: T('home.wall') }), everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webNote, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, file,
     galHead, gal, credit,
     langHead, langs, focusHead, focus, colsHead, cols, rowsHead, rowsLine, rowsNote, motionHead, motion,
     el('label', { className: 'check' }, clock, el('span', { textContent: T('home.clock24') })),

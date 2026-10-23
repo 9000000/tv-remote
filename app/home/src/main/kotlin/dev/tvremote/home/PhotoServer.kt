@@ -98,6 +98,15 @@ object PhotoServer {
             when {
                 req.method == "GET" && req.path == "/" -> reply(out, 200, "text/html; charset=utf-8", page(c, req.lang, t).toByteArray())
                 req.method == "GET" && req.path == "/photofit.js" -> reply(out, 200, "application/javascript; charset=utf-8", c.assets.open("photofit.js").use { it.readBytes() })
+                req.method == "POST" && req.path == "/web" -> {          // the link of a page for the "web" wall: the body is the address, as text
+                    if (req.length <= 0) return@use reply(out, 411, "application/json", err("empty"))
+                    if (req.length > 4 * HomeConfig.WURL_MAX) return@use reply(out, 413, "application/json", err("big"))   // a character is up to 4 bytes
+                    val buf = ByteArrayOutputStream(req.length)
+                    if (copy(req.body, buf, req.length) != req.length) return@use reply(out, 400, "application/json", err("short"))
+                    val url = HomeConfig.wurl(String(buf.toByteArray(), Charsets.UTF_8))   // the same rules as the settings: http(s) with a host, at most WURL_MAX
+                    if (url.isEmpty()) reply(out, 400, "application/json", err("url"))
+                    else { useWeb(c, url, onSet); reply(out, 200, "application/json", JSONObject().put("ok", true).toString()) }
+                }
                 req.method == "POST" && req.path == "/photo" -> {
                     if (req.length <= 0) return@use reply(out, 411, "application/json", err("empty"))
                     val raw = req.query["raw"] == "1"
@@ -217,17 +226,26 @@ object PhotoServer {
         return "ok"
     }
 
+    /** The page chosen as the background (its address goes along: a change of the wall alone, without one, is cleaned to Night). */
+    private fun useWeb(c: Context, url: String, onSet: () -> Unit) {
+        val done = CountDownLatch(1)
+        main.post {
+            try { Store.change(c, JSONObject().put("wall", HomeConfig.WEB).put("wurl", url)); onSet() } finally { done.countDown() }
+        }
+        done.await(5, TimeUnit.SECONDS)
+    }
+
     /** photo.html with the words (the phone's language by Accept-Language: Vietnamese, else English) and the TV's picture size filled in. */
     private fun page(c: Context, accept: String, token: String): String {
         val vi = accept.trimStart().lowercase(Locale.ROOT).startsWith("vi")   // the phone's first choice; anything else reads English
         val cfg = android.content.res.Configuration(c.resources.configuration).apply { setLocale(Locale(if (vi) "vi" else "en")) }
         val r = c.createConfigurationContext(cfg).resources
         val words = JSONObject()
-        for (n in listOf("pg_title", "pg_pick", "pg_hint", "pg_send", "pg_sending", "pg_done", "pg_again", "pg_err", "pg_err_big", "pg_err_full", "pg_err_image", "pg_gone", "pg_other", "pg_raw"))
+        for (n in listOf("pg_web_title", "pg_web_hint", "pg_web_ph", "pg_web_use", "pg_web_bad", "pg_title", "pg_pick", "pg_hint", "pg_send", "pg_sending", "pg_done", "pg_again", "pg_err", "pg_err_big", "pg_err_full", "pg_err_image", "pg_gone", "pg_other", "pg_raw"))
             words.put(n, r.getString(c.resources.getIdentifier(n, "string", c.packageName)))
         val dm = c.resources.displayMetrics
         val (w, h) = Wall.want(dm.widthPixels, dm.heightPixels)
-        val cfgJson = JSONObject().put("w", w).put("h", h).put("t", words)
+        val cfgJson = JSONObject().put("w", w).put("h", h).put("t", words).put("web", Store.get(c).optString("wurl"))   // the saved address fills the field
         return c.assets.open("photo.html").bufferedReader().use { it.readText() }
             .replace("__LANG__", if (vi) "vi" else "en").replace("__CFG__", cfgJson.toString().replace("</", "<\\/"))
             .replace("__K__", token)                                         // the script needs the token too: without it a 403, no crop code, and every photo "unreadable"
