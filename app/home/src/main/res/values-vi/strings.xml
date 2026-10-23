@@ -89,7 +89,7 @@
     <string name="w_cpu_need_adb">TV Setup chưa có ADB</string>
     <string name="w_widgets">Widget</string>
     <string name="w_net">Mạng</string>
-    <string name="c_sub">Đổi ở đây, thấy ngay bên trái</string>
+    <string name="c_sub">Áp dụng ngay · có mã QR để chỉnh bằng điện thoại</string>
     <string name="c_look">Hiển thị</string>
     <string name="c_system_sub">RAM, bộ nhớ, mạng</string>
     <string name="c_usage_sub">app dùng nhiều, giới hạn</string>

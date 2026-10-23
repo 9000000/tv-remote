@@ -70,7 +70,6 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
 
     companion object {
         const val SAMPLE_MS = 2000L
-        private const val FRAME_MS = 33L                               // the clock's second hand: ~30 frames a second
         private const val POINTS = 40                                  // 80 s of the network graph
         private val CYAN = intArrayOf(0xFF62D2FF.toInt(), 0xFF4F7CFF.toInt())
         private val VIOLET = intArrayOf(0xFFC59BFF.toInt(), 0xFF7B5CFF.toInt())
@@ -293,9 +292,10 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
     private fun viDay(d: Date) = Calendar.getInstance().apply { time = d }.get(Calendar.DAY_OF_WEEK).let { if (it == Calendar.SUNDAY) "CN" else "T$it" }
 
     /**
-     * An analog face drawn by hand: ticks, numbers, hour and minute hands, a thin second hand that sweeps. It redraws itself about
-     * every [FRAME_MS] only while it is on screen (a hidden window, an app in front or a screen off draws nothing, so the loop ends
-     * by itself), once a second when motion is calm or off. [onMinute] gets the time each time the minute changes (the digits beside it).
+     * An analog face drawn by hand: ticks, numbers, hour and minute hands. It redraws itself once a minute while it is on screen (a
+     * hidden window, an app in front or a screen off draws nothing, so the loop ends by itself). No second hand: its 30 frames a
+     * second redrew Home on the thread a panel over it shares, and held Customize's opening on the FPT box.
+     * [onMinute] gets the time each time the minute changes (the digits beside it).
      */
     private inner class ClockFace(c: Context, val style: String, val onMinute: (Date) -> Unit) : View(c) {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -315,10 +315,7 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             val now = System.currentTimeMillis()
             cal.timeInMillis = now
             if (cal.get(Calendar.MINUTE) != minute) { minute = cal.get(Calendar.MINUTE); val d = Date(now); post { onMinute(d) } }
-            val sec = cal.get(Calendar.SECOND) + cal.get(Calendar.MILLISECOND) / 1000f
-            val smooth = Motion.on && !Motion.calm
-            val s = if (smooth) sec else Math.floor(sec.toDouble()).toFloat()
-            val min = cal.get(Calendar.MINUTE) + sec / 60f
+            val min = cal.get(Calendar.MINUTE).toFloat()
             val hr = cal.get(Calendar.HOUR) + min / 60f
             paint.style = Paint.Style.FILL
             paint.color = when (style) { "light" -> 0xFFF4F4F6.toInt(); "roman" -> 0xFF211C17.toInt(); "minimal" -> 0xFF161618.toInt(); else -> 0xFF1C1C1E.toInt() }
@@ -361,14 +358,12 @@ class Widgets(private val a: Activity, private val dp: (Number) -> Int) : Linear
             line(cv, cx, cy, hr * 30f, 0f, r * (if (serif) 0.45f else 0.5f), paint)
             paint.strokeWidth = r * (if (thin) 0.025f else 0.055f)
             line(cv, cx, cy, min * 6f, 0f, r * (if (serif) 0.68f else 0.74f), paint)
-            paint.color = orange; paint.strokeWidth = maxOf(1.5f, r * 0.02f)
-            line(cv, cx, cy, s * 6f, -r * 0.18f, r * 0.8f, paint)
             paint.style = Paint.Style.FILL
             paint.color = if (serif) gold else ink; cv.drawCircle(cx, cy, r * 0.065f, paint)
             paint.color = orange; cv.drawCircle(cx, cy, r * 0.03f, paint)
             removeCallbacks(frame)                                  // one pending frame, however many draws asked
             if (isShown && windowVisibility == VISIBLE) {
-                if (smooth) postOnAnimationDelayed(frame, FRAME_MS) else postDelayed(frame, 1000 - now % 1000)
+                postDelayed(frame, 60_000 - now % 60_000)
             }
         }
         /** A stroke at [deg] clockwise from 12, from [from] to [to] of the centre. */

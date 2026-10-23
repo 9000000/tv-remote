@@ -287,3 +287,9 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   (Android 14) the same `cname=` form; both emulators only the `WifiConfigManager` header (no saved network, no setupwraith). No dump,
   or networks without owners → "wifi_unknown", never a guess. Cast hosts (`ro.product.device` sabrina / boreal / kirkwood) → "cast"
   (phones' casts fail "Untrusted device" there). Not run on a device with setupwraith yet: LauncherTest's fake TV covers the paths.
+
+## Customize opens lazily; no second hand (`Customize.kt`, `Widgets.kt`)
+- Measured on the FPT box (217 MB free RAM, swap in use), key to first frame: all seven pages built in `show()` took 0.9–1.6 s; building only the top level and the rest one page a message after the slide-in takes 0.33–0.57 s (same logging, 5 runs each, 2026-10-23).
+- `Store.get` costs ~7–14 ms a call there; `refresh()` read it once per row, so it reads it once. A memo of the cleaned conf barely moved the total and was dropped.
+- The analog clock's smooth second hand redrew Home ~30 fps (125 frames in 5 s idle) on the same UI thread as any panel over it. Removed; the face redraws on the minute.
+- Panel 460 dp, not 600: the rows' text uses under half of 600. Tile titles take 2 lines so nothing is cut at the narrower width.

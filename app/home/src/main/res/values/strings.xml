@@ -91,7 +91,7 @@
     <string name="w_cpu_need_adb">TV Setup has no ADB</string>
     <string name="w_widgets">Widgets</string>
     <string name="w_net">Network</string>
-    <string name="c_sub">Changes show at once, on the left</string>
+    <string name="c_sub">Applies at once · a QR code lets a phone do it</string>
     <string name="c_look">Display</string>
     <string name="c_system_sub">memory, storage, network</string>
     <string name="c_usage_sub">most used apps, limits</string>
