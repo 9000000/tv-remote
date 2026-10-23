@@ -187,11 +187,14 @@ object TvUi {
 
 /**
  * The whole screen's own state while there is nothing to list: a spinner while it loads, then the words and the buttons
- * ([buttons]: add the app's, the first is focused). Over [TvUi.BG], centred on the screen. Words: [loading] / [message].
+ * ([buttons]: add the app's, the first is focused), or a bar when the size of the wait is known. Over [TvUi.BG], centred on the screen. Words: [loading] / [message].
  */
 class TvState(c: Context, accent: Int = TvUi.ACCENT) : FrameLayout(c) {
     private val spin = ProgressBar(c).apply { isIndeterminate = true; indeterminateTintList = ColorStateList.valueOf(accent) }
     private val words = TvUi.text(c, "", TvUi.SP_STATE, TvUi.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }
+    private val bar = ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {   // a wait with a known size: how far it is
+        max = 100; progressTintList = ColorStateList.valueOf(accent); progressBackgroundTintList = ColorStateList.valueOf(TvUi.FIELD_REST); visibility = View.GONE
+    }
     val buttons = LinearLayout(c).apply { gravity = Gravity.CENTER }
 
     init {
@@ -200,6 +203,7 @@ class TvState(c: Context, accent: Int = TvUi.ACCENT) : FrameLayout(c) {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(spin, LinearLayout.LayoutParams(TvUi.dp(c, 44).toInt(), TvUi.dp(c, 44).toInt()).apply { bottomMargin = TvUi.dp(c, 16).toInt() })
             addView(words, LinearLayout.LayoutParams(TvUi.dp(c, 520).toInt(), -2))
+            addView(bar, LinearLayout.LayoutParams(TvUi.dp(c, 320).toInt(), TvUi.dp(c, 6).toInt()).apply { topMargin = TvUi.dp(c, 14).toInt() })
             addView(buttons, LinearLayout.LayoutParams(-2, -2).apply { topMargin = TvUi.dp(c, 16).toInt() })
         }, LayoutParams(-1, -1))
     }
@@ -207,12 +211,15 @@ class TvState(c: Context, accent: Int = TvUi.ACCENT) : FrameLayout(c) {
     /** Add a button after the others, 12 dp from them. */
     fun add(b: View) = buttons.addView(b, LinearLayout.LayoutParams(-2, -2).apply { if (buttons.childCount > 0) marginStart = TvUi.dp(context, 12).toInt() })
 
-    /** Loading: the spinner and [words], no buttons. */
-    fun loading(s: String) { words.text = s; TvUi.show(spin, true); TvUi.show(buttons, false) }
+    /** Loading: the spinner and [words], no buttons; with [percent] (0-100) a bar under the words shows how far it is. */
+    fun loading(s: String, percent: Int = -1) {
+        words.text = s; TvUi.show(spin, true); TvUi.show(buttons, false)
+        TvUi.show(bar, percent >= 0); if (percent >= 0) bar.progress = percent.coerceAtMost(100)
+    }
 
     /** Nothing to show and why: the words, the buttons; the first button gets the focus unless the screen has it already. */
     fun message(s: String) {
-        words.text = s; TvUi.show(spin, false); TvUi.show(buttons, true)
+        words.text = s; TvUi.show(spin, false); TvUi.show(bar, false); TvUi.show(buttons, true)
         if (!hasFocus()) buttons.getChildAt(0)?.let { b -> b.post { b.requestFocus() } }
     }
 }

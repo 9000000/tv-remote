@@ -6,6 +6,8 @@
     <string name="country">Quốc gia</string>
     <string name="refresh">Tải lại danh sách</string>
     <string name="loading">Đang tải kênh…</string>
+    <string name="loading_pct">Đang tải danh sách kênh… %1$d%%</string>
+    <string name="loading_read">Đang đọc danh sách kênh…</string>
     <string name="offline">Không có mạng. Kiểm tra mạng của TV rồi thử lại.</string>
     <string name="none_here">Nước này chưa có kênh nào.</string>
     <string name="no_favs">Chưa có kênh yêu thích. Giữ OK (hoặc bấm Menu) trên một kênh để thêm.</string>

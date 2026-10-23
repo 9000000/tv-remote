@@ -357,3 +357,16 @@ clip on the faces 15.5 / 28; **a hardware layer per card 12 / 16** (presses with
 layer scaled by GROW is soft, and its animation runs `withLayer()` as before. Cost: about 11 MB of render targets for TV Home's 27.
 `DimLayer` on a TV is MATCH_PARENT now: twice the long side each way (for phones that turn) was a 3840 x 3840 buffer for one colour; it
 did not change the composition (`CLIENT` either way) nor did moving its alpha into the colour.
+
+## TV Channels first open: show iptv-org's list first, the rest behind (`BrowseActivity.load`, `Catalog.iptv`, `Providers.warm`, `TvState.loading`)
+
+The first open (no files kept) did five requests one after another on the I/O thread before anything showed: the country's m3u,
+`providers.json` (+ its `.sig`), each provider's list (VieON pages), the categories file, `countries.json`. Measured on the TV emulator
+(Vietnam, wall-clock from the start of `load`, 3 runs): m3u 0.2-0.4 s, providers list +0.4 s, provider channels +1.0-1.1 s, categories
++0.3-0.5 s, country name +0.07 s: **2.27-2.39 s** to the first card (a slow box and network took almost 5 s). Now: the m3u alone is shown
+(**0.17-0.25 s**, 88 channels, no provider logos, the country as "VN"), then the providers (asked together, one thread each) and the
+categories (beside them) land by 2.6-3.2 s and `show(..., first = false)` swaps the list in place without taking the focus. When every
+file is kept (`Providers.warm`, fresh categories) nothing waits and it is one show, as before. The bar is determinate when Content-Length
+is known (`Accept-Encoding: identity` on that GET: with gzip the bytes counted would pass the length); otherwise the spinner stays.
+Throttling the emulator (`adb emu network speed`) delays the handshake, not the body, so the bar was seen by sleeping 250 ms per chunk
+once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.

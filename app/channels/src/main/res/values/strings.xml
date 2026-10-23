@@ -7,6 +7,8 @@
     <string name="country">Country</string>
     <string name="refresh">Refresh list</string>
     <string name="loading">Loading channels…</string>
+    <string name="loading_pct">Downloading the channel list… %1$d%%</string>
+    <string name="loading_read">Reading the channel list…</string>
     <string name="offline">No internet. Check the TV\'s network, then try again.</string>
     <string name="none_here">No channels for this country yet.</string>
     <string name="no_favs">No favourites yet. Hold OK (or press Menu) on a channel to add one.</string>

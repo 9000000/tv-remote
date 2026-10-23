@@ -217,24 +217,42 @@ class BrowseActivity : Activity() {
         chrome()
         val country = cc
         io.execute {
-            val list = Catalog.channels(this, cc, fresh)
+            var last = -1
+            val iptv = Catalog.iptv(this, country, fresh) { got, total ->      // a bar while the list comes in (total -1: not told: the spinner stays)
+                val pct = if (total > 0) (got * 100 / total).toInt().coerceAtMost(100) else -1
+                if (pct != last) { last = pct; main.post { if (loading && country == cc) state.loading(progressWords(pct), pct) } }
+            }
+            // the first screen is iptv-org's list alone (one request); the providers' channels and the categories need more requests
+            // (a slow TV measured them at most of the old 5 s wait), so they come after, unless all kept: then nothing to wait for
+            val quick = !fresh && Providers.warm(this, country) && Categories.current(this, country) != null && !Categories.stale(this, country)
+            var list = if (quick) Providers.merge(this, country, iptv, false) else iptv
             var doc = Categories.current(this, country)               // the kept copy at once; the site is asked only when there is none (or Refresh)
-            if (doc == null || fresh) { Categories.refresh(this, country, fresh); doc = Categories.current(this, country) }
-            val res = doc?.let { Categories.categorize(it, list.byChannel()) }
-            val name = Catalog.countries(this).firstOrNull { it.code == cc }?.let { "${it.flag} ${it.name}" } ?: cc.uppercase()
-            val ok = list.isNotEmpty() || java.io.File(filesDir, "m3u-$cc.m3u").exists()
-            main.post {
-                if (isDestroyed) return@post
-                if (country != cc) return@post                         // another country was chosen meanwhile
-                all = list.byChannel(); failed = !ok; countryName = name; loading = false; catRes = res
+            val known = Catalog.young(this, "countries.json")
+            fun nameOf() = Catalog.countries(this).firstOrNull { it.code == country }?.let { "${it.flag} ${it.name}" } ?: country.uppercase()
+            fun show(l: List<Channel>, name: String, res: Categories.Result?, first: Boolean) = main.post {
+                if (isDestroyed || country != cc) return@post          // gone, or another country was chosen meanwhile
+                all = l.byChannel(); failed = l.isEmpty() && !java.io.File(filesDir, "m3u-$country.m3u").exists(); countryName = name; loading = false; catRes = res
                 if (homeShown() && group != SEARCH) group = ALL
                 if (mine(group) == null && !isList(group) && group != ALL && group != SEARCH && all.none { it.first().group == group }) group = ALL
                 buildRail(); filter()
+                if (!first) { refreshHome(); return@post }              // the person may be on a card already: it keeps the focus
                 if (homeShown()) {
                     refreshHome()
                     val p = pendingRow; pendingRow = null
                     if (p == null || !shelves.focusRow(p)) shelves.focusFirst()
                 } else if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
+            }
+            if (quick) {
+                val res = doc?.let { Categories.categorize(it, list.byChannel()) }
+                show(list, nameOf(), res, true)
+            } else {
+                main.post { if (loading && country == cc) state.loading(getString(R.string.loading_read), 100) }
+                if (iptv.isNotEmpty()) { show(list, if (known) nameOf() else country.uppercase(), doc?.let { Categories.categorize(it, list.byChannel()) }, true) }
+                val cats = if (doc == null || fresh) java.util.concurrent.CompletableFuture.runAsync { Categories.refresh(this, country, fresh) } else null   // beside the providers
+                list = Providers.merge(this, country, iptv, fresh)
+                if (cats != null) { cats.join(); doc = Categories.current(this, country) }
+                val res = doc?.let { Categories.categorize(it, list.byChannel()) }
+                show(list, nameOf(), res, false)
             }
             if (Categories.stale(this, country)) {                    // a day old: the site's newer file is used next time, or now if it changed what is shown
                 Categories.refresh(this, country)
@@ -243,6 +261,9 @@ class BrowseActivity : Activity() {
             }
         }
     }
+
+    /** "Downloading the channel list… 42%" for the bar; no number before the size is told. */
+    private fun progressWords(pct: Int) = if (pct < 0) getString(R.string.loading) else getString(R.string.loading_pct, pct)
 
     private fun buildRail() {
         val hadFocus = rail.hasFocus()
