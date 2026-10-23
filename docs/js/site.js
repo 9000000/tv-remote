@@ -78,20 +78,6 @@
     tick();
   })();
 
-  // the narrow screens' menu: the same links in a sheet under the header; closes on a tap on a link, outside, or Escape
-  (function(){
-    var btn = document.querySelector(".menubtn"), sheet = document.getElementById("navsheet");
-    function set(open, back){
-      sheet.hidden = !open; btn.setAttribute("aria-expanded", open);
-      if (!open && back) btn.focus();
-    }
-    btn.onclick = function(){ set(sheet.hidden); if (!sheet.hidden) sheet.querySelector("a").focus({preventScroll:true}); };
-    sheet.addEventListener("click", function(e){ if (e.target.closest("a")) set(false); });
-    document.addEventListener("click", function(e){ if (!sheet.hidden && !e.target.closest("nav")) set(false); });
-    document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !sheet.hidden) set(false, true); });
-    matchMedia("(min-width:981px)").addEventListener("change", function(m){ if (m.matches) set(false); });
-  })();
-
   document.getElementById("yr").textContent = new Date().getFullYear();
 
   // the computer app: the file for this computer on the big button (one Mac app runs on both chips)

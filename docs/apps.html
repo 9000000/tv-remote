@@ -28,30 +28,7 @@
 </head>
 <body>
 
-<nav>
-  <div class="wrap">
-    <a class="brand" href="./"><img src="img/icon.png" width="32" height="32" alt="">TV Remote</a>
-    <div class="navlinks">
-      <a href="guide"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 21.5V5.5M8 7h8"/></svg><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a>
-      <a href="apps" class="on" aria-current="page"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.500"/><rect x="14" y="3" width="7" height="7" rx="1.500"/><rect x="3" y="14" width="7" height="7" rx="1.500"/><path d="M14 17.500h7M17.500 14v7"/></svg><span class="vi">Các app</span><span class="en">The apps</span></a>
-      <a href="demo/"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z"/></svg><span class="vi">Dùng thử</span><span class="en">Live demo</span></a>
-    </div>
-    <div class="navtools">
-      <a class="btn btn-primary btn-sm navcta" href="./#install"><svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Cài đặt</span><span class="en">Install</span></a>
-      <div class="lang" role="group" aria-label="Language">
-        <button data-set="vi" aria-pressed="true">VI</button>
-        <button data-set="en" aria-pressed="false">EN</button>
-      </div>
-      <button class="menubtn" type="button" aria-expanded="false" aria-controls="navsheet" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path class="m1" d="M4 7h16"/><path class="m2" d="M4 12h16"/><path class="m3" d="M4 17h16"/></svg></button>
-    </div>
-  </div>
-  <div class="navsheet" id="navsheet" hidden><div class="wrap">
-    <a href="./#install"><span class="vi">Cài đặt</span><span class="en">Install</span></a>
-    <a href="guide"><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a>
-    <a href="apps" class="on"><span class="vi">Các app</span><span class="en">The apps</span></a>
-    <a href="demo/"><span class="vi">Dùng thử</span><span class="en">Live demo</span></a>
-  </div></div>
-</nav>
+<script src="js/nav.js" data-page="apps"></script>
 
 <main class="wrap am">
   <span class="eyebrow"><span class="vi">Các app</span><span class="en">The apps</span></span>
@@ -89,8 +66,6 @@
   }
   setLang(root.dataset.lang);
   document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
-  var m = document.querySelector(".menubtn"), sh = document.getElementById("navsheet");
-  m.onclick = function(){ var o = sh.hidden; sh.hidden = !o; m.setAttribute("aria-expanded", o); };
 })();
 </script>
 <script src="js/apps.js"></script>

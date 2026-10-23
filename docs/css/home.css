@@ -8,7 +8,6 @@
 .h-trust{color:var(--dim);font-size:14px}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:40px;text-align:left}
 .pair figure{position:relative}
-nav .navtools{margin-left:auto}
 .h-hero .lead,.sc-t h2,.sc-t p{text-wrap:balance}
 .hshot{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line2);background:var(--card);box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
 .hshot img{width:100%;height:auto}
@@ -72,8 +71,6 @@ nav .navtools{margin-left:auto}
   .steps4{grid-template-columns:1fr}
   .steps4 .th{height:100px}
 }
-@media (min-width:861px){nav .menubtn{display:none}}                /* the four buttons (Live demo, Guide, The apps, Install) fit from here up */
-@media (max-width:860px){nav .navtools .navdemo,nav .navtools .btn-ghost[href="guide"],nav .navtools .btn-ghost[href="apps"]{display:none}}  /* in the menu */
 
 /* ---- And more: a scroll-snap row, native swipe, no autoplay ---- */
 .h-more2{padding:56px 0 24px;overflow-x:clip}
