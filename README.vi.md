@@ -459,7 +459,7 @@ TCL Trung Quốc không có Tùy chọn nhà phát triển: Cài đặt → Gi�
 | Tailscale không ra link đăng nhập | TV phải đang mở màn hình (không ở chế độ chờ) và có Internet. Bấm lại nút; vẫn không được thì mở Tailscale trên TV và quét mã QR nó hiện |
 | Hình giật, TV chậm | Chọn chất lượng thấp hơn; tắt hình khi không cần |
 | Ở xa không kết nối được | Hai máy có cùng tài khoản Tailscale và đều đang bật không? |
-| Android báo app "có hại" khi cài | Play Protect cảnh báo app lạ có quyền cài APK. Mã nguồn ở ngay repo này; chọn "Vẫn cài" nếu bạn tin |
+| Android báo app "có hại" khi cài | Play Protect cảnh báo app lạ có quyền cài APK, và **chặn hẳn** app khai báo dịch vụ trợ năng khi cài từ trình duyệt hoặc Downloader ("Đã chặn ứng dụng để bảo vệ thiết bị của bạn… gian lận tài chính", chỉ có nút "Tôi hiểu"). Từ bản này TV Setup không khai báo dịch vụ nào (hai dịch vụ phím nằm trong app nhỏ *TV Setup Keys*, do TV Setup tự cài lên TV qua ADB) nên cài bằng Downloader được. Bản cũ: cài TV Setup từ App điện thoại hoặc App máy tính (qua ADB, không bị chặn), hoặc tắt quét của Play Protect một lát (Play Store → ảnh đại diện → Play Protect → Cài đặt). Mã nguồn ở ngay repo này; chọn "Vẫn cài" nếu bạn tin |
 
 ## Bảo mật
 

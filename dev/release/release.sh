@@ -40,7 +40,8 @@ if [ -n "$LAST" ]; then
   for a in android tv; do                                             # changed code must come with a new number, or nobody gets it
     [ -z "$SKIP_CHECK" ] || continue
     old=$(git show "$LAST:app/$a/VERSION" 2>/dev/null || true)
-    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && dev/release/code_changed.py "$LAST" "app/$a" app/shared ":(exclude)app/$a/*.apk" ":(exclude)app/$a/tests" ":(exclude)app/shared/tests"; then
+    more=app/shared; [ "$a" = tv ] && more=app/tvkeys                 # TV Setup Keys (the accessibility add-on) rides inside tv-setup.apk with TV Setup's number
+    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && dev/release/code_changed.py "$LAST" "app/$a" app/shared $more ":(exclude)app/$a/*.apk" ":(exclude)app/$a/tests" ":(exclude)app/shared/tests"; then
       next "$old" > "app/$a/VERSION"
     fi
   done
@@ -98,6 +99,7 @@ if [ -n "$LAST" ]; then
   if [ -n "$NO_DESKTOP" ] || ! dev/release/code_changed.py "v$BUILT" app/desktop app/shared ":(exclude)app/shared/tests" >/dev/null; then DESK=$BUILT; fi
 fi
 ./app/android/build.sh && ./app/tv/build.sh && ./app/home/build.sh && ./app/channels/build.sh && ./app/games/build.sh
+unzip -l app/tv/build/tv-setup.apk | grep -q 'assets/tvkeys.apk' || { echo "tv-setup.apk has no assets/tvkeys.apk (TV Setup Keys, the add-on with the accessibility services): not releasing"; exit 1; }
 printf '{"android": "%s", "tv": "%s", "home": "%s", "channels": "%s", "games": "%s", "web": "%s"}\n' "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" "$(cat app/games/VERSION)" "$DESK" > app/android/build/versions.json
 D=https://github.com/HoangTran0410/tv-remote/releases/latest/download
 NOTES="$NOTES

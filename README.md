@@ -344,7 +344,7 @@ Things that bit us, so they don't bite you.
 | Choppy picture, slow TV | Pick a lower quality; turn the picture off when not needed |
 | Cannot connect from far away | Are both devices in the same Tailscale account and online? |
 | Netflix and the like show black | Protected video cannot be mirrored. Keys, volume and sound still work |
-| Android calls the app "harmful" | Play Protect warns about any app outside the Play Store that can install APKs. The source is in this repo; choose "Install anyway" if you trust it |
+| Android calls the app "harmful" | Play Protect warns about an app outside the Play Store that can install APKs, and **blocks** one that declares an accessibility service when it comes from a browser or Downloader ("blocked to protect your device… financial fraud", only an "I understand" button). From this version TV Setup declares none (its two key services live in a small add-on, *TV Setup Keys*, which TV Setup puts on the TV itself over ADB), so Downloader installs it. On an older version: install TV Setup from the Phone or Computer app (over ADB, no block), or switch off Play Protect scanning for a minute (Play Store → profile → Play Protect → Settings). The source is in this repo; choose "Install anyway" if you trust it |
 | The TV got something wrong | About → **Send the log** (keys are blanked) |
 
 ## Questions people ask
