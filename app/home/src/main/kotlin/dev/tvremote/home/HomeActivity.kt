@@ -717,9 +717,11 @@ class HomeActivity : Activity() {
         val before = shown.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
         m.add(to, m.removeAt(at))
         val all: List<View> = m + shown.filter { it.app == null }      // each tile once: the old code listed every pin again after the apps, and a pin put on the grid (already in [movable]) was added to a second row: the crash
+        val gap = dp(GRID_GAP)
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()
-        grid.removeAllViews()
-        fill(all, cols, dp(GRID_GAP))
+        all.forEachIndexed { i, v ->                                   // the same rows (a step moves no row): their fade and the page stay, nothing is re-made or veiled
+            (grid.getChildAt(i / cols) as ViewGroup).addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
+        }
         stepping = true; try { t.requestFocus() } finally { stepping = false }
         t.carry(true)
         grid.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
@@ -1173,8 +1175,9 @@ class HomeActivity : Activity() {
         capture(false); p.dialog.setOnKeyListener(null); amGroup = ""
         val rows = ArrayList<TvGlass.Item>()
         rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.am_open)) { launch(a) })
-        if (a.live) {                                                 // a live tile belongs to an app: its name and own icon, a press opens it
-            val prov = HomeConfig.tileProvider(a.pkg)
+        val source = if (a.live) HomeConfig.tileProvider(a.pkg) else (a.pin as? android.content.pm.ShortcutInfo)?.`package`
+        if (source != null) {                                         // a live tile or a pinned shortcut belongs to an app: its name and own icon, a press opens it
+            val prov = source
             val pm = packageManager
             val info = try { pm.getApplicationInfo(prov, 0) } catch (e: Exception) { null }
             if (info != null) rows.add(TvGlass.Item(0, info.loadLabel(pm).toString(), "", false, false) {
