@@ -146,7 +146,8 @@ async function setSleep(m) {
 const bedRanges = () => { const b = (RULES && RULES.bedtime) || {}; return b.ranges || (b.from ? [{ from: b.from, to: b.to }] : []); };
 async function saveBeds(list, on = list.length > 0) {
   const r = await loadRules({ do: 'bedtime', on: on && list.length > 0, ranges: list, from: list.length ? list[0].from : '22:00', to: list.length ? list[0].to : '06:30' });
-  if (r && !r.bedtime.on) toast(T('auto.bed_off'));
+  if (!r || !r.bedtime) return null;                                  // TV Setup restarting or missing: renderRules already says so
+  if (!r.bedtime.on) toast(T('auto.bed_off'));
   return r;
 }
 // ＋ Thêm opens its form in a dialog: the cards keep to what is set
