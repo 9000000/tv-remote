@@ -397,7 +397,8 @@ object Customize {
                             val n = box.text.toString().trim().ifEmpty { return }
                             apply(JSONObject().put("save", n)); draw(); themeTiles.lastOrNull()?.second?.requestFocus()
                         }
-                        val dlg = android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_name_q).setView(box)
+                        val dlg = android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_name_q)
+                            .setView(FrameLayout(a).apply { setPadding(dp(24), dp(4), dp(24), 0); addView(box) })   // in line with the title
                             .setPositiveButton(R.string.th_save_ok) { _, _ -> save() }.setNegativeButton(android.R.string.cancel, null).create()
                         box.setOnEditorActionListener { _, _, _ -> save(); dlg.dismiss(); true }
                         dlg.show()
