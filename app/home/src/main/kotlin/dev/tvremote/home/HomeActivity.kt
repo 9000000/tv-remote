@@ -261,6 +261,7 @@ class HomeActivity : Activity() {
         registerReceiver(tick, IntentFilter().apply {
             addAction(Intent.ACTION_TIME_TICK); addAction(Intent.ACTION_TIME_CHANGED); addAction(Intent.ACTION_TIMEZONE_CHANGED)
             @Suppress("DEPRECATION") addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+            addAction(Intent.ACTION_DREAMING_STARTED); addAction(Intent.ACTION_DREAMING_STOPPED)
         })
         loadApps()
         if (Motion.on) enter(true)
@@ -538,7 +539,13 @@ class HomeActivity : Activity() {
             packageChanged(pkg, i.action == Intent.ACTION_PACKAGE_REMOVED)
         }
     }
-    private val tick = object : BroadcastReceiver() { override fun onReceive(c: Context, i: Intent) { clockAndDay(); bingCheck() } }   // Bing: a new day's picture seen while Home stays on
+    private val tick = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, i: Intent) {
+            // a screensaver over Home: Android 11+ stops the activity, older TVs only lay a window over it and the video went on decoding
+            when (i.action) { Intent.ACTION_DREAMING_STARTED -> return video?.stop() ?: Unit; Intent.ACTION_DREAMING_STOPPED -> return if (!away) video?.start() ?: Unit else Unit }
+            clockAndDay(); bingCheck()                                // Bing: a new day's picture seen while Home stays on
+        }
+    }
 
     private var seq = 0                                               // PackageManager's change counter at the last full list; 0 = everything since boot
 

@@ -250,6 +250,7 @@ object Customize {
         // with [choices] (value to its words) the tile steps through them on each press instead of switching on / off; on = not the first
         fun tile(res: Int, text: String, sub: String?, key: String, choices: List<Pair<String, String>>? = null) {
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
+            if (key == "vvol") pick = (conf.optInt(key, HomeConfig.VOL_DEFAULT) + 12) / 25    // set in steps of 5 from a phone: the nearest of 0..100 by 25, not 0%
             var on = if (choices != null || key == "rows" || key == "shade") pick > 0 || key == "cols" || key == "rows" || key == "shade" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
@@ -270,7 +271,7 @@ object Customize {
                 }
                 ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
                 val word = a.getString(if (on) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else if (key == "shade") "${Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT)}%" else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
+                state.text = if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else if (key == "shade") "${Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT)}%" else if (key == "vvol" && pick == (Store.get(a).optInt("vvol", HomeConfig.VOL_DEFAULT) + 12) / 25) "${Store.get(a).optInt("vvol", HomeConfig.VOL_DEFAULT)}%" else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
                 state.setTextColor(if (on) ACCENT else DIM)
             }
             paint()
