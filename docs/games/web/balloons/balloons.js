@@ -24,6 +24,7 @@
     if (b.kind === 'gold') K.light(g, x, y, '#fde047', r * 2.2, 0.5);
     g.fillStyle = b.col; g.beginPath(); g.ellipse(x, y, r * 0.86, r, 0, 0, 6.283); g.fill();
     g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.ellipse(x - r * 0.3, y - r * 0.35, r * 0.2, r * 0.32, -0.5, 0, 6.283); g.fill();
+    if (b.kind === 'bomb') { g.strokeStyle = '#fb7185'; g.lineWidth = 4; g.beginPath(); g.ellipse(x, y, r * 0.86, r, 0, 0, 6.283); g.stroke(); }                 // a red rim: a dark bomb vanishes on the night sky
     if (b.kind === 'bomb') K.text(g, '\u2620', x, y + 2, r * 0.9, '#f8fafc'); else if (b.kind === 'gold') K.text(g, '\u2605', x, y + 2, r * 0.9, '#a16207');
     else { g.fillStyle = b.col; g.beginPath(); g.moveTo(x - 6, y + r + 6); g.lineTo(x + 6, y + r + 6); g.lineTo(x, y + r - 2); g.fill(); }
     return (cache[key] = cv);
@@ -69,7 +70,7 @@
     start(slots) { B = []; txt.length = 0; left = TIME; spawnT = 0; over = false; bg = bg || makeBg(); slots.forEach((s) => { s.streak = 0; s.tg = null; if (s.human) Ptr.get(s.pad); }); Ptr.reset(); for (let i = 0; i < 6; i++) { spawn(); B[B.length - 1].y = K.rnd(150, H); } },
     update(dt) {
       if (K.mode === 'over') { Ptr.update(dt); return; }
-      Ptr.update(dt); left -= dt; spawnT -= dt;
+      Ptr.update(dt); left -= dt; spawnT -= dt; K.timeTick(left);
       if (spawnT <= 0) { spawn(); spawnT = K.rnd(0.22, 0.5) * (1 - (TIME - left) / TIME * 0.35); }
       for (let i = B.length - 1; i >= 0; i--) { const b = B[i]; b.y += b.vy * dt; b.x += Math.sin(K.t * 1.6 + b.ph) * b.sw * dt; if (b.y < -b.r - 40) B.splice(i, 1); }
       K.slots.forEach((s) => { if (!s.human) ai(s, dt); });

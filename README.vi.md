@@ -174,7 +174,7 @@ Miễn phí, không quảng cáo, app nào riêng app đó: chỉ cài app bạn
 |---|---|---|
 | TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
 | TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
-| TV Games | chưa có | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
+| TV Games | **`2294968`** | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
 
 ### 🏠 TV Home
 
@@ -264,6 +264,7 @@ Cách dễ nhất cho người mới: chỉ cần remote của TV, không cần 
 | TV Remote (điện thoại Android) | **`2973135`** | [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk) |
 | TV Home (màn hình chính) | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
 | TV Channels (xem kênh) | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
+| TV Games (game trên TV) | **`2294968`** | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
 
 Mã luôn trỏ tới bản mới nhất. Không có Downloader thì mở `go.aftvnews.com/<mã>` trong trình duyệt cũng tải được.
 

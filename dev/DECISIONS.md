@@ -266,6 +266,10 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   own crossfade brings Home in. A launcher's `windowAnimationStyle` is ignored for this on Android 14 (a test 1.5x scale over
   1.5 s never showed on the Google TV emulator), and shrinking the app's own picture is not possible: only the system's launcher
   may take another app's window. `SPLASH_SCREEN_STYLE_ICON` was dropped: it changed nothing.
+- The pickers over Home ("Add to home screen", "Quick keys") are a solid page, not a panel over a dimmed, see-through Home: the window
+  over Home and the Customize panel was blended again on every frame of a focus move. Emulator, 12 D-pad moves, 3 runs: 14-26% late
+  frames (median 31-36 ms) as before; dropping only the gliding glass changed nothing (48% → 48% in one run); solid window, no dim,
+  plain panel: 6-11% (25 ms). Home's own grid: 0.4% (16 ms). `solidPage()` in keys/Picker.kt; `TvTile.glassy` false keeps the ring.
 
 ## The stock launcher wins over the HOME choice (BRAVIA, Android 9)
 
@@ -283,3 +287,111 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   (Android 14) the same `cname=` form; both emulators only the `WifiConfigManager` header (no saved network, no setupwraith). No dump,
   or networks without owners → "wifi_unknown", never a guess. Cast hosts (`ro.product.device` sabrina / boreal / kirkwood) → "cast"
   (phones' casts fail "Untrusted device" there). Not run on a device with setupwraith yet: LauncherTest's fake TV covers the paths.
+
+## Customize opens lazily; no second hand (`Customize.kt`, `widgets/Widgets.kt`)
+- Measured on the FPT box (217 MB free RAM, swap in use), key to first frame: all seven pages built in `show()` took 0.9–1.6 s; building only the top level and the rest one page a message after the slide-in takes 0.33–0.57 s (same logging, 5 runs each, 2026-10-23).
+- `Store.get` costs ~7–14 ms a call there; `refresh()` read it once per row, so it reads it once. A memo of the cleaned conf barely moved the total and was dropped.
+- The analog clock's smooth second hand redrew Home ~30 fps (125 frames in 5 s idle) on the same UI thread as any panel over it. Removed; the face redraws on the minute.
+- Panel 460 dp, not 600: the rows' text uses under half of 600. Tile titles take 2 lines so nothing is cut at the narrower width.
+- Still ~470 ms from the menu row's click to the slide (FPT, timestamps per step): building the top level ~300 ms (seven group rows ~100-190 ms, `Store.get` ~15 ms x2, the photo list ~17 ms), then window + first frame ~140 ms. Now `Customize.prepare` builds the panel on an idle handler 3.5 s after Home starts and 1.5 s after each close; the click only shows it: 170-240 ms. Pages still fill on first use and `refresh()` runs at show, so a change made meanwhile (a phone, a sent photo) is in it. The slide's start offset is set at show, not at build: motion may have been turned off since.
+- Reopened on a page (`show(at = "lang")` after a new language rebuilt Home): no slide, the page is simply there with its choice focused. Language is a list (each in its own words, the one in use ticked), not a tile that stepped through them and rebuilt Home on every press.
+
+## A dialog taller than the screen squashes its last row (`TvUi.sheet`, `PhotoScreen.kt`)
+- Android caps a WRAP_CONTENT dialog window at the screen height; the content is then laid out short and the last child (the Close/Done button) is squashed until its text vanishes. The FPT box is 540 dp tall; the web-page QR screen measured taller.
+- `TvUi.sheet` wraps its rows in a ScrollView (every TV Channels/Games sheet). `PhotoScreen` keeps Close outside the scroll, pinned under it, and lays out in two columns: the QR alone on the left (at most 45% of the width, shrunk to what the height leaves, min 160 dp), words and choices on the right. The QR is drawn unfiltered so the scaled squares stay sharp. On the FPT the QR went from 100 dp (web) / ~195 dp (manage) to ~250 dp.
+- Already scrolling: Customize, QuickKeys, Picker, TvGlass.menu, TV Setup's MainActivity. `ui/Drop.kt` has at most 6 rows: no scroll.
+- Top-bar menus (`Drop`) hang from the capsule, not from the whole bar: the bar's height includes the focused button's word under it, which left a 38 dp gap. Dim 0.45 (0.15 left Home as bright as the menu). Customize opened from that menu dims the same (`Drop.MENU_DIM`), else the light jumped back between them; its preview pages (bg, look, widgets) set the dim to 0 (not layout: its rows / columns open a stepper of their own with the panel hidden) so a veil or a background is judged as it will be.
+
+## The web page is served gzipped (`WebPage.kt`)
+- First load after an update was 1,232,711 bytes (79 requests, browser, cache off); with `Content-Encoding: gzip` it is 413,903. Per file: core.js 49,975 -> 17,433, i18n/en.json 183,393 -> 54,359, index.html 87,894 -> 21,328.
+- Compressed once per file and kept next to the plain bytes (a weak TV must not gzip per request); png and files under 1 KB stay plain; `Vary: Accept-Encoding` on the rest. Default gzip level: -9 would save ~100 KB more for a one-time cost not worth it on a TV.
+- TV Home's `ManageServer` is a separate server and does not do this yet.
+
+## Settings are cleaned once (`Store.kt`)
+- `Store.get` parsed and cleaned the saved JSON (~7 ms on the FPT box) and added the live reports (`effective`, ~6 ms) on every call; `Store.list` paid both for one array. The picker called it per tile (~370 ms of UI thread), Quick keys per key (~400 ms).
+- Now the cleaned copy is kept until the text in prefs changes (string compare: any writer, even another process's prefs, is seen). `list` reads it without `effective` (dock, hidden, order, tiles, widgets are all saved keys): ~0.1 ms. `get` still returns a fresh copy with the reports, so callers may change it.
+- The picker also reuses Home's loaded apps and banners (copies via `constantState`, so the Home grid's drawables keep their bounds).
+- The picker's tiles cost ~10 ms each to make on the FPT box. The first three rows are made on the picker's thread (views not yet on a window, as AsyncLayoutInflater does) and drawn alone; the rest is added a frame later, focus kept. Making all of them off the UI thread (~180 ms) took longer than the wait it saved. First rows on screen: ~0.25–0.3 s, from 0.75–1 s.
+
+## Focus without growth on the Customize pages (`Customize.kt`, `PickTile`)
+- Measured on the FPT box, 24 D-pad moves: the picker's growing tiles 8.3–8.5 s of CPU, ~615 frames (50th 32 ms); the ring alone 1.1–1.3 s, ~27 frames. Customize's rows (1.06 pop) 5.3–5.5 s, ~533 frames; the lighter background alone 0.7–1.1 s, ~29 frames. Idle: 0 frames, 60 ms in 10 s.
+- So these pages show focus by colour and ring only. Home's grid keeps its growth (the look of the launcher, one tile at a time over a still page).
+
+## Phone pads: why links dropped and lagged (`GameServer.kt`, `pad.js`)
+- iPhone drops: iOS freezes a page's timers and socket (screen dimmed, locked, other app, Low Power Mode). On waking, "no pong for 5 s" was true of the page, not the link, so a healthy link was closed every wake. A gap between ticks now means "slept": ping, fresh window, dead only after 8 s.
+- Lag: a frame was 3-4 writes (one TLS record / TCP segment each) and a broadcast wrote phones in turn on one thread. Now one write per frame from a writer thread per phone (256-frame queue). The TV holds a Wi-Fi lock while serving (power save parks frames ~100 ms).
+- Same IP is one phone only if the same kind (iOS / Android / other): a repeater or hotspot puts both behind one address.
+- Emulator loopback cannot show the gain (p50 1-2 ms before and after); real Wi-Fi is the test.
+
+## Session cookies from a QR are SameSite=Lax (`ManageServer.kt`, desktop `Pass.kt`)
+- A QR or link opened by another app (camera, Lens, a desktop app) is a cross-site navigation: a Strict cookie set on the 302 is not sent on the redirect, so the phone got 401. Lax is sent on top-level GETs; changes stay protected (X-Tvh header in Home; Sec-Fetch-Site / Origin / localhost checks on desktop).
+- The key in the QR works while the QR is on screen (a scanner's preview opens it first), at most 8 sessions.
+
+
+## Ready-made channel categories are data, per country (`Categories.kt`, `Shelves.kt`, `chancat.js`)
+- Users mostly in Vietnam could not find channels among iptv-org's groups and built their own slowly. The apps now open on rows by category when the site has `docs/channels/categories/<cc>.json`; no country is named in code, so a new one is a file and a push.
+- Matching is by normalized channel NAME (NFD, no marks, đ→d, [a-z0-9], trailing hd/fhd/uhd/sd/4k stripped; `re:` = regex), never by stream URL: links die weekly, names do not. Shared vectors: `app/shared/tests/fixtures/norm.json`.
+- Not signed (unlike providers.json): it holds names only, so a tampered copy can only misfile channels.
+- Coverage 2026-10-24: 285 of 298 real names (iptv-org vn + TV360 + VieON) land in a category; the rest (radio, VBS TV) go to "Others".
+- The page cannot read the site (no CORS header), so the TV/desktop server proxies it: `GET /api/channels/categories?cc=`, a day's cache per country, `{}` for a 404.
+- Focus on the rows is a ring only (no scale): 24 D-pad moves on the emulator 307 frames, 7.8% janky, p99 34 ms, vs the old grid's 10.2% / 65 ms.
+
+## TV Games: lobby and columns cost (`GameActivity.still()`, `LobbyView.kt`, `LibraryActivity.kt`)
+- The ROM lobby was slow because libretro's GLThread kept drawing every vsync behind it, plus a pulse and a spinner always running: emulator 589 CPU ticks / 239 frames → 38 / 23 with RENDERMODE_WHEN_DIRTY while waiting and no pulse. The QR takes 1-6 ms: not the cause; it is cached anyway.
+- Changing columns rebuilt every tile: now the same views are re-measured in place (215 → 34-41 ticks).
+- Pills (tvui `pill`) change colour only on focus: a scale needs a hardware layer per focus, ~7x the CPU on the FPT box (same finding as Customize).
+- Lobby layout: QR card 320 dp (~614 px at 1080p) left, title/players/start right, one Back hint; the web games' in-page lobby mirrors it.
+- Still slow: typing in search (4 letters: 129 ticks, 95% janky); not yet measured on the FPT box.
+
+## TV Home scroll: tiles at rest are layers (`TvTile.card`, TV Setup `DimLayer`)
+
+Measured on the FPT box (Mali-G31, Android 14, 50 Hz, the person's 25% Dim on), DOWN/UP between the dock row and the next, focus on a tile:
+the app delivered a frame every vsync, but SurfaceFlinger held a frame (2 vsyncs, then one skipped) in 3-10 presses of 8, always in the first
+6 frames, where the scroll is fastest. Sideways moves (same focus animation, no scroll): 0-1 in 8. The box composes every layer with the GPU
+(`CLIENT` in `dumpsys SurfaceFlinger`, even a lone app), so the Dim window's full-screen blend shares the GPU with the app; with the Dim
+hidden for a minute the same scroll held 0-1 in 8. The Dim stays (the person chose it): the app had to cost less.
+App GPU per scroll frame (framestats `GpuCompleted`), p50 / p90 ms: as it was 17 / 38; Frost not invalidated, no text shadows, no widget
+layer, the web wall: no change; one layer for the whole grid 48 / 70 (re-rendered every frame by the focus animation inside); the
+wallpaper a solid colour 15 / 27 (at half or quarter size: no change, the cost is the full-screen pass, not the bitmap); no rounded
+clip on the faces 15.5 / 28; **a hardware layer per card 12 / 16** (presses with a held frame: 1 in 8). The focused card has none: a
+layer scaled by GROW is soft, and its animation runs `withLayer()` as before. Cost: about 11 MB of render targets for TV Home's 27.
+`DimLayer` on a TV is MATCH_PARENT now: twice the long side each way (for phones that turn) was a 3840 x 3840 buffer for one colour; it
+did not change the composition (`CLIENT` either way) nor did moving its alpha into the colour.
+
+## TV Channels first open: show iptv-org's list first, the rest behind (`BrowseActivity.load`, `Catalog.iptv`, `Providers.warm`, `TvState.loading`)
+
+The first open (no files kept) did five requests one after another on the I/O thread before anything showed: the country's m3u,
+`providers.json` (+ its `.sig`), each provider's list (VieON pages), the categories file, `countries.json`. Measured on the TV emulator
+(Vietnam, wall-clock from the start of `load`, 3 runs): m3u 0.2-0.4 s, providers list +0.4 s, provider channels +1.0-1.1 s, categories
++0.3-0.5 s, country name +0.07 s: **2.27-2.39 s** to the first card (a slow box and network took almost 5 s). Now: the m3u alone is shown
+(**0.17-0.25 s**, 88 channels, no provider logos, the country as "VN"), then the providers (asked together, one thread each) and the
+categories (beside them) land by 2.6-3.2 s and `show(..., first = false)` swaps the list in place without taking the focus. When every
+file is kept (`Providers.warm`, fresh categories) nothing waits and it is one show, as before. The bar is determinate when Content-Length
+is known (`Accept-Encoding: identity` on that GET: with gzip the bytes counted would pass the length); otherwise the spinner stays.
+Throttling the emulator (`adb emu network speed`) delays the handshake, not the body, so the bar was seen by sleeping 250 ms per chunk
+once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.
+
+## TV Home's settings page: groups, one save for the order, a session that outlives its QR (`js/home.js`, `js/home_order.js`, `Access.kt`, `WebCheck.kt`)
+
+- **Groups as on the TV** (`GROUPS` in home.js = `Customize.kt`'s seven): everything on one page was a long scroll, and the person setting it up already knows the TV's groups. Each row shows a summary (`sums()`) so most questions are answered without opening it.
+- **The app order is saved once.** A write per move made TV Home rebuild its grid at every step and the page wait for each answer. The grid is now a preview (`homeGridOrder` = HomeActivity.show's order: old dock first, then `order`, the rest A-Z); Save sends `{dock: [], order: all}`.
+- **Drag listens on the window, not with pointer capture.** Moving the dragged node in the DOM (`before`/`after`) drops its pointer capture: in Chrome the drag stopped after one step and the pointerup went elsewhere (tile stuck "lifted"). Measured on the FPT's page in Chrome 2026-10-24. The app pictures are `<img>`: `dragstart` is cancelled and the img gets `pointer-events:none`, or the browser's own image drag takes the pointer.
+- **Closing the QR keeps phones that came in** (`ManageServer.release`, `Access.closeKey`): the person closes the QR to look at the TV while still setting it up. The key stops working (a new QR = a new key, `issue(keep = true)` keeps the sessions); idle 10 min still ends it.
+- **The web background is tried where it will be shown** (`WebCheck`): TV Home's own page asks the TV (`/h/web/check`), so a server on the home network that the phone cannot see is judged by the TV; host pages ask from the host (`/api/home/web/check`). FPT measured: dns 173 ms, refused 36 ms, 404 / 200 + title 0.4-0.8 s. A failed check still allows "Use anyway" (a page needing a login on the TV).
+
+
+## TV Channels: other countries' channels in a country's categories (`"also"` in `docs/channels/categories/<cc>.json`, `Categories.alsoFetch`, `GlobalIndex.byIds`)
+
+- **Why Cartoon Network never showed on the Vietnam screen:** the screen reads `iptv/countries/vn.m3u` (88 streams, all `.vn`), and the categories only sort what that list holds. The `match` rules already named cartoon / hbo / espn / cnn, but no such channel was in the list. Measured 2026-10-24 on iptv-org's API: Cartoon Network has streams under `.us` (3), `.sg` Asia (1), `.in`, `.pk`, `.ae`, Latin America; none under `.vn`.
+- **Design:** the file carries `"also": ["CartoonNetworkAsia.sg", {"id": "DW.de", "name": "DW"}, ...]` (iptv-org ids; no country in code). The TV app picks those ids out of `index.country.m3u` (3 MB, the search index it already keeps a day), keeps just them in `files/also-<cc>.tsv` (~12 KB, key = hash of the ids and names) and adds them to the country's list; the name rules then place them. Kept copy is read on the first screen (no network); the index is fetched after the screen is up and released unless a search holds it. One card per id (feeds merged, geo-blocked / flaky streams last), card name from `name` or the shortest name with "(United States)" cut (the index names "DW" as "DW Arabic", "Cinemax West", "BBC News UK HD"). The phone / computer / TV web lists get them through `Catalog.channels` (kept copy; the `list` broadcast fetches first).
+- **Reachability, measured from Vietnam (my IP is VN) 2026-10-24, GET of each stream's first bytes, `#EXTM3U` expected:** 257 of 430 streams of ~250 foreign candidate ids answer. Ids kept all had at least one answering stream: Cartoon Network Asia, Cartoonito Asia, Boomerang.us, BabyTV, Nick Jr., Nickelodeon, Nicktoons, Disney Junior, National Geographic (+Wild), Animal Planet.us, Discovery Channel.in, Discovery World, TLC.in, History Asia, HBO.us, HBO Hits, Cinemax.us, Star Movies.in, ESPN, ESPN 2, Fox Sports 1/2, MTV, MTV Live, BBC News, CNN, CNN International, Euronews English, DW, France 24, NHK World-Japan, Arirang TV, Bloomberg TV, CNA. No answering stream (or none in iptv-org at all): AXN Asia, HBO Asia, Cinemax Asia, CBeebies UK, CBBC, BBC Earth, Discovery Channel US, Disney Channel (English: none; only Polish, German, Latin American feeds), BBC World News (not in iptv-org). Only the playlist was fetched, not playback; one card (Boomerang) was played on the emulator and shows video. Streams change daily; geo-blocked ones are flagged by iptv-org (`geo`) and sort last.
+- **The two "VTV" rows could not be reproduced:** the shipped file has one `vtv` category and the emulator shows VTV (12), HTV, VTVcab, SCTV... once each. Most likely reading: "VTV" and "VTVcab" (which holds ON channels, no VTVcab ones). The row is now "VTVcab (ON)", and `Categories.parse` / `ChanCat.categorize` join categories with the same id or the same title so a file can never show one twice. A person's own group named "VTV" would also show as a second row (not changed: it is the person's data).
+- **Not signed:** the categories file names channels only (a wrong name only moves a card), so there is no signature to redo. The site has no `channels/categories/vn.json` deployed yet (pages.dev answers the app's page for that path), so the new file reaches TVs on the next site deploy.
+
+## TV Games / TV Setup D-pad + UI pass (2026-10-24, emulator tvremote_gtv3, 1080p, density 320)
+- **Measured:** TV Games library cold start 570 ms (`am start -W`), TV Setup main 355 ms; Manage on the TV shows its first tab ~3 s after OK (WebView + `/api` calls on the emulator, not re-measured on a real TV).
+- **The `.tabs` shadow was the clipped header:** `box-shadow:0 -9px 0 8px` reaches 9+8 = 17px above the bar, `main`'s gap is 14px, so it painted 3px over the TV-name card's bottom border on every client; now `0 -8px 0 6px` (14px up, nothing below).
+- **`js/ontv.js` skipped the tab bar going Up:** the tab bar is in no `.card`, so "the same column of cards first" kept only the header's buttons; the tab bar is now taken when it is the next row. Back still goes to the tabs; closing a dialog now goes back to what opened it (`opener`), else the tabs.
+- **Games search field:** a plain `EditText`, so Android's `focusSearch(RIGHT)` picked the grid's wide tile whose far edge is past the field's; `nextFocusRightId = itself`. (`TvField` in tvui has the same `focusSearch` path; Channels' search is not checked, left alone.)
+- **Seen and left, with why:** Setup's system AlertDialogs (Optimize / Connection / Update) are Known drift #4; the selected filter chip being near-white is the documented chip look (§4); "Or choose an .apk file from this computer" and "drop them here" show on the TV's own Manage screen too (the file chooser exists there, the words are the computer's); web games' own title sits 30px from the top (docs/games/web, not in this pass).
+- **ADB on the emulator:** TV Setup connects to 127.0.0.1:5555, so `adb -s <emu> tcpip 5555` is needed; the "Allow USB debugging?" asked with fingerprint CE:0F:40:D4:DD:68:E4:E5:A8:7A:9E:48:46:2D:34:D6, computed from `files/adbkey.x509` of TV Setup (MD5 of adb's public key blob) = the asking key, then allowed.

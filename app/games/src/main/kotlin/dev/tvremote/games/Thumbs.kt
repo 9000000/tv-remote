@@ -40,6 +40,7 @@ object Thumbs {
     private val disk = Executors.newSingleThreadExecutor { Thread(it, "thumbs-disk").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
     private val net = Executors.newFixedThreadPool(3) { Thread(it, "thumbs-net").apply { isDaemon = true; priority = Thread.MIN_PRIORITY } }
     private val main = Handler(Looper.getMainLooper())
+    private val mem = object : android.util.LruCache<String, Pair<Bitmap, String>>(12 shl 20) { override fun sizeOf(k: String, v: Pair<Bitmap, String>) = v.first.byteCount }   // pictures as drawn, by what the tile is kept under
     private val failed = java.util.Collections.synchronizedSet(HashSet<String>())   // a timeout: asked again next time the app starts
 
     fun tileW(c: Context) = c.dp(200)
@@ -74,8 +75,10 @@ object Thumbs {
     }
 
     /** Shows what is on disk at once (off the main thread), then asks the network once if there is no real picture yet. [show] runs on the main thread. */
-    fun load(c: Context, s: Src, show: (Bitmap, String) -> Unit) {
+    fun load(c: Context, s: Src, show0: (Bitmap, String) -> Unit) {
         val app = c.applicationContext
+        val show = { b: Bitmap, m: String -> mem.put(s.store, b to m); show0(b, m) }
+        mem.get(s.store)?.let { (b, m) -> show0(b, m); if (m in REMOTE) return }   // decoded once: a rebuilt row (search, filter, a new folder) draws at once, no disk, no decode
         disk.execute {
             try {
                 if (s.asset != null) {

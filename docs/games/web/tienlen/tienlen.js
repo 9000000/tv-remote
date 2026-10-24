@@ -60,7 +60,7 @@ function play(t, s, cards) {
   g.hands[s] = hand.filter((x) => !cards.includes(x));
   g.last = { c, cards: cards.slice().sort((a, b) => a - b), by: s, chop };
   g.msg = chop ? W.chop : '';
-  if (chop) t.buzz(s, 300);
+  Sfx.play(chop ? 'boom' : 'card'); if (chop) t.buzz(s, 300);
   if (!g.hands[s].length) {
     g.out.push(s);
     if (g.out.length >= 3 || !t.seats.some((o) => t.human(o) && active(o))) { finish(t); return ''; }   // no phone left playing: no waiting on bots
@@ -69,7 +69,7 @@ function play(t, s, cards) {
 }
 function pass(t, s) {
   if (!g.last) return W.nolead;
-  g.passed.add(s); g.msg = ''; advance(t, s); return '';
+  Sfx.play('ui'); g.passed.add(s); g.msg = ''; advance(t, s); return '';
 }
 // the next to play: whoever after [from] is still in the trick; nobody = the trick goes to its last player (or, gone out, the next one)
 function advance(t, from) {

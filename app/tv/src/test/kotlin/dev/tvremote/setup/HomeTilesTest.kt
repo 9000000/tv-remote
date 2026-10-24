@@ -67,12 +67,12 @@ class HomeTilesTest {
         assertTrue(HomeTiles.protectedPkg("dev.tvremote.setup", "", emptySet()))
     }
 
-    @Test fun sleepPressCyclesThirtySixtyNinetyOff() {
-        assertEquals(30, HomeTiles.nextSleep(0))                          // off -> 30
-        assertEquals(60, HomeTiles.nextSleep(30)); assertEquals(90, HomeTiles.nextSleep(60)); assertEquals(0, HomeTiles.nextSleep(90))
-        assertEquals(60, HomeTiles.nextSleep(25))                         // 30 running down: still the 30 step
-        assertEquals(90, HomeTiles.nextSleep(45)); assertEquals(0, HomeTiles.nextSleep(75))
-        assertEquals(0, HomeTiles.nextSleep(120))                         // set longer elsewhere: a press switches it off
+    @Test fun sleepPressAddsFifteenUpToTwoHoursThenOff() {
+        assertEquals(15, HomeTiles.nextSleep(0))                          // off -> 15
+        assertEquals(30, HomeTiles.nextSleep(15)); assertEquals(45, HomeTiles.nextSleep(30)); assertEquals(120, HomeTiles.nextSleep(105))
+        assertEquals(45, HomeTiles.nextSleep(25))                         // 30 running down: still the 30 step
+        assertEquals(30, HomeTiles.nextSleep(1)); assertEquals(0, HomeTiles.nextSleep(120))
+        assertEquals(0, HomeTiles.nextSleep(150))                         // set longer elsewhere: a press switches it off
     }
 
     @Test fun sleepLeftRoundsUp() {
@@ -82,10 +82,10 @@ class HomeTilesTest {
 
     @Test fun sleepStateIsAToggleInBothLanguages() {
         val on = HomeTiles.sleepState("en", 60)
-        assertEquals("toggle", on.getString("layout")); assertEquals("60 min", on.getString("big")); assertTrue(on.getBoolean("on")); assertEquals("Press: 90 min", on.getString("small"))
+        assertEquals("toggle", on.getString("layout")); assertEquals("60 min", on.getString("big")); assertTrue(on.getBoolean("on")); assertEquals("Press: 75 min", on.getString("small"))
         val off = HomeTiles.sleepState("vi", 0)
-        assertEquals("Tắt", off.getString("big")); assertFalse(off.getBoolean("on")); assertEquals("Bấm: 30 phút", off.getString("small"))
-        assertEquals("Bấm: tắt", HomeTiles.sleepState("vi", 90).getString("small"))
+        assertEquals("Tắt", off.getString("big")); assertFalse(off.getBoolean("on")); assertEquals("Bấm: 15 phút", off.getString("small"))
+        assertEquals("Bấm: tắt", HomeTiles.sleepState("vi", 120).getString("small"))
         assertEquals("Hẹn giờ tắt", HomeTiles.list("vi").getJSONObject(1).getString("title"))
         assertEquals("gauge", HomeTiles.list("en").getJSONObject(0).getString("layout"))
     }

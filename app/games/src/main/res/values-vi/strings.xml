@@ -149,4 +149,7 @@
     <string name="sc_lib_short">Trò chơi</string>        <!-- launcher shortcuts (TV Home picker) -->
     <string name="sc_lib_long">Thư viện trò chơi</string>
     <string name="sc_pad_short">Tay cầm</string>
+    <plurals name="need_more">
+        <item quantity="other">Cần thêm %1$d người</item>
+    </plurals>
 </resources>

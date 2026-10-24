@@ -6,7 +6,7 @@
   let ps, phase, ptimer, round, over, roundWin, R, age;
 
   function newRound() {
-    round++; phase = 'ready'; ptimer = 1.6; R = R0; age = 0;
+    round++; phase = 'ready'; ptimer = 1.6; R = R0; age = 0; K.sfx.tick();
     const n = K.slots.length;
     ps = K.slots.map((s, i) => {
       const a = n === 2 ? (i ? 0 : Math.PI) : -Math.PI / 2 + i * 6.283 / n + (n === 3 ? 0 : Math.PI / 4);
@@ -111,7 +111,7 @@
       }
       K.drawParts(c);
       K.hud(c, K.slots, (s) => (ps[s.i] && (!ps[s.i].alive || ps[s.i].fall) ? 'out' : ''));
-      if (phase === 'ready') K.banner(c, (K.VI ? 'Ván ' : 'Round ') + round, null, '#fff');
+      if (phase === 'ready') { K.banner(c, (K.VI ? 'Ván ' : 'Round ') + round, null, '#fff'); for (const p of ps) K.nameTag(c, p.s, p.x, p.y - PR - 30); }
       else if (phase === 'end' && !over) K.banner(c, roundWin >= 0 ? K.slots[roundWin].name : (K.VI ? 'Hòa' : 'Draw'), roundWin >= 0 ? (K.VI ? 'thắng ván này' : 'takes the round') : null, roundWin >= 0 ? K.slots[roundWin].color : '#fff');
     },
   };

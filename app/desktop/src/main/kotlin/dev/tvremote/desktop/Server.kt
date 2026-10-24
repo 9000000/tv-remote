@@ -134,7 +134,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             if (type != "application/json" && type != "application/octet-stream") return Response.error(415, "json only")
             if (type == "application/json" && r.jsonOrNull(Draw.MAX_BODY) == null) return Response.error(400, "bad json")   // never "save nothing"; as big as the biggest body taken: a picture to draw
         }
-        if (!r.path.startsWith("/api/")) page().serve(r.path)?.let { return it }
+        if (!r.path.startsWith("/api/")) page().serve(r.path, r.headers["accept-encoding"].orEmpty())?.let { return it }
         if (r.path == "/api/hook/config") return hookConfig(r)
         return dispatch(r)
     }

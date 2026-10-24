@@ -68,6 +68,11 @@ object Providers {
 
     @Volatile private var mem: Pair<Long, List<Provider>>? = null
 
+    /** Whether [merge] for [cc] can run without the network (the list and each provider's channels kept, a day at most): the screen then waits for it. */
+    fun warm(c: Context, cc: String): Boolean =
+        (mem?.let { System.currentTimeMillis() - it.first < DAY } == true || Catalog.young(c, "providers.json")) &&
+            all(c).filter { it.country == cc && it.o.has("list") }.all { Catalog.young(c, "prov-${it.id}-$cc.json") }
+
     /** The list: the site's (checked, kept a day), else the last one read, else the copy packed in the APK. */
     fun all(c: Context): List<Provider> {
         mem?.let { if (System.currentTimeMillis() - it.first < DAY) return it.second }
@@ -98,8 +103,11 @@ object Providers {
         val byName = iptv.groupBy { key(it.name) }
         val before = HashMap<String, MutableList<Channel>>()             // a provider's stream to put ahead of a channel's own
         val after = ArrayList<Channel>()
-        for (p in ps) {
-            val got = Catalog.cached(c, "prov-${p.id}-$cc.json", "", fresh) { channelsJson(p) }?.let { fromJson(it) }.orEmpty()
+        val gots = ps.map { p -> java.util.concurrent.CompletableFuture.supplyAsync {          // each provider is its own server: asked together, not one after another
+            Catalog.cached(c, "prov-${p.id}-$cc.json", "", fresh, null) { channelsJson(p) }?.let { fromJson(it) }.orEmpty()
+        } }
+        for ((p, g) in ps.zip(gots)) {
+            val got = g.join()
             for (ch in got) {
                 val k = ch.url.substringAfter(':')
                 if (k in p.skip) continue

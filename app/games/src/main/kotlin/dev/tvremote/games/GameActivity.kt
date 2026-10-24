@@ -105,15 +105,19 @@ class GameActivity : ComponentActivity() {
         val root = FrameLayout(this).apply { addView(retro) }
         setContentView(root)
         if (!::server.isInitialized) server = GameServer.acquire(this)   // once: onDestroy releases it once
-        keys = RemoteMap(this, root) { retro.frameSpeed = if (it) 0 else 1 }
+        keys = RemoteMap(this, root) { retro.frameSpeed = if (it) 0 else 1; still(it) }
         cards = GameCards(this, root, server, Systems.clean(file.name), null,
-            onPause = { retro.frameSpeed = if (it) 0 else 1 }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
+            onPause = { retro.frameSpeed = if (it) 0 else 1; still(it) }, onSave = { quickSave() }, onLoad = { quickLoad() }, onQuit = { finish() },
             withLobby = true, kind = sys.label, art = Thumbs.catalog(this, file.name) ?: Thumbs.src(this, sys, file.name), maxPlayers = players.first, minPlayers = players.second,
             onStart = { tapStart() }, onMap = { keys.learn() },
             onGo = { if (server.lobbyPlayers().isEmpty()) android.widget.Toast.makeText(this, R.string.remote_hint, android.widget.Toast.LENGTH_LONG).show()
                 startedAt = System.currentTimeMillis(); snapLoop.removeCallbacksAndMessages(null); snapLoop.postDelayed(snapTick, 5000) })
         if (lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) bind()   // the core was fetched after onResume already ran
     }
+
+    /** Lobby / pause: the picture does not change, so the GL thread stops drawing (frameSpeed 0 still rendered every vsync: the lobby over it cost a core
+     *  and ~65 % janky frames on the test box); on resume it draws continuously again. */
+    private fun still(on: Boolean) { try { retro.renderMode = if (on) android.opengl.GLSurfaceView.RENDERMODE_WHEN_DIRTY else android.opengl.GLSurfaceView.RENDERMODE_CONTINUOUSLY } catch (e: Throwable) { } }
 
     /** Start down, then up a moment later: a core reads the pad once a frame, so a press within one frame is missed. */
     private fun tapStart() { press(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_START); press(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_START) }

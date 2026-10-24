@@ -4,12 +4,14 @@
 // (2 seats; players 3 and 4 only watch). The balls are real-time, so the TV runs its own fixed-step loop (rules.js) between turns.
 const W = Object.assign({}, Table.W, Table.VI ? {
   solids: 'Bi màu', stripes: 'Bi sọc', openT: 'Bàn mở', hintAim: 'Kéo để xoay cơ · giữ A lấy lực · thả để đánh', hintPlace: 'Kéo để đặt bi cái · bấm A để xác nhận',
+  tvAim: '◀ ▶ xoay cơ · giữ OK lấy lực · thả OK để đánh', tvPlace: '◀ ▶ ▲ ▼ chuyển bi cái · OK xác nhận',
   badSpot: 'Chỗ này chưa đặt được bi', power: 'Lực', breakT: (n) => `${n} khai cuộc`, turnOf: (n) => `Lượt của ${n}`, goOn: (n) => `${n} đánh tiếp`,
   hand: (n) => `${n} được đặt bi cái`, takes: (n, g) => `${n} đánh ${g}`, watch: 'Bạn đang xem trận này',
   f: { scratch: 'Lỗi: bi cái xuống lỗ', nohit: 'Lỗi: không chạm bi nào', wrong: 'Lỗi: chạm sai bi đầu tiên', rail: 'Lỗi: không bi nào chạm băng' },
   why: { clear: (n) => `${n} đưa bi 8 xuống lỗ`, early: (n) => `${n} làm bi 8 xuống lỗ quá sớm`, foul: (n) => `${n} làm bi 8 xuống lỗ cùng lỗi` },
 } : {
   solids: 'Solids', stripes: 'Stripes', openT: 'Open table', hintAim: 'Drag to turn the cue · hold A to charge · release to shoot', hintPlace: 'Drag to place the cue ball · press A to confirm',
+  tvAim: '◀ ▶ turn the cue · hold OK to charge · release OK to shoot', tvPlace: '◀ ▶ ▲ ▼ move the cue ball · OK to confirm',
   badSpot: 'The ball cannot go there', power: 'Power', breakT: (n) => `${n} breaks`, turnOf: (n) => `${n} to play`, goOn: (n) => `${n} shoots again`,
   hand: (n) => `${n} has the cue ball in hand`, takes: (n, g) => `${n} plays ${g}`, watch: 'You are watching this game',
   f: { scratch: 'Foul: cue ball in the pocket', nohit: 'Foul: no ball was hit', wrong: 'Foul: wrong ball hit first', rail: 'Foul: no ball reached a rail' },
@@ -40,6 +42,7 @@ const table = Table({
     if (S.phase !== 'aim' && S.phase !== 'place') return;
     const mv = BD.botMove(S.g, S.level);
     S.bot = { mv, t: 0, stage: S.g.hand ? 0 : 1, a0: S.ang, x0: S.px, y0: S.py, dur: 0 };
+    wake();
   },
   timeUp(t, s) {                                                  // away from the phone: the game goes on with an easy shot
     if (S.phase === 'roll') { t.left = 20; return; }
@@ -54,7 +57,8 @@ const table = Table({
     if (s === t.turn) return { pointer: true, buttons: ['A'] };
     return { buttons: [], dpad: false };
   },
-  draw(t) { prompt(t); },
+  draw(t) { prompt(t); wake(); },
+  tick: () => wake(),                                          // the clock text changes once a second
 });
 
 // a line on the phone whose turn it is (once per shot)
@@ -82,6 +86,7 @@ function finish(res) {
     t.over(res.winner === 0 ? [0, 1] : [1, 0]); return;
   }
   S.phase = g.hand ? 'place' : 'aim';
+  if (res.foul) Sfx.play('bad'); else if (res.pots.some((b) => b !== 0)) Sfx.play('score');   // the pocket click is per frame; this says whether the shot counted
   if (g.hand) { S.px = g.x[0]; S.py = g.y[0]; } nearestBall();
   if (res.foul) { S.banner = W.f[res.foul]; S.bannerT = 3; S.msg = W.hand(who); t.buzz(me, 300); }
   else if (res.assigned) { S.banner = ''; S.msg = W.takes(nm, gname(g.grp[me])); }
@@ -111,22 +116,25 @@ if (table.ok) {
   pad.on('pointer', (e) => {
     const s = e.player - 1;
     if (s !== table.turn || !myTurn() || e.dx == null) return;
+    wake();
     if (S.phase === 'place') { S.px += e.dx * 1.85; S.py += e.dy * 1.85; clampSpot(); } else S.ang = wrap(S.ang + (e.dx + e.dy * 0.3) * 0.003);
   });
   pad.on('button', (e) => {
     const s = e.player - 1;
     if (s < 0 || s > 1) return;
+    wake();
     if (e.btn === 'A') { if (e.down) aDown(s); else aUp(s); return; }
     const k = S.k[s];
     if (e.btn === 'LEFT' || e.btn === 'RIGHT' || e.btn === 'UP' || e.btn === 'DOWN') k[e.btn[0]] = e.down ? 1 : 0;
   });
-  pad.on('axis', (e) => { const s = e.player - 1; if (s >= 0 && s < 2) { S.k[s].ax = Math.abs(e.x) > 0.25 ? e.x : 0; S.k[s].ay = Math.abs(e.y) > 0.25 ? e.y : 0; } });
+  pad.on('axis', (e) => { wake(); const s = e.player - 1; if (s >= 0 && s < 2) { S.k[s].ax = Math.abs(e.x) > 0.25 ? e.x : 0; S.k[s].ay = Math.abs(e.y) > 0.25 ? e.y : 0; } });
   const KEYS = { ArrowLeft: 'L', ArrowRight: 'R', ArrowUp: 'U', ArrowDown: 'D' };
   document.addEventListener('keydown', (e) => {
+    wake();
     if (KEYS[e.key]) S.k[0][KEYS[e.key]] = 1;
     else if ((e.key === ' ' || e.key === 'z' || e.key === 'Z' || (e.key === 'Enter' && !table.done)) && !e.repeat) aDown(0);
   });
-  document.addEventListener('keyup', (e) => { if (KEYS[e.key]) S.k[0][KEYS[e.key]] = 0; else if (e.key === ' ' || e.key === 'z' || e.key === 'Z' || e.key === 'Enter') aUp(0); });
+  document.addEventListener('keyup', (e) => { wake(); if (KEYS[e.key]) S.k[0][KEYS[e.key]] = 0; else if (e.key === ' ' || e.key === 'z' || e.key === 'Z' || e.key === 'Enter') aUp(0); });
   const watcher = (p) => { if (p > 2) { try { pad.layout(p, { buttons: [], dpad: false }); pad.say(p, W.watch); } catch (e) { /* older TV Games */ } } };
   pad.on('join', (e) => watcher(e.player));
   pad.players().forEach(watcher);
@@ -182,19 +190,8 @@ const bg = document.createElement('canvas'); bg.width = 1280; bg.height = 720;
   }
 })();
 
-// ---------------------------------------------------------------------------------------------- sound (a click per frame at most, made on the spot)
-let AC = null;
-const MUTE = /[?&]mute/.test(location.search);
-function click(f, v, d) {
-  if (MUTE) return;
-  try {
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state === 'suspended') AC.resume();
-    const o = AC.createOscillator(), a = AC.createGain(), t = AC.currentTime;
-    o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.55, t + d);
-    a.gain.setValueAtTime(v, t); a.gain.exponentialRampToValueAtTime(0.001, t + d); o.connect(a); a.connect(AC.destination); o.start(t); o.stop(t + d + 0.02);
-  } catch (e) { AC = null; }
-}
+// ---------------------------------------------------------------------------------------------- sound (a click per frame at most)
+function click(f, v, d) { Sfx.tone(f, d, 'triangle', v, 0.55); }   // Sfx owns the AudioContext and ?mute
 function sounds(g) {
   const e = g.ev; let ball = 0, rail = 0, pk = 0;
   for (let i = 0; i < e.n; i++) { if (e.k[i] === 0) ball = Math.max(ball, e.s[i]); else if (e.k[i] === 1) rail = Math.max(rail, e.s[i]); else pk = 1; }
@@ -335,6 +332,9 @@ function render() {
   if (S.phase === 'aim' && !t.done) { guide(g); stick(g, OX + g.x[0] * SC, OY + g.y[0] * SC); powerBar(); }
   else if (S.phase === 'place') powerBar();
   card(0); card(1);
+  if (t.remote && t.turn === 0 && !t.done && !S.bot && (S.phase === 'aim' || S.phase === 'place')) {   // the remote seat has no phone line telling it the keys
+    const hint = S.phase === 'place' ? W.tvPlace : W.tvAim; fit(hint, 20, 900, 700); cx.fillStyle = 'rgba(255,255,255,.75)'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(hint, 640, 108);
+  }
   cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = '#fff'; cx.font = '800 40px ' + FONT; cx.fillText(t.scores[0] + ' : ' + t.scores[1], 640, 36);
   if (!t.done && t.human(t.turn)) { cx.font = '700 20px ' + FONT; cx.fillStyle = t.left <= 8 ? '#f87171' : '#9aa5bd'; cx.fillText('⏱ ' + Math.max(0, t.left), 640, 66); }
   if (!t.done) { fit(S.msg, 26, 540, 700); cx.fillStyle = '#e5e9f5'; cx.textAlign = 'left'; cx.textBaseline = 'middle'; cx.fillText(S.msg, 74, 699); }
@@ -345,12 +345,21 @@ function render() {
   }
   if (t.done && t.games) overlay();
 }
-let last = performance.now();
+// The loop runs only while something moves (balls, the cue turning or charging, a bot thinking, a banner fading); otherwise one
+// last frame is drawn and it sleeps until an input, the table or the clock wakes it: a weak TV box idles at ~0% instead of 60 draws a second.
+let last = performance.now(), raf = 0;
+function busy() {
+  if (S.phase === 'roll' || S.bot || S.charging || S.bannerT > 0 || S.fireT > 0) return true;
+  const k = S.k[table.turn || 0]; return !!(k.L || k.R || k.U || k.D || k.ax || k.ay);
+}
+function wake() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
 function frame(now) {
+  raf = 0;
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  logic(dt); render(); requestAnimationFrame(frame);
+  logic(dt); render();
+  if (busy()) raf = requestAnimationFrame(frame);
 }
 window.__bida = { S, table, BD };
 if (table.ok) table.go();
-requestAnimationFrame(frame);
+wake();
 Credit.key = () => table.done;   // Down plays while a game is on

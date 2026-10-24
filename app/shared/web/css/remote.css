@@ -220,3 +220,24 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homeask .item .acts .iconbtn { padding:0; }
 .homeask.page { position:static; display:block; width:100%; max-width:none; max-height:none; margin:0; padding:16px; box-sizing:border-box; }   /* TV Home's own page: the settings are the page */
 .homeask.page .card { width:min(760px, 100%); margin:0 auto; }
+/* the settings as the TV has them: a list of seven groups, then one group's page (js/home.js GROUPS) */
+.homeask .homepages, .homeask .homepage, .homeask .homemenu { display:flex; flex-direction:column; min-width:0; }
+.homeask .homepage { gap:14px; }
+.homeask .homemenu { gap:8px; }
+.homeask .homemenu .mitem .mi .ui-ic { width:28px; height:28px; }
+.homeask .homepage[hidden], .homeask .homemenu[hidden], .homeask .homemenu .mitem[hidden] { display:none; }
+.homeask .card-head .tools { display:flex; gap:6px; margin-left:auto; }
+@media (max-width: 520px) {                                        /* a phone: the page is the screen, no frame round it */
+  .homeask.page { padding:0; }
+  .homeask.page .card { border:0; border-radius:0; padding:14px 16px 24px; }
+}
+/* the app grid's order: TV Home's columns (--cols), tiles moved by drag or press-then-press (js/home_order.js) */
+.homeorder { display:grid; grid-template-columns:repeat(var(--cols, 5), minmax(0, 1fr)); gap:6px; user-select:none; -webkit-user-select:none; }
+.homeorder .cell { display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; height:auto; padding:6px 2px; border-radius:10px; font-size:11px; line-height:1.2; -webkit-touch-callout:none; touch-action:manipulation; }
+.homeorder .cell img { pointer-events:none; -webkit-user-drag:none; }   /* the tile is what is dragged, never its picture */
+.homeorder .cell span { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.homeorder .cell .appicon { width:100%; height:auto; aspect-ratio:16 / 9; border-radius:8px; font-size:15px; }   /* the TV's tile: a banner fills it, an icon sits in it */
+.homeorder .cell.lift { box-shadow:0 0 0 2px var(--accent); background:var(--sel); transform:scale(1.06); z-index:1; }
+.homeorder.dragging .cell:not(.lift) { transition:transform .12s; }
+dialog.ask.homeweb .card { width:min(560px, 94vw); }
+

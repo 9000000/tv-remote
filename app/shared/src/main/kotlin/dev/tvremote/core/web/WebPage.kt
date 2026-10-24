@@ -5,9 +5,10 @@ package dev.tvremote.core.web
  */
 class WebPage(private val open: (String) -> java.io.InputStream, private val core: String, private val stamp: String) {
     private val cache = HashMap<String, ByteArray>()
+    private val zipped = HashMap<String, ByteArray>()                // gzip of the same bytes, made once: a weak TV must not compress per request
 
-    /** null when the path is not one of the page's files. */
-    fun serve(path: String): HttpServer.Response? {
+    /** null when the path is not one of the page's files. [acceptEncoding] is the request's header: text files go out gzipped when it allows (1.2 MB -> 0.3 MB on the first load). */
+    fun serve(path: String, acceptEncoding: String = ""): HttpServer.Response? {
         val name = if (path == "/" || path == "/index.html") "index.html" else path.substring(1)
         if (!FILE.matches(name)) return null
         val bytes = synchronized(cache) {
@@ -21,10 +22,21 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
             "html" -> "text/html; charset=utf-8"; "css" -> "text/css; charset=utf-8"; "png" -> "image/png"
             "json" -> if (name.startsWith("i18n/")) "application/json; charset=utf-8" else "application/manifest+json"; else -> "text/javascript; charset=utf-8"
         }
-        val out = HttpServer.Response.of(type, bytes)
+        val gz = if (name.endsWith(".png") || bytes.size < 1024 || !GZIP.containsMatchIn(acceptEncoding)) null else gzip(name, bytes)
+        val out = HttpServer.Response.of(type, gz ?: bytes)
+        if (!name.endsWith(".png")) out.headers["Vary"] = "Accept-Encoding"     // a cache must not hand the plain copy to a browser that wants gzip, or the reverse
+        if (gz != null) out.headers["Content-Encoding"] = "gzip"
         // the page names its files with a stamp that changes with every update of the app, so they can be kept; the page itself never is
         out.headers["Cache-Control"] = if (name == "index.html") "no-store" else "max-age=604800"
         return out
+    }
+
+    private fun gzip(name: String, plain: ByteArray): ByteArray? = synchronized(zipped) {
+        zipped[name] ?: run {
+            val b = java.io.ByteArrayOutputStream(plain.size / 3)
+            java.util.zip.GZIPOutputStream(b).use { it.write(plain) }
+            b.toByteArray().takeIf { it.size < plain.size }.also { if (it != null && zipped.size < 60) zipped[name] = it }
+        }
     }
 
     private fun page(html: String): String =
@@ -32,6 +44,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
 
     private companion object {
         val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|i18n/[a-z]{2,3}\\.json|icon-[a-z0-9]+\\.png")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
+        val GZIP = Regex("(?i)(^|[\\s,])gzip\\s*(,|;(?!\\s*q=0(\\.0*)?\\s*(,|$))|$)")   // "gzip" as a token, not "gzip;q=0"
         val LINK = Regex("((?:src|href)=\"(?:css/[^\"?]+|stats\\.js|js/[^\"?]+))\"")
     }
 }

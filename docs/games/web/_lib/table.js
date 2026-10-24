@@ -85,13 +85,14 @@
       sent[s] = JSON.stringify(l); pad.layout(s + 1, l);
     };
     function changed() { if (g.draw) g.draw(t); push(); rdraw(); }
-    function turnTo(s) { t.turn = s; t.left = g.turnSecs || 0; changed(); wake(); }
+    function turnTo(s) { if (s !== t.turn && t.human(s) && !t.done) Sfx.play('turn'); t.turn = s; t.left = g.turnSecs || 0; changed(); wake(); }
     function go() { clearTimeout(botT); seat(); t.done = false; t.order = []; t.games++; g.deal(t); if (!t.done) turnTo(t.turn); }
     function over(order) {
       clearTimeout(botT); t.done = true; t.order = order.slice(); t.lastWinner = order[0];
       const pts = SCORE[order.length] || SCORE[4];
       order.forEach((s, r) => { t.scores[s] += pts[r] || 0; t.buzz(s, r ? 120 : 700); });
       t.points = (r) => pts[r] || 0;
+      Sfx.play(t.human(order[0]) ? 'win' : 'lose');
       changed();
     }
     // ---- the remote seat (see the header)
@@ -199,7 +200,7 @@
     function rpress(a, only) {
       const cards = only ? [only] : R.hand.map((x) => String(x.id)).filter((x) => R.sel.has(x));
       const why = g.act(t, 0, { act: a, cards });
-      if (why) rflash(why); else { R.flash = ''; R.sel = new Set(); }
+      if (why) { rflash(why); Sfx.play('bad'); } else { R.flash = ''; R.sel = new Set(); }
       rdraw();
     }
     function rkey(e) {
@@ -247,7 +248,7 @@
         if (m.act === 'again') { if (t.done) go(); return; }
         if (!t.humans[s] || t.done) return;
         const why = g.act(t, s, m);
-        if (why) { pad.say(player, why); pad.vibrate(player, 250); }
+        if (why) { pad.say(player, why); pad.vibrate(player, 250); Sfx.play('bad'); }
       });
       const moved = () => { seat(); changed(); wake(); };   // a phone took a bot's seat or gave it back
       pad.on('join', moved); pad.on('leave', moved);

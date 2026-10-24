@@ -76,7 +76,7 @@ class ServerTest {
         assertEquals(302, r.status)
         assertEquals("/?lang=en", r.headers["Location"])
         val cookie = r.headers["Set-Cookie"]!!
-        assertTrue(cookie, cookie.startsWith("${Pass.COOKIE}=${pass.key};") && "HttpOnly" in cookie && "SameSite=Strict" in cookie)
+        assertTrue(cookie, cookie.startsWith("${Pass.COOKIE}=${pass.key};") && "HttpOnly" in cookie && "SameSite=Lax" in cookie)
     }
 
     @Test fun theKeyIsKeptOnDiskForASecondStart() {
@@ -125,6 +125,20 @@ class ServerTest {
         val spec = req("GET", "/remote.json", keyed = true)
         assertEquals(200, spec.status)
         JSONObject(text(spec))
+    }
+
+    @Test fun textFilesAreGzippedOnceWhenTheBrowserAsksAndPlainOtherwise() {
+        val plain = req("GET", "/js/core.js", keyed = true)
+        assertEquals(null, plain.headers["Content-Encoding"])
+        assertEquals("Accept-Encoding", plain.headers["Vary"])
+        val gz = req("GET", "/js/core.js", headers = mapOf("accept-encoding" to "br, gzip;q=0.8"), keyed = true)
+        assertEquals("gzip", gz.headers["Content-Encoding"])
+        assertEquals("Accept-Encoding", gz.headers["Vary"])
+        assertTrue(gz.body.size < plain.body.size)
+        assertEquals(text(plain), String(java.util.zip.GZIPInputStream(ByteArrayInputStream(gz.body)).readBytes(), Charsets.UTF_8))
+        assertTrue(gz.body === req("GET", "/js/core.js", headers = mapOf("accept-encoding" to "gzip"), keyed = true).body)   // compressed once, not per request
+        assertEquals(null, req("GET", "/js/core.js", headers = mapOf("accept-encoding" to "gzip;q=0, br"), keyed = true).headers["Content-Encoding"])
+        assertEquals(null, req("GET", "/js/core.js", headers = mapOf("accept-encoding" to "identity"), keyed = true).headers["Content-Encoding"])
     }
 
     @Test fun unknownFilesAreNotFoundAndCannotEscapeTheFolder() {

@@ -30,7 +30,7 @@
     for (const b of cyc) if (b.alive) for (let i = 1; i < b.path.length; i++) segment(tc, b.s.color, cx(b.path[i - 1][0]), cy(b.path[i - 1][1]), cx(b.path[i][0]), cy(b.path[i][1]));
   }
   function newRound() {
-    grid = new Uint8Array(COLS * ROWS); round++; phase = 'ready'; ptimer = 1.6; acc = 0;
+    grid = new Uint8Array(COLS * ROWS); round++; phase = 'ready'; ptimer = 1.6; acc = 0; K.sfx.tick();
     trail = trail || Object.assign(document.createElement('canvas'), { width: 1280, height: 720 }); tc = trail.getContext('2d'); tc.clearRect(0, 0, 1280, 720);
     cyc = K.slots.map((s, i) => {
       const [x, y, d] = STARTS[i]; grid[y * COLS + x] = i + 1;
@@ -97,7 +97,7 @@
       if (phase === 'play') {
         for (const b of cyc) {                                                // boost bar
           if (!b.alive) continue;
-          if (b.boost && b.energy > (b.boosting ? 0 : 0.2)) { b.boosting = true; b.energy = Math.max(0, b.energy - dt * 0.8); } else { b.boosting = false; b.energy = Math.min(1, b.energy + dt * 0.3); }
+          if (b.boost && b.energy > (b.boosting ? 0 : 0.2)) { if (!b.boosting) K.sfx.dash(); b.boosting = true; b.energy = Math.max(0, b.energy - dt * 0.8); } else { b.boosting = false; b.energy = Math.min(1, b.energy + dt * 0.3); }
         }
         const fast = cyc.some((b) => b.alive && b.boosting);
         acc += dt;
@@ -127,7 +127,7 @@
       }
       K.drawParts(c);
       K.hud(c, K.slots, (s) => (cyc[s.i] && !cyc[s.i].alive ? 'out' : ''));
-      if (phase === 'ready') K.banner(c, (K.VI ? 'Ván ' : 'Round ') + round, null, '#fff');
+      if (phase === 'ready') { K.banner(c, (K.VI ? 'Ván ' : 'Round ') + round, null, '#fff'); for (const b of cyc) K.nameTag(c, b.s, cx(b.x), cy(b.y) + (b.y < ROWS / 2 ? 40 : -40)); }
       else if (phase === 'end' && !over) K.banner(c, roundWin >= 0 ? K.slots[roundWin].name : (K.VI ? 'Hòa' : 'Draw'), roundWin >= 0 ? (K.VI ? 'thắng ván này' : 'takes the round') : null, roundWin >= 0 ? K.slots[roundWin].color : '#fff');
     },
   };

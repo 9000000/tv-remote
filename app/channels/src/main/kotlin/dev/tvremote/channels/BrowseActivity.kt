@@ -52,6 +52,10 @@ class BrowseActivity : Activity() {
     private lateinit var state: TvState                                // the one full-screen state: loading, offline, nothing here
     private lateinit var find: TvField
     private val cards = Cards()
+    private lateinit var shelves: Shelves                              // the home of a country that has ready-made categories (Categories)
+    private var catRes: Categories.Result? = null                     // this country's shelves; null: it has none, the plain list is the home
+    private var homeMode = true                                        // shelves on show; off while the person is in the list view (all channels, search, a group)
+    private var pendingRow: String? = null                             // a link to a group: its shelf gets the focus once the shelves are drawn
 
     private var cc = ""
     private var all: List<List<Channel>> = emptyList()
@@ -117,16 +121,22 @@ class BrowseActivity : Activity() {
         right.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
         root.addView(right, LinearLayout.LayoutParams(0, -1, 1f))
         content = root
+        shelves = Shelves(this, object : Shelves.Host {
+            override fun play(ch: List<Channel>, lineup: List<List<Channel>>, title: String) = this@BrowseActivity.play(ch, lineup, title)
+            override fun actions(ch: List<Channel>) = this@BrowseActivity.actions(ch)
+            override fun search() = enterSearch()
+            override fun menu() = homeMenu()
+        })
 
         // the whole screen's own state, centred on the screen (not on the grid): loading, or no list and why
         state = TvState(this)
         state.add(TvUi.button(this, getString(R.string.retry)) { load(true) })
         state.add(TvUi.button(this, getString(R.string.country)) { countries() })
-        setContentView(FrameLayout(this).apply { addView(root, FrameLayout.LayoutParams(-1, -1)); addView(state, FrameLayout.LayoutParams(-1, -1)) })
+        setContentView(FrameLayout(this).apply { addView(root, FrameLayout.LayoutParams(-1, -1)); addView(shelves.view, FrameLayout.LayoutParams(-1, -1)); addView(state, FrameLayout.LayoutParams(-1, -1)) })
         cc = countryOf(intent) ?: Store.country(this)
-        groupOf(intent)?.let { group = it }
+        groupOf(intent)?.let { group = it; pendingRow = rowOf(it) }
         keepGroup?.let { group = it; keepGroup = null }                // the language changed: the same group, not the first
-        intent.getStringExtra(QUERY)?.let { group = SEARCH; find.setText(it) }
+        intent.getStringExtra(QUERY)?.let { group = SEARCH; homeMode = false; find.setText(it) }
         load(false)
         watching = Store.watch(this) { runOnUiThread {
             val g = mine(group)
@@ -134,24 +144,46 @@ class BrowseActivity : Activity() {
             if (isList(group) && Store.playlist(this, group.removePrefix(PL)) == null) group = ALL
             val known = Store.playlists(this).map { it.id }.toSet()
             plData.keys.retainAll(known)                               // an edited list (same id) keeps its channels until read again
-            buildRail(); filter()
+            if (homeShown()) refreshHome() else { buildRail(); filter() }
         } }
     }
 
     override fun onNewIntent(i: Intent) {
         super.onNewIntent(i)
-        countryOf(i)?.takeIf { it != cc }?.let { cc = it; group = ALL; load(false) }
-        groupOf(i)?.let { find.setText(""); pick(it) }
-        i.getStringExtra(QUERY)?.let { group = SEARCH; others = emptyList(); otherState = IDLE; find.setText(it); buildRail(); filter() }
+        countryOf(i)?.takeIf { it != cc }?.let { cc = it; group = ALL; homeMode = true; load(false) }
+        groupOf(i)?.let {
+            find.setText("")
+            if (catRes != null) { homeMode = true; group = ALL; filter(); refreshHome(); if (!shelves.focusRow(rowOf(it))) shelves.focusFirst() } else pick(it)
+        }
+        i.getStringExtra(QUERY)?.let { group = SEARCH; homeMode = false; others = emptyList(); otherState = IDLE; find.setText(it); buildRail(); filter() }
     }
 
     override fun onResume() {
-        super.onResume(); cards.notifyDataSetChanged(); if (mine(group) != null) { buildRail(); filter() }
+        super.onResume(); cards.notifyDataSetChanged(); if (homeShown()) shelves.refreshCards() else if (mine(group) != null) { buildRail(); filter() }
         upd.check({ askUpdate(it) }, { updating(it) })
     }
 
     /** A group link (a pin on the home screen): the favourites or one of the groups, when it still exists. */
     private fun groupOf(i: Intent?) = Pins.groupId(i?.data)?.let { if (it == Store.FAV) FAVS else if (Store.group(this, it) != null) MINE + it else null }
+
+    private fun rowOf(g: String) = if (g == FAVS) "fav" else "g:" + g.removePrefix(MINE)
+    private fun homeShown() = homeMode && catRes != null
+
+    /** Favourites, the person's groups, the country's categories, the rest: one shelf each, none empty. */
+    private fun homeRows(): List<Shelves.Row> {
+        val res = catRes ?: return emptyList()
+        val out = ArrayList<Shelves.Row>()
+        Store.favourites(this).byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("fav", getString(R.string.favourites), it, R.drawable.ic_star)) }
+        for (g in Store.groups(this)) g.channels.byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("g:${g.id}", g.name, it, R.drawable.ic_folder)) }
+        val lang = Lang.code()
+        res.sections.forEach { out.add(Shelves.Row("c:${it.cat.id}", it.cat.title(lang), it.items)) }
+        if (res.others.isNotEmpty()) out.add(Shelves.Row("other", getString(R.string.others), res.others))
+        return out
+    }
+    private fun refreshHome() { if (homeShown()) shelves.set(homeRows()) }
+
+    /** Back from the list view to the shelves. */
+    private fun goHome() { homeMode = true; group = ALL; filter(); refreshHome(); shelves.focusFirst() }
 
     /** The group of the person's that [g] shows ([Store.FAV] for the favourites), or null for a category of the country. */
     private fun mine(g: String) = if (g == FAVS) Store.FAV else if (g.startsWith(MINE)) g.removePrefix(MINE) else null
@@ -181,21 +213,67 @@ class BrowseActivity : Activity() {
     private fun load(fresh: Boolean) {
         Store.setCountry(this, cc)
         if (fresh && isList(group)) loadList(group.removePrefix(PL), true)   // Refresh on a playlist reads that link again too
-        all = emptyList(); failed = false; loading = true
+        all = emptyList(); failed = false; loading = true; catRes = null
         chrome()
+        val country = cc
         io.execute {
-            val list = Catalog.channels(this, cc, fresh)
-            val name = Catalog.countries(this).firstOrNull { it.code == cc }?.let { "${it.flag} ${it.name}" } ?: cc.uppercase()
-            val ok = list.isNotEmpty() || java.io.File(filesDir, "m3u-$cc.m3u").exists()
-            main.post {
-                if (isDestroyed) return@post
-                all = list.byChannel(); failed = !ok; countryName = name; loading = false
+            var last = -1
+            val iptv = Catalog.iptv(this, country, fresh) { got, total ->      // a bar while the list comes in (total -1: not told: the spinner stays)
+                val pct = if (total > 0) (got * 100 / total).toInt().coerceAtMost(100) else -1
+                if (pct != last) { last = pct; main.post { if (loading && country == cc) state.loading(progressWords(pct), pct) } }
+            }
+            // the first screen is iptv-org's list alone (one request); the providers' channels and the categories need more requests
+            // (a slow TV measured them at most of the old 5 s wait), so they come after, unless all kept: then nothing to wait for
+            val quick = !fresh && Providers.warm(this, country) && Categories.current(this, country) != null && !Categories.stale(this, country)
+            var list = if (quick) Providers.merge(this, country, iptv, false) else iptv
+            var doc = Categories.current(this, country)               // the kept copy at once; the site is asked only when there is none (or Refresh)
+            val known = Catalog.young(this, "countries.json")
+            fun nameOf() = Catalog.countries(this).firstOrNull { it.code == country }?.let { "${it.flag} ${it.name}" } ?: country.uppercase()
+            fun full(l: List<Channel>, d: Categories.Doc?) = if (d == null || d.also.isEmpty()) l else l + Categories.alsoKept(this, country, d)   // + the other countries' channels the file asks for (kept copy)
+            fun show(l: List<Channel>, name: String, res: Categories.Result?, first: Boolean) = main.post {
+                if (isDestroyed || country != cc) return@post          // gone, or another country was chosen meanwhile
+                all = l.byChannel(); failed = l.isEmpty() && !java.io.File(filesDir, "m3u-$country.m3u").exists(); countryName = name; loading = false; catRes = res
+                if (homeShown() && group != SEARCH) group = ALL
                 if (mine(group) == null && !isList(group) && group != ALL && group != SEARCH && all.none { it.first().group == group }) group = ALL
                 buildRail(); filter()
-                if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
+                if (!first) { refreshHome(); return@post }              // the person may be on a card already: it keeps the focus
+                if (homeShown()) {
+                    refreshHome()
+                    val p = pendingRow; pendingRow = null
+                    if (p == null || !shelves.focusRow(p)) shelves.focusFirst()
+                } else if (!find.hasFocus()) grid.post { (grid.getChildAt(0) ?: rail.getChildAt(0))?.requestFocus() }
+            }
+            if (quick) {
+                val l2 = full(list, doc)
+                val res = doc?.let { Categories.categorize(it, l2.byChannel()) }
+                show(l2, nameOf(), res, true)
+            } else {
+                main.post { if (loading && country == cc) state.loading(getString(R.string.loading_read), 100) }
+                if (iptv.isNotEmpty()) { show(list, if (known) nameOf() else country.uppercase(), doc?.let { Categories.categorize(it, list.byChannel()) }, true) }
+                val cats = if (doc == null || fresh) java.util.concurrent.CompletableFuture.runAsync { Categories.refresh(this, country, fresh) } else null   // beside the providers
+                list = Providers.merge(this, country, iptv, fresh)
+                if (cats != null) { cats.join(); doc = Categories.current(this, country) }
+                val l2 = full(list, doc)
+                val res = doc?.let { Categories.categorize(it, l2.byChannel()) }
+                show(l2, nameOf(), res, false)
+            }
+            // the other countries' channels the file asks for: kept ones were on the screen already; the index (3 MB, once a day) comes last, so it never delays the first screen
+            Categories.current(this, country)?.takeIf { Categories.alsoStale(this, country, it) }?.let { d ->
+                if (Categories.alsoFetch(this, country, d).isNotEmpty()) {
+                    val l2 = full(list, d); val res = Categories.categorize(d, l2.byChannel())
+                    show(l2, nameOf(), res, false)
+                }
+            }
+            if (Categories.stale(this, country)) {                    // a day old: the site's newer file is used next time, or now if it changed what is shown
+                Categories.refresh(this, country)
+                val now = Categories.current(this, country)
+                if (now != null && now !== doc) { val r2 = Categories.categorize(now, full(list, now).byChannel()); main.post { if (!isDestroyed && country == cc) { catRes = r2; refreshHome() } } }
             }
         }
     }
+
+    /** "Downloading the channel list… 42%" for the bar; no number before the size is told. */
+    private fun progressWords(pct: Int) = if (pct < 0) getString(R.string.loading) else getString(R.string.loading_pct, pct)
 
     private fun buildRail() {
         val hadFocus = rail.hasFocus()
@@ -213,6 +291,7 @@ class BrowseActivity : Activity() {
             addView(TvUi.text(this@BrowseActivity, getString(R.string.app_name), 0f, TvUi.TEXT, true).apply {
                 setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.tv_head_name)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         })
+        if (catRes != null) add(TvUi.row(this, R.drawable.ic_home, getString(R.string.home)) { goHome() }, false)   // back to the shelves
         add(TvUi.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
         val favs = Store.favourites(this).byChannel().size
         add(TvUi.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
@@ -266,7 +345,7 @@ class BrowseActivity : Activity() {
     }
 
     private fun pick(g: String) {
-        group = g; buildRail(); filter()
+        homeMode = false; group = g; buildRail(); filter()
         intoGrid()
     }
 
@@ -340,7 +419,7 @@ class BrowseActivity : Activity() {
 
     /** The first row of the side list: the field gets the focus and the keyboard, and results come from every country. */
     private fun enterSearch() {
-        group = SEARCH; others = emptyList(); otherState = IDLE
+        homeMode = false; group = SEARCH; others = emptyList(); otherState = IDLE
         find.setText("")
         buildRail(); filter()
         find.requestFocus()
@@ -377,14 +456,18 @@ class BrowseActivity : Activity() {
     /** One state for the whole screen while there is no list to show: loading (a spinner), offline or empty (the words, Retry, Country). */
     private fun chrome() {
         val on = loading || all.isEmpty() && mine(group) == null && !isList(group) && group != SEARCH
-        TvUi.show(state, on); TvUi.show(content, !on)
+        val home = !on && homeShown()
+        TvUi.show(state, on); TvUi.show(content, !on && !home); TvUi.show(shelves.view, home)
         if (!on) return
         if (loading) state.loading(getString(R.string.loading)) else state.message(getString(if (failed) R.string.offline else R.string.none_here))
     }
 
 
-    fun play(ch: List<Channel>) {
-        Lineup.set(shown.filter { it.first().id != HDR }, title.text.toString())
+    fun play(ch: List<Channel>) = play(ch, shown.filter { it.first().id != HDR }, title.text.toString())
+
+    /** [ch] with ▲▼ in the player stepping through [lineup] (the shelf or list it was chosen from). */
+    fun play(ch: List<Channel>, lineup: List<List<Channel>>, name: String) {
+        Lineup.set(lineup, name)
         startActivity(Intent(Intent.ACTION_VIEW, Pins.link(ch.first().id)).setClass(this, PlayActivity::class.java))
     }
 
@@ -431,6 +514,53 @@ class BrowseActivity : Activity() {
                 cards.notifyDataSetChanged()                          // the cards' "on now" lines, now known
             }
         }
+    }
+
+    /** Everything that is not "watch a channel", out of the way of the shelves: opened by "⋯" or the Menu key. */
+    private fun homeMenu() {
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 380)
+        TvUi.sheetTitle(box, getString(R.string.more))
+        fun item(icon: Int, label: String, count: String = "", go: () -> Unit) = box.addView(TvUi.row(this, icon, label, count) { dlg.dismiss(); go() })
+        item(R.drawable.ic_tv, getString(R.string.all_channels), "${all.size}") { pick(ALL) }
+        item(R.drawable.ic_folder, getString(R.string.my_groups), Store.groups(this).size.takeIf { it > 0 }?.toString() ?: "") { myGroups() }
+        item(R.drawable.ic_plus, getString(R.string.new_group)) {
+            ask(getString(R.string.new_group), "") { Store.addGroup(this, it); Toast.makeText(this, R.string.group_made, Toast.LENGTH_LONG).show() }
+        }
+        val lists = Store.playlists(this)
+        if (lists.isNotEmpty()) item(R.drawable.ic_files, getString(R.string.your_lists), "${lists.size}") { playlists() }
+        val rem = Reminders.all(this).size
+        if (rem > 0) item(R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }
+        item(R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }
+        item(R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() }
+        item(R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }
+        dlg.show()
+        box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
+    }
+
+    /** The favourites and the person's groups: OK on one opens its menu (open, pin, rename, delete). */
+    private fun myGroups() {
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 380)
+        TvUi.sheetTitle(box, getString(R.string.my_groups))
+        val favs = Store.favourites(this).byChannel().size
+        box.addView(TvUi.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { dlg.dismiss(); groupMenu(Store.FAV) })
+        for (g in Store.groups(this)) {
+            val n = g.channels.byChannel().size
+            box.addView(TvUi.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { dlg.dismiss(); groupMenu(g.id) })
+        }
+        box.addView(TvUi.row(this, R.drawable.ic_plus, getString(R.string.new_group)) {
+            dlg.dismiss(); ask(getString(R.string.new_group), "") { Store.addGroup(this, it); Toast.makeText(this, R.string.group_made, Toast.LENGTH_LONG).show(); myGroups() }
+        })
+        dlg.show()
+        box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
+    }
+
+    /** The person's own m3u links, one row each. */
+    private fun playlists() {
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 380)
+        TvUi.sheetTitle(box, getString(R.string.your_lists))
+        for (l in Store.playlists(this)) box.addView(TvUi.row(this, R.drawable.ic_files, l.name) { dlg.dismiss(); pick(PL + l.id) })
+        dlg.show()
+        box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
     }
 
     private fun langName(l: String) = when (l) { "vi" -> "Tiếng Việt"; "en" -> "English"; else -> getString(R.string.lang_auto) }
@@ -613,7 +743,7 @@ class BrowseActivity : Activity() {
                         val k = now[i]; val row = h.itemView as LinearLayout
                         (row.getChildAt(0) as TextView).text = "${k.flag}  ${k.name}"
                         row.isActivated = k.code == cc
-                        row.setOnClickListener { dlg.dismiss(); if (k.code != cc) { cc = k.code; group = ALL; find.setText(""); load(false) } }
+                        row.setOnClickListener { dlg.dismiss(); if (k.code != cc) { cc = k.code; group = ALL; homeMode = true; find.setText(""); load(false) } }
                     }
                 }
                 list.adapter = ad
@@ -659,10 +789,19 @@ class BrowseActivity : Activity() {
 
     override fun onKeyDown(k: Int, e: KeyEvent): Boolean {
         val v0 = currentFocus
+        if (homeShown() && shelves.view.visibility == View.VISIBLE) {      // the shelves: their own D-pad; Menu on a card is its menu (hold OK is the card's own long click), Menu elsewhere the "⋯" menu
+            val ch = shelves.channelAt(v0)
+            when {
+                k == KeyEvent.KEYCODE_MENU -> { if (ch != null) actions(ch) else homeMenu(); return true }
+                k == KeyEvent.KEYCODE_BACK && e.repeatCount == 0 && shelves.toTop() -> return true
+                (k == KeyEvent.KEYCODE_DPAD_UP || k == KeyEvent.KEYCODE_DPAD_DOWN || k == KeyEvent.KEYCODE_DPAD_LEFT || k == KeyEvent.KEYCODE_DPAD_RIGHT) && shelves.key(k) -> return true
+            }
+        }
         if (k == KeyEvent.KEYCODE_BACK && e.repeatCount == 0 && v0 != null && content.visibility == View.VISIBLE && !rail.hasFocus()) {
             if (group == SEARCH && find.hasFocus() && find.text.isNotEmpty()) { hideKeys(find); firstCard(); return true }   // the field -> its results, then the side list
             (0 until rail.childCount).map { rail.getChildAt(it) }.firstOrNull { it.isActivated }?.let { it.requestFocus(); return true }
         }
+        if (k == KeyEvent.KEYCODE_BACK && e.repeatCount == 0 && catRes != null && !homeMode && content.visibility == View.VISIBLE) { goHome(); return true }   // the list view -> the shelves
         if (k == KeyEvent.KEYCODE_DPAD_RIGHT && v0 != null && rail.hasFocus() && shown.isNotEmpty()) {   // into the grid, the open group made sure of
             (v0.getTag(TAG_GROUP) as? String)?.let { if (it != group) select(it) }
             intoGrid(); return true

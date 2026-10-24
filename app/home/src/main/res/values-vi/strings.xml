@@ -31,7 +31,6 @@
     <string name="clock24">Đồng hồ 24 giờ</string>
     <string name="greet">Lời chào</string>
     <string name="motion">Hiệu ứng chuyển động</string>
-    <string name="more">Ứng dụng yêu thích, ứng dụng ẩn và thêm hình nền: trên điện thoại hoặc máy tính, tab Thiết lập → TV Home.</string>
     <string name="done">Xong</string>
     <string name="wall_night">Đêm</string>
     <string name="wall_ocean">Biển</string>
@@ -89,7 +88,7 @@
     <string name="w_cpu_need_adb">TV Setup chưa có ADB</string>
     <string name="w_widgets">Widget</string>
     <string name="w_net">Mạng</string>
-    <string name="c_sub">Đổi ở đây, thấy ngay bên trái</string>
+    <string name="c_sub">Áp dụng ngay · có mã QR để chỉnh bằng điện thoại</string>
     <string name="c_look">Hiển thị</string>
     <string name="c_system_sub">RAM, bộ nhớ, mạng</string>
     <string name="c_usage_sub">app dùng nhiều, giới hạn</string>
@@ -165,15 +164,15 @@
     <string name="wx_rain">Mưa</string>
     <string name="wx_snow">Tuyết</string>
     <string name="wx_storm">Dông</string>
-    <string name="w_order_hint">Nút bên phải mỗi thẻ để đổi chỗ: bấm nút đó, rồi Lên / Xuống, rồi OK.</string>
+    <string name="w_order_hint">Nút ⌃⌄ đổi chỗ thẻ, nút To / Nhỏ đổi cỡ.</string>
     <string name="c_move">Đổi chỗ</string>
     <string name="c_moving">Lên / Xuống, rồi OK</string>
     <string name="w_layout">Kết quả</string>
+    <string name="w_layout_empty">Chưa bật widget nào: bật ở bên dưới</string>
     <string name="c_size_big">To</string>
     <string name="c_size_small">Nhỏ</string>
     <string name="c_size">Cỡ</string>
     <string name="c_waits">chưa hiện</string>
-    <string name="c_size_hint">Nút To / Nhỏ chọn cỡ thẻ. Thẻ to có một cột, hai thẻ nhỏ chung một cột.</string>
     <string name="c_lang">Ngôn ngữ</string>
     <string name="c_motion">Mức chuyển động</string>
     <string name="c_motion_auto">Tự động</string>
@@ -238,7 +237,7 @@
     <string name="power_keep">Thôi, giữ bật</string>
     <string name="power_missing">Cần TV Setup mới nhất trên TV này</string>
     <string name="c_home_screen">Màn hình chính</string>
-    <string name="c_home_screen_sub">Dùng launcher khác: TV Setup tắt launcher gốc và canh chừng việc đổi</string>
+    <string name="c_home_screen_sub">Dùng launcher khác (cần TV Setup)</string>
     <string name="c_home_screen_need">Cần app TV Setup · Downloader mã %1$s</string>
     <string name="power_needs_setup">Nút nguồn cần app TV Setup trên TV</string>
     <string name="power_setup_code">Cài bằng Downloader: mã %1$s</string>
@@ -277,7 +276,7 @@
     <string name="k_none">Không</string>
     <string name="k_need_setup">Chỉ chạy khi đang ở TV Home — cài TV Setup để dùng mọi nơi</string>
     <string name="k_need_adb">TV Setup cần ADB (gỡ lỗi USB) để dùng phím ngoài TV Home.</string>
-    <string name="k_everywhere">Phím màu và nút điều khiển đã hỏng chạy mọi app. Phím 0-9 chỉ ở TV Home.</string>
+    <string name="k_everywhere">Phím màu, nút hỏng: mọi app. Phím 0-9: chỉ TV Home.</string>
     <string name="k_auto_need_setup">Cần TV Setup trên TV này — hãy cài để dùng.</string>
     <string name="k_auto_note">Mỗi lần bật một lần. Không mở nếu TV đã vào app khác.</string>
     <string name="k_red">Phím đỏ</string>
@@ -301,7 +300,7 @@
     <string name="err_share">Chia sẻ</string>
     <string name="err_repeat">lặp lại %d lần</string>
     <string name="mg_row">Quản lý từ điện thoại</string>
-    <string name="mg_row_sub">Một mã cho mọi cài đặt</string>
+    <string name="mg_row_sub">App yêu thích, app ẩn, ảnh và mọi cài đặt</string>
     <string name="mg_title">Quản lý từ điện thoại</string>
     <string name="mg_step">1. Mở camera điện thoại, quét mã này\n2. Đổi cài đặt bất kỳ trong trang vừa mở</string>
     <string name="mg_connected">Đã có điện thoại kết nối</string>
@@ -314,14 +313,17 @@
     <string name="pk_live">Trực tiếp</string>
     <string name="pk_none">Không</string>
     <string name="pk_none_found">Không thấy gì</string>
-    <string name="pk_grid_hint">Bấm một ô để đưa lên màn hình chính hoặc gỡ xuống.</string>
+    <string name="pk_grid_hint">Thêm hoặc gỡ ô trên màn hình chính.</string>
     <string name="pk_target_hint">Chọn thứ sẽ mở: một app, lối tắt của app hoặc ô trực tiếp.</string>
     <string name="pk_pins_need_home">Chỉ đọc được lối tắt khi TV Home là màn hình chính.</string>
     <string name="c_add_home">Thêm vào màn hình chính</string>
     <string name="qk_title">Phím nhanh</string>
-    <string name="qk_on">Bật phím</string>
-    <string name="qk_auto_on">Mở khi bật TV</string>
+    <string name="qk_on">Phím nhanh: %1$s</string>
+    <string name="qk_auto_on">Mở app khi bật TV: %1$s</string>
+    <string name="qk_yes">Bật</string>
+    <string name="qk_no">Tắt</string>
     <string name="qk_power">Khi bật TV</string>
     <string name="qk_no_key">remote không có</string>
     <string name="c_quickkeys">Phím nhanh</string>
+    <string name="pk_loading">Đang tải ứng dụng…</string>
 </resources>

@@ -20,6 +20,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 
 /**
@@ -155,15 +156,23 @@ object TvUi {
             if (icon != 0) { setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0); compoundDrawablePadding = dp(c, 8).toInt() }
         }
 
-    /** A dialog box, the look all of them share: [theme] the app's transparent dialog style, [w] dp wide. Back closes it. */
+    /**
+     * A dialog box, the look all of them share: [theme] the app's transparent dialog style, [w] dp wide. Back closes it.
+     * The rows scroll once they are taller than the screen: Android caps the window there, and without the scroll the last
+     * rows (the buttons) were squashed until their words vanished (a group list of a big playlist, a 540 dp tall TV).
+     */
     fun sheet(c: Context, theme: Int, w: Int = 380): Pair<Dialog, LinearLayout> {
         val dlg = Dialog(c, theme)
         val box = LinearLayout(c).apply {
             orientation = LinearLayout.VERTICAL
             val p = dp(c, 14).toInt(); setPadding(p, p, p, p)
-            background = round(SHEET_FILL, dp(c, R_SHEET), 1, SHEET_EDGE)
         }
-        dlg.setContentView(box, ViewGroup.LayoutParams(dp(c, w).toInt(), -2))
+        val scroll = ScrollView(c).apply {
+            isVerticalScrollBarEnabled = false
+            background = round(SHEET_FILL, dp(c, R_SHEET), 1, SHEET_EDGE); clipToOutline = true   // the corners stay put while the rows scroll
+            addView(box, ViewGroup.LayoutParams(-1, -2))
+        }
+        dlg.setContentView(scroll, ViewGroup.LayoutParams(dp(c, w).toInt(), -2))
         return dlg to box
     }
 
@@ -178,11 +187,14 @@ object TvUi {
 
 /**
  * The whole screen's own state while there is nothing to list: a spinner while it loads, then the words and the buttons
- * ([buttons]: add the app's, the first is focused). Over [TvUi.BG], centred on the screen. Words: [loading] / [message].
+ * ([buttons]: add the app's, the first is focused), or a bar when the size of the wait is known. Over [TvUi.BG], centred on the screen. Words: [loading] / [message].
  */
 class TvState(c: Context, accent: Int = TvUi.ACCENT) : FrameLayout(c) {
     private val spin = ProgressBar(c).apply { isIndeterminate = true; indeterminateTintList = ColorStateList.valueOf(accent) }
     private val words = TvUi.text(c, "", TvUi.SP_STATE, TvUi.DIM).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.2f) }
+    private val bar = ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {   // a wait with a known size: how far it is
+        max = 100; progressTintList = ColorStateList.valueOf(accent); progressBackgroundTintList = ColorStateList.valueOf(TvUi.FIELD_REST); visibility = View.GONE
+    }
     val buttons = LinearLayout(c).apply { gravity = Gravity.CENTER }
 
     init {
@@ -191,6 +203,7 @@ class TvState(c: Context, accent: Int = TvUi.ACCENT) : FrameLayout(c) {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
             addView(spin, LinearLayout.LayoutParams(TvUi.dp(c, 44).toInt(), TvUi.dp(c, 44).toInt()).apply { bottomMargin = TvUi.dp(c, 16).toInt() })
             addView(words, LinearLayout.LayoutParams(TvUi.dp(c, 520).toInt(), -2))
+            addView(bar, LinearLayout.LayoutParams(TvUi.dp(c, 320).toInt(), TvUi.dp(c, 6).toInt()).apply { topMargin = TvUi.dp(c, 14).toInt() })
             addView(buttons, LinearLayout.LayoutParams(-2, -2).apply { topMargin = TvUi.dp(c, 16).toInt() })
         }, LayoutParams(-1, -1))
     }
@@ -198,12 +211,15 @@ class TvState(c: Context, accent: Int = TvUi.ACCENT) : FrameLayout(c) {
     /** Add a button after the others, 12 dp from them. */
     fun add(b: View) = buttons.addView(b, LinearLayout.LayoutParams(-2, -2).apply { if (buttons.childCount > 0) marginStart = TvUi.dp(context, 12).toInt() })
 
-    /** Loading: the spinner and [words], no buttons. */
-    fun loading(s: String) { words.text = s; TvUi.show(spin, true); TvUi.show(buttons, false) }
+    /** Loading: the spinner and [words], no buttons; with [percent] (0-100) a bar under the words shows how far it is. */
+    fun loading(s: String, percent: Int = -1) {
+        words.text = s; TvUi.show(spin, true); TvUi.show(buttons, false)
+        TvUi.show(bar, percent >= 0); if (percent >= 0) bar.progress = percent.coerceAtMost(100)
+    }
 
     /** Nothing to show and why: the words, the buttons; the first button gets the focus unless the screen has it already. */
     fun message(s: String) {
-        words.text = s; TvUi.show(spin, false); TvUi.show(buttons, true)
+        words.text = s; TvUi.show(spin, false); TvUi.show(bar, false); TvUi.show(buttons, true)
         if (!hasFocus()) buttons.getChildAt(0)?.let { b -> b.post { b.requestFocus() } }
     }
 }
@@ -292,8 +308,8 @@ fun Context.pill(text: String, sp: Float = 16f, lead: Int? = null, trail: Int? =
     }
     minWidth = Math.ceil(paint.measureText(text).toDouble()).toInt() + dp(36)   // the words alone: icons are not counted at first (as before the move), pillText() counts them when the words change
     setOnFocusChangeListener { v, on ->
-        val g = if (on) TvUi.PILL_GROW else 1f
-        v.animate().scaleX(g).scaleY(g).setDuration(if (animate()) TvUi.MS_PILL else 0).withLayer().start(); if (on) focused(v)
+        // colour only (the state list above): a scale needs a hardware layer built on every focus, ~7x the CPU of a colour change on the target box
+        if (on) focused(v)
     }
     setOnClickListener { onClick() }
     layoutParams = LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) }

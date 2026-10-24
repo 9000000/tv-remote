@@ -40,7 +40,10 @@ class Pass(private val file: File) {
             return HttpServer.Response().apply {
                 status = 302
                 headers["Location"] = r.path + (if (rest.isEmpty()) "" else "?$rest")   // the key out of the address bar and the history
-                headers["Set-Cookie"] = "$COOKIE=$key; Path=/; HttpOnly; SameSite=Strict"
+                // Lax, not Strict: a link opened from another app (a QR read by a camera, a chat) is a cross-site navigation, and Strict
+                // drops a cookie set on its redirect, so the page after the 302 came back 403. Lax still keeps the cookie off cross-site
+                // POSTs and fetches (every state change is one), which is what protects the TVs' keys.
+                headers["Set-Cookie"] = "$COOKIE=$key; Path=/; HttpOnly; SameSite=Lax"
             }
         }
         if (same(r.cookie(COOKIE)) || same(r.headers[HEADER])) return null

@@ -86,6 +86,7 @@ const table = Table({
 });
 
 function post(t) {
+  if (!G.over && !t.seats.some((s) => t.human(s) && TY.alive(G, s))) { G.over = true; G.reason = 'rounds'; }   // every person is bankrupt: no sitting through bots playing on
   if (G.over) { finish(t); return; }
   t.turnTo(G.p);
   if (afk[G.p]) t.left = 10;
@@ -133,6 +134,8 @@ function view(t, s) {
 const POS = (id) => (id <= 10 ? [11, 11 - id] : id <= 20 ? [21 - id, 1] : id <= 30 ? [1, id - 19] : [id - 29, 11]);
 const ICON = { go: '➡', jail: '🔒', park: '🅿', gojail: '👮', chance: '❓', chest: '🎁', tax: '💸', rail: '🚆', util: '💡' };
 const tiles = [], tcache = [];
+const SND = { roll: 'dice', buy: 'score', build: 'pickup', salary: 'pickup', freecard: 'pickup', rent: 'hit', tax: 'bad', fine: 'bad', jail: 'bad', dbl3: 'bad', card: 'card', sell: 'ui', mort: 'ui', redeem: 'ui', broke: 'boom' };
+const PRIO = ['ui', 'card', 'dice', 'pickup', 'score', 'hit', 'bad', 'boom'];      // later = louder news
 function build() {
   const board = $('#board');
   for (let id = 0; id < 40; id++) {
@@ -141,7 +144,7 @@ function build() {
     const e = h('div', `tile ${side} k-${T.t}`); e.style.gridRow = r; e.style.gridColumn = c;
     if (T.t === 'prop') e.style.setProperty('--g', TY.GROUP_COLORS[T.g]);
     const band = h('i', 'band'), inn = h('div', 'in'), tk = h('span', 'tk');
-    inn.append(h('b', 'nm', tname(id)));
+    inn.append(h('b', 'nm', T.t === 'prop' && (side === 'sl' || side === 'sr') ? T.sh : tname(id)));   // the side tiles are narrow (a band takes one edge): the short name keeps 3 lines from spilling out
     if (ICON[T.t]) inn.append(h('u', 'ic', ICON[T.t]));
     if (T.price) inn.append(h('small', 'pr', k(T.price)));
     if (T.t === 'tax') inn.append(h('small', 'pr', k(T.n)));
@@ -201,6 +204,8 @@ function draw(t) {
   const last = G.log.slice(-5).reverse();
   $('#say').textContent = t.done ? '' : last.length ? W.ev[last[0].k](last[0], nm, T) : '';
   $('#log').replaceChildren(...last.slice(1).map((e, i) => h('div', 'l' + i, W.ev[e.k](e, nm, T))));
+  const fresh = G.log.filter((e) => e.seq > lastSeq).map((e) => SND[e.k]).filter(Boolean);   // one sound per redraw: the most important new event
+  if (fresh.length && !t.done) Sfx.play(fresh.sort((x, y) => PRIO.indexOf(y) - PRIO.indexOf(x))[0]);
   lastSeq = G.seq;
   $('#msg').replaceChildren();
   const ov = $('#over');

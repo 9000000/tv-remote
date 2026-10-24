@@ -19,10 +19,12 @@ import java.util.Locale
  *   memory        a notice over whatever is on when the TV's memory stays fuller than a set share, to free it or not
  *   one heavy app a video app left for another is closed after 15 s, for TVs with little RAM ([Heavy]); off until turned on
  *   app locks     a PIN asked over an app before it can be used, again each time another app was opened ([PinActivity])
+ *   schedules     an app that may be opened only on some days in a window of the day (Mon–Fri 16:00–18:00), with optional minutes inside it; or never
  *
  * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
  * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
- * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)}, heavy: {on, keep: [pkg], log: [{pkg, label, at}]}, lock: {apps: [pkg], salt, hash (of the PIN), len (its digits)} }.
+ * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)}, heavy: {on, keep: [pkg], log: [{pkg, label, at}]}, lock: {apps: [pkg], salt, hash (of the PIN), len (its digits)},
+ * sched: {pkg: {days: [1..7, Monday = 1], from, to, max (minutes inside the window, 0 = no cap), block (never: days and window ignored)}} }.
  * The remotes reach it through [RulesReceiver] (phone, computer: over ADB) or RemoteService (the TV's own page).
  */
 internal object Rules {
@@ -57,6 +59,7 @@ internal object Rules {
      * One action from a remote, then the state they show. Actions ("do"): sleep {minutes} (0 cancels), sleep_add {minutes},
      * bedtime {on, ranges: [{from, to}] ("22:00"), or from, to for one}, snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
      * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list),
+     * sched {pkg, days: [1..7], from, to, max, or block: true; on: false removes} (an app opened only on those days inside the window, at most max minutes in it),
      * ram {on, pct} (the memory notice, at pct% used), heavy {on}, heavy_keep {pkg, on}, heavy_clear (the list of closes), pin {pin} (4 to 8 digits), lock {pkg, on} (a PIN must be set first).
      * An empty "do" only reads.
      */
@@ -110,6 +113,16 @@ internal object Rules {
                 val apps = locked(o).toMutableList().apply { remove(pkg); if (d.optBoolean("on")) add(pkg) }
                 lock.put("apps", JSONArray(apps))
             }
+            "sched" -> {                                               // on: false takes the schedule back
+                val pkg = d.optString("pkg")
+                if (!PKG.matches(pkg) || pkg == SELF) throw IllegalArgumentException("bad package name")
+                val all = o.optJSONObject("sched") ?: JSONObject()
+                if (d.optBoolean("on", true)) {
+                    if (!all.has(pkg) && all.length() >= SCHED_MAX) throw IllegalArgumentException("too many schedules")
+                    all.put(pkg, clean(d))
+                } else all.remove(pkg)
+                o.put("sched", all)
+            }
             "snooze" -> o.put("snooze_until", if (minutes > 0) now + minutes * 60_000L else 0L)
             "limit", "extra" -> {
                 val pkg = d.optString("pkg")
@@ -128,6 +141,20 @@ internal object Rules {
             else -> throw IllegalArgumentException("unknown action")
         }
         return true
+    }
+
+    const val SCHED_MAX = 50
+
+    /** One schedule as stored: days sorted and unique, padded times, the cap in range; a bad one throws, so nothing odd is kept. */
+    internal fun clean(d: JSONObject): JSONObject {
+        if (d.optBoolean("block")) return JSONObject().put("block", true)
+        val given = d.optJSONArray("days") ?: JSONArray()
+        val days = java.util.TreeSet<Int>()
+        for (i in 0 until given.length()) days.add(given.optInt(i).also { if (it !in 1..7) throw IllegalArgumentException("bad day") })
+        if (days.isEmpty()) throw IllegalArgumentException("no days")
+        val from = d.optString("from"); val to = d.optString("to")
+        if (!HHMM.matches(from) || !HHMM.matches(to) || pad(from) == pad(to)) throw IllegalArgumentException("bad time")   // the same time twice is never a window
+        return JSONObject().put("days", JSONArray(days.toList())).put("from", pad(from)).put("to", pad(to)).put("max", d.optInt("max").coerceIn(0, 24 * 60))
     }
 
     /** At most 8 {from, to} ranges ("H:MM" padded to "HH:MM"), each with a "max" percent when [withMax]; a bad time throws. */
@@ -199,6 +226,45 @@ internal object Rules {
 
     private fun pad(hhmm: String): String = hhmm.split(":").let { it[0].padStart(2, '0') + ":" + it[1] }
 
+    /** "Mon – Fri", "Mon, Wed, Sun", "Every day": the days of a schedule in a sentence (the page's dayText does the same). */
+    fun dayText(days: JSONArray?): String {
+        val list = (0 until (days?.length() ?: 0)).map { days!!.optInt(it) }
+        if (list.size == 7) return dev.tvremote.core.T("auto.every_day")
+        val runs = ArrayList<IntArray>()
+        for (d in list) { val last = runs.lastOrNull(); if (last != null && last[1] == d - 1) last[1] = d else runs.add(intArrayOf(d, d)) }
+        fun n(d: Int) = dev.tvremote.core.T("auto.day_$d")
+        return runs.joinToString(", ") { (a, b) -> if (a == b) n(a) else n(a) + (if (b == a + 1) ", " else " – ") + n(b) }
+    }
+
+    /** The packages with a schedule. */
+    fun schedApps(o: JSONObject): List<String> = o.optJSONObject("sched")?.keys()?.asSequence()?.toList() ?: emptyList()
+
+    /** Monday = 1 … Sunday = 7 at [now] (Calendar counts from Sunday). */
+    private fun isoDay(now: Long): Int = (Calendar.getInstance().apply { timeInMillis = now }.get(Calendar.DAY_OF_WEEK) + 5) % 7 + 1
+
+    /**
+     * Whether [pkg] may be on screen at [now]: true with no schedule. A window that runs past midnight (22:00–02:00) belongs to the day
+     * it begins on, so Friday's still runs at 01:00 on Saturday.
+     */
+    fun allowedNow(o: JSONObject, pkg: String, now: Long): Boolean {
+        val s = o.optJSONObject("sched")?.optJSONObject(pkg) ?: return true
+        if (s.optBoolean("block")) return false
+        val days = s.optJSONArray("days") ?: return false
+        val today = isoDay(now)
+        val has = { day: Int -> (0 until days.length()).any { days.optInt(it) == day } }
+        val from = s.optString("from"); val to = s.optString("to")
+        if (!within(from, to, now)) return false
+        val past = Calendar.getInstance().apply { timeInMillis = now }.let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) } < from.split(":")[0].toInt() * 60 + from.split(":")[1].toInt()
+        return has(if (past) (today + 5) % 7 + 1 else today)       // before "from" inside a window = the night of the day before
+    }
+
+    /** The minutes [pkg] may use today before it is closed (extra grants not counted): the lowest of its daily limit and its schedule's cap inside the window; null for none. */
+    fun budget(o: JSONObject, pkg: String, now: Long): Int? {
+        val cap = o.optJSONObject("sched")?.optJSONObject(pkg)?.optInt("max")?.takeIf { it > 0 && allowedNow(o, pkg, now) }
+        val limit = o.optJSONObject("limits")?.optInt(pkg)?.takeIf { it > 0 }
+        return if (cap != null && limit != null) minOf(cap, limit) else cap ?: limit
+    }
+
     /** Minutes of today granted on top of [pkg]'s limit. */
     fun extra(o: JSONObject, pkg: String, now: Long): Int = o.optJSONObject("extra")?.optJSONObject(day(now))?.optInt(pkg) ?: 0
 
@@ -257,6 +323,11 @@ internal object Rules {
             for (pkg in l.keys()) limits.put(JSONObject().put("pkg", pkg).put("label", label(c, pkg)).put("minutes", l.optInt(pkg))
                 .put("extra", extra(o, pkg, now)).put("used", used.optLong(pkg) / 60))
         }
+        val sched = JSONArray()
+        o.optJSONObject("sched")?.let { l ->
+            for (pkg in l.keys()) sched.put(JSONObject(l.getJSONObject(pkg).toString()).put("pkg", pkg).put("label", label(c, pkg))
+                .put("now", allowedNow(o, pkg, now)).put("used", used.optLong(pkg) / 60).put("extra", extra(o, pkg, now)))
+        }
         val sleepAt = o.optLong("sleep_at").let { if (it > now) it else 0L }
         return JSONObject().put("ok", true).put("now", now).put("sleep_at", sleepAt)
             .put("bedtime", bedtime(o))
@@ -264,6 +335,7 @@ internal object Rules {
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
             .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake")).put("holdkeys", o.optBoolean("holdkeys")).put("heavy", heavy(c, o))
+            .put("sched", sched)
             .put("lock", JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true)
                 .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) })))
     }

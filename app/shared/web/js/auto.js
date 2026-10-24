@@ -82,6 +82,19 @@ function renderRules() {
         act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger', T('auto.unlock'))));
   }) : [UI.empty(T('auto.no_locks'))]));
   $('#lockacts').replaceChildren(act(T(lock.pin ? 'auto.pin_change' : 'auto.pin_first'), () => askPin()));
+  // schedules; a TV Setup older than them has no "sched" in its answer
+  const scheds = (r.sched || []).map((x) => {
+    const icon = appIcon(x.pkg); onMeta(x.pkg, (m) => icon.fill(m));
+    const name = x.label || appName(x.pkg), total = (x.max || 0) + (x.extra || 0);
+    const when = x.block ? T('auto.sched_never') : dayText(x.days) + ' · ' + x.from + ' – ' + x.to + (x.max ? ' · ' + T('auto.sched_max', { time: minsShort(x.max) }) : '');
+    const now = x.block ? '' : !x.now ? T('auto.sched_closed_now') : x.max ? T('auto.limit_used', { used: minsShort(x.used), total: minsShort(total) }) : T('auto.sched_open_now');
+    return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name }), el('small', { textContent: when }), now ? el('small', { textContent: now }) : null),
+      el('div', { className: 'acts' },
+        x.max && x.now ? act(T('auto.plus_30_today'), async () => { await loadRules({ do: 'extra', pkg: x.pkg, minutes: 30 }); toast(T('auto.plus_30_done', { name })); }) : null,
+        act('✏️', () => openSched(x), '', T('auto.edit')),
+        act('🗑', async () => { if (await ask(T('auto.sched_drop_ask', { name }), { ok: T('auto.sched_drop') })) await loadRules({ do: 'sched', pkg: x.pkg, on: false }); }, 'danger', T('auto.sched_drop'))));
+  });
+  $('#scheds').replaceChildren(...(scheds.length ? scheds : [UI.empty(T('auto.no_scheds'))]));
   // volume limits; a TV Setup older than them has no "volume" in its answer
   const vols = r.volume || [];
   $('#vols').replaceChildren(...(vols.length ? vols.map((v, i) => el('div', { className: 'item' },
@@ -190,6 +203,52 @@ $('#limitpkg').addEventListener('click', async () => {
 $('#limitf').addEventListener('submit', async (e) => {
   e.preventDefault(); const pkg = $('#limitpkg').value; if (!pkg) { $('#limitpkg').click(); return; }
   if (await loadRules({ do: 'limit', pkg, minutes: +$('#limitmin').value })) $('#limitdlg').close(), toast(T('auto.limit_added', { name: appName(pkg), time: mins(+$('#limitmin').value) }));
+});
+
+// ---------- schedules (Rules.kt "sched"): the days (Monday = 1) and the window of the day an app may be on, minutes inside it, or never ----------
+// literal ids, so the i18n test sees them used
+const dayName = (d) => [T('auto.day_1'), T('auto.day_2'), T('auto.day_3'), T('auto.day_4'), T('auto.day_5'), T('auto.day_6'), T('auto.day_7')][d - 1];
+const dayText = (days) => {
+  if (days.length === 7) return T('auto.every_day');
+  const runs = [];
+  for (const d of days) { const last = runs[runs.length - 1]; if (last && last[1] === d - 1) last[1] = d; else runs.push([d, d]); }
+  return runs.map(([a, b]) => a === b ? dayName(a) : dayName(a) + (b === a + 1 ? ', ' : ' – ') + dayName(b)).join(', ');
+};
+let schedDays = new Set(), schedBlock = false;
+function drawSched() {
+  $('#scheddays').replaceChildren(...[1, 2, 3, 4, 5, 6, 7].map((d) => el('button', { type: 'button', className: schedDays.has(d) ? 'on' : '', textContent: dayName(d),
+    onclick: () => { schedDays.has(d) ? schedDays.delete(d) : schedDays.add(d); drawSched(); } })));
+  $('#scheddays').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.classList.contains('on')));
+  $('#schedblock').replaceChildren(el('button', { type: 'button', className: schedBlock ? 'on' : '', textContent: T('scheddlg.block'), 'aria-pressed': schedBlock,
+    onclick: () => { schedBlock = !schedBlock; drawSched(); } }));
+  for (const id of ['scheddays', 'schedwin', 'schedmax']) put('#' + id, 'hidden', schedBlock);   // never: no days and no window to ask for
+}
+function openSched(x) {
+  schedDays = new Set(x && x.days || [1, 2, 3, 4, 5]); schedBlock = !!(x && x.block);
+  appChoice($('#schedpkg'), x ? x.pkg : '');
+  $('#schedfrom').value = x && x.from || '16:00'; $('#schedto').value = x && x.to || '18:00'; $('#schedmax').value = String(x && x.max || 0);
+  drawSched(); $('#scheddlg').showModal();
+}
+$('#schedadd').addEventListener('click', async () => {
+  if (RULES && RULES.sched === undefined && !await setupFor('schedule')) return;
+  if (!pickApps.length) await loadPickApps();
+  openSched(null);
+});
+$('#schedpkg').addEventListener('click', async () => {
+  const pkg = await chooseApp(T('scheddlg.title'), choosable(), $('#schedpkg').value);
+  if (pkg) appChoice($('#schedpkg'), pkg);
+});
+$('#schedf').addEventListener('submit', async (e) => {
+  e.preventDefault(); const pkg = $('#schedpkg').value; if (!pkg) { $('#schedpkg').click(); return; }
+  const d = { do: 'sched', pkg, on: true };
+  if (schedBlock) d.block = true;
+  else {
+    if (!schedDays.size) return toast(T('auto.sched_no_days'));
+    Object.assign(d, { days: [...schedDays].sort(), from: $('#schedfrom').value || '16:00', to: $('#schedto').value || '18:00', max: +$('#schedmax').value });
+    if (d.from === d.to) return toast(T('auto.times_differ'));
+  }
+  if (RULES && RULES.sched === undefined && !await setupFor('schedule')) return;
+  if (await loadRules(d)) $('#scheddlg').close(), toast(T('auto.sched_added', { name: appName(pkg) }));
 });
 
 // the apps to choose from: the ones with an icon on the TV's home screen

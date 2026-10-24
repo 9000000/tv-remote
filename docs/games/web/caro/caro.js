@@ -3,20 +3,20 @@
 // Rules and the bot are in ai.js (node-tested); this file is the screen, the pads and the turns.
 const VI = (navigator.language || '').toLowerCase().startsWith('vi');
 const T = VI ? {
-  title: 'Cờ caro', rule: 'Đủ 5 quân liền nhau là thắng', join: 'Quét mã QR để vào chơi', p: (n) => `Người chơi ${n}`, bot: 'Máy',
+  title: 'Cờ caro', rule: 'Đủ 5 quân liền nhau là thắng', lobbyHint: 'Hoặc nhấn OK để chơi với máy', p: (n) => `Người chơi ${n}`, bot: 'Máy',
   turn: (n) => `Lượt của ${n}`, yours: 'Đến lượt bạn', think: 'Máy đang nghĩ…', win: (n) => `${n} thắng!`, draw: 'Hòa!',
-  again: 'Nhấn Start trên điện thoại (hoặc OK) để chơi ván mới', watch: 'Hai người đang chơi, bạn xem nhé', watching: (n) => `${n} người đang xem`, first: 'đi trước',
+  again: 'Nhấn A hoặc Start trên điện thoại (hoặc OK) để chơi ván mới', watch: 'Hai người đang chơi, bạn xem nhé', watching: (n) => `${n} người đang xem`, first: 'đi trước',
 } : {
-  title: 'Gomoku', rule: 'Five in a row wins', join: 'Scan the QR code to join', p: (n) => `Player ${n}`, bot: 'Computer',
+  title: 'Gomoku', rule: 'Five in a row wins', lobbyHint: 'Or press OK to play the computer', p: (n) => `Player ${n}`, bot: 'Computer',
   turn: (n) => `${n}'s turn`, yours: 'Your turn', think: 'Thinking…', win: (n) => `${n} wins!`, draw: 'A draw!',
-  again: 'Press Start on a phone (or OK) for a new game', watch: 'Two players are playing, enjoy watching', watching: (n) => `${n} watching`, first: 'goes first',
+  again: 'Press A or Start on a phone (or OK) for a new game', watch: 'Two players are playing, enjoy watching', watching: (n) => `${n} watching`, first: 'goes first',
 };
 const N = Caro.N, BOT_MS = 500, HOLD_FIRST = 280, HOLD_EVERY = 90;
 const CUR = ['#0e9f4a', '#7c3aed'], XC = '#2563eb', OC = '#dc2626';       // cursors read on the tan board and next to both stones
 const pad = window.tvpad;
 const cv = document.getElementById('cv'), side = document.getElementById('side'), ctx = cv.getContext('2d');
 const g = { b: Caro.create(), seat: [1, 0], cur: [{ x: 7, y: 7 }, { x: 7, y: 7 }], starter: 0, ts: 0, last: -1, wl: null, over: false, wait: false, wins: [0, 0], draw: false };
-let botTimer = 0;
+let botTimer = 0, endAt = 0, lobbyDone = false;   // lobbyDone: nobody on a phone and OK was pressed: the remote plays the computer
 const holds = {};
 const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const players = () => (pad ? pad.players() : [1]);
@@ -50,13 +50,14 @@ function newGame() {
 function endTurnOrGame(i) {
   const s = g.ts;
   g.wl = Caro.winLine(g.b, i);
-  if (g.wl) { g.over = true; g.wins[s]++; players().forEach((p) => buzz(p, g.seat[s] === p ? 600 : 150)); }
-  else if (Caro.isFull(g.b)) { g.over = true; g.draw = true; }
-  if (!g.over) { g.ts ^= 1; buzz(g.seat[g.ts], 80); }
+  if (g.wl) { g.over = true; g.wins[s]++; Sfx.play(g.seat[s] ? 'win' : 'lose'); players().forEach((p) => buzz(p, g.seat[s] === p ? 600 : 150)); }
+  else if (Caro.isFull(g.b)) { g.over = true; g.draw = true; Sfx.play('bad'); }
+  if (g.over) endAt = performance.now();
+  else { g.ts ^= 1; buzz(g.seat[g.ts], 80); if (g.seat[g.ts] && !g.seat[s]) Sfx.play('turn'); }   // a bot just moved: tell the human it is their turn
   tell(); render(); maybeBot();
 }
 function place(i) {
-  g.b[i] = markOf(g.ts); g.last = i;
+  g.b[i] = markOf(g.ts); g.last = i; Sfx.play('place');
   endTurnOrGame(i);
 }
 function maybeBot() {
@@ -70,7 +71,7 @@ function maybeBot() {
 }
 
 function move(s, dx, dy) {
-  const c = g.cur[s]; c.x = Math.max(0, Math.min(N - 1, c.x + dx)); c.y = Math.max(0, Math.min(N - 1, c.y + dy)); render();
+  const c = g.cur[s]; c.x = Math.max(0, Math.min(N - 1, c.x + dx)); c.y = Math.max(0, Math.min(N - 1, c.y + dy)); Sfx.play('move'); drawBoard();   // the side panel is unchanged by a cursor step: no DOM rebuild per step
 }
 const DIR = { LEFT: [-1, 0], RIGHT: [1, 0], UP: [0, -1], DOWN: [0, 1] };
 function hold(s, btn, down, noStep) {      // a held D-pad repeats; noStep: the key already took the first step
@@ -84,9 +85,10 @@ function hold(s, btn, down, noStep) {      // a held D-pad repeats; noStep: the 
 function press(s, btn, down, noStep) {
   if (btn === 'START') { if (down && g.over) newGame(); return; }
   if (DIR[btn]) { hold(s, btn, down, noStep); return; }
+  if (btn === 'A' && down && g.over) { if (performance.now() - endAt > 1200) newGame(); return; }   // A also deals again, but not on the press that placed the winning stone
   if (btn !== 'A' || !down || g.over || g.wait || g.ts !== s || !g.seat[s]) return;
   const c = g.cur[s], i = c.y * N + c.x;
-  if (g.b[i]) buzz(g.seat[s], 40); else place(i);
+  if (g.b[i]) { buzz(g.seat[s], 40); Sfx.play('bad'); } else place(i);
 }
 
 if (pad) {
@@ -117,9 +119,10 @@ if (pad) {
   });
   pad.on('leave', ({ player }) => {
     const s = g.seat.indexOf(player);
-    if (s >= 0) { g.seat[s] = 0; Object.keys(holds).filter((k) => k[0] === String(s)).forEach((k) => hold(s, k.slice(1), false)); }
+    if (s >= 0) { g.seat[s] = 0; const w = players().find((q) => q !== player && !g.seat.includes(q)); if (w) g.seat[s] = w;   // a watcher sits down; else the computer plays on
+      Object.keys(holds).filter((k) => k[0] === String(s)).forEach((k) => hold(s, k.slice(1), false)); }
     if (!g.seat[0] && !g.seat[1]) { if (players().length) g.wait = true; else g.seat[0] = 1; }   // the remote takes seat 1 back
-    tell(); render(); maybeBot();
+    layouts(); tell(); render(); maybeBot();
   });
   pad.on('rename', () => render());
 }
@@ -135,7 +138,8 @@ function twice(src, dir) {
   return !!o && o.src !== src && now - o.t < 150;
 }
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { if (g.over) newGame(); else press(0, 'A', true); }
+  if (lobbyOn()) { e.preventDefault(); if (e.key === 'Enter' && !e.repeat && !g.wait) { lobbyDone = true; render(); } return; }   // the lobby takes the keys: OK starts against the computer
+  if (e.key === 'Enter') { if (g.over) { if (performance.now() - endAt > 1200) newGame(); } else press(0, 'A', true); }
   else if (KEY[e.key]) {
     e.preventDefault();
     if (e.repeat ? e.timeStamp - keyAt < HOLD_EVERY : twice('key', KEY[e.key])) return;
@@ -174,9 +178,10 @@ function drawBoard() {
     const a = g.wl[0], z = g.wl[g.wl.length - 1];
     ctx.moveTo(at(a % N), at((a / N) | 0)); ctx.lineTo(at(z % N), at((z / N) | 0)); ctx.stroke();
   }
-  if (!g.over && !g.wait) for (let s = 0; s < 2; s++) {          // each human's cursor; the one to move is thicker
+  if (!g.over && !g.wait) for (let n = 0; n < 2; n++) {          // each human's cursor; the one to move is thicker and drawn last, so two on one cell both show
+    const s = n ? g.ts : g.ts ^ 1;
     if (!g.seat[s]) continue;
-    const c = g.cur[s], x = at(c.x), y = at(c.y), r = u * 0.5, k = u * 0.28;
+    const c = g.cur[s], x = at(c.x), y = at(c.y), r = u * (g.ts === s ? 0.5 : 0.6), k = u * 0.28;
     ctx.strokeStyle = CUR[s]; ctx.lineWidth = u * (g.ts === s ? 0.12 : 0.07); ctx.lineCap = 'square';
     ctx.beginPath();
     [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => { ctx.moveTo(x + sx * r, y + sy * (r - k)); ctx.lineTo(x + sx * r, y + sy * r); ctx.lineTo(x + sx * (r - k), y + sy * r); });
@@ -184,14 +189,14 @@ function drawBoard() {
   }
 }
 
+// the lobby shows before the first stone with no phone on (the remote would play the computer), or while phones wait for a seat
+const lobbyOn = () => !!pad && (g.wait || (!lobbyDone && !players().length && !g.b.some((v) => v) && !g.over));
 function drawSide() {
   const kids = [h('h1', '', T.title), h('p', 'sub', T.rule)];
-  const joinQr = (small) => {
-    kids.push(h('p', small ? 'sub' : 'msg', T.join));
-    try { const q = pad.qr && pad.qr(400); if (q) { const im = h('img', small ? 'qr sm' : 'qr'); im.src = q; kids.push(im); } } catch (e) { }
-  };
-  if (g.wait) joinQr(false);
-  else {
+  if (lobbyOn()) { side.replaceChildren(); Lobby.set({ title: T.title, tag: T.rule, min: 0, go: g.wait ? false : undefined, hints: [T.lobbyHint],
+    chips: players().map((p) => ({ id: 'p' + p, name: pname(p), color: CUR[Math.min(1, p - 1)], label: 'P' + p })) }); return; }
+  Lobby.hide();
+  {
     for (let s = 0; s < 2; s++) {
       const m = markOf(s), e = h('div', 'seat' + (!g.over && g.ts === s ? ' turn' : ''));
       e.style.setProperty('--pc', CUR[s]);
@@ -207,7 +212,6 @@ function drawSide() {
     if (g.over) kids.push(h('p', 'sub', T.again));
     const w = players().filter((p) => !g.seat.includes(p)).length;
     if (w) kids.push(h('p', 'sub', T.watching(w)));
-    if (pad && !players().length) joinQr(true);
   }
   side.replaceChildren(...kids);
 }

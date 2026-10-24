@@ -27,7 +27,7 @@ async function chanManage() {
     else if (!r.latest) toast(T('chm.old_none'));
     return;
   }
-  chm = { favs: r.favs, groups: r.groups, pls: r.lists || [], plsOk: Array.isArray(r.lists), view: 'find', cc: r.country, countries: r.countries || [], lists: {}, q: '', cat: '', saving: false, dlg: null, sync: null };
+  chm = { favs: r.favs, groups: r.groups, pls: r.lists || [], plsOk: Array.isArray(r.lists), view: 'find', cc: r.country, countries: r.countries || [], lists: {}, q: '', cat: '', saving: false, dlg: null, sync: null, adv: false, cats: {}, browse: false };
   chm.base = chmCopy(chm);
   chmDialog();
   chmLoad(chm.cc, false);
@@ -37,6 +37,7 @@ async function chanManage() {
 // the country's channels (kept for the dialog's life); fresh: read from the network again
 async function chmLoad(cc, fresh) {
   const c = chm; if (!c) return;
+  chmCatLoad(c, cc);
   if (!fresh && c.lists[cc]) return chmDraw();
   c.loading = cc; chmDraw();
   const r = await api('/api/channels/manage?cc=' + cc + (fresh ? '&fresh=1' : ''), null, true);
@@ -44,6 +45,19 @@ async function chmLoad(cc, fresh) {
   c.loading = '';
   c.lists[cc] = r && r.list ? r.list : { channels: [], empty: true };
   chmDraw();
+}
+
+// A country with a categories file (docs/channels/categories/<cc>.json, js/chancat.js) shows ready-made categories. The page asks its own
+// core first (/api/channels/categories?cc=: the site sends no CORS header, so a browser on the TV or phone cannot read it from there),
+// then the site itself; no file: the plain list. Which countries have one is the site's data, never the page's.
+async function chmCatLoad(c, cc) {
+  if (cc in c.cats) return;
+  c.cats[cc] = undefined;
+  const ok = (d) => d && Array.isArray(d.categories) && d.categories.length ? d : null;
+  let doc = ok(await api('/api/channels/categories?cc=' + encodeURIComponent(cc), null, true));
+  if (!doc) { try { doc = ok(await (await fetch('https://tvremote.pages.dev/channels/categories/' + encodeURIComponent(cc) + '.json')).json()); } catch (e) { doc = null; } }
+  c.cats[cc] = doc;
+  if (chm === c) chmDraw();
 }
 
 function chmDialog() {
@@ -159,7 +173,8 @@ function chmClose(c) {
 function chmTabs() {
   const c = chm;
   return UI.chips([
-    { label: T('chm.find'), on: c.view === 'find', fn: () => { c.view = 'find'; chmDraw(); } },
+    ...(c.cats[c.cc] ? [{ label: T('chm.sec_back'), fn: () => { c.adv = false; c.view = 'find'; chmDraw(); } }] : []),
+    { label: T('chm.find'), on: c.view === 'find', fn: () => { c.view = 'find'; c.adv = true; chmDraw(); } },
     { label: T('chm.fav_chip', { n: c.favs.length }), on: c.view === 'fav', title: T('chm.favourites'), fn: () => { c.view = 'fav'; chmDraw(); } },
     ...c.groups.map((g) => ({ label: g.name + ' (' + g.ch.length + ')', on: c.view === g.id, fn: () => { c.view = g.id; chmDraw(); } })),
     ...(c.plsOk ? [{ label: T('chm.lists_chip', { n: c.pls.length }), on: c.view === 'lists', title: T('chm.lists'), fn: () => { c.view = 'lists'; chmDraw(); } }] : []),
@@ -168,7 +183,8 @@ function chmTabs() {
 }
 // after an edit in the search list: only the tabs' counts, the bar and the buttons change; the list is not drawn again
 function chmRefresh() {
-  const c = chm; if (!c.tabs) return chmDraw();
+  const c = chm; if (c.browse) { if (c.sync) c.sync(); chmBar(); return; }
+  if (!c.tabs) return chmDraw();
   const t = chmTabs(); c.tabs.replaceWith(t); c.tabs = t;
   if (c.sync) c.sync();
   chmBar();
@@ -177,8 +193,13 @@ function chmDraw() {
   const c = chm; if (!c || !c.body) return;
   const top = c.card.scrollTop, moved = c.shown !== c.view; c.shown = c.view;
   c.sync = null;
-  c.tabs = chmTabs();
-  c.body.replaceChildren(c.tabs, ...(c.view === 'find' ? chmFind() : c.view === 'lists' ? chmLists() : chmMine()), ...chmFile());
+  const doc = c.cats[c.cc], home = c.view === 'find' && !c.adv && doc !== null;   // null: no file for this country: the plain list
+  const wait = home && (doc === undefined || !c.lists[c.cc]);
+  c.browse = home && !wait && !c.lists[c.cc].empty;
+  c.tabs = c.browse || wait ? null : chmTabs();
+  if (c.browse) c.body.replaceChildren(...chmSecs());
+  else if (wait) c.body.replaceChildren(chmSecTop(), UI.state(T('chm.loading')));
+  else c.body.replaceChildren(c.tabs, ...(c.view === 'find' ? chmFind() : c.view === 'lists' ? chmLists() : chmMine()), ...chmFile());
   const on = c.body.querySelector('.places .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   c.card.scrollTop = moved ? 0 : top;
   chmBar();
@@ -272,8 +293,68 @@ function chmCountryBtn(c) {
   const k = c.countries.find((x) => x.cc === c.cc) || { cc: c.cc, name: c.cc.toUpperCase(), flag: '' };
   const n = chmN(c, k.cc);
   return c.ccBtn = el('button', { type: 'button', className: 'chmcc', title: T('chm.country'), 'aria-label': T('chm.country'),
-    onclick: async () => { const cc = await chmCountry(c); if (cc && cc !== c.cc && chm === c) { c.cc = cc; c.cat = ''; chmLoad(cc, false); } } },
+    onclick: () => chmPickCountry(c) },
     el('span', { textContent: (k.flag ? k.flag + ' ' : '') + k.name }), n ? el('b', { textContent: String(n) }) : null, el('i', { textContent: '▾' }));
+}
+
+async function chmPickCountry(c) {
+  const cc = await chmCountry(c);
+  if (cc && cc !== c.cc && chm === c) { c.cc = cc; c.cat = ''; c.adv = false; if (c.view === 'find') chmLoad(cc, false); else { c.view = 'find'; chmLoad(cc, false); } }
+}
+
+// ---------- sections of channel cards, one swipe row each. Favourites, then the person's groups, then the file's categories,
+// then the rest. A card plays the channel (the TV finds it by name); its star favours it in place (only the favourites row is drawn
+// again). The tools of the plain view (search, groups, lists, country) are behind one ⋯.
+const CHM_SEC_SHOW = 40;                             // cards drawn in a row at first; "+n" draws the rest of that row
+function chmSecTop() {
+  const c = chm, k = c.countries.find((x) => x.cc === c.cc) || { name: c.cc.toUpperCase(), flag: '' };
+  return el('div', { className: 'chtop' }, el('span', { className: 'chcc', textContent: (k.flag ? k.flag + ' ' : '') + k.name }),
+    el('button', { type: 'button', className: 'small iconbtn', textContent: '⋯', title: T('chm.tools'), 'aria-label': T('chm.tools'), onclick: () => chmSecMenu(c) }));
+}
+function chmSecMenu(c) {
+  const adv = (view) => { c.adv = true; c.view = view; chmDraw(); };
+  menuDlg(T('chm.tools'), -1, [
+    [T('chm.sec_all'), '', () => adv('find')],
+    [T('chm.sec_mine'), '', () => adv('fav')],
+    [T('chm.new_group_btn'), '', async () => { const g = await chmNewGroup(null); if (g) adv(g.id); }],
+    ...(c.plsOk ? [[T('chm.lists'), '', () => adv('lists')]] : []),
+    [T('chm.country'), '', () => chmPickCountry(c)],
+  ]);
+}
+function chmSecs() {
+  const c = chm, list = c.lists[c.cc], doc = c.cats[c.cc];
+  const cat = c.secs && c.secs.src === list ? c.secs : (c.secs = Object.assign(ChanCat.categorize(list.channels, doc), { src: list }));
+  const marks = [];                                 // the stars of the rows that stay: they follow the favourites without drawing again
+  const star = (ch, into) => {
+    const b = el('button', { type: 'button', className: 'chstar', title: T('chm.favourite'), 'aria-label': T('chm.favourite'), onclick: () => chmToggle('fav', ch) });
+    into.push({ ch, b }); return b;
+  };
+  const paint = (r) => { const f = chmIsFav(r.ch.id); put(r.b, 'textContent', f ? '★' : '☆'); r.b.classList.toggle('on', f); r.b.setAttribute('aria-pressed', String(f)); };
+  const card = (ch, into) => { const b = star(ch, into); paint(into[into.length - 1]); return el('div', { className: 'chcard' },
+    el('button', { type: 'button', className: 'chplay', title: ch.n, onclick: () => chanOpen(ch.n) }, chmLogo(ch), el('span', { className: 'chn', textContent: ch.n })), b); };
+  const fill = (row, list, into, all) => {
+    const upto = all ? list.length : CHM_SEC_SHOW, frag = document.createDocumentFragment();
+    list.slice(0, upto).forEach((ch) => frag.append(card(ch, into)));
+    if (list.length > upto) frag.append(el('button', { type: 'button', className: 'chcard chmore', textContent: T('chm.sec_more_n', { n: list.length - upto }),
+      onclick: () => { row.replaceChildren(); fill(row, list, into, true); } }));
+    row.replaceChildren(frag);
+  };
+  const section = (title, list, into, empty) => {
+    const row = el('div', { className: 'chrow' });
+    if (list.length) fill(row, list, into, false);
+    return [el('section', { className: 'chsec' }, el('h3', {}, title, el('small', { textContent: String(list.length) })), list.length ? row : UI.note(empty))];
+  };
+  const out = [chmSecTop()];
+  const favSec = () => section(T('chm.favourites'), c.favs, [], T('chm.sec_fav_empty'))[0];   // its stars are drawn from the state each time: no marks kept
+  let favNode = favSec(); out.push(favNode);
+  for (const g of c.groups) if (g.ch.length) out.push(section(g.name, g.ch, marks, '')[0]);
+  for (const k of cat.cats) out.push(section(k[window.LANG] || k.en || k.id, k.list, marks, '')[0]);
+  if (cat.other.length) out.push(section(T('chm.sec_others'), cat.other, marks, '')[0]);
+  c.sync = () => {
+    marks.forEach(paint);
+    const n = favSec(); favNode.replaceWith(n); favNode = n;
+  };
+  return out;
 }
 
 // a country's number: its list once loaded (with the providers' channels too, e.g. VieON's for Vietnam), else iptv-org's count

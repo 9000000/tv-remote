@@ -1,10 +1,13 @@
 'use strict';
 // Kit: what the TV Games arcade pages (hockey, tanks, cycles, sumo) share: input from the phones (window.tvpad), Bluetooth pads (Gamepad API)
 // and the keyboard; a fixed 60 Hz step with a 1280x720 canvas that lowers its own resolution on a slow TV box; generated sound (WebAudio,
-// no files); the title screen (players, CPU seats, QR), the score bar, the result screen and a rematch. A game gives Kit.run() its rules:
+// no files); the title screen (the shared _lib/lobby.js: QR, players, CPU seats), the score bar, the result screen and a rematch. A game gives Kit.run() its rules:
 //   { id, title:{vi,en}, tag:{vi,en}, help:{vi:[..],en:[..]}, total:[min,max] seats, buttons:['A'], start(slots), update(dt), draw(ctx) }
 // and calls Kit.over(winnerSlotIndex | -1, scoreLines) when the match is decided. ?auto=N plays N CPUs against each other (tests, fps),
 // ?p=2 gives the keyboard a second player, ?fps=1 shows the frame rate, ?mute silences it.
+// Seats follow the phones while a match runs: a phone that drops hands its seat to a CPU (s.human false, s.away true), the same phone back or a new one
+// wearing that seat's colour takes it again; a game that keeps per-seat state besides s.human implements seat(slot). Kit steps the sparks itself.
+// K.nameTag(c, slot, x, y) names a seat's piece (draw it in the 'ready' phase); K.timeTick(left) ticks the last 5 s of a timed game.
 (function () {
   const Q = new URLSearchParams(location.search);
   const VI = (navigator.language || '').toLowerCase().startsWith('vi');
@@ -56,49 +59,21 @@
       P.x[k] = x; P.y[k] = y; P.vx[k] = Math.cos(a) * s; P.vy[k] = Math.sin(a) * s; P.life[k] = P.max[k] = life * (0.5 + Math.random() * 0.5); P.sz[k] = (size || 5) * (0.6 + Math.random() * 0.8); P.col[k] = color;
     }
   };
-  K.updateParts = (dt) => { const f = Math.max(0, 1 - 2.2 * dt); for (let k = 0; k < PN; k++) if (P.life[k] > 0) { P.life[k] -= dt; P.x[k] += P.vx[k] * dt; P.y[k] += P.vy[k] * dt; P.vx[k] *= f; P.vy[k] *= f; } };
+  let partsDone = false;                                                                 // Kit steps the sparks itself (a game that forgot froze them on screen); a game's own call in the same step is skipped
+  K.updateParts = (dt) => { if (partsDone) return; partsDone = true; const f = Math.max(0, 1 - 2.2 * dt); for (let k = 0; k < PN; k++) if (P.life[k] > 0) { P.life[k] -= dt; P.x[k] += P.vx[k] * dt; P.y[k] += P.vy[k] * dt; P.vx[k] *= f; P.vy[k] *= f; } };
   K.drawParts = (c) => { for (let k = 0; k < PN; k++) if (P.life[k] > 0) { const a = P.life[k] / P.max[k], s = P.sz[k] * (0.4 + a); c.globalAlpha = a; c.fillStyle = P.col[k]; c.fillRect(P.x[k] - s / 2, P.y[k] - s / 2, s, s); } c.globalAlpha = 1; };
+  K.nameTag = (c, s, x, y) => {                                                          // who is who, in words: a pill in the seat colour (colour alone fails for some eyes)
+    const n = K.fit(c, s.name, 220, 22, 800); c.font = '800 22px ' + FONT; const w = c.measureText(n).width + 28;
+    c.fillStyle = s.color; K.rr(c, x - w / 2, y - 17, w, 34, 17); c.fill(); K.text(c, n, x, y + 1, 22, '#0b1020');
+  };
   K.shake = (a) => { K.shakeAmt = Math.max(K.shakeAmt, a); };
   K.shakeApply = (c) => { if (K.shakeAmt > 0.3) c.translate(K.rnd(-K.shakeAmt, K.shakeAmt), K.rnd(-K.shakeAmt, K.shakeAmt)); };
 
-  // ---------------- sound: tones and noise made on the spot, at most a dozen at once
-  let ac = null, live = 0;
-  const audio = () => {
-    if (Q.has('mute')) return null;
-    if (ac === null) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = false; } }
-    if (ac && ac.state === 'suspended') ac.resume().catch(() => { });
-    return ac || null;
-  };
-  K.tone = (f, d, type, v, slide, delay) => {
-    const a = audio(); if (!a || live > 12) return;
-    const t = a.currentTime + (delay || 0), o = a.createOscillator(), g = a.createGain();
-    o.type = type || 'square'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + d);
-    g.gain.setValueAtTime(v == null ? 0.08 : v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g); g.connect(a.destination); live++; o.onended = () => { live--; }; o.start(t); o.stop(t + d + 0.02);
-  };
-  let nbuf = null;
-  K.noise = (d, v, f0, f1) => {
-    const a = audio(); if (!a || live > 12) return;
-    if (!nbuf) { nbuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const b = nbuf.getChannelData(0); for (let i = 0; i < b.length; i++) b[i] = Math.random() * 2 - 1; }
-    const t = a.currentTime, s = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain();
-    s.buffer = nbuf; fl.type = 'lowpass'; fl.frequency.setValueAtTime(f0 || 2000, t); fl.frequency.exponentialRampToValueAtTime(f1 || 200, t + d);
-    g.gain.setValueAtTime(v || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    s.connect(fl); fl.connect(g); g.connect(a.destination); live++; s.onended = () => { live--; }; s.start(t); s.stop(t + d + 0.02);
-  };
-  K.sfx = {
-    ui: () => K.tone(660, 0.07, 'triangle', 0.1),
-    ok: () => { K.tone(520, 0.09, 'square', 0.07); K.tone(780, 0.14, 'square', 0.07, 0, 0.08); },
-    tick: () => K.tone(880, 0.06, 'sine', 0.1),
-    go: () => { K.tone(440, 0.12, 'sawtooth', 0.08); K.tone(880, 0.3, 'sawtooth', 0.08, 0, 0.1); },
-    hit: (v) => K.tone(180 + (v || 0) * 140, 0.09, 'triangle', 0.18, 0.6),
-    goal: () => { K.noise(0.5, 0.25, 1800, 120); [523, 659, 784, 1046].forEach((f, i) => K.tone(f, 0.18, 'square', 0.07, 0, i * 0.09)); },
-    shoot: () => K.tone(520, 0.12, 'sawtooth', 0.07, 0.35),
-    bounce: () => K.tone(300, 0.05, 'square', 0.05, 0.8),
-    boom: () => { K.noise(0.55, 0.3, 2500, 90); K.tone(110, 0.4, 'sawtooth', 0.12, 0.3); },
-    dash: () => K.noise(0.18, 0.12, 3500, 600),
-    fall: () => K.tone(600, 0.6, 'sine', 0.12, 0.12),
-    win: () => [523, 659, 784, 1046, 1318].forEach((f, i) => K.tone(f, 0.22, 'triangle', 0.1, 0, i * 0.11)),
-  };
+  // ---------------- sound: _lib/sfx.js owns the AudioContext and the sounds; the games keep calling K.tone / K.noise / K.sfx.x()
+  const audio = Sfx.wake;
+  let tickN = -1;
+  K.timeTick = (left) => { const n = Math.ceil(left); if (n !== tickN) { tickN = n; if (n > 0 && n <= 5 && K.mode === 'play') K.sfx.tick(); } };   // the last five seconds of a timed game
+  K.tone = Sfx.tone; K.noise = Sfx.noise; K.sfx = Sfx.s;
 
   // ---------------- input: phones, pads, keyboard -> K.pad(n) = { x, y, held{}, hit{} } for pad player n (1..4)
   const S = {};
@@ -106,14 +81,15 @@
   K.pad = (n) => st(n);
   const DIRS = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
   if (pad) {
+    if (pad.ownKeys) { try { pad.ownKeys(); } catch (e) { } }                              // Kit reads every phone itself: player 1's presses must not come back as keys too (a doubled press)
     pad.on('button', (e) => {
       const s = st(e.player); if (!e.btn) return;
       if (DIRS.includes(e.btn)) s.dp[e.btn] = e.down; else { s.held[e.btn] = e.down; if (e.down) s.hit[e.btn] = true; }
       if (e.down) audio();
     });
     pad.on('axis', (e) => { const s = st(e.player); s.ax = e.x || 0; s.ay = e.y || 0; });
-    pad.on('join', () => { if (K.mode === 'title') K.layout(); });
-    pad.on('leave', (e) => { const s = S[e.player]; if (s) { s.dp = {}; s.held = {}; s.ax = s.ay = 0; } });
+    pad.on('join', (e) => { K.layout(); if (K.mode === 'play') adopt(e.player); });             // a phone joining mid-game gets the game's pad, and a seat if one is free
+    pad.on('leave', (e) => { const s = S[e.player]; if (s) { s.dp = {}; s.held = {}; s.ax = s.ay = 0; } if (K.mode === 'play') away(e.player); });
   }
   const KB = { ArrowUp: [1, 'UP'], ArrowDown: [1, 'DOWN'], ArrowLeft: [1, 'LEFT'], ArrowRight: [1, 'RIGHT'], z: [1, 'A'], x: [1, 'B'], Enter: [1, 'START'], ' ': [1, 'A'],
     w: [2, 'UP'], s: [2, 'DOWN'], a: [2, 'LEFT'], d: [2, 'RIGHT'], f: [2, 'A'], g: [2, 'B'], i: [3, 'UP'], k: [3, 'DOWN'], j: [3, 'LEFT'], l: [3, 'RIGHT'], h: [3, 'A'], ',': [4, 'UP'], '.': [4, 'DOWN'], ';': [4, 'A'] };
@@ -161,6 +137,7 @@
   let cpuWant = null, G = null;
   function seats() {
     const hs = K.humans(), [mn, mx] = G.total, auto = +Q.get('auto') || 0;
+    if (hs.length > mx) hs.length = mx;                                                    // a third phone at an air hockey table watches: the game has two seats
     let nc = auto ? auto : cpuWant == null ? Math.max(0, mn - hs.length) : cpuWant;
     nc = K.clamp(nc, Math.max(0, mn - hs.length), Math.max(0, mx - hs.length));
     if (auto) hs.length = 0;
@@ -170,37 +147,39 @@
     out.forEach((s, i) => { s.i = i; s.score = 0; });
     return { out, nc, hs };
   }
+  // A phone that drops mid-game hands its seat to a CPU (its blob would otherwise stand still and be shoved off); the same phone coming back takes it again,
+  // and a new phone takes the CPU seat that wears its own colour. A game that keeps per-seat state reads s.human each step; one that cannot, listens to G.seat(slot).
+  function giveSeat(s, human, n) {
+    if (human) { s.human = true; s.pad = n; s.name = pname(n); s.away = false; } else { s.human = false; s.away = true; s.name = s.name + ' · ' + words.cpu; }
+    if (G && G.seat) G.seat(s); K.layout();
+  }
+  function away(n) {
+    if (Q.get('auto')) return;
+    let left = []; try { left = pad.players().map((x) => (typeof x === 'object' ? x.player : x)).filter((m) => m !== n); } catch (e) { }
+    if (n === 1 && !left.length) return;                                                  // nobody else is on a phone: the remote / keyboard keeps seat 1
+    const s = K.slots.find((x) => x.human && x.pad === n); if (s) giveSeat(s, false, n);
+  }
+  function adopt(n) {
+    if (Q.get('auto') || n < 1 || n > 4) return;
+    let s = K.slots.find((x) => x.away && x.pad === n);                                     // the same phone back
+    if (!s) s = K.slots.find((x) => !x.human && !x.away && x.color === PCOL[n - 1]);         // or a fresh one: the CPU wearing its colour
+    if (s && !K.slots.some((x) => x.human && x.pad === n)) giveSeat(s, true, n);
+  }
   K.layout = () => { if (pad && G) { try { pad.layout('all', { buttons: K.mode !== 'play' ? ['A', 'START'] : G.buttons || ['A'] }); } catch (e) { } } };
 
   // ---------------- screens
-  let qrImg = null, titleT = 0, overInfo = null, countdown = 0, lastNum = 0;
+  let titleT = 0, overInfo = null, countdown = 0, lastNum = 0;
   function frameBg(c, t) {                                                               // drifting orbs, only on title / result
     for (let i = 0; i < 5; i++) { const a = t * 0.15 + i * 1.3; K.light(c, W / 2 + Math.cos(a * 1.1 + i) * 520, H / 2 + Math.sin(a * 0.9 + i * 2) * 260, PCOL[i % 4], 260, 0.16); }
   }
-  function drawTitle(c) {
-    frameBg(c, titleT);
-    const sc = seats(), pulse = 1 + Math.sin(titleT * 3) * 0.02;
-    c.save(); c.translate(W / 2, 150); c.scale(pulse, pulse);
-    K.text(c, K.tr(G.title), 4, 5, 104, 'rgba(0,0,0,.5)'); K.text(c, K.tr(G.title), 0, 0, 104, '#fff'); c.restore();
-    K.text(c, K.tr(G.tag), W / 2, 236, 30, '#9fb4d8', 'center', 600);
-    const help = (G.help && G.help[VI ? 'vi' : 'en']) || [];
-    help.forEach((l, i) => K.text(c, l, W / 2, 300 + i * 38, 26, '#d7e2f5', 'center', 500));
-    const n = sc.out.length, cw = 250, gx = W / 2 - (n * cw + (n - 1) * 20) / 2;
-    sc.out.forEach((s, i) => {
-      const x = gx + i * (cw + 20), y = 450;
-      c.fillStyle = 'rgba(255,255,255,.07)'; K.rr(c, x, y, cw, 84, 18); c.fill();
-      c.fillStyle = s.color; K.rr(c, x, y, 10, 84, 5); c.fill();
-      c.beginPath(); c.arc(x + 48, y + 42, 20, 0, 6.283); c.fill();
-      K.text(c, K.fit(c, s.name, cw - 94, 24), x + 82, y + 30, 24, '#fff', 'left');
-      K.text(c, s.human ? 'P' + s.pad : 'CPU', x + 82, y + 59, 19, '#94a3b8', 'left', 600);
-    });
-    if (G.total[1] > sc.hs.length) K.text(c, '◀  ' + words.cpuSeats + ': ' + sc.nc + '  ▶', W / 2, 580, 24, '#9fb4d8', 'center', 600);
-    const a = 0.55 + 0.45 * Math.sin(titleT * 4);
-    c.globalAlpha = a; K.text(c, words.startHint, W / 2, 640, 32, '#fff'); c.globalAlpha = 1;
-    if (qrImg && qrImg.complete && qrImg.naturalWidth) {
-      c.imageSmoothingEnabled = false; c.fillStyle = '#fff'; K.rr(c, W - 196, H - 214, 172, 172, 12); c.fill(); c.drawImage(qrImg, W - 188, H - 206, 156, 156);
-      c.imageSmoothingEnabled = true; K.text(c, words.scan, W - 110, H - 24, 20, '#9fb4d8', 'center', 600);
-    }
+  // The title screen is the shared lobby (_lib/lobby.js): QR hero, player chips, one OK pill. It is DOM, so the loop below stops drawing
+  // the canvas and polls input at 20 Hz while it shows (no rAF: an idle lobby costs ~nothing on a weak TV box).
+  function lobbyShow() {
+    const sc = seats(), tx = (o) => (o && (VI ? o.vi : o.en)) || '', help = (G.help && G.help[VI ? 'vi' : 'en']) || [];
+    let extra = null;
+    if (G.total[1] > sc.hs.length) { extra = document.createElement('div'); extra.textContent = '\u25C0  ' + words.cpuSeats + ': ' + sc.nc + '  \u25B6'; extra.style.cssText = 'font-size:2.8vh;color:#b6c4dc'; }
+    Lobby.set({ title: tx(G.title), tag: tx(G.tag), min: 0, extra, hints: help.concat(extra ? [words.arrows] : []),
+      chips: sc.out.map((s, i) => (s.human ? { id: 'p' + s.pad, name: s.name, color: s.color, label: 'P' + s.pad } : { id: 'c' + i, name: s.name, color: s.color, label: 'C', cpu: true })) });
   }
   K.hud = (c, slots, extra) => {                                                         // the score bar across the top
     const n = slots.length, cw = Math.min(290, (W - 60) / n - 14), gx = W / 2 - (n * cw + (n - 1) * 14) / 2;
@@ -231,24 +210,25 @@
       c.lineWidth = on ? 5 : 2; c.strokeStyle = on ? '#fff' : 'rgba(255,255,255,.25)'; K.rr(c, x, y, 320, 78, 20); c.stroke();
       K.text(c, K.fit(c, l, 280, 34), x + 160, y + 40, 34, on ? '#fff' : '#cbd5e1', 'center', 800);
     });
-    K.text(c, '◀  ▶  ·  OK', W / 2, 676, 22, '#9fb4d8', 'center', 600);
+    K.text(c, '◀  ▶  ·  OK', W / 2, 676, 26, '#b6c4dc', 'center', 600);
   }
   K.over = (win, lines) => {
     if (K.mode !== 'play') return;
-    K.mode = 'over'; overInfo = { win, lines, t: 0, sel: 0 }; K.sfx.win(); K.layout();
+    K.mode = 'over'; overInfo = { win, lines, t: 0, sel: 0 }; K.layout();
+    const w = win >= 0 ? K.slots[win] : null; if (w && !w.human && K.slots.some((x) => x.human)) K.sfx.lose(); else K.sfx.win();   // a CPU beat every phone: a sad jingle, not a fanfare
     if (+Q.get('auto')) setTimeout(() => begin(), 3500);
   };
   function begin() {
-    const sc = seats(); K.slots = sc.out; K.mode = 'play'; K.t = 0; K.layout(); G.start(K.slots); K.sfx.go();
+    Lobby.hide(); const sc = seats(); K.slots = sc.out; K.mode = 'play'; K.t = 0; K.layout(); G.start(K.slots); K.sfx.go();
   }
   function toTitle() { K.mode = 'title'; cpuWant = null; K.layout(); }
 
   // ---------------- the loop
   let acc = 0, last = performance.now(), fcount = 0, ftime = 0, lowFor = 0, fpsEl = null, logT = 0;
   function step() {
-    K.t += DT; titleT += DT; K.shakeAmt *= 0.9;
+    K.t += DT; titleT += DT; K.shakeAmt *= 0.9; partsDone = false;
     if (K.mode === 'title') {
-      const hs = K.humans(); let go = false, dl = 0;
+      lobbyShow(); const hs = K.humans(); let go = false, dl = 0;
       hs.forEach((n) => { const s = st(n); if (s.pulse || s.start) go = true; if (s.edgeL) dl--; if (s.edgeR) dl++; });
       if (dl) { const sc = seats(); cpuWant = sc.nc + dl; const sc2 = seats(); if (sc2.nc !== sc.nc) K.sfx.ui(); cpuWant = sc2.nc; }
       if (go || +Q.get('auto')) { begin(); }
@@ -257,20 +237,26 @@
       K.humans().forEach((n) => { const s = st(n); if (s.edgeL && overInfo.sel) { overInfo.sel = 0; K.sfx.ui(); } if (s.edgeR && !overInfo.sel) { overInfo.sel = 1; K.sfx.ui(); } });
       if (overInfo.t > 1.2) K.humans().forEach((n) => { const s = st(n); if (s.pulse) { K.sfx.ok(); if (overInfo.sel) toTitle(); else begin(); } else if (s.start) { K.sfx.ui(); toTitle(); } });   // OK (A, and Enter) takes the lit choice (rematch first), Left / Right switch; a phone's Start = menu
     } else G.update(DT);
+    K.updateParts(DT);                                                                    // a no-op when the game stepped them already
   }
   function render() {
     ctx.setTransform(K.scale, 0, 0, K.scale, 0, 0); ctx.clearRect(0, 0, W, H);
-    if (K.mode === 'title') drawTitle(ctx);
+    if (K.mode === 'title') return;                                                       // the lobby overlay is the screen
     else { ctx.save(); G.draw(ctx); ctx.restore(); if (K.mode === 'over') drawOver(ctx); }
   }
+  let skip = false;
+  document.addEventListener('visibilitychange', () => { last = performance.now(); acc = 0; });   // no catch-up burst after the page was hidden
   function frame(now) {
-    requestAnimationFrame(frame);
+    try { tick(now); } finally { if (K.mode === 'title') setTimeout(() => frame(performance.now()), 50); else requestAnimationFrame(frame); }   // a finally: a throw must not end the loop
+  }
+  function tick(now) {
     let d = (now - last) / 1000; last = now; if (d > 0.1) d = 0.1;
     acc += d; poll();
     let n = 0;
     while (acc >= DT && n < 3) { step(); clearHits(); acc -= DT; n++; }
     if (n === 3) acc = 0;
-    render();
+    skip = !skip;
+    if (!(skip && K.mode !== 'play')) render();                                          // the title and result screens only need 30 fps: half the work on a weak box
     fcount++; ftime += d;
     if (ftime >= 1) {
       K.fps = Math.round(fcount / ftime); fcount = 0; ftime = 0; window.__fps = K.fps;
@@ -281,7 +267,6 @@
   }
   K.run = (game) => {
     G = game; K.G = game; document.title = K.tr(game.title);
-    if (pad && pad.qr) { try { qrImg = new Image(); qrImg.src = pad.qr(156); } catch (e) { qrImg = null; } }
     K.layout(); requestAnimationFrame(frame);
   };
 })();

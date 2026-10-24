@@ -58,7 +58,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private var warnedSleep = 0L                                      // the sleep_at already warned about
     private var bedWarnedAt = 0L                                      // bedtime: when this turn-on was warned about, 0 when not yet
     private val nearlyWarned = HashSet<String>()                      // "pkg day": the five-minute notice was shown
-    private var lastStop = HashMap<String, Long>()
+    private val lastStop = java.util.concurrent.ConcurrentHashMap<String, Long>()   // also read by the guard-lock thread (schedules)
     private val audio = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var volSaidAt = 0L
     private var ramHigh = 0                                           // checks in a row with the memory past the line
@@ -163,9 +163,10 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
         // ---- daily app limits, for the app on screen
         val limits = o.optJSONObject("limits")
-        if (on && limits != null && limits.length() > 0) {
+        val capped = Rules.schedApps(o).any { o.optJSONObject("sched")?.optJSONObject(it)?.optInt("max") ?: 0 > 0 }   // a schedule's minutes count like a limit's
+        if (on && (limits != null && limits.length() > 0 || capped)) {
             val (used, front) = stats.today(now, true)
-            val limit = limits.optInt(front)
+            val limit = Rules.budget(o, front, now) ?: 0
             if (front.isNotEmpty() && limit > 0) {
                 val allowed = (limit + Rules.extra(o, front, now)) * 60L
                 val left = allowed - used.optLong(front)
@@ -198,7 +199,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val o = Rules.load(c)
         val apps = Rules.locked(o)
         val heavyOn = Heavy.on(o)
-        if (apps.isEmpty() && !heavyOn) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
+        val sched = Rules.schedApps(o)
+        if (apps.isEmpty() && sched.isEmpty() && !heavyOn) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
         if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
             unlocked = ""
@@ -207,7 +209,11 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         }
         val app = frontApp(now)
         if (heavyOn) heavy.look(app, now, true, o)                    // the same events as the locks: no second poller
-        if (apps.isEmpty()) return 3_000                              // a heavy app is left for 15 s: a look every 3 s is plenty
+        if (app in sched && !Rules.allowedNow(o, app, now) && now - (lastStop[app] ?: 0L) > 15_000) {
+            lastStop[app] = now                                       // outside its window: closed here, before any PIN could be asked
+            close(app, "sched")
+        }
+        if (apps.isEmpty()) return if (sched.isEmpty()) 3_000 else 1_500   // a schedule's edge is noticed within a second and a half                              // a heavy app is left for 15 s: a look every 3 s is plenty
         if (app.isNotEmpty() && app != unlocked && app != c.packageName) unlocked = ""
         if (app in apps && app != unlocked && PinActivity.showing == null && now - pinAt > 2_000) {
             askPin(app, now - pinAt < 5_000)                          // asked a moment ago and not shown: Android kept it back
@@ -258,9 +264,9 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     }
 
     /** The app's minutes are used up: back to the home screen, the app closed, and a word on screen saying why. */
-    private fun close(pkg: String) {
+    private fun close(pkg: String, kind: String = "limit") {
         sh("input keyevent 3; am force-stop " + q(pkg))
-        warn("limit", 0, pkg)
+        warn(kind, 0, pkg)
     }
 
     /** The warning screen over whatever is on the TV. Since Android 10 a service may not open a screen by itself; ADB's shell may. */
@@ -270,6 +276,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             "sleep" -> T("guard.the_tv_turns_off")
             "bed" -> T("guard.bedtime_the_tv_turns")
             "ram" -> T("guard.the_tv_s_memory")
+            "sched" -> T("guard.sched_closed", "name" to label(pkg))
             else -> T("guard.time_up", "name" to label(pkg))
         })
     }

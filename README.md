@@ -172,7 +172,7 @@ Free, no ads, each on its own: install only the ones you want, from the phone or
 |---|---|---|
 | TV Home | **`4356026`** | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) |
 | TV Channels | **`8135635`** | [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) |
-| TV Games | none yet | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
+| TV Games | **`2294968`** | [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) |
 
 ### 🏠 TV Home
 
@@ -249,7 +249,7 @@ That's it. A ready TV opens straight on the Remote tab.
 5. Open **TV Setup**. If ADB is still off, it explains how and opens Developer options for you.
 6. Scan its **QR code** with the phone's camera and type the 6-digit code. Done.
 
-The phone app is `2973135` the same way; TV Home `4356026`, TV Channels `8135635`. The codes always point at the latest release.
+The phone app is `2973135` the same way; TV Home `4356026`, TV Channels `8135635`, TV Games `2294968`. The codes always point at the latest release.
 
 <p align="center"><img src="docs/img/tvapp-en.webp" width="640" alt="The TV Setup app on the TV"></p>
 

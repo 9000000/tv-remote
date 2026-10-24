@@ -50,7 +50,7 @@ $('#plseek').addEventListener('change', (e) => {
   if (PL.busy) return;
   PL.o.pos = ms; PL.at = performance.now(); plDo('seek', ms);
 });
-setInterval(() => { if (!$('#playing').hidden && PL.o.state === 'playing') plDraw(); }, 250);   // the time moves on between polls
+setInterval(() => { if (!document.hidden && !$('#playing').hidden && PL.o.state === 'playing') plDraw(); }, 250);   // the time moves on between polls
 document.addEventListener('visibilitychange', () => { if (!document.hidden) plPoll(); });
 plPoll();
 

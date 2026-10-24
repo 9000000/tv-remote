@@ -56,6 +56,7 @@ function after(t) {
     : l.ev ? W.ev[l.ev](t.name(l.seat), t.name(l.victim), l.n) + (l.card.c === UL.WILD ? ' · ' + W.color[l.color] : '')
       : l.card && l.card.c === UL.WILD ? W.col(t.name(l.seat), W.color[l.color]) : '';
   if (l && l.ev === 'draw' && t.human(l.victim)) t.buzz(l.victim, 250);
+  if (l && l.ev !== 'win') Sfx.play(l.ev === 'took' ? 'pickup' : l.ev === 'draw' ? 'hit' : l.ev === 'pass' ? 'ui' : 'card');   // win/lose come from t.over
   t.turnTo(st.pend >= 0 ? st.pend : st.turn);
 }
 

@@ -163,7 +163,7 @@ const table = Table({
 
 function roll(t, s) {
   g.dice = LU.roll(g.pos, s); g.phase = 'move'; g.moves = []; g.busy = true; g.rolling = true; g.msg = W.rollsOf(nm(t, s));
-  startDie(); t.changed();
+  startDie(); Sfx.play('dice'); t.changed();
   later(750, () => {
     g.rolling = false; stopDie(); g.moves = LU.legal(g.pos, s, g.dice);
     if (!g.moves.length) {
@@ -187,14 +187,14 @@ function move(t, s, k) {
   const e = toks[s][k]; g.walking = { s, k }; e.classList.add('walk'); if (r.from < 0) e.style.transitionDuration = '.3s';
   t.changed();
   const walk = (i) => {
-    if (i < steps.length) { place(s, k, ...steps[i]); later(r.from < 0 ? 320 : STEP, () => walk(i + 1)); return; }
+    if (i < steps.length) { Sfx.play('move'); place(s, k, ...steps[i]); later(r.from < 0 ? 320 : STEP, () => walk(i + 1)); return; }
     e.classList.remove('walk'); e.style.transitionDuration = ''; g.walking = null; g.shown = clone(g.pos);
     e.classList.remove('land'); void e.offsetWidth; e.classList.add('land');
     const who = nm(t, s);
     if (r.kicked.length) {
-      const [vs] = r.kicked[0]; g.msg = W.kick(who, nm(t, vs)); t.buzz(s, 200); r.kicked.forEach(([ks]) => t.buzz(ks, 300));
-    } else if (r.home) g.msg = W.home(who);
-    else if (r.from < 0) g.msg = W.out(who);
+      const [vs] = r.kicked[0]; g.msg = W.kick(who, nm(t, vs)); Sfx.play('hit', 1); t.buzz(s, 200); r.kicked.forEach(([ks]) => t.buzz(ks, 300));
+    } else if (r.home) { g.msg = W.home(who); Sfx.play('score'); }
+    else if (r.from < 0) { g.msg = W.out(who); Sfx.play('pickup'); }
     drawToks(t); draw(t);
     later(r.kicked.length ? 900 : 350, () => {
       if (LU.done(g.pos, s)) { finish(t, s); return; }

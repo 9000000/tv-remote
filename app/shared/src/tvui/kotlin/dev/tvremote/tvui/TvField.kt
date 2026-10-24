@@ -79,6 +79,6 @@ class TvField(c: Context) : EditText(c) {
     override fun onFocusChanged(focused: Boolean, dir: Int, prev: Rect?) {
         super.onFocusChanged(focused, dir, prev)
         if (focused) setSelection(length())                         // at the end: one press right reaches the button beside
-        else typing = false
+        else if (typing) { typing = false; keys().hideSoftInputFromWindow(windowToken, 0) }   // the keyboard goes with the field: left up, it covered what the focus moved to
     }
 }

@@ -72,16 +72,17 @@ class GameCards(
             addView(act.label(s(R.string.chip), 15f).apply { setPadding(0, 0, act.dp(10), 0) }); addView(chipDots)
         }
         root.addView(chip, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(act.dp(24), act.dp(20), act.dp(24), act.dp(20)) })
-        resumeBtn = act.menuButton(s(R.string.resume), 340, 56, 22f) { resume() }.withIcon(R.drawable.ic_play)
+        // 50 dp rows: six at 56 made the card 519 of 540 dp tall (11 dp margins; the safe area is 27)
+        resumeBtn = act.menuButton(s(R.string.resume), 340, 50, 22f) { resume() }.withIcon(R.drawable.ic_play)
         val col = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
             addView(act.heading(s(R.string.paused)))
             addView(resumeBtn)
-            if (onStart != null) addView(act.menuButton(s(R.string.press_start), 340, 56, 22f) { resume(); onStart.invoke() }.withIcon(R.drawable.ic_gamepad))
-            if (onMap != null) addView(act.menuButton(s(R.string.map_title), 340, 56, 22f) { resume(); onMap.invoke() }.withIcon(R.drawable.ic_keyboard))
-            if (onSave != null) addView(act.menuButton(s(R.string.quick_save), 340, 56, 22f) { pauseNote.text = onSave.invoke() }.withIcon(R.drawable.ic_save))
-            if (onLoad != null) addView(act.menuButton(s(R.string.quick_load), 340, 56, 22f) { val m = onLoad.invoke(); if (m == null) resume() else pauseNote.text = m }.withIcon(R.drawable.ic_undo))
-            addView(act.menuButton(s(R.string.quit), 340, 56, 22f) { onQuit() }.withIcon(R.drawable.ic_close))
+            if (onStart != null) addView(act.menuButton(s(R.string.press_start), 340, 50, 22f) { resume(); onStart.invoke() }.withIcon(R.drawable.ic_gamepad))
+            if (onMap != null) addView(act.menuButton(s(R.string.map_title), 340, 50, 22f) { resume(); onMap.invoke() }.withIcon(R.drawable.ic_keyboard))
+            if (onSave != null) addView(act.menuButton(s(R.string.quick_save), 340, 50, 22f) { pauseNote.text = onSave.invoke() }.withIcon(R.drawable.ic_save))
+            if (onLoad != null) addView(act.menuButton(s(R.string.quick_load), 340, 50, 22f) { val m = onLoad.invoke(); if (m == null) resume() else pauseNote.text = m }.withIcon(R.drawable.ic_undo))
+            addView(act.menuButton(s(R.string.quit), 340, 50, 22f) { onQuit() }.withIcon(R.drawable.ic_close))
             addView(pauseNote)
         }
         val side = LinearLayout(act).apply {

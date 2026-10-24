@@ -12,7 +12,7 @@ import java.io.IOException
  */
 object Downloader {
     /** The copy that ships with the app: docs/data/downloader.json. A code is null where the APK has none yet. */
-    const val PACKED = """{"v":1,"setup":"2397346","remote":"2973135","home":"4356026","channels":"8135635","games":null}"""
+    const val PACKED = """{"v":1,"setup":"2397346","remote":"2973135","home":"4356026","channels":"8135635","games":"2294968"}"""
     var bases = listOf("https://tvremote.pages.dev/data/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/data/")
     /** The app's own folder for the kept copy (set once at start; null: nothing is kept, the packed codes serve). */
     @Volatile var dir: File? = null

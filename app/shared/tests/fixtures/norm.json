@@ -1,0 +1,97 @@
+{
+ "about": "norm(name) vectors: NFD, drop combining marks, d/D->d, lowercase, keep [a-z0-9], strip trailing hd|fhd|uhd|sd|4k repeatedly",
+ "norm": [
+  {
+   "in": "VTV1 HD",
+   "out": "vtv1"
+  },
+  {
+   "in": "Đà Nẵng 1",
+   "out": "danang1"
+  },
+  {
+   "in": "SCTV Phim Tổng Hợp",
+   "out": "sctvphimtonghop"
+  },
+  {
+   "in": "THVL1 FHD",
+   "out": "thvl1"
+  },
+  {
+   "in": "SCTV4K",
+   "out": "sctv"
+  },
+  {
+   "in": "HTV7 HD",
+   "out": "htv7"
+  },
+  {
+   "in": "VTV5 Tay Nam Bo HD",
+   "out": "vtv5taynambo"
+  },
+  {
+   "in": "Khánh Hoà 1",
+   "out": "khanhhoa1"
+  },
+  {
+   "in": "Khánh Hòa 1",
+   "out": "khanhhoa1"
+  },
+  {
+   "in": "Đắk Lắk",
+   "out": "daklak"
+  },
+  {
+   "in": "HTVC+ HD",
+   "out": "htvc"
+  },
+  {
+   "in": "ON Vie Giải trí",
+   "out": "onviegiaitri"
+  },
+  {
+   "in": "Hà Nội 1",
+   "out": "hanoi1"
+  },
+  {
+   "in": "FHD HD",
+   "out": ""
+  },
+  {
+   "in": "VTV 4K UHD",
+   "out": "vtv"
+  },
+  {
+   "in": "HD",
+   "out": ""
+  },
+  {
+   "in": "Cần Thơ 2",
+   "out": "cantho2"
+  },
+  {
+   "in": "France 24 SD",
+   "out": "france24"
+  },
+  {
+   "in": "VOH FM 99.9 MHz",
+   "out": "vohfm999mhz"
+  },
+  {
+   "in": "  ĐỒNG  nai-3 ",
+   "out": "dongnai3"
+  },
+  {
+   "in": "Channel 4 HD HD",
+   "out": "channel4"
+  },
+  {
+   "in": "SHD",
+   "out": "s"
+  },
+  {
+   "in": "Mạnh",
+   "out": "manh"
+  }
+ ]
+}

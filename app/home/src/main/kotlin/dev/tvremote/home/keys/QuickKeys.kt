@@ -1,0 +1,134 @@
+package dev.tvremote.home.keys
+
+import android.app.Activity
+import android.app.Dialog
+import android.graphics.Color
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.view.Window
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import dev.tvremote.home.Font
+import dev.tvremote.home.HomeConfig
+import dev.tvremote.home.R
+import dev.tvremote.home.Store
+import dev.tvremote.home.Target
+import dev.tvremote.home.apps.App
+import dev.tvremote.tvui.TvGlass
+import dev.tvremote.tvui.pill
+import dev.tvremote.tvui.pillText
+import org.json.JSONObject
+
+/**
+ * "Quick keys" (Phím nhanh), webOS's number-key screen for this TV: 1-9 and 0, the four colour keys and the power-on slot, each a tile
+ * with the logo of what it opens (a [Target]: app, shortcut or live tile). A key this remote does not have ([Keys.have]) is greyed
+ * and cannot be chosen, unless something is already on it (so it can still be cleared). A press picks the target in the [Picker];
+ * the first one chosen switches the keys on (HomeConfig keyon / keyapps / autoon / autoapp, the same settings the phone's page edits).
+ */
+object QuickKeys {
+    private val COLOUR = mapOf(183 to 0xFFB3261E.toInt(), 184 to 0xFF2E7D32.toInt(), 185 to 0xFFB58105.toInt(), 186 to 0xFF1D5FBF.toInt())
+    private const val POWER = -1                                     // the power-on slot's place among the keys
+
+    fun show(a: Activity): Dialog {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val dm = a.resources.displayMetrics
+        val dialog = Dialog(a, R.style.Menu)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val panelW = minOf(dm.widthPixels - dp(64), dp(1180))
+        val cols = 5
+        val gap = dp(dev.tvremote.home.GRID_GAP)                      // Home's: a focused tile's name shows under it, 26 put it under the next row
+        val tileW = (panelW - dp(2 * 34) - (cols - 1) * gap) / cols
+
+        val area = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
+        val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(34), dp(24), dp(34), dp(70)) }
+        area.addView(grid, FrameLayout.LayoutParams(-1, -2))
+        val scroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(area) }
+
+        fun line(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply { text = t; textSize = size; setTextColor(color) }
+        val hint = line("", 13f, PK_DIM).apply { setPadding(dp(34), 0, dp(34), dp(4)) }
+        // the switch and its state in its words: "Bật phím" alone did not say whether the keys were on, nor what pressing would do
+        val keysOn = a.pill(a.getString(R.string.qk_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
+        val autoOn = a.pill(a.getString(R.string.qk_auto_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoon", !Store.get(a).optBoolean("autoon"))) }
+        val head = LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(12))   // 32 dp above the panel before, now inside it
+            clipChildren = false; clipToPadding = false                // a focused pill grows past the row: clipped, its top and bottom were cut
+            addView(line(a.getString(R.string.qk_title), 26f, Color.WHITE).apply { typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(keysOn); addView(autoOn)
+        }
+        val panel = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL; clipChildren = false
+            addView(head); addView(hint); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        }
+        dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, -1, Gravity.CENTER_HORIZONTAL)) })   // centred: a bare content view sat at the left; to the bottom edge: 64 dp short, the last row stopped on an empty band
+        dialog.window?.let(::solidPage)
+
+        val keyOrder = (HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()) + HomeConfig.KEY_COLOURS + POWER + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD }   // 1..9, 0, the colours, power-on, then keys the stock launcher answered
+        val tiles = HashMap<Int, PickTile>()
+        var seq = 0                                                   // a redraw superseded by a newer one (two changes in a row) is dropped
+
+        fun targetOf(code: Int, c: JSONObject = Store.get(a)): String = if (code == POWER) c.optString("autoapp") else HomeConfig.keyApps(c.optJSONObject("keyapps"))[code].orEmpty()
+        fun words(code: Int) = if (code == POWER) a.getString(R.string.qk_power) else Keys.name(a, code)
+        fun choose(code: Int) {
+            Picker.show(a, Picker.Mode.TARGET, words(code), targetOf(code)) { t ->
+                if (code == POWER) Store.change(a, JSONObject().put("autoapp", t).also { if (t.isNotEmpty()) it.put("autoon", true) })
+                else {
+                    val m = JSONObject(); for ((k, v) in HomeConfig.keyApps(Store.get(a).optJSONObject("keyapps"))) if (k != code) m.put(k.toString(), v)
+                    if (t.isNotEmpty()) m.put(code.toString(), t)
+                    Store.change(a, JSONObject().put("keyapps", m).also { if (t.isNotEmpty()) it.put("keyon", true) })   // the first one chosen switches the keys on: nobody asks twice
+                }
+            }
+        }
+        fun paintHead() {
+            val c = Store.get(a)
+            keysOn.isSelected = c.optBoolean("keyon"); autoOn.isSelected = c.optBoolean("autoon")
+            fun said(on: Boolean) = a.getString(if (on) R.string.qk_yes else R.string.qk_no)
+            keysOn.pillText(a.getString(R.string.qk_on, said(keysOn.isSelected))); autoOn.pillText(a.getString(R.string.qk_auto_on, said(autoOn.isSelected)))
+            hint.text = a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere)
+        }
+
+        fun redraw(keepFocus: Int?) {
+            val mine = ++seq
+            val have = Keys.have(a)?.let { arr -> List(arr.length()) { arr.getInt(it) } }
+            Thread({
+                val conf = Store.get(a)                                // once: read per key (twice each, 16 keys) it was ~400 ms on the FPT box
+                val pics = HashMap<Int, App?>()
+                for (code in keyOrder) targetOf(code, conf).takeIf { it.isNotEmpty() }?.let { pics[code] = Targets.app(a, it) }
+                a.runOnUiThread {
+                    if (mine != seq || !dialog.isShowing) return@runOnUiThread
+                    paintHead()
+                    grid.removeAllViews(); tiles.clear()
+                    var row: LinearLayout? = null
+                    keyOrder.forEachIndexed { i, code ->
+                        if (i % cols == 0) { row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
+                            grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
+                        val target = targetOf(code, conf)
+                        val art = pics[code]
+                        val missing = target.isNotEmpty() && art == null                    // the app is gone: the slot shows it, to be cleared or changed
+                        val t = PickTile(a, tileW, ::dp, "k$code", if (art != null) art.label else if (missing) Targets.label(a, target) else if (code != POWER && have != null && code !in have) a.getString(R.string.qk_no_key) else "", art, "k$code",
+                            tag = words(code), icon = if (code == POWER) R.drawable.ic_power else if (Target.kind(target) == Target.Kind.TILE) R.drawable.ic_gauge else 0, plus = target.isEmpty(), color = if (art == null) COLOUR[code] ?: PK_EMPTY else 0)
+                        t.dead = code != POWER && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS && have != null && code !in have && target.isEmpty()
+                        t.setOnClickListener { choose(code) }
+                        tiles[code] = t
+                        row!!.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
+                    }
+                    if (keysOn.hasFocus() || autoOn.hasFocus()) return@runOnUiThread   // a pill just switched: the focus stays on it, not on key 1
+                    (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: keyOrder.firstNotNullOfOrNull { k -> tiles[k]?.takeIf { it.isFocusable } })?.requestFocus()   // key 1 first: a HashMap's order put it on any slot (the power-on one)
+                }
+            }, "home-quickkeys").apply { isDaemon = true }.start()
+        }
+
+        val change = Store.onChange                                   // the screen behind still hears every change; this one redraws too
+        var lastFocus: Int? = null
+        Store.onChange = { change?.invoke(); redraw(tiles.entries.firstOrNull { it.value.hasFocus() }?.key ?: lastFocus) }
+        Keys.onState = { paintHead() }
+        dialog.setOnDismissListener { Store.onChange = change; Keys.onState = null }
+        dialog.setOnShowListener { Keys.push(a) }                     // asks TV Setup again, so the line above is true when it answers
+        paintHead(); redraw(null)
+        dialog.show()
+        return dialog
+    }
+}

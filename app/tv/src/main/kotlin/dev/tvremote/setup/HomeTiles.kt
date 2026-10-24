@@ -20,13 +20,14 @@ import org.json.JSONObject
  *   "tile_do"  runs its action (arg = id) on a thread of its own and answers {started}; the outcome shows in "tile" as mode done / failed
  * Each tile has a "layout" (how TV Home draws it): "gauge" (a ring and a line) or "toggle" (a value to cycle). Two tiles:
  * "ram" (gauge): RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the measured
- * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it steps 30 -> 60 -> 90 -> off ([nextSleep]).
+ * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it adds 15 minutes, up to 120, then off ([nextSleep]).
  * The pure parts (numbers, words, which packages may be closed) live here and are tested without a TV.
  */
 internal object HomeTiles {
     const val RAM = "ram"
     const val SLEEP = "sleep"
-    val SLEEP_STEPS = listOf(30, 60, 90)                               // minutes a press cycles through, then off
+    const val SLEEP_STEP = 15                                          // minutes a press adds (30/60/90 jumped too far for "a bit longer")
+    const val SLEEP_MAX = 120                                          // past it a press switches the timer off
     const val DONE_MS = 6000L                                          // how long the before -> after stays, then the live value again
     const val MIN_FREED_MB = 16L                                       // less than this is noise: "nothing to free", said honestly
     private const val SETTLE_MS = 1500L                                // Android takes a moment to hand the memory back before it is read again
@@ -41,13 +42,13 @@ internal object HomeTiles {
     fun sleepLeft(sleepAt: Long, now: Long): Int = if (sleepAt > now) ((sleepAt - now + 59_999L) / 60_000L).toInt() else 0
 
     /**
-     * What a press sets, given the minutes left: off -> 30 -> 60 -> 90 -> off. A timer running down between steps counts as the step
-     * it is under (25 left of a 60 is "30"), so a press always moves up; one set longer than 90 elsewhere (a remote's 120) goes off.
+     * What a press sets, given the minutes left: off -> 15 -> 30 -> ... -> 120 -> off. A timer running down counts as the step it is
+     * under (25 left is "30"), so a press always adds 15; at 120 or more (set longer elsewhere too) it goes off.
      */
-    fun nextSleep(left: Int): Int = when {
-        left <= 0 -> SLEEP_STEPS.first()
-        left > SLEEP_STEPS.last() -> 0
-        else -> { val under = SLEEP_STEPS.first { it >= left }; SLEEP_STEPS.firstOrNull { it > under } ?: 0 }
+    fun nextSleep(left: Int): Int {
+        if (left <= 0) return SLEEP_STEP
+        val under = (left + SLEEP_STEP - 1) / SLEEP_STEP * SLEEP_STEP
+        return (under + SLEEP_STEP).takeIf { it <= SLEEP_MAX } ?: 0
     }
 
     /** The state: "toggle" layout, big = minutes left or "Off", small = what a press does next. */

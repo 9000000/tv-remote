@@ -44,7 +44,7 @@
     }
   }
   function newRound() {
-    wall = makeMap(); paintWalls(); bul = []; round++; phase = 'ready'; ptimer = 1.6; dist = null;
+    wall = makeMap(); paintWalls(); bul = []; round++; phase = 'ready'; ptimer = 1.6; dist = null; K.sfx.tick();
     tanks = K.slots.map((s, i) => {
       const [c, r] = CORNERS[i], x = OX + (c + 0.5) * CS, y = OY + (r + 0.5) * CS;
       return { s, i, x, y, a: Math.atan2(OY + ROWS * CS / 2 - y, OX + COLS * CS / 2 - x), alive: true, cool: 0, react: 0, aimErr: 0, think: 0, goal: null, dodge: 0 };
@@ -160,7 +160,7 @@
       }
       K.drawParts(c);
       K.hud(c, K.slots, (s) => (tanks[s.i] && !tanks[s.i].alive ? 'out' : ''));
-      if (phase === 'ready') K.banner(c, (K.VI ? 'Ván ' : 'Round ') + round, null, '#fff');
+      if (phase === 'ready') { K.banner(c, (K.VI ? 'Ván ' : 'Round ') + round, null, '#fff'); for (const t of tanks) K.nameTag(c, t.s, t.x, t.y < 300 ? t.y + 52 : t.y - 52); }
       else if (phase === 'end' && !over) K.banner(c, roundWin >= 0 ? K.slots[roundWin].name : (K.VI ? 'Hòa' : 'Draw'), roundWin >= 0 ? (K.VI ? 'thắng ván này' : 'takes the round') : null, roundWin >= 0 ? K.slots[roundWin].color : '#fff');
     },
   };

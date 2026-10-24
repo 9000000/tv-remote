@@ -51,6 +51,32 @@ import dev.tvremote.tvui.TvGlass
 import dev.tvremote.tvui.TvTile
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
+import dev.tvremote.home.apps.App
+import dev.tvremote.home.apps.Apps
+import dev.tvremote.home.wall.Backdrop
+import dev.tvremote.home.apps.Badges
+import dev.tvremote.home.ui.Drop
+import dev.tvremote.home.ui.Frost
+import dev.tvremote.home.apps.InputOpen
+import dev.tvremote.home.keys.Keys
+import dev.tvremote.home.manage.ManageServer
+import dev.tvremote.home.apps.Nav
+import dev.tvremote.home.wall.Online
+import dev.tvremote.home.manage.PhotoScreen
+import dev.tvremote.home.apps.Pins
+import dev.tvremote.home.widgets.sample
+import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveFace
+import dev.tvremote.home.ui.BarBtn
+import dev.tvremote.home.ui.TopBar
+import dev.tvremote.home.wall.Wall
+import dev.tvremote.home.wall.WallArt
+import dev.tvremote.home.wall.Walls
+import dev.tvremote.home.wall.WebWall
+import dev.tvremote.home.wall.WebSnap
+import dev.tvremote.home.wall.WebSnapper
+import dev.tvremote.home.widgets.Widgets
+import dev.tvremote.home.ui.Zoom
 
 /**
  * The home screen: the clock, three round buttons in one capsule (inputs, network, settings), and ONE grid of apps: the favourites
@@ -74,6 +100,8 @@ class HomeActivity : Activity() {
     private lateinit var bar: TopBar
     private lateinit var grid: LinearLayout                         // the favourites first, then every other app, then the hidden apps' tile: one grid
     private var apps: List<App> = emptyList()
+    /** The apps with their pictures as the grid has them: the picker shows these instead of loading every banner again (~230 ms). */
+    internal fun loaded(): List<App> = apps
     @Volatile private var pins: List<App> = emptyList()                // shortcuts other apps pinned here ([Pins])
     private var conf = JSONObject()
     private var wallShown = ""
@@ -175,7 +203,7 @@ class HomeActivity : Activity() {
         netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for both settings, the TV's and TV Home's: two buttons side by side read as the same thing
         settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.settings), ::dp) {
-            open = Drop.show(this, bar, listOf(
+            open = Drop.show(this, bar.capsule, listOf(
                 Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) }) +
                 listOf(Settings.ACTION_DISPLAY_SETTINGS to (R.drawable.ic_monitor to R.string.picture), Settings.ACTION_SOUND_SETTINGS to (R.drawable.ic_vol_up to R.string.sound))
                     .filter { Intent(it.first).resolveActivity(packageManager) != null }          // a TV without that screen shows no dead row
@@ -184,12 +212,12 @@ class HomeActivity : Activity() {
         }
         // for a remote whose own power button is broken: three named actions TV Setup runs (Power.kt), the hard one asks again
         powerPill = BarBtn(this, R.drawable.ic_power, getString(R.string.power), ::dp) {
-            if (!setupThere()) { open = Drop.show(this, bar, needSetup()); return@BarBtn }
-            open = Drop.show(this, bar, listOf(
+            if (!setupThere()) { open = Drop.show(this, bar.capsule, needSetup()); return@BarBtn }
+            open = Drop.show(this, bar.capsule, listOf(
                 Drop.Row(R.drawable.ic_eye_off, getString(R.string.power_screen_off)) { Power.run(this, Power.SCREEN_OFF) },
                 Drop.Row(R.drawable.ic_moon, getString(R.string.power_standby)) { Power.run(this, Power.STANDBY) },
                 Drop.Row(R.drawable.ic_power, getString(R.string.power_off)) {
-                    open = Drop.show(this, bar, listOf(                // Cancel first: the focus lands on the safe choice
+                    open = Drop.show(this, bar.capsule, listOf(                // Cancel first: the focus lands on the safe choice
                         Drop.Row(R.drawable.ic_close, getString(R.string.power_keep)) { },
                         Drop.Row(R.drawable.ic_power, getString(R.string.power_off_now)) { Power.run(this, Power.POWER_OFF) }))
                 }))
@@ -229,7 +257,7 @@ class HomeActivity : Activity() {
         })
         loadApps()
         if (Motion.on) enter(true)
-        if (reopen) { reopen = false; ui.post { customize() } }
+        if (reopen) { reopen = false; ui.post { customize("lang") } }
     }
 
     /** A new language: the screen built again in it, the panel reopened if the change came from it (else it is closed). */
@@ -240,6 +268,7 @@ class HomeActivity : Activity() {
     }
 
     override fun onDestroy() {
+        Customize.forget(this)
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
         Store.onChange = null
         open?.dismiss()
@@ -271,6 +300,7 @@ class HomeActivity : Activity() {
         if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
         bingCheck()
         ui.postDelayed({ if (!isDestroyed) bg.execute { Customize.warm(this) } }, 3000)   // the panel's pictures made while nothing else goes on
+        ui.postDelayed({ Customize.prepare(this) }, 3500)                  // and the panel itself, on the main thread once it is idle
         upd.check({ r -> ui.postDelayed({ if (!isDestroyed && !away && open == null) askUpdate(r) }, 2500) }, { updating(it) })   // asked once the home has settled
     }
 
@@ -307,7 +337,7 @@ class HomeActivity : Activity() {
         WebWall.wake(web); snapper?.resume()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
     }
 
-    override fun onStop() { away = true; zoom.hidden(); ManageServer.stop(); WebWall.sleep(web); snapper?.pause(); super.onStop() }   // the phone-photo page lives only while its QR screen is in front
+    override fun onStop() { away = true; zoom.hidden(); ManageServer.release(); WebWall.sleep(web); snapper?.pause(); super.onStop() }   // the QR stops opening the page; a phone already on it goes on until idle
 
     /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
     override fun onTrimMemory(level: Int) {
@@ -548,6 +578,7 @@ class HomeActivity : Activity() {
     private fun show() {
         moving?.let { it.carry(false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = (currentFocus as? Tile)?.app?.pkg
+        val keepAt = tiles().indexOf(currentFocus)                    // its place: an app hidden or a live tile taken off leaves no tile to go back to
         Motion.read(this, conf)
         if (!Motion.glass) glass.hide()
         wall()
@@ -582,7 +613,8 @@ class HomeActivity : Activity() {
         ui.removeCallbacks(tileTick); if (!away && liveViews().isNotEmpty()) ui.post(tileTick)   // a new grid asks at once
 
         val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
-        if (again != null) again.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
+        val near = if (again == null && keepAt >= 0) tiles().let { t -> t.getOrNull(minOf(keepAt, t.size - 1)) } else null   // the one now in its place (the last, if it was last): not the top of Home, a scroll away
+        if (again != null) again.requestFocus() else if (near != null) near.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
     }
 
     private fun fill(cells: List<View>, cols: Int, gap: Int) {
@@ -768,10 +800,10 @@ class HomeActivity : Activity() {
 
     /** The press: the provider does its job and the tile follows it until it is done (the count-down is the tile's). */
     private fun pressTile(a: App) {
-        bg.execute {
+        Thread {                                                  // its own thread: the follow-up polls for up to 14 s, and on [bg] the wallpaper, widgets and apps waited behind it
             val ok = Tiles.press(this, a.pkg) { s -> runOnUiThread { tileShow(a.pkg, s) } }
-            if (!ok) runOnUiThread { toast(if (Tiles.status(this) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.tile_need_setup_long) }
-        }
+            if (!ok) runOnUiThread { if (!isDestroyed) toast(if (Tiles.status(this) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.tile_need_setup_long) }
+        }.start()
     }
 
     /** The tiles in the config ([HomeConfig] "tiles") are among the apps, so move, hide and the order work on them as on any app. */
@@ -1020,7 +1052,7 @@ class HomeActivity : Activity() {
     }
 
     private var panel: android.app.Dialog? = null
-    private fun customize() { open = Customize.show(this).also { panel = it } }
+    private fun customize(at: String? = null) { open = Customize.show(this, at).also { panel = it } }
 
     /** The remote's Menu key anywhere but on an app (an app's own Menu opens its menu) opens the settings. */
     override fun onKeyUp(code: Int, e: KeyEvent): Boolean {
@@ -1069,7 +1101,7 @@ class HomeActivity : Activity() {
         }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
         if (rows.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }
         open?.dismiss()
-        open = Drop.show(this, bar, rows)
+        open = Drop.show(this, bar.capsule, rows)
     }
 
     /** "HDMI 2" before "HDMI 10". */

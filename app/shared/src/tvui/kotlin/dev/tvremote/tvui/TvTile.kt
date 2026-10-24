@@ -28,6 +28,10 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     private val shine = View(c)
     private var content: View = face                                // the picture, scaled inside the face
     private val lift = dp(14).toFloat()
+    /** False: the tile's own ring, never the gliding glass, whatever the setting (a picker over Home: the glass's layer cost a frame there). */
+    open val glassy get() = Motion.glass
+    /** False: focus is the ring and the name only, the card stays its size (a full-screen page of tiles, where the growth cost most). */
+    open val grows get() = true
     private val across = w.toFloat()
     val pane: View get() = face                                     // where the glass goes
     val corner = dp(TvUi.R_TILE).toFloat()
@@ -54,6 +58,10 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
             override fun getOutline(v: View, out: android.graphics.Outline) { out.setRoundRect(o, o, o + w, o + h, corner) }
         }
         addView(card, LayoutParams(w + 2 * o, h + 2 * o).apply { setMargins(-o, -o, -o, -o) })
+        // a card at rest is a texture: a page scroll then pastes it, not the picture through its rounded clip again. On the FPT
+        // box (Mali-G31, a 25% tint over the screen) TV Home's scroll took 17 ms of GPU a frame (p90 38) and held a frame
+        // 5 presses in 8; with this 12 ms (p90 16). The focused card has none: a layer grown by GROW would be soft ([focus])
+        card.setLayerType(LAYER_TYPE_HARDWARE, null)
         name.apply {
             textSize = 13f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
             alpha = 0f; setPadding(0, 0, 0, 0); setShadowLayer(dp(5).toFloat(), 0f, dp(1).toFloat(), NAME_SHADOW)
@@ -77,22 +85,24 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     fun carry(on: Boolean) {
         val s = if (on) GROW + 0.10f else GROW
         card.animate().cancel()
-        ring.animate().cancel(); ring.alpha = if (on || !Motion.glass) 1f else 0f   // the accent ring even where the focus is the glass; back to the glass after
+        ring.animate().cancel(); ring.alpha = if (on || !glassy) 1f else 0f   // the accent ring even where the focus is the glass; back to the glass after
         if (!Motion.on) { card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift * 1.5f else 0f; return }
         card.animate().scaleX(s).scaleY(s).translationZ(if (on) lift * 1.5f else 0f).setDuration(150).setInterpolator(Motion.glide).start()
     }
 
     /**
      * Focus lifts the card (a springy rise, a soft shadow, the picture a touch larger inside it, a shine passing over) and rings it;
-     * with motion off only the ring and the name change, at once. Hardware layers only while it moves.
+     * with motion off only the ring and the name change, at once. A card at rest keeps its layer; the focused one draws itself.
      */
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
+        if (grows) card.setLayerType(if (on) LAYER_TYPE_NONE else LAYER_TYPE_HARDWARE, null)   // before withLayer(), which puts this back after
+        if (!grows) { ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; return }
         if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
             val s = if (on) GROW else 1f
             card.translationX = 0f; card.translationY = 0f
             card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift else 0f; content.scaleX = if (on) 1.05f else 1f; content.scaleY = content.scaleX
-            ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
+            ring.alpha = if (on && !glassy) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
             return
         }
         // in on a spring, out on a plain glide a little slower: the next tile's rise leads, the last one sinks behind it
@@ -102,7 +112,7 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
         card.translationX = 0f; card.translationY = 0f
         if (Motion.calm) {                                            // one animator, not five: the rest is set at once
             card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f; shine.alpha = 0f; name.translationY = 0f
-            ring.alpha = if (on && !Motion.glass) 1f else 0f; name.alpha = if (on) 1f else 0f
+            ring.alpha = if (on && !glassy) 1f else 0f; name.alpha = if (on) 1f else 0f
             card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
             return
         }
@@ -111,7 +121,7 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
         card.translationZ = if (on) lift else 0f
         card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
         content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
-        ring.animate().alpha(if (on && !Motion.glass) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
+        ring.animate().alpha(if (on && !glassy) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
         name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
         // the gloss: light from above that settles on the card as it rises, rather than a sweep on every move (busy when stepping fast)
         shine.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift).setDuration(if (on) 420L else 200L).setInterpolator(Motion.glide).start()

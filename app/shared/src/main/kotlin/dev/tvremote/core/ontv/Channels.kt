@@ -69,6 +69,23 @@ object Channels {
         } catch (e: Exception) { counted?.second }
     }
     @Volatile private var counted: Pair<Long, Map<String, Int>>? = null
+
+    /**
+     * A country's ready-made categories (docs/channels/categories/<cc>.json), for the page: the site sends no CORS header, so a
+     * browser on the phone or TV cannot read it there. Which countries have one is the site's business, not the app's: none
+     * (404) is {}. Kept a day per country; the last copy when the network fails.
+     */
+    fun categories(cc: String): JSONObject {
+        if (!cc.matches(Regex("[a-z]{2}"))) return JSONObject()
+        cats[cc]?.let { (at, j) -> if (System.currentTimeMillis() - at < 24 * 3600_000L) return j }
+        for (base in CATS) try {
+            val j = JSONObject(String(fetch("$base$cc.json").use { it.readBytes() }, Charsets.UTF_8))
+            cats[cc] = System.currentTimeMillis() to j; return j
+        } catch (e: IOException) { if (e.message == "HTTP 404") { cats[cc] = System.currentTimeMillis() to JSONObject(); return JSONObject() } } catch (e: Exception) {}
+        return cats[cc]?.second ?: JSONObject()
+    }
+    private val cats = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, JSONObject>>()
+    private val CATS = listOf("https://tvremote.pages.dev/channels/categories/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/channels/categories/")   // Providers.BASES
     private const val IPTV = "https://iptv-org.github.io"
 
     private fun fetch(url: String): java.io.InputStream = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).run {

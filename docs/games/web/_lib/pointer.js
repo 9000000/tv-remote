@@ -10,13 +10,17 @@
 //   Ptr.update(dt)               call once per game step: speed, previous position
 //   Ptr.draw(c, slots)           the crosshairs of the human seats, in their colour
 //   Ptr.steer(p, tx, ty, dt, v)  move a crosshair toward a point at v px/s (a CPU)
+//   Ptr.stick                    true (default): a stick / arrow keys / the TV remote's D-pad also move a human's crosshair (a Bluetooth pad, or the remote alone),
+//                                and a pad's A / the remote's OK fires. A game with its own key handling (moles) or its own stick use (hockey) sets it false.
 (function () {
   const K = window.Kit, pad = window.tvpad, W = 1280, H = 720, SENS = 2.4;
   const P = {}, fires = [];
   const Ptr = window.Ptr = { W, H };
   const get = Ptr.get = (n) => P[n] || (P[n] = { x: W / 2, y: H / 2, vx: 0, vy: 0, sp: 0, px: W / 2, py: H / 2, fire: 9, mv: 0 });
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-  const fire = (n) => { get(n).fire = 0; fires.forEach((f) => { try { f(n); } catch (e) { console.error(e); } }); };
+  const fire = (n) => {
+    const now = Date.now(), p = get(n); if (now - (p.fat || 0) < 60) return; p.fat = now;     // one press can arrive twice (the button event and, on an older TV Games, its key): nobody taps faster than 60 ms
+    p.fire = 0; fires.forEach((f) => { try { f(n); } catch (e) { console.error(e); } }); };
   Ptr.onFire = (f) => { fires.push(f); };
   Ptr.reset = () => { for (const k in P) { const p = P[k]; p.x = p.px = W / 2; p.y = p.py = H / 2; p.sp = 0; p.mv = 0; p.fire = 9; } };
 
@@ -33,7 +37,8 @@
   cv.addEventListener('mousemove', (e) => { const p = get(1), [x, y] = at(e); p.x = x; p.y = y; });
   cv.addEventListener('mousedown', (e) => { const p = get(1), [x, y] = at(e); p.x = x; p.y = y; if (K.mode === 'play') fire(1); });
   cv.addEventListener('touchmove', (e) => { const t = e.touches[0], p = get(1), [x, y] = at(t); p.x = x; p.y = y; e.preventDefault(); }, { passive: false });
-  window.addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'KeyZ') && !e.repeat && K.mode === 'play') fire(1); });
+  window.addEventListener('keydown', (e) => { if ((e.code === 'Space' || e.code === 'KeyZ' || (Ptr.stick && e.key === 'Enter')) && !e.repeat && K.mode === 'play') fire(1); });
+  Ptr.stick = true;
 
   Ptr.use = (o) => {
     const buttons = (o && o.buttons) || ['A'];
@@ -47,6 +52,12 @@
     };
   };
   Ptr.update = (dt) => {
+    if (Ptr.stick && K.mode === 'play') K.slots.forEach((s) => {
+      if (!s.human) return;
+      const q = K.pad(s.pad), p = get(s.pad);
+      if (q.x || q.y) { p.x = clamp(p.x + q.x * 820 * dt, 0, W); p.y = clamp(p.y + q.y * 820 * dt, 0, H); }
+      const g = !!(q.gp.A || q.gp.B); if (g && !p.gpd) fire(s.pad); p.gpd = g;                // a Bluetooth pad's A (phones fire through their own button event)
+    });
     for (const k in P) {
       const p = P[k], d = Math.hypot(p.x - p.px, p.y - p.py) / Math.max(dt, 1e-3);
       p.sp += (d - p.sp) * Math.min(1, dt * 12); p.vx = (p.x - p.px) / Math.max(dt, 1e-3); p.vy = (p.y - p.py) / Math.max(dt, 1e-3);
