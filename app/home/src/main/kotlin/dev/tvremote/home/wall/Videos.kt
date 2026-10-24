@@ -268,4 +268,41 @@ object Videos {
             if (w == b.width && h == b.height) b else Bitmap.createScaledBitmap(b, w, h, true).also { if (it !== b) b.recycle() }
         } catch (e: Throwable) { null } finally { try { r.release() } catch (e: Exception) { } }
     }
+
+    // ---- how it plays on THIS TV: measured by VideoWall for [Verdict.WINDOW_MS] after each start, the last result kept in prefs ----
+
+    private fun prefs(c: Context) = c.getSharedPreferences("home", Context.MODE_PRIVATE)
+
+    /** The last measurement {id, fps, want, cpu, at, level: ok|choppy|slow, slow, off} or null. [off]: Home shows the poster instead of this video. */
+    fun perf(c: Context): JSONObject? = try { prefs(c).getString("vperf", null)?.let { JSONObject(it) } } catch (e: Exception) { null }
+
+    fun measured(c: Context, id: String, fps: Float, want: Float, cpu: Int, at: Long): JSONObject =
+        Verdict.next(perf(c), id, fps, want, cpu, at).also { prefs(c).edit().putString("vperf", it.toString()).apply() }
+
+    /** The person chose [wall] again (or the rotation came back to it): the verdict is forgotten and it gets another try. */
+    fun forgetPerf(c: Context, wall: String) { if (perf(c)?.optString("id") == wall) prefs(c).edit().remove("vperf").apply() }
+
+    /** Whether Home should show the poster instead of the video [id] (it was too slow for this TV twice). */
+    fun off(c: Context, id: String) = perf(c)?.let { it.optString("id") == id && it.optBoolean("off") } == true
+}
+
+/** The verdict on a measurement: pure, so it is tested without a TV. */
+object Verdict {
+    const val WINDOW_MS = 20_000L
+    const val SMOOTH = 0.9f                                             // shown / wanted fps from here: smooth
+    const val SLOW = 0.6f                                               // under this: too slow for this TV
+    const val TWICE = 2                                                 // this many slow measurements in a row and Home stops playing it
+
+    /** "ok", "choppy" (between [SLOW] and [SMOOTH]) or "slow". */
+    fun level(fps: Float, want: Float): String {
+        val r = if (want > 0) fps / want else 1f
+        return if (r >= SMOOTH) "ok" else if (r >= SLOW) "choppy" else "slow"
+    }
+
+    /** The new record after one measurement; [prev] counts the slow ones in a row for the same video. */
+    fun next(prev: JSONObject?, id: String, fps: Float, want: Float, cpu: Int, at: Long): JSONObject {
+        val slow = if (level(fps, want) == "slow") (if (prev?.optString("id") == id) prev.optInt("slow") else 0) + 1 else 0
+        return JSONObject().put("id", id).put("fps", Math.round(fps)).put("want", Math.round(want)).put("cpu", cpu).put("at", at)
+            .put("level", level(fps, want)).put("slow", slow).put("off", slow >= TWICE)
+    }
 }

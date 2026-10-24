@@ -168,7 +168,7 @@ async function homeOpen() {
     try { const n = await homeVideo(f, (t) => put(vstate, 'textContent', t)); if (n) await after(n); } finally { back(); put(vstate, 'textContent', ''); }
   } });
   const vupload = el('button', { type: 'button', className: 'primary', textContent: T('home.vupload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : vfile.click() });
-  const vstate = el('p', { className: 'state', role: 'status' }), vnote = el('p', { className: 'note', textContent: T('home.v_note') });
+  const vstate = el('p', { className: 'state', role: 'status' }), vperf = el('p', { className: 'state', role: 'status' }), vnote = el('p', { className: 'note', textContent: T('home.v_note') });
   const vsound = el('input', { type: 'checkbox', onchange: () => send({ vsound: vsound.checked }) });
   const vvolOut = el('output'); let vvolWait = 0;
   const vvolIn = el('input', { type: 'range', min: 0, max: 100, step: 5, ariaLabel: T('home.v_vol'), oninput: () => {
@@ -331,6 +331,8 @@ async function homeOpen() {
     if (document.activeElement !== shadeIn) { shadeIn.value = String(c.shade ?? 50); shadeOut.textContent = (c.shade ?? 50) + '%'; }
     const vOk = !!r.video;                                        // a TV Home from before video has no library
     vupload.hidden = vstate.hidden = !vOk;
+    const pl = homePerf((r.video || {}).perf, c.wall); vperf.hidden = !pl;
+    if (pl) put(vperf, 'textContent', T(pl[0], pl[1]));
     for (const x of [vHead, vsound.parentNode || vsound, vvol, vfpsHead, vfps, vresHead, vres, vnote]) x.hidden = !vOk;
     vsound.checked = !!c.vsound;
     if (document.activeElement !== vvolIn) { vvolIn.value = String(c.vvol ?? 50); vvolOut.textContent = (c.vvol ?? 50) + '%'; }
@@ -504,7 +506,7 @@ async function homeOpen() {
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const GROUPS = [
     ['themes', 'star', 45, 'home.themes', [themeReady, themeMineHead, themeMine, themeHead, themeLine, themeNote]],
-    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, el('div', { className: 'actions' }, upload, vupload), vstate, walls, holdNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, vHead, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres, vnote, file, vfile, galHead, gal, credit]],
+    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, el('div', { className: 'actions' }, upload, vupload), vstate, vperf, walls, holdNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, vHead, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres, vnote, file, vfile, galHead, gal, credit]],
     ['look', 'sparkle', 180, 'home.g_look', [focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet')]],
     ['layout', 'apps', 265, 'home.g_layout', [colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden]],
@@ -648,6 +650,14 @@ async function homeGallery(box, credit, head, done) {
 function homeShape() {
   const d = homeNow && homeNow.display;
   return d && d.w > 0 && d.h > 0 ? [1920, Math.max(1, Math.round(1920 * d.h / d.w))] : [1920, 1080];
+}
+
+// The one line about how the video plays on THIS TV (TV Home measures it for 20 s after each start: wall/Videos.kt Verdict, `video.perf`
+// {id, fps, want, cpu, level: ok|choppy|slow, off}): [id, words' values] or null (nothing measured for the wall on now).
+function homePerf(perf, wall) {
+  if (!perf || !wall || perf.id !== wall) return null;
+  const a = { fps: perf.fps, want: perf.want, cpu: perf.cpu };
+  return perf.off ? ['home.v_perf_off', a] : perf.level === 'ok' ? ['home.v_perf_ok', a] : ['home.v_perf_bad', a];
 }
 
 // A video or GIF as the background: shown in the TV's frame first (the TV covers the screen with it, as this box does), then sent

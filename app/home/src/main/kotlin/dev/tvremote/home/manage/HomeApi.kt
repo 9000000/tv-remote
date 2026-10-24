@@ -51,7 +51,7 @@ object HomeApi {
             .put("photo", File(c.getExternalFilesDir(null), "wall.jpg").isFile)
             .put("photos", photos).put("thumbs", pictures)
             // the media library (Videos.kt): its items, the work under way, the room left and the cap; the screen's real size for previews
-            .put("video", JSONObject().put("items", library).put("job", Videos.job?.json() ?: JSONObject.NULL).put("free", Videos.free(c)).put("max", HomeConfig.VIDEO_MAX_BYTES).put("libmax", HomeConfig.VIDEO_LIB_MAX))
+            .put("video", JSONObject().put("items", library).put("job", Videos.job?.json() ?: JSONObject.NULL).put("free", Videos.free(c)).put("max", HomeConfig.VIDEO_MAX_BYTES).put("libmax", HomeConfig.VIDEO_LIB_MAX).put("perf", Videos.perf(c) ?: JSONObject.NULL))
             .put("display", JSONObject().put("w", dw).put("h", dh))
             .also { o -> Online.info(c)?.let { o.put("bing", it) } }
     }

@@ -6,6 +6,7 @@ import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.apps.Tiles
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.wall.Online
+import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.wall.Walls
 import org.json.JSONObject
 
@@ -66,6 +67,7 @@ object Store {
     fun change(c: Context, change: JSONObject): JSONObject {
         if (change.has("dream")) Dream.set(c, change.optBoolean("dream"))
         val n = HomeConfig.merge(get(c), change) { Walls.usable(c, it) }
+        if (change.has("wall")) Videos.forgetPerf(c, change.optString("wall"))   // a video that was too slow gets another try when it is chosen again
         val e = prefs(c).edit().putString("conf", n.toString())
         val applied = change.optJSONObject("theme")?.has("apply") == true      // a theme sets the motion and the background too
         if (change.has("anim") || applied) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs

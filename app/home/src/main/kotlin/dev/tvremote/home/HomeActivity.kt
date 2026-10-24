@@ -948,10 +948,17 @@ class HomeActivity : Activity() {
     /** The player of a video wall behind the grid. A file the codec cannot play leaves the poster (a picture), tried again in 2 minutes. */
     private fun attachVideo(id: String) {
         val f = Videos.file(this, id).takeIf { it.isFile } ?: return detachVideo()   // deleted: the poster (or the gradient) stays
+        if (Videos.off(this, id)) return detachVideo()                // too slow for this TV twice: the poster stays until the video is chosen again
         val root = scroll.parent as? ViewGroup ?: return
-        val v = video ?: VideoWall(this, root, ui) { detachVideo(); ui.postDelayed(videoRetry, 120_000) }.also { video = it }
+        val v = video ?: VideoWall(this, root, ui, { m -> videoMeasured(conf.optString("wall"), m) }) { detachVideo(); ui.postDelayed(videoRetry, 120_000) }.also { video = it }
         v.show(f, shadeK(), conf.optBoolean("vsound", false), conf.optInt("vvol", HomeConfig.VOL_DEFAULT))
         if (away) v.stop()                                            // made while away (a rotation, a phone): [onStart] plays it
+    }
+
+    /** 20 s of the video are measured: kept for the clients; slow twice in a row and the poster takes over (a still picture beats a stutter). */
+    private fun videoMeasured(id: String, m: VideoWall.Measure) {
+        val r = Videos.measured(this, id, m.fps, m.want, m.cpu, System.currentTimeMillis())
+        if (r.optBoolean("off")) detachVideo()
     }
 
     private fun detachVideo() {

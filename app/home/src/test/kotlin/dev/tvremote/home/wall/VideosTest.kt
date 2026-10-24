@@ -56,4 +56,21 @@ class VideosTest {
             assertEquals(true, Videos.inUse(now, "vid:0a1b2c3d")); assertEquals(true, Videos.kept("photo2")); assertEquals(false, Videos.kept("photo3"))
         } finally { Videos.refs.remove(hook) }
     }
+
+    @Test fun verdictLevels() {
+        assertEquals("ok", Verdict.level(30f, 30f)); assertEquals("ok", Verdict.level(27f, 30f))      // 90 % and over: smooth
+        assertEquals("choppy", Verdict.level(26f, 30f)); assertEquals("choppy", Verdict.level(18f, 30f))
+        assertEquals("slow", Verdict.level(17f, 30f)); assertEquals("slow", Verdict.level(0f, 30f))   // under 60 %
+        assertEquals("ok", Verdict.level(0f, 0f))                                                     // a clip that does not say its rate is not judged
+    }
+
+    @Test fun slowTwiceInARowTurnsTheVideoOff() {
+        val a = Verdict.next(null, "vid:a", 14f, 30f, 40, 1L)
+        assertEquals(1, a.optInt("slow")); assertEquals(false, a.optBoolean("off")); assertEquals("slow", a.optString("level"))
+        val b = Verdict.next(a, "vid:a", 12f, 30f, 40, 2L)
+        assertEquals(2, b.optInt("slow")); assertEquals(true, b.optBoolean("off"))
+        val c = Verdict.next(a, "vid:a", 29f, 30f, 8, 3L)                     // a good run in between starts the count again
+        assertEquals(0, c.optInt("slow")); assertEquals(false, c.optBoolean("off")); assertEquals(29, c.optInt("fps"))
+        assertEquals(1, Verdict.next(a, "vid:other", 14f, 30f, 40, 4L).optInt("slow"))   // another video starts its own count
+    }
 }
