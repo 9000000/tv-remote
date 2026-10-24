@@ -48,7 +48,7 @@ class HomeThemesTest {
         for (bad in listOf("http://x.dev/a.jpg", "javascript:alert(1)", "https://x.dev/a b.jpg", "https://x.dev/a\"b", "https://", "https://x.dev/" + "a".repeat(HomeConfig.THUMB_MAX), "file:///sdcard/a.jpg", ""))
             assertEquals(bad, "", thumb(bad))
         val r = HomeConfig.parseReady(String(list), "99.0.0")
-        for (id in listOf("sapa", "beach", "city")) assertTrue("$id: thumb", r.first { it.id == id }.thumb.startsWith("https://upload.wikimedia.org/"))
+        for (id in listOf("sapa", "beach", "city", "sports", "cinema", "tet", "kids", "bed")) assertTrue("$id: thumb", r.first { it.id == id }.thumb.startsWith("https://tvremote.pages.dev/home/"))
     }
 
     @Test fun everyShippedThemeHasAudienceNamesAndNoFlatBlack() {

@@ -214,7 +214,7 @@
    },
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Ff%2Fff%2FRice_terraces_in_Sapa%252C_Vietnam.jpg%2F1920px-Rice_terraces_in_Sapa%252C_Vietnam.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fterraces-sapa.jpg",
     "shade": 35,
     "widgets": [
      "weather",
@@ -230,8 +230,8 @@
     "greet": true
    },
    "look": "meadow",
-   "src": "Wikimedia Commons, CC0 (Eerin25): File:Rice terraces in Sapa, Vietnam.jpg",
-   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Rice_terraces_in_Sapa%2C_Vietnam.jpg/330px-Rice_terraces_in_Sapa%2C_Vietnam.jpg"
+   "src": "Wikimedia Commons, CC BY 2.0 (David McKelvey): Sapa view 3.jpg",
+   "thumb": "https://tvremote.pages.dev/home/terraces-sapa-t.jpg"
   },
   {
    "id": "beach",
@@ -240,12 +240,12 @@
     "en": "Sunset beach"
    },
    "for": {
-    "vi": "Thư giãn cuối ngày: video hoàng hôn trên biển chạy nền",
-    "en": "Unwinding: a sunset beach video in the background"
+    "vi": "Thư giãn cuối ngày: ảnh hoàng hôn trên biển phủ cả màn hình",
+    "en": "Unwinding: a sunset beach photo across the screen"
    },
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2F330px--Sunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fbeach-sunset.jpg",
     "shade": 30,
     "widgets": [
      "clock",
@@ -264,8 +264,8 @@
     "greet": true
    },
    "look": "sunset",
-   "src": "Wikimedia Commons, CC0: File:Sunset timelapse on the beach in Libreville, Gabon.webm",
-   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm/330px--Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm.jpg"
+   "src": "Wikimedia Commons, CC BY-SA 4.0 (PattayaPatrol): DZ6 2673 Golden hour at the beach - palm-thatched huts gentle waves and a sunset that slows time.jpg",
+   "thumb": "https://tvremote.pages.dev/home/beach-sunset-t.jpg"
   },
   {
    "id": "city",
@@ -274,12 +274,12 @@
     "en": "City night"
    },
    "for": {
-    "vi": "Cú đêm: video thành phố về đêm, đồng hồ lớn",
-    "en": "Night owls: a night-city video, a big clock"
+    "vi": "Cú đêm: ảnh thành phố về đêm, đồng hồ lớn",
+    "en": "Night owls: a night-city photo, a big clock"
    },
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2F9%2F91%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2F9%2F91%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm%2F330px--Shanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fhk-night.jpg",
     "shade": 45,
     "widgets": [
      "clock",
@@ -299,8 +299,8 @@
     "greet": false
    },
    "look": "navy",
-   "src": "Wikimedia Commons, CC0 (Yigang Yu): File:Shanghai Bund, Lujiazui Skyline Timelapse.webm",
-   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Shanghai_Bund%2C_Lujiazui_Skyline_Timelapse.webm/330px--Shanghai_Bund%2C_Lujiazui_Skyline_Timelapse.webm.jpg"
+   "src": "Wikimedia Commons, CC BY-SA 4.0 (Suicasmo): Hong Kong night skylines (Hong Kong Island) 20170807-1.jpg",
+   "thumb": "https://tvremote.pages.dev/home/hk-night-t.jpg"
   },
   {
    "id": "tech",
@@ -377,7 +377,7 @@
     "en": "Sports fans: a pitch green background, TV Channels' Continue-watching tile"
    },
    "conf": {
-    "wall": "forest",
+    "wall": "web",
     "shade": 35,
     "widgets": [
      "clock",
@@ -395,11 +395,15 @@
     "focus": "glass",
     "motion": "full",
     "clock24": true,
-    "greet": true
+    "greet": true,
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fpitch-night.jpg"
    },
    "tiles": [
     "tile:dev.tvremote.channels/next"
-   ]
+   ],
+   "look": "forest",
+   "src": "Wikimedia Commons, CC BY-SA 4.0 (Emessem T): The Peninsula Stadium at night - Salford City - Aug 24.jpg",
+   "thumb": "https://tvremote.pages.dev/home/pitch-night-t.jpg"
   },
   {
    "id": "kids",
@@ -412,7 +416,7 @@
     "en": "Homes with small children: candy colours, big tiles (4 columns)"
    },
    "conf": {
-    "wall": "candy",
+    "wall": "web",
     "shade": 10,
     "widgets": [
      "clock",
@@ -429,8 +433,12 @@
     "cols": 4,
     "focus": "glass",
     "motion": "full",
-    "greet": true
-   }
+    "greet": true,
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Ftulips-sunset.jpg"
+   },
+   "look": "candy",
+   "src": "Wikimedia Commons, CC BY 2.0 (rboed*): Tulip field in Holland2.jpg",
+   "thumb": "https://tvremote.pages.dev/home/tulips-sunset-t.jpg"
   },
   {
    "id": "easy",
@@ -473,7 +481,7 @@
     "en": "Tết and full-moon days: big lunar and month cards in warm tones"
    },
    "conf": {
-    "wall": "ember",
+    "wall": "web",
     "shade": 40,
     "widgets": [
      "lunar",
@@ -492,8 +500,12 @@
     "cols": 5,
     "focus": "glass",
     "motion": "full",
-    "greet": true
-   }
+    "greet": true,
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Flanterns-red.jpg"
+   },
+   "look": "ember",
+   "src": "Wikimedia Commons, CC BY-SA 4.0 (Tony Ng): Chinese Lanterns at Night in Chinatown (2).jpg",
+   "thumb": "https://tvremote.pages.dev/home/lanterns-red-t.jpg"
   },
   {
    "id": "bed",
@@ -506,7 +518,7 @@
     "en": "Winding down: dark and still, the sleep-timer tile first"
    },
    "conf": {
-    "wall": "night",
+    "wall": "web",
     "shade": 70,
     "widgets": [
      "timer",
@@ -525,11 +537,15 @@
     "motion": "calm",
     "anim": false,
     "clock24": true,
-    "greet": false
+    "greet": false,
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fmilky-way.jpg"
    },
    "tiles": [
     "tile:dev.tvremote.setup/sleep"
-   ]
+   ],
+   "look": "night",
+   "src": "Wikimedia Commons, CC0 (Andrew Coelho andrewcoelho): Milky Way Lake Mountains (Unsplash).jpg",
+   "thumb": "https://tvremote.pages.dev/home/milky-way-t.jpg"
   },
   {
    "id": "cinema",
@@ -538,19 +554,23 @@
     "en": "Cinema"
    },
    "for": {
-    "vi": "Tối xem phim: đồi đỏ như nhung rạp hát, không thẻ, chỉ ứng dụng",
-    "en": "Movie night: theatre-red hills, no cards, just the apps"
+    "vi": "Tối xem phim: ghế đỏ rạp hát, không thẻ, chỉ ứng dụng",
+    "en": "Movie night: a theatre in red, no cards, just the apps"
    },
    "conf": {
-    "wall": "canyon",
+    "wall": "web",
     "shade": 55,
     "widgets": [],
     "cols": 6,
     "rows": 1.2,
     "focus": "ring",
     "motion": "calm",
-    "greet": false
-   }
+    "greet": false,
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Ftheatre-red.jpg"
+   },
+   "look": "canyon",
+   "src": "Wikimedia Commons, CC BY-SA 4.0 (Bretonjulie123): Theatre Lionel Groulx.jpg",
+   "thumb": "https://tvremote.pages.dev/home/theatre-red-t.jpg"
   },
   {
    "id": "minimal",
@@ -574,5 +594,5 @@
    }
   }
  ],
- "rev": 1792867510
+ "rev": 1792879307
 }

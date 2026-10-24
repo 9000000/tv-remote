@@ -4,7 +4,7 @@
 <title>TV Home background</title>
 <!-- A page TV Home's "web" background can show: a muted looping video (?v=https://...) or a picture covering the screen (?i=https://...).
      Only the hosts below are accepted, so the page cannot be used to show anything else. Licences of what the themes point at:
-     docs/home/themes.json "src" fields (Wikimedia Commons, CC0). Not signed itself: the signed theme list holds its address. -->
+     docs/home/themes.json "src" fields and docs/home/wallpapers.json (Wikimedia Commons; the site's own copies under tvremote.pages.dev/home/). Not signed itself: the signed theme list holds its address. -->
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: linear-gradient(135deg, #050a1a, #0b1b45 60%, #14307a); }
   video, img { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -13,7 +13,7 @@
   img.p { filter: blur(24px); transform: scale(1.1); }
 </style>
 <script>
-  const HOSTS = ['upload.wikimedia.org', 'videos.pexels.com', 'images.pexels.com', 'images.unsplash.com'];
+  const HOSTS = ['tvremote.pages.dev', 'upload.wikimedia.org', 'videos.pexels.com', 'images.pexels.com', 'images.unsplash.com'];
   const q = new URLSearchParams(location.search);
   const ok = (s) => { try { const u = new URL(s); return u.protocol === 'https:' && HOSTS.includes(u.hostname); } catch { return false; } };
   const v = q.get('v'), i = q.get('i'), p = q.get('p');

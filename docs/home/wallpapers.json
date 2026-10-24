@@ -180,6 +180,126 @@
       "credit": "TV Remote",
       "source": "https://github.com/HoangTran0410/tv-remote",
       "license": "CC0"
+    },
+    {
+      "id": "terraces-sapa",
+      "name": {
+        "vi": "Ruộng bậc thang Sa Pa",
+        "en": "Sa Pa rice terraces"
+      },
+      "file": "terraces-sapa.jpg",
+      "sha256": "77222d7e9a727b4c54a8612e73dd20ad7db805bf2d67433115830d83083de708",
+      "bytes": 569901,
+      "thumb": "terraces-sapa-t.jpg",
+      "thumb_sha256": "507542a494422e0df6fc24ee1c1d62dedf80b3285ca31ebf5bd87d39d40c28da",
+      "credit": "David McKelvey (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:Sapa_view_3.jpg",
+      "license": "CC BY 2.0"
+    },
+    {
+      "id": "beach-sunset",
+      "name": {
+        "vi": "Hoàng hôn biển",
+        "en": "Sunset beach"
+      },
+      "file": "beach-sunset.jpg",
+      "sha256": "a8c13ed32c13ac96ffc313cf63f99d268e8607fa93b10148cac3c0e1efe11b41",
+      "bytes": 181545,
+      "thumb": "beach-sunset-t.jpg",
+      "thumb_sha256": "1f72df2379abbc0beffa91f1139a0f03e233fe1faf743f812e9db4f97d291e58",
+      "credit": "PattayaPatrol (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:DZ6_2673_Golden_hour_at_the_beach_-_palm-thatched_huts_gentle_waves_and_a_sunset_that_slows_time.jpg",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "hk-night",
+      "name": {
+        "vi": "Đêm Hồng Kông",
+        "en": "Hong Kong night"
+      },
+      "file": "hk-night.jpg",
+      "sha256": "71be7064ccb3d07ad1bf84ab53f2697e44f593d8d60c96e1e904ba7c3f472361",
+      "bytes": 439019,
+      "thumb": "hk-night-t.jpg",
+      "thumb_sha256": "fd0ccc8562beaf44287490b862ee8fd17dddb70d0a1e456d2a51e03b2910856e",
+      "credit": "Suicasmo (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:Hong_Kong_night_skylines_%28Hong_Kong_Island%29_20170807-1.jpg",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "pitch-night",
+      "name": {
+        "vi": "Sân cỏ đêm",
+        "en": "Pitch at night"
+      },
+      "file": "pitch-night.jpg",
+      "sha256": "f916c683aeee890cc5b820298c1099e56e809eb87f625ea386d6f40b34c82ea7",
+      "bytes": 132460,
+      "thumb": "pitch-night-t.jpg",
+      "thumb_sha256": "9df37cb73e08072b9a08f744784feb772fac3f37525cea5a7778f9c0d83ade6a",
+      "credit": "Emessem T (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:The_Peninsula_Stadium_at_night_-_Salford_City_-_Aug_24.jpg",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "lanterns-red",
+      "name": {
+        "vi": "Đèn lồng đỏ",
+        "en": "Red lanterns"
+      },
+      "file": "lanterns-red.jpg",
+      "sha256": "d3093ea7fe6a69886fc35812c194610ba98bdea8b280f2538f815e6cbad841ae",
+      "bytes": 317007,
+      "thumb": "lanterns-red-t.jpg",
+      "thumb_sha256": "82a70e97b7ca1567400e36b197a3bcb858613e12e40cc1047a80d2bd4d6def36",
+      "credit": "Tony Ng (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:Chinese_Lanterns_at_Night_in_Chinatown_%282%29.jpg",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "theatre-red",
+      "name": {
+        "vi": "Rạp hát",
+        "en": "Theatre"
+      },
+      "file": "theatre-red.jpg",
+      "sha256": "bef0746617441a26f101fd23de631bb58b7ccfcb4a9b8f152a8bad38a943703b",
+      "bytes": 278389,
+      "thumb": "theatre-red-t.jpg",
+      "thumb_sha256": "eb413663d5a0028c556ad6856e9094e3a712b7602752c3b4b9726fff12081769",
+      "credit": "Bretonjulie123 (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:Theatre_Lionel_Groulx.jpg",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "tulips-sunset",
+      "name": {
+        "vi": "Cánh đồng tulip",
+        "en": "Tulip field"
+      },
+      "file": "tulips-sunset.jpg",
+      "sha256": "e5f48ee0944f90d711f9baf8e5984f9f359f433b976a65e556f19544c4936d5e",
+      "bytes": 497710,
+      "thumb": "tulips-sunset-t.jpg",
+      "thumb_sha256": "76bbeccc73590af18bb9e0ae9d626fd1d628a73764e99aca6126c99ac7077134",
+      "credit": "rboed* (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:Tulip_field_in_Holland2.jpg",
+      "license": "CC BY 2.0"
+    },
+    {
+      "id": "milky-way",
+      "name": {
+        "vi": "Dải Ngân Hà",
+        "en": "Milky Way"
+      },
+      "file": "milky-way.jpg",
+      "sha256": "a5585cc86532ee0d110960ed3da1ed2be1e4fa4bac5d8d8c348a2d832685de41",
+      "bytes": 401311,
+      "thumb": "milky-way-t.jpg",
+      "thumb_sha256": "f843dc9e449d0efb45e2b148621ec27fc9f4375049c1d35166f8bdf47372fc3a",
+      "credit": "Andrew Coelho andrewcoelho (Wikimedia Commons)",
+      "source": "https://commons.wikimedia.org/wiki/File:Milky_Way_Lake_Mountains_%28Unsplash%29.jpg",
+      "license": "CC0"
     }
   ]
 }

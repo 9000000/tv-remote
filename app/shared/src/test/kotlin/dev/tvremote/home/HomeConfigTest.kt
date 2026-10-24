@@ -434,7 +434,7 @@ class HomeConfigTest {
             .put("qrs", JSONObject().put("qr1", JSONObject().put("tpl", "link").put("f", JSONObject().put("url", "https://x.dev")).put("cap", "x").put("show", true)))
             .put("widgets", JSONArray(listOf("system", "qr1")))
         val n = HomeConfig.merge(old, op("apply" to "cinema"))
-        assertEquals("canyon", n.getString("wall")); assertEquals(55, n.getInt("shade")); assertEquals(6, n.getInt("cols")); assertEquals("ring", n.getString("focus"))
+        assertEquals("web", n.getString("wall")); assertEquals(55, n.getInt("shade")); assertEquals(6, n.getInt("cols")); assertEquals("ring", n.getString("focus"))
         assertEquals(listOf("com.a.b"), dock(n)); assertEquals("vi", n.getString("lang")); assertTrue(n.getBoolean("keyon"))      // the apps, language, keys are not a look
         assertEquals(listOf("qr1"), n.getJSONArray("widgets").let { a -> List(a.length()) { a.getString(it) } })              // the cards go, the QR card stays
         assertTrue(n.getJSONObject("qrs").has("qr1"))
