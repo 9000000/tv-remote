@@ -27,6 +27,7 @@ import dev.tvremote.home.manage.HomeApi
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.wall.Online
 import dev.tvremote.home.manage.PhotoScreen
+import dev.tvremote.home.manage.TelegramScreen
 import dev.tvremote.home.ui.Drop
 import dev.tvremote.home.keys.Picker
 import dev.tvremote.home.keys.QuickKeys
@@ -621,6 +622,24 @@ object Customize {
             }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        // Telegram: a plain row (TV Setup is asked only once it is opened, so Customize stays light); without TV Setup the screen says how to get it
+        top.addView(LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+            setPadding(dp(10), dp(8), dp(14), dp(8))
+            background = TvGlass.rowBg(a, 18)
+            addView(FrameLayout(a).apply {
+                background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(ACCENT); alpha = 51 }
+                val (iv, s) = icon(R.drawable.ic_send, ACCENT, dp(24))
+                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
+            }, LinearLayout.LayoutParams(dp(42), dp(42)))
+            addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(label(a.getString(R.string.tg_row), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
+                addView(label(a.getString(R.string.tg_row_sub), 13f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
+            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
+            setOnClickListener { TelegramScreen.show(a) }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         val done = Font.on(TextView(a)).apply {
             text = a.getString(R.string.done); textSize = 16f; setTextColor(0xFF111318.toInt()); gravity = Gravity.CENTER

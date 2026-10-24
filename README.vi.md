@@ -192,6 +192,7 @@ Là màn hình chính thay cho Google TV: không quảng cáo, không hàng gợ
 - Widget tùy chọn: hệ thống (RAM, bộ nhớ, IP), thời tiết, lịch âm, lịch tháng, app dùng nhiều và giới hạn, hẹn giờ tắt, ghi chú.
 - Hình nền hoặc ảnh của bạn, đồng hồ 12/24 giờ, mức hiệu ứng.
 - Chỉnh từ điện thoại / máy tính (tab TV → 🏠 → *Tùy chỉnh TV Home*) hoặc ngay trên TV bằng remote.
+- *Tùy chỉnh → Telegram* hiện mã QR để ghép bot Telegram của bạn với điện thoại (bot chạy trong TV Setup).
 - *Tối ưu TV* tự đặt nó làm màn hình chính; *Về launcher của TV* là trả lại như cũ.
 
 ### 📺 TV Channels
