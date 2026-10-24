@@ -17,6 +17,7 @@ import dev.tvremote.home.R
 import dev.tvremote.home.Store
 import dev.tvremote.home.Target
 import dev.tvremote.home.apps.App
+import dev.tvremote.home.apps.Tiles
 import dev.tvremote.tvui.TvGlass
 import dev.tvremote.tvui.pill
 import dev.tvremote.tvui.pillText
@@ -39,9 +40,6 @@ object QuickKeys {
         val dialog = Dialog(a, R.style.Menu)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val panelW = minOf(dm.widthPixels - dp(64), dp(1180))
-        val cols = 5
-        val gap = dp(dev.tvremote.home.GRID_GAP)                      // Home's: a focused tile's name shows under it, 26 put it under the next row
-        val tileW = (panelW - dp(2 * 34) - (cols - 1) * gap) / cols
 
         val area = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
         val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(34), dp(24), dp(34), dp(70)) }
@@ -63,10 +61,13 @@ object QuickKeys {
             orientation = LinearLayout.VERTICAL; clipChildren = false
             addView(head); addView(hint); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         }
+        // a tile lifts out of the scroll's box (its ring), so scrolled keys drew over the title and the switches: they sit above, on the page's colour
+        for (v in listOf(head, hint)) { v.setBackgroundColor(TvGlass.PANEL_BOTTOM); v.translationZ = 1f; v.outlineProvider = null }
         dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, -1, Gravity.CENTER_HORIZONTAL)) })   // centred: a bare content view sat at the left; to the bottom edge: 64 dp short, the last row stopped on an empty band
         dialog.window?.let(::solidPage)
 
-        val keyOrder = (HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()) + HomeConfig.KEY_COLOURS + POWER + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD }   // 1..9, 0, the colours, power-on, then keys the stock launcher answered
+        val extra = listOf(POWER) + Keys.dead(a).filter { it in HomeConfig.KEY_DEAD }                      // the last row: power-on, then the keys the stock launcher answered
+        val keyOrder = (HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()) + HomeConfig.KEY_COLOURS + extra   // 1..9, 0, the colours, power-on, then keys the stock launcher answered
         val tiles = HashMap<Int, PickTile>()
         var seq = 0                                                   // a redraw superseded by a newer one (two changes in a row) is dropped
 
@@ -101,20 +102,18 @@ object QuickKeys {
                     if (mine != seq || !dialog.isShowing) return@runOnUiThread
                     paintHead()
                     grid.removeAllViews(); tiles.clear()
-                    var row: LinearLayout? = null
-                    keyOrder.forEachIndexed { i, code ->
-                        if (i % cols == 0) { row = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
-                            grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
+                    fun slot(code: Int): Keypad.Slot {
                         val target = targetOf(code, conf)
                         val art = pics[code]
                         val missing = target.isNotEmpty() && art == null                    // the app is gone: the slot shows it, to be cleared or changed
-                        val t = PickTile(a, tileW, ::dp, "k$code", if (art != null) art.label else if (missing) Targets.label(a, target) else if (code != POWER && have != null && code !in have) a.getString(R.string.qk_no_key) else "", art, "k$code",
-                            tag = words(code), icon = if (code == POWER) R.drawable.ic_power else if (Target.kind(target) == Target.Kind.TILE) R.drawable.ic_gauge else 0, plus = target.isEmpty(), color = if (art == null) COLOUR[code] ?: PK_EMPTY else 0)
-                        t.dead = code != POWER && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS && have != null && code !in have && target.isEmpty()
-                        t.setOnClickListener { choose(code) }
-                        tiles[code] = t
-                        row!!.addView(t, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
+                        val off = code != POWER && have != null && code !in have
+                        val info = if (Target.kind(target) == Target.Kind.TILE) Tiles.available(a).firstOrNull { it.key == target } else null
+                        return Keypad.Slot(if (art != null) art.label else if (missing) Targets.label(a, target) else if (off) a.getString(R.string.qk_no_key) else "", art, words(code), target.isEmpty(),
+                            if (art == null) COLOUR[code] ?: PK_EMPTY else 0,
+                            icon = if (code == POWER) R.drawable.ic_power else if (Target.kind(target) == Target.Kind.TILE) (info?.let { Tiles.iconRes(a, it) } ?: R.drawable.ic_gauge) else 0,
+                            dead = code != POWER && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS && off && target.isEmpty())
                     }
+                    grid.addView(Keypad.build(a, ::dp, extra, ::slot, ::choose, tiles), LinearLayout.LayoutParams(-1, -2))
                     if (keysOn.hasFocus() || autoOn.hasFocus()) return@runOnUiThread   // a pill just switched: the focus stays on it, not on key 1
                     (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: keyOrder.firstNotNullOfOrNull { k -> tiles[k]?.takeIf { it.isFocusable } })?.requestFocus()   // key 1 first: a HashMap's order put it on any slot (the power-on one)
                 }
@@ -125,8 +124,12 @@ object QuickKeys {
         var lastFocus: Int? = null
         Store.onChange = { change?.invoke(); redraw(tiles.entries.firstOrNull { it.value.hasFocus() }?.key ?: lastFocus) }
         Keys.onState = { paintHead() }
-        dialog.setOnDismissListener { Store.onChange = change; Keys.onState = null }
+        dialog.setOnDismissListener { Store.onChange = change; Keys.onState = null; Keys.capture(a, false) }
         dialog.setOnShowListener { Keys.push(a) }                     // asks TV Setup again, so the line above is true when it answers
+        dialog.setOnKeyListener { _, code, e ->                       // the real key on the remote: the tile of that key is chosen without walking to it
+            if (code in tiles.keys && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS) { if (e.action == android.view.KeyEvent.ACTION_DOWN && e.repeatCount == 0) choose(code); true } else false
+        }
+        Keys.capture(a, true)
         paintHead(); redraw(null)
         dialog.show()
         return dialog

@@ -26,6 +26,11 @@ object Keys {
     private fun prefs(c: Context) = c.getSharedPreferences("home_keys", Context.MODE_PRIVATE)
 
     /** Tells TV Setup the setting as it is now and keeps its answer; on a thread of its own (a binder call to another app). */
+    /** TV Setup lets the remote's mapped keys through to the screen while a page that assigns them is open (an older one: they open their apps as ever). */
+    fun capture(c: Context, on: Boolean) {
+        Thread({ try { c.contentResolver.call(android.net.Uri.parse(HomeConfig.USAGE), "capture", if (on) "1" else "0", null) } catch (e: Exception) { } }, "home-capture").apply { isDaemon = true }.start()
+    }
+
     fun push(c: Context) {
         val app = c.applicationContext
         val conf = Store.get(app)

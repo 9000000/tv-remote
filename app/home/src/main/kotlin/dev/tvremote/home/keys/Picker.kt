@@ -83,10 +83,10 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
             inner.addView(ImageView(c).apply {
                 if (pic != null) setImageDrawable(pic.constantState?.newDrawable(c.resources) ?: pic)   // a copy: the grid's tile has the same picture
                 else { setImageResource(if (plus) R.drawable.ic_plus else icon.takeIf { it != 0 } ?: R.drawable.ic_apps); imageTintList = android.content.res.ColorStateList.valueOf(if (plus) PK_FAINT else Color.WHITE) }
-            }, LayoutParams(h * (if (flat) 30 else 42) / 100, h * (if (flat) 30 else 42) / 100))
+            }, LayoutParams(h * (if (flat) 27 else 42) / 100, h * (if (flat) 27 else 42) / 100))
             if (label.isNotEmpty()) inner.addView(Font.on(TextView(c)).apply {
                 text = label; textSize = 12f; setTextColor(if (plus) PK_SOFT else Color.WHITE); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER
-                setPadding(0, dpx(4), 0, 0)
+                setPadding(0, dpx(if (flat) 1 else 4), 0, 0)
             }, LayoutParams(-1, -2))
             fill(inner)
             name.text = ""

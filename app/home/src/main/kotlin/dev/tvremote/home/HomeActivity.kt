@@ -1207,7 +1207,7 @@ class HomeActivity : Activity() {
     private fun capture(on: Boolean) {
         if (!on && !capturing) return
         capturing = on
-        Thread({ try { contentResolver.call(Uri.parse(HomeConfig.USAGE), "capture", if (on) "1" else "0", null) } catch (e: Exception) { } }, "home-capture").apply { isDaemon = true }.start()
+        Keys.capture(this, on)
     }
     private var capturing = false
 
@@ -1541,34 +1541,20 @@ class HomeActivity : Activity() {
             capture(true)
             keyPicker(a, st, code, if (mine) getString(R.string.am_key_gone) else getString(R.string.am_key_set, Keys.name(this, code), a.label))
         }
-        fun tile(code: Int): View {
-            val tw = dp(if (code in HomeConfig.KEY_COLOURS) 130 else 112)         // the colour keys wider: their name sits on the top edge
+        fun slot(code: Int): dev.tvremote.home.keys.Keypad.Slot {
             val who = map[code].orEmpty(); val pic = art[code]
             val missing = who.isNotEmpty() && pic == null
-            val colour = dev.tvremote.home.keys.QuickKeys.COLOUR[code]
-            val t = dev.tvremote.home.keys.PickTile(this, tw, ::dp, "k$code", if (pic != null) pic.label else if (missing) dev.tvremote.home.keys.Targets.label(this, who) else "", pic, "k$code",
-                tag = Keys.name(this, code), plus = who.isEmpty(), color = if (pic == null) colour ?: dev.tvremote.home.keys.PK_EMPTY else 0, flat = true)
-            t.deadAlpha = 0.65f
-            t.dead = who.isEmpty() && have != null && code !in have
-            t.mark(who == a.pkg)
-            t.setOnClickListener { toggle(code) }
-            tiles[code] = t
-            return t
-        }
-        fun row(codes: List<Int>) = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false; clipToPadding = false
-            codes.forEachIndexed { i, c -> addView(tile(c), LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = gap }) }
+            return dev.tvremote.home.keys.Keypad.Slot(if (pic != null) pic.label else if (missing) dev.tvremote.home.keys.Targets.label(this, who) else "", pic, Keys.name(this, code), who.isEmpty(),
+                if (pic == null) dev.tvremote.home.keys.QuickKeys.COLOUR[code] ?: dev.tvremote.home.keys.PK_EMPTY else 0,
+                dead = who.isEmpty() && have != null && code !in have, mark = who == a.pkg)
         }
         fun note(t: String, colour: Int) = TextView(this).apply { Font.on(this); text = t; textSize = 13f; setTextColor(colour); gravity = Gravity.CENTER; maxLines = 2 }
-        val n = HomeConfig.KEY_NUMBERS
+        val digits = HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()
         val pad = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         pad.addView(note(getString(R.string.am_key_hint), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2))
         if (said.isEmpty()) pad.addView(note(getString(R.string.am_key_move), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })
         else pad.addView(note(said, Color.WHITE), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })      // what the last key did, in the place of the note
-        val digits = n.drop(1) + n.first()                                // KEYCODE_1..9, then 0
-        for (r in listOf(digits.subList(0, 3), digits.subList(3, 6), digits.subList(6, 9), digits.subList(9, 10)))
-            pad.addView(row(r), LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
-        pad.addView(row(HomeConfig.KEY_COLOURS), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        pad.addView(dev.tvremote.home.keys.Keypad.build(this, ::dp, emptyList(), ::slot, ::toggle, tiles), LinearLayout.LayoutParams(-1, -2))
         p.dialog.setOnKeyListener { _, code, e ->
             if (code in tiles.keys && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS) {   // the real key: assign it without walking to its button; its up and repeats are eaten too
                 if (e.action == KeyEvent.ACTION_DOWN && e.repeatCount == 0) toggle(code)
