@@ -99,8 +99,24 @@ object TvGlass {
             }
         }
 
-        private fun frame(title: String, back: (() -> Unit)?, body: View, padBottom: Int = 0, margin: Int = 140): LinearLayout {
+        private fun frame(title: String, back: (() -> Unit)?, body: View, padBottom: Int = 0, margin: Int = 140, fixed: View? = null): LinearLayout {
             this.back = back
+            if (fixed != null) {                                                  // the head and [fixed] stay put; only [body] scrolls
+                val top = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(8), dp(12), 0) }
+                top.addView(head(title, back), LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(4), dp(4), dp(4), dp(12)) })
+                top.addView(fixed, LinearLayout.LayoutParams(-1, -2))
+                val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(12), 0, dp(12), 0) }
+                col.addView(body, LinearLayout.LayoutParams(-1, -2))
+                val cap = dm.heightPixels - dp(margin)
+                val scroll = object : ScrollView(a) {
+                    override fun onMeasure(w: Int, h: Int) {
+                        top.measure(View.MeasureSpec.makeMeasureSpec(View.MeasureSpec.getSize(w), View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                        super.onMeasure(w, View.MeasureSpec.makeMeasureSpec(maxOf(dp(120), cap - top.measuredHeight), View.MeasureSpec.AT_MOST))
+                    }
+                }.apply { isVerticalScrollBarEnabled = false; setPadding(0, dp(8), 0, dp(10) + padBottom); clipToPadding = false; addView(col) }   // the ring of a focused tile has room inside the scroll's box
+                box.removeAllViews(); box.addView(top, LinearLayout.LayoutParams(-1, -2)); box.addView(scroll, LinearLayout.LayoutParams(-1, -2))
+                return col
+            }
             val col = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(12), dp(8), dp(12), dp(8) + padBottom) }   // room for a focused row's growth: the scroll clips at its edge
             col.addView(head(title, back), LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(4), dp(4), dp(4), dp(12)) })
             col.addView(body, LinearLayout.LayoutParams(-1, -2))
@@ -133,9 +149,12 @@ object TvGlass {
         }
 
         /** A page of your own [content] (a keypad), [wide] dp across; [focus] is the view that starts focused. */
-        fun view(title: String, content: View, wide: Int, focus: View?, back: (() -> Unit)?) {
+        fun view(title: String, content: View, wide: Int, focus: View?, back: (() -> Unit)?) = view(title, content, wide, focus, null, back)
+
+        /** As above, with [fixed] under the title that does not scroll: only [content] does. */
+        fun view(title: String, content: View, wide: Int, focus: View?, fixed: View?, back: (() -> Unit)?) {
             width(wide)
-            frame(title, back, content, padBottom = dp(10), margin = 64)                      // a focused tile's name shows under it
+            frame(title, back, content, padBottom = dp(10), margin = 64, fixed = fixed)                      // a focused tile's name shows under it
             focus?.let { r -> first(r) }
         }
 

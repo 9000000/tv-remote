@@ -1542,19 +1542,22 @@ class HomeActivity : Activity() {
             keyPicker(a, st, code, if (mine) getString(R.string.am_key_gone) else getString(R.string.am_key_set, Keys.name(this, code), a.label))
         }
         fun slot(code: Int): dev.tvremote.home.keys.Keypad.Slot {
-            val who = map[code].orEmpty(); val pic = art[code]
+            val who = map[code].orEmpty(); val pic0 = art[code]
+            val info = if (who.isNotEmpty() && dev.tvremote.home.Target.kind(who) == dev.tvremote.home.Target.Kind.TILE) dev.tvremote.home.apps.Tiles.available(this).firstOrNull { it.key == who } else null
+            val pic = if (info != null) null else pic0                                          // a live tile has no app picture: its own icon
             val missing = who.isNotEmpty() && pic == null
             return dev.tvremote.home.keys.Keypad.Slot(if (pic != null) pic.label else if (missing) dev.tvremote.home.keys.Targets.label(this, who) else "", pic, Keys.name(this, code), who.isEmpty(),
                 if (pic == null) dev.tvremote.home.keys.QuickKeys.COLOUR[code] ?: dev.tvremote.home.keys.PK_EMPTY else 0,
+                icon = info?.let { dev.tvremote.home.apps.Tiles.iconRes(this, it) } ?: 0,
                 dead = who.isEmpty() && have != null && code !in have, mark = who == a.pkg)
         }
         fun note(t: String, colour: Int) = TextView(this).apply { Font.on(this); text = t; textSize = 13f; setTextColor(colour); gravity = Gravity.CENTER; maxLines = 2 }
         val digits = HomeConfig.KEY_NUMBERS.drop(1) + HomeConfig.KEY_NUMBERS.first()
         val pad = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-        pad.addView(note(getString(R.string.am_key_hint), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2))
-        if (said.isEmpty()) pad.addView(note(getString(R.string.am_key_move), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })
-        else pad.addView(note(said, Color.WHITE), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })      // what the last key did, in the place of the note
-        pad.addView(android.widget.ScrollView(this).apply { isVerticalScrollBarEnabled = false; clipChildren = true; clipToPadding = true; setPadding(dp(8), dp(8), dp(8), dp(8)); addView(dev.tvremote.home.keys.Keypad.build(this@HomeActivity, ::dp, emptyList(), ::slot, ::toggle, tiles)) }, LinearLayout.LayoutParams(-1, 0, 1f))   // the taller tiles (a banner each) scroll with the focus
+        val head = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; minimumWidth = dp(560) }              // fixed above the keypad: only the keys scroll
+        head.addView(note(getString(R.string.am_key_hint), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2))
+        head.addView(note(said.ifEmpty { getString(R.string.am_key_move) }, if (said.isEmpty()) TvGlass.HINT else Color.WHITE), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })   // what the last key did, in the place of the note
+        pad.addView(dev.tvremote.home.keys.Keypad.build(this, ::dp, emptyList(), ::slot, ::toggle, tiles), LinearLayout.LayoutParams(-1, -2))
         p.dialog.setOnKeyListener { _, code, e ->
             if (code in tiles.keys && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS) {   // the real key: assign it without walking to its button; its up and repeats are eaten too
                 if (e.action == KeyEvent.ACTION_DOWN && e.repeatCount == 0) toggle(code)
@@ -1562,7 +1565,7 @@ class HomeActivity : Activity() {
             } else false
         }
         capture(true)
-        p.view("${a.label} · ${getString(R.string.am_key)}", pad, 600, focusCode?.let { tiles[it] } ?: tiles[digits[0]], back = { sub(a, st, 1, 1) })
+        p.view("${a.label} · ${getString(R.string.am_key)}", pad, 600, focusCode?.let { tiles[it] } ?: tiles[digits[0]], fixed = head, back = { sub(a, st, 1, 1) })
     }
 
     /** Rename [a]: a field with the TV's keyboard, prefilled with the name shown; "Original name" takes the person's name away. */
