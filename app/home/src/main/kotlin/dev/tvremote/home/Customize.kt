@@ -333,9 +333,20 @@ object Customize {
                     }, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener { apply(JSONObject().put("apply", id)); mark() }
-                    if (mine) setOnLongClickListener {                  // OK held on one of mine: delete, after a question (as a photo)
-                        android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_del_q).setMessage(R.string.th_del_note)
-                            .setPositiveButton(R.string.photo_del) { _, _ -> apply(JSONObject().put("del", id)); draw() }.setNegativeButton(android.R.string.cancel, null).show()
+                    setOnLongClickListener {                            // OK held: what the theme sets, read only; one of mine can be deleted from there
+                        val conf = HomeConfig.theme(Store.get(a), id) ?: return@setOnLongClickListener true
+                        val body = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24), dp(8), dp(24), dp(8)) }
+                        for ((k, v) in themeRows(a, conf)) body.addView(LinearLayout(a).apply {
+                            addView(label(k, 14f, DIM), LinearLayout.LayoutParams(dp(230), -2))
+                            addView(label(v, 14f, Color.WHITE), LinearLayout.LayoutParams(0, -2, 1f))
+                        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+                        val b = android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(name).setView(android.widget.ScrollView(a).apply { addView(body) })
+                            .setPositiveButton(android.R.string.ok, null)
+                        if (mine) b.setNeutralButton(R.string.photo_del) { _, _ ->
+                            android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_del_q).setMessage(R.string.th_del_note)
+                                .setPositiveButton(R.string.photo_del) { _, _ -> apply(JSONObject().put("del", id)); draw() }.setNegativeButton(android.R.string.cancel, null).show()
+                        }
+                        b.show()
                         true
                     }
                 }
@@ -353,14 +364,17 @@ object Customize {
                 page.removeAllViews(); themeTiles.clear()
                 val c = Store.get(a)
                 col = page
+                val mine = c.optJSONArray("themes")
+                val own = ArrayList<View>()
+                c.optJSONObject(HomeConfig.BEFORE)?.let { own += themeTile(HomeConfig.BEFORE, a.getString(R.string.th_before), it.optString("wall"), true) }   // the look before the last switch
+                if (mine != null) for (i in 0 until mine.length()) mine.getJSONObject(i).let { own += themeTile(it.getString("id"), it.getString("name"), it.getJSONObject("conf").optString("wall"), true) }
+                if (own.isNotEmpty()) {
+                    section(a.getString(R.string.th_mine))
+                    grid(own)
+                }
                 section(a.getString(R.string.th_ready))
                 grid(HomeConfig.BUILTIN.map { (id, cf) -> themeTile(id, themeName(a, c, id), cf.optString("wall"), false) })
-                val mine = c.optJSONArray("themes")
-                if (mine != null && mine.length() > 0) {
-                    section(a.getString(R.string.th_mine))
-                    grid((0 until mine.length()).map { mine.getJSONObject(it) }.map { themeTile(it.getString("id"), it.getString("name"), it.getJSONObject("conf").optString("wall"), true) })
                     page.addView(label(a.getString(R.string.th_hold), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
-                }
                 val full = (mine?.length() ?: 0) >= HomeConfig.THEMES_MAX
                 val save = LinearLayout(a).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
@@ -370,8 +384,21 @@ object Customize {
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         if (full) { android.widget.Toast.makeText(a, R.string.th_full, android.widget.Toast.LENGTH_LONG).show(); return@setOnClickListener }
-                        apply(JSONObject().put("save", a.getString(R.string.th_name_n, (mine?.length() ?: 0) + 1)))
-                        draw(); themeTiles.lastOrNull()?.second?.requestFocus()
+                        // named here, with the TV's keyboard; the field starts with a default ("My theme 3"), the same name saves over that theme
+                        val box = dev.tvremote.tvui.TvField(a).apply {
+                            Font.on(this); textSize = 16f; isSingleLine = true; maxLines = 1
+                            filters = arrayOf(android.text.InputFilter.LengthFilter(HomeConfig.THEME_NAME_MAX))
+                            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
+                            setText(a.getString(R.string.th_name_n, (mine?.length() ?: 0) + 1)); setSelection(text.length)
+                        }
+                        fun save() {
+                            val n = box.text.toString().trim().ifEmpty { return }
+                            apply(JSONObject().put("save", n)); draw(); themeTiles.lastOrNull()?.second?.requestFocus()
+                        }
+                        val dlg = android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_name_q).setView(box)
+                            .setPositiveButton(R.string.th_save_ok) { _, _ -> save() }.setNegativeButton(android.R.string.cancel, null).create()
+                        box.setOnEditorActionListener { _, _, _ -> save(); dlg.dismiss(); true }
+                        dlg.show()
                     }
                 }
                 page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
@@ -396,11 +423,6 @@ object Customize {
             }, LinearLayout.LayoutParams(-1, -2))
             // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
             tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
-            // a video or GIF background (HomeConfig vsound / vvol / vfps / vres): sound and volume now; frame rate and size for the NEXT upload, which is made on a phone through the QR above
-            tile(R.drawable.ic_vol_up, a.getString(R.string.v_sound), null, "vsound")
-            tile(R.drawable.ic_vol_up, a.getString(R.string.v_vol), null, "vvol", listOf(0, 25, 50, 75, 100).map { "$it" to "$it%" })
-            tile(R.drawable.ic_play, a.getString(R.string.v_fps), null, "vfps", HomeConfig.VFPS.map { it to if (it.isEmpty()) a.getString(R.string.v_orig) else a.getString(R.string.v_fps_n, it.toInt()) })
-            tile(R.drawable.ic_image, a.getString(R.string.v_res), null, "vres", HomeConfig.VRES.map { it to if (it.isEmpty()) a.getString(R.string.v_res_screen) else "${it}p" })
             col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
             var chipRow: LinearLayout? = null
             HomeConfig.EVERY.forEachIndexed { i, k ->
@@ -420,9 +442,10 @@ object Customize {
                 chipRow!!.addView(chip, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i % 3 > 0) leftMargin = dp(8) })
             }
             col.addView(rotNote, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
-            col.addView(View(a), LinearLayout.LayoutParams(1, dp(14)))
+            // the wall tiles by where they come from, each with the settings that belong to it (a video's sound only when there is a video)
+            fun wallRows(list: List<String>) {
             var row: LinearLayout? = null
-            keys.forEachIndexed { i, k ->
+            list.forEachIndexed { i, k ->
                 if (i % cols == 0) { row = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
                 val cell = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
                 val t = FrameLayout(a).apply {
@@ -502,6 +525,28 @@ object Customize {
                     LinearLayout.LayoutParams(w, -2).apply { topMargin = dp(5) })
                 row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
             }
+            }
+            val videos = keys.filter { HomeConfig.isVideo(it) }
+            val online = keys.filter { it == HomeConfig.BING || it == HomeConfig.WEB }
+            val photos = keys.filter { HomeConfig.isPhoto(it) }
+            val scenes = keys.filter { it in HomeConfig.ART }
+            val colours = keys.filter { it !in online && it !in photos && it !in videos && it !in scenes }
+            fun part(title: Int, list: List<String>, more: () -> Unit = {}) {
+                if (list.isEmpty()) return
+                section(a.getString(title)); wallRows(list); more()
+            }
+            part(R.string.wall_h_online, online)
+            part(R.string.wall_h_photos, photos)
+            part(R.string.wall_h_videos, videos) {
+                // a video or GIF background (HomeConfig vsound / vvol / vfps / vres): sound and volume now; frame rate and size for the NEXT upload, which is made on a phone through the QR above
+                col.addView(View(a), LinearLayout.LayoutParams(1, dp(10)))
+                tile(R.drawable.ic_vol_up, a.getString(R.string.v_sound), null, "vsound")
+                tile(R.drawable.ic_vol_up, a.getString(R.string.v_vol), null, "vvol", listOf(0, 25, 50, 75, 100).map { "$it" to "$it%" })
+                tile(R.drawable.ic_play, a.getString(R.string.v_fps), null, "vfps", HomeConfig.VFPS.map { it to if (it.isEmpty()) a.getString(R.string.v_orig) else a.getString(R.string.v_fps_n, it.toInt()) })
+                tile(R.drawable.ic_image, a.getString(R.string.v_res), null, "vres", HomeConfig.VRES.map { it to if (it.isEmpty()) a.getString(R.string.v_res_screen) else "${it}p" })
+            }
+            part(R.string.wall_h_scenes, scenes)
+            part(R.string.wall_h_colours, colours)
             markAll(); markEvery()
             if (keys.any { HomeConfig.isPhoto(it) || HomeConfig.isVideo(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         }
@@ -1091,8 +1136,34 @@ object Customize {
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }
 
+    /** What a theme sets, as short name / value rows (read only): the long press on a theme tile. */
+    private fun themeRows(a: Context, conf: JSONObject): List<Pair<String, String>> {
+        fun onOff(v: Boolean) = a.getString(if (v) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
+        val set = conf.optJSONArray("walls"); val sizes = conf.optJSONObject("wsize"); val styles = conf.optJSONObject("wstyle")
+        val wall = wallName(a, conf.optString("wall")) + if (set != null && set.length() > 1)
+            " · " + a.getString(R.string.g_bg_set, set.length(), a.getString(EVERY_WORDS.getValue(conf.optString("wevery", "off"))).lowercase()) else ""
+        val ws = conf.optJSONArray("widgets"); val cards = (0 until (ws?.length() ?: 0)).map { ws!!.getString(it) }.map { k ->
+            val n = a.resources.getIdentifier("w_$k", "string", a.packageName).let { if (it != 0) a.getString(it) else k }
+            val parts = listOfNotNull(a.getString(if (sizes?.optString(k) == "big") R.string.th_big else R.string.th_small), styles?.optString(k)?.takeIf { it.isNotEmpty() })
+            "$n (${parts.joinToString(", ")})"
+        }
+        return listOf(
+            a.getString(R.string.bg) to wall,
+            a.getString(R.string.c_shade) to "${conf.optInt("shade", HomeConfig.SHADE_DEFAULT)}%",
+            a.getString(R.string.w_widgets) to (if (cards.isEmpty()) a.getString(R.string.th_none) else cards.joinToString(", ")),
+            a.getString(R.string.c_cols) to "${conf.optInt("cols", HomeConfig.COLS_DEFAULT)}",
+            a.getString(R.string.c_rows) to rowsWord(a, conf.optDouble("rows", 0.0)),
+            a.getString(R.string.c_focus) to a.getString(if (conf.optString("focus") == "ring") R.string.c_focus_ring else R.string.c_focus_glass),
+            a.getString(R.string.motion) to onOff(conf.optBoolean("anim", true)),
+            a.getString(R.string.c_motion) to a.getString(when (conf.optString("motion")) { "calm" -> R.string.c_motion_calm; "full" -> R.string.c_motion_full; else -> R.string.c_motion_auto }),
+            a.getString(R.string.clock24) to onOff(conf.optBoolean("clock24", true)),
+            a.getString(R.string.greet) to onOff(conf.optBoolean("greet", true)),
+        )
+    }
+
     /** A theme's name: the person's own as saved, a ready-made one from the strings. */
     private fun themeName(a: Context, c: JSONObject, id: String): String {
+        if (id == HomeConfig.BEFORE) return a.getString(R.string.th_before)
         c.optJSONArray("themes")?.let { m -> for (i in 0 until m.length()) m.getJSONObject(i).let { if (it.optString("id") == id) return it.optString("name") } }
         return a.getString(a.resources.getIdentifier("th_$id", "string", a.packageName))
     }

@@ -380,6 +380,22 @@ class HomeConfigTest {
         assertFalse(n.has("theme"))                                                                                            // an operation, never stored
     }
 
+    @Test fun unsavedLookIsKeptBeforeASwitch() {
+        var c = HomeConfig.merge(JSONObject(), JSONObject().put("wall", "teal").put("cols", 7).put("shade", 70))
+        assertFalse(c.has("before"))
+        c = HomeConfig.merge(c, op("apply" to "cinema"))                                                                       // the look matched nothing: kept
+        assertEquals("teal", c.getJSONObject("before").getString("wall")); assertEquals("cinema", HomeConfig.themeNow(c))
+        c = HomeConfig.merge(c, op("apply" to "tech"))                                                                         // cinema is a saved look: the slot stays
+        assertEquals("teal", c.getJSONObject("before").getString("wall"))
+        c = HomeConfig.merge(c, op("apply" to "before"))                                                                       // the way back; the look left (tech) matches a theme
+        assertEquals("teal", c.getString("wall")); assertEquals(7, c.getInt("cols")); assertEquals("before", HomeConfig.themeNow(c))
+        c = HomeConfig.merge(c, JSONObject().put("wall", "ocean")); c = HomeConfig.merge(c, op("apply" to "calm"))             // a new unsaved look replaces the slot
+        assertEquals("ocean", c.getJSONObject("before").getString("wall"))
+        assertTrue(HomeConfig.themeUses(c, "ocean")); assertFalse(HomeConfig.themeUses(c, "teal"))                             // the slot keeps its pictures
+        c = HomeConfig.merge(c, op("del" to "before")); assertFalse(c.has("before"))
+        c = HomeConfig.merge(c, op("apply" to "before")); assertEquals("calm", HomeConfig.themeNow(c))                        // nothing there: nothing happens
+    }
+
     @Test fun saveApplyDeleteMine() {
         var c = HomeConfig.merge(JSONObject(), JSONObject().put("wall", "teal").put("cols", 7).put("shade", 70))
         c = HomeConfig.merge(c, op("save" to "  Evening  "))

@@ -326,7 +326,12 @@ object HomeConfig {
 
     /** The theme [id] (the person's or a ready-made one) as its settings, or null. */
     fun theme(c: JSONObject, id: String): JSONObject? =
-        customThemes(c).firstOrNull { it.optString("id") == id }?.optJSONObject("conf") ?: BUILTIN.firstOrNull { it.first == id }?.second
+        if (id == BEFORE) before(c) else customThemes(c).firstOrNull { it.optString("id") == id }?.optJSONObject("conf") ?: BUILTIN.firstOrNull { it.first == id }?.second
+
+    /** The id of the one automatic slot: the look that was on before the last theme was applied, when it matched no saved theme. */
+    const val BEFORE = "before"
+    /** The look kept in the [BEFORE] slot ("before" in the config), or null. */
+    private fun before(c: JSONObject?): JSONObject? = c?.optJSONObject(BEFORE)?.let { pickTheme(it) }?.takeIf { it.length() > 0 }
 
     /** [v] as text with the keys of every object in order: two looks are the same whatever order a JSON library kept their keys in. */
     private fun canon(v: Any?): String = when (v) {
@@ -340,12 +345,13 @@ object HomeConfig {
     fun themeNow(c: JSONObject): String {
         val now = canon(pickTheme(clean(c)))
         return customThemes(c).firstOrNull { canon(it.optJSONObject("conf")) == now }?.optString("id")
+            ?: before(c)?.takeIf { canon(it) == now }?.let { BEFORE }
             ?: BUILTIN.firstOrNull { canon(it.second) == now }?.first ?: ""
     }
 
     /** Whether a saved theme keeps [wall] (a photo, a video of the library) alive: Videos.refs and the photos' delete ask this. */
-    fun themeUses(c: JSONObject, wall: String): Boolean = customThemes(c).any { t ->
-        val conf = t.optJSONObject("conf") ?: return@any false
+    fun themeUses(c: JSONObject, wall: String): Boolean = (customThemes(c).map { it.optJSONObject("conf") } + before(c)).any { conf ->
+        if (conf == null) return@any false
         conf.optString("wall") == wall || strs(conf.optJSONArray("walls")).contains(wall)
     }
 
@@ -362,7 +368,7 @@ object HomeConfig {
     /** [n] (cleaned) with the "theme" field [op] done: apply (what is gone, [usable], is passed over), save the look now, delete. */
     private fun doTheme(n: JSONObject, op: JSONObject, usable: (String) -> Boolean): JSONObject {
         val mine = customThemes(n).toMutableList()
-        op.optString("del").takeIf { it.isNotEmpty() }?.let { id -> mine.removeAll { it.optString("id") == id } }
+        op.optString("del").takeIf { it.isNotEmpty() }?.let { id -> if (id == BEFORE) n.remove(BEFORE) else mine.removeAll { it.optString("id") == id } }
         op.optString("save").takeIf { it.isNotEmpty() }?.let { name ->
             val look = pickTheme(clean(n))
             val same = mine.indexOfFirst { it.optString("name").equals(name, ignoreCase = true) }      // the same name: that theme is saved over
@@ -376,6 +382,8 @@ object HomeConfig {
         op.optString("apply").takeIf { it.isNotEmpty() }?.let { id ->
             val conf = theme(n, id) ?: return n
             val now = clean(n)
+            // a look saved nowhere would be lost by this switch: kept in the one slot (replaced each time), so there is a way back
+            if (id != themeNow(n) && themeNow(n).isEmpty()) n.put(BEFORE, pickTheme(now))
             for (k in conf.keys()) n.put(k, conf.get(k))
             // the QR cards stay as they are, where they are in the order
             val qr = strs(now.optJSONArray("widgets")).filter { it in HomeQr.KEYS }
@@ -436,6 +444,7 @@ object HomeConfig {
             .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
             .put("qrs", qrs)
             .put("themes", JSONArray(customThemes(o)))
+            .also { out -> before(o)?.let { out.put(BEFORE, it) } }
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
             .put("wstyle", JSONObject().also { out ->
