@@ -164,7 +164,7 @@ function homeVeil(ctx, w, h, k, user) {
 }
 
 // ---- a theme's picture in the Themes list: its home screen in miniature, from its config (ThemePreview.kt does the same on the TV).
-// The wall under the veil at its real strength, the clock and greeting, the cards as homePack lays them, the grid's columns and rows with
+// The wall under the veil at its real strength, the clock, the cards as homePack lays them, the grid's columns and rows with
 // the live tiles first and the focus on the first one. Rounded shapes only; `img` (a loaded Image) is the background of a photo / page /
 // video, else the drawn look or the colours.
 const HOME_PREV = { ink: '255,255,255', live: ['#4fc3a1', '#ffc857', '#8ab4f8', '#f28b82'], none: '#2a2f3a' };
@@ -181,8 +181,7 @@ function homeThemePaint(cv, conf, tiles, img, look) {
   }
   const m = w * 0.06;
   bar(m, h * 0.07, w * 0.17, h * 0.075, 0.9); bar(m, h * 0.17, w * 0.10, h * 0.025, 0.45);
-  if (conf.greet !== false) bar(m + w * 0.12, h * 0.17, w * 0.14, h * 0.025, 0.3);
-  for (let i = 0; i < 3; i++) bar(w - m - (i + 1) * w * 0.05 - i * w * 0.012, h * 0.085, w * 0.05, h * 0.05, 0.25);
+  bar(w - m - w * 0.16, h * 0.085, w * 0.16, h * 0.05, 0.25);           // the buttons as one bar: where things are, not each one
   let y = h * 0.26;
   const big = HOME_WIDGETS.concat(['qr1', 'qr2', 'qr3', 'qr4']).filter((k) => homeSize(conf, k) === 'big'), packed = homePack((conf.widgets || []).filter((k) => HOME_WIDGETS.includes(k)), big);
   if (packed.cols.length) {
@@ -208,7 +207,6 @@ function homeThemePaint(cv, conf, tiles, img, look) {
     ctx.fillStyle = live ? HOME_PREV.live[i % 4] : `rgba(${HOME_PREV.ink},0.15)`;
     if (live) ctx.globalAlpha = 0.8;
     box(rx, ry, tw, th * vis, h * 0.03); ctx.globalAlpha = 1;
-    if (!live && vis === 1) bar(rx + tw * 0.12, ry + th * 0.68, tw * 0.5, h * 0.014, 0.3);
     if (i === 0) {
       if (ring) { ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, h * 0.012); ctx.beginPath(); ctx.roundRect(rx - 1, ry - 1, tw + 2, th * vis + 2, h * 0.03); ctx.stroke(); }
       else { ctx.fillStyle = `rgba(${HOME_PREV.ink},0.25)`; box(rx - tw * 0.04, ry - th * 0.06, tw * 1.08, th * vis + th * 0.12, h * 0.036); }

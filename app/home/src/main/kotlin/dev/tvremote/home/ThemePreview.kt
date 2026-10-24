@@ -20,7 +20,7 @@ import java.io.File
 
 /**
  * A theme's picture in the Themes page: a miniature of the home screen it makes, built from its config (the page's twin is
- * js/home.js `homeThemePaint`): the real background under the real veil, the clock and greeting, the cards as [HomeConfig.pack] lays
+ * js/home.js `homeThemePaint`): the real background under the real veil, the clock, the cards as [HomeConfig.pack] lays
  * them (the same rule HomeActivity uses), the grid with its columns and rows, the live tiles first, the focus on the first one.
  * Rounded shapes only. Each is drawn ONCE into a bitmap (off the main thread) and kept in [cache], so scrolling the page costs nothing.
  */
@@ -100,11 +100,10 @@ object ThemePreview {
 
     private fun layout(cv: Canvas, p: Paint, conf: JSONObject, tiles: List<String>, w: Float, h: Float) {
         val m = w * 0.06f
-        // the head: the time, the date, the greeting; the round buttons at the right
+        // the head: the time, the date; the buttons at the right as one bar (a preview shows where things are, not each one)
         bar(cv, p, m, h * 0.07f, w * 0.17f, h * 0.075f, 0xE6)
         bar(cv, p, m, h * 0.17f, w * 0.10f, h * 0.025f, 0x73)
-        if (conf.optBoolean("greet", true)) bar(cv, p, m + w * 0.12f, h * 0.17f, w * 0.14f, h * 0.025f, 0x4D)
-        for (i in 0 until 3) bar(cv, p, w - m - (i + 1) * w * 0.05f - i * w * 0.012f, h * 0.085f, w * 0.05f, h * 0.05f, 0x40)
+        bar(cv, p, w - m - w * 0.16f, h * 0.085f, w * 0.16f, h * 0.05f, 0x40)
         var y = h * 0.26f
         // the cards, in the columns HomeActivity makes of them
         val keys = strs(conf, "widgets")
@@ -158,7 +157,6 @@ object ThemePreview {
             val live = i < tiles.size
             p.color = if (live) (LIVE[i % LIVE.size] and 0xFFFFFF) or (0xCC shl 24) else (FILL_TILE shl 24) or (INK and 0xFFFFFF)
             cv.drawRoundRect(rx, ry, rx + tw, bottom, h * 0.03f, h * 0.03f, p)
-            if (!live && vis == 1f) bar(cv, p, rx + tw * 0.12f, ry + th * 0.68f, tw * 0.5f, h * 0.014f, 0x4D)
             if (i == 0) {                                                                // the focus: a ring, or the glass lifting the tile
                 if (ring) { p.style = Paint.Style.STROKE; p.strokeWidth = maxOf(1.5f, h * 0.012f); p.color = INK; cv.drawRoundRect(rx - 1, ry - 1, rx + tw + 1, bottom + 1, h * 0.03f, h * 0.03f, p); p.style = Paint.Style.FILL }
                 else { p.color = (0x40 shl 24) or (INK and 0xFFFFFF); cv.drawRoundRect(rx - tw * 0.04f, ry - th * 0.06f, rx + tw * 1.04f, bottom + th * 0.06f, h * 0.036f, h * 0.036f, p) }
