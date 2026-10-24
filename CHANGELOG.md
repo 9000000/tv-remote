@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: thẻ sống "Đã xem" (TV Setup): số giờ TV đã bật màn hình hôm nay trong vòng tròn (đầy ở 8 giờ, vàng từ 6 giờ, đỏ từ 10 giờ), "Hôm qua …" bên dưới; dùng đúng số của thẻ "App dùng nhiều". Cần TV Setup mới (bản cũ không có thẻ này trong danh sách).
 - TV Home chủ đề: nhìn đang dùng chưa lưu thì tự giữ lại ở ô "Giao diện trước" trước khi đổi chủ đề; chủ đề của bạn nằm riêng mục "Chủ đề của bạn"; lưu có đặt tên (bàn phím TV); giữ OK trên chủ đề (web: nút ⓘ) xem nó chỉnh gì.
 - TV Home hình nền: chia mục Trên mạng, Ảnh của bạn, Video của bạn, Cảnh vẽ, Màu; cài đặt video nằm trong mục Video, chỉ hiện khi có video.
 - TV Home: đóng hộp Telegram hay Quản lý từ điện thoại không còn làm lớp tối nháy.
@@ -49,6 +50,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 
 **English**
+- TV Home: a "Watched" live tile (TV Setup): how long the TV's screen was on in apps today, in a ring (full at 8 h, amber from 6 h, red from 10 h), "Yest. …" under it; the same count as the usage card. Needs a newer TV Setup (an older one does not list it).
 - TV Home themes: a look in use that is not saved is kept in a "Previous look" slot before a theme is applied; your themes have their own section; saving asks for a name (TV keyboard); hold OK on a theme (web: the ⓘ button) to see what it sets.
 - TV Home wallpaper: sections Online, Your photos, Your videos, Scenes, Colours; video settings live in the Videos section and show only when there are videos.
 - TV Home: closing the Telegram or Manage from phone box no longer makes the dim flicker.

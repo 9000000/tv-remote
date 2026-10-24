@@ -89,4 +89,15 @@ class HomeTilesTest {
         assertEquals("Hẹn giờ tắt", HomeTiles.list("vi").getJSONObject(1).getString("title"))
         assertEquals("gauge", HomeTiles.list("en").getJSONObject(0).getString("layout"))
     }
+
+    @Test fun watchTileIsAGaugeOfTodayWithYesterdayUnder() {
+        val vi = HomeTiles.watchState("vi", 3 * 3600L + 12 * 60, 2 * 3600L + 40 * 60)
+        assertEquals("gauge", vi.getString("layout")); assertEquals("3g12", vi.getString("big")); assertEquals("Hôm qua 2g40", vi.getString("small"))
+        assertEquals(0.4, vi.getDouble("progress"), 0.001); assertEquals("ok", vi.getString("accent"))
+        val en = HomeTiles.watchState("en", 45 * 60L, 0)
+        assertEquals("45m", en.getString("big")); assertEquals("Yest. 0m", en.getString("small"))
+        assertEquals(1.0, HomeTiles.watchState("en", 12 * 3600L, 0).getDouble("progress"), 0.001)
+        assertEquals("warn", HomeTiles.watchAccent(6 * 3600L)); assertEquals("bad", HomeTiles.watchAccent(10 * 3600L))
+        assertEquals("watch", HomeTiles.list("en").getJSONObject(2).getString("id"))
+    }
 }

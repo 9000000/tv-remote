@@ -18,14 +18,16 @@ import org.json.JSONObject
  *              icon?, tone? (how TV Home draws it), note? (a shorter line than small, for the outcome),
  *              result?: {before, after, freed_mb, none, text}}; answers at once, a binder call never waits on ADB
  *   "tile_do"  runs its action (arg = id) on a thread of its own and answers {started}; the outcome shows in "tile" as mode done / failed
- * Each tile has a "layout" (how TV Home draws it): "gauge" (a ring and a line) or "toggle" (a value to cycle). Two tiles:
+ * Each tile has a "layout" (how TV Home draws it): "gauge" (a ring and a line) or "toggle" (a value to cycle). Three tiles:
  * "ram" (gauge): RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the measured
- * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it adds 15 minutes, up to 120, then off ([nextSleep]).
+ * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it adds 15 minutes, up to 120, then off ([nextSleep]). "watch" (gauge): the hours on the screen today (the usage card's count), yesterday under it.
  * The pure parts (numbers, words, which packages may be closed) live here and are tested without a TV.
  */
 internal object HomeTiles {
     const val RAM = "ram"
     const val SLEEP = "sleep"
+    const val WATCH = "watch"
+    const val WATCH_FULL_H = 8                                         // the ring is full at 8 h; amber from 6 h, red from 10 h
     const val SLEEP_STEP = 15                                          // minutes a press adds (30/60/90 jumped too far for "a bit longer")
     const val SLEEP_MAX = 120                                          // past it a press switches the timer off
     const val DONE_MS = 6000L                                          // how long the before -> after stays, then the live value again
@@ -35,6 +37,39 @@ internal object HomeTiles {
     fun list(lang: String): JSONArray = JSONArray()
         .put(JSONObject().put("id", RAM).put("title", Words.get(lang, "tile.ram_title")).put("icon", "ram").put("kind", "meter").put("layout", "gauge"))
         .put(JSONObject().put("id", SLEEP).put("title", Words.get(lang, "tile.sleep_title")).put("icon", "moon").put("kind", "toggle").put("layout", "toggle"))
+        .put(JSONObject().put("id", WATCH).put("title", Words.get(lang, "tile.watch_title")).put("icon", "tv").put("kind", "meter").put("layout", "gauge"))
+
+    // ---- the watched-today tile ----
+
+    /** Seconds on screen per day (today first) in apps one opens: the sum the usage card's columns hold, counted by the same Stats; not TV Home / the launcher nor this app. */
+    fun dayTotals(c: Context, perDay: List<JSONObject>): List<Long> {
+        val pm = c.packageManager
+        val homes = try {                                              // a home screen (Google TV's, TV Home) is where people pass, not what they watch
+            pm.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0).map { it.activityInfo.packageName }.toSet()
+        } catch (e: Exception) { emptySet() }
+        val opens = { p: String -> (if (android.os.Build.VERSION.SDK_INT >= 21) pm.getLeanbackLaunchIntentForPackage(p) else null) ?: pm.getLaunchIntentForPackage(p) }
+        val counted = { k: String -> k != c.packageName && k !in homes && opens(k) != null }
+        return perDay.map { o -> o.keys().asSequence().filter(counted).sumOf { o.optLong(it) } }
+    }
+
+    /** "3 h 12 min" / "45 min" / "0 min", in the TV's words. */
+    fun duration(lang: String, sec: Long): String {
+        val m = ((sec + 30) / 60).toInt()
+        return if (m >= 60) Words.get(lang, "tile.watch_hm", "h" to m / 60, "m" to m % 60) else Words.get(lang, "tile.watch_m", "m" to m)
+    }
+
+    /** The ring's colour: amber from 6 h, red from 10 h on the screen in a day. */
+    fun watchAccent(sec: Long) = if (sec >= 10 * 3600) "bad" else if (sec >= 6 * 3600) "warn" else "ok"
+
+    /** The state: "gauge" layout, big = hours and minutes inside the ring, small = yesterday. */
+    fun watchState(lang: String, today: Long, yesterday: Long): JSONObject {
+        val m = ((today + 30) / 60).toInt()
+        val big = if (m >= 60) Words.get(lang, "tile.watch_big", "h" to m / 60, "m" to "%02d".format(m % 60)) else Words.get(lang, "tile.watch_big_m", "m" to m)
+        return JSONObject().put("id", WATCH).put("title", Words.get(lang, "tile.watch_title")).put("layout", "gauge").put("mode", "live")
+            .put("icon", "tv").put("tone", "watch").put("big", big).put("accent", watchAccent(today))
+            .put("progress", (today / 3600.0 / WATCH_FULL_H).coerceIn(0.0, 1.0))
+            .put("small", Words.get(lang, "tile.watch_yesterday", "t" to duration(lang, yesterday)))
+    }
 
     // ---- the sleep timer tile ----
 
@@ -148,10 +183,24 @@ internal object HomeTiles {
     fun tile(c: Context, lang: String, id: String): JSONObject? {
         val now = System.currentTimeMillis()
         if (id == SLEEP) return sleepState(lang, sleepLeft(Rules.load(c).optLong("sleep_at"), now))
+        if (id == WATCH) return watchNow(c, lang, now)
         if (id != RAM) return null
         val bad = failed && now - failedAt <= DONE_MS
         if (failed && !bad) failed = false
         return state(lang, mem(), working, last, bad, now)
+    }
+
+    /** Today from Stats (usage events, as the usage card), the earlier days from its usage.json. */
+    private fun watchNow(c: Context, lang: String, now: Long): JSONObject {
+        val token = android.os.Binder.clearCallingIdentity()           // our own permissions (usage access)
+        try {
+            val on = (c.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isInteractive
+            val today = try { Stats(c).today(now, on).first } catch (e: Exception) { JSONObject() }
+            val all = try { JSONObject(java.io.File(c.getExternalFilesDir(null), "stats/usage.json").readText()) } catch (e: Exception) { JSONObject() }
+            val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            val per = dayTotals(c, (0..6).map { d -> if (d == 0) today else all.optJSONObject(day.format(java.util.Date(now - d * 86_400_000L))) ?: JSONObject() })
+            return watchState(lang, per[0], per[1])
+        } finally { android.os.Binder.restoreCallingIdentity(token) }
     }
 
     /** "tile_do": starts the action once at a time (a second press while it runs is the same run); {started} or {busy}. */
@@ -161,6 +210,7 @@ internal object HomeTiles {
             Rules.change(c, JSONObject().put("do", "sleep").put("minutes", nextSleep(left)))
             return JSONObject().put("started", true)
         }
+        if (id == WATCH) return JSONObject().put("started", false)   // nothing to press: a reading only
         if (id != RAM) return null
         val app = c.applicationContext
         synchronized(this) {

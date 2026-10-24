@@ -97,9 +97,8 @@ class HomeInfo : ContentProvider() {
             val top = JSONArray()                                      // apps one opens: not the system's screens (systemui) nor a home screen
             for ((pkg, s) in week.entries.filter { it.key != c.packageName && it.key !in homes && it.value >= 60 && opens(it.key) != null }.sortedByDescending { it.value }.take(5).map { it.key to it.value })
                 top.put(JSONObject().put("pkg", pkg).put("sec", s))
-            val counted = { k: String -> k != c.packageName && k !in homes && opens(k) != null }
             val days = JSONArray()                                     // each day's total, today first: the card's columns
-            for (o in perDay) days.put(o.keys().asSequence().filter(counted).sumOf { o.optLong(it) })
+            for (t in HomeTiles.dayTotals(c, perDay)) days.put(t)
             val rules = Rules.load(c)
             val limits = JSONArray()
             rules.optJSONObject("limits")?.let { l ->
