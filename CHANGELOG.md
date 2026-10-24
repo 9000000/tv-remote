@@ -22,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hướng dẫn bật ADB: box nhà mạng (FPT, Viettel…) không nên bấm Bản dựng 7 lần vì có thể bị đòi mật khẩu hoặc khóa máy; cài TV Setup trước để app mở thẳng Tùy chọn nhà phát triển.
 - Tối ưu TV: thêm 17 app hướng dẫn, quảng cáo bật lên và thu thập dữ liệu của TCL, Sony, Skyworth, Xiaomi, Hisense, Amazon (từ danh sách mới của cleanyourtv); không bao giờ tắt các phần lõi Android mà thiếu chúng TV có thể không khởi động được.
 - Danh sách app trên app điện thoại và máy tính (tab App, chọn app cho giới hạn, khóa PIN, lịch, cảnh, mở app trên TV): có cả app cài sẵn có ô trên màn hình chính như YouTube, Netflix, CH Play, Cài đặt; trước đây chỉ có app tự cài nên tìm YouTube không thấy.
+- TV Home tự cập nhật xong thì TV Setup dịch sẵn lại ngay (trước đây phải chờ tới đêm): mở nhanh hơn ~20-30% trên box yếu (FPT: 457-1332 ms → ~410 ms).
 
 **English**
 - Control the TV from Telegram: your own bot (made with @BotFather, token pasted in Settings on the TV's web page). Pair with a 6-digit code shown on the TV; commands /status /off /on /vol /key /open /scene /timer /say /shot /remote (a tappable keypad). Also /apps /usage /now /channel /type /scenes /bedtime /limits /schedule /alerts: the TV messages you when it turns on or off, an app is closed, bedtime starts, the sleep timer fires or a new device pairs (one per kind per minute); a Full chat can change bedtime or block an app, with an Undo button. The Telegram card in the phone and computer apps: status, pairing QR (t.me/<bot>?start=code), each chat, a 7-day history. Unknown chats are ignored, a newly paired chat gets Remote rights only. Needs TV Setup 0.21.1; step-by-step in the User guide.
@@ -39,6 +40,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Turning ADB on: the steps now warn that internet-provider boxes (FPT, Viettel…) may ask for a password or lock up after the 7 presses on Build; install TV Setup first, it opens Developer options directly.
 - Optimize TV: 17 more manual, promo pop-up and data-collection apps from TCL, Sony, Skyworth, Xiaomi, Hisense and Amazon (from the newer cleanyourtv lists); Android core parts a TV may not boot without are never turned off.
 - App lists on the phone and computer apps (Apps tab, choosing an app for limits, PIN lock, schedule, scenes, open on the TV): the preinstalled apps with a home-screen tile (YouTube, Netflix, Play Store, Settings) are listed too; before, only installed apps were, so YouTube could not be found.
+- After TV Home updates itself, TV Setup compiles it ahead again at once (before, only at night): ~20-30% faster start on slow boxes (FPT: 457-1332 ms → ~410 ms).
 
 ## 0.21.0 - 2026-10-24
 

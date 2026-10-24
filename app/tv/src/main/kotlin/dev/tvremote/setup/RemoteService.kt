@@ -268,6 +268,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var reoptimize: Reoptimize? = null
     private var nightly: Nightly? = null
     private var keyFix: KeyFixWatch? = null
+    private var homeCompile: HomeCompile? = null
     internal var keepAwake: KeepAwake? = null
     private var welcome: WelcomeWatch? = null
     private var autoOpen: AutoOpenWatch? = null
@@ -333,6 +334,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         reoptimize = Reoptimize(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         nightly = Nightly(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         keyFix = KeyFixWatch(this).also { it.start() }
+        homeCompile = HomeCompile(this).also { it.start() }
         keepAwake = KeepAwake(this).also { it.start(); it.check() }
         welcome = WelcomeWatch(this).also { it.start() }
         autoOpen = AutoOpenWatch(this).also { it.start() }
@@ -363,6 +365,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         reoptimize?.stop()
         nightly?.stop()
         keyFix?.stop()
+        homeCompile?.stop()
         keepAwake?.stop()
         welcome?.stop()
         autoOpen?.stop()
