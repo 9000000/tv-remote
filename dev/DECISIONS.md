@@ -79,6 +79,21 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 - **On the Google TV emulator the "Set up Google TV" reminder hides the question**, and TV Setup steps aside for a question it
   cannot see. Bring the question up (`cmd activity stack remove <its task>`, then start TV Setup again).
 
+## ISP boxes that lock Developer options (FPT Play, Viettel)
+
+- **FPT Play 650** (Hisense IP940N, Android 14, measured 2026-10-13): tapping Build 7 times asks "password for ADB". No public
+  password (a Voz thread for the Box S: 0000 / 1234 wrong). Got ADB without it:
+  1. Pair the Android TV Remote protocol (6-character code on screen): keys work, no ADB needed.
+  2. Send TV Setup's download link as a link over that protocol: the box asks "Open with" → Downloader (Downloader itself from its
+     Play Store page: the box refused opening apps by package name).
+  3. Allow Downloader to install unknown apps → Install → open TV Setup.
+  4. TV Setup starts `ACTION_APPLICATION_DEVELOPMENT_SETTINGS` itself (`app/tv/.../setup/MainActivity.kt` ~684): the screen opens
+     without the guarded 7 taps. Turn on **USB debugging** only (Wireless debugging is not used) → port 5555 → "Always allow" per device.
+- Settings intents sent from outside (over the remote protocol) were ignored by the box: it has to be an app on the box that opens it.
+  This is the "Bật ADB giúp tôi" flow / Downloader code (README.vi.md "Bước này không bắt buộc").
+- **Viettel box** (user report, 2026-10-24, not tested here): after the taps the whole box showed a lock screen with an ISP QR and a
+  password. So for ISP boxes: do not tap Build; install TV Setup first and let it open Developer options.
+
 ## Start-up speed (computer app, TV emulator, `TVR_TRACE`)
 
 - **One shell call for the start** (`Tv.startFacts`): wake, model, SDK, `ip addr`, the jar's size and MD5 were 3-5 calls, ~127 ms
