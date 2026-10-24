@@ -462,7 +462,7 @@ class HomeActivity : Activity() {
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
     /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. A tile being moved has the ring alone. */
-    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass && moving == null) glass.to(content, pane, TvTile.GROW, corner, glide && Motion.on) { edge } else glass.hide() }
+    private fun Tile.glassOn(glide: Boolean) { if (Motion.glass && moving == null) glass.to(content, pane, TvTile.GROW, corner, glide && Motion.on) else glass.hide() }
 
     private fun scrollToY(y: Int) {
         scrollAnim?.cancel()
