@@ -21,6 +21,9 @@ object Weather {
     class Day(val date: String, val kind: Kind, val min: Int, val max: Int)
     class Forecast(val place: String, val temp: Int, val kind: Kind, val night: Boolean, val days: List<Day>, val at: Long)
 
+    /** The air now at the place: the US air quality index and PM2.5 in µg/m³ (Open-Meteo's air-quality API, same place as the weather). */
+    class Air(val aqi: Int, val pm25: Int, val at: Long)
+
     const val FRESH_MS = 45 * 60_000L                                  // asked again after this, while the home is shown
     const val RETRY_MS = 5 * 60_000L                                   // after a failure: not on every minute's tick
     private const val DAYS = 4                                          // today and the three after it
@@ -57,6 +60,18 @@ object Weather {
         Forecast(o.getString("place"), o.getInt("temp"), Kind.valueOf(o.getString("kind")), o.getBoolean("night"),
             (0 until a.length()).map { a.getJSONObject(it).let { d -> Day(d.getString("date"), Kind.valueOf(d.getString("kind")), d.getInt("min"), d.getInt("max")) } }, o.getLong("at"))
     } catch (e: Exception) { null }
+
+    /** Open-Meteo's air-quality answer as an [Air] at [now]; null when it has no index (an error, or a place with no data). */
+    fun parseAir(json: String, now: Long): Air? = try {
+        val cur = JSONObject(json).getJSONObject("current")
+        Air(Math.round(cur.getDouble("us_aqi")).toInt(), Math.round(cur.optDouble("pm2_5", 0.0)).toInt(), now)
+    } catch (e: Exception) { null }
+
+    /** The index as one of six levels, 0 good .. 5 hazardous (the US EPA's bands). */
+    fun airLevel(aqi: Int) = when { aqi <= 50 -> 0; aqi <= 100 -> 1; aqi <= 150 -> 2; aqi <= 200 -> 3; aqi <= 300 -> 4; else -> 5 }
+
+    fun airToJson(a: Air) = JSONObject().put("aqi", a.aqi).put("pm25", a.pm25).put("at", a.at)
+    fun airFromJson(s: String): Air? = try { JSONObject(s).let { Air(it.getInt("aqi"), it.getInt("pm25"), it.getLong("at")) } } catch (e: Exception) { null }
 
     /** The first geocoding hit for a typed city (`results[0]`), null when there is none. */
     fun parseGeocode(json: String): Place? = try {
@@ -95,17 +110,21 @@ object Weather {
 
     fun cached(c: Context): Forecast? = prefs(c).getString("fc", null)?.let { fromJson(it) }
 
-    /** True when the card should ask again now: no answer yet, or an old one, and not just after a failure. */
-    fun due(c: Context, typed: String, now: Long = System.currentTimeMillis()): Boolean {
+    fun cachedAir(c: Context): Air? = prefs(c).getString("aq", null)?.let { airFromJson(it) }
+
+    /** True when the card should ask again now: no answer yet, or an old one, and not just after a failure. [air]: the air card is on too. */
+    fun due(c: Context, typed: String, now: Long = System.currentTimeMillis(), air: Boolean = false): Boolean {
         val p = prefs(c); val f = cached(c)
         if (now - p.getLong("tried", 0) < RETRY_MS && now >= p.getLong("tried", 0)) return false
+        val a = if (air) cachedAir(c) else null
         return f == null || now - f.at > FRESH_MS || p.getString("typed", "") != typed.trim()   // a new city asked for: at once
+            || (air && (a == null || now - a.at > FRESH_MS))
     }
 
     private var busy = false
 
     /** Asks the network (a thread of its own, the cards' reading must not wait for it) and calls [done] on that thread when something changed. */
-    fun refresh(c: Context, typed: String, lang: String, done: () -> Unit) {
+    fun refresh(c: Context, typed: String, lang: String, air: Boolean = false, done: () -> Unit) {
         synchronized(this) { if (busy) return; busy = true }
         Thread {
             try {
@@ -120,7 +139,11 @@ object Weather {
                     get("https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&current=temperature_2m,weather_code,is_day" +
                         "&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=$DAYS&timezone=auto")?.let { parse(w.name, it, now) }
                 }
-                val e = p.edit().putLong("tried", if (f == null) now else 0)
+                val aq = if (air) place?.let { w ->
+                    get("https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${w.lat}&longitude=${w.lon}&current=us_aqi,pm2_5&timezone=auto")?.let { parseAir(it, now) }
+                } else null
+                val e = p.edit().putLong("tried", if (f == null || (air && aq == null)) now else 0)
+                if (aq != null) e.putString("aq", airToJson(aq).toString())
                 if (f != null) e.putString("fc", toJson(f).toString()).putString("typed", typed.trim())
                     .putString("place", JSONObject().put("name", place.name).put("lat", place.lat).put("lon", place.lon).toString())
                 else if (typed.trim() != p.getString("typed", "")) e.remove("fc")      // a new city that was not found: not the old city under its name

@@ -82,4 +82,14 @@ class WeatherTest {
         assertEquals(listOf("device", "ip"), s.asked)
         assertNull(Weather.resolve("", Fake(null, null, null)))
     }
+
+    @Test fun theAirIsParsedAndBanded() {
+        val a = Weather.parseAir("""{"current":{"time":"2026-10-23T20:00","us_aqi":91,"pm2_5":25.4}}""", 9)!!
+        assertEquals(91, a.aqi); assertEquals(25, a.pm25); assertEquals(9L, a.at)
+        assertEquals(1, Weather.airLevel(91))
+        assertEquals(listOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5), listOf(0, 50, 51, 100, 101, 150, 151, 200, 201, 300, 301).map { Weather.airLevel(it) })
+        assertNull(Weather.parseAir("""{"error":true}""", 0))
+        assertNull(Weather.parseAir("""{"current":{"us_aqi":null,"pm2_5":3}}""", 0))
+        assertEquals(91, Weather.airFromJson(Weather.airToJson(a).toString())!!.aqi)
+    }
 }

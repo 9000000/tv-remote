@@ -41,7 +41,8 @@ test('no new raw colour in the TV apps\' views: a colour is a named constant or 
 const DRAWN = {
   tv: { 'DrawLayer.kt': 1 },                                          // drawing over the TV: strokes, nothing to reuse
   home: { 'CalendarWidget.kt': 1, 'ClockWidget.kt': 1, 'LunarWidget.kt': 1, 'UsageWidget.kt': 1, 'WeatherWidget.kt': 1,
-    'WidgetViews.kt': 2, 'HomeActivity.kt': 1, 'QrCard.kt': 1, 'Zoom.kt': 1, 'Customize.kt': 1, 'Tiles.kt': 1 },
+    'WidgetViews.kt': 2, 'HomeActivity.kt': 1, 'QrCard.kt': 1, 'Zoom.kt': 1, 'Customize.kt': 1, 'Tiles.kt': 1,
+    'Tonal.kt': 2 },                                                  // the scalloped badge and the bar with its dot: no stock view has either
   android: { 'RemoteScreen.kt': 1, 'IconButton.kt': 1, 'AirMouse.kt': 2, 'Drawing.kt': 1 },
 };
 

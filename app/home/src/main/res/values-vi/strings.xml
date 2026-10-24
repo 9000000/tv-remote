@@ -369,4 +369,34 @@
     <string name="th_nature">Thiên nhiên</string>
     <string name="th_tech">Công nghệ</string>
     <string name="th_minimal">Tối giản</string>
+    <!-- Thẻ tông màu, thẻ không khí, ngày lễ -->
+    <string name="w_air">Không khí</string>
+    <string name="c_air_sub">chỉ số và PM2.5 nơi bạn ở</string>
+    <string name="aq_none">Chưa có số liệu không khí</string>
+    <string name="aq_0">Tốt</string>
+    <string name="aq_1">Trung bình</string>
+    <string name="aq_2">Kém với người nhạy cảm</string>
+    <string name="aq_3">Kém</string>
+    <string name="aq_4">Rất kém</string>
+    <string name="aq_5">Nguy hại</string>
+    <string name="aq_line">%1$s, PM2.5 %2$d</string>
+    <string name="ton_year">Năm %1$s</string>
+    <string name="ton_sky">%1$s, %2$d° / %3$d°</string>
+    <string name="h_today">%1$s, hôm nay</string>
+    <plurals name="h_in"><item quantity="one">%1$s, còn %2$d ngày</item><item quantity="other">%1$s, còn %2$d ngày</item></plurals>
+    <string name="h_newyear">Tết Dương lịch</string>
+    <string name="h_liberation">Giải phóng miền Nam</string>
+    <string name="h_labour">Quốc tế Lao động</string>
+    <string name="h_national">Quốc khánh</string>
+    <string name="h_xmas">Giáng sinh</string>
+    <string name="h_tet">Tết</string>
+    <string name="h_hung">Giỗ Tổ Hùng Vương</string>
+    <string name="h_buddha">Phật Đản</string>
+    <string name="h_duanwu">Tết Đoan Ngọ</string>
+    <string name="h_vulan">Vu Lan</string>
+    <string name="h_midautumn">Trung thu</string>
+    <string name="c_cardlook">Kiểu thẻ</string>
+    <string name="c_cardlook_sub">thời tiết, hệ thống, âm lịch, không khí: kính hoặc tông màu</string>
+    <string name="c_cardlook_glass">Kính</string>
+    <string name="c_cardlook_tonal">Tông màu</string>
 </resources>

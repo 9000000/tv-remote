@@ -40,13 +40,13 @@ class HomeConfigTest {
         val none = HomeConfig.clean(JSONObject())
         assertEquals(0, none.getJSONObject("wsize").length())                    // nothing chosen: the defaults apply
         assertFalse(none.has("wlayout"))
-        assertEquals(setOf("system", "usage", "calendar", "weather") + HomeQr.KEYS, HomeConfig.bigs(none))   // QR cards are big by default
+        assertEquals(setOf("system", "usage", "calendar", "weather", "air") + HomeQr.KEYS, HomeConfig.bigs(none))   // QR cards are big by default
         val c = HomeConfig.clean(JSONObject().put("wsize", JSONObject().put("system", "small").put("lunar", "big").put("timer", "huge").put("bogus", "big")))
         assertEquals("small", c.getJSONObject("wsize").getString("system"))
         assertEquals("big", c.getJSONObject("wsize").getString("lunar"))
         assertFalse(c.getJSONObject("wsize").has("timer"))                       // an unknown size: dropped
         assertFalse(c.getJSONObject("wsize").has("bogus"))
-        assertEquals(setOf("usage", "calendar", "weather", "lunar") + HomeQr.KEYS, HomeConfig.bigs(c))
+        assertEquals(setOf("usage", "calendar", "weather", "air", "lunar") + HomeQr.KEYS, HomeConfig.bigs(c))
         val m = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wsize", JSONObject().put("weather", "small")))
         assertEquals("small", m.getJSONObject("wsize").getString("weather"))
         assertEquals("weather", m.getJSONArray("widgets").getString(0))          // moving never sorts them back
@@ -63,6 +63,10 @@ class HomeConfigTest {
         assertEquals("bold", f.getJSONObject("wstyle").getString("future"))      // a newer TV Home's card keeps its look
         assertFalse(f.getJSONObject("wstyle").has("Bad Key"))
         assertEquals("classic", HomeConfig.STYLES["clock"]!![0])
+        for (k in listOf("weather", "system", "lunar", "air")) assertEquals("glass", HomeConfig.STYLES[k]!![0])   // today's look stays the default
+        val t = HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("weather", "tonal").put("air", "tonal").put("system", "wood")))
+        assertEquals("tonal", t.getJSONObject("wstyle").getString("weather")); assertEquals("tonal", t.getJSONObject("wstyle").getString("air"))
+        assertFalse(t.getJSONObject("wstyle").has("system"))
         assertEquals("light", HomeConfig.merge(JSONObject(), JSONObject().put("wstyle", JSONObject().put("clock", "light"))).getJSONObject("wstyle").getString("clock"))
     }
 

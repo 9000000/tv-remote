@@ -161,6 +161,18 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 3. D-pad Down from the field → the list; Up from the list's first row → the field; the IME action key also goes to the list;
 4. empty field or no results: Back behaves normally (closes).
 
+### Tonal cards (TV Home's home screen cards, style "tonal")
+
+The other look of the weather, system, lunar and air cards (`wstyle`, `HomeConfig.STYLES`; "glass" stays the default). One helper draws all of them: `widgets/Tonal.kt` (`tonalCard`, `Scallop`, `tonalBar`); a card never hand-paints its own.
+
+| Part | Value |
+|---|---|
+| Card | opaque fill `Tonal.FILL` `#F6E9E0` (one warm tone, **not** taken from the wallpaper: TV Home has no colour pick), radius **28** dp, no border, no shadow, height = the cards' `BIG_H` |
+| Words | ink `Tonal.INK` `#3B2A22`; 3 lines: label 14 sp (placed first), figure 64 sp regular (shrinks to 30 in a narrow card), caption 14 sp in `Tonal.SUB` |
+| Badge | `Scallop`: a circle with 9 bumps (Material 3 "cookie"), 100 dp (smaller in a narrow or small card), top right. Pale `Tonal.PALE` + dark icon, or dark olive `Tonal.OLIVE` + light icon (air) |
+| Bar (system rows) | 10 dp rounded, fill `Tonal.BAR` on track `Tonal.TRACK`, a small dot at the end of the track |
+| Small (half height) | same parts, figure 30 sp, badge 52 dp |
+
 ### Dialogs
 
 One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.TvSheet` from `tvui/res`; `:tv` and `:home` both include that res dir). Don't build another.

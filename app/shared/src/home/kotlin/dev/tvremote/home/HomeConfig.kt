@@ -51,7 +51,8 @@ import org.json.JSONObject
  *           "lunar" (the lunar date, the next full moon and Tết), "clock" (an analog clock face, round, sweeping second hand),
  *           "timer" (the sleep timer or bedtime, from TV Setup too;
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
- *           location or the internet address's)
+ *           location or the internet address's), "air" (the air quality index and PM2.5 at that place, Open-Meteo's air-quality API;
+ *           a TV Home older than it drops the key)
  *           Their order in the list is the order on the screen (the page and the TV's panel move them).
  *   qrs     QR cards: {"qr1": {tpl, f, cap, show}, ...} up to [HomeQr.CARDS_MAX], each a template's fields (Wi-Fi, link, text, phone, SMS,
  *           e-mail, contact: [HomeQr]) and a caption; a card is on the screen when its key is also in "widgets" (the order, the size).
@@ -180,13 +181,17 @@ object HomeConfig {
         }
         return null
     }
-    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "clock") + HomeQr.KEYS
-    /** The looks of the cards that have more than one, the first is the default ("wstyle"). */
-    val STYLES: Map<String, List<String>> = mapOf("clock" to listOf("classic", "light", "minimal", "roman"))
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "clock") + HomeQr.KEYS
+    /**
+     * The looks of the cards that have more than one, the first is the default ("wstyle"). "glass" is the look every card had; "tonal"
+     * (weather, system, lunar, air) is an opaque warm card with a big figure and a scalloped badge (app/DESIGN-TV.md "Tonal cards").
+     */
+    val STYLES: Map<String, List<String>> = mapOf("clock" to listOf("classic", "light", "minimal", "roman"),
+        "weather" to listOf("glass", "tonal"), "system" to listOf("glass", "tonal"), "lunar" to listOf("glass", "tonal"), "air" to listOf("glass", "tonal"))
     fun styles(): JSONObject = JSONObject().also { o -> STYLES.forEach { (k, v) -> o.put(k, JSONArray(v)) } }
     /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, clock, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
-    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
+    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather", "air") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
     /**
      * Widths as weights (a column's share of the row): a big card, the calendar (seven day columns) a little more, a small column
      * (stacked pills, or one standing) a little less. The row holds [BUDGET] at most: three big cards and a small column fit; a

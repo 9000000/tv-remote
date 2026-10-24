@@ -371,4 +371,34 @@
     <string name="th_nature">Nature</string>
     <string name="th_tech">Tech</string>
     <string name="th_minimal">Minimal</string>
+    <!-- Tonal cards, the air card, the holidays -->
+    <string name="w_air">Air quality</string>
+    <string name="c_air_sub">index and PM2.5 where you are</string>
+    <string name="aq_none">No air data yet</string>
+    <string name="aq_0">Good</string>
+    <string name="aq_1">Moderate</string>
+    <string name="aq_2">Unhealthy for some</string>
+    <string name="aq_3">Unhealthy</string>
+    <string name="aq_4">Very unhealthy</string>
+    <string name="aq_5">Hazardous</string>
+    <string name="aq_line">%1$s, PM2.5 %2$d</string>
+    <string name="ton_year">Year of the %1$s</string>
+    <string name="ton_sky">%1$s, %2$d° / %3$d°</string>
+    <string name="h_today">%1$s, today</string>
+    <plurals name="h_in"><item quantity="one">%1$s, %2$d day left</item><item quantity="other">%1$s, %2$d days left</item></plurals>
+    <string name="h_newyear">New Year</string>
+    <string name="h_liberation">Reunification Day</string>
+    <string name="h_labour">Labour Day</string>
+    <string name="h_national">National Day</string>
+    <string name="h_xmas">Christmas</string>
+    <string name="h_tet">Tết</string>
+    <string name="h_hung">Hùng Kings</string>
+    <string name="h_buddha">Buddha\'s Birthday</string>
+    <string name="h_duanwu">Mid-year Festival</string>
+    <string name="h_vulan">Vu Lan</string>
+    <string name="h_midautumn">Mid-Autumn</string>
+    <string name="c_cardlook">Card look</string>
+    <string name="c_cardlook_sub">weather, system, lunar, air: glass or tonal</string>
+    <string name="c_cardlook_glass">Glass</string>
+    <string name="c_cardlook_tonal">Tonal</string>
 </resources>

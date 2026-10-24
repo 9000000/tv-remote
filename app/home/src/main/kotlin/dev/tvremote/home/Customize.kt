@@ -854,6 +854,7 @@ object Customize {
         arrayOf<Any>("lunar", R.drawable.ic_moon, R.string.w_lunar, R.string.c_lunar_sub),
         arrayOf<Any>("timer", R.drawable.ic_timer, R.string.w_timer, R.string.c_timer_sub),
         arrayOf<Any>("weather", R.drawable.ic_weather, R.string.w_weather, R.string.c_weather_sub),
+        arrayOf<Any>("air", R.drawable.ic_wind, R.string.w_air, R.string.c_air_sub),
         arrayOf<Any>("clock", R.drawable.ic_clock, R.string.w_clock, R.string.c_clock_sub),
     )
 
@@ -875,6 +876,31 @@ object Customize {
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(box, LinearLayout.LayoutParams(-1, -2))
         col.addView(label(a.getString(R.string.w_order_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 2 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        // the look of the cards that have two (weather, system, lunar, air): OK flips all of them together, glass <-> tonal
+        val tonalKinds = HomeConfig.STYLES.filter { "tonal" in it.value }.keys
+        val lookLine = LinearLayout(a).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
+                addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
+            }
+            onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
+        }
+        val lookName = label("", 15f, Color.WHITE).apply { maxLines = 1 }
+        val lookState = label("", 12f, DIM).apply { maxLines = 1 }
+        fun lookNow() = Store.get(a).optJSONObject("wstyle")?.let { w -> tonalKinds.all { w.optString(it) == "tonal" } } == true
+        fun lookWords() { lookName.text = a.getString(R.string.c_cardlook); lookState.text = a.getString(if (lookNow()) R.string.c_cardlook_tonal else R.string.c_cardlook_glass) + " · " + a.getString(R.string.c_cardlook_sub) }
+        lookLine.addView(ImageView(a).apply { setImageResource(R.drawable.ic_sliders); imageTintList = ColorStateList.valueOf(DIM) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+        lookLine.addView(LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; addView(lookName); addView(lookState) }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+        lookLine.setOnClickListener {
+            val next = if (lookNow()) "glass" else "tonal"
+            val w = (Store.get(a).optJSONObject("wstyle") ?: JSONObject()).let { JSONObject(it.toString()) }
+            tonalKinds.forEach { w.put(it, next) }
+            Store.change(a, JSONObject().put("wstyle", w)); lookWords(); preview.invalidate()
+        }
+        lookWords()
+        col.addView(lookLine, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         var moving: String? = null; var building = false
         fun fill(focus: String? = null, focusMove: Boolean = false, focusSize: Boolean = false) {
             building = true                                            // taking the rows down loses their focus: not a wander

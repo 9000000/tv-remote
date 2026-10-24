@@ -44,7 +44,10 @@ import dev.tvremote.home.R
  *   usage   a column per day of the last week, the most used apps with their share, today's app limits: from TV Setup (its
  *           HomeInfo provider), the count the limits themselves hold to
  *   weather  the sky now, today's low and high and the next days ([Weather]: Open-Meteo, asked on a thread of its own, the last answer kept)
+
+ *   air      the air quality index and PM2.5 ([Weather.Air]: Open-Meteo's air-quality API, same place and cache as the weather)
  *   calendar the month, today a filled circle, a lunar day only on its 1st and 15th ([Month], one View; the lunar days from [Lunar], once a day)
+ * weather, system, lunar and air also have the "tonal" look (HomeConfig "wstyle", [Tonal]); calendar etc. stay glass.
  * and, smaller, stacked in a column beside them:
  *   clock   an analog clock, four looks (HomeConfig "wstyle"); a face in a stack, standing, or big with the time beside it
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
@@ -58,10 +61,10 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** What a card needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
                 val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null,
-                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0)
+                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0, val air: Weather.Air? = null)
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
-    class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int)
+    class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int, val hol: Holidays.Next? = null)
 
     /** The month shown: its grid, today's cell, and today's lunar date (the title's). */
     class Cal(val grid: MonthGrid.Grid, val today: Int, val moon: Lunar.Day)
@@ -81,7 +84,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
-        private val BIG = setOf("system", "usage", "calendar", "weather")
+        private val BIG = setOf("system", "usage", "calendar", "weather", "air")
+        private val TONAL = setOf("system", "weather", "lunar", "air")      // the cards that have the tonal look (HomeConfig.STYLES)
         const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
         private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
 
@@ -110,7 +114,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                 if (full >= 0 && new >= 0 && tet >= 0) break
                 c.add(Calendar.DAY_OF_MONTH, 1)
             }
-            return Moon(day, full, new, tet)
+            return Moon(day, full, new, tet, Holidays.next(today))
         }
     }
 
@@ -182,12 +186,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         cpuMiss = if (cpu == null && "system" in want) cpuMiss + 1 else 0
         val cpuWhy = if (cpuMiss == 0) 0 else if (ask("badges") == null) R.string.w_cpu_need_setup else if (cpuMiss >= 2) R.string.w_cpu_need_adb else 0
         val typed = Store.get(a).optString("place")
-        val wx = if ("weather" in want) {
-            if (Weather.due(a, typed)) Weather.refresh(a, typed, resources.configuration.locales[0].language) { onWeather?.invoke() }
-            Weather.cached(a)
-        } else null
+        val air = "air" in want
+        if (("weather" in want || air) && Weather.due(a, typed, air = air)) Weather.refresh(a, typed, resources.configuration.locales[0].language, air) { onWeather?.invoke() }
+        val wx = if ("weather" in want) Weather.cached(a) else null
         return Facts(mem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
-            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy)
+            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy, if (air) Weather.cachedAir(a) else null)
     }
 
     /**
@@ -213,6 +216,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             in HomeQr.KEYS -> qrCard(qrs.getJSONObject(k))
             else -> noteView
         }
+        val looks = Store.get(a).optJSONObject("wstyle")
+        fun tonal(k: String) = k in TONAL && looks?.optString(k) == "tonal"             // the first style, glass, is what a missing one means
         val gap = dp(20)
         val room = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (packed.cols.size - 1)
         val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight })
@@ -221,9 +226,18 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             val box = LinearLayout(a).apply { orientation = VERTICAL }
             col.keys.forEachIndexed { j, k ->
                 val alone = col.keys.size == 1                         // a lone card has the column's whole height
-                val v: View = if (k in BIG) card().also { c ->
-                    if (alone && k in big && w >= dp(FULL_MIN)) when (k) {
+                val full = alone && k in big && w >= dp(FULL_MIN)
+                val v: View = if (tonal(k)) tonalCard(!full).also { c ->     // the same parts at both sizes: a figure, a caption, a badge
+                    when (k) {
+                        "system" -> systemTonal(c, f, !full)
+                        "weather" -> weatherTonal(c, f, w, !full)
+                        "air" -> airTonal(c, f, w, !full)
+                        else -> f.moon?.let { lunarTonal(c, it, w, !full) }
+                    }
+                } else if (k in BIG) card().also { c ->
+                    if (full) when (k) {
                         "system" -> system(c, f, w)
+                        "air" -> airGlass(c, f, true)
                         "calendar" -> calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
                         "weather" -> weather(c, f, w, fixed = true)
                         else -> usage(c, f, label, w < dp(340))
@@ -233,6 +247,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                             "system" -> systemHalf(c, f, w - dp(32))
                             "calendar" -> calendarHalf(c, f, w - dp(32))
                             "weather" -> weatherHalf(c, f, w - dp(32))
+                            "air" -> airGlass(c, f, false)
                             else -> usageHalf(c, f, label)
                         }
                     }
