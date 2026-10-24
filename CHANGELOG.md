@@ -76,6 +76,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 - TV Home: khóa app không cần TV Setup: mã PIN 4 số tạo ngay trên TV (nhập hai lần), TV Home tự khóa mở app từ lưới, dock, phím gán (chặn mở từ nơi khác thì cần TV Setup); giới hạn mỗi ngày vẫn cần TV Setup. Cài TV Setup sau thì khóa tự chuyển sang. Màn mờ phía sau menu không còn nhấp nháy khi quay về từ app khác (Thông tin app).
+- TV Home, Tùy chỉnh → Widget: mỗi thẻ có nút kiểu riêng (bấm OK đổi sang kiểu kế tiếp của thẻ đó: Kính / Tông màu, đồng hồ Cổ điển / Sáng / Tối giản / La Mã), thay cho công tắc "Kiểu thẻ" chung; bỏ dòng nhắc ⌃⌄.
 
 **English**
 - TV Setup, mic button on the TV's remote (new, off by default): turn it on in the Health tab or in TV Setup and the mic button opens TV Remote's voice on the TV itself (live text and the action: keys, volume, open app, channel, timer, scenes) instead of Google Assistant. No recognizer or no network: the button stays as it was. Needs a newer TV Setup (and TV Setup Keys).
@@ -147,6 +148,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Code screen: 6 dots for the Google Authenticator code, a wrong one says so at once; an 8-digit backup code goes through the "Use a backup code" button.
 - TV Setup: the Optimize, Connection and Update menus have icons and a second line; switches show a check or an empty ring at the end instead of words.
 - Site and app pictures re-compressed without a visible change (6% fewer bytes; `dev/optimize_images.py`); the wallpapers and launcher pictures are pinned by hash and stay as they were
+- TV Home, Customize → Widgets: each card has its own look button (OK steps to that card's next look: Glass / Tonal, the clock Classic / Light / Minimal / Roman), replacing the one shared "Card look" switch; the ⌃⌄ hint is gone.
 
 ## 0.21.0 - 2026-10-24
 

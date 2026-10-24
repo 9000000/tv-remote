@@ -170,7 +170,6 @@
     <string name="wx_rain">Rain</string>
     <string name="wx_snow">Snow</string>
     <string name="wx_storm">Thunderstorm</string>
-    <string name="w_order_hint">The ⌃⌄ button moves a card, Big / Small sets its size.</string>
     <string name="c_move">Move</string>
     <string name="c_moving">Up / Down, then OK</string>
     <string name="w_layout">Result</string>
@@ -410,9 +409,12 @@
     <string name="h_vulan">Vu Lan</string>
     <string name="h_midautumn">Mid-Autumn</string>
     <string name="c_cardlook">Card look</string>
-    <string name="c_cardlook_sub">weather, system, lunar, air: glass or tonal</string>
     <string name="c_cardlook_glass">Glass</string>
     <string name="c_cardlook_tonal">Tonal</string>
+    <string name="c_look_classic">Classic</string>
+    <string name="c_look_light">Light</string>
+    <string name="c_look_minimal">Minimal</string>
+    <string name="c_look_roman">Roman</string>
     <string name="auto_on">Open when the TV turns on</string>
     <string name="auto_off">Don\'t open when the TV turns on</string>
     <string name="auto_needs_setup">Saved · needs the TV Setup app to open on power-on</string>

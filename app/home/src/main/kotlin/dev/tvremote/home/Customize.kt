@@ -917,6 +917,8 @@ object Customize {
         android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()
     }
 
+    private val LOOK_WORDS = mapOf("glass" to R.string.c_cardlook_glass, "tonal" to R.string.c_cardlook_tonal, "classic" to R.string.c_look_classic,   // HomeConfig.STYLES
+        "light" to R.string.c_look_light, "minimal" to R.string.c_look_minimal, "roman" to R.string.c_look_roman)
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
         arrayOf<Any>("system", R.drawable.ic_gauge, R.string.w_system, R.string.c_system_sub),
         arrayOf<Any>("usage", R.drawable.ic_chart, R.string.w_usage, R.string.c_usage_sub),
@@ -945,34 +947,8 @@ object Customize {
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(box, LinearLayout.LayoutParams(-1, -2))
-        col.addView(label(a.getString(R.string.w_order_hint), 12f, 0x8CFFFFFF.toInt()).apply { maxLines = 2 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
-        // the look of the cards that have two (weather, system, lunar, air): OK flips all of them together, glass <-> tonal
-        val tonalKinds = HomeConfig.STYLES.filter { "tonal" in it.value }.keys
-        val lookLine = LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-            setPadding(dp(14), dp(12), dp(14), dp(12))
-            background = StateListDrawable().apply {
-                addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
-                addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
-            }
-            onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
-        }
-        val lookName = label("", 15f, Color.WHITE).apply { maxLines = 1 }
-        val lookState = label("", 12f, DIM).apply { maxLines = 1 }
-        fun lookNow() = Store.get(a).optJSONObject("wstyle")?.let { w -> tonalKinds.all { w.optString(it) == "tonal" } } == true
-        fun lookWords() { lookName.text = a.getString(R.string.c_cardlook); lookState.text = a.getString(if (lookNow()) R.string.c_cardlook_tonal else R.string.c_cardlook_glass) + " · " + a.getString(R.string.c_cardlook_sub) }
-        lookLine.addView(ImageView(a).apply { setImageResource(R.drawable.ic_sliders); imageTintList = ColorStateList.valueOf(DIM) }, LinearLayout.LayoutParams(dp(26), dp(26)))
-        lookLine.addView(LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; addView(lookName); addView(lookState) }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-        lookLine.setOnClickListener {
-            val next = if (lookNow()) "glass" else "tonal"
-            val w = (Store.get(a).optJSONObject("wstyle") ?: JSONObject()).let { JSONObject(it.toString()) }
-            tonalKinds.forEach { w.put(it, next) }
-            Store.change(a, JSONObject().put("wstyle", w)); lookWords(); preview.invalidate()
-        }
-        lookWords()
-        col.addView(lookLine, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         var moving: String? = null; var building = false
-        fun fill(focus: String? = null, focusMove: Boolean = false, focusSize: Boolean = false) {
+        fun fill(focus: String? = null, focusMove: Boolean = false, focusSize: Boolean = false, focusLook: Boolean = false) {
             building = true                                            // taking the rows down loses their focus: not a wander
             box.removeAllViews()
             val on = Store.list(a, "widgets")
@@ -991,7 +967,8 @@ object Customize {
                 val state = label("", 12f, if (isOn) ACCENT else DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
                 val sub = if (qr != null) qrKind(a, qr) else a.getString(r[3] as Int)
                 val word = a.getString(if (isOn) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = if (moving == k) a.getString(R.string.c_moving) else if (k in waiting) "$word · ${a.getString(R.string.c_waits)}" else "$word · $sub"
+                // a row with a look button has room for "On" only: the card itself is on screen
+                state.text = if (moving == k) a.getString(R.string.c_moving) else if (k in waiting) "$word · ${a.getString(R.string.c_waits)}" else if (isOn && HomeConfig.STYLES[k] != null) word else "$word · $sub"
                 val t = LinearLayout(a).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                     setPadding(dp(14), dp(12), dp(14), dp(12))
@@ -1034,6 +1011,28 @@ object Customize {
                     }
                     line.addView(s, LinearLayout.LayoutParams(dp(72), -1).apply { leftMargin = dp(8) })
                     if (focus == k && focusSize) want = s
+                }
+                val looks = HomeConfig.STYLES[k]
+                if (isOn && looks != null) {                           // the card's look: OK moves to the next of its own looks
+                    val cur = conf.optJSONObject("wstyle")?.optString(k)?.takeIf { it in looks } ?: looks[0]
+                    val lk = LinearLayout(a).apply {
+                        gravity = Gravity.CENTER; isFocusable = true; isClickable = true
+                        contentDescription = a.getString(R.string.c_cardlook)
+                        background = StateListDrawable().apply {
+                            addState(intArrayOf(android.R.attr.state_focused), glass(16, 0x2EFFFFFF, Color.WHITE))
+                            addState(intArrayOf(), glass(16, 0x12FFFFFF, 0x1FFFFFFF))
+                        }
+                        addView(label(a.getString(LOOK_WORDS[cur] ?: R.string.c_cardlook), 14f, Color.WHITE).apply { gravity = Gravity.CENTER; maxLines = 1 })
+                        onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
+                        setOnClickListener {
+                            moving = null
+                            val now = (conf.optJSONObject("wstyle") ?: JSONObject()).let { JSONObject(it.toString()) }
+                            Store.change(a, JSONObject().put("wstyle", now.put(k, looks[(looks.indexOf(cur) + 1) % looks.size])))
+                            preview.invalidate(); fill(k, focusLook = true)
+                        }
+                    }
+                    line.addView(lk, LinearLayout.LayoutParams(dp(104), -1).apply { leftMargin = dp(8) })
+                    if (focus == k && focusLook) want = lk
                 }
                 if (isOn && on.size > 1) {
                     val m = LinearLayout(a).apply {

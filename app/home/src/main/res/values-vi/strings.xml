@@ -168,7 +168,6 @@
     <string name="wx_rain">Mưa</string>
     <string name="wx_snow">Tuyết</string>
     <string name="wx_storm">Dông</string>
-    <string name="w_order_hint">Nút ⌃⌄ đổi chỗ thẻ, nút To / Nhỏ đổi cỡ.</string>
     <string name="c_move">Đổi chỗ</string>
     <string name="c_moving">Lên / Xuống, rồi OK</string>
     <string name="w_layout">Kết quả</string>
@@ -408,9 +407,12 @@
     <string name="h_vulan">Vu Lan</string>
     <string name="h_midautumn">Trung thu</string>
     <string name="c_cardlook">Kiểu thẻ</string>
-    <string name="c_cardlook_sub">thời tiết, hệ thống, âm lịch, không khí: kính hoặc tông màu</string>
     <string name="c_cardlook_glass">Kính</string>
     <string name="c_cardlook_tonal">Tông màu</string>
+    <string name="c_look_classic">Cổ điển</string>
+    <string name="c_look_light">Sáng</string>
+    <string name="c_look_minimal">Tối giản</string>
+    <string name="c_look_roman">La Mã</string>
     <string name="auto_on">Mở khi bật TV</string>
     <string name="auto_off">Thôi mở khi bật TV</string>
     <string name="auto_needs_setup">Đã lưu · cần app TV Setup để mở khi bật TV</string>
