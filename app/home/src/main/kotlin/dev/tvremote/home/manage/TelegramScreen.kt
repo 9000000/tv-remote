@@ -23,6 +23,7 @@ import dev.tvremote.home.Font
 import dev.tvremote.home.HomeActivity
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.R
+import dev.tvremote.update.Release
 import dev.tvremote.tvui.TvGlass
 import org.json.JSONObject
 
@@ -55,6 +56,16 @@ object TelegramScreen {
     fun ask(a: Activity, arg: String): Answer = try {
         Answer.parse(a.contentResolver.call(Uri.parse(HomeConfig.USAGE), "telegram", arg, null))
     } catch (e: Exception) { Answer("missing") }
+
+    /** The TV Setup this TV has, under the number needed: "not installed", "this TV has 0.21.0", or new enough but not answering. */
+    private fun haveLine(a: Activity): String {
+        val have = try { a.packageManager.getPackageInfo("dev.tvremote.setup", 0).versionName ?: "" } catch (e: Exception) { null }
+        return when {
+            have == null -> a.getString(R.string.tg_have_none)
+            have.isNotEmpty() && Release.compare(have, HomeConfig.TELEGRAM_SETUP) >= 0 -> a.getString(R.string.tg_have_mute, have)
+            else -> a.getString(R.string.tg_have, have)
+        }
+    }
 
     fun show(a: Activity): Dialog {
         val d = a.resources.displayMetrics.density
@@ -150,7 +161,8 @@ object TelegramScreen {
                 else -> {   // TV Setup absent, too old, or not answering: the same way to get it as the power button's
                     val dl = a.packageManager.getLaunchIntentForPackage("com.esaba.downloader")
                     val words = mutableListOf<View>(
-                        label(a.getString(R.string.tg_need), 18f, Color.WHITE).apply { gravity = Gravity.START; typeface = Font.medium },
+                        label(a.getString(R.string.tg_need, HomeConfig.TELEGRAM_SETUP), 18f, Color.WHITE).apply { gravity = Gravity.START; typeface = Font.medium },
+                        label(haveLine(a), 15f, BAD).apply { gravity = Gravity.START },
                         label(a.getString(R.string.tg_need_code, HomeActivity.SETUP_CODE), 16f, SOFT).apply { gravity = Gravity.START },
                         label(a.getString(R.string.tg_need_phone), 14f, DIM).apply { gravity = Gravity.START })
                     if (dl != null) {

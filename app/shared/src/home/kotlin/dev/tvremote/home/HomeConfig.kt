@@ -254,6 +254,8 @@ object HomeConfig {
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"
+    /** The first TV Setup with the Telegram bot: TV Home's card names it, and SetupNeed.MIN "telegram" is this, so both say one number. */
+    const val TELEGRAM_SETUP = "0.21.1"
     /** The languages TV Home has words in (res/values-<lang>; English is res/values), "" = the TV's. */
     val MOTIONS = listOf("calm", "full")
     val LANGS = listOf("", "vi", "en")

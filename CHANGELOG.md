@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: thẻ Điều khiển bằng Telegram ghi rõ cần TV Setup bản nào và TV đang có bản nào (trước chỉ ghi "bản mới nhất").
 - TV Home: video nền nặng không còn ra file hỏng trên TV yếu. Trên BRAVIA, nén video 1080p60 ra 27 Mbps toàn khung hỏng (nền xanh nhòe). Giờ TV hạ xuống 30 fps khi chip không làm nổi, tự kiểm tra file vừa nén (bitrate và giải mã thử), hỏng thì nén lại ở 720p30.
 - TV Home: thẻ "tông màu" (kiểu Google TV) cho Thời tiết, Hệ thống, Lịch âm, Không khí: nền kem đặc, số lớn, huy hiệu răng cưa; chọn ở Tùy chỉnh > Widget ("Kiểu thẻ") hoặc trang web. Thẻ Không khí mới (chỉ số AQI + PM2.5 từ Open-Meteo, cùng nơi ở với thời tiết). Lịch âm báo ngày lễ tới và còn bao nhiêu ngày (tính offline, cả lễ dương và âm). Mặc định vẫn là kiểu kính.
 - Remote hồng ngoại (app điện thoại): bấm giữ phím giờ là bấm giữ thật, như remote của TV. Trước đây giữ OK chỉ gửi một lần nên TV mở app thay vì hiện menu của app. Giờ mọi phím trừ Nguồn gửi tiếp khi giữ (NEC: mã lặp ngắn mỗi 108 ms, giao thức khác: cùng khung theo nhịp của nó).
@@ -41,6 +42,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 
 **English**
+- TV Home: the Telegram card says which TV Setup it needs and which one the TV has (it said "the latest version").
 - TV Home: a heavy video background no longer comes out broken on a weak TV. On a BRAVIA, making a 1080p60 video light wrote 27 Mbps of broken frames (a green smear). Now the TV drops to 30 fps when its chip cannot do the rate, checks the file it made (bitrate and a test decode), and makes it again at 720p30 if it is bad.
 - TV Home: "tonal" cards (Google TV style) for Weather, System, Lunar and Air quality: opaque warm fill, big figure, scalloped badge; pick it in Customize > Widgets ("Card look") or on the web page. New Air quality card (AQI + PM2.5 from Open-Meteo, same place as the weather). The lunar card names the next holiday and the days left (offline, solar and lunar holidays). The glass look stays the default.
 - Infrared remote (phone app): holding a key is a real hold, as on the TV's remote. Holding OK used to send it once, so the TV opened the app instead of its menu. Every key but Power now keeps sending while held (NEC: its short repeat code every 108 ms, other protocols: the same frame at their own rate).

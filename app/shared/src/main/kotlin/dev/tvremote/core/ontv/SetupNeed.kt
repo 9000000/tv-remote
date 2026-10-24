@@ -34,7 +34,7 @@ object SetupNeed {
         "checkout" to "0.19.1",                                        // 🧳 check-out: forget the guests' browsers (RulesReceiver "forget_web")
         "schedule" to "0.20.1",                                        // 📅 an app opened only on some days in a window of the day (Rules "sched"; the release after 0.20.0)
         "schedule_windows" to "0.21.1",                                // 📅 several windows in a schedule (Rules "sched" windows; the release after 0.21.0); one window still works on older ones
-        "telegram" to "0.21.1",                                        // 💬 the Telegram bot on the TV (Telegram.kt; the release after 0.21.0)
+        "telegram" to dev.tvremote.home.HomeConfig.TELEGRAM_SETUP,      // 💬 the Telegram bot on the TV (Telegram.kt; the release after 0.21.0)
         "kids" to "0.21.1",                                            // 🧒 kids mode: every app asks a code, Authenticator, a parent over Telegram, a total of minutes a day (Rules "kids" / "totp" / "total"; the release after 0.21.0)
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )

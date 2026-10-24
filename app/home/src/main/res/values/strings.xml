@@ -340,7 +340,10 @@
     <string name="tg_none_steps">Your bot is saved. To turn it on:\n1. Point the phone\'s camera at the code\n2. Enter the 6-digit code TV Setup shows\n3. In the Telegram card, switch it on</string>
     <string name="tg_token_steps">1. In Telegram open @BotFather, send /newbot and name your bot\n2. Copy the token it gives you\n3. Point the phone\'s camera at the code, enter the 6-digit code TV Setup shows, and paste the token in the Telegram card</string>
     <string name="tg_no_net">The TV has no network address. Connect it to Wi-Fi or Ethernet first.</string>
-    <string name="tg_need">Telegram control needs the TV Setup app (the latest version)</string>
+    <string name="tg_need">Needs TV Setup %1$s or newer</string>
+    <string name="tg_have">This TV has %1$s</string>
+    <string name="tg_have_none">TV Setup is not installed on this TV</string>
+    <string name="tg_have_mute">This TV has %1$s, but TV Setup did not answer: open TV Setup once, then try again</string>
     <string name="tg_need_code">Install or update it with Downloader: code %1$s</string>
     <string name="tg_open_dl">Open Downloader</string>
     <string name="tg_need_phone">Or send it to the TV from the TV Remote app on your phone</string>

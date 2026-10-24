@@ -338,7 +338,10 @@
     <string name="tg_none_steps">Bot của bạn đã lưu. Để bật:\n1. Quét mã bằng camera điện thoại\n2. Nhập mã 6 số TV Setup đang hiện\n3. Ở thẻ Telegram, gạt sang Bật</string>
     <string name="tg_token_steps">1. Trong Telegram mở @BotFather, gửi /newbot và đặt tên cho bot\n2. Chép token nó trả về\n3. Quét mã bằng camera điện thoại, nhập mã 6 số TV Setup đang hiện rồi dán token vào thẻ Telegram</string>
     <string name="tg_no_net">TV chưa có địa chỉ mạng. Hãy nối Wi-Fi hoặc cáp mạng trước.</string>
-    <string name="tg_need">Điều khiển bằng Telegram cần app TV Setup (bản mới nhất)</string>
+    <string name="tg_need">Cần TV Setup %1$s trở lên</string>
+    <string name="tg_have">TV này đang có bản %1$s</string>
+    <string name="tg_have_none">TV này chưa cài TV Setup</string>
+    <string name="tg_have_mute">TV có bản %1$s nhưng TV Setup chưa trả lời: mở TV Setup một lần rồi thử lại</string>
     <string name="tg_need_code">Cài hoặc cập nhật bằng Downloader: mã %1$s</string>
     <string name="tg_open_dl">Mở Downloader</string>
     <string name="tg_need_phone">Hoặc gửi sang TV từ app TV Remote trên điện thoại</string>
