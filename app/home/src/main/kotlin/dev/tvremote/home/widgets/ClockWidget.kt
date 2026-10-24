@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.LinearLayout.HORIZONTAL
 import android.widget.LinearLayout.LayoutParams
 import android.widget.LinearLayout.VERTICAL
+import android.widget.TextView
 import dev.tvremote.home.Font
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.Store
@@ -33,10 +34,19 @@ internal fun Widgets.clock(mode: Int): View {
     // the small form is one short line, never broken inside the date: "T4, 21/10", "Wed 21 Oct"
     val dateF = SimpleDateFormat(if (mode != 0) android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMM")
         else if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
-    val vi = mode == 0 && locale.language == "vi"
     val time = text("", if (mode == 2) 34f else 22f, Color.WHITE).apply { typeface = Font.medium }
-    val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = if (mode == 0) 1 else 2; ellipsize = TextUtils.TruncateAt.END }
-    val face = ClockFace(this@clock, a, style) { now -> time.text = timeF.format(now); date.text = (if (vi) viDay(now) + ", " else "") + dateF.format(now).replaceFirstChar { it.uppercase() } }
+    val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = if (mode == 1) 2 else 1; ellipsize = TextUtils.TruncateAt.END }
+    // big beside two other big cards: "Chủ Nhật, 25 thg 10" broke in two; it falls to the short form ("CN, 25/10") when it does not fit
+    val shortF = SimpleDateFormat(if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
+    var shown = Date()
+    fun put(now: Date) {
+        shown = now
+        val full = dateF.format(now).replaceFirstChar { it.uppercase() }
+        val fits = mode == 1 || (mode == 2 && (date.width == 0 || date.paint.measureText(full) <= date.width - date.paddingLeft - date.paddingRight))
+        date.text = if (fits) full else (if (locale.language == "vi") viDay(now) + ", " else "") + shortF.format(now)
+    }
+    if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown) } }
+    val face = ClockFace(this@clock, a, style) { now -> time.text = timeF.format(now); put(now) }
     return LinearLayout(a).apply {
         Frost.on(this, dp(if (mode == 0) 18 else 22).toFloat(), dp(1))
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL

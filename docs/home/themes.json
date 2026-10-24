@@ -16,7 +16,7 @@
      "lunar"
     ],
     "wsize": {
-     "clock": "big",
+     "clock": "small",
      "weather": "big",
      "lunar": "big"
     },
