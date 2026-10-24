@@ -44,7 +44,9 @@ class ManageActivity : Activity() {
         val box = android.widget.FrameLayout(this)
         box.setBackgroundColor(Color.rgb(13, 16, 20))
         val wait = android.widget.TextView(this)
-        wait.text = T("manage.opening")
+        // the words on a thread too: the first T() in this new process parses i18n/vi.json + en.json (390 KB), 1 s on an FPT box,
+        // and done here it held the WebView's start below back by that second
+        Thread({ val w = T("manage.opening"); ui.post { wait.text = w } }, "words").start()
         wait.setTextColor(Color.rgb(160, 170, 185))
         wait.textSize = 18f
         box.addView(wait, android.widget.FrameLayout.LayoutParams(-2, -2, android.view.Gravity.CENTER))

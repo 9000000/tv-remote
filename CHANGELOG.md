@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Setup, Quản lý trên TV: mở nhanh hơn khoảng 1 giây (trên FPT: hiện "đã kết nối" sau 3,7 s thay vì 4,7–5,3 s).
 - TV Games: dòng nhỏ dưới game đang chọn (số người · thể loại · hệ máy) không còn bị cắt "W…": ô hẹp thì bỏ hệ máy.
 - TV Games, thử giao diện bằng phím điều khiển: ô tìm kiếm không còn "nhảy" xuống lưới game khi bấm Phải ở cuối hàng đầu; thẻ Tạm dừng khi chơi game retro thấp lại (nút 50dp thay 56dp: thẻ cao 483 thay vì 519 trên 540dp, lề 28dp thay vì 11dp, trước đây gần chạm mép màn hình).
 - Quản lý trên TV (và cả web trên máy tính, điện thoại): thanh tab dính không còn cắt mất mép dưới của thẻ tên TV (bóng nền dày 17px trong khi khoảng cách giữa hai thẻ chỉ 14px); bấm Lên từ nội dung đi vào thanh tab thay vì nhảy qua nó tới nút Cài đặt; đóng hộp Cài đặt (Back) trả focus về nút Cài đặt thay vì thanh tab; hàng "Bảo vệ màn hình" xếp thời gian hiện tại đúng thứ tự (10 phút nằm giữa Tắt và 15 phút) thay vì cuối hàng.
@@ -68,6 +69,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - Tỷ phú: tên ô không tràn chữ, và ván kết thúc khi không còn người thật.
 
 **English**
+- TV Setup, Manage on the TV: opens about 1 s sooner (on an FPT box "connected" shows after 3.7 s, was 4.7–5.3 s).
 - TV Games: the line under the chosen game (players · genre · system) is no longer cut to "W…": a narrow tile drops the system.
 - TV Games, D-pad pass: the search field no longer jumps down to the game grid on Right at the end of the first row; the game's Paused card is shorter (50 dp buttons instead of 56: 483 dp tall instead of 519 on a 540 dp screen, 28 dp margins instead of 11, it nearly touched the screen edge).
 - Manage on the TV (and the page on computer and phone): the sticky tab bar no longer cuts the bottom edge of the TV-name card (its backing shadow reached 17px up, the gap between the two cards is 14px); Up from the content enters the tab bar instead of skipping it to the Settings button; closing Settings with Back returns the focus to the Settings button instead of the tab bar; the Screensaver row puts the current time in order (10 min between Off and 15 min) instead of last.
