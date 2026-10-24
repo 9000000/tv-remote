@@ -23,7 +23,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .navlinks a.on{color:var(--text);background:rgba(91,140,255,.14);box-shadow:inset 0 -2px 0 var(--blue)}
 .navtools{display:flex;gap:8px;align-items:center}
-.navprog{position:absolute;left:0;right:0;bottom:-1px;height:2px;pointer-events:none;background:linear-gradient(90deg,var(--prog-a),var(--prog-b));transform:scaleX(var(--p,0));transform-origin:0 50%;will-change:transform}
+.navprog{position:absolute;left:0;right:0;bottom:-1px;height:3px;pointer-events:none;background:linear-gradient(90deg,var(--prog-a),var(--prog-b));transform:scaleX(var(--p,0));transform-origin:0 50%;will-change:transform}
 .menubtn,.navsheet{display:none}
 .menubtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);align-items:center;justify-content:center;cursor:pointer;flex:none}
 .menubtn svg{width:20px;height:20px}

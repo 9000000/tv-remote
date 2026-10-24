@@ -19,7 +19,6 @@
     { id: "features", href: "#remote", vi: "Tính năng", en: "Features" },
     { id: "tvs", href: "#tvs", vi: "TV đã chạy", en: "TVs it ran on" },
     { id: "guide", href: "guide", vi: "Hướng dẫn", en: "Guide", page: true },
-    { id: "apps", href: "apps", vi: "Các app", en: "The apps", page: true },
     { id: "demo", href: "demo/", vi: "Dùng thử", en: "Live demo", page: true }
   ];
   var own = page === "home" || page === "tour";                       // pages with their own Install part
@@ -58,6 +57,11 @@
   sheet.addEventListener("click", function(e){ if (e.target.closest("a")) set(false); });
   document.addEventListener("click", function(e){ if (!sheet.hidden && !e.target.closest("nav")) set(false); });
   document.addEventListener("keydown", function(e){ if (e.key === "Escape" && !sheet.hidden) set(false, true); });
+  // how far down the page the reader is: a bar along the header's bottom edge, on every page (it was tour.html's only)
+  var prog = document.querySelector("nav .navprog"), pbusy = false;
+  function bar(){ pbusy = false; var max = document.documentElement.scrollHeight - innerHeight; prog.style.setProperty("--p", max > 0 ? Math.min(1, Math.max(0, scrollY / max)).toFixed(4) : 0); }
+  addEventListener("scroll", function(){ if (!pbusy){ pbusy = true; requestAnimationFrame(bar); } }, { passive: true });
+  addEventListener("resize", bar); addEventListener("load", bar);
   // the home page: its part in view is lit, like a page's own link elsewhere
   if (page === "home" && "IntersectionObserver" in window) {
     var parts = { features: ["remote", "manage", "home", "channels", "games", "more"], tvs: ["tvs"] }, seen = {};

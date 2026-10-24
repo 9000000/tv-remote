@@ -67,14 +67,8 @@
       if (cur && cur.getBoundingClientRect().bottom < 0) cur = null;                     // past the last one (the closing part)
       links.forEach(function(a, i){ a.classList.toggle("on", !!cur && secs[i] === cur); });   // the bar's link and the sheet's both; none at the top (guide.html has no section here)
     }
-    var prog = document.querySelector(".navprog");
-    function bar(){                                                    // reading progress along the header's bottom edge
-      var max = document.documentElement.scrollHeight - innerHeight;
-      prog.style.setProperty("--p", max > 0 ? Math.min(1, Math.max(0, scrollY / max)).toFixed(4) : 0);
-    }
-    function tick(){ mark(); bar(); }
+    function tick(){ mark(); }                                         // the reading progress bar is nav.js's
     addEventListener("scroll", function(){ if (!busy){ busy = true; requestAnimationFrame(tick); } }, {passive:true});
-    addEventListener("resize", bar);
     tick();
   })();
 
