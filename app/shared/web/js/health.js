@@ -31,37 +31,6 @@ $('#freeram').addEventListener('click', async () => {
   const b = $('#freeram'); b.disabled = true; const r = await api('/api/free', {}); b.disabled = false;
   if (r) { toast(T('health.ram_freed', { freed: r.freed, after: r.after })); loadHealth(); recentsNow(true); }
 });
-// "Hold to use Input / Settings" (HoldKeys.kt in TV Setup): the remote's own keys need a 2 s hold; keys sent from here are not filtered.
-// Read with the rules, at most every 20 s while Health is open; an older TV Setup answers without "holdkeys" and is asked to update when the switch is used.
-let holdAt = 0, holdBusy = false, holdSeen = '', holdGen = 0;
-function holdReset() { holdGen++; holdAt = 0; holdSeen = ''; $('#hhold').replaceChildren(); }
-onTvChange(holdReset);
-async function loadHold(now) {
-  if (holdBusy || (!now && Date.now() - holdAt < 20000)) return;
-  const box = $('#hhold'), gen = holdGen;
-  if (!now && box.contains(document.activeElement) && document.activeElement !== document.body) return;   // not under a D-pad's focus
-  holdBusy = true; holdAt = Date.now();
-  const r = await api('/api/rules', null, true);
-  holdBusy = false;
-  if (gen !== holdGen || !r || hmode !== 'now') return;
-  const seen = JSON.stringify([r.holdkeys, r.mic]) + window.LANG;
-  if (seen === holdSeen) return;                                       // nothing new: keep what is on screen
-  holdSeen = seen;
-  const holdOld = r.holdkeys === undefined;
-  const hold = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!r.holdkeys, onchange: async (e) => {
-    const cb = e.currentTarget, on = cb.checked; cb.disabled = true;
-    const ok = (!holdOld || await setupFor('holdkeys')) && await api('/api/rules', { do: 'holdkeys', on });
-    cb.disabled = false; if (!ok) cb.checked = !on; else { holdSeen = ''; toast(on ? T('hold.enabled') : T('hold.disabled')); }
-  } }), ' ' + T('hold.switch'));
-  // The remote's mic button opens TV Remote's voice on the TV (MicVoice.kt in TV Setup): off by default, a rule like the one above.
-  const micOld = r.mic === undefined;
-  const mic = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!r.mic, onchange: async (e) => {
-    const cb = e.currentTarget, on = cb.checked; cb.disabled = true;
-    const ok = (!micOld || await setupFor('mic')) && await api('/api/rules', { do: 'mic', on });
-    cb.disabled = false; if (!ok) cb.checked = !on; else { holdSeen = ''; toast(on ? T('mic.enabled') : T('mic.disabled')); }
-  } }), ' ' + T('mic.switch'));
-  box.replaceChildren(UI.card(T('hold.tile'), {}, hold, UI.note(T('hold.sub'))), UI.card(T('mic.tile'), {}, mic, UI.note(T('mic.sub'))));
-}
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
 // decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.
 
@@ -448,7 +417,6 @@ async function loadHealth() {
   if (h.mem_total) { const used = h.mem_total - h.mem_free; load.push(meter('RAM', used * 100 / h.mem_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.mem_total) }))); }
   if (h.disk_total) { const used = h.disk_total - h.disk_free; load.push(meter(T('health.internal_storage'), used * 100 / h.disk_total, T('health.used_of', { used: fmtSize(used), total: fmtSize(h.disk_total) }))); }
   $('#hload').replaceChildren(...load);
-  loadHold();
   const cell = (cls, text) => el('div', { className: cls, textContent: text });   // CPU and RAM said once, as column heads
   $('#htop').replaceChildren(...(h.top.length ? [cell('h', T('health.k_process')), cell('h n', 'CPU'), cell('h n', 'RAM')] : []),
     ...h.top.flatMap((p) => [cell('k', (typeof appName === 'function' && META.has(p.name) && appName(p.name)) || p.name), cell('v n', p.cpu + '%'), cell('v n', p.mem + '%')]));

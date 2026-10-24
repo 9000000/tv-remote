@@ -86,3 +86,17 @@ test('the chart legend keeps its small keys', () => {
   assert.ok(rules.length >= 2);
   for (const r of rules) assert.match(r, /:not\(\.st-key\)/, r.slice(0, 80));
 });
+
+test('cards put side by side in one slot are spaced (never glued)', () => {
+  // kit.css spaces any plain div holding 2+ cards (a script's slot); this keeps that rule, and keeps scripts from filling
+  // a slot that is not a plain div (a class of its own would lose the rule) with several cards at once
+  assert.match(css, /:where\(.*\):has\(> \.card ~ \.card\)\s*\{[^}]*gap:\s*14px/, 'kit.css lost the rule that spaces a wrapper of cards');
+  const bad = [];
+  for (const [f, s] of scripts) for (const m of s.matchAll(/\$\('#([\w-]+)'\)\.(?:replaceChildren|append)\(([^;\n]*)/g)) {
+    if ((m[2].match(/\bUI\.(?:card|say)\(/g) || []).length < 2) continue;
+    const tag = html.match(new RegExp(`<(\\w+)([^>]*\\bid="${m[1]}"[^>]*)>`));
+    const cls = tag && tag[2].match(/class="([^"]*)"/);
+    if (!tag || tag[1] !== 'div' || (cls && !/^(stack|two-up)$/.test(cls[1].trim()))) bad.push(`${f}: #${m[1]}`);
+  }
+  assert.deepEqual(bad, [], 'put the cards in a plain <div id> or .stack: it spaces them');
+});

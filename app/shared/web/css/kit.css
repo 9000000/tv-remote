@@ -35,6 +35,9 @@ form.line button { padding:0 16px; }
 .bar { height:6px; background:var(--btn); border-radius:3px; overflow:hidden; margin-top:6px; }
 .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
 .stack { display:flex; flex-direction:column; gap:14px; min-width:0; }
+/* any plain wrapper that holds two or more cards (a slot a script fills with UI.card) spaces them like .stack, so a new slot
+   cannot leave them glued; :where() = no weight, so .two-up / #hnow / .panel and every explicit layout win (tests/ui.test.js, layout.js) */
+:where(div:not([class]), div[id]):has(> .card ~ .card) { display:flex; flex-direction:column; gap:14px; min-width:0; }
 .kv { display:grid; grid-template-columns:fit-content(55%) minmax(0,1fr); gap:6px 14px; font-size:14px; }
 .kv dt, .kv .k { color:var(--muted); overflow-wrap:anywhere; min-width:0; }
 .kv .v { font-weight:600; overflow-wrap:anywhere; text-align:right; }

@@ -11,7 +11,7 @@
 //   - the page scrolling sideways;
 //   - a control or title whose words are cut (ellipsis, or more text than room), or a button whose label wraps;
 //   - something sticking out of its card; two cards on top of each other (the masonry columns);
-//   - a row of chips that wrapped;
+//   - a row of chips that wrapped; two cards one under the other with under 8 px between (glued: a slot holding several cards needs the gap);
 // and, left alone a few seconds on each tab (at 1100 px), what the page keeps doing by itself:
 //   - a write that changed nothing (the same text or attribute again: still a change for every observer and WebKit's styles);
 //   - one element changed more than 3 times a second, or an animation started over and over (a running line that wrapped
@@ -96,6 +96,10 @@ function scan(root) {
   for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) {
     const a = cards[i].getBoundingClientRect(), b = cards[j].getBoundingClientRect();
     if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 4 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 4) add('cards overlap', cards[i], 'and ' + name(cards[j]));
+  }
+  for (let i = 0; i < cards.length; i++) for (let j = 0; j < cards.length; j++) {   // glued: one right under another with (almost) no gap
+    const a = cards[i].getBoundingClientRect(), b = cards[j].getBoundingClientRect(), gap = b.top - a.bottom;
+    if (i !== j && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 4 && gap > -4 && gap < 8) add('cards glued (gap ' + Math.round(gap) + 'px)', cards[i], 'and ' + name(cards[j]));
   }
   for (const row of root.querySelectorAll('.places, .fchips, .chips')) {
     const kids = [...row.children].filter(shown);

@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Trang web, tab Thiết lập: thẻ mới "Nút remote" chứa 2 công tắc "Giữ 2 giây để đổi nguồn / mở Cài đặt" và "Nút mic mở giọng nói TV Remote" (trước nằm lẫn trong tab Sức khoẻ, hai thẻ dính sát nhau); mô tả ngắn lại (Bật / Tắt mỗi cái một dòng). Mọi chỗ chứa nhiều thẻ giờ tự có khoảng cách; kiểm tra tự động bắt thẻ dính nhau.
 - TV Home, bảng tuỳ chỉnh: Giao diện và Bố cục gộp thành một trang "Giao diện" (hai phần: Hiển thị, Lưới ứng dụng), cả trên TV lẫn trang cài đặt; không mất tuỳ chọn nào.
 - TV Home, nền Trang web nhẹ hơn: trang chỉ là một video (link thẳng tới file .mp4 / .webm / .m3u8, trang nền vòng lặp của TV Remote, hoặc trang có đúng một thẻ video) giờ được TV phát bằng trình phát của máy (phần cứng, không mở trình duyệt); trang thật vẫn dùng WebView và tạm dừng khi màn hình chờ chạy đè lên. Bảng chọn nền ghi chú trang web tốn RAM nhất, video nhẹ hơn.
 - TV Setup, Nút mic trên điều khiển TV (mới, mặc định tắt): bật ở tab Sức khoẻ hoặc trong TV Setup, nút mic mở giọng nói của TV Remote ngay trên TV (hiện chữ đang nghe và việc sẽ làm; phím, âm lượng, mở app, kênh, hẹn giờ, cảnh) thay vì Trợ lý Google. TV không có nhận giọng nói hoặc mất mạng thì nút giữ như cũ. Cần TV Setup mới (cả TV Setup Keys).
@@ -79,11 +80,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 - TV Home: khóa app không cần TV Setup: mã PIN 4 số tạo ngay trên TV (nhập hai lần), TV Home tự khóa mở app từ lưới, dock, phím gán (chặn mở từ nơi khác thì cần TV Setup); giới hạn mỗi ngày vẫn cần TV Setup. Cài TV Setup sau thì khóa tự chuyển sang. Màn mờ phía sau menu không còn nhấp nháy khi quay về từ app khác (Thông tin app).
 - TV Home, Tùy chỉnh → Widget: mỗi thẻ có nút kiểu riêng (bấm OK đổi sang kiểu kế tiếp của thẻ đó: Kính / Tông màu, đồng hồ Cổ điển / Sáng / Tối giản / La Mã), thay cho công tắc "Kiểu thẻ" chung; bỏ dòng nhắc ⌃⌄.
-
+- Giọng nói, nói gì cũng hiểu hơn: "ra màn hình chính", "mở tivi game", "mở tivi channel", "mở vtv3", "tắt youtube" (đóng app, cần ADB; không bao giờ đóng TV Setup / TV Home), mở cài đặt, lên xuống trái phải, OK, menu; cả tiếng Anh. Các câu nói giờ là danh sách có chữ ký trên trang web (docs/voice/phrases.json), thêm câu mới không cần cập nhật app; có bản đóng gói sẵn khi không có mạng.
 - TV Home, Chủ đề: chủ đề có nền video (hoặc trang web chỉ là một video) có dấu ▶ ở góc ảnh xem trước, trên TV và trên trang cài đặt.
 - Cập nhật: hết lượt hỏi GitHub (lỗi "GitHub HTTP 403" khi nhà có nhiều máy cùng kiểm tra) thì app đọc bản mới thẳng từ trang release, vẫn kiểm chữ ký như cũ.
-- Giọng nói, nói gì cũng hiểu hơn: "ra màn hình chính", "mở tivi game", "mở tivi channel", "mở vtv3", "tắt youtube" (đóng app, cần ADB; không bao giờ đóng TV Setup / TV Home), mở cài đặt, lên xuống trái phải, OK, menu; cả tiếng Anh. Các câu nói giờ là danh sách có chữ ký trên trang web (docs/voice/phrases.json), thêm câu mới không cần cập nhật app; có bản đóng gói sẵn khi không có mạng.
+
 **English**
+- Web page, Setup tab: a new "Remote buttons" card holds the two switches "Hold 2 s to change input / open Settings" and "Mic button opens TV Remote's voice" (they sat in Health, two cards glued together); shorter descriptions (one On line, one Off line). Any slot holding several cards now spaces them by itself; the tests catch glued cards.
 - TV Home, Customize panel: Look and Layout merged into one "Look" page (two sections: Display, App grid), on the TV and on the settings page; no setting lost.
 - TV Home, lighter Web page background: a page that is only one video (a direct .mp4 / .webm / .m3u8 link, TV Remote's own loop page, or a page with exactly one video tag) is now played by the TV's own player (hardware, no browser); a real page still uses the WebView and also sleeps under a screensaver. The background picker notes that a web page costs the most memory and a video is lighter.
 - TV Setup, mic button on the TV's remote (new, off by default): turn it on in the Health tab or in TV Setup and the mic button opens TV Remote's voice on the TV itself (live text and the action: keys, volume, open app, channel, timer, scenes) instead of Google Assistant. No recognizer or no network: the button stays as it was. Needs a newer TV Setup (and TV Setup Keys).
@@ -156,12 +158,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Setup: the Optimize, Connection and Update menus have icons and a second line; switches show a check or an empty ring at the end instead of words.
 - Site and app pictures re-compressed without a visible change (6% fewer bytes; `dev/optimize_images.py`); the wallpapers and launcher pictures are pinned by hash and stay as they were
 - TV Home, Customize → Widgets: each card has its own look button (OK steps to that card's next look: Glass / Tonal, the clock Classic / Light / Minimal / Roman), replacing the one shared "Card look" switch; the ⌃⌄ hint is gone.
+- Voice understands more: "go to the home screen", "open tivi game", "open tivi channel", "open vtv3", "close youtube" (closes the app, needs ADB; never TV Setup / TV Home), open settings, up / down / left / right, OK, menu; in Vietnamese and English. The phrases are now a signed list on the site (docs/voice/phrases.json), so new ones arrive without an app update; a packed copy is the offline fallback.
 - TV Home, Themes: a theme with a video background (or a web page that is only a video) shows ▶ in the corner of its preview, on the TV and on the settings page.
 - Updates: when GitHub's API is out of asks ("GitHub HTTP 403", several devices at home checking), the apps read the latest release from its page instead, with the same signed checksums.
 
-## 0.21.0 - 2026-10-24
-- Voice understands more: "go to the home screen", "open tivi game", "open tivi channel", "open vtv3", "close youtube" (closes the app, needs ADB; never TV Setup / TV Home), open settings, up / down / left / right, OK, menu; in Vietnamese and English. The phrases are now a signed list on the site (docs/voice/phrases.json), so new ones arrive without an app update; a packed copy is the offline fallback.
 
+## 0.21.0 - 2026-10-24
 
 Web 0.21.0 · app điện thoại 0.21.0 · app TV 0.21.0 · TV Home 0.8.0 · TV Channels 0.5.0 · TV Games 0.5.0
 

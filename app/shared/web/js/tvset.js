@@ -166,3 +166,35 @@ async function watchReboot(t0) {
       : (CORE === 'tv' ? T('tvset.slow_tv', { clock }) : T('tvset.slow_adb', { clock })));
   }
 }
+
+// "Hold to use Input / Settings" (HoldKeys.kt in TV Setup): the remote's own keys need a 2 s hold; keys sent from here are not filtered.
+// Read with the rules, at most every 20 s while the TV tab is open (card "Remote buttons"); an older TV Setup answers without "holdkeys" and is asked to update when the switch is used.
+let holdAt = 0, holdBusy = false, holdSeen = '', holdGen = 0;
+function holdReset() { holdGen++; holdAt = 0; holdSeen = ''; $('#hhold').replaceChildren(); if (typeof currentTab !== 'undefined' && currentTab === 'tv') loadHold(true); }
+onTvChange(holdReset);
+async function loadHold(now) {
+  if (holdBusy || (!now && Date.now() - holdAt < 20000)) return;
+  const box = $('#hhold'), gen = holdGen;
+  if (!now && box.contains(document.activeElement) && document.activeElement !== document.body) return;   // not under a D-pad's focus
+  holdBusy = true; holdAt = Date.now();
+  const r = await api('/api/rules', null, true);
+  holdBusy = false;
+  if (gen !== holdGen || !r) return;
+  const seen = JSON.stringify([r.holdkeys, r.mic]) + window.LANG;
+  if (seen === holdSeen) return;                                       // nothing new: keep what is on screen
+  holdSeen = seen;
+  const holdOld = r.holdkeys === undefined;
+  const hold = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!r.holdkeys, onchange: async (e) => {
+    const cb = e.currentTarget, on = cb.checked; cb.disabled = true;
+    const ok = (!holdOld || await setupFor('holdkeys')) && await api('/api/rules', { do: 'holdkeys', on });
+    cb.disabled = false; if (!ok) cb.checked = !on; else { holdSeen = ''; toast(on ? T('hold.enabled') : T('hold.disabled')); }
+  } }), ' ' + T('hold.switch'));
+  // The remote's mic button opens TV Remote's voice on the TV (MicVoice.kt in TV Setup): off by default, a rule like the one above.
+  const micOld = r.mic === undefined;
+  const mic = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!r.mic, onchange: async (e) => {
+    const cb = e.currentTarget, on = cb.checked; cb.disabled = true;
+    const ok = (!micOld || await setupFor('mic')) && await api('/api/rules', { do: 'mic', on });
+    cb.disabled = false; if (!ok) cb.checked = !on; else { holdSeen = ''; toast(on ? T('mic.enabled') : T('mic.disabled')); }
+  } }), ' ' + T('mic.switch'));
+  box.replaceChildren(UI.group(T('hold.tile'), hold, UI.note(T('hold.sub')), UI.note(T('hold.sub_off'))), UI.group(T('mic.tile'), mic, UI.note(T('mic.sub')), UI.note(T('mic.sub_off')), UI.note(T('mic.eg')), UI.note(T('mic.need'))));
+}

@@ -105,6 +105,13 @@ function check({ root: sel, ids, phone, lang }) {
       if (r.right > c.right + 1 || r.left < c.left - 1) add('layout', e, `sticks out of ${card.matches('.pop') ? 'its menu' : 'its card'}`);
     }
   }
+  // two cards one right under another with under 8 px between: a slot holding several cards needs the gap (css/kit.css)
+  const cardsAll = all.filter((e) => e.matches('.panel .card') && !e.parentElement.closest('.card') && shown(e));
+  for (const a of cardsAll) for (const b of cardsAll) {
+    if (a === b) continue;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(), gap = rb.top - ra.bottom;
+    if (Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left) > 4 && gap > -4 && gap < 8) add('layout', a, `glued to the card under it (${Math.round(gap)} px)`);
+  }
   // two things on top of each other: controls and lines of words, neither inside the other
   const solid = all.filter((e) => !content(e) && (e.matches('button, input, select, a, .chip, .tag') || ([...e.childNodes].some((n) => n.nodeType === 3 && n.data.trim()) && !e.matches('button *, a *'))))
     .filter((e) => !e.closest('.pop') || root.matches('.pop') || root.contains(e.closest('.pop')));
