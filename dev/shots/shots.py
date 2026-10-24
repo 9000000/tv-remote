@@ -304,13 +304,13 @@ FEATS = {
                  " await picPlace(cv.toDataURL('image/png'), 3000); await W(1500);", "$('#screenbox').closest('.card')", 0),
     "gamepad":  (480, "remote", "await W(500); const tt = () => { toast(T('gamepad.connected')); $('#toast').style.cssText = 'inset:auto auto auto 50%;top:270px'; }; tt(); setInterval(tt, 400); await W(300);",
                  "{ scrollIntoView() {}, getBoundingClientRect() { const a = document.querySelector('[role=tablist]').getBoundingClientRect(); return new DOMRect(a.x, a.y, a.width, 640); } }", 4),
-    "keymap":   (480, "tv", "await W(500); $('#homeopen').click(); await W(2500); [...document.querySelectorAll('dialog[open] button, dialog[open] summary, dialog[open] .item')].find((b) => /Phím|keys/i.test(b.innerText)).click(); await W(2000);",
+    "keymap":   (480, "tv", "await W(500); const real = api; api = async (u, b, q) => { const x = await real(u, b, q); if (x && x.config && /^\\/api\\/home/.test(u)) { x.config.keyon = true; x.config.keyapps = { 8: 'com.google.android.youtube.tv', 9: 'dev.tvremote.channels', 10: 'dev.tvremote.games', 183: 'com.google.android.youtube.tv' }; } return x; }; $('#homeopen').click(); await W(2500); [...document.querySelectorAll('dialog[open] button, dialog[open] summary, dialog[open] .item')].find((b) => /Phím|keys/i.test(b.innerText)).click(); await W(2000);",
                  DLG, 6),
     "hook":     (480, "", "$('#aboutbtn').click(); await W(1500); $('#hookpick [data-v=on]').click(); await W(1500); $('#hookgroup').style.cssText = 'padding:16px;background:var(--bg2);border-radius:14px'; await W(300);", "$('#hookgroup')", 5),
 }
 OPEN = """const ob = [...document.querySelectorAll('#tvlist button, #savedcard button')].find(b => /^\\s*(Mở|Connect|Open)\\s*$/.test(b.textContent)); if (ob) ob.click(); await W(8000);"""
 RENAME = """(() => { const N = %s, w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
-  while (n = w.nextNode()) n.nodeValue = n.nodeValue.replace(/sdk_google_atv64_amati_arm64/g, N).replace(/127\\.0\\.0\\.1/g, '192.168.1.50'); })()"""
+  while (n = w.nextNode()) n.nodeValue = n.nodeValue.replace(/sdk_google_atv64_amati_arm64/g, N).replace(/127\\.0\\.0\\.1/g, '192.168.1.50').replace(/YouTube Kids/g, 'YouTube'); })()"""
 
 
 def shot_feat(only=()):
