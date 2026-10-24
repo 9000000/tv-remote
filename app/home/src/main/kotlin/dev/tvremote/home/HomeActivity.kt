@@ -309,7 +309,7 @@ class HomeActivity : Activity() {
         Keys.push(this)                                               // TV Setup keeps the keys and the power-on app: told again, so a TV Setup installed later has them
         badgesRead()
         pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
-        bg.execute { if (Tiles.refresh(this)) runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }   // what TV Setup offers (it may have been installed or updated while away)
+        bg.execute { forget(null); if (Tiles.refresh(this)) runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }   // what TV Setup offers (it may have been installed or updated while away)
         ui.removeCallbacks(tileTick); ui.post(tileTick)
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
@@ -598,9 +598,11 @@ class HomeActivity : Activity() {
     private fun packageChanged(pkg: String, removed: Boolean) {
         if (pkg == packageName) return
         bg.execute {
+            if (removed) forget(pkg)
             val one = if (removed) null else Apps.one(this, pkg)?.also { it.load(this) }
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
+                if (removed && apps.any { it.grid && Target.pkg(it.pkg) == pkg }) apps = apps.filter { !(it.grid && Target.pkg(it.pkg) == pkg) }
                 val was = apps.firstOrNull { it.pkg == pkg }
                 if (one == null && was == null) return@runOnUiThread    // not an app this screen lists (a service, a library)
                 // a part of it turned on or off with its name and entry the same: some boxes' apps do it every 15 s, and each rebuilt the grid
@@ -611,6 +613,23 @@ class HomeActivity : Activity() {
                 pinsRead()                                            // an app's pins leave with it
             }
         }
+    }
+
+    /**
+     * An app that left takes its shortcuts and live tiles off the grid, the dock and the order, and out of the picker's list: they
+     * stayed as dead tiles (TV Channels' VTV1, its "Keep watching") until each was removed by hand. Its keys and power-on choice
+     * stay. [pkg] null: every app no longer installed (on resume: one removed while Home was not running missed the broadcast).
+     */
+    private fun forget(pkg: String?) {
+        fun gone(p: String) = if (pkg != null) p == pkg else try { packageManager.getPackageInfo(p, 0); false } catch (e: Exception) { true }
+        val change = JSONObject()
+        for (k in listOf("tiles", "dock", "order", "hidden")) {
+            val l = Store.list(this, k)
+            val keep = l.filter { !(Target.kind(it).let { t -> t == Target.Kind.PIN || t == Target.Kind.TILE } && gone(Target.pkg(it))) }
+            if (keep.size != l.size) change.put(k, org.json.JSONArray(keep))
+        }
+        if (change.length() > 0) Store.change(this, change)
+        if (pkg != null) { Pins.refresh(this); Tiles.refresh(this) }
     }
 
     // ---- what is shown ----
