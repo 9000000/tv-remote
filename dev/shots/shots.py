@@ -6,8 +6,8 @@
                                   phone (phone app's remote), tvapp (TV Setup's screen), og (the link previews, from TV Home's picture)
 
 Needs: python3 with Pillow, Google Chrome, cwebp, the computer app built (./gradlew :desktop:installDist) and, for tv / phone /
-tvapp, the two emulators running with the apps installed (dev/test/emu.sh). The picture on the TV is a made-up home screen
-(dev/shots/home-<lang>.html): no real TV, no real app's artwork, no one's address in the pictures.
+tvapp, the two emulators running with the apps installed (dev/test/emu.sh). The picture on the TV is the real TV Home of the TV
+emulator, captured before (docs/img/tvhome-widgets-<lang>.webp): no real TV, no one's address in the pictures.
 Only the standard library besides Pillow: Chrome is driven through its DevTools protocol over a small WebSocket client below.
 """
 import base64, functools, http.server, json, os, re, shutil, socket, struct, subprocess, sys, tempfile, threading, time
@@ -142,13 +142,12 @@ def save_webp(img, name):
         log(f"docs/img/{name}-{w}.webp", small.size)
 
 
-# ---- the made-up TV picture --------------------------------------------------------------------------------------------
+# ---- the TV picture ----------------------------------------------------------------------------------------------------
 
 def serve_pictures():
-    """home-<lang>.png on PIC_PORT, the picture the pages show as the TV's screen."""
+    """<lang>.png on PIC_PORT, the picture the pages show as the TV's screen: TV Home as captured on the TV emulator."""
     for lang in ("vi", "en"):
-        img, _ = chrome_shot("file://" + os.path.join(ROOT, "dev", "shots", f"home-{lang}.html"), None, 1280, 720, wait=1.5)
-        img.save(os.path.join(TMP, f"{lang}.png"))
+        Image.open(os.path.join(IMG, f"tvhome-widgets-{lang}.webp")).convert("RGB").save(os.path.join(TMP, f"{lang}.png"))
     class Quiet(http.server.SimpleHTTPRequestHandler):
         def log_message(self, *a): pass
     h = functools.partial(Quiet, directory=TMP)
@@ -165,6 +164,14 @@ SHOW_PICTURE = """
   img.src = 'http://127.0.0.1:%d/' + LANG + '.png'; await W(800);
   v.hidden = true; v.style.display = 'none'; img.hidden = false; img.style.display = 'block'; $('#screenph').hidden = true;
   $('#setupupd')?.setAttribute('hidden', '');
+""" % PIC_PORT
+
+# the page's own frames come back some seconds later: put the picture again just before the shot
+PUT_PICTURE = """
+  { const img = $('#screen'); let me = $('#shotpic');
+    if (!me) { me = img.cloneNode(false); me.id = 'shotpic'; img.after(me);
+      const st = document.createElement('style'); st.textContent = '#screen, #screenv, #screenc { display: none !important }'; document.head.append(st); }
+    me.hidden = false; me.style.display = 'block'; me.src = 'http://127.0.0.1:%d/' + LANG + '.png'; await W(1500); }
 """ % PIC_PORT
 
 
@@ -195,13 +202,16 @@ def shot_web():
           wantPick = false; await W(3000); $('[data-tab=remote]')?.click(); await W(4000);
           %s
           await W(6000);                                              // the app logos come in
+          %s
           [...document.querySelectorAll('#quick > *, .appgrid > *')].forEach(e => { if (/com\\./.test(e.textContent)) e.remove() });
           setChip('#chipTv', 'ok', T('core.tv_on')); $('#info').textContent = T('core.connected');
           scrollTo(0, 0);
           return (document.querySelector('[role=tablist]') || $('[data-tab]').parentElement).getBoundingClientRect().top;
-        })()""" % SHOW_PICTURE
+        })()""" % (SHOW_PICTURE, PUT_PICTURE)
         img, top = chrome_shot(f"http://127.0.0.1:{WEB_PORT}/?lang={lang}&k={PASS}", js, 1200, 1000)
-        save_webp(img.crop((0, int(top), 1200, int(top) + 852)), f"web-remote-{lang}")
+        full = img.crop((0, int(top), 1200, int(top) + 852))
+        save_webp(full, f"web-remote-{lang}")
+        save_webp(full.crop((0, 0, 1200, 640)).resize((600, 320), Image.LANCZOS), f"web-remote-{lang}-600")   # the hero's small copy
 
 
 def shot_ts():
@@ -261,7 +271,7 @@ def shot_tv():
     base = f"http://127.0.0.1:{TV_FWD}"
     tok = tv_cookie(base)
     for lang in ("vi", "en"):
-        js = """(async () => { %s $('#name').textContent = %s; scrollTo(0, 0); return 1 })()""" % (SHOW_PICTURE, json.dumps(NAME[lang]))
+        js = """(async () => { %s $('#name').textContent = %s; scrollTo(0, 0); await W(3000); %s $('#name').textContent = %s; return 1 })()""" % (SHOW_PICTURE, json.dumps(NAME[lang]), PUT_PICTURE, json.dumps(NAME[lang]))
         img, _ = chrome_shot(f"{base}/?lang={lang}", js, 400, 880, dpr=2, cookie=("tvr", tok))
         c = img.crop((0, 0, 800, 1733))
         save_webp(c.resize((400, 867), Image.LANCZOS), f"tvpage-remote-{lang}")
@@ -298,7 +308,7 @@ def words(img, box, bg, xy, text, size, weight, color):
 
 
 def shot_phone():
-    """phone-remote: the phone app's remote on the phone emulator, the TV emulator's picture swapped for the made-up one."""
+    """phone-remote: the phone app's remote on the phone emulator, the TV emulator's picture swapped for the captured TV Home."""
     adb(PHONE, "shell", "am", "start", "-n", "dev.tvremote.phone/.MainActivity"); time.sleep(3)
     if tap(PHONE, "10.0.2.2"): time.sleep(6)
     if tap(PHONE, "480p"): time.sleep(1); tap(PHONE, "720p"); time.sleep(5)
