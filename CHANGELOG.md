@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Chuột bay (app điện thoại): nút nhỏ ở cuối dải cuộn đổi bên cho người thuận tay trái (dải cuộn sang trái, nút đóng sang phải); nhớ lựa chọn.
 - TV Home: thẻ Điều khiển bằng Telegram ghi rõ cần TV Setup bản nào và TV đang có bản nào (trước chỉ ghi "bản mới nhất").
 - TV Home: video nền nặng không còn ra file hỏng trên TV yếu. Trên BRAVIA, nén video 1080p60 ra 27 Mbps toàn khung hỏng (nền xanh nhòe). Giờ TV hạ xuống 30 fps khi chip không làm nổi, tự kiểm tra file vừa nén (bitrate và giải mã thử), hỏng thì nén lại ở 720p30.
 - TV Home: thẻ "tông màu" (kiểu Google TV) cho Thời tiết, Hệ thống, Lịch âm, Không khí: nền kem đặc, số lớn, huy hiệu răng cưa; chọn ở Tùy chỉnh > Widget ("Kiểu thẻ") hoặc trang web. Thẻ Không khí mới (chỉ số AQI + PM2.5 từ Open-Meteo, cùng nơi ở với thời tiết). Lịch âm báo ngày lễ tới và còn bao nhiêu ngày (tính offline, cả lễ dương và âm). Mặc định vẫn là kiểu kính.
@@ -42,6 +43,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 
 **English**
+- Air mouse (phone app): a small button at the foot of the scroll strip swaps sides for left-handed use (strip on the left, close button on the right); the choice is remembered.
 - TV Home: the Telegram card says which TV Setup it needs and which one the TV has (it said "the latest version").
 - TV Home: a heavy video background no longer comes out broken on a weak TV. On a BRAVIA, making a 1080p60 video light wrote 27 Mbps of broken frames (a green smear). Now the TV drops to 30 fps when its chip cannot do the rate, checks the file it made (bitrate and a test decode), and makes it again at 720p30 if it is bad.
 - TV Home: "tonal" cards (Google TV style) for Weather, System, Lunar and Air quality: opaque warm fill, big figure, scalloped badge; pick it in Customize > Widgets ("Card look") or on the web page. New Air quality card (AQI + PM2.5 from Open-Meteo, same place as the weather). The lunar card names the next holiday and the days left (offline, solar and lunar holidays). The glass look stays the default.

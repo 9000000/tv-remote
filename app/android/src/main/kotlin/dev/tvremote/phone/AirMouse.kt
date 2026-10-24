@@ -205,7 +205,7 @@ internal fun MainActivity.airPad(): FrameLayout {
     val strip = FrameLayout(this)
     strip.background = box(BG, 14)                                // a track darker than the pad: there, not loud
     val sfx = StripFx(this, noAnim, dp(1).toFloat())                  // the two arrows, the thumb under the finger
-    strip.addView(sfx, FrameLayout.LayoutParams(-1, -1))
+    strip.addView(sfx, FrameLayout.LayoutParams(-1, -1).apply { bottomMargin = dp(44) })   // the swap button has the strip's foot
     var stripY = 0f; var stripT = 0L; var stripCarry = 0f
     strip.setOnTouchListener { v, ev ->
         when (ev.actionMasked) {
@@ -224,12 +224,29 @@ internal fun MainActivity.airPad(): FrameLayout {
         }
         true
     }
-    pad.addView(strip, FrameLayout.LayoutParams(dp(48), -1, Gravity.END).apply { setMargins(0, dp(8), dp(8), dp(8)) })
+    pad.addView(strip, FrameLayout.LayoutParams(dp(48), -1))
     val off = android.widget.ImageView(this)                          // a way out when the pad fills the screen and the chooser is off it
     off.setImageResource(R.drawable.ic_close); off.setColorFilter(TEXT); off.alpha = 0.35f
     off.setPadding(dp(10), dp(10), dp(10), dp(10)); off.contentDescription = T("common.close")
     off.setOnClickListener { airPick("mouse") }                       // the mode in use again: back to the arrows
-    pad.addView(off, FrameLayout.LayoutParams(dp(40), dp(40), Gravity.START or Gravity.TOP).apply { setMargins(dp(4), dp(4), 0, 0) })
+    pad.addView(off, FrameLayout.LayoutParams(dp(40), dp(40)))
+    // Left-handed: the strip on the left and the close button on the right (kept in the app's prefs). The button sits at the strip's foot.
+    val swap = android.widget.ImageView(this)
+    swap.setImageResource(R.drawable.ic_swap); swap.setColorFilter(TEXT); swap.alpha = 0.5f
+    swap.setPadding(dp(10), dp(10), dp(10), dp(10)); swap.contentDescription = T("air.swap")
+    strip.addView(swap, FrameLayout.LayoutParams(dp(40), dp(40), Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = dp(4) })
+    fun place(left: Boolean) {
+        val side = if (left) Gravity.START else Gravity.END; val other = if (left) Gravity.END else Gravity.START
+        (strip.layoutParams as FrameLayout.LayoutParams).apply { gravity = side; setMargins(if (left) dp(8) else 0, dp(8), if (left) 0 else dp(8), dp(8)) }
+        (off.layoutParams as FrameLayout.LayoutParams).apply { gravity = other or Gravity.TOP; setMargins(if (left) 0 else dp(4), dp(4), if (left) dp(4) else 0, 0) }
+        hint.setPadding(if (left) dp(68) else dp(16), 0, if (left) dp(16) else dp(68), 0)
+        pad.requestLayout()
+    }
+    place(prefs.getBoolean("airLeft", false))
+    swap.setOnClickListener {
+        val left = !prefs.getBoolean("airLeft", false)
+        prefs.edit().putBoolean("airLeft", left).apply(); place(left); swap.airTick()
+    }
     return pad
 }
 
