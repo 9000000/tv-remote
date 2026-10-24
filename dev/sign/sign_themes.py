@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """dev/sign/sign_themes.py: checks docs/home/themes.json and signs it (themes.json.sig, Ed25519, base64).
 
-The list holds TV Home's ready-made themes (id, names per language, conf = the same keys HomeConfig cleans, optional "since" = the
+The list holds TV Home's ready-made themes (id, names per language, conf = the same keys HomeConfig cleans, optional "tiles" (live tiles added first to the grid, kept beside the person's own), "look" (a drawn wall for its picture), "for" (who it is for), "src" (licence of a web background), optional "since" = the
 first TV Home version that shows it). TV Home reads it from the site, else GitHub, else the copy it kept, else the one packed in
 its APK; a list without a good signature is ignored. It is signed because a theme may set "wurl" (a web page as the background),
 which only a signed list can. It uses the launcher list's key (LAUNCHERS_KEY, default ~/.tv-remote-release/launchers.key).
@@ -9,11 +9,14 @@ which only a signed list can. It uses the launcher list's key (LAUNCHERS_KEY, de
 Run it after every edit, then commit themes.json and themes.json.sig together (:home packs both as the copy used until the site's is
 read; HomeThemesTest fails when the packed copy differs). Nothing here uploads: the site is deployed on push.
 """
-import json, os, re, subprocess, sys
+import json, time, os, re, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LIST = os.path.join(ROOT, "docs", "home", "themes.json")
 KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/launchers.key"))
+LOOKS = ["dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon", "night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember",
+         "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss"]   # HomeConfig.ART + PLAIN: what a tile's picture can be drawn from
+TILE = re.compile(r"tile:[a-z][a-z0-9_.]*/[a-z0-9_]+")
 THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle",
               "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]   # HomeConfig.THEME_KEYS
 
@@ -43,8 +46,27 @@ def check():
         bad = [k for k in t["conf"] if k not in THEME_KEYS]
         if bad:
             fail("%s: not a theme setting: %s" % (i, ", ".join(bad)))
-        if "wurl" in t["conf"] and not t["conf"]["wurl"].startswith(("https://", "http://")):
-            fail("%s: wurl is not http(s)" % i)
+        if "wurl" in t["conf"] and not t["conf"]["wurl"].startswith("https://"):
+            fail("%s: wurl is not https" % i)
+        for k in t:
+            if k not in ("id", "names", "for", "conf", "since", "tiles", "look", "src"):
+                fail("%s: unknown field %s" % (i, k))
+        f = t.get("for") or {}
+        if not f.get("en") or not f.get("vi"):
+            fail("%s: no 'for' (who the theme is for, vi + en)" % i)
+        if not n.get("vi"):
+            fail("%s: no Vietnamese name" % i)
+        for x in t.get("tiles", []):
+            if not TILE.fullmatch(x):
+                fail("%s: bad tile %s" % (i, x))
+        if len(t.get("tiles", [])) > 4:
+            fail("%s: at most 4 tiles" % i)
+        if t.get("look") and t["look"] not in LOOKS:
+            fail("%s: look %s is not a drawn wall" % (i, t["look"]))
+        if t["conf"].get("wall") in ("web", "bing") and not t.get("look"):
+            fail("%s: a web / Bing wall needs a 'look' for its picture in the list" % i)
+        if "wurl" in t["conf"] and not t.get("src"):
+            fail("%s: a web background needs 'src' (where it is from, its licence)" % i)
         if t.get("since") and not re.fullmatch(r"\d+(\.\d+){1,2}", t["since"]):
             fail("%s: bad since" % i)
     if not ids:
@@ -56,6 +78,9 @@ def main():
     d = check()
     if not os.path.exists(KEY):
         fail("no key at %s (dev/README.md: the launcher list's key)" % KEY)
+    d["rev"] = int(time.time())   # the apps keep the list with the higher rev, so a site not yet deployed cannot put an older list over a newer APK's
+    with open(LIST, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=1); f.write("\n")
     subprocess.run(["java", os.path.join(ROOT, "dev", "release", "Sign.java"), "sign", KEY, LIST], check=True)
     print("signed %s: %d themes (%s)" % (LIST, len(d["themes"]), ", ".join(t["id"] for t in d["themes"])))
 

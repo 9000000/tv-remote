@@ -17,25 +17,28 @@ object Themes {
         val app = c.applicationContext
         val have = try { app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
         val f = File(app.filesDir, NAME)
-        // the kept copy (cheap to check once seen), else the packed one, kept in turn so its check is paid once; dated 1 ms so the site is asked at once
+        // the kept copy (cheap to check once seen) or the packed one, whichever has the higher "rev" (an APK newer than the site carries a newer list than
+        // the site's); the packed one is kept in turn so its check is paid once, dated 1 ms so the site is asked at once
         var bytes = SignedList.kept(f)
-        if (bytes == null) {
-            bytes = SignedList.packed({ app.assets.open(it) }, NAME)
-            if (bytes != null) try {
-                SignedList.keep(f, bytes, app.assets.open("$NAME.sig").use { String(it.readBytes(), Charsets.UTF_8) }); f.setLastModified(1)
-            } catch (e: Exception) { }
+        val packed = SignedList.packed({ app.assets.open(it) }, NAME)
+        if (packed != null && rev(packed) > (bytes?.let { rev(it) } ?: -1)) {
+            bytes = packed
+            try { SignedList.keep(f, packed, app.assets.open("$NAME.sig").use { String(it.readBytes(), Charsets.UTF_8) }); f.setLastModified(1) } catch (e: Exception) { }
         }
+        val mine = bytes?.let { rev(it) } ?: -1
         use(bytes, have)
         if (System.currentTimeMillis() - f.lastModified() < DAY) return
         Thread({
             try {
                 SignedList.fetch(BASES, NAME, 1 shl 20, connectMs = 6000, readMs = 8000) { list, sig, _ ->
                     val t = HomeConfig.parseReady(String(list, Charsets.UTF_8), have)
-                    if (t.isEmpty()) null else { SignedList.keep(f, list, sig); HomeConfig.ready = t; t }
+                    if (t.isEmpty() || rev(list) < mine) null          // a site older than this app's list (not deployed yet) changes nothing else { SignedList.keep(f, list, sig); HomeConfig.ready = t; t }
                 }
             } catch (e: Exception) { }
         }, "themes").apply { isDaemon = true }.start()
     }
+
+    private fun rev(b: ByteArray): Long = try { org.json.JSONObject(String(b, Charsets.UTF_8)).optLong("rev", 0) } catch (e: Exception) { 0 }
 
     private fun use(bytes: ByteArray?, have: String) {
         val t = bytes?.let { HomeConfig.parseReady(String(it, Charsets.UTF_8), have) }.orEmpty()

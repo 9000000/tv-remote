@@ -7,6 +7,10 @@
     "vi": "Hiện đại",
     "en": "Modern"
    },
+   "for": {
+    "vi": "Ai cũng dùng được: đồng hồ kim, thời tiết và lịch âm cỡ lớn",
+    "en": "Anyone: analog clock, big weather and lunar cards"
+   },
    "conf": {
     "wall": "midnight",
     "shade": 50,
@@ -16,7 +20,7 @@
      "lunar"
     ],
     "wsize": {
-     "clock": "small",
+     "clock": "big",
      "weather": "big",
      "lunar": "big"
     },
@@ -37,6 +41,10 @@
    "names": {
     "vi": "Dịu mắt",
     "en": "Calm"
+   },
+   "for": {
+    "vi": "Xem tối, đọc không chói",
+    "en": "Evenings, easy on the eyes"
    },
    "conf": {
     "wall": "dusk",
@@ -59,27 +67,14 @@
    }
   },
   {
-   "id": "cinema",
-   "names": {
-    "vi": "Rạp phim",
-    "en": "Cinema"
-   },
-   "conf": {
-    "wall": "black",
-    "shade": 80,
-    "widgets": [],
-    "cols": 6,
-    "rows": 1.2,
-    "focus": "ring",
-    "motion": "calm",
-    "greet": false
-   }
-  },
-  {
    "id": "day",
    "names": {
     "vi": "Ban ngày",
     "en": "Daylight"
+   },
+   "for": {
+    "vi": "Phòng khách sáng, nhìn từ xa",
+    "en": "A bright living room, read from afar"
    },
    "conf": {
     "wall": "dawn",
@@ -103,10 +98,49 @@
    }
   },
   {
+   "id": "morning",
+   "names": {
+    "vi": "Buổi sáng",
+    "en": "Morning news"
+   },
+   "for": {
+    "vi": "Xem thời tiết và chất lượng không khí trước khi ra khỏi nhà",
+    "en": "Weather and air quality before leaving home"
+   },
+   "conf": {
+    "wall": "peach",
+    "shade": 40,
+    "widgets": [
+     "weather",
+     "air",
+     "clock"
+    ],
+    "wsize": {
+     "weather": "big",
+     "air": "big",
+     "clock": "small"
+    },
+    "wstyle": {
+     "weather": "tonal",
+     "air": "tonal",
+     "clock": "classic"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "full",
+    "clock24": true,
+    "greet": true
+   }
+  },
+  {
    "id": "nature",
    "names": {
     "vi": "Thiên nhiên",
     "en": "Nature"
+   },
+   "for": {
+    "vi": "Ảnh nền đổi mỗi ngày: núi, đồng cỏ, biển, cồn cát",
+    "en": "A background that turns daily: peaks, meadow, sea, dunes"
    },
    "conf": {
     "wall": "peaks",
@@ -132,10 +166,148 @@
    }
   },
   {
+   "id": "frame",
+   "names": {
+    "vi": "Khung ảnh",
+    "en": "Photo frame"
+   },
+   "for": {
+    "vi": "Phòng khách: ảnh Bing của ngày, đổi vài giờ một lần, ít chữ",
+    "en": "Living room: the day's Bing picture, changing every few hours, few words"
+   },
+   "conf": {
+    "wall": "bing",
+    "walls": [
+     "bing",
+     "peaks",
+     "waves",
+     "meadow"
+    ],
+    "wevery": "6h",
+    "shade": 35,
+    "widgets": [
+     "clock"
+    ],
+    "wsize": {
+     "clock": "small"
+    },
+    "wstyle": {
+     "clock": "light"
+    },
+    "cols": 6,
+    "rows": 1,
+    "focus": "ring",
+    "motion": "calm",
+    "greet": false
+   },
+   "look": "peaks"
+  },
+  {
+   "id": "sapa",
+   "names": {
+    "vi": "Ruộng bậc thang",
+    "en": "Rice terraces"
+   },
+   "for": {
+    "vi": "Người nhớ quê: ảnh Sa Pa phủ cả màn hình, qua đường dẫn web",
+    "en": "Homesick: a Sa Pa photo across the screen, from a web link"
+   },
+   "conf": {
+    "wall": "web",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Ff%2Fff%2FRice_terraces_in_Sapa%252C_Vietnam.jpg%2F1920px-Rice_terraces_in_Sapa%252C_Vietnam.jpg",
+    "shade": 35,
+    "widgets": [
+     "weather",
+     "lunar"
+    ],
+    "wsize": {
+     "weather": "big",
+     "lunar": "small"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "greet": true
+   },
+   "look": "meadow",
+   "src": "Wikimedia Commons, CC0 (Eerin25): File:Rice terraces in Sapa, Vietnam.jpg"
+  },
+  {
+   "id": "beach",
+   "names": {
+    "vi": "Hoàng hôn biển",
+    "en": "Sunset beach"
+   },
+   "for": {
+    "vi": "Thư giãn cuối ngày: video hoàng hôn trên biển chạy nền",
+    "en": "Unwinding: a sunset beach video in the background"
+   },
+   "conf": {
+    "wall": "web",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm",
+    "shade": 30,
+    "widgets": [
+     "clock",
+     "weather"
+    ],
+    "wsize": {
+     "clock": "small",
+     "weather": "big"
+    },
+    "wstyle": {
+     "clock": "light"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "greet": true
+   },
+   "look": "sunset",
+   "src": "Wikimedia Commons, CC0: File:Sunset timelapse on the beach in Libreville, Gabon.webm"
+  },
+  {
+   "id": "city",
+   "names": {
+    "vi": "Đêm thành phố",
+    "en": "City night"
+   },
+   "for": {
+    "vi": "Cú đêm: video thành phố về đêm, đồng hồ lớn",
+    "en": "Night owls: a night-city video, a big clock"
+   },
+   "conf": {
+    "wall": "web",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2F9%2F91%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm.480p.vp9.webm",
+    "shade": 45,
+    "widgets": [
+     "clock",
+     "lunar"
+    ],
+    "wsize": {
+     "clock": "big",
+     "lunar": "small"
+    },
+    "wstyle": {
+     "clock": "minimal"
+    },
+    "cols": 6,
+    "focus": "ring",
+    "motion": "calm",
+    "clock24": true,
+    "greet": false
+   },
+   "look": "navy",
+   "src": "Wikimedia Commons, CC0 (Yigang Yu): File:Shanghai Bund, Lujiazui Skyline Timelapse.webm"
+  },
+  {
    "id": "tech",
    "names": {
     "vi": "Công nghệ",
     "en": "Tech"
+   },
+   "for": {
+    "vi": "Người hay chỉnh TV: bộ nhớ, ứng dụng dùng nhiều, 7 cột",
+    "en": "Tinkerers: memory, most-used apps, 7 columns"
    },
    "conf": {
     "wall": "midnight",
@@ -160,10 +332,232 @@
    }
   },
   {
+   "id": "gamer",
+   "names": {
+    "vi": "Game thủ",
+    "en": "Gamer"
+   },
+   "for": {
+    "vi": "Chơi game trên TV: đèn neon, thẻ RAM sống để dọn bộ nhớ",
+    "en": "Gaming on the TV: neon lights, a live RAM tile to clear memory"
+   },
+   "conf": {
+    "wall": "bokeh",
+    "shade": 40,
+    "widgets": [
+     "system",
+     "usage"
+    ],
+    "wsize": {
+     "system": "big",
+     "usage": "big"
+    },
+    "cols": 6,
+    "focus": "ring",
+    "motion": "full",
+    "clock24": true,
+    "greet": false
+   },
+   "tiles": [
+    "tile:dev.tvremote.setup/ram"
+   ],
+   "look": "bokeh"
+  },
+  {
+   "id": "sports",
+   "names": {
+    "vi": "Bóng đá",
+    "en": "Match day"
+   },
+   "for": {
+    "vi": "Fan thể thao: nền sân cỏ, thẻ Xem tiếp kênh của TV Channels",
+    "en": "Sports fans: a pitch green background, TV Channels' Continue-watching tile"
+   },
+   "conf": {
+    "wall": "forest",
+    "shade": 35,
+    "widgets": [
+     "clock",
+     "weather"
+    ],
+    "wsize": {
+     "clock": "big",
+     "weather": "big"
+    },
+    "wstyle": {
+     "clock": "classic",
+     "weather": "glass"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "full",
+    "clock24": true,
+    "greet": true
+   },
+   "tiles": [
+    "tile:dev.tvremote.channels/next"
+   ]
+  },
+  {
+   "id": "kids",
+   "names": {
+    "vi": "Bé vui",
+    "en": "Kids"
+   },
+   "for": {
+    "vi": "Nhà có trẻ nhỏ: màu kẹo, ô ứng dụng to (4 cột)",
+    "en": "Homes with small children: candy colours, big tiles (4 columns)"
+   },
+   "conf": {
+    "wall": "candy",
+    "shade": 10,
+    "widgets": [
+     "clock",
+     "weather"
+    ],
+    "wsize": {
+     "clock": "big",
+     "weather": "big"
+    },
+    "wstyle": {
+     "clock": "classic",
+     "weather": "glass"
+    },
+    "cols": 4,
+    "focus": "glass",
+    "motion": "full",
+    "greet": true
+   }
+  },
+  {
+   "id": "easy",
+   "names": {
+    "vi": "Dễ nhìn",
+    "en": "Easy to read"
+   },
+   "for": {
+    "vi": "Người lớn tuổi: đồng hồ to, ít ứng dụng, viền chọn rõ, tương phản cao",
+    "en": "Older people: a big clock, few apps, a clear ring, high contrast"
+   },
+   "conf": {
+    "wall": "navy",
+    "shade": 70,
+    "widgets": [
+     "clock"
+    ],
+    "wsize": {
+     "clock": "big"
+    },
+    "wstyle": {
+     "clock": "classic"
+    },
+    "cols": 4,
+    "rows": 1,
+    "focus": "ring",
+    "motion": "calm",
+    "clock24": true,
+    "greet": true
+   }
+  },
+  {
+   "id": "tet",
+   "names": {
+    "vi": "Tết",
+    "en": "Lunar New Year"
+   },
+   "for": {
+    "vi": "Dịp Tết và rằm: lịch âm và lịch tháng cỡ lớn, thẻ ấm",
+    "en": "Tết and full-moon days: big lunar and month cards in warm tones"
+   },
+   "conf": {
+    "wall": "ember",
+    "shade": 40,
+    "widgets": [
+     "lunar",
+     "calendar",
+     "clock"
+    ],
+    "wsize": {
+     "lunar": "big",
+     "calendar": "big",
+     "clock": "small"
+    },
+    "wstyle": {
+     "lunar": "tonal",
+     "clock": "light"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "full",
+    "greet": true
+   }
+  },
+  {
+   "id": "bed",
+   "names": {
+    "vi": "Đi ngủ",
+    "en": "Bedtime"
+   },
+   "for": {
+    "vi": "Xem trước khi ngủ: tối, ít động, thẻ Hẹn giờ tắt ở đầu",
+    "en": "Winding down: dark and still, the sleep-timer tile first"
+   },
+   "conf": {
+    "wall": "night",
+    "shade": 70,
+    "widgets": [
+     "timer",
+     "clock"
+    ],
+    "wsize": {
+     "timer": "big",
+     "clock": "small"
+    },
+    "wstyle": {
+     "clock": "light"
+    },
+    "cols": 5,
+    "rows": 1,
+    "focus": "glass",
+    "motion": "calm",
+    "anim": false,
+    "clock24": true,
+    "greet": false
+   },
+   "tiles": [
+    "tile:dev.tvremote.setup/sleep"
+   ]
+  },
+  {
+   "id": "cinema",
+   "names": {
+    "vi": "Rạp phim",
+    "en": "Cinema"
+   },
+   "for": {
+    "vi": "Tối xem phim: đồi đỏ như nhung rạp hát, không thẻ, chỉ ứng dụng",
+    "en": "Movie night: theatre-red hills, no cards, just the apps"
+   },
+   "conf": {
+    "wall": "canyon",
+    "shade": 55,
+    "widgets": [],
+    "cols": 6,
+    "rows": 1.2,
+    "focus": "ring",
+    "motion": "calm",
+    "greet": false
+   }
+  },
+  {
    "id": "minimal",
    "names": {
     "vi": "Tối giản",
     "en": "Minimal"
+   },
+   "for": {
+    "vi": "Thích gọn: nền xám than, không thẻ, không hiệu ứng",
+    "en": "Clean lovers: charcoal, no cards, no effects"
    },
    "conf": {
     "wall": "graphite",
@@ -176,5 +570,6 @@
     "greet": false
    }
   }
- ]
+ ],
+ "rev": 1792864098
 }

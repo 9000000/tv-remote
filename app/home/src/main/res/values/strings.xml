@@ -373,7 +373,7 @@
     <string name="th_small">small</string>
     <string name="th_none">None</string>
     <string name="th_before">Before</string>
-    <string name="th_save">Save this look as my theme</string>
+    <string name="th_save_look">Save the current look as a theme</string>
     <string name="th_name_n">My theme %1$d</string>
     <string name="th_del_q">Delete this theme?</string>
     <string name="th_del_note">Its pictures and videos stay.</string>

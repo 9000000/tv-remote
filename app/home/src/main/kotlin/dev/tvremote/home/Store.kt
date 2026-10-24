@@ -45,7 +45,7 @@ object Store {
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now
-            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf) }))
+            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.tiles)) }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
             .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
             .let { Pins.report(c, it) }                           // shortcuts: "pinsOk", what the apps offer ([Target] "pin:...")
@@ -66,7 +66,8 @@ object Store {
     /** @throws SecurityException "dream" without WRITE_SECURE_SETTINGS (a client grants it over ADB first; the TV's own switch falls back to the system's screen) */
     fun change(c: Context, change: JSONObject): JSONObject {
         if (change.has("dream")) Dream.set(c, change.optBoolean("dream"))
-        val n = HomeConfig.merge(get(c), change) { Walls.usable(c, it) }
+        val n = HomeConfig.merge(get(c), change, { k -> Tiles.status(c) == Tiles.OK && Tiles.available(c).any { it.key == k } },
+            { it == HomeConfig.BING || Walls.usable(c, it) })           // Bing is fetched once it shows, so a theme with it is not turned into Night on a TV that has none yet
         if (change.has("wall")) Videos.forgetPerf(c, change.optString("wall"))   // a video that was too slow gets another try when it is chosen again
         val e = prefs(c).edit().putString("conf", n.toString())
         val applied = change.optJSONObject("theme")?.has("apply") == true      // a theme sets the motion and the background too

@@ -486,10 +486,10 @@ async function homeOpen() {
   // the grid, the focus, the motion and the clock at once. A saved one keeps its photo / video (the TV refuses to delete one a theme shows).
   const themeReady = el('div', { className: 'fchips homewalls themes' }), themeReadyHead = el('h3', { textContent: T('home.theme_ready') }), themeMineHead = el('h3', { textContent: T('home.theme_mine') }), themeMine = el('div', { className: 'fchips homewalls themes' });
   const themeName = el('input', { type: 'text', maxLength: 24, placeholder: T('home.theme_name_ph'), 'aria-label': T('home.theme_name') });
-  const themeSave = el('button', { type: 'button', className: 'primary', textContent: T('home.theme_save'), onclick: () => { const n = themeName.value.trim(); if (n) { send({ theme: { save: n } }); themeName.value = ''; } } });
+  const themeSave = el('button', { type: 'button', className: 'primary', textContent: T('home.theme_save_look'), onclick: () => { const n = themeName.value.trim(); if (n) { send({ theme: { save: n } }); themeName.value = ''; } } });
   themeName.addEventListener('keydown', (e) => { if (e.key === 'Enter') themeSave.click(); });
-  const themeNote = el('p', { className: 'note', textContent: T('home.theme_note') });
-  const themeHead = el('h3', { textContent: T('home.theme_save_head') }), themeLine = UI.line(themeName, themeSave);
+  const themeNote = el('p', { className: 'note', textContent: T('home.theme_note') }), themeHint = el('p', { className: 'note', textContent: T('home.theme_hint') });
+  const themeLine = el('div', { className: 'group' }, themeName, el('div', { className: 'actions' }, themeSave));
   const wallFace = (k) => {
     if (HOME_WALLS[k]) { const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')'); return dot; }
     if (HOME_ART_IDS.includes(k)) { const cv = el('canvas', { width: 128, height: 72 }); homeArtPaint(cv.getContext('2d'), 128, 72, k); return el('i', {}, cv); }
@@ -524,16 +524,16 @@ async function homeOpen() {
       themeInfo.replaceChildren(el('h3', { textContent: name }), el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
       themeInfo.hidden = false;
     };
-    const tile = (id, name, conf, mine) => {
+    const tile = (id, name, conf, mine, look) => {
       const on = c.theme === id;
-      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, wallFace(conf.wall), el('span', { textContent: name }));
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, wallFace(look || conf.wall), el('span', { textContent: name }));
       const info = el('button', { type: 'button', className: 'small iconbtn wallx info', textContent: 'ⓘ', title: T('home.theme_info'), 'aria-label': T('home.theme_info'), onclick: () => showInfo(id, name, conf) });
       if (!mine) return el('span', { className: 'wallcell' }, b, info);
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),
         onclick: async () => { if (await ask(T('home.theme_del_q'), { ok: T('home.theme_del'), danger: true })) send({ theme: { del: id } }); } });
       return el('span', { className: 'wallcell' }, b, info, del);
     };
-    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, homeThemeName(t), t.conf, false)));
+    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, homeThemeName(t), t.conf, false, t.look)));
     // the look that was on before the last switch (TV Home keeps it when it matched no saved theme), then the person's own
     const own = [...(c.before ? [{ id: 'before', name: T('home.theme_before'), conf: c.before }] : []), ...(c.themes || [])];
     themeMine.replaceChildren(...own.map((t) => tile(t.id, t.name, t.conf, true)));
@@ -546,7 +546,7 @@ async function homeOpen() {
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const vFold = UI.card(T('home.v_head'), { fold: true }, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
   const GROUPS = [
-    ['themes', 'star', 45, 'home.themes', [themeMineHead, themeMine, themeReadyHead, themeReady, themeInfo, themeHead, themeLine, themeNote]],
+    ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady, themeInfo]],
     ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote,
       hOnline, wOnline, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote,
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,

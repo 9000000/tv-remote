@@ -367,6 +367,7 @@ object Customize {
                 val c = Store.get(a)
                 col = page
                 val mine = c.optJSONArray("themes")
+                page.addView(label(a.getString(R.string.th_hold), 12f, DIM), LinearLayout.LayoutParams(-2, -2))   // the hint first, before every list
                 val own = ArrayList<View>()
                 c.optJSONObject(HomeConfig.BEFORE)?.let { own += themeTile(HomeConfig.BEFORE, a.getString(R.string.th_before), it.optString("wall"), true) }   // the look before the last switch
                 if (mine != null) for (i in 0 until mine.length()) mine.getJSONObject(i).let { own += themeTile(it.getString("id"), it.getString("name"), it.getJSONObject("conf").optString("wall"), true) }
@@ -374,15 +375,12 @@ object Customize {
                     section(a.getString(R.string.th_mine))
                     grid(own)
                 }
-                section(a.getString(R.string.th_ready))
-                grid(HomeConfig.BUILTIN.map { (id, cf) -> themeTile(id, themeName(a, c, id), cf.optString("wall"), false) })
-                    page.addView(label(a.getString(R.string.th_hold), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
                 val full = (mine?.length() ?: 0) >= HomeConfig.THEMES_MAX
                 val save = LinearLayout(a).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                     setPadding(dp(14), dp(12), dp(14), dp(12)); background = TvGlass.rowBg(a, 16)
                     val (iv, sz) = icon(R.drawable.ic_save, ACCENT, dp(26)); addView(iv, LinearLayout.LayoutParams(sz, sz))
-                    addView(label(a.getString(R.string.th_save), 15f, Color.WHITE), LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+                    addView(label(a.getString(R.string.th_save_look), 15f, Color.WHITE), LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         if (full) { android.widget.Toast.makeText(a, R.string.th_full, android.widget.Toast.LENGTH_LONG).show(); return@setOnClickListener }
@@ -395,7 +393,8 @@ object Customize {
                         }
                         fun save() {
                             val n = box.text.toString().trim().ifEmpty { return }
-                            apply(JSONObject().put("save", n)); draw(); themeTiles.lastOrNull()?.second?.requestFocus()
+                            apply(JSONObject().put("save", n)); draw()
+                            Store.get(a).optJSONArray("themes")?.let { m -> m.optJSONObject(m.length() - 1)?.optString("id") }?.let { id -> themeTiles.firstOrNull { it.first == id }?.second?.requestFocus() }
                         }
                         val dlg = android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_name_q)
                             .setView(FrameLayout(a).apply { setPadding(dp(24), dp(4), dp(24), 0); addView(box) })   // in line with the title
@@ -404,7 +403,9 @@ object Customize {
                         dlg.show()
                     }
                 }
-                page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+                page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (own.isEmpty()) 10 else 14) })
+                section(a.getString(R.string.th_ready))
+                grid(HomeConfig.BUILTIN.map { (id, cf) -> themeTile(id, themeName(a, c, id), HomeConfig.ready.firstOrNull { it.id == id }?.look?.ifEmpty { null } ?: cf.optString("wall"), false) })
                 mark()
             }
             draw()

@@ -371,7 +371,7 @@
     <string name="th_small">nhỏ</string>
     <string name="th_none">Không có</string>
     <string name="th_before">Giao diện trước</string>
-    <string name="th_save">Lưu giao diện này thành chủ đề</string>
+    <string name="th_save_look">Lưu giao diện đang có thành chủ đề</string>
     <string name="th_name_n">Chủ đề của tôi %1$d</string>
     <string name="th_del_q">Xoá chủ đề này?</string>
     <string name="th_del_note">Ảnh và video của nó vẫn còn.</string>

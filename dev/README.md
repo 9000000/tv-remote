@@ -61,7 +61,7 @@ release key; its public half is `Launchers.KEYS`). Run after every edit of the l
 | `sign_games.py` | `docs/games/games.json`: TV Games' cores, suggested web games, homebrew |
 | `sign_providers.py` | `docs/channels/providers.json`: TV Channels' extra sources, e.g. VieON |
 | `sign_bloat.py` | `docs/optimize/bloat.json`: Optimize TV's suggestions added from the site |
-| `sign_themes.py` | `docs/home/themes.json`: TV Home's ready-made themes (names per language, looks; a theme may set `wurl`, so only a signed list may). Packed in the APK by `:home` `packThemes`; `HomeThemesTest` keeps the copy equal |
+| `sign_themes.py` | `docs/home/themes.json`: TV Home's ready-made themes (names per language, looks; a theme may set `wurl`, so only a signed list may). Packed in the APK by `:home` `packThemes`; `HomeThemesTest` keeps the copy equal; stamps `rev` (the higher one wins, so an undeployed site never overwrites a newer APK). Web backgrounds go through `docs/home/loop.html` (host allow-list); each theme names its `src` + licence: Sa Pa photo = Wikimedia Commons CC0 `File:Rice terraces in Sapa, Vietnam.jpg`; beach video = CC0 `File:Sunset timelapse on the beach in Libreville, Gabon.webm`; city video = CC0 `File:Shanghai Bund, Lujiazui Skyline Timelapse.webm` (480p transcodes) |
 | `sign_downloader.py` | `docs/data/downloader.json`: the Downloader codes |
 
 ## release/

@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: 18 chủ đề có sẵn, mỗi cái cho một kiểu người xem (Buổi sáng, Khung ảnh, Game thủ, Bóng đá, Bé vui, Dễ nhìn, Tết, Đi ngủ, Rạp phim...); chủ đề có thể đặt sẵn ô sống (Đi ngủ: Hẹn giờ tắt ở đầu; Game thủ: Dọn RAM; Bóng đá: Xem tiếp kênh), thêm vào đầu và giữ nguyên ô bạn đã ghim, thiếu app thì bỏ qua. Ba chủ đề dùng nền web: ảnh Sa Pa và hai video (biển, thành phố đêm) qua `docs/home/loop.html` (nguồn Wikimedia Commons, CC0); Rạp phim bỏ nền đen phẳng. Danh sách ký có `rev`: bản của app mới hơn site thì site chưa deploy không ghi đè.
+- Trang Chủ đề (TV và web): lời nhắc ở đầu trang, rồi "Chủ đề của bạn" (không có thì không có tiêu đề), nút "Lưu giao diện đang có thành chủ đề", rồi các chủ đề có sẵn; tiêu điểm đầu tiên rơi vào mục đầu trang.
 - TV Home: app được đặt tự mở khi bật TV có huy hiệu ⏻ xanh trên ô, nhìn trang chủ là biết.
 - Đã bỏ "Chế độ 1 app nặng" (Health): đo trên TV 1,8 GB RAM, app bị bỏ lại chỉ giữ ~40 MB, đóng đi thì lần mở sau chậm gấp 7-8 lần (khởi động nguội 1216 ms thay vì 159 ms); Android tự dọn khi cần. TV còn giữ cài đặt cũ thì bỏ qua.
 - VIDAA ghi rõ "thử nghiệm, chưa thử trên TV thật" ở danh sách TV tìm thấy (web và app điện thoại) và bảng README.
@@ -59,6 +61,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- TV Home: 18 ready-made themes, each for one kind of viewer (Morning news, Photo frame, Gamer, Match day, Kids, Easy to read, Lunar New Year, Bedtime, Cinema...); a theme can set live tiles (Bedtime: the sleep timer first; Gamer: Clean RAM; Match day: Continue watching), added first with the person's own pins kept, skipped when the app is missing. Three themes use a web background: a Sa Pa photo and two videos (beach, night city) through `docs/home/loop.html` (Wikimedia Commons, CC0); Cinema no longer a flat black. The signed list has a `rev`: a site not yet deployed cannot overwrite a newer list packed in the app.
+- Themes page (TV and web): the hint first, then "Your themes" (no header when there are none), the "Save the current look as a theme" button, then the ready-made ones; the first focus lands on the first item.
 - TV Home: the app set to open when the TV turns on carries a small green power mark on its tile, so the setting is visible on the home screen.
 - Removed "One heavy app mode" (Health): measured on a 1.8 GB TV, a leftover app held only ~40 MB and closing it made the next launch 7-8x slower (cold start 1216 ms vs 159 ms); Android frees memory by itself when needed. A TV that still stores the old setting ignores it.
 - VIDAA is labelled "beta, not tested on a real TV" in the found-TV lists (web page and phone app) and the README tables.

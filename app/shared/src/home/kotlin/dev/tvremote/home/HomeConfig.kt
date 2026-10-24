@@ -293,13 +293,14 @@ object HomeConfig {
      * kept or the copy packed in the APK, and again when the site's is newer (`Themes.kt` there). Each is a whole look (every key of
      * [THEME_KEYS], [clean] fills the rest), so applying one never leaves a bit of the one before.
      */
-    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject) {
+    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val tiles: List<String> = emptyList(), val look: String = "") {
         /** The name in [lang], else English, else the id. */
         fun name(lang: String): String = names[lang] ?: names["en"] ?: id
     }
     @Volatile var ready: List<Ready> = emptyList()
     val BUILTIN: List<Pair<String, JSONObject>> get() = ready.map { it.id to it.conf }
     const val READY_MAX = 40
+    const val READY_TILES_MAX = 4
     private val READY_ID = Regex("[a-z][a-z0-9_]{0,15}")
 
     /** [a] newer than [b] ("0.8.1" vs "0.8.0"); a missing part is 0. */
@@ -326,7 +327,9 @@ object HomeConfig {
             if (t.optString("since").let { it.isNotEmpty() && newer(it, have) }) continue
             val n = t.optJSONObject("names")
             val names = if (n == null) emptyMap() else n.keys().asSequence().filter { LANGS.contains(it) }.associateWith { themeName(n.optString(it)) }.filterValues { it.isNotEmpty() }
-            out += Ready(id, names, pickTheme(clean(conf)))
+            // "tiles": live tiles the theme adds ([doTheme]); "look": a drawn wall or gradient for its picture in the list when its own wall has none (Bing, a page, a video)
+            out += Ready(id, names, pickTheme(clean(conf)), strs(t.optJSONArray("tiles")).filter { isTile(it) }.distinct().take(READY_TILES_MAX),
+                t.optString("look").takeIf { it in ART || it in PLAIN } ?: "")
             if (out.size >= READY_MAX) break
         }
         out
@@ -388,7 +391,7 @@ object HomeConfig {
     }
 
     /** [n] (cleaned) with the "theme" field [op] done: apply (what is gone, [usable], is passed over), save the look now, delete. */
-    private fun doTheme(n: JSONObject, op: JSONObject, usable: (String) -> Boolean): JSONObject {
+    private fun doTheme(n: JSONObject, op: JSONObject, usable: (String) -> Boolean, tileOk: (String) -> Boolean): JSONObject {
         val mine = customThemes(n).toMutableList()
         op.optString("del").takeIf { it.isNotEmpty() }?.let { id -> if (id == BEFORE) n.remove(BEFORE) else mine.removeAll { it.optString("id") == id } }
         op.optString("save").takeIf { it.isNotEmpty() }?.let { name ->
@@ -415,6 +418,11 @@ object HomeConfig {
             val walls = strs(conf.optJSONArray("walls")).filter(usable)
             val wall = conf.optString("wall").takeIf(usable) ?: walls.firstOrNull() ?: "night"
             n.put("walls", JSONArray(walls.ifEmpty { listOf(wall) })).put("wall", wall)
+            // a ready-made theme's live tiles: put FIRST in the grid and kept beside the person's own (never replaced); one whose provider is not here is skipped
+            ready.firstOrNull { it.id == id }?.tiles?.filter(tileOk)?.takeIf { it.isNotEmpty() }?.let { add ->
+                n.put("tiles", JSONArray((add + strs(n.optJSONArray("tiles"))).distinct().take(TILES_MAX)))
+                n.put("order", JSONArray((add + strs(n.optJSONArray("order"))).distinct().take(ORDER_MAX)))
+            }
         }
         return n
     }
@@ -516,12 +524,12 @@ object HomeConfig {
         return out
     }
 
-    /** [old] with the fields [change] has (any of them), cleaned. [usable]: whether a wall's file is there (a theme's apply passes over one that is not). */
-    fun merge(old: JSONObject, change: JSONObject, usable: (String) -> Boolean = { true }): JSONObject {
+    /** [old] with the fields [change] has (any of them), cleaned. [usable]: whether a wall's file is there, [tileOk] whether a live tile is on offer (a theme's apply passes over one that is not). */
+    fun merge(old: JSONObject, change: JSONObject, tileOk: (String) -> Boolean = { true }, usable: (String) -> Boolean = { true }): JSONObject {
         val n = JSONObject(clean(old).toString())
         for (k in change.keys()) if (k != "theme") n.put(k, change.get(k))
         if (change.has("wall") && !change.has("walls")) n.put("walls", JSONArray().put(change.get("wall")))   // a client that picks one: the set is that one
-        themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable) }
+        themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable, tileOk) }
         return clean(n)
     }
 
