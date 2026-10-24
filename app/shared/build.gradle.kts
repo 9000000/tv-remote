@@ -25,7 +25,7 @@ dependencies {
     testImplementation("org.json:json:20240303")
 }
 // The tests read tests/*_cases.json and web/remote.json from disk: inputs, so a changed case table runs them again
-tasks.withType<Test>().configureEach { inputs.dir("tests"); inputs.file("web/remote.json") }
+tasks.withType<Test>().configureEach { inputs.dir("tests"); inputs.file("web/remote.json"); inputs.dir("web/voice"); inputs.dir("../../docs/voice") }
 
 // assets/tvr-helper.jar: Meta, Caps, Playing and Screen alone, dexed for app_process on the TV, where the phone and the computer copy it for app
 // names, pictures, the hardware report and what is playing (a few KB, where the whole phone APK was copied before). Java, so no Kotlin library

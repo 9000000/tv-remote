@@ -1,16 +1,48 @@
 // node --test app/shared/tests/   (Node 18+, nothing to install)
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { fold, voiceCommand, channelLink } = require('../web/js/voice.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { fold, norm, voiceCommand, wantsApp, channelLink } = require('../web/js/voice.js');
 
-const APPS = [
+// the words are data (docs/voice/phrases.json, packed in app/shared/web/voice/); the case table is read by VoiceTest.kt too
+const ROOT = path.join(__dirname, '..', '..', '..');
+const PACKED = path.join(ROOT, 'app', 'shared', 'web', 'voice', 'phrases.json');
+const LIST = JSON.parse(fs.readFileSync(PACKED, 'utf8'));
+const TABLE = JSON.parse(fs.readFileSync(path.join(__dirname, 'voice_cases.json'), 'utf8'));
+const APPS = Object.entries(TABLE.apps).map(([pkg, name]) => ({ pkg, name }));
+const SCENES = Object.entries(TABLE.scenes).map(([id, name]) => ({ id, name }));
+const cmd = (t, apps = [
   { pkg: 'com.google.android.youtube.tv', name: 'YouTube' },
   { pkg: 'com.netflix.ninja', name: 'Netflix' },
   { pkg: 'com.fptplay.tv', name: 'FPT Play' },
   { pkg: 'org.videolan.vlc', name: 'VLC' },
-];
-const SCENES = [{ id: 's1', name: 'Đi ngủ' }, { id: 's2', name: 'Xem phim' }];
-const cmd = (t) => voiceCommand(t, APPS, SCENES);
+]) => voiceCommand(t, apps, SCENES, LIST);
+const show = (c) => !c ? 'null' : c.kind === 'key' ? `key:${c.key}:${c.times}` : c.kind === 'app' ? `app:${c.pkg}` : c.kind === 'close' ? `close:${c.pkg}`
+  : c.kind === 'channel' ? `channel:${c.name}` : c.kind === 'timer' ? `timer:${c.min}` : `scene:${c.scene.id}`;
+
+test('the sentence table (shared with VoiceTest.kt)', () => {
+  assert.ok(TABLE.cases.length >= 40);
+  for (const [text, want] of TABLE.cases) assert.equal(show(voiceCommand(text, APPS, SCENES, LIST)), want, text);
+});
+
+test('the packed list is the site\'s list, signed by the project\'s key', () => {
+  const site = path.join(ROOT, 'docs', 'voice', 'phrases.json');
+  assert.ok(fs.readFileSync(site).equals(fs.readFileSync(PACKED)), 'run dev/sign/sign_voice.py');
+  assert.ok(fs.readFileSync(site + '.sig').equals(fs.readFileSync(PACKED + '.sig')), 'run dev/sign/sign_voice.py');
+  const key = crypto.createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from('de2714846a352ea4e0e5b5dcf2272fee9b10bd2da6ebdea8cff858bac1c3f6ea', 'hex')]), format: 'der', type: 'spki' });
+  const sig = Buffer.from(fs.readFileSync(PACKED + '.sig', 'utf8').trim(), 'base64');
+  const body = fs.readFileSync(PACKED);
+  assert.ok(crypto.verify(null, body, key, sig), 'signature does not match');
+  assert.ok(!crypto.verify(null, Buffer.concat([body, Buffer.from(' ')]), key, sig), 'a changed list must fail');
+});
+
+test('"tivi" and "ti vi" read as tv; fillers at the ends go', () => {
+  assert.equal(norm('Mở Ti Vi game'), 'mo tv game');
+  assert.equal(wantsApp('tắt youtube', LIST), true);
+  assert.equal(wantsApp('tăng âm lượng', LIST), false);
+});
 
 test('fold drops accents, case and punctuation', () => {
   assert.equal(fold('  Mở YouTube! '), 'mo youtube');
@@ -26,7 +58,7 @@ test('opens apps by name, accents or not', () => {
 });
 
 test('an app the TV does not have goes to the Assistant', () => {
-  assert.equal(cmd('mở Spotify'), null);
+  assert.equal(cmd('mở Spotify'), null);               // an alias, but the TV does not have it
   assert.equal(cmd('thời tiết hôm nay'), null);
   assert.equal(cmd(''), null);
 });

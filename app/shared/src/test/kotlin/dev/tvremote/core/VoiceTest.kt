@@ -5,14 +5,40 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import dev.tvremote.core.scenes.Phrases
 import dev.tvremote.core.scenes.Voice
+import org.json.JSONObject
+import java.io.File
 
 /** The same cases as app/shared/tests/voice.test.js: the page and the phone app must understand the same sentences. */
 class VoiceTest {
     private val apps = mapOf("com.google.android.youtube.tv" to "YouTube", "com.netflix.ninja" to "Netflix", "com.fptplay.tv" to "FPT Play", "org.videolan.vlc" to "VLC")
     private val scenes = mapOf("s1" to "Đi ngủ", "s2" to "Xem phim")
     private fun p(t: String) = Voice.parse(t, apps, scenes)
+    @Before fun words() { Voice.phrases = Phrases(File("web/voice/phrases.json").readText()) }     // the packed list: what the apps start with
+
+    /** tests/voice_cases.json is read by voice.test.js too: the page and the phone must understand the same sentences. */
+    private fun show(c: Command?): String = when (c) {
+        null -> "null"; is Command.Key -> "key:${c.key}:${c.times}"; is Command.App -> "app:${c.pkg}"; is Command.Close -> "close:${c.pkg}"
+        is Command.Channel -> "channel:${c.name}"; is Command.Timer -> "timer:${c.minutes}"; is Command.Scene -> "scene:${c.id}"
+    }
+    @Test fun sentenceTable() {
+        val t = JSONObject(File("tests/voice_cases.json").readText())
+        val a = t.getJSONObject("apps").let { o -> o.keys().asSequence().associateWith { o.getString(it) } }
+        val sc = t.getJSONObject("scenes").let { o -> o.keys().asSequence().associateWith { o.getString(it) } }
+        val cases = t.getJSONArray("cases")
+        assertTrue(cases.length() >= 40)
+        for (i in 0 until cases.length()) { val c = cases.getJSONArray(i); assertEquals(c.getString(0), c.getString(1), show(Voice.parse(c.getString(0), a, sc))) }
+    }
+
+    @Test fun closeNeedsAdbSaidInThePreview() {
+        assertEquals(Voice.Say("talk.close_app", mapOf("name" to "YouTube")), Voice.preview("tắt youtube", apps, scenes)!!.say)
+        assertEquals(Voice.Say("talk.close_needs_adb", mapOf("name" to "YouTube")), Voice.preview("tắt youtube", apps, scenes, adb = false)!!.say)
+        assertEquals(Command.Close("com.google.android.youtube.tv", "YouTube"), Voice.preview("tắt youtube", apps, scenes, adb = false)!!.command)
+        assertNull(Voice.parse("tắt tv home", apps + ("dev.tvremote.home" to "TV Home"), scenes))      // never TV Home / TV Setup
+    }
 
     @Test fun fold() {
         assertEquals("mo youtube", Voice.fold("  Mở YouTube! "))
@@ -20,7 +46,7 @@ class VoiceTest {
     }
 
     @Test fun wantsApp() {
-        assertTrue(Voice.wantsApp("Mở YouTube!")); assertTrue(Voice.wantsApp("open the app")); assertTrue(Voice.wantsApp("chạy ứng dụng zing tv"))
+        assertTrue(Voice.wantsApp("Mở YouTube!")); assertTrue(Voice.wantsApp("tắt youtube")); assertTrue(Voice.wantsApp("open the app")); assertTrue(Voice.wantsApp("chạy ứng dụng zing tv"))
         assertFalse(Voice.wantsApp("tăng âm lượng")); assertFalse(Voice.wantsApp("mở")); assertFalse(Voice.wantsApp(""))
     }
 
@@ -79,6 +105,8 @@ class VoiceTest {
     @Test fun previewSaysWhatItWouldDo() {
         fun say(t: String) = Voice.preview(t, apps, scenes)!!.say
         assertEquals(Voice.Say("talk.k_mute"), say("tắt tiếng"))
+        assertEquals(Voice.Say("talk.k_home"), say("ra màn hình chính"))
+        assertEquals(Voice.Say("talk.k_settings"), say("mở cài đặt"))
         assertEquals(Voice.Say("talk.k_vol_up_n", mapOf("n" to "3")), say("tăng âm lượng"))
         assertEquals(Voice.Say("talk.k_vol_down_n", mapOf("n" to "5")), say("giảm âm lượng 5"))
         assertEquals(Voice.Say("talk.open_app", mapOf("name" to "YouTube")), say("mở youtube"))

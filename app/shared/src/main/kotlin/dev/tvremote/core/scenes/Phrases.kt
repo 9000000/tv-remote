@@ -1,0 +1,100 @@
+package dev.tvremote.core.scenes
+
+import dev.tvremote.update.SignedList
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.io.InputStream
+
+/**
+ * The words of the spoken commands, from the site's signed list (docs/voice/phrases.json; js/voice.js reads the same file). What a key or a
+ * verb DOES is code in [Voice]; the phrases that mean it are data, so a new way of saying "go home" reaches every app without an update.
+ * Everything is folded (no accents, no case) and "tivi" / "ti vi" read as "tv", so a list is written the way people write.
+ */
+class Phrases(json: String) {
+    class Alias(val label: String, val pkgs: List<String>, val names: Set<String>)
+
+    private val o = JSONObject(json)
+    val rev: Int = o.getInt("rev")
+    private val langs = o.getJSONObject("lang").let { l -> l.keys().asSequence().map { l.getJSONObject(it) }.toList() }
+
+    private fun words(a: JSONArray?): List<String> = if (a == null) emptyList() else (0 until a.length()).map { Voice.norm(a.getString(it)) }.filter { it.isNotEmpty() }
+    private fun all(vararg path: String): List<String> = langs.flatMap { words(at(it, path)) }.distinct()
+    private fun at(o: JSONObject, path: Array<out String>): JSONArray? {
+        var c: JSONObject = o
+        for (i in 0 until path.size - 1) c = c.optJSONObject(path[i]) ?: return null
+        return c.optJSONArray(path.last())
+    }
+    /** Longest first, so "chuyen sang" wins over "chuyen". */
+    private fun alt(l: List<String>) = l.sortedByDescending { it.length }.joinToString("|") { Regex.escape(it) }
+
+    val fillers: List<String> = all("fillers").sortedByDescending { it.length }
+    val keys: Map<String, String> = HashMap<String, String>().also { m ->
+        for (l in langs) { val k = l.optJSONObject("keys") ?: continue; for (key in k.keys()) for (p in words(k.getJSONArray(key))) m[p] = key }
+    }
+    val volUp = Regex("^(?:" + alt(all("volume", "up")) + ")(?: (?:(?:len|xuong|them|by|to) )?(\\d+))?$")
+    val volDown = Regex("^(?:" + alt(all("volume", "down")) + ")(?: (?:(?:len|xuong|them|by|to) )?(\\d+))?$")
+    val timerCancel: Set<String> = all("timer", "cancel").toSet()
+    val timerSet = Regex("^(?:" + alt(all("timer", "set")) + ") (\\d+) ?(" + alt(all("timer", "hours") + all("timer", "minutes")) + ")?$")
+    val hours: Set<String> = all("timer", "hours").toSet()
+    private val tune = all("channel", "tune")
+    private val noise = alt(all("open", "noise"))
+    val open = Regex("^(?:" + alt(all("open", "verbs") + tune) + ")(?: (?:$noise))? (.+)$")
+    val close = Regex("^(?:" + alt(all("close", "verbs")) + ") (?:(?:$noise) )?(.+)$")
+    val tuneRe = Regex("^(?:" + alt(tune) + ") (.+)$")
+    val channel = Regex("^(?:(?:" + alt(all("channel", "verbs")) + ") )?(?:" + alt(all("channel", "words")) + ") (.+)$")
+    val channelNames = Regex("^(?:" + (0 until (o.optJSONArray("channel_names")?.length() ?: 0)).joinToString("|") { o.getJSONArray("channel_names").getString(it) } + ")$")
+    val neverClose: Set<String> = o.optJSONArray("never_close")?.let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } ?: emptySet()
+    val apps: List<Alias> = o.getJSONArray("apps").let { a ->
+        (0 until a.length()).map { a.getJSONObject(it) }.map { x ->
+            val p = x.optJSONArray("pkgs")
+            Alias(x.getString("label"), if (p == null) emptyList() else (0 until p.length()).map { p.getString(it) }, words(x.getJSONArray("names")).toSet())
+        }
+    }
+}
+
+/**
+ * Which copy of the list is in use: the site's / GitHub's when read (signature checked), else the one kept from the last read, else the
+ * one packed in the app (the page's own files, `voice/phrases.json` + `.sig`). A copy that fails its signature or is older than the packed
+ * one (a rolled-back list) is skipped. The page asks the app for the same bytes ([json]), so every screen speaks the same phrases.
+ */
+object VoicePhrases {
+    const val NAME = "voice/phrases.json"
+    private val BASES = listOf("https://tvremote.pages.dev/voice/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/voice/")
+    private const val DAY = 24 * 3600_000L
+    @Volatile private var bytes: ByteArray? = null
+    @Volatile private var started = false
+    private var kept: File? = null
+
+    /** The first of [fetched] / [kept] / [packed] that reads as a list, never one with a lower rev than [packed]. Pure: the order and the rollback rule are tested. */
+    fun choose(fetched: ByteArray?, kept: ByteArray?, packed: ByteArray?): Pair<ByteArray, Phrases>? {
+        fun read(b: ByteArray?): Phrases? = try { b?.let { Phrases(String(it, Charsets.UTF_8)) } } catch (e: Exception) { null }
+        val base = read(packed)
+        for (b in listOf(fetched, kept)) { val p = read(b) ?: continue; if (b != null && (base == null || p.rev >= base.rev)) return b to p }
+        return if (packed != null && base != null) packed to base else null
+    }
+
+    /** Once per run: the kept or packed list now, the site's in the background (at most once a day). [open] reads the page's files (assets, or the web folder), [dir] is where the copy is kept. */
+    @Synchronized fun start(open: (String) -> InputStream, dir: File?) {
+        if (started) return
+        started = true
+        val f = dir?.let { File(it, "voice-phrases.json") }
+        kept = f
+        use(choose(null, f?.let { SignedList.kept(it) }, SignedList.packed(open, NAME)))
+        if (f != null && !(f.isFile && System.currentTimeMillis() - f.lastModified() < DAY)) Thread({ refresh() }, "voice-phrases").apply { isDaemon = true }.start()
+    }
+
+    /** Reads the site's list now (blocks). True when it replaced what was in use. */
+    fun refresh(): Boolean = try {
+        var sig = ""
+        val list = SignedList.fetch(BASES, "phrases.json", 1 shl 20, connectMs = 6000, readMs = 8000) { l, s, _ -> sig = s; l }
+        val packedRev = Voice.phrases?.rev ?: 0
+        val got = choose(list, null, null)
+        if (got != null && got.second.rev >= packedRev) { kept?.let { SignedList.keep(it, list, sig) }; use(got); true } else false
+    } catch (e: Exception) { false }
+
+    private fun use(p: Pair<ByteArray, Phrases>?) { if (p != null) { bytes = p.first; Voice.phrases = p.second } }
+
+    /** The list in use, as the page asks for it; null before [start]. */
+    fun json(): ByteArray? = bytes
+}

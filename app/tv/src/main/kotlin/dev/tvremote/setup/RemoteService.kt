@@ -296,6 +296,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     override fun onCreate() {
         super.onCreate()
+        dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the page asks for the same words (voice/phrases.json)
         dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this

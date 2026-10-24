@@ -576,6 +576,11 @@ async function doCommand(c) {
   if (c.kind === 'app') return openOnTv(c.pkg, c.name);
   if (c.kind === 'channel') return chanOpen(c.name);
   if (c.kind === 'timer') return setSleep(c.min);
+  if (c.kind === 'close') {                                           // am force-stop, so ADB; TV Setup / TV Home are refused by the server as well
+    if (needAdb()) return;
+    const r = await api('/api/app/stop', { pkg: c.pkg }); if (r) toast(T('auto.closed_app', { name: c.name }));
+    return;
+  }
   if (c.kind === 'key') {
     if (c.key === 'SLEEP' || c.key === 'WAKE') { const r = await api('/api/key', { key: c.key }); if (r) toast(T(c.key === 'SLEEP' ? 'auto.tv_off_done' : 'auto.tv_on_done')); return; }   // never POWER: it would turn a TV that is off on
     for (let i = 0; i < c.times; i++) { await api('/api/key', { key: c.key }); if (c.times > 1) await sleep(150); }

@@ -53,6 +53,7 @@ class MicActivity : Activity(), RecognitionListener {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         live = this
+        dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)
         val fake = intent.getStringExtra("say")                        // `am start -n .../.MicActivity --es say "mở youtube"` (the shell only): a test with no microphone
         if (fake != null) { build(); ui.postDelayed({ onPartialResults(Bundle().apply { putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(fake)) }) }, 500)
             ui.postDelayed({ finish(fake, cut = false) }, 1300); return }

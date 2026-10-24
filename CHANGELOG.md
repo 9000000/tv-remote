@@ -78,6 +78,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: khóa app không cần TV Setup: mã PIN 4 số tạo ngay trên TV (nhập hai lần), TV Home tự khóa mở app từ lưới, dock, phím gán (chặn mở từ nơi khác thì cần TV Setup); giới hạn mỗi ngày vẫn cần TV Setup. Cài TV Setup sau thì khóa tự chuyển sang. Màn mờ phía sau menu không còn nhấp nháy khi quay về từ app khác (Thông tin app).
 - TV Home, Tùy chỉnh → Widget: mỗi thẻ có nút kiểu riêng (bấm OK đổi sang kiểu kế tiếp của thẻ đó: Kính / Tông màu, đồng hồ Cổ điển / Sáng / Tối giản / La Mã), thay cho công tắc "Kiểu thẻ" chung; bỏ dòng nhắc ⌃⌄.
 
+- Giọng nói, nói gì cũng hiểu hơn: "ra màn hình chính", "mở tivi game", "mở tivi channel", "mở vtv3", "tắt youtube" (đóng app, cần ADB; không bao giờ đóng TV Setup / TV Home), mở cài đặt, lên xuống trái phải, OK, menu; cả tiếng Anh. Các câu nói giờ là danh sách có chữ ký trên trang web (docs/voice/phrases.json), thêm câu mới không cần cập nhật app; có bản đóng gói sẵn khi không có mạng.
 **English**
 - TV Setup, mic button on the TV's remote (new, off by default): turn it on in the Health tab or in TV Setup and the mic button opens TV Remote's voice on the TV itself (live text and the action: keys, volume, open app, channel, timer, scenes) instead of Google Assistant. No recognizer or no network: the button stays as it was. Needs a newer TV Setup (and TV Setup Keys).
 - TV Games: when TV Games is killed without warning (TV Setup's time limit, a task killer) the phone's pad now shows "TV Games was closed on the TV" after about 1.2 s (it used to say only "Reconnecting…", with a hint after 15 s), keeps retrying quietly and joins back within 3 s of TV Games reopening.
@@ -151,6 +152,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home, Customize → Widgets: each card has its own look button (OK steps to that card's next look: Glass / Tonal, the clock Classic / Light / Minimal / Roman), replacing the one shared "Card look" switch; the ⌃⌄ hint is gone.
 
 ## 0.21.0 - 2026-10-24
+- Voice understands more: "go to the home screen", "open tivi game", "open tivi channel", "open vtv3", "close youtube" (closes the app, needs ADB; never TV Setup / TV Home), open settings, up / down / left / right, OK, menu; in Vietnamese and English. The phrases are now a signed list on the site (docs/voice/phrases.json), so new ones arrive without an app update; a packed copy is the offline fallback.
+
 
 Web 0.21.0 · app điện thoại 0.21.0 · app TV 0.21.0 · TV Home 0.8.0 · TV Channels 0.5.0 · TV Games 0.5.0
 

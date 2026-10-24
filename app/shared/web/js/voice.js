@@ -6,45 +6,117 @@
   const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd').toLowerCase()
     .replace(/[^\p{L}\p{N} ]/gu, ' ').replace(/\s+/g, ' ').trim();
 
-  const KEYS = [
-    [/^(tat tieng|bat tieng|im lang|mute|unmute)$/, 'MUTE'],
-    [/^(tam dung|dung lai|dung|phat|phat tiep|tiep tuc|pause|play|resume|stop)$/, 'PLAY_PAUSE'],
-    [/^(ve )?(man hinh chinh|trang chu|home|go home)$/, 'HOME'],
-    [/^(quay lai|tro lai|back|go back)$/, 'BACK'],
-    [/^(bai tiep|bai sau|tiep theo|next)$/, 'NEXT'],
-    [/^(bai truoc|truoc do|previous)$/, 'PREV'],
-    [/^(kenh tiep( theo)?|kenh sau|next channel|channel up)$/, 'CH_UP'],
-    [/^(kenh truoc|kenh truoc do|previous channel|channel down)$/, 'CH_DOWN'],
-    [/^(tat tv|tat ti ?vi|tat may|turn off( the)? tv|tv off)$/, 'SLEEP'],
-    [/^(bat tv|bat ti ?vi|mo tv|mo ti ?vi|turn on( the)? tv|tv on)$/, 'WAKE'],
-  ];
+  // "tivi" / "ti vi" read as "tv": the form every phrase of the list is kept in
+  const norm = (s) => fold(s).replace(/\bti ?vi\b/g, 'tv');
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const alt = (l) => [...l].sort((x, y) => y.length - x.length).map(esc).join('|');
 
-  // apps: [{pkg, name}]; scenes: [{id, name}]. Returns what to do, or null for "ask the Assistant".
-  function voiceCommand(text, apps, scenes) {
-    const s = fold(text);
-    if (!s) return null;
-    const scene = (scenes || []).find((x) => fold(x.name) === s || fold('canh ' + x.name) === s || fold('scene ' + x.name) === s);
-    if (scene) return { kind: 'scene', scene };
-    for (const [re, key] of KEYS) if (re.test(s)) return { kind: 'key', key, times: 1 };
-    let m = /^(tang am luong|to len|to hon|volume up|louder|turn it up)( (\d+))?$/.exec(s);
-    if (m) return { kind: 'key', key: 'VOL_UP', times: Math.min(+(m[3] || 3), 15) };
-    m = /^(giam am luong|nho lai|nho hon|be lai|volume down|quieter|turn it down)( (\d+))?$/.exec(s);
-    if (m) return { kind: 'key', key: 'VOL_DOWN', times: Math.min(+(m[3] || 3), 15) };
-    m = /^(huy hen gio|bo hen gio|cancel( the)?( sleep)? timer)$/.exec(s);
-    if (m) return { kind: 'timer', min: 0 };
-    m = /^(hen gio tat( tv)?|hen gio|tat tv sau|tat sau|sleep in|turn off( the tv)? in|sleep timer) (\d+) ?(phut|p|minutes?|mins?|gio|tieng|hours?|h)?$/.exec(s);
-    if (m) return { kind: 'timer', min: Math.min(+m[4] * (/^(gio|tieng|hours?|h)$/.test(m[5] || '') ? 60 : 1), 720) };
-    // before the app rule: "mở kênh vtv1" is a channel, not an app called "kenh vtv1"
-    m = /^((mo|xem|chuyen|bat|chuyen sang|chuyen qua) )?kenh (.+)$|^(open |watch )?channel (.+)$|^tune to (.+)$/.exec(s);
-    if (m) return { kind: 'channel', name: (m[3] || m[5] || m[6]).trim() };
-    m = /^(mo|bat|vao|chay|xem|open|launch|start|play)( ung dung| app)? (.+)$/.exec(s);
-    if (m) {
-      const want = m[3], named = (apps || []).map((a) => ({ a, n: fold(a.name) })).filter((x) => x.n);
-      const hit = named.find((x) => x.n === want) || named.find((x) => x.n.startsWith(want) || want.startsWith(x.n + ' '))
-        || named.find((x) => want.length >= 3 && x.n.includes(want)) || named.find((x) => x.n.length >= 3 && want.includes(x.n));
-      if (hit) return { kind: 'app', pkg: hit.a.pkg, name: hit.a.name };
+  // The words are data: the app serves the signed list (docs/voice/phrases.json, the same one Voice.kt reads) at voice/phrases.json.
+  // What a key or a verb does is code here and in Voice.kt. Compiled once per list.
+  const compiled = new WeakMap();
+  function compile(list) {
+    if (compiled.has(list)) return compiled.get(list);
+    const langs = Object.values(list.lang);
+    const words = (a) => (a || []).map(norm).filter(Boolean);
+    const all = (...path) => [...new Set(langs.flatMap((l) => words(path.reduce((o, k) => (o ? o[k] : undefined), l))))];
+    const keys = new Map();
+    for (const l of langs) for (const [key, ps] of Object.entries(l.keys || {})) for (const p of words(ps)) keys.set(p, key);
+    const tune = all('channel', 'tune');
+    const noise = alt(all('open', 'noise'));
+    const vol = (dir) => new RegExp('^(?:' + alt(all('volume', dir)) + ')(?: (?:(?:len|xuong|them|by|to) )?(\\d+))?$');
+    const c = {
+      rev: list.rev, fillers: all('fillers').sort((x, y) => y.length - x.length), keys,
+      volUp: vol('up'), volDown: vol('down'),
+      timerCancel: new Set(all('timer', 'cancel')), hours: new Set(all('timer', 'hours')),
+      timerSet: new RegExp('^(?:' + alt(all('timer', 'set')) + ') (\\d+) ?(' + alt([...all('timer', 'hours'), ...all('timer', 'minutes')]) + ')?$'),
+      open: new RegExp('^(?:' + alt([...all('open', 'verbs'), ...tune]) + ')(?: (?:' + noise + '))? (.+)$'),
+      close: new RegExp('^(?:' + alt(all('close', 'verbs')) + ') (?:(?:' + noise + ') )?(.+)$'),
+      tune: new RegExp('^(?:' + alt(tune) + ') (.+)$'),
+      channel: new RegExp('^(?:(?:' + alt(all('channel', 'verbs')) + ') )?(?:' + alt(all('channel', 'words')) + ') (.+)$'),
+      channelNames: new RegExp('^(?:' + (list.channel_names || []).join('|') + ')$'),
+      neverClose: new Set(list.never_close || []),
+      apps: (list.apps || []).map((a) => ({ label: a.label, pkgs: a.pkgs || [], names: new Set(words(a.names)) })),
+    };
+    compiled.set(list, c);
+    return c;
+  }
+
+  // politeness and filler at either end ("giúp tôi", "đi", "nhé", "please") off; a sentence that is only filler stays
+  function strip(s, c) {
+    for (let again = true; again;) {
+      again = false;
+      for (const f of c.fillers) {
+        if (s.startsWith(f + ' ')) { s = s.slice(f.length + 1); again = true; break; }
+        if (s.endsWith(' ' + f)) { s = s.slice(0, -f.length - 1); again = true; break; }
+      }
     }
+    return s;
+  }
+
+  // an app called [want]: its alias in the list (a package the TV has), else the installed names, loosely
+  function findApp(want, apps, c, loose) {
+    const alias = c.apps.find((a) => a.names.has(want));
+    const named = (apps || []).map((a) => ({ a, n: fold(a.name) })).filter((x) => x.n);
+    const fuzzy = (w) => {
+      const hit = named.find((x) => x.n === w) || named.find((x) => x.n.startsWith(w) || w.startsWith(x.n + ' '))
+        || named.find((x) => w.length >= 3 && x.n.includes(w)) || named.find((x) => x.n.length >= 3 && w.includes(x.n));
+      return hit ? { pkg: hit.a.pkg, name: hit.a.name } : null;
+    };
+    if (alias) {
+      for (const p of alias.pkgs) { const have = named.find((x) => x.a.pkg === p); if (have || !named.length) return { pkg: p, name: have ? have.a.name : alias.label }; }
+      return named.length ? fuzzy(fold(alias.label)) : null;
+    }
+    return loose ? fuzzy(want) : null;
+  }
+  const chName = (w) => w.replace(/([a-z]) (\d)/g, '$1$2');
+
+  // apps: [{pkg, name}]; scenes: [{id, name}]; list: the phrases (default: the app's, read once). Returns what to do, or null for "ask the Assistant".
+  function voiceCommand(text, apps, scenes, list) {
+    const raw = fold(text);
+    if (!raw) return null;
+    const scene = (scenes || []).find((x) => fold(x.name) === raw || fold('canh ' + x.name) === raw || fold('scene ' + x.name) === raw);
+    if (scene) return { kind: 'scene', scene };
+    list = list || phrases();
+    if (!list) return null;
+    const c = compile(list), s = strip(norm(text), c);
+    if (c.keys.has(s)) return { kind: 'key', key: c.keys.get(s), times: 1 };
+    let m = c.volUp.exec(s);
+    if (m) return { kind: 'key', key: 'VOL_UP', times: Math.min(+(m[1] || 3), 15) };
+    m = c.volDown.exec(s);
+    if (m) return { kind: 'key', key: 'VOL_DOWN', times: Math.min(+(m[1] || 3), 15) };
+    if (c.timerCancel.has(s)) return { kind: 'timer', min: 0 };
+    m = c.timerSet.exec(s);
+    if (m) return { kind: 'timer', min: Math.min(+m[1] * (c.hours.has(m[2] || '') ? 60 : 1), 720) };
+    m = c.close.exec(s);
+    if (m) { const hit = findApp(m[1], apps, c, true); if (hit && !c.neverClose.has(hit.pkg)) return { kind: 'close', pkg: hit.pkg, name: hit.name }; }
+    const o = c.open.exec(s), verb = o ? o[1] : null, want = verb == null ? s : verb;
+    let hit = findApp(want, apps, c, false);
+    if (hit) return { kind: 'app', pkg: hit.pkg, name: hit.name };
+    // before the apps by name: "mở kênh vtv1" is a channel, not an app called "kenh vtv1"
+    m = c.channel.exec(s);
+    if (m) return { kind: 'channel', name: c.channelNames.test(m[1]) ? chName(m[1]) : m[1] };
+    if (c.channelNames.test(want)) return { kind: 'channel', name: chName(want) };
+    m = c.tune.exec(s);
+    if (m) return { kind: 'channel', name: m[1] };
+    if (verb != null && (hit = findApp(verb, apps, c, true))) return { kind: 'app', pkg: hit.pkg, name: hit.name };
     return null;
+  }
+
+  // True when the sentence asks to open or close something: the phone then asks the TV for its app names first
+  function wantsApp(text, list) {
+    list = list || phrases();
+    if (!list) return false;
+    const c = compile(list), s = strip(norm(text), c);
+    return c.open.test(s) || c.close.test(s);
+  }
+
+  // the list the app serves, read once and kept (a page reload takes a new one)
+  let loaded = null;
+  function phrases() {
+    if (root.VOICE_PHRASES) return root.VOICE_PHRASES;
+    if (loaded || typeof XMLHttpRequest === 'undefined' || typeof document === 'undefined') return loaded;
+    try { const x = new XMLHttpRequest(); x.open('GET', 'voice/phrases.json', false); x.send(); loaded = JSON.parse(x.responseText); } catch (e) { loaded = null; }
+    return loaded;
   }
 
   // the link TV Channels (dev.tvremote.channels) takes; spaces as %20
@@ -53,5 +125,5 @@
   root.fold = fold;
   root.channelLink = channelLink;
   root.voiceCommand = voiceCommand;
-  if (typeof module !== 'undefined') module.exports = { fold, voiceCommand, channelLink };
+  if (typeof module !== 'undefined') module.exports = { fold, norm, voiceCommand, wantsApp, channelLink };
 })(typeof window !== 'undefined' ? window : globalThis);

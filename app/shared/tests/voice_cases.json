@@ -1,0 +1,319 @@
+{
+ "apps": {
+  "com.google.android.youtube.tv": "YouTube",
+  "com.netflix.ninja": "Netflix",
+  "com.fptplay.tv": "FPT Play",
+  "org.videolan.vlc": "VLC",
+  "dev.tvremote.games": "TV Games",
+  "dev.tvremote.channels": "TV Channels",
+  "dev.tvremote.home": "TV Home",
+  "dev.tvremote.setup": "TV Setup",
+  "com.android.vending": "Google Play Store"
+ },
+ "scenes": {
+  "s1": "Đi ngủ",
+  "s2": "Xem phim"
+ },
+ "cases": [
+  [
+   "ra màn hình chính",
+   "key:HOME:1"
+  ],
+  [
+   "tắt youtube",
+   "close:com.google.android.youtube.tv"
+  ],
+  [
+   "mở tivi game",
+   "app:dev.tvremote.games"
+  ],
+  [
+   "mở tivi channel",
+   "app:dev.tvremote.channels"
+  ],
+  [
+   "mở vtv3",
+   "channel:vtv3"
+  ],
+  [
+   "về trang chủ",
+   "key:HOME:1"
+  ],
+  [
+   "Home",
+   "key:HOME:1"
+  ],
+  [
+   "giúp tôi ra màn hình chính đi",
+   "key:HOME:1"
+  ],
+  [
+   "go to the home screen please",
+   "key:HOME:1"
+  ],
+  [
+   "quay lại",
+   "key:BACK:1"
+  ],
+  [
+   "tắt tiếng",
+   "key:MUTE:1"
+  ],
+  [
+   "bật tiếng",
+   "key:MUTE:1"
+  ],
+  [
+   "tạm dừng",
+   "key:PLAY_PAUSE:1"
+  ],
+  [
+   "tiếp tục nhé",
+   "key:PLAY_PAUSE:1"
+  ],
+  [
+   "bài tiếp",
+   "key:NEXT:1"
+  ],
+  [
+   "tắt TV",
+   "key:SLEEP:1"
+  ],
+  [
+   "tắt tivi đi",
+   "key:SLEEP:1"
+  ],
+  [
+   "bật tivi",
+   "key:WAKE:1"
+  ],
+  [
+   "mở tv",
+   "key:WAKE:1"
+  ],
+  [
+   "turn off the tv",
+   "key:SLEEP:1"
+  ],
+  [
+   "mở cài đặt",
+   "key:SETTINGS:1"
+  ],
+  [
+   "open settings",
+   "key:SETTINGS:1"
+  ],
+  [
+   "ok",
+   "key:OK:1"
+  ],
+  [
+   "sang trái",
+   "key:LEFT:1"
+  ],
+  [
+   "xuống",
+   "key:DOWN:1"
+  ],
+  [
+   "tăng âm lượng",
+   "key:VOL_UP:3"
+  ],
+  [
+   "tăng âm lượng 5",
+   "key:VOL_UP:5"
+  ],
+  [
+   "to lên",
+   "key:VOL_UP:3"
+  ],
+  [
+   "nhỏ lại 2",
+   "key:VOL_DOWN:2"
+  ],
+  [
+   "volume up 99",
+   "key:VOL_UP:15"
+  ],
+  [
+   "giảm tiếng đi",
+   "key:VOL_DOWN:3"
+  ],
+  [
+   "hẹn giờ tắt 30 phút",
+   "timer:30"
+  ],
+  [
+   "tắt tivi sau 2 tiếng",
+   "timer:120"
+  ],
+  [
+   "sleep in 45 minutes",
+   "timer:45"
+  ],
+  [
+   "hủy hẹn giờ",
+   "timer:0"
+  ],
+  [
+   "mở YouTube",
+   "app:com.google.android.youtube.tv"
+  ],
+  [
+   "mở ứng dụng youtube",
+   "app:com.google.android.youtube.tv"
+  ],
+  [
+   "Xem FPT Play",
+   "app:com.fptplay.tv"
+  ],
+  [
+   "open vlc",
+   "app:org.videolan.vlc"
+  ],
+  [
+   "mở tv games",
+   "app:dev.tvremote.games"
+  ],
+  [
+   "mở trò chơi",
+   "app:dev.tvremote.games"
+  ],
+  [
+   "mở kênh tivi",
+   "app:dev.tvremote.channels"
+  ],
+  [
+   "mở tv home",
+   "app:dev.tvremote.home"
+  ],
+  [
+   "youtube",
+   "app:com.google.android.youtube.tv"
+  ],
+  [
+   "mở cho tôi netflix nhé",
+   "app:com.netflix.ninja"
+  ],
+  [
+   "tắt netflix",
+   "close:com.netflix.ninja"
+  ],
+  [
+   "đóng youtube",
+   "close:com.google.android.youtube.tv"
+  ],
+  [
+   "thoát netflix",
+   "close:com.netflix.ninja"
+  ],
+  [
+   "close tv games",
+   "close:dev.tvremote.games"
+  ],
+  [
+   "tắt vlc",
+   "close:org.videolan.vlc"
+  ],
+  [
+   "tắt tv setup",
+   "null"
+  ],
+  [
+   "đóng tv home",
+   "null"
+  ],
+  [
+   "tắt google play",
+   "null"
+  ],
+  [
+   "mở kênh vtv1",
+   "channel:vtv1"
+  ],
+  [
+   "Xem kênh VTV1",
+   "channel:vtv1"
+  ],
+  [
+   "chuyển sang kênh vtv1",
+   "channel:vtv1"
+  ],
+  [
+   "kênh vtv1",
+   "channel:vtv1"
+  ],
+  [
+   "watch channel vtv1",
+   "channel:vtv1"
+  ],
+  [
+   "tune to vtv1",
+   "channel:vtv1"
+  ],
+  [
+   "mở kênh Thể thao",
+   "channel:the thao"
+  ],
+  [
+   "xem vtv 3",
+   "channel:vtv3"
+  ],
+  [
+   "mở htv7",
+   "channel:htv7"
+  ],
+  [
+   "chuyển sang vtv6",
+   "channel:vtv6"
+  ],
+  [
+   "watch hbo",
+   "channel:hbo"
+  ],
+  [
+   "hbo",
+   "channel:hbo"
+  ],
+  [
+   "kênh tiếp",
+   "key:CH_UP:1"
+  ],
+  [
+   "previous channel",
+   "key:CH_DOWN:1"
+  ],
+  [
+   "đi ngủ",
+   "scene:s1"
+  ],
+  [
+   "cảnh xem phim",
+   "scene:s2"
+  ],
+  [
+   "mở Spotify",
+   "null"
+  ],
+  [
+   "mở prime video",
+   "null"
+  ],
+  [
+   "thời tiết hôm nay",
+   "null"
+  ],
+  [
+   "mở",
+   "null"
+  ],
+  [
+   "",
+   "null"
+  ],
+  [
+   "đi",
+   "null"
+  ]
+ ]
+}

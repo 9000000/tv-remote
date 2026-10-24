@@ -92,6 +92,7 @@ object MicVoice {
         is Voice.Command.Key -> T("auto.pressed", "key" to cmd.key.lowercase().replace('_', ' ')) + if (cmd.times > 1) " × ${cmd.times}" else ""
         is Voice.Command.App -> T("automation.opening", "name" to cmd.name)
         is Voice.Command.Channel -> T("automation.channel", "name" to cmd.name)
+        is Voice.Command.Close -> T("mic.do_close", "name" to cmd.name)
         is Voice.Command.Timer -> if (cmd.minutes <= 0) T("mic.do_timer_off") else T("mic.do_timer", "n" to cmd.minutes)
         is Voice.Command.Scene -> T("mic.do_scene", "name" to (scenes(c)[cmd.id] ?: cmd.id))
     }
@@ -107,6 +108,10 @@ object MicVoice {
                 is Voice.Command.App -> {
                     val i = c.packageManager.getLeanbackLaunchIntentForPackage(cmd.pkg) ?: c.packageManager.getLaunchIntentForPackage(cmd.pkg)
                     if (i != null) c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) else Scenes.launch(sh, cmd.pkg)
+                }
+                is Voice.Command.Close -> {
+                    if (dev.tvremote.core.ontv.Setup.mustKeep(cmd.pkg) || cmd.pkg == c.packageName) return T("mic.failed")   // the TV needs it
+                    sh("am force-stop " + dev.tvremote.core.adb.Adb.q(cmd.pkg))
                 }
                 is Voice.Command.Channel -> {
                     val i = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(Voice.channelLink(cmd.name))).setPackage("dev.tvremote.channels").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

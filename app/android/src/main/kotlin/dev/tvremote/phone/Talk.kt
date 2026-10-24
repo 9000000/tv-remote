@@ -191,7 +191,7 @@ internal class Talk(private val a: MainActivity) {
         end()
         if (sentence.isBlank()) { say(T("talk.heard_nothing")); return }
         liveText("“${sentence.trim()}”", true)
-        Voice.preview(sentence, a.appNames, scenes)?.let { listPlans(listOf(it), true) }
+        Voice.preview(sentence, a.appNames, scenes, a.tv?.ready() == true)?.let { listPlans(listOf(it), true) }
         state?.text = T("talk.sent", "sentence" to sentence.trim())
         a.buzz()
         a.voice(sentence)
@@ -216,7 +216,7 @@ internal class Talk(private val a: MainActivity) {
 
     private fun show() {
         if (lastPartial.isBlank()) liveText(T("talk.listening"), false) else liveText(lastPartial, true)
-        val ps = alternatives.distinct().take(3).mapNotNull { Voice.preview(it, a.appNames, scenes) }.distinctBy { it.say }
+        val ps = alternatives.distinct().take(3).mapNotNull { Voice.preview(it, a.appNames, scenes, a.tv?.ready() == true) }.distinctBy { it.say }
         listPlans(ps, false)
     }
 

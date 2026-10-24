@@ -142,6 +142,13 @@ private fun MainActivity.doVoice(c: Voice.Command) {
             if (tv != null && tv.ready()) Thread { try { Scenes.launch({ tv.shell(it) }, c.pkg) } catch (e: Exception) { ui.post { toast(e.message ?: "") } } }.start()
             else basic?.launch(c.pkg)
         }
+        is Voice.Command.Close -> {
+            val tv = tv
+            if (tv == null || !tv.ready()) { needsAdb(); return }              // am force-stop is ADB's; the keys-only link cannot
+            if (dev.tvremote.core.ontv.Setup.mustKeep(c.pkg)) return           // the TV needs it (the list's "never_close" says so too)
+            toast(T("auto.closed_app", "name" to c.name))
+            Thread { try { tv.shell("am force-stop " + dev.tvremote.core.adb.Adb.q(c.pkg)) } catch (e: Exception) { ui.post { toast(e.message ?: "") } } }.start()
+        }
         is Voice.Command.Channel -> {
             toast(T("automation.channel", "name" to c.name))
             val link = Voice.channelLink(c.name)

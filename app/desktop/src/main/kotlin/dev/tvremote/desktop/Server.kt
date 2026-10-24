@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class Server(private val repo: File, private val keys: File, private val pass: Pass, private val cache: File, private val saved: Saved, first: String?, private val hookPort: Int, private val stop: () -> Unit) : HttpServer.Handler {
     private val web = File(repo, "app/shared/web").also { w -> Words.open = { File(w, it).takeIf { f -> f.isFile }?.inputStream() } }
+    init { dev.tvremote.core.scenes.VoicePhrases.start({ File(web, it).inputStream() }, cache) }   // the page asks for the freshest signed words
     private val helperFile = File(repo, "app/shared/assets/tvr-helper.jar")   // Meta and Caps, started on the TV
     private val helper: () -> ByteArray = { helperFile.readBytes() }
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")

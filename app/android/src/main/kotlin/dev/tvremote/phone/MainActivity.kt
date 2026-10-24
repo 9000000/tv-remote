@@ -206,6 +206,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         applyPalette(this)                                        // before the theme and every view: they read the colours
         setTheme(if (LIGHT) R.style.AppLight else R.style.AppDark)   // dialogs and the keyboard's look follow
         super.onCreate(b)
+        dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the words of the spoken commands: signed list from the site, else kept, else packed
         dev.tvremote.core.Downloader.dir = filesDir                   // the signed Downloader codes are kept here (core/Downloader.kt)
         prefs = getSharedPreferences("tvs", MODE_PRIVATE)
         soundPace()                                               // Listen.kt
