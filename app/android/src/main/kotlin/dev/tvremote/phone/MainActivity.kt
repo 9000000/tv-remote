@@ -77,6 +77,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal var listen = false                                        // the TV's sound plays here (Listen.kt)
     internal var listenShare = false                                   // ...and on the TV's speakers too
     internal var bgListen = false                                      // listening with the app in the background: the session runs without its picture
+    internal val talk by lazy { Talk(this) }                          // Quick talk: hold to talk (Talk.kt)
     internal var appNames: Map<String, String> = emptyMap()           // the TV's apps by package, for "open <app>" spoken (Automation.kt)
     internal var appNamesFor: String? = null
     internal lateinit var waiting: FrameLayout                         // covers the remote while a TV is being connected: nothing on it works yet
@@ -304,6 +305,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onDestroy() {
         pipRx?.let { try { unregisterReceiver(it) } catch (e: Exception) { } }
         managing.destroy()
+        talk.destroy()
         Popup.closeAll(this)                                           // or the window leaks, in the old colours
         if (::nowApp.isInitialized) nowApp.close()
         if (::kbdWatch.isInitialized) kbdWatch.close()
@@ -366,6 +368,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (talk.isOpen()) { talk.close(); return }
         if (managing.back() || irBack() || gamesPointerBack()) return
         if (fullscreen) { setFullscreen(false); return }
         if (about.visibility == View.VISIBLE) about.visibility = View.GONE
@@ -841,6 +844,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             val heard = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             if (heard != null && heard.isNotEmpty()) voice(heard[0])
         }
+    }
+
+    override fun onRequestPermissionsResult(request: Int, permissions: Array<out String>, results: IntArray) {
+        super.onRequestPermissionsResult(request, permissions, results)
+        if (request == 31) talk.permission(results.isNotEmpty() && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED)
     }
 
     // ---------------------------------------------------------------- speaking to the TV

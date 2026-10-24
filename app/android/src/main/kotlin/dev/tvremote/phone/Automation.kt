@@ -126,15 +126,7 @@ internal fun MainActivity.voice(sentence: String) {
     val tv = tv
     val ip = host
     if (appNamesFor != ip && ip != null && tv != null && tv.ready() && Voice.wantsApp(sentence)) {
-        Thread {                                                      // "open <app>": the names of this TV's apps, asked once per TV
-            val link = AdbLink(filesDir, ip)
-            val names = try { RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }).names() } catch (e: Exception) { emptyMap() } finally { link.close() }
-            ui.post {
-                if (isFinishing || host != ip) return@post
-                appNames = names; appNamesFor = ip
-                Voice.parse(sentence, names, scenes)?.let { doVoice(it) } ?: ask(sentence)
-            }
-        }.start()
+        warmAppNames { Voice.parse(sentence, appNames, scenes)?.let { doVoice(it) } ?: ask(sentence) }   // "open <app>": the names of this TV's apps, asked once per TV
         return
     }
     ask(sentence)
