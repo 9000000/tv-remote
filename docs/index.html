@@ -323,26 +323,42 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <section class="h-setup" id="install">
   <div class="wrap">
     <h2 class="reveal"><span class="vi">Cài trong vài phút</span><span class="en">Set up in minutes</span></h2>
-    <p class="lead reveal"><span class="vi">Bốn bước, không cần tài khoản.</span><span class="en">Four steps, no account.</span></p>
-    <ol class="steps4 reveal">
+    <p class="lead reveal"><span class="vi">Không cần tài khoản. Bắt đầu từ máy bạn đang có.</span><span class="en">No account. Start from the device you have.</span></p>
+    <div class="paths reveal" role="tablist">
+      <button class="path" role="tab" data-path="app" aria-selected="true"><b><span class="vi">Điện thoại Android · máy tính</span><span class="en">Android phone · computer</span></b><small><span class="vi">Dễ nhất: chưa cần cài gì lên TV</span><span class="en">Easiest: nothing to install on the TV yet</span></small></button>
+      <button class="path" role="tab" data-path="web" aria-selected="false"><b><span class="vi">iPhone · iPad · trình duyệt</span><span class="en">iPhone · iPad · a browser</span></b><small><span class="vi">Cài TV Setup lên TV trước</span><span class="en">Put TV Setup on the TV first</span></small></button>
+    </div>
+    <ol class="steps4" role="tabpanel" data-for="app">
+      <li>
+        <h3><span class="vi">Tải app</span><span class="en">Get the app</span></h3>
+        <p><span class="vi">Android, Mac, Windows hay Linux: nút tải ngay bên dưới.</span><span class="en">Android, Mac, Windows or Linux: the download buttons are just below.</span></p>
+        <div class="th emo" aria-hidden="true">📲</div>
+      </li>
+      <li>
+        <h3><span class="vi">Chọn TV, gõ mã</span><span class="en">Pick the TV, type the code</span></h3>
+        <p><span class="vi">App tự tìm TV cùng Wi-Fi. TV hiện một mã, gõ vào app: bấm phím được ngay.</span><span class="en">The app finds the TV on your Wi-Fi. The TV shows a code; type it in the app and the keys work.</span></p>
+        <div class="th emo" aria-hidden="true">🔢</div>
+      </li>
+      <li>
+        <h3><span class="vi">Muốn nhiều hơn: bật ADB</span><span class="en">Want more: turn on ADB</span></h3>
+        <p><span class="vi">Hình TV, app, tệp, hẹn giờ: bật Gỡ lỗi ADB trên TV, chọn Luôn cho phép. App tự cài TV Setup, TV Home… khi cần.</span><span class="en">The picture, apps, files, timers: turn on ADB debugging on the TV and choose Always allow. The app installs TV Setup, TV Home… when needed.</span></p>
+        <div class="th"><img data-lang-src="img/phone-remote-LANG-360.webp?v=1024" width="360" height="780" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+      </li>
+    </ol>
+    <ol class="steps4" role="tabpanel" data-for="web" hidden>
       <li>
         <h3><span class="vi">Cài TV Setup lên TV</span><span class="en">Put TV Setup on the TV</span></h3>
-        <p><span class="vi">Mở Downloader trên TV, gõ mã</span><span class="en">Open Downloader on the TV and type</span> <button class="hcode" type="button" data-copy="2397346">2397346</button></p>
+        <p><span class="vi">Cài Downloader từ CH Play trên TV, mở, gõ mã</span><span class="en">Install Downloader from Google Play on the TV, open it and type</span> <button class="hcode" type="button" data-copy="2397346">2397346</button></p>
         <div class="th"><img data-lang-src="img/tvapp-LANG-960.webp?v=1024" width="960" height="540" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
       </li>
       <li>
-        <h3><span class="vi">Tải app cho máy bạn</span><span class="en">Get the app for your device</span></h3>
-        <p><span class="vi">Android, Mac, Windows hay Linux. iPhone thì bỏ qua: dùng trang web của TV.</span><span class="en">Android, Mac, Windows or Linux. On iPhone skip this: use the TV's web page.</span></p>
-        <div class="th"><img data-lang-src="img/phone-remote-LANG-360.webp?v=1024" width="360" height="780" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+        <h3><span class="vi">Quét mã QR trên TV</span><span class="en">Scan the QR code on the TV</span></h3>
+        <p><span class="vi">Mở TV Setup, quét mã QR bằng camera (hoặc gõ địa chỉ TV hiện vào trình duyệt).</span><span class="en">Open TV Setup and scan its QR code with the camera (or type the address it shows into a browser).</span></p>
+        <div class="th emo" aria-hidden="true">📷</div>
       </li>
       <li>
-        <h3><span class="vi">Chọn TV, bấm Cho phép</span><span class="en">Pick the TV, press Allow</span></h3>
-        <p><span class="vi">App tự tìm TV. Khi TV hỏi “Cho phép gỡ lỗi USB?”, chọn Luôn cho phép.</span><span class="en">The app finds the TV. When it asks “Allow USB debugging?”, choose Always allow.</span></p>
-        <div class="th emo" aria-hidden="true">✅</div>
-      </li>
-      <li>
-        <h3><span class="vi">Xong: điều khiển</span><span class="en">Done: control it</span></h3>
-        <p><span class="vi">TV Home, TV Channels, TV Games cài thêm ngay từ app khi bạn muốn.</span><span class="en">Add TV Home, TV Channels and TV Games from the app whenever you like.</span></p>
+        <h3><span class="vi">Gõ mã 6 số</span><span class="en">Type the 6-digit code</span></h3>
+        <p><span class="vi">TV hiện mã ghép, gõ vào trang. Xong: điều khiển từ trình duyệt.</span><span class="en">The TV shows a pairing code; type it on the page. Done: control it from the browser.</span></p>
         <div class="th"><img data-lang-src="img/tvpage-remote-LANG.webp?v=1024" width="400" height="867" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
       </li>
     </ol>

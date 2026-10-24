@@ -26,6 +26,15 @@
     };
   });
 
+  // the setup steps: one path per kind of device (an Android phone or a computer needs nothing on the TV to start)
+  var paths = document.querySelectorAll(".path");
+  paths.forEach(function(b){
+    b.onclick = function(){
+      paths.forEach(function(o){ o.setAttribute("aria-selected", o === b); });
+      document.querySelectorAll(".steps4[data-for]").forEach(function(l){ l.hidden = l.dataset.for !== b.dataset.path; });
+    };
+  });
+
   // fade in on scroll (nothing moves for people who asked for less motion: site.css)
   var rv = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window){
