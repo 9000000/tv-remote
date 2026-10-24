@@ -308,16 +308,10 @@ class MainActivity : Activity() {
     /** The Update tile: update now, automatic updates on or off, and removing this app, kept out of the way here. */
     private fun updateMenu() {
         if (busy) return
-        val items = arrayOf(T("tv_main.update_now"), autoText(), T("tv_main.remove_tv_setup"))
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle("TV Setup " + version())
-            .setItems(items) { _, i ->
-                when (i) {
-                    0 -> if (adb == null) log(T("tv_main.needs_adb_turn_on")) else update()
-                    1 -> { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) }
-                    2 -> askRemove()
-                }
-            }.show()
+        menu("TV Setup " + version(), listOf(
+            TvUi.Item(R.drawable.ic_download, T("tv_main.update_now")) { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else update() },
+            TvUi.Item(R.drawable.ic_refresh, T("tv_main.automatic_updates"), on = AutoUpdate.on(this)) { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) },
+            TvUi.Item(R.drawable.ic_trash, T("tv_main.remove_tv_setup")) { askRemove() }))
     }
 
     private fun update() {
@@ -643,22 +637,18 @@ class MainActivity : Activity() {
     private fun keepText() = if (KeepAdb.on(this)) T("tv_main.turn_back_on_when")
         else T("tv_main.turn_back_on_when_2")
 
+    /** The tiles' menus: icons and a second line, a switch's state at the end (TvUi.menu, the TV apps' one list dialog). */
+    private fun menu(title: String, items: List<TvUi.Item>) { TvUi.menu(this, R.style.TvSheet, title, items, R.drawable.ic_check) }
+
     /** Connection: the TV's ADB again, Developer options and whether TV Setup turns ADB debugging back on (KeepAdb), Tailscale. */
     private fun connectionMenu() {
         if (busy) return
-        val items = arrayOf(T("tv_main.reconnect") + " · " + T("tv_main.the_tv_s_adb"), T("tv_main.open_developer_options"), keepText(),
-            "Tailscale · " + tsStatus, T("tv_main.forget_adb_keys"))
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(T("tv_main.connection"))
-            .setItems(items) { _, i ->
-                when (i) {
-                    0 -> connect()
-                    1 -> devOptions()
-                    2 -> { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) }
-                    3 -> if (adb == null) log(T("tv_main.needs_adb_turn_on")) else tailscale()
-                    4 -> forgetAdbKeys()
-                }
-            }.show()
+        menu(T("tv_main.connection"), listOf(
+            TvUi.Item(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() },
+            TvUi.Item(R.drawable.ic_code, T("tv_main.open_developer_options")) { devOptions() },
+            TvUi.Item(R.drawable.ic_power, T("tv_main.turn_back_on"), on = KeepAdb.on(this)) { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) },
+            TvUi.Item(R.drawable.ic_globe, "Tailscale", tsStatus) { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else tailscale() },
+            TvUi.Item(R.drawable.ic_unlink, T("tv_main.forget_adb_keys")) { forgetAdbKeys() }))
     }
 
     /**
@@ -677,27 +667,17 @@ class MainActivity : Activity() {
     /** Optimize TV: the clean-up and its undo, the home screen to use, the remote buttons the stock launcher answered (KeyFix). */
     private fun optimizeMenu() {
         if (busy) return
-        val items = arrayOf(T("tv_main.optimize_tv") + " · " + T("tv_main.fewer_extra_apps"),
-            T("setup.undo_ok") + " · " + T("tv_main.as_before_optimize"),
-            T("launcher.tile") + " · " + T("launcher.tile_sub"),
-            T("keyfix.tile") + " · " + keysSub(),
-            T("hold.tile") + " · " + T(if (HoldKeys.on(this)) "hold.on" else "hold.off") + "\n" + T("hold.sub"))   // says the remote on the phone / web is the way round
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(T("tv_main.optimize_tv"))
-            .setItems(items) { _, i ->
-                if (i < 3 && adb == null) { log(T("tv_main.needs_adb_turn_on")); return@setItems }
-                when (i) {
-                    0 -> chooseOptimize()
-                    1 -> job { it.undo() }
-                    2 -> chooseLauncher()
-                    3 -> { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) }
-                    4 -> {                                            // HoldKeys: stored as a rule, so the phone and web switch it too
-                        val on = !HoldKeys.on(this)
-                        Rules.change(this, org.json.JSONObject().put("do", "holdkeys").put("on", on))
-                        log(T("hold.tile") + " · " + T(if (on) "hold.on" else "hold.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
-                    }
-                }
-            }.show()
+        fun needsAdb(go: () -> Unit): () -> Unit = { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else go() }
+        menu(T("tv_main.optimize_tv"), listOf(
+            TvUi.Item(R.drawable.ic_sparkle, T("tv_main.optimize_tv"), T("tv_main.fewer_extra_apps"), go = needsAdb { chooseOptimize() }),
+            TvUi.Item(R.drawable.ic_undo, T("setup.undo_ok"), T("tv_main.as_before_optimize"), go = needsAdb { job { it.undo() } }),
+            TvUi.Item(R.drawable.ic_home, T("launcher.tile"), T("launcher.tile_sub"), go = needsAdb { chooseLauncher() }),
+            TvUi.Item(R.drawable.ic_wrench, T("keyfix.tile"), keysSub(), on = KeyFix.wanted(this)) { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) },
+            TvUi.Item(R.drawable.ic_input, T("hold.tile"), T("hold.sub"), on = HoldKeys.on(this)) {   // HoldKeys: stored as a rule, so the phone and web switch it too
+                val on = !HoldKeys.on(this)
+                Rules.change(this, org.json.JSONObject().put("do", "holdkeys").put("on", on))
+                log(T("hold.tile") + " · " + T(if (on) "hold.on" else "hold.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
+            }))
     }
 
     private fun devOptions() {

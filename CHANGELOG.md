@@ -28,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Có PIN hoặc Google Authenticator thì màn hình chính và Quản lý của TV Setup trên TV cũng hỏi mã, trẻ không tự tắt khóa được.
 - Khóa app bằng PIN: nếu Cài đặt TV chưa khóa, tab Tự động gợi ý "Khóa luôn Cài đặt TV" (trẻ có thể vào đó gỡ TV Setup hoặc chỉnh giờ).
 - Màn nhập mã: 6 ô cho mã Google Authenticator, nhập sai báo ngay; mã dự phòng 8 số nhập qua nút "Dùng mã dự phòng".
+- TV Setup: menu Tối ưu, Kết nối, Cập nhật có icon và dòng mô tả; công tắc bật/tắt hiện dấu tick hoặc vòng tròn ở cuối dòng thay cho chữ.
 
 **English**
 - TV Setup: when a device asks to pair but the code screen cannot open (another app is in front), the code still shows as a line on the main screen; the Connection menu has a "Forget all ADB keys" row (asks first, then opens Developer options at the revoke-USB-debugging row, since an app cannot delete the keys itself); TV Home that crashes over and over (3 times in 60 s) opens the TV's Settings so the home app can be changed, instead of relaunching itself.
@@ -51,6 +52,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - With a PIN or Google Authenticator set, TV Setup's own main and Manage screens on the TV ask for the code too, so a child can't turn the lock off there.
 - PIN app lock: when the TV's Settings isn't locked, the Automation tab offers "Lock the TV's Settings too" (a child could uninstall TV Setup there or change the clock).
 - Code screen: 6 dots for the Google Authenticator code, a wrong one says so at once; an 8-digit backup code goes through the "Use a backup code" button.
+- TV Setup: the Optimize, Connection and Update menus have icons and a second line; switches show a check or an empty ring at the end instead of words.
 
 ## 0.21.0 - 2026-10-24
 

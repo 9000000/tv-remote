@@ -1994,6 +1994,8 @@
  "tv_main.busy": "⚠ Đang chạy một việc, đợi xong rồi bấm lại.",
  "tv_main.automatic_updates_on": "Tự cập nhật: Bật",
  "tv_main.automatic_updates_off": "Tự cập nhật: Tắt",
+ "tv_main.automatic_updates": "Tự động cập nhật",
+ "tv_main.turn_back_on": "Tự bật lại ADB khi bị tắt",
  "tv_main.update_now": "Cập nhật ngay",
  "tv_main.remove_tv_setup": "Gỡ TV Setup",
  "tv_main.needs_adb_turn_on": "✗ Cần ADB: bật Gỡ lỗi ADB trước.",

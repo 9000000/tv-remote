@@ -2060,6 +2060,8 @@
  "tv_main.busy": "⚠ One task is running. Wait for it, then try again.",
  "tv_main.automatic_updates_on": "Automatic updates: On",
  "tv_main.automatic_updates_off": "Automatic updates: Off",
+ "tv_main.automatic_updates": "Automatic updates",
+ "tv_main.turn_back_on": "Turn ADB back on when switched off",
  "tv_main.update_now": "Update now",
  "tv_main.remove_tv_setup": "Remove TV Setup",
  "tv_main.needs_adb_turn_on": "✗ Needs ADB: turn on Debugging first.",

@@ -15,4 +15,8 @@
     <color name="tv_ink">#FFE8EAED</color>
     <color name="tv_dim">#FF9AA0A6</color>
     <color name="tv_ring_accent">#FF2F7DF6</color>
+    <!-- TvUi.sheet / TvUi.menu: the box draws its own rounded fill, the window stays clear -->
+    <style name="TvSheet" parent="@android:style/Theme.DeviceDefault.Dialog.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
 </resources>

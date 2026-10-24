@@ -183,6 +183,43 @@ object TvUi {
     /** A line under a sheet's title, in line with it. */
     fun sheetNote(box: LinearLayout, s: String) =
         text(box.context, s, SP_ROW, DIM).apply { setPadding(dp(box.context, 12).toInt(), 0, 0, dp(box.context, 10).toInt()) }.also { box.addView(it) }
+
+    /** One choice of a [menu]: [icon] a drawable id, [sub] a dim line under the words, [on] a switch's state (null: an action). */
+    class Item(val icon: Int, val label: String, val sub: String = "", val on: Boolean? = null, val go: () -> Unit)
+
+    /**
+     * A list of choices in a [sheet], each with its icon and an optional second line; a switch shows its state at the end
+     * ([check] the app's own check icon, or a dim ring for off) instead of "✓" / ": off" in its words. Picking one closes the sheet first.
+     */
+    fun menu(c: Context, theme: Int, title: String, items: List<Item>, check: Int, w: Int = 460): Dialog {
+        val (dlg, box) = sheet(c, theme, w)
+        sheetTitle(box, title)
+        items.forEach { item ->
+            box.addView(LinearLayout(c).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                val p = dp(c, 12).toInt()
+                setPadding(p, dp(c, 10).toInt(), p, dp(c, 10).toInt())
+                background = states(c, Color.TRANSPARENT, dp(c, R_ROW), edge = false)
+                isFocusable = true; isClickable = true
+                setOnClickListener { _ -> dlg.dismiss(); item.go() }
+                addView(ImageView(c).apply { setImageResource(item.icon); imageTintList = ColorStateList.valueOf(ACCENT) },
+                    LinearLayout.LayoutParams(dp(c, 22).toInt(), dp(c, 22).toInt()).apply { rightMargin = dp(c, 14).toInt() })
+                addView(LinearLayout(c).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(text(c, item.label, SP_ROW + 1))
+                    if (item.sub.isNotEmpty()) addView(text(c, item.sub, SP_COUNT, DIM).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END })
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                item.on?.let { on ->
+                    addView(if (on) ImageView(c).apply { setImageResource(check); imageTintList = ColorStateList.valueOf(ACCENT) }
+                        else View(c).apply { background = round(Color.TRANSPARENT, dp(c, 10), dp(c, 2).toInt(), DIM) },
+                        LinearLayout.LayoutParams(dp(c, 20).toInt(), dp(c, 20).toInt()).apply { leftMargin = dp(c, 12).toInt() })
+                }
+            }, LinearLayout.LayoutParams(-1, -2))
+        }
+        dlg.show()
+        box.getChildAt(1)?.requestFocus()
+        return dlg
+    }
 }
 
 /**
