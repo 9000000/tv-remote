@@ -175,7 +175,7 @@ object Picker {
                 if (it.key in hidden) Store.change(a, JSONObject().put("hidden", JSONArray(hidden - it.key)))
                 else Store.change(a, JSONObject().put("hidden", JSONArray(hidden + it.key)).put("dock", JSONArray(Store.list(a, "dock") - it.key)))
             } else if (Target.kind(it.key) == Target.Kind.PIN) {   // a shortcut: pinned = on the grid; press unpins it (like the long-press menu), or pins it again
-                if (it.key in pinnedNow) { it.app?.let { x -> Pins.remove(a, x) }; pinnedNow = pinnedNow - it.key }
+                if (it.key in pinnedNow || it.key in tilesNow) { Pins.off(a, it.key); pinnedNow = pinnedNow - it.key }
                 else if (Pins.add(a, it.key)) pinnedNow = pinnedNow + it.key
                 (a as? HomeActivity)?.pinsRead()
             } else {

@@ -1233,6 +1233,7 @@ class HomeActivity : Activity() {
             home.add(item(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
                 .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
             if (a.grid) home.add(item(R.drawable.ic_trash, R.string.tile_remove) {   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
+                if (Target.isPin(a.pkg)) { Pins.off(this, a.pkg); pinsRead(); return@item }   // its system pin too, or it came back as that
                 fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
                 Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
             })

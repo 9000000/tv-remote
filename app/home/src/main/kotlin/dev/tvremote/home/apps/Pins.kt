@@ -72,6 +72,21 @@ object Pins {
         return try { la(c)!!.pinShortcuts(s.`package`, (keep + s.id).distinct(), Process.myUserHandle()); true } catch (e: Exception) { false }
     }
 
+    /**
+     * [key] off the home screen for good: its system pin and TV Home's own tile ("tiles", dock, order). A shortcut can be both (put on
+     * the grid by the picker, pinned by its app too): taking only the tile off showed the pin again, so "Remove" seemed to do nothing.
+     */
+    fun off(c: Context, key: String) {
+        val s = find(c, key)
+        if (s != null && list(c).any { it.pkg == key }) {
+            val keep = list(c).mapNotNull { it.pin as? ShortcutInfo }.filter { it.`package` == s.`package` && it.id != s.id }.map { it.id }
+            try { la(c)!!.pinShortcuts(s.`package`, keep, Process.myUserHandle()) } catch (e: Exception) {}
+        }
+        order(c, order(c) - key)
+        fun without(k: String) = JSONArray(Store.list(c, k) - key)
+        Store.change(c, JSONObject().put("tiles", without("tiles")).put("dock", without("dock")).put("order", without("order")))
+    }
+
     // ---- every shortcut an app offers (static, dynamic, pinned), for the picker and for a key / the grid that points at one ----
 
     private const val ALL = LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
