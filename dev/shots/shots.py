@@ -279,7 +279,7 @@ DLG = "document.querySelector('dialog[open] .card')"
 MORE = "if (!$('#more') || $('#more').getBoundingClientRect().height < 10) { $('#morebtn').click(); await W(900); }"
 FEATS = {
     "apps":     (840, "apps", "await W(2500);", "$('#appsf').closest('section')", 0),
-    "files":    (480, "files", "await W(2500); $('#places button')?.click(); await W(2500);", "$('#filescard')", 1),
+    "files":    (480, "files", "await W(2500); $('#places button').click(); await W(3000); [...$('#places').closest('section').querySelectorAll('.item')].slice(4).forEach((n) => n.remove());", "$('#places').closest('section')", 1),
     "health":   (480, "health", "await W(4000);", "[...document.querySelectorAll('.card')].find(c => /CPU/.test(c.textContent) && /RAM/.test(c.textContent) && c.getBoundingClientRect().height < 500)", 2),
     "tvset":    (480, "tv", "await W(2500); const t = [...document.querySelectorAll('.card')].find(c => /DNS/.test(c.textContent) && c.getBoundingClientRect().height < 900).closest('section, details'); t.style.cssText = 'padding:16px;background:var(--bg2);border-radius:14px';", "t", 3),
     "welcome":  (480, "auto", "await W(2500);", "$('#welcomecard')", 4),
@@ -299,6 +299,13 @@ FEATS = {
                  " android: '14', disk_free: 18.7e9, disk_total: 30.1e9, ram: 3.9e9, setup: '0.21.0', model: 'Streamer 4K' }, { host: '192.168.1.34', state: 'ready', name: LANG === 'vi' ? 'TV phòng ngủ' : 'Bedroom TV',"
                  " android: '14', disk_free: 18.7e9, disk_total: 30.1e9, ram: 3.9e9, setup: '0.21.0', model: 'Streamer 4K' }] } : real(u, b, q);"
                  " $('#fleet').hidden = false; $('#fleet').open = true; await W(2500);", "$('#fleet')", 2),
+    "photo":    (600, "remote", "await W(500); $('#screenbtn').click(); await W(7000); await drawStart(); await W(1500); const cv = document.createElement('canvas'); cv.width = 1280; cv.height = 720; const g = cv.getContext('2d');"
+                 " g.fillStyle = '#2d7d5b'; g.fillRect(0, 0, 1280, 720); g.fillStyle = '#ffd54a'; g.beginPath(); g.arc(900, 190, 70, 0, 7); g.fill(); g.fillStyle = '#1f5f46'; g.beginPath(); g.moveTo(0, 720); g.lineTo(380, 260); g.lineTo(760, 720); g.fill();"
+                 " await picPlace(cv.toDataURL('image/png'), 3000); await W(1500);", "$('#screenbox').closest('.card')", 0),
+    "gamepad":  (480, "remote", "await W(500); const tt = () => { toast(T('gamepad.connected')); $('#toast').style.cssText = 'inset:auto auto auto 50%;top:270px'; }; tt(); setInterval(tt, 400); await W(300);",
+                 "{ scrollIntoView() {}, getBoundingClientRect() { const a = document.querySelector('[role=tablist]').getBoundingClientRect(); return new DOMRect(a.x, a.y, a.width, 640); } }", 4),
+    "keymap":   (480, "tv", "await W(500); $('#homeopen').click(); await W(2500); [...document.querySelectorAll('dialog[open] button, dialog[open] summary, dialog[open] .item')].find((b) => /Phím|keys/i.test(b.innerText)).click(); await W(2000);",
+                 DLG, 6),
     "hook":     (480, "", "$('#aboutbtn').click(); await W(1500); $('#hookpick [data-v=on]').click(); await W(1500); $('#hookgroup').style.cssText = 'padding:16px;background:var(--bg2);border-radius:14px'; await W(300);", "$('#hookgroup')", 5),
 }
 OPEN = """const ob = [...document.querySelectorAll('#tvlist button, #savedcard button')].find(b => /^\\s*(Mở|Connect|Open)\\s*$/.test(b.textContent)); if (ob) ob.click(); await W(8000);"""
@@ -320,9 +327,10 @@ def shot_feat(only=()):
                 opened = "" if tab == "pick" else OPEN
                 try:
                     r = c.js("(async () => { wantPick = %s; await W(3000); %s %s %s scrollTo(0, 0); await W(500); const e = %s; if (!e) throw new Error('no card'); e.scrollIntoView({ block: 'center' }); await W(1500);"
-                             " const r = e.getBoundingClientRect(); return [r.x + scrollX, r.y + scrollY, r.width, Math.min(r.height, 600)] })()"
+                             " window.__e = e; return 1 })()"
                              % ("true" if tab == "pick" else "false", opened, tabjs, setup, card))
                     c.js(RENAME % json.dumps(FEAT_NAMES[lang])); time.sleep(0.5)
+                    r = c.js("(() => { const r = window.__e.getBoundingClientRect(); return [r.x + scrollX, r.y + scrollY, r.width, Math.min(r.height, 600)] })()")
                     shot = c.call("Page.captureScreenshot", clip=dict(x=r[0] + 1, y=r[1] + 1, width=r[2] - 2, height=r[3] - 2, scale=2))
                     png = os.path.join(TMP, f"f{time.time_ns()}.png")
                     open(png, "wb").write(base64.b64decode(shot["data"]))
