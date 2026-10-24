@@ -395,3 +395,18 @@ once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.
 - **Games search field:** a plain `EditText`, so Android's `focusSearch(RIGHT)` picked the grid's wide tile whose far edge is past the field's; `nextFocusRightId = itself`. (`TvField` in tvui has the same `focusSearch` path; Channels' search is not checked, left alone.)
 - **Seen and left, with why:** Setup's system AlertDialogs (Optimize / Connection / Update) are Known drift #4; the selected filter chip being near-white is the documented chip look (§4); "Or choose an .apk file from this computer" and "drop them here" show on the TV's own Manage screen too (the file chooser exists there, the words are the computer's); web games' own title sits 30px from the top (docs/games/web, not in this pass).
 - **ADB on the emulator:** TV Setup connects to 127.0.0.1:5555, so `adb -s <emu> tcpip 5555` is needed; the "Allow USB debugging?" asked with fingerprint CE:0F:40:D4:DD:68:E4:E5:A8:7A:9E:48:46:2D:34:D6, computed from `files/adbkey.x509` of TV Setup (MD5 of adb's public key blob) = the asking key, then allowed.
+
+## TV Channels: VTV from VTVgo's free player (`Providers.Vtvgo`, `"vtvgo"` in `docs/channels/providers.json`)
+
+- Why (measured 2026-10-24): all 12 VTV URLs in iptv-org's vn.m3u were dead. The `vips-livecdn.fptplay.net` links return 403 INVALID_TOKEN, and `dethich.pw` does not answer. VieON carries no VTV channel. TV360 only gives a guide: its streams need a browser token.
+- Other apps were checked: the TV apps in the user's `ximao_tv` emulator. QuanTV reads a GitHub m3u with the same dead FPT links plus TV360 `bpk-token` URLs, which return 403. HongTV uses `livesct.vtvprime.vn` DASH, which has DRM. Others use `fptplay53.net` restreams, which are unofficial. None of these is used: no DRM keys, no restreams.
+- VTVgo (vtvgo.vn) plays VTV free without an account, from its own API:
+  - The channel list: `display/v21.0/channels/details?channelIDs=…`. The ids are listed in the JSON. `mustLogin` channels are left out.
+  - The source: a POST of `live-channel/v21.0/playback/source` with `{"channelId","platform":"webPC"}`. It answers with HLS sources, about 4 h signed. Only `isVip` 0 and `drmTypeID` "none" are kept.
+  - It is used exactly as the vtvgo.vn page uses it.
+- Each answer gives 2–4 servers. On 2026-10-24, one (`vtvgolive-ssaimh`) answered 404 or timed out, so `play` checks each master playlist and takes the first that answers.
+- Result: VTV2–VTV10, VTV5 TNB and VTV5 TN played on 2–4 servers each, with segments of 200 KB–1.2 MB. They were played on the FPT box from both the category and a saved group. VTV1 also stays on iptv-org.
+- `"first": true` puts VTVgo ahead of iptv-org's stream of the same channel.
+- Other ids found and not added yet: QPVN 103, ANTV 89, Hà Nội 1 111, Hà Nội 2 17, about 55 local stations (117–255).
+- Saved channels (favourites, groups) keep the streams they had when saved. `BrowseActivity.live` puts the country's current streams of the same id first, so a provider added later reaches them too. Before this, a saved "VTV" group stayed greyed out with only the dead FPT links.
+

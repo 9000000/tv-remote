@@ -15,7 +15,7 @@ class ProvidersTest {
         val list = File(docs, "providers.json").readBytes()
         assertTrue(Providers.verified(list, File(docs, "providers.json.sig").readText()))
         assertFalse(Providers.verified(list + ' '.code.toByte(), File(docs, "providers.json.sig").readText()))   // one byte more: refused
-        assertEquals(listOf("tv360", "vieon"), Providers.parse(String(list)).map { it.id })
+        assertEquals(listOf("tv360", "vieon", "vtvgo"), Providers.parse(String(list)).map { it.id })
     }
 
     @Test fun offAndUnknownKindsAreLeftOut() {
@@ -52,6 +52,27 @@ class ProvidersTest {
         assertEquals("https://l/1.png", l[0].logo)
         assertEquals("Music", l[1].group)
         assertNull(Vieon.parseList("oops", p))
+    }
+
+    @Test fun vtvgoList() {
+        val v = Providers.parse("""{"v":1,"providers":[{"id":"vtvgo","kind":"vtvgo","country":"vn","ids":"2,13,9"}]}""")[0]
+        val l = Vtvgo.parseList("""{"data":{"13":{"id":"13","name":"VTV6","logo":"https://l/6.webp","mustLogin":false},
+            "2":{"id":"2","name":"VTV2","logo":"https://l/2.webp"},"9":{"id":"9","name":"K+","mustLogin":true}}}""", v)!!
+        assertEquals(listOf("VTV2", "VTV6"), l.map { it.name })       // the list's order; a channel that needs an account left out
+        assertEquals("vtvgo:13", l[1].url)
+        assertEquals("vn", l[1].country)
+        assertNull(Vtvgo.parseList("oops", v))
+    }
+
+    @Test fun vtvgoPlay() {
+        val now = 1_792_600_000_000L
+        fun src(drm: String, u: String) = """{"drmTypeID":"$drm","drmInfo":{"expire":14410},"manifestType":"hls","sources":[{"url":"$u"}]}"""
+        val (urls, until) = Vtvgo.parsePlay("""{"data":{"sourceModes":[{"id":"default","isVip":0,"multiSource":[${src("none", "https://a/s/1/master.m3u8")},
+            ${src("widevine", "https://b/x.mpd")},${src("none", "https://c/s/1/playlist.m3u8")}]},{"id":"1080p","isVip":1}]}}""", now)!!
+        assertEquals(listOf("https://a/s/1/master.m3u8", "https://c/s/1/playlist.m3u8"), urls)   // DRM sources are not ours to play
+        assertEquals(now + 14410_000L - 30 * 60_000L, until)
+        assertNull(Vtvgo.parsePlay("""{"data":{"sourceModes":[{"isVip":1,"multiSource":[${src("none", "https://a/v.m3u8")}]}]}}""", now))   // VIP only
+        assertNull(Vtvgo.parsePlay("""{"error":{"code":"BAD_REQUEST"}}""", now))
     }
 
     @Test fun vieonPlay() {

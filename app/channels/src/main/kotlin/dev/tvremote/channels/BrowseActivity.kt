@@ -173,12 +173,17 @@ class BrowseActivity : Activity() {
     private fun homeRows(): List<Shelves.Row> {
         val res = catRes ?: return emptyList()
         val out = ArrayList<Shelves.Row>()
-        Store.favourites(this).byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("fav", getString(R.string.favourites), it, R.drawable.ic_star)) }
-        for (g in Store.groups(this)) g.channels.byChannel().takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("g:${g.id}", g.name, it, R.drawable.ic_folder)) }
+        live(Store.favourites(this).byChannel()).takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("fav", getString(R.string.favourites), it, R.drawable.ic_star)) }
+        for (g in Store.groups(this)) live(g.channels.byChannel()).takeIf { it.isNotEmpty() }?.let { out.add(Shelves.Row("g:${g.id}", g.name, it, R.drawable.ic_folder)) }
         val lang = Lang.code()
         res.sections.forEach { out.add(Shelves.Row("c:${it.cat.id}", it.cat.title(lang), it.items)) }
         if (res.others.isNotEmpty()) out.add(Shelves.Row("other", getString(R.string.others), res.others))
         return out
+    }
+    /** Saved channels keep the streams they had when saved; the country's list now may have more (a provider added later): those first. */
+    private fun live(saved: List<List<Channel>>): List<List<Channel>> {
+        val now = all.associateBy { it.first().id }
+        return saved.map { s -> now[s.first().id]?.let { n -> n + s.filter { x -> n.none { it.url == x.url } } } ?: s }
     }
     private fun refreshHome() { if (homeShown()) shelves.set(homeRows()) }
 
@@ -378,7 +383,7 @@ class BrowseActivity : Activity() {
                     else -> emptyList()
                 }
             }
-            gid != null -> Store.channels(this, gid).byChannel()
+            gid != null -> live(Store.channels(this, gid).byChannel())
             pl != null -> plData[pl]?.channels?.byChannel().orEmpty()
             group == ALL -> all
             else -> all.filter { it.first().group == group }

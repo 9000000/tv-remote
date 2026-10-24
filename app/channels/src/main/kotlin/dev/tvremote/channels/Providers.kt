@@ -47,7 +47,7 @@ object Providers {
     }
     class Played(val url: String, val until: Long)
 
-    private val KINDS: Map<String, Kind> = mapOf("vieon" to Vieon, "tv360" to Tv360)
+    private val KINDS: Map<String, Kind> = mapOf("vieon" to Vieon, "tv360" to Tv360, "vtvgo" to Vtvgo)
 
     fun kind(p: Provider): Kind? = KINDS[p.kind]
 
@@ -159,14 +159,14 @@ object Providers {
         (0 until a.length()).map { a.getJSONObject(it) }.map { Channel(it.getString("id"), it.getString("name"), it.optString("logo"), it.optString("group"), it.getString("url"), it.optString("q"), guide = it.optString("g")) }
     } catch (e: org.json.JSONException) { emptyList() }
 
-    /** GET, or POST [form] when given; the body on 2xx, null otherwise. */
-    fun http(url: String, headers: Map<String, String>, form: String?): String? {
+    /** GET, or POST [form] (of [type]) when given; the body on 2xx, null otherwise. */
+    fun http(url: String, headers: Map<String, String>, form: String?, type: String = "application/x-www-form-urlencoded"): String? {
         val k = URL(url).openConnection() as HttpURLConnection
         k.connectTimeout = 8000; k.readTimeout = 12000
         headers.forEach { (n, v) -> k.setRequestProperty(n, v) }
         if (form != null) {
             k.requestMethod = "POST"; k.doOutput = true
-            k.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+            k.setRequestProperty("Content-Type", type)
             k.outputStream.use { it.write(form.toByteArray()) }
         }
         return try { if (k.responseCode in 200..299) k.inputStream.bufferedReader().readText() else null } finally { k.disconnect() }
@@ -237,6 +237,46 @@ object Vieon : Providers.Kind {
             val expiry = Regex("/[0-9a-f]{32}/(\\d{13})/").find(url)?.groupValues?.get(1)?.toLong()
             Providers.Played(url, if (expiry == null) now + 3600_000L else maxOf(now, minOf(expiry - 3600_000L, now + 6 * 3600_000L)))
         }
+    } catch (e: org.json.JSONException) { null }
+}
+
+/**
+ * VTVgo (vtvgo.vn), VTV's own free player: the same calls its web page makes, without an account. The channels are the ids the
+ * list names ("ids"), their names and logos asked in one call (`{data: {"<id>": {...}}}`; "mustLogin" ones left out). Playing
+ * asks the channel's sources (a JSON POST): plain HLS (drmTypeID "none") on two to four servers, signed for about 4 hours
+ * ("expire", seconds). One server of them has answered 404 while the others played (2026-10-24): the first that answers is played.
+ */
+object Vtvgo : Providers.Kind {
+    override fun list(p: Providers.Provider, get: (String) -> String?): List<Channel> =
+        get(p.o.getString("list").replace("{ids}", p.o.optString("ids")))?.let { parseList(it, p) }.orEmpty()
+
+    fun parseList(text: String, p: Providers.Provider): List<Channel>? = try {
+        val d = JSONObject(text).optJSONObject("data")
+        val order = p.o.optString("ids").split(',').map { it.trim() }
+        d?.let { o -> order.mapNotNull { o.optJSONObject(it) } }?.mapNotNull { o ->
+            val id = o.optString("id"); val name = o.optString("name").trim()
+            if (id.isEmpty() || name.isEmpty() || o.optBoolean("mustLogin")) null
+            else Channel("vtvgo$id.${p.country}@${p.id}", name, o.optString("logo"), "General", "${p.id}:$id", "")
+        }
+    } catch (e: org.json.JSONException) { null }
+
+    override fun play(p: Providers.Provider, key: String): Providers.Played? {
+        val text = Providers.http(p.o.getString("play"), p.headers, p.o.getString("body").replace("{id}", key), "application/json") ?: return null
+        val (urls, until) = parsePlay(text, System.currentTimeMillis()) ?: return null
+        val url = urls.firstOrNull { u -> try { Providers.http(u, p.headers, null) != null } catch (e: IOException) { false } } ?: return null
+        return Providers.Played(url, until)
+    }
+
+    /** The plain HLS sources of the free mode, in its order, and when to ask again (half an hour before they run out). */
+    fun parsePlay(text: String, now: Long): Pair<List<String>, Long>? = try {
+        val modes = JSONObject(text).optJSONObject("data")?.optJSONArray("sourceModes") ?: org.json.JSONArray()
+        val free = (0 until modes.length()).mapNotNull { modes.optJSONObject(it) }.firstOrNull { it.optInt("isVip") == 0 }
+        val ms = free?.optJSONArray("multiSource") ?: org.json.JSONArray()
+        val ok = (0 until ms.length()).mapNotNull { ms.optJSONObject(it) }
+            .filter { it.optString("drmTypeID") == "none" && it.optString("manifestType") == "hls" }
+        val urls = ok.mapNotNull { it.optJSONArray("sources")?.optJSONObject(0)?.optString("url")?.takeIf { u -> u.startsWith("https://") } }
+        val expire = ok.mapNotNull { it.optJSONObject("drmInfo")?.optLong("expire")?.takeIf { s -> s > 0 } }.minOrNull() ?: 3600L
+        if (urls.isEmpty()) null else urls to now + (expire * 1000 - 30 * 60_000L).coerceIn(10 * 60_000L, 6 * 3600_000L)
     } catch (e: org.json.JSONException) { null }
 }
 

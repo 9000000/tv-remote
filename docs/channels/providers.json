@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-21",
+  "updated": "2026-10-24",
   "providers": [
     {
       "id": "tv360",
@@ -186,6 +186,23 @@
         "tra-vinh-1": "Tra Vinh TV"
       },
       "guide": "https://api.vieon.vn/backend/cm/v5/livetv/epg?livetv_id={id}"
+    },
+    {
+      "id": "vtvgo",
+      "kind": "vtvgo",
+      "name": "VTVgo",
+      "on": true,
+      "country": "vn",
+      "first": true,
+      "headers": {
+        "Origin": "https://vtvgo.vn",
+        "Referer": "https://vtvgo.vn/",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+      },
+      "list": "https://api.vtvdigital.org/display/v21.0/channels/details?channelIDs={ids}",
+      "ids": "1,2,3,4,5,13,27,36,39,6,7,163",
+      "play": "https://api.vtvdigital.org/live-channel/v21.0/playback/source",
+      "body": "{\"channelId\":\"{id}\",\"platform\":\"webPC\"}"
     }
   ]
 }

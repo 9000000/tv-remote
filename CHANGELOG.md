@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Channels: VTV2 → VTV10, VTV5 Tây Nam Bộ, VTV5 Tây Nguyên hết bị mờ. Nguồn mới là trình phát miễn phí của VTVgo (của chính VTV, không cần tài khoản), có 2–4 máy chủ cho mỗi kênh; máy chủ nào không trả lời thì app tự dùng máy khác. Trước đây cả 12 link VTV của iptv-org đều chết: link FPT báo hết hạn token, máy chủ còn lại không trả lời.
+- TV Channels: kênh trong Yêu thích và nhóm tự tạo giờ có thêm các nguồn mới của chính kênh đó. Trước đây kênh chỉ giữ những link có lúc bấm lưu, nên nhóm "VTV" đã lưu vẫn mờ dù danh mục VTV đã có nguồn sống.
+
+**English**
+- TV Channels: VTV2 → VTV10, VTV5 Tây Nam Bộ and VTV5 Tây Nguyên are no longer greyed out. The new source is VTVgo's free player (VTV's own, no account needed), with 2–4 servers per channel; when a server does not answer, the next one is used. Before this, all 12 of iptv-org's VTV links were dead: the FPT links answered with an expired token and the other server did not answer at all.
+- TV Channels: channels in Favourites and in your own groups now also get that channel's newer sources. They used to keep only the links they had when saved, so a saved "VTV" group stayed greyed out while the VTV category had live sources.
+
 ## 0.21.0 - 2026-10-24
 
 Web 0.21.0 · app điện thoại 0.21.0 · app TV 0.21.0 · TV Home 0.8.0 · TV Channels 0.5.0 · TV Games 0.5.0

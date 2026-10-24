@@ -14,7 +14,7 @@ import json, os, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LIST = os.path.join(ROOT, "docs", "channels", "providers.json")
 KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/launchers.key"))
-KINDS = {"vieon": ["list", "play", "form"], "tv360": ["guide", "channels"]}                         # what each kind's code reads (Providers.kt)
+KINDS = {"vieon": ["list", "play", "form"], "tv360": ["guide", "channels"], "vtvgo": ["list", "ids", "play", "body"]} # what each kind's code reads (Providers.kt)
 
 
 def fail(m):
