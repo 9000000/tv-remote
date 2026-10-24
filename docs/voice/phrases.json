@@ -1,0 +1,99 @@
+{
+  "v": 1,
+  "rev": 1,
+  "about": "Words of the spoken commands (Voice.kt, js/voice.js). What each KEY / verb DOES is code; the words are here. Accents and case do not matter (folded), 'tivi' and 'ti vi' read as 'tv'. Signed: dev/sign/sign_voice.py.",
+  "never_close": ["dev.tvremote.setup", "dev.tvremote.setup.keys", "dev.tvremote.home", "dev.tvremote.phone", "android", "com.android.systemui", "com.android.settings", "com.android.tv.settings", "com.android.vending", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx", "com.google.android.leanbacklauncher"],
+  "apps": [
+    { "label": "YouTube", "pkgs": ["com.google.android.youtube.tv"], "names": ["youtube", "you tube", "du tup", "diu tup", "youtube tv"] },
+    { "label": "Netflix", "pkgs": ["com.netflix.ninja"], "names": ["netflix", "net flix"] },
+    { "label": "Spotify", "pkgs": ["com.spotify.tv.android"], "names": ["spotify", "spo ti phai"] },
+    { "label": "Prime Video", "pkgs": ["com.amazon.amazonvideo.livingroom"], "names": ["prime video", "amazon prime", "amazon prime video", "prime"] },
+    { "label": "Disney+", "pkgs": ["com.disney.disneyplus"], "names": ["disney", "disney plus", "disney+"] },
+    { "label": "Apple TV", "pkgs": ["com.apple.atve.androidtv.appletv"], "names": ["apple tv", "app le tv"] },
+    { "label": "Google Play Store", "pkgs": ["com.android.vending"], "names": ["cua hang ung dung", "play store", "google play", "cho ung dung", "kho ung dung"] },
+    { "label": "Chrome", "pkgs": ["com.android.chrome"], "names": ["chrome", "trinh duyet", "trinh duyet web", "browser", "web browser", "internet"] },
+    { "label": "FPT Play", "pkgs": [], "names": ["fpt play", "fpt", "fpt plei", "fptplay"] },
+    { "label": "VieON", "pkgs": [], "names": ["vieon", "vie on", "vi on", "vieon tv"] },
+    { "label": "TV360", "pkgs": [], "names": ["tv360", "tv 360", "tv ba sau khong", "tv ba tram sau muoi"] },
+    { "label": "Zing TV", "pkgs": [], "names": ["zing tv", "zing"] },
+    { "label": "MyTV", "pkgs": [], "names": ["mytv", "my tv"] },
+    { "label": "Clip TV", "pkgs": [], "names": ["clip tv"] },
+    { "label": "TV Games", "pkgs": ["dev.tvremote.games"], "names": ["tv games", "tv game", "tv gem", "tro choi", "tro choi tv", "game tv", "choi game", "game", "games", "may choi game"] },
+    { "label": "TV Channels", "pkgs": ["dev.tvremote.channels"], "names": ["tv channels", "tv channel", "kenh tv", "tv kenh", "truyen hinh", "iptv", "kenh truyen hinh", "danh sach kenh"] },
+    { "label": "TV Home", "pkgs": ["dev.tvremote.home"], "names": ["tv home", "tv hom", "man hinh tv home"] },
+    { "label": "TV Setup", "pkgs": ["dev.tvremote.setup"], "names": ["tv setup", "tv set up", "cai dat tv setup"] }
+  ],
+  "channel_names": ["vtv ?\\d{1,2}", "vtv cab ?\\d*", "htv ?\\d{1,2}", "htv (?:the thao|phim|co may|key)", "vtc ?\\d{1,2}", "thvl ?\\d", "antv", "qpvn", "hbo", "hbo family", "cinemax", "fox movies", "star movies", "axn", "disney channel", "cartoon network", "cnn", "bbc", "bbc news", "discovery", "national geographic", "nat geo", "animal planet", "espn", "fox sports", "bein sports", "mtv", "fashion tv"],
+  "lang": {
+    "vi": {
+      "fillers": ["giup toi", "giup minh", "giup", "cho toi", "cho minh", "toi muon", "minh muon", "xin", "hay", "di", "nhe", "nha", "a", "oi", "voi", "dum", "ho", "ho toi", "ho minh", "nao", "luon", "ngay", "tivi oi", "tv oi", "google oi", "alo"],
+      "keys": {
+        "MUTE": ["tat tieng", "bat tieng", "im lang", "im di", "khong tieng", "het tieng", "tat am"],
+        "PLAY_PAUSE": ["tam dung", "dung lai", "dung", "phat", "phat tiep", "tiep tuc", "choi tiep", "phat lai", "bat dau phat"],
+        "HOME": ["ve man hinh chinh", "ra man hinh chinh", "man hinh chinh", "ve trang chu", "ra trang chu", "trang chu", "ve nha", "thoat ra man hinh chinh", "thoat ra ngoai", "ra ngoai"],
+        "BACK": ["quay lai", "tro lai", "lui lai", "lui", "thoat", "ve truoc"],
+        "NEXT": ["bai tiep", "bai sau", "bai ke tiep", "tiep theo", "qua bai", "chuyen bai", "tap tiep", "tap sau", "toi"],
+        "PREV": ["bai truoc", "bai truoc do", "truoc do", "tap truoc", "lui bai"],
+        "CH_UP": ["kenh tiep", "kenh tiep theo", "kenh sau", "chuyen kenh", "doi kenh", "kenh ke tiep"],
+        "CH_DOWN": ["kenh truoc", "kenh truoc do", "kenh lui"],
+        "SLEEP": ["tat tv", "tat may", "tat nguon", "tat man hinh", "cho tv ngu", "tv ngu", "tat luon tv", "tat tv di ngu"],
+        "WAKE": ["bat tv", "mo tv", "bat may", "bat nguon", "bat man hinh", "danh thuc tv", "tv day"],
+        "SETTINGS": ["cai dat", "mo cai dat", "vao cai dat", "cai dat he thong", "mo cai dat he thong", "setting", "mo setting"],
+        "OK": ["ok", "chon", "dong y", "xac nhan", "xac nhan di", "vao", "enter"],
+        "UP": ["len", "di len", "len tren", "huong len", "ben tren"],
+        "DOWN": ["xuong", "di xuong", "xuong duoi", "huong xuong", "ben duoi"],
+        "LEFT": ["trai", "sang trai", "qua trai", "ben trai", "di sang trai"],
+        "RIGHT": ["phai", "sang phai", "qua phai", "ben phai", "di sang phai"],
+        "MENU": ["menu", "thuc don", "mo menu"]
+      },
+      "volume": {
+        "up": ["tang am luong", "tang tieng", "tang volume", "tang to", "to len", "to hon", "to them", "lon len", "lon hon", "am luong len", "mo to", "nghe khong ro", "tieng to len"],
+        "down": ["giam am luong", "giam tieng", "giam volume", "giam nho", "nho lai", "nho hon", "nho xuong", "nho bot", "be lai", "be bot", "am luong xuong", "nho tieng", "tieng nho lai", "nhe tieng"]
+      },
+      "timer": {
+        "set": ["hen gio tat tv", "hen gio tat", "hen gio", "tat tv sau", "tat sau", "tat may sau", "tat tv trong", "tv tat sau", "ngu sau"],
+        "cancel": ["huy hen gio", "bo hen gio", "xoa hen gio", "tat hen gio", "dung hen gio", "khong hen gio nua"],
+        "minutes": ["phut", "p"],
+        "hours": ["gio", "tieng"]
+      },
+      "open": { "verbs": ["mo", "bat", "vao", "chay", "xem", "khoi dong", "mo len", "cho toi vao", "den"], "noise": ["ung dung", "app", "ung dung cho", "chuong trinh"] },
+      "close": { "verbs": ["tat", "dong", "thoat", "thoat khoi", "tat di", "dung", "ket thuc", "dung ung dung", "tat ung dung", "dong ung dung", "thoat ung dung", "tat app", "dong app"] },
+      "channel": { "words": ["kenh"], "verbs": ["mo", "xem", "chuyen", "bat", "chuyen sang", "chuyen qua", "chuyen den", "vao", "doi sang"], "tune": ["chuyen sang", "chuyen den"] }
+    },
+    "en": {
+      "fillers": ["please", "can you", "could you", "would you", "will you", "for me", "now", "hey", "ok", "okay", "just", "the"],
+      "keys": {
+        "MUTE": ["mute", "unmute", "silence", "mute it", "mute the tv", "unmute the tv", "be quiet", "quiet"],
+        "PLAY_PAUSE": ["pause", "play", "resume", "stop", "pause it", "play it", "continue", "unpause", "stop playing"],
+        "HOME": ["home", "go home", "go to home", "home screen", "go to the home screen", "back to home", "take me home", "main screen", "launcher"],
+        "BACK": ["back", "go back", "previous screen", "return"],
+        "NEXT": ["next", "next song", "next track", "next episode", "skip", "skip it"],
+        "PREV": ["previous", "previous song", "previous track", "previous episode", "go previous"],
+        "CH_UP": ["next channel", "channel up", "channel next", "change channel"],
+        "CH_DOWN": ["previous channel", "channel down", "last channel"],
+        "SLEEP": ["turn off tv", "turn off", "turn off the tv", "tv off", "power off", "shut down", "switch off", "switch off the tv", "go to sleep", "sleep"],
+        "WAKE": ["turn on tv", "turn on", "turn on the tv", "tv on", "power on", "wake up", "wake tv", "switch on", "switch on the tv"],
+        "SETTINGS": ["settings", "open settings", "go to settings", "show settings", "system settings"],
+        "OK": ["select", "enter", "confirm", "press ok", "yes", "ok"],
+        "UP": ["up", "go up", "move up"],
+        "DOWN": ["down", "go down", "move down"],
+        "LEFT": ["left", "go left", "move left"],
+        "RIGHT": ["right", "go right", "move right"],
+        "MENU": ["menu", "open menu", "show menu"]
+      },
+      "volume": {
+        "up": ["volume up", "turn up", "turn it up", "louder", "increase volume", "raise volume", "turn up the volume", "make it louder", "up volume"],
+        "down": ["volume down", "turn down", "turn it down", "quieter", "lower", "decrease volume", "lower volume", "reduce volume", "turn down the volume", "make it quieter", "softer"]
+      },
+      "timer": {
+        "set": ["sleep in", "turn off in", "turn off tv in", "turn off the tv in", "sleep timer", "set sleep timer", "set a sleep timer", "set timer", "sleep timer for", "shut down in", "power off in"],
+        "cancel": ["cancel timer", "cancel the timer", "cancel sleep timer", "cancel the sleep timer", "stop timer", "remove timer", "clear timer", "no timer"],
+        "minutes": ["minutes", "minute", "mins", "min", "m"],
+        "hours": ["hours", "hour", "hrs", "hr", "h"]
+      },
+      "open": { "verbs": ["open", "launch", "start", "play", "run", "go to", "show", "show me", "put on", "watch", "switch to", "take me to"], "noise": ["the app", "app", "application", "the"] },
+      "close": { "verbs": ["close", "quit", "exit", "kill", "stop", "turn off", "shut", "shut down", "force stop", "close the app", "quit the app"] },
+      "channel": { "words": ["channel"], "verbs": ["open", "watch", "go to", "switch to", "change to", "tune to", "put on", "show"], "tune": ["tune to", "switch to", "change to"] }
+    }
+  }
+}

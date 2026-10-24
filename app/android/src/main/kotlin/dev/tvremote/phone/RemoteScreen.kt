@@ -287,11 +287,8 @@ internal fun MainActivity.buildRemote() {
     }
     first.addView(power, cell(58, false))
     val mic = icon("@mic", T("remote.speak"), BTN)
-    mic.setOnClickListener { speak() }                         // keys-only too: keys, apps and scenes still work (Automation.kt)
-    mic.setOnLongClickListener {                                  // the TV's own Assistant screen
-        tv?.let { if (it.ready()) it.press(219) }
-        true
-    }
+    mic.setOnClickListener { micTap() }                         // keys-only too: keys, apps and scenes still work (Automation.kt)
+    mic.setOnLongClickListener { micMenu(); true }                // the other way to talk, and the TV's own Assistant screen
     first.addView(mic, cell(58, true))
     // The typing box and the "Hỏi TV" box fold out under this row, as the extra keys do: the arrows stay close (the web's ⌨️)
     val kbdBtn = icon("@keyboard", T("rkey.keyboard"), BTN)

@@ -44,8 +44,6 @@
   },
   "menus": {
     "tools": [
-      { "id": "tools-talk", "icon": "mic", "t": "rkey.talk", "sub": "rkey.talk_sub", "do": "talk", "cores": ["phone"],
-        "why": "hold-to-talk with the phone's SpeechRecognizer and a live preview (Talk.kt); the web page has no such flow yet, the old mic button stays as it was" },
       { "id": "tools-keys", "icon": "tv", "t": "rkey.tools_keys", "sub": "rkey.tools_keys_sub", "do": "menu", "arg": "tvkeys" },
       { "id": "tools-share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
       { "id": "tools-notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },

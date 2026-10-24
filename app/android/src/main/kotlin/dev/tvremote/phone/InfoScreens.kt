@@ -59,6 +59,16 @@ internal fun MainActivity.buildSettings(): View {
     }
     box.addView(modes, gap(6))
 
+    box.addView(head(T("talk.setting_head")), gap(18))
+    val talkBox = android.widget.FrameLayout(this)
+    lateinit var talkChips: () -> Unit
+    talkChips = {
+        talkBox.removeAllViews()
+        talkBox.addView(chips(listOf("quick" to T("talk.mode_quick_short"), "old" to T("talk.mode_old_short")), pref("talkMode")) { setTalkMode(it); talkChips() })
+    }
+    talkChips()
+    box.addView(talkBox, gap(6))
+
     box.addView(head(T("info_screens.the_phone_s_volume")), gap(18))
     lateinit var vol: Button
     val volLabel = { vol.setToggle(prefs.getBoolean("volKeysTv", true), T("info_screens.set_the_tv_s")) }

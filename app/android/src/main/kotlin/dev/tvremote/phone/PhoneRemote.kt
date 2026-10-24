@@ -33,7 +33,6 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!, if (irAvailable()) setOf("ir") else emptySet())) },   // "ir": this phone has an IR LED
     "key" to act { k -> val code = Scenes.KEYS[k] ?: return@act; if (code in Tv.OPENERS) opens(code) else press(code) },   // a key from a menu (Tools)
     "timer" to act { timerMenu() },
-    "talk" to act { talkOpen() },                                     // Quick talk (Talk.kt): hold to talk, the old mic button stays
     "scenes" to act { scenesMenu() },
     "notify" to act { if (!needsAdb()) managing.open(host, then = "fromRemote(notifyDialog)") },   // the page's dialogs (js/notify.js, dim.js, setup.js): one copy
     "draw" to act { if (drawing) stopDrawing() else startDrawing() },

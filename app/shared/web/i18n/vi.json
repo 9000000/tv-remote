@@ -3608,6 +3608,16 @@
  "talk.k_vol_down": "Giảm âm lượng",
  "talk.k_vol_up_n": "Tăng âm lượng ×{n}",
  "talk.k_vol_down_n": "Giảm âm lượng ×{n}",
- "rkey.talk": "Nói nhanh",
- "rkey.talk_sub": "Giữ để nói, thả ra là gửi"
+ "talk.choose_title": "Nút Nói hoạt động thế nào?",
+ "talk.mode_quick": "Giữ để nói (nhanh)",
+ "talk.mode_quick_sub": "Giữ nút, nói, thả ra là gửi",
+ "talk.mode_old": "Bấm rồi nói (như cũ)",
+ "talk.mode_old_sub": "Bấm, nói trong hộp thoại của Google",
+ "talk.mode_quick_short": "Giữ để nói",
+ "talk.mode_old_short": "Bấm rồi nói",
+ "talk.old_chip": "Cách cũ",
+ "talk.to_quick": "Chuyển sang Giữ để nói",
+ "talk.to_old": "Chuyển sang Bấm rồi nói",
+ "talk.assistant": "Trợ lý của TV",
+ "talk.setting_head": "NÚT NÓI"
 }

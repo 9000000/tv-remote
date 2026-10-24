@@ -3710,6 +3710,16 @@
  "talk.k_vol_down": "Volume down",
  "talk.k_vol_up_n": "Volume up ×{n}",
  "talk.k_vol_down_n": "Volume down ×{n}",
- "rkey.talk": "Quick talk",
- "rkey.talk_sub": "Hold to talk, release to send"
+ "talk.choose_title": "How should the voice button work?",
+ "talk.mode_quick": "Hold to talk (fast)",
+ "talk.mode_quick_sub": "Hold the button, speak, let go to send",
+ "talk.mode_old": "Tap, then talk (as before)",
+ "talk.mode_old_sub": "Tap, speak in Google's dialog",
+ "talk.mode_quick_short": "Hold to talk",
+ "talk.mode_old_short": "Tap, then talk",
+ "talk.old_chip": "Old way",
+ "talk.to_quick": "Switch to Hold to talk",
+ "talk.to_old": "Switch to Tap, then talk",
+ "talk.assistant": "TV's Assistant",
+ "talk.setting_head": "VOICE BUTTON"
 }

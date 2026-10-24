@@ -270,6 +270,10 @@ internal class Talk(private val a: MainActivity) {
         val top = LinearLayout(a)
         top.gravity = Gravity.CENTER_VERTICAL
         top.addView(a.label(T("talk.title"), 20, TEXT).apply { typeface = Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, -2, 1f))
+        top.addView(TextView(a).apply {                              // the other way (the old dialog), remembered
+            text = T("talk.old_chip"); textSize = 13f; setTextColor(TEXT); gravity = Gravity.CENTER; background = a.box(BTN, 14); setPadding(a.dp(12), 0, a.dp(12), 0)
+            contentDescription = T("talk.mode_old"); setOnClickListener { a.setTalkMode("old"); close(); a.speak() }
+        }, LinearLayout.LayoutParams(-2, a.dp(40)).apply { rightMargin = a.dp(8) })
         top.addView(TextView(a).apply {
             text = "✕"; textSize = 20f; setTextColor(TEXT); gravity = Gravity.CENTER; background = a.box(BTN, 14)
             contentDescription = T("common.close"); setOnClickListener { close() }
@@ -356,4 +360,23 @@ internal fun MainActivity.warmAppNames(then: (() -> Unit)? = null) {
     }.start()
 }
 
-internal fun MainActivity.talkOpen() = talk.open()
+internal fun MainActivity.setTalkMode(m: String) { prefs.edit().putString("talkMode", m).apply() }
+
+/** The mic button: Quick talk or the old dialog, as chosen; the first time it asks (and remembers). */
+internal fun MainActivity.micTap() {
+    when (pref("talkMode")) {
+        "quick" -> talk.open()
+        "old" -> speak()
+        else -> menu(T("talk.choose_title"), 0, listOf(
+            Triple("@mic|" + T("talk.mode_quick"), T("talk.mode_quick_sub")) { setTalkMode("quick"); talk.open() },
+            Triple("@mic|" + T("talk.mode_old"), T("talk.mode_old_sub")) { setTalkMode("old"); speak() }))
+    }
+}
+
+/** Long-press on the mic: the other way, and the TV's own Assistant screen (the old long-press). */
+internal fun MainActivity.micMenu() {
+    val quick = pref("talkMode") == "quick"
+    menu(T("remote.speak"), -1, listOf(
+        Triple("@mic|" + T(if (quick) "talk.to_old" else "talk.to_quick"), T(if (quick) "talk.mode_old_sub" else "talk.mode_quick_sub")) { setTalkMode(if (quick) "old" else "quick") },
+        Triple("@tv|" + T("talk.assistant"), "") { tv?.let { if (it.ready()) it.press(219) } }))
+}
