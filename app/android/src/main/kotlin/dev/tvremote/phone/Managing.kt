@@ -226,13 +226,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             a.ui.post { back() }
             return HttpServer.Response.json(JSONObject())
         }
-        if (r.path == "/api/scenes") {                                 // this phone's scenes: the widget, tiles and shortcuts use them too
-            if (r.method == "POST") SceneStore.save(a, r.json().optJSONArray("scenes") ?: JSONArray())
-            if (r.query["download"] != null) return Scenes.backup(SceneStore.all(a))   // "Export": lands in the phone's Download folder
-            return HttpServer.Response.json(JSONObject().put("scenes", SceneStore.all(a)))
-        }
-        if (r.path == "/api/scene/run" && r.method == "POST")
-            return Scenes.runRequest(r.json(), { id -> SceneStore.find(a, id) }, "adb: not connected") { link?.let { l -> Scenes.Shell({ l.get().shell(it) }) } }
+        // this phone's scenes (the widget, tiles and shortcuts use them too); "Export" lands in the phone's Download folder
+        Scenes.Routes({ SceneStore.all(a) }, { SceneStore.save(a, it) }, { "adb: not connected" }) { link?.let { l -> Scenes.Shell({ l.get().shell(it) }) } }.handle(r)?.let { return it }
         if (r.path == "/api/watchers") {                               // the TV's own count: this phone's remote screen and PiP too
             val c = try { link?.get()?.shell(dev.tvremote.core.picture.Watchers.CMD)?.let { dev.tvremote.core.picture.Watchers.parse(it) } } catch (e: Exception) { null }
             return HttpServer.Response.json(if (c == null) JSONObject() else JSONObject().put("watch", c.watch).put("listen", c.listen))

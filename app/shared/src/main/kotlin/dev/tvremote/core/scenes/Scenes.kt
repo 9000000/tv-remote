@@ -103,6 +103,29 @@ object Scenes {
         return HttpServer.Response.json(JSONObject().put("ok", failed == null).put("failed", failed ?: ""))
     }
 
+    /**
+     * The scenes routes of every core, so a change reaches the phone, the TV and the computer at once: GET/POST `/api/scenes`
+     * (`?download` is the backup file), POST `/api/scene/run`. Each core brings only where its list lives ([all], [save]), its
+     * offline words and its [target]. A POST without a `scenes` list is a 400: a broken import must not wipe the saved ones.
+     * Null from [handle]: not a scenes path.
+     */
+    class Routes(private val all: () -> JSONArray, private val save: (JSONArray) -> Unit, private val offline: () -> String, private val target: () -> Target?) {
+        fun handle(r: HttpServer.Request): HttpServer.Response? = when {
+            r.path == "/api/scenes" -> {
+                val post = r.method == "POST"
+                val list = if (post) r.json().optJSONArray("scenes") else null
+                if (post && list == null) HttpServer.Response.error(400, "scenes required")
+                else {
+                    if (list != null) save(clean(list))
+                    if (r.query.containsKey("download")) backup(all()) else HttpServer.Response.json(JSONObject().put("scenes", all()))
+                }
+            }
+            r.path == "/api/scene/run" && r.method == "POST" ->
+                runRequest(r.json(), { id -> all().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }.firstOrNull { it.optString("id") == id } }, offline(), target)
+            else -> null
+        }
+    }
+
     /** Keeps only what can be run: at most 24 scenes of 30 steps, known steps with sane values, short names. */
     fun clean(list: JSONArray): JSONArray {
         val out = JSONArray()

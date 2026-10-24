@@ -184,4 +184,35 @@ class ScenesTest {
         }
         assertTrue(Scenes.run(steps("""{"do":"input","id":"HDMI_1"}"""), t)!!.contains("cannot switch inputs"))
     }
+
+    // ---- Routes: the one /api/scenes + /api/scene/run of every core
+    private fun req(method: String, path: String, json: JSONObject? = null, query: Map<String, String> = emptyMap()): dev.tvremote.core.web.HttpServer.Request {
+        val r = dev.tvremote.core.web.HttpServer.Request(); r.method = method; r.path = path; r.query.putAll(query)
+        json?.toString()?.toByteArray()?.let { r.body = java.io.ByteArrayInputStream(it); r.length = it.size.toLong() }
+        return r
+    }
+
+    @Test fun routesSaveCleanListAndBackUpScenes() {
+        var store = JSONArray()
+        val tv = Fake()
+        val routes = Scenes.Routes({ store }, { store = it }, { "off" }) { tv }
+        val list = JSONArray().put(JSONObject().put("id", "s1").put("name", "Night").put("steps", steps("""{"do":"wake"}""", """{"do":"bogus"}""")))
+        val saved = body(routes.handle(req("POST", "/api/scenes", JSONObject().put("scenes", list)))!!)
+        assertEquals(1, saved.getJSONArray("scenes").getJSONObject(0).getJSONArray("steps").length())   // cleaned, and answered as saved
+        assertEquals(1, body(routes.handle(req("GET", "/api/scenes"))!!).getJSONArray("scenes").length())
+        assertEquals(400, routes.handle(req("POST", "/api/scenes", JSONObject()))!!.status)               // a broken import must not wipe them
+        assertEquals(1, store.length())
+        assertTrue(routes.handle(req("GET", "/api/scenes", query = mapOf("download" to "1")))!!.headers["Content-Disposition"]!!.contains("tv-remote-scenes-"))
+        assertEquals(true, body(routes.handle(req("POST", "/api/scene/run", JSONObject().put("id", "s1")))!!).getBoolean("ok"))
+        assertEquals(listOf("key 224"), tv.did)
+        assertEquals(404, routes.handle(req("POST", "/api/scene/run", JSONObject().put("id", "nope")))!!.status)
+        assertNull(routes.handle(req("GET", "/api/other")))
+    }
+
+    @Test fun routesAnswerOfflineWithTheCoresOwnWords() {
+        val routes = Scenes.Routes({ JSONArray().put(saved) }, { }, { "adb:none" }) { null }
+        val r = routes.handle(req("POST", "/api/scene/run", JSONObject().put("id", "s1")))!!
+        assertEquals(503, r.status)
+        assertTrue(String(r.body).contains("adb:none"))
+    }
 }

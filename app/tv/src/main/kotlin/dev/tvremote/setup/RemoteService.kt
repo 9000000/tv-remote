@@ -29,6 +29,7 @@ import dev.tvremote.core.ontv.Notify
 import dev.tvremote.core.ontv.Setup
 import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.picture.TvControl
 import dev.tvremote.core.picture.Watchers
 import dev.tvremote.core.web.WebPage
 import org.json.JSONArray
@@ -526,6 +527,13 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private fun video(quality: Int, fps: Int, rate: Int, enc: String, hand: Boolean): HttpServer.Response =
         feeds.video("$quality/$fps/$rate/$enc/$hand") { l, sink -> Tv(this, "127.0.0.1", null, quality, 1280, false, l, sink, fps = fps, bitRate = rate, encoder = enc, hand = hand) }
 
+    /** The one scenes handler of every core (Scenes.Routes); here the list is kept in the preferences. */
+    private val sceneRoutes by lazy {
+        Scenes.Routes({ scenes() }, { prefs.edit().putString("scenes", it.toString()).apply() }, { "adb:$adbState" }) {
+            link?.let { l -> Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) } }
+        }
+    }
+
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
 
     // ---------------------------------------------------------------- the sound, one session for every browser
@@ -602,20 +610,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 HttpServer.Response.json(st)
             } catch (e: CodeWrong) { HttpServer.Response.json(400, JSONObject().put("error", "code_wrong").put("clock", e.clock))
             } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message.toString()) }
-            "/api/scenes" -> {
-                if (r.method == "POST") prefs.edit().putString("scenes", Scenes.clean(r.json().optJSONArray("scenes") ?: JSONArray()).toString()).apply()
-                if (r.query["download"] != null) return Scenes.backup(scenes())
-                return HttpServer.Response.json(JSONObject().put("scenes", scenes()))
-            }
-            "/api/scene/run" -> return Scenes.runRequest(r.json(), { id -> (0 until scenes().length()).map { scenes().getJSONObject(it) }.firstOrNull { it.optString("id") == id } }, "adb:$adbState") {
-                link?.let { l -> Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) } }
-            }
+            "/api/scenes", "/api/scene/run" -> return sceneRoutes.handle(r)!!
             "/api/touch" -> {
-                val d = r.json()
-                val a = when (d.optString("a")) { "down", "0" -> 0; "up", "1" -> 1; "move", "2" -> 2; "scroll" -> 8; else -> -1 }
-                val x = d.optDouble("x").toFloat(); val y = d.optDouble("y").toFloat()
-                feeds.viewer?.let { if (a == 8 && it.ready()) it.scroll(x, y, d.optDouble("dy", 0.0).toFloat()) else if (a >= 0 && it.ready()) it.touch(a, x, y) }   // the wheel, as on the computer
-                return ok()
+                val v = feeds.viewer?.takeIf { it.ready() } ?: return ok()   // no picture session: nothing to touch
+                return TvControl.touch(v, r.json())                          // the wheel (scroll) too, as on the computer
             }
             "/api/apps" -> if (r.q("system") != "1") return HttpServer.Response.json(JSONObject().put("apps", apps()))   // every package: Manage
             "/api/app/icon" -> {
@@ -655,11 +653,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             }
             "/api/type" -> {
                 if (t == null || !t.ready()) return HttpServer.Response.error(503, "adb:$adbState")
-                repeat(minOf(d.optInt("del"), 500)) { t.press(67) }    // live typing: what changed is deleted, then typed again
-                if (d.optString("text").isNotEmpty()) t.text(d.optString("text"))
-                repeat(minOf(d.optInt("fdel"), 500)) { t.press(112) }
-                if (d.optBoolean("enter")) t.press(66)
-                return ok()
+                return TvControl.type(t, d)
             }
             else -> return HttpServer.Response.error(404, "not found")
         }

@@ -17,6 +17,7 @@ import dev.tvremote.core.remote.Vidaa
 import dev.tvremote.core.remote.RemoteSteps
 import dev.tvremote.core.scenes.Scenes
 import dev.tvremote.core.picture.Tv
+import dev.tvremote.core.picture.TvControl
 import dev.tvremote.core.picture.Watchers
 import dev.tvremote.core.web.WebPage
 import org.json.JSONArray
@@ -190,7 +191,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/video" -> return video(s, r)
             "/api/audio" -> return audio(s, r)
             "/api/watchers" -> return Response.json(s.feeds.count(if (native(s)) "" else try { sh(s, Watchers.CMD) } catch (e: Exception) { "" }))   // how many watch this TV (Watchers.kt)
-            "/api/scenes" -> return if (r.query.containsKey("download")) Scenes.backup(saved.scenes) else Response.json(JSONObject().put("scenes", saved.scenes))
+            "/api/scenes" -> return scenes(s).handle(r)!!
             "/api/clip" -> return clip(s.control().clipboard())
             "/api/fleet" -> return fleetInfo(s)
             "/api/fleet/checkout" -> return Response.json(Checkout.Config.of(saved.checkout.takeIf { it.length() > 0 }).json()   // what was chosen last time; no "apps" = never chosen
@@ -265,8 +266,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             }
             "/api/volume" -> volume(s, d)
             "/api/text" -> { s.need().text(d.optString("text").take(500)); Response.ok() }
-            "/api/touch" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else touch(s, d)
-            "/api/type" -> if (native(s)) { s.need().type(minOf(d.optInt("del"), 500), d.optString("text").take(500), d.optBoolean("enter")); Response.ok() } else type(s, d)
+            "/api/touch" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else TvControl.touch(s.control(), d)
+            "/api/type" -> if (native(s)) { s.need().type(minOf(d.optInt("del"), 500), d.optString("text").take(500), d.optBoolean("enter")); Response.ok() } else TvControl.type(s.control(), d)
             "/api/clip" -> if (native(s)) Response.error(400, "unsupported: " + Remote.Kind.name(s.kind)) else { s.control().setClipboard(d.optString("text").take(100000), d.optBoolean("paste")); Response.ok() }
             "/api/wake" -> wake(s, d.optString("host").ifEmpty { s.host })
             "/api/tv/select" -> {
@@ -284,13 +285,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
                 if (host == s.host) switch(saved.current)
                 Response.ok()
             }
-            "/api/scenes" -> {
-                val list = d.optJSONArray("scenes") ?: throw IllegalArgumentException("scenes required")   // a broken import must not wipe them
-                saved.scenes = Scenes.clean(list); saved.save(); Response.json(JSONObject().put("scenes", saved.scenes))
-            }
-            "/api/scene/run" -> Scenes.runRequest(d, { id -> (0 until saved.scenes.length()).map { saved.scenes.getJSONObject(it) }.firstOrNull { it.optString("id") == id } }, "TV not connected") {
-                if (native(s)) RemoteSteps(s.need()) { wake(s, s.host) } else Scenes.Shell({ sh(s, it) })
-            }
+            "/api/scenes", "/api/scene/run" -> scenes(s).handle(r)
             "/api/fleet/do" -> {
                 val work = fleets.action(d.optString("action"), d.optString("pkg"))
                 val hosts = d.optJSONArray("hosts")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
@@ -450,31 +445,12 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         return Response.json(JSONObject().put("ok", true).put("via", "keys").put("level", a.volume?.first ?: JSONObject.NULL))
     }
 
-    private fun touch(s: Session, d: JSONObject): Response {
-        val x = d.optDouble("x", 0.0).toFloat()
-        val y = d.optDouble("y", 0.0).toFloat()
-        val t = s.control()
-        when (d.optString("a")) {
-            "tap" -> { t.touch(0, x, y); t.touch(1, x, y) }
-            "down" -> t.touch(0, x, y)
-            "up" -> t.touch(1, x, y)
-            "move" -> t.touch(2, x, y)
-            "scroll" -> t.scroll(x, y, d.optDouble("dy", 0.0).toFloat())
-            else -> throw IllegalArgumentException("bad action")
-        }
-        return Response.ok()
-    }
-
     /** The TV's clipboard as the page shows it; null: the TV did not answer in time. */
     private fun clip(text: String?) = if (text == null) Response.error(504, "the TV did not answer") else Response.json(JSONObject().put("text", text))
 
-    private fun type(s: Session, d: JSONObject): Response {
-        val t = s.control()
-        repeat(minOf(d.optInt("del"), 500)) { t.press(67) }             // live typing: what changed is deleted, then typed again
-        repeat(minOf(d.optInt("fdel"), 500)) { t.press(112) }
-        d.optString("text").take(500).let { if (it.isNotEmpty()) t.text(it) }
-        if (d.optBoolean("enter")) t.press(66)
-        return Response.ok()
+    /** Where the scenes live here and what runs them (the one handler of every core: Scenes.Routes). */
+    private fun scenes(s: Session) = Scenes.Routes({ saved.scenes }, { saved.scenes = it; saved.save() }, { "TV not connected" }) {
+        if (native(s)) RemoteSteps(s.need()) { wake(s, s.host) } else Scenes.Shell({ sh(s, it) })
     }
 
     private fun wake(s: Session, host: String): Response {             // host: a saved TV from the list, not only the one in use
