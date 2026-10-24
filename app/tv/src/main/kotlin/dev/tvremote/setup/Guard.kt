@@ -131,7 +131,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             val left = at - now
             if (left <= 0) {
                 Rules.clearSleep(c, at)
-                if (on) standby()
+                if (on) { standby(); RemoteService.alert("sleep") }
             } else {
                 if (left <= 61_000 && on && warnedSleep != at) { warnedSleep = at; warn("sleep", at, "") }
                 next = minOf(next, if (left > 61_000) left - 60_000 else left)
@@ -140,7 +140,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
         // ---- bedtime: a minute after the TV is turned on in the window, standby again
         if (on && Rules.inBedtime(o, now) && now >= o.optLong("snooze_until")) {
-            if (bedWarnedAt == 0L) { bedWarnedAt = now; warn("bed", now + 60_000, "") }
+            if (bedWarnedAt == 0L) { bedWarnedAt = now; warn("bed", now + 60_000, ""); RemoteService.alert("bed", "range" to (Rules.bedNow(o, now)?.let { it.optString("from") + "–" + it.optString("to") } ?: "")) }
             else if (now - bedWarnedAt >= 60_000) { bedWarnedAt = 0; standby() }
             next = minOf(next, 5_000)
         } else bedWarnedAt = 0
@@ -267,6 +267,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private fun close(pkg: String, kind: String = "limit") {
         sh("input keyevent 3; am force-stop " + q(pkg))
         warn(kind, 0, pkg)
+        RemoteService.alert("limit", "app" to label(pkg), "why" to (if (kind == "sched") "sched" else "limit"))
     }
 
     /** The warning screen over whatever is on the TV. Since Android 10 a service may not open a screen by itself; ADB's shell may. */

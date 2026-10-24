@@ -60,6 +60,16 @@ class RulesReceiver : BroadcastReceiver() {
                 }, "keys-addon").apply { isDaemon = true }.start()
                 return
             }
+            if (change.optString("do") == "telegram") {             // the Telegram card of the phone and computer apps (Manage "telegram"): Telegram answers slowly, so off the main thread
+                val pending = goAsync()
+                Thread({
+                    val out = try { RemoteService.telegramApi(change.optJSONObject("req") ?: JSONObject()) } catch (e: Exception) { JSONObject().put("failed", e.message ?: e.javaClass.simpleName) }
+                    pending.resultCode = Activity.RESULT_OK
+                    pending.resultData = Base64.encodeToString(out.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                    pending.finish()
+                }, "telegram-card").apply { isDaemon = true }.start()
+                return
+            }
             val state = Rules.change(c, change)
             if (Rules.active(c) && !RemoteService.isRunning()) {
                 try { RemoteService.start(c, true) } catch (e: Exception) { }   // may be refused from the background: RulesClient starts it through the shell then

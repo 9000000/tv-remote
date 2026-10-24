@@ -81,6 +81,7 @@ object Paired {
         val now = System.currentTimeMillis()
         all(c).add(Entry(hex(4), sha256(token), name.take(60), ip, now, now, kind, tls, Scope.of(scope)))
         save(c)
+        RemoteService.alert("pair", "name" to name.take(60), "ip" to ip, "kind" to kind)   // Telegram /alerts: a new device holds a pass
         return token
     }
 

@@ -99,6 +99,45 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         fun pairingCode(): String? { val c = code; return if (c != null && System.currentTimeMillis() < codeUntil) c else null }
         fun cancelPairing() { code = null }
         fun isRunning(): Boolean = running != null
+        /** Tells the Telegram bot something happened (Telegram.alert); nothing when the service or the bot is not running. */
+        fun alert(kind: String, vararg args: Pair<String, Any?>) { try { running?.telegram?.alert(kind, *args) } catch (e: Exception) { } }
+
+        /**
+         * The Telegram card of the phone and computer apps (RulesReceiver "telegram", sent by Manage over ADB, so the owner's): [req] is {body, query}
+         * as the TV's own page would send /api/telegram. Slow (it asks Telegram), so the receiver calls it from a thread. {failed: why} when the service is not up or refuses (its own state has an "error" field, so that name is taken).
+         */
+        fun telegramApi(req: JSONObject): JSONObject {
+            val t = running?.telegram ?: return JSONObject().put("failed", "not running")
+            val body = req.optJSONObject("body")
+            val bytes = (body ?: JSONObject()).toString().toByteArray(Charsets.UTF_8)
+            val q = HttpServer.Request()
+            q.method = if (body != null && body.length() > 0) "POST" else "GET"; q.path = "/api/telegram"; q.peer = "127.0.0.1"
+            req.optJSONObject("query")?.let { o -> for (k in o.keys()) q.query[k] = o.optString(k) }
+            q.headers["content-type"] = "application/json"; q.body = java.io.ByteArrayInputStream(bytes); q.length = bytes.size.toLong()
+            val r = t.config(q)
+            val out = try { JSONObject(String(r.body)) } catch (e: Exception) { JSONObject() }
+            return if (r.status in 200..299) out else JSONObject().put("failed", out.optString("error").ifEmpty { "error ${r.status}" })
+        }
+
+        /**
+         * TV Home's Telegram card (HomeInfo "telegram"): {state: token_missing (no bot yet) | none (a token, switched off) | ready (listening),
+         * bot (the @name without @, "" until Telegram has answered once)}; with [newCode] (and ready) a fresh pairing code: {code, code_left (s), link
+         * https://t.me/<bot>?start=<code>}, which a phone's camera can open and /start <code> pairs.
+         */
+        fun telegramForHome(c: Context, newCode: Boolean): JSONObject {
+            val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val has = !p.getString("tg_token", "").isNullOrEmpty()
+            val state = if (!has) "token_missing" else if (p.getBoolean("tg_on", false)) "ready" else "none"
+            val bot = (p.getString("tg_bot", "") ?: "").removePrefix("@")
+            val o = JSONObject().put("state", state).put("bot", bot)
+            val t = if (state == "ready") running?.telegram else null
+            if (t != null) {
+                if (newCode) t.newCode()
+                val left = t.codeLeftS()
+                if (left > 0) { val code = t.json().optString("code"); o.put("code", code).put("code_left", left); if (bot.isNotEmpty()) o.put("link", "https://t.me/$bot?start=$code") }
+            }
+            return o
+        }
         /** The HTTPS port is up: the TV's screen shows that address then. */
         fun secure(): Boolean = running?.https != null
         /** connecting | allow | ready | error: the state of the input session, for the app's own screen. */
@@ -187,6 +226,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override var lang: String get() = prefs.getString("tg_lang", "") ?: ""; set(v) { prefs.edit().putString("tg_lang", v).apply() }
             override var bot: String get() = prefs.getString("tg_bot", "") ?: ""; set(v) { prefs.edit().putString("tg_bot", v).apply() }
             override var chats: String get() = prefs.getString("tg_chats", "[]") ?: "[]"; set(v) { prefs.edit().putString("tg_chats", v).apply() }
+            override var history: String get() = prefs.getString("tg_history", "[]") ?: "[]"; set(v) { prefs.edit().putString("tg_history", v).apply() }
         }, dev.tvremote.core.web.TelegramHttp(telegramBase()), hook,
             { r, scope -> used(r.path); route(r, "127.0.0.1", Paired.Entry("tv", "", "Telegram", "127.0.0.1", 0L, 0L, "tv", false, scope)) },
             { state("127.0.0.1") },

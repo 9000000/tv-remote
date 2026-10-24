@@ -50,6 +50,7 @@
   "scenes": {"since": "0.1.0"},
   "hook": {"since": "0.9.0"},
   "telegram": {"since": "next", "setup": "next"},
+  "telegram-more": {"since": "next", "setup": "next"},
   "many": {"since": "0.1.0"},
   "share": {"since": "0.5.0", "setup": "0.5.0"},
   "away": {"since": "0.1.0"},

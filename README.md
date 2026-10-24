@@ -41,7 +41,7 @@ Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Sam
 - **Now playing**, the TV's clipboard, a screen that goes off while the music plays on (and back on from the app), and a dimmer or blue light filter over every app.
 - **Apps, files and health** (what runs, how much memory, the TV's own internet speed) on the TV, managed from your phone.
 - **Sleep timer, bedtime, app limits, volume limits and apps locked with a PIN** that run on the TV, so they work with every other device off.
-- **Scenes** (several steps in one tap), widget and Quick Settings tiles, game controller, Home Assistant and Siri Shortcuts, and control from your own Telegram bot (TV Setup).
+- **Scenes** (several steps in one tap), widget and Quick Settings tiles, game controller, Home Assistant and Siri Shortcuts, and control from your own Telegram bot (TV Setup): commands, alerts from the TV, rules with Undo, managed from any app.
 - **TV Home**, a home screen without ads, set up from your phone or computer: favourite apps, hidden apps, your own background, widgets (system stats, most used apps and limits, month calendar with lunar days, lunar calendar, sleep timer, weather, a pinned note) (the background, clock and motion can also be changed on the TV itself). Or pick another launcher from the gallery.
 - **TV Channels**, free TV channels on the TV from iptv-org's public lists and VieON's free channels, with the programme guide (VN): by country and category, favourites and your own groups, pinned to the home screen, opened by name from the phone ("open channel VTV1").
 - **TV Games**, retro and web games on the TV with phones as pads (the QR on the TV, no ADB needed).
@@ -79,7 +79,7 @@ The **TV app** is shown on the TV as *TV Setup*. It also runs the timers and lim
 | Widget, Quick Settings tiles, the phone's volume keys | ✓ | | |
 | Game controller | ✓ | ✓ | ✓ |
 | Link for Home Assistant, Shortcuts (Siri) | | ✓ | ✓ |
-| Telegram bot (off/on, volume, apps, screenshot) | needs TV Setup | set up here | needs TV Setup |
+| Telegram bot (off/on, volume, apps, screenshot, alerts, bedtime with Undo, pairing QR, history) | needs TV Setup | set up here | needs TV Setup |
 | Nothing to install on the controlling device | | ✓ | |
 | LG, Samsung, Roku, VIDAA TVs | ✓ | | ✓ |
 

@@ -457,7 +457,7 @@
         <p class="note" data-i18n="about.anyone_with_this_link">Ai có đường dẫn này bấm được phím trên TV. Đổi mã mới thì đường dẫn cũ hết dùng.</p>
       </div>
     </div>
-    <div class="group" id="tggroup" data-for="tv"><h3 data-i18n="telegram_ui.title">💬 Điều khiển bằng Telegram</h3>
+    <div class="group" id="tggroup"><h3 data-i18n="telegram_ui.title">💬 Điều khiển bằng Telegram</h3>
       <p class="note" data-i18n="telegram_ui.why">Nhắn tin cho bot của bạn để tắt/bật TV, chỉnh tiếng, mở app, chụp màn hình. Bot do bạn tự tạo, chạy ngay trên TV, không cần mở cổng. Ảnh chụp màn hình đi qua máy chủ Telegram.</p>
       <div class="places" id="tgpick"><button data-v="off" data-i18n="about.off">Không bật</button><button data-v="on" data-i18n="about.on">Cho dùng</button></div>
       <div class="group" id="tgbody" hidden>
@@ -469,14 +469,21 @@
         </div>
         <div class="group" id="tgready" hidden>
           <p class="state" id="tgstate"></p>
+          <p class="note" id="tgsub"></p>
+          <p class="note"><a id="tgbotlink" href="#" target="_blank" rel="noopener" hidden></a></p>
           <h3 data-i18n="telegram_ui.pair_h">Ghép đôi một chat</h3>
           <p class="note" data-i18n="telegram_ui.pair_note">Bấm Tạo mã, rồi gửi “/pair mã” cho bot, trong chat riêng hoặc trong nhóm. Mã dùng một lần, 5 phút, cũng hiện trên màn hình TV. Chat lạ gửi gì bot cũng không trả lời.</p>
           <div class="actions"><button class="primary" id="tgcode" data-i18n="telegram_ui.make_code">Tạo mã ghép đôi</button></div>
           <p class="state" id="tgcodeline" hidden></p>
+          <div class="qrs" id="tgqr"></div>
           <h3 data-i18n="telegram_ui.chats_h">Chat được phép</h3>
           <div id="tgchats"></div>
           <h3 data-i18n="telegram_ui.lang_h">Ngôn ngữ của bot</h3>
           <div class="places" id="tglang"><button data-v="" data-i18n="telegram_ui.lang_auto">Theo TV</button><button data-v="vi" data-i18n="telegram_ui.lang_vi">Tiếng Việt</button><button data-v="en" data-i18n="telegram_ui.lang_en">English</button></div>
+          <h3 data-i18n="telegram_ui.hist_h">Bot đã làm gì</h3>
+          <div id="tgfilter"></div>
+          <div id="tghist"></div>
+          <div class="actions"><button class="small" id="tgmore" hidden data-i18n="telegram_ui.h_more">Xem thêm 20</button><button class="small danger" id="tgclear" hidden data-i18n="telegram_ui.h_clear">Xoá lịch sử</button></div>
         </div>
       </div>
       <div class="group" id="tgkept" hidden>
@@ -484,8 +491,8 @@
         <div class="actions"><button class="small danger" id="tgremove" data-i18n="telegram_ui.remove">Xoá token</button></div>
       </div>
     </div>
-    <div class="group" id="tghint" data-for="pc phone"><h3 data-i18n="telegram_ui.title">💬 Điều khiển bằng Telegram</h3>
-      <p class="note" data-i18n="telegram_ui.hint">Bot Telegram chạy ngay trên TV, trong TV Setup. Mở trang web của TV (hoặc TV Setup trên TV) → 🛠️ Cài đặt để bật.</p>
+    <div class="group" id="tghint" hidden><h3 data-i18n="telegram_ui.title">💬 Điều khiển bằng Telegram</h3>
+      <p class="note" data-i18n="telegram_ui.hint">Bot Telegram chạy trong TV Setup trên TV. TV Setup ở đó chưa có hoặc quá cũ: bấm Kiểm tra để cài hoặc cập nhật, rồi quản lý bot ngay tại đây.</p>
       <div class="actions"><button class="small" id="tgcheck" data-i18n="telegram_ui.check">Kiểm tra TV Setup</button></div>
     </div>
     <div class="group about"><h3 data-i18n="about.about">Giới thiệu</h3>

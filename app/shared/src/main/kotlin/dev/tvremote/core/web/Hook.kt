@@ -152,10 +152,10 @@ class Hook(
     }
 
     /** [path] with [body] as the request the page itself would have sent, run by [via] (never the caller's own request). */
-    fun send(via: (HttpServer.Request) -> HttpServer.Response, path: String, body: JSONObject, method: String = "POST"): HttpServer.Response {
+    fun send(via: (HttpServer.Request) -> HttpServer.Response, path: String, body: JSONObject, method: String = "POST", query: Map<String, String> = emptyMap()): HttpServer.Response {
         val bytes = body.toString().toByteArray(Charsets.UTF_8)
         val q = HttpServer.Request()
-        q.method = method; q.path = path; q.peer = "127.0.0.1"
+        q.method = method; q.path = path; q.peer = "127.0.0.1"; q.query.putAll(query)
         q.headers["content-type"] = "application/json"
         q.body = ByteArrayInputStream(bytes); q.length = bytes.size.toLong()
         return try { via(q) } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message ?: "bad request") }

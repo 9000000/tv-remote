@@ -180,6 +180,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "crashes" -> return HttpServer.Response.json(JSONObject().put("text", sh(CRASHES).replace("\r\n", "\n").takeLast(500000)))
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
+                "telegram" -> return HttpServer.Response.json(telegram(r))
                 "welcome" -> if (!post) return HttpServer.Response.json(Welcome.call({ sh(it) }, null))
                 "welcome/thumb" -> {                                  // a small picture of the welcome, for the card's preview
                     val b64 = Welcome.call({ sh(it) }, JSONObject().put("do", "thumb")).optString("thumb")
@@ -283,6 +284,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "adb/connect" -> HttpServer.Response.json(JSONObject().put("state", link.reconnect()))
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
+                "telegram" -> HttpServer.Response.json(telegram(r))
                 "welcome" -> HttpServer.Response.json(Welcome.call({ sh(it) }, r.json()))
                 "notify" -> { Notify.send({ sh(it) }, r.json()); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "share" -> HttpServer.Response.json(Invite.share({ sh(it) }, link.host, r.json().optString("scope"), r.json().optBoolean("again")))   // a QR another phone scans (Invite.kt)
@@ -1103,6 +1105,22 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
     // ---------------------------------------------------------------- timers and limits (kept by TV Setup on the TV)
     /** The labels of the limited apps are this device's to give; TV Setup knows only package names when asked over ADB. */
+    /**
+     * The Telegram card: the bot lives in TV Setup on the TV, so this asks it over the same shell-only broadcast as the rules (the owner's; a paired
+     * browser of the TV has its own /api/telegram there). The token goes to the TV once and is never read back: the answer has it masked.
+     */
+    private fun telegram(r: HttpServer.Request): JSONObject {
+        val req = JSONObject()
+        if (r.method == "POST") req.put("body", r.json()) else req.put("query", JSONObject().apply { for (k in listOf("history", "chat", "offset")) if (r.q(k).isNotEmpty()) put(k, r.q(k)) })
+        var out = RulesClient.call({ sh(it) }, JSONObject().put("do", "telegram").put("req", req))
+        if (out.optString("failed") == "not running") { sh(RulesClient.START); Thread.sleep(2500); out = RulesClient.call({ sh(it) }, JSONObject().put("do", "telegram").put("req", req)) }
+        val setup = out.optString("setup")
+        if (setup == "missing" || setup == "old" || out.optString("error") == "unknown action") throw SetupNeed.Missing("telegram", SetupNeed.have { sh(it) })
+        if (setup == "busy") throw IOException("adb: TV Setup is starting")
+        if (out.has("failed")) throw IllegalArgumentException(out.optString("failed"))
+        return out
+    }
+
     private fun rules(change: JSONObject?): JSONObject {
         val state = RulesClient.call({ sh(it) }, change)
         val limits = state.optJSONArray("limits")

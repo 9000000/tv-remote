@@ -216,7 +216,11 @@ internal class Stats(private val ctx: Context) {
     }
 
     private val screen = object : BroadcastReceiver() {
-        override fun onReceive(c: Context, i: Intent) { note(ctx, if (i.action == Intent.ACTION_SCREEN_ON) "on" else "off") }
+        override fun onReceive(c: Context, i: Intent) {
+            val on = i.action == Intent.ACTION_SCREEN_ON
+            note(ctx, if (on) "on" else "off")
+            RemoteService.alert(if (on) "on" else "off")            // Telegram /alerts
+        }
     }
 
     /** Starts writing power.jsonl; the service calls it once, as it starts. */

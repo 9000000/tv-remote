@@ -53,7 +53,7 @@ test('control heights come from the tokens', () => {
 test('words starting with a colour emoji have a line icon for it', () => {
   // the title test above sees index.html only; buttons and titles the scripts build take their words from i18n (⭐ Manage
   // channels stayed a yellow star among line icons). Running text may keep these marks; a plain glyph (✓ ✕ ←) is one colour anyway
-  const TEXT_MARKS = new Set(['⚠️', '💡']);
+  const TEXT_MARKS = new Set(['⚠️', '💡', '📴', '🚫', '🔐', '📸', '🗓️', '⛔', '🔓'])   // + the Telegram bot's messages (Telegram.kt): chat text, not this page's;
   const ui = scripts.find(([f]) => f === 'ui.js')[1];
   const known = new Set([...ui.slice(ui.indexOf('const ICON = {'), ui.indexOf('};', ui.indexOf('const ICON = {'))).matchAll(/'([^']+)': \['/g)].map((m) => m[1]));
   const lead = /^\s*(\p{Emoji_Presentation}|\p{Extended_Pictographic}\uFE0F)/u;

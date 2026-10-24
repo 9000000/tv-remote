@@ -17,7 +17,7 @@ import java.io.IOException
 class TelegramTest {
     private class Mem : Telegram.Store {
         override var enabled = true; override var token = "123456789:AAH-fake_token_for_tests_0123456789abc"
-        override var offset = 0L; override var lang = "en"; override var bot = "@tvbot"; override var chats = "[]"
+        override var offset = 0L; override var lang = "en"; override var bot = "@tvbot"; override var chats = "[]"; override var history = "[]"
     }
 
     /** A Telegram that answers from a script and remembers every call (the token is never part of what it remembers). */
@@ -298,7 +298,7 @@ class TelegramTest {
         bot.step(); bot.step(); bot.step()
         assertEquals(1, api.named("deleteWebhook").size); assertEquals(1, api.named("setMyCommands").size)
         assertEquals(3, api.named("getUpdates").size)
-        assertEquals(12, api.named("setMyCommands")[0].getJSONArray("commands").length())
+        assertEquals(22, api.named("setMyCommands")[0].getJSONArray("commands").length())
         assertEquals("ok", bot.status)
     }
 
@@ -306,7 +306,7 @@ class TelegramTest {
         store.offset = 5
         api.on("getMe") { throw IOException("down") }
         api.on("getMe") { throw IOException("down") }
-        assertEquals(5000L, bot.step()); assertEquals("error", bot.status)
+        assertEquals(5000L, bot.step()); assertEquals("offline", bot.status)
         assertEquals(10000L, bot.step())
         assertEquals(0L, bot.step()); assertEquals("ok", bot.status)
         api.on("getUpdates") { Telegram.Reply(500, JSONObject()) }
@@ -403,5 +403,174 @@ class TelegramTest {
         assertTrue(log.contains("telegram"))
         assertNotNull(bot.json().optString("error"))
         assertFalse(bot.json().toString().contains("AAH-fake_token"))
+    }
+
+    // ---------------------------------------------------------------- alerts, new commands, rules with undo, history
+    private fun say(chat: Long, text: String, id: Long = 1, type: String = "private") { now += 1000; bot.onUpdate(msg(chat, text, id, type)) }
+    private fun tap(chat: Long, data: String, id: Long = 50, msgId: Long = 9) { now += 1000
+        bot.onUpdate(JSONObject("""{"update_id":$id,"callback_query":{"id":"cb$id","data":"$data","message":{"message_id":$msgId,"chat":{"id":$chat}}}}""")) }
+    private fun hist(chat: Long? = null, offset: Int = 0): JSONObject {
+        val r = HttpServer.Request(); r.method = "GET"; r.path = "/api/telegram"; r.query["history"] = "1"; r.query["offset"] = "$offset"
+        if (chat != null) r.query["chat"] = "$chat"
+        return JSONObject(String(bot.config(r).body))
+    }
+
+    @Test fun alertsNeedAnOptInAndAreDebouncedPerKind() {
+        pairChat(42); pairChat(43)
+        bot.alert("on"); assertTrue(api.sent(42).none { it.contains("on") && false }); val before = api.sent(42).size
+        bot.alert("on"); assertEquals(before, api.sent(42).size)                  // nobody opted in: nothing sent
+        tap(42, "l:on")
+        assertTrue(bot.chats().first { it.id == 42L }.alerts.contains("on")); assertTrue(bot.chats().first { it.id == 43L }.alerts.isEmpty())
+        val n = api.sent(42).size
+        bot.alert("on"); assertEquals(n + 1, api.sent(42).size); assertEquals(0, api.sent(43).size - api.sent(43).size)
+        bot.alert("on"); assertEquals(n + 1, api.sent(42).size)                   // same kind inside a minute
+        bot.alert("off"); assertEquals(n + 1, api.sent(42).size)                  // another kind, not opted in
+        tap(42, "l:off", 51); bot.alert("off"); assertEquals(n + 2, api.sent(42).size)
+        now += 61_000; bot.alert("on"); assertEquals(n + 3, api.sent(42).size)    // a minute later it speaks again
+        tap(42, "l:on", 52); now += 61_000; bot.alert("on"); assertEquals(n + 3, api.sent(42).size)   // switched off again
+    }
+
+    @Test fun anUnoptedAlertDoesNotStartTheMinute() {
+        pairChat(42)
+        bot.alert("bed")
+        tap(42, "l:bed"); val n = api.sent(42).size
+        bot.alert("bed", "range" to "22:00"); assertEquals(n + 1, api.sent(42).size)
+    }
+
+    @Test fun alertsConfigFromThePageSetsOneKindOrAll() {
+        pairChat(42)
+        post(JSONObject().put("do", "alerts").put("id", 42).put("kind", "pair").put("on", true))
+        assertEquals(setOf("pair"), bot.chats().first().alerts)
+        post(JSONObject().put("do", "alerts").put("id", 42).put("kind", "").put("on", true))
+        assertEquals(6, bot.chats().first().alerts.size)
+        post(JSONObject().put("do", "alerts").put("id", 42).put("kind", "").put("on", false))
+        assertTrue(bot.chats().first().alerts.isEmpty())
+        assertEquals(400, post(JSONObject().put("do", "alerts").put("id", 42).put("kind", "nope").put("on", true)).status)
+    }
+
+    @Test fun startWithTheCodePairsLikePairAndWrongCodesCountToTheLock() {
+        val code = bot.newCode()
+        say(44, "/start 000000", 1)
+        assertTrue(bot.chats().isEmpty())
+        say(42, "/start $code", 2, type = "private")
+        assertEquals(listOf(42L), bot.chats().map { it.id }); assertEquals("private", bot.chats()[0].type)
+        say(42, "/start", 3); assertTrue(api.sent(42).size >= 2)    // paired and bare: answered like /help
+        val again = bot.newCode()
+        repeat(5) { say(60 + it.toLong(), "/start 99999$it", 10L + it) }
+        assertTrue(bot.lockedLeftS() > 0); assertEquals(0, bot.codeLeftS()); assertFalse(again.isEmpty())
+    }
+
+    @Test fun newCommandsAreParsedAndAnswered() {
+        for ((t, name, arg) in listOf(Triple("/apps", "apps", ""), Triple("/usage", "usage", ""), Triple("/now", "now", ""), Triple("/channel VTV3", "channel", "VTV3"),
+            Triple("/type xin chào", "type", "xin chào"), Triple("/scenes", "scenes", ""), Triple("/bedtime", "bedtime", ""), Triple("/limits", "limits", ""),
+            Triple("/schedule@TvBot", "schedule", ""), Triple("/alerts", "alerts", ""))) {
+            val c = Telegram.parse(t, "@tvbot")!!; assertEquals(name, c.name); assertEquals(arg, c.arg)
+        }
+        pairChat(42, "full")
+        answer = { r -> when (r.path) {
+            "/api/stats" -> HttpServer.Response.json(JSONObject("""{"usage":{"${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date(now))}":{"com.netflix.ninja":5400,"com.google.android.youtube.tv":600}},"labels":{}}"""))
+            "/api/playing" -> HttpServer.Response.json(JSONObject("""{"state":"playing","app":"Netflix","pkg":"com.netflix.ninja","title":"Dark"}"""))
+            "/api/scenes" -> HttpServer.Response.json(JSONObject().put("scenes", scenes))
+            else -> HttpServer.Response.ok() } }
+        say(42, "/usage", 1); assertTrue(api.sent(42).last().contains("Netflix") && api.sent(42).last().contains("1"))
+        say(42, "/now", 2); assertTrue(api.sent(42).last().contains("Dark"))
+        assertTrue(api.named("sendMessage").last().toString().contains("i:shot"))
+        say(42, "/apps", 3); assertTrue(api.named("sendMessage").last().toString().contains("a:com.netflix.ninja"))
+        say(42, "/scenes", 4); assertTrue(api.named("sendMessage").last().toString().contains("s:s1"))
+        seen.clear(); say(42, "/type hello", 5)
+        assertEquals(1, seen.count { it.path == "/api/text" || it.path == "/api/type" })
+    }
+
+    @Test fun channelOpensThroughTheChannelsLinkAndSaysHowToGetItWhenMissing() {
+        pairChat(42, "remote")
+        say(42, "/channel VTV3", 1)
+        val s = seen.last { it.path == "/api/channels/open" }; assertEquals("VTV3", s.body.optString("q"))
+        answer = { HttpServer.Response.error(503, "adb: channels:missing") }
+        say(42, "/channel VTV3", 2)
+        assertTrue(api.sent(42).last().contains("TV Channels"))
+    }
+
+    @Test fun remoteChatsReadRulesButCannotChangeThem() {
+        pairChat(42, "remote")
+        answer = { r -> if (r.path == "/api/rules" && r.method == "GET") HttpServer.Response.json(JSONObject("""{"bedtime":{"on":true,"ranges":[{"from":"22:00","to":"06:00"}]},"limits":[],"sched":[]}""")) else HttpServer.Response.ok() }
+        say(42, "/bedtime", 1)
+        val last = api.named("sendMessage").last().toString()
+        assertTrue(api.sent(42).last().contains("22:00")); assertFalse(last.contains("r:bed:off")); assertFalse(last.contains("z:"))
+        tap(42, "r:bed:off", 2)
+        assertTrue(seen.none { it.method == "POST" && it.path == "/api/rules" })  // the tap does nothing for a remote chat
+    }
+
+    @Test fun fullChatsChangeBedtimeAndUndoPutsItBack() {
+        pairChat(42, "full")
+        var on = true
+        answer = { r ->
+            if (r.path == "/api/rules" && r.method == "GET") HttpServer.Response.json(JSONObject("""{"bedtime":{"on":$on,"ranges":[{"from":"22:00","to":"06:00"}]},"limits":[],"sched":[]}"""))
+            else if (r.path == "/api/rules") { val b = r.json(); if (b.optString("do") == "bedtime") on = b.optBoolean("on"); HttpServer.Response.ok() } else HttpServer.Response.ok() }
+        say(42, "/bedtime", 1)
+        assertTrue(api.named("sendMessage").last().toString().contains("r:bed:off"))
+        tap(42, "r:bed:off", 2)
+        assertFalse(on)
+        val undo = Regex("z:[A-Za-z0-9]+").find(api.calls.filter { it.first == "sendMessage" }.last().second.toString())!!.value
+        tap(42, undo, 3)
+        assertTrue(on)
+    }
+
+    @Test fun blockNowAndUnblockUseTheScheduleEntry() {
+        pairChat(42, "full")
+        answer = { r -> if (r.path == "/api/rules" && r.method == "GET") HttpServer.Response.json(JSONObject("""{"bedtime":{"on":false,"ranges":[]},"limits":[],"sched":[{"pkg":"com.netflix.ninja","label":"Netflix","block":false,"now":false}]}""")) else HttpServer.Response.ok() }
+        tap(42, "r:blk:com.netflix.ninja", 2)
+        val p = seen.last { it.method == "POST" && it.path == "/api/rules" }
+        assertEquals("sched", p.body.optString("do")); assertEquals("com.netflix.ninja", p.body.optString("pkg")); assertTrue(p.body.optBoolean("block"))
+    }
+
+    @Test fun historyKeepsCommandsButNeverTheWordsOfTypeAndSay() {
+        pairChat(42, "full")
+        say(42, "/type my password 1234", 1); say(42, "/say dinner is ready", 2); say(42, "/vol 5", 3)
+        say(42, "/off", 4)
+        val j = hist(); val all = j.toString()
+        assertFalse(all.contains("1234")); assertFalse(all.contains("password")); assertFalse(all.contains("dinner")); assertFalse(all.contains(store.token))
+        val cmds = (0 until j.getJSONArray("items").length()).map { j.getJSONArray("items").getJSONObject(it).getString("cmd") }
+        assertTrue(cmds.containsAll(listOf("/type", "/say", "/vol 5", "/off"))); assertEquals("/off", cmds.first())   // newest first
+    }
+
+    @Test fun historyIsCappedAtTwoHundredAndForgetsAfterSevenDays() {
+        val h = Telegram.History(store, { now })
+        repeat(230) { h.add(now + it, null, "/vol $it", "ok") }
+        assertEquals(200, h.page(now + 300, null, 0, 1000).getInt("total"))
+        assertEquals("/vol 229", h.page(now + 300, null, 0, 1).getJSONArray("items").getJSONObject(0).getString("cmd"))
+        assertEquals(20, h.page(now + 300, null, 0, 20).getJSONArray("items").length())
+        assertEquals(20, h.page(now + 300, null, 20, 20).getJSONArray("items").length())
+        assertEquals(0, h.page(now + 8 * 86_400_000L, null, 0, 20).getInt("total"))                 // every entry is older than a week
+        h.add(now + 8 * 86_400_000L, null, "/new", "ok")
+        assertEquals(1, h.page(now + 8 * 86_400_000L, null, 0, 20).getInt("total"))                 // the write drops the expired ones
+        assertEquals(1, JSONArray(store.history).length())
+    }
+
+    @Test fun historyFiltersByChatAndClears() {
+        pairChat(42, "full"); pairChat(43, "full")
+        say(42, "/vol 5", 1); say(43, "/vol 6", 2); say(43, "/vol 7", 3)
+        assertEquals(1, hist(42).getInt("total")); assertEquals(2, hist(43).getInt("total"))
+        post(JSONObject().put("do", "clear_history"))
+        assertEquals(0, hist().getInt("total"))
+    }
+
+    @Test fun historyRecordsRefusedAndAlertsSent() {
+        pairChat(42, "remote")
+        answer = { HttpServer.Response.error(403, "scope") }
+        say(42, "/usage", 1)
+        assertEquals("scope", hist(42).getJSONArray("items").getJSONObject(0).getString("res"))
+        tap(42, "l:sleep", 2); bot.alert("sleep")
+        val first = hist().getJSONArray("items").getJSONObject(0)
+        assertEquals("alert sleep", first.getString("cmd")); assertEquals("An", first.getJSONArray("to").getString(0))
+    }
+
+    @Test fun theStateTellsWhenTelegramLastAnswered() {
+        val j = bot.json(); assertEquals(0L, j.optLong("last_ok")); assertTrue(j.has("now"))
+    }
+
+    @Test fun forTvHomeBotNameAndLinkComeWithTheFreshCode() {
+        val code = bot.newCode()
+        val j = bot.json()
+        assertEquals("https://t.me/tvbot", j.optString("bot_link")); assertEquals("https://t.me/tvbot?start=$code", j.optString("link"))
     }
 }

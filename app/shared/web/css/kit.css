@@ -65,6 +65,7 @@ button .minispin { border-color:currentColor; border-right-color:transparent; } 
 @keyframes flash { 0% { box-shadow:0 0 0 0 var(--accent); } 10%, 60% { box-shadow:0 0 0 3px var(--accent), 0 0 24px var(--accent); } 100% { box-shadow:0 0 0 3px transparent; } }
 .state { font-size:16px; font-weight:600; margin:0 0 10px; }
 .state:empty { display:none; }
+.state.bad { color:var(--bad); }
 .bar.full i { background:var(--bad); }
 .fchips { display:flex; gap:6px; margin-top:4px; }
 /* a line wider than its place slides to its end and back (ui.js runFit) */
