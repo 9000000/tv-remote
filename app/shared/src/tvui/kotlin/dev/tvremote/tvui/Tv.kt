@@ -184,37 +184,50 @@ object TvUi {
     fun sheetNote(box: LinearLayout, s: String) =
         text(box.context, s, SP_ROW, DIM).apply { setPadding(dp(box.context, 12).toInt(), 0, 0, dp(box.context, 10).toInt()) }.also { box.addView(it) }
 
-    /** One choice of a [menu]: [icon] a drawable id, [sub] a dim line under the words, [on] a switch's state (null: an action). */
-    class Item(val icon: Int, val label: String, val sub: String = "", val on: Boolean? = null, val go: () -> Unit)
+    /**
+     * One choice of a [menu]: [icon] a drawable id, [sub] a dim line under the words. A switch has [on] (its state, read again
+     * after each press) and stays open when pressed; an action closes the menu first.
+     */
+    class Item(val icon: Int, val label: String, val sub: () -> String = { "" }, val on: (() -> Boolean)? = null, val go: () -> Unit) {
+        constructor(icon: Int, label: String, sub: String, go: () -> Unit) : this(icon, label, { sub }, null, go)
+        constructor(icon: Int, label: String, go: () -> Unit) : this(icon, label, { "" }, null, go)
+    }
 
     /**
-     * A list of choices in a [sheet], each with its icon and an optional second line; a switch shows its state at the end
-     * ([check] the app's own check icon, or a dim ring for off) instead of "✓" / ": off" in its words. Picking one closes the sheet first.
+     * A list of choices in a [sheet], each with its icon and an optional second line. A switch ends in a ring, with [check] (the
+     * app's own check icon) inside it while on, instead of "✓" / ": off" in its words; pressing it flips it in place.
      */
     fun menu(c: Context, theme: Int, title: String, items: List<Item>, check: Int, w: Int = 460): Dialog {
         val (dlg, box) = sheet(c, theme, w)
         sheetTitle(box, title)
         items.forEach { item ->
+            val sub = text(c, "", SP_COUNT, DIM).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END }
+            val ring = FrameLayout(c).apply { val p = dp(c, 4).toInt(); setPadding(p, p, p, p) }
+            val tick = ImageView(c).apply { setImageResource(check); imageTintList = ColorStateList.valueOf(ACCENT) }
+            ring.addView(tick, FrameLayout.LayoutParams(-1, -1))
+            fun show() {
+                val s = item.sub(); sub.text = s; show(sub, s.isNotEmpty())
+                val on = item.on?.invoke() ?: return
+                ring.background = round(Color.TRANSPARENT, dp(c, 12), dp(c, 2).toInt(), if (on) ACCENT else DIM)
+                show(tick, on)
+            }
             box.addView(LinearLayout(c).apply {
                 gravity = Gravity.CENTER_VERTICAL
                 val p = dp(c, 12).toInt()
                 setPadding(p, dp(c, 10).toInt(), p, dp(c, 10).toInt())
                 background = states(c, Color.TRANSPARENT, dp(c, R_ROW), edge = false)
                 isFocusable = true; isClickable = true
-                setOnClickListener { _ -> dlg.dismiss(); item.go() }
+                setOnClickListener { if (item.on == null) { dlg.dismiss(); item.go() } else { item.go(); show() } }
                 addView(ImageView(c).apply { setImageResource(item.icon); imageTintList = ColorStateList.valueOf(ACCENT) },
                     LinearLayout.LayoutParams(dp(c, 22).toInt(), dp(c, 22).toInt()).apply { rightMargin = dp(c, 14).toInt() })
                 addView(LinearLayout(c).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(text(c, item.label, SP_ROW + 1))
-                    if (item.sub.isNotEmpty()) addView(text(c, item.sub, SP_COUNT, DIM).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END })
+                    addView(sub)
                 }, LinearLayout.LayoutParams(0, -2, 1f))
-                item.on?.let { on ->
-                    addView(if (on) ImageView(c).apply { setImageResource(check); imageTintList = ColorStateList.valueOf(ACCENT) }
-                        else View(c).apply { background = round(Color.TRANSPARENT, dp(c, 10), dp(c, 2).toInt(), DIM) },
-                        LinearLayout.LayoutParams(dp(c, 20).toInt(), dp(c, 20).toInt()).apply { leftMargin = dp(c, 12).toInt() })
-                }
+                if (item.on != null) addView(ring, LinearLayout.LayoutParams(dp(c, 24).toInt(), dp(c, 24).toInt()).apply { leftMargin = dp(c, 12).toInt() })
             }, LinearLayout.LayoutParams(-1, -2))
+            show()
         }
         dlg.show()
         box.getChildAt(1)?.requestFocus()

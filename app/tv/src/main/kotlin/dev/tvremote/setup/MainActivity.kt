@@ -310,7 +310,7 @@ class MainActivity : Activity() {
         if (busy) return
         menu("TV Setup " + version(), listOf(
             TvUi.Item(R.drawable.ic_download, T("tv_main.update_now")) { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else update() },
-            TvUi.Item(R.drawable.ic_refresh, T("tv_main.automatic_updates"), on = AutoUpdate.on(this)) { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) },
+            TvUi.Item(R.drawable.ic_refresh, T("tv_main.automatic_updates"), on = { AutoUpdate.on(this) }) { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) },
             TvUi.Item(R.drawable.ic_trash, T("tv_main.remove_tv_setup")) { askRemove() }))
     }
 
@@ -646,7 +646,7 @@ class MainActivity : Activity() {
         menu(T("tv_main.connection"), listOf(
             TvUi.Item(R.drawable.ic_refresh, T("tv_main.reconnect"), T("tv_main.the_tv_s_adb")) { connect() },
             TvUi.Item(R.drawable.ic_code, T("tv_main.open_developer_options")) { devOptions() },
-            TvUi.Item(R.drawable.ic_power, T("tv_main.turn_back_on"), on = KeepAdb.on(this)) { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) },
+            TvUi.Item(R.drawable.ic_power, T("tv_main.turn_back_on"), on = { KeepAdb.on(this) }) { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) },
             TvUi.Item(R.drawable.ic_globe, "Tailscale", tsStatus) { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else tailscale() },
             TvUi.Item(R.drawable.ic_unlink, T("tv_main.forget_adb_keys")) { forgetAdbKeys() }))
     }
@@ -672,8 +672,8 @@ class MainActivity : Activity() {
             TvUi.Item(R.drawable.ic_sparkle, T("tv_main.optimize_tv"), T("tv_main.fewer_extra_apps"), go = needsAdb { chooseOptimize() }),
             TvUi.Item(R.drawable.ic_undo, T("setup.undo_ok"), T("tv_main.as_before_optimize"), go = needsAdb { job { it.undo() } }),
             TvUi.Item(R.drawable.ic_home, T("launcher.tile"), T("launcher.tile_sub"), go = needsAdb { chooseLauncher() }),
-            TvUi.Item(R.drawable.ic_wrench, T("keyfix.tile"), keysSub(), on = KeyFix.wanted(this)) { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) },
-            TvUi.Item(R.drawable.ic_input, T("hold.tile"), T("hold.sub"), on = HoldKeys.on(this)) {   // HoldKeys: stored as a rule, so the phone and web switch it too
+            TvUi.Item(R.drawable.ic_wrench, T("keyfix.tile"), { keysSub() }, on = { KeyFix.wanted(this) }) { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) },
+            TvUi.Item(R.drawable.ic_input, T("hold.tile"), { T("hold.sub") }, on = { HoldKeys.on(this) }) {   // HoldKeys: stored as a rule, so the phone and web switch it too
                 val on = !HoldKeys.on(this)
                 Rules.change(this, org.json.JSONObject().put("do", "holdkeys").put("on", on))
                 log(T("hold.tile") + " · " + T(if (on) "hold.on" else "hold.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
