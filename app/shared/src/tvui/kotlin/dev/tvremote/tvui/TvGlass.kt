@@ -11,6 +11,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.Window
 import android.widget.ImageView
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -68,12 +69,15 @@ object TvGlass {
 
         init {
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-            dialog.setContentView(box)
-            dialog.window?.apply { setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); setGravity(Gravity.CENTER); setDimAmount(0.55f) }
-            width(420)
+            // The window is the whole screen and the box floats in it: a page of another size then resizes a view, not the window (a window
+            // resize reaches the screen a frame after its content, which was the quick flicker inside the panel on a slow box).
+            val root = FrameLayout(a).apply { setOnClickListener { dialog.cancel() }; isFocusable = false }
+            root.addView(box, FrameLayout.LayoutParams(dp(420), -2, Gravity.CENTER))
+            dialog.setContentView(root)
+            dialog.window?.apply { setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); setLayout(-1, -1); setDimAmount(0.55f) }
         }
 
-        private fun width(w: Int) { dialog.window?.setLayout(minOf(dp(w), dm.widthPixels - dp(96)), -2) }
+        private fun width(w: Int) { box.layoutParams = FrameLayout.LayoutParams(minOf(dp(w), dm.widthPixels - dp(96)), -2, Gravity.CENTER) }
 
         /** The page's first line: the plain [title], or with a [back] the "‹ title" row that goes up a level. */
         private fun head(title: String, back: (() -> Unit)?): View {
@@ -120,15 +124,18 @@ object TvGlass {
             }, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
             width(420)
             frame(title, back, list)
-            list.getChildAt(focus.coerceIn(0, maxOf(0, items.size - 1)))?.let { r -> r.post { r.requestFocus() } }
+            list.getChildAt(focus.coerceIn(0, maxOf(0, items.size - 1)))?.let { r -> first(r) }
         }
 
         /** A page of your own [content] (a keypad), [wide] dp across; [focus] is the view that starts focused. */
         fun view(title: String, content: View, wide: Int, focus: View?, back: (() -> Unit)?) {
             width(wide)
             frame(title, back, content, padBottom = dp(10), margin = 64)                      // a focused tile's name shows under it
-            focus?.let { r -> r.post { r.requestFocus() } }
+            focus?.let { r -> first(r) }
         }
+
+        /** [r] is focused when the page is first laid out (before its first draw), so no frame shows the ring on another row. */
+        private fun first(r: View) { r.isFocusedByDefault = true; r.post { if (!r.hasFocus()) r.requestFocus() } }
 
         fun show() = dialog.show()
     }

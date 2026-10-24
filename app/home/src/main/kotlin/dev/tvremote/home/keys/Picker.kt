@@ -57,7 +57,7 @@ private val PK_HUES = intArrayOf(0xFF27324A.toInt(), 0xFF2E3B2F.toInt(), 0xFF432
  * glass ([glassy]). [tag] is a small pill on a corner, [mark] a check, [dead] a tile that cannot be used (greyed, no focus).
  */
 class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: String, label: String, art: App?, hue: String,
-               tag: String = "", icon: Int = 0, plus: Boolean = false, color: Int = 0) : TvTile(c, w, dpx) {
+               tag: String = "", icon: Int = 0, plus: Boolean = false, color: Int = 0, flat: Boolean = false) : TvTile(c, w, dpx) {
     private val check = ImageView(c).apply { setImageResource(R.drawable.ic_check); imageTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
         background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(PK_CHECK) }; setPadding(dpx(3), dpx(3), dpx(3), dpx(3)); visibility = View.GONE }
     private val tagView = Font.on(TextView(c)).apply { textSize = 11f; setTextColor(Color.WHITE); maxLines = 1; setPadding(dpx(7), dpx(2), dpx(7), dpx(2))
@@ -65,24 +65,25 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
     private val h = w * 9 / 16
     override val grows get() = false                                  // the ring alone: growing, 24 moves cost ~8.4 s of CPU and ~610 frames on the FPT box, ~1.2 s and ~27 without
     override val glassy get() = false                                 // a window over Home: the glass's layer, composed over two see-through windows, made half the frames late (emulator: 50% janky, 48 ms median)
+    var deadAlpha = 0.38f                                             // the key pad keeps a missing key's name readable
     var dead = false
-        set(v) { field = v; isFocusable = !v; isClickable = !v; alpha = if (v) 0.38f else 1f }
+        set(v) { field = v; isFocusable = !v; isClickable = !v; alpha = if (v) deadAlpha else 1f }
 
     init {
         Font.on(name)
         setOnFocusChangeListener { _, on -> focus(on) }
-        val banner = art?.banner
+        val banner = if (flat) null else art?.banner       // flat: the key pad has a chip on top, so an icon and a name, never a banner
         faceColor(if (banner != null) PK_BANNER_BACK else if (color != 0) color else shade(hue))
         if (banner != null) {
             fill(ImageView(c).apply { setImageDrawable(banner.constantState?.newDrawable(c.resources) ?: banner); scaleType = ImageView.ScaleType.CENTER_CROP })
             name.text = label
         } else {
-            val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dpx(6), dpx(if (tag.isEmpty()) 4 else 22), dpx(6), dpx(4)) }   // a tag sits on the top edge: the picture starts under it
-            val pic = art?.icon
+            val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dpx(6), dpx(if (tag.isEmpty()) 4 else if (flat) 24 else 22), dpx(6), dpx(4)) }   // a tag sits on the top edge: the picture starts under it
+            val pic = art?.icon ?: if (flat) art?.banner else null   // an app with only a banner: the banner small, like an icon
             inner.addView(ImageView(c).apply {
                 if (pic != null) setImageDrawable(pic.constantState?.newDrawable(c.resources) ?: pic)   // a copy: the grid's tile has the same picture
                 else { setImageResource(if (plus) R.drawable.ic_plus else icon.takeIf { it != 0 } ?: R.drawable.ic_apps); imageTintList = android.content.res.ColorStateList.valueOf(if (plus) PK_FAINT else Color.WHITE) }
-            }, LayoutParams(h * 42 / 100, h * 42 / 100))
+            }, LayoutParams(h * (if (flat) 30 else 42) / 100, h * (if (flat) 30 else 42) / 100))
             if (label.isNotEmpty()) inner.addView(Font.on(TextView(c)).apply {
                 text = label; textSize = 12f; setTextColor(if (plus) PK_SOFT else Color.WHITE); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dpx(4), 0, 0)

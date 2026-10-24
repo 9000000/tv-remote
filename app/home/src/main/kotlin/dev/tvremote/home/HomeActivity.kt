@@ -1267,12 +1267,13 @@ class HomeActivity : Activity() {
             keyPicker(a, st, code, if (mine) getString(R.string.am_key_gone) else getString(R.string.am_key_set, Keys.name(this, code), a.label))
         }
         fun tile(code: Int): View {
-            val tw = dp(if (code in HomeConfig.KEY_COLOURS) 130 else 108)         // the colour keys wider: their name sits on the top edge
+            val tw = dp(if (code in HomeConfig.KEY_COLOURS) 130 else 112)         // the colour keys wider: their name sits on the top edge
             val who = map[code].orEmpty(); val pic = art[code]
             val missing = who.isNotEmpty() && pic == null
             val colour = dev.tvremote.home.keys.QuickKeys.COLOUR[code]
             val t = dev.tvremote.home.keys.PickTile(this, tw, ::dp, "k$code", if (pic != null) pic.label else if (missing) dev.tvremote.home.keys.Targets.label(this, who) else "", pic, "k$code",
-                tag = Keys.name(this, code), plus = who.isEmpty(), color = if (pic == null) colour ?: dev.tvremote.home.keys.PK_EMPTY else 0)
+                tag = Keys.name(this, code), plus = who.isEmpty(), color = if (pic == null) colour ?: dev.tvremote.home.keys.PK_EMPTY else 0, flat = true)
+            t.deadAlpha = 0.65f
             t.dead = who.isEmpty() && have != null && code !in have
             t.mark(who == a.pkg)
             t.setOnClickListener { toggle(code) }
@@ -1293,7 +1294,6 @@ class HomeActivity : Activity() {
         for (r in listOf(digits.subList(0, 3), digits.subList(3, 6), digits.subList(6, 9), digits.subList(9, 10)))
             pad.addView(row(r), LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         pad.addView(row(HomeConfig.KEY_COLOURS), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
-        if (dead.isNotEmpty()) pad.addView(row(dead.take(4)), LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         p.dialog.setOnKeyListener { _, code, e ->
             if (code in tiles.keys && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS) {   // the real key: assign it without walking to its button; its up and repeats are eaten too
                 if (e.action == KeyEvent.ACTION_DOWN && e.repeatCount == 0) toggle(code)
