@@ -465,6 +465,12 @@
   "Nickelodeon.us",
   "Nicktoons.us",
   "DisneyJunior.us",
+  "CartoonNetwork.us",
+  "PBSKids.us",
+  "MoonbugKids.uk",
+  "BabySharkTV.us",
+  "KartoonChannel.us",
+  "LegoChannel.us",
   "NationalGeographic.us",
   {
    "id": "NationalGeographicWild.us",
@@ -494,6 +500,11 @@
   "FoxSports2.us",
   "MTV.us",
   "MTVLive.us",
+  "MovieMusicbyStingray.ca",
+  "E.us",
+  "BBCAmerica.us",
+  "AsianCrush.us",
+  "AsianDrama.hk",
   {
    "id": "BBCNews.uk",
    "name": "BBC News"
