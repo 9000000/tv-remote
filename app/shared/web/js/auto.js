@@ -279,7 +279,7 @@ $('#schedf').addEventListener('submit', async (e) => {
 // the apps to choose from: the user's own and every one with a tile on the TV's home screen (YouTube is a system app)
 let pickApps = [];
 async function loadPickApps() {
-  const r = await api('/api/apps?launch=1', null, true); if (!r) return;
+  const r = await api('/api/apps', null, true); if (!r) return;
   seedMeta(r.apps); pickApps = r.apps.map((a) => a.pkg);
 }
 const choosable = () => pickApps.filter((p) => p !== 'dev.tvremote.setup');   // TV Setup asks the PIN and keeps the limits: never its own
