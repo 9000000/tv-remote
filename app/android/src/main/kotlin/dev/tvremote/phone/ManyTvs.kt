@@ -209,6 +209,7 @@ private fun MainActivity.launcherCards(g: dev.tvremote.core.ontv.Launchers.Galle
     val list = col()
     list.setPadding(dp(16), dp(2), dp(16), dp(2))
     lateinit var box: Popup
+    val pics = ArrayList<Pair<dev.tvremote.core.ontv.Launchers.Entry, android.widget.ImageView>>()
     for (e in g.entries) {
         val card = col()
         card.background = box(BTN, 14)
@@ -239,11 +240,21 @@ private fun MainActivity.launcherCards(g: dev.tvremote.core.ontv.Launchers.Galle
         foot.addView(use, LinearLayout.LayoutParams(-2, dp(44)))
         card.addView(foot, gap(4))
         list.addView(card, if (list.childCount == 0) LinearLayout.LayoutParams(-1, -2) else gap(10))
-        Thread {                                                      // checked against the signed list's hash, as on the page
-            val bm = try { dev.tvremote.core.ontv.Launchers.thumb(g, e).let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) } } catch (x: Exception) { null }
-            if (bm != null) ui.post { pic.setImageBitmap(bm) }
-        }.start()
+        pics.add(e to pic)
     }
+    // Four at a time (one thread each was a burst of requests; one by one was ~4 s for 13), checked against the signed list's hash,
+    // decoded at the card's size (the 960x540 picture was 2 MB of memory for a 112 dp card)
+    val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+    for ((e, pic) in pics) pool.execute {
+        val b = try { dev.tvremote.core.ontv.Launchers.thumb(g, e) } catch (x: Exception) { return@execute }
+        val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size, o)
+        var n = 1
+        while (o.outWidth / (n * 2) >= dp(112)) n *= 2
+        val bm = android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size, android.graphics.BitmapFactory.Options().apply { inSampleSize = n }) ?: return@execute
+        ui.post { pic.setImageBitmap(bm) }
+    }
+    pool.shutdown()
     box = Popup.Builder(this).setTitle(T("fleet.which_launcher")).setMessage(T("fleet.launcher_note")).setView(list)
         .setNegativeButton(T("common.cancel"), null).show()
 }
@@ -472,15 +483,15 @@ private fun MainActivity.fleetUninstall(ips: List<String>) {
                         }.setNegativeButton(T("common.cancel"), null).show()
                 }.setNegativeButton(T("common.cancel"), null).setOnDismissListener { closeLinks() }.show()
             sync()
-            // the pictures, one after the other, each from the first TV that has the app (a TV that gives none leaves the letter)
-            Thread {
-                for (r in list) {
-                    if (!box.isShowing) break
-                    val png = r.on.firstNotNullOfOrNull { ip -> try { labels[ip]?.icon(r.pkg) } catch (e: Exception) { null } } ?: continue
-                    val bmp = android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size) ?: continue
-                    ui.post { if (box.isShowing) { r.image.setImageBitmap(bmp); r.image.visibility = View.VISIBLE; r.letter.visibility = View.GONE } }
-                }
-            }.start()
+            // the pictures, four at a time (the TV answers each on its own stream: 16 took 0.49 s one by one, 0.18 s four at a time), each from the first TV that has the app (a TV that gives none leaves the letter)
+            val pics = Executors.newFixedThreadPool(4)
+            for (r in list) pics.execute {
+                if (!box.isShowing) return@execute
+                val png = r.on.firstNotNullOfOrNull { ip -> try { labels[ip]?.icon(r.pkg) } catch (e: Exception) { null } } ?: return@execute
+                val bmp = android.graphics.BitmapFactory.decodeByteArray(png, 0, png.size) ?: return@execute
+                ui.post { if (box.isShowing) { r.image.setImageBitmap(bmp); r.image.visibility = View.VISIBLE; r.letter.visibility = View.GONE } }
+            }
+            pics.shutdown()
         }
     }.start()
 }
