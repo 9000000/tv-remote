@@ -82,6 +82,7 @@ function renderRules() {
         act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger', T('auto.unlock'))));
   }) : [UI.empty(T('auto.no_locks'))]));
   $('#lockacts').replaceChildren(act(T(lock.pin ? 'auto.pin_change' : 'auto.pin_first'), () => askPin()));
+  renderKids(r);                                                       // kids mode, unlock, total time (kids.js)
   // schedules; a TV Setup older than them has no "sched" in its answer
   const scheds = (r.sched || []).map((x) => {
     const icon = appIcon(x.pkg); onMeta(x.pkg, (m) => icon.fill(m));
