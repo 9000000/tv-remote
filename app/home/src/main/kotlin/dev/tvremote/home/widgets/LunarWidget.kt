@@ -25,7 +25,7 @@ internal fun Widgets.lunar(m: Moon): View {
         else -> a.getString(R.string.l_new_in, m.new)
     }
     val tetNow = d.month == 1 && d.day <= 3 && !d.leap
-    val sub = if (m.tet > 0 && !tetNow) near + "\n" + a.getString(R.string.l_tet_in, m.tet) else near       // a line each: "·" was left hanging at a line's end
+    val tet = if (m.tet > 0 && !tetNow) a.getString(R.string.l_tet_in, m.tet) else null   // beside the words on a wide pill, a line under them on a narrow one (Pill)
     // the whole card counts the days in columns instead: "3 ngày / tới Rằm", "108 ngày / tới Tết" (the line wrapped and left the right empty)
     val counts = ArrayList<Pair<Int, Int>>()
     val today = tetNow || m.full == 0 || m.new == 0
@@ -34,7 +34,7 @@ internal fun Widgets.lunar(m: Moon): View {
     val t = text(d.day.toString(), 19f, Color.WHITE).apply { typeface = Font.medium; gravity = Gravity.CENTER }
     val (can, chi) = Lunar.canChi(d.year)
     val year = a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
-    return pill(tile(ROSE, null, t), date, sub, 3).apply { tag = Night((d.day - 0.5f) / 29.53f, year, if (today) near else null, counts) }       // a whole card: the moon and the year fill its right
+    return pill(tile(ROSE, null, t), date, near, 3, tet).apply { tag = Night((d.day - 0.5f) / 29.53f, year, if (today) near else null, counts) }       // a whole card: the moon and the year fill its right
 }
 
 /** What a standing lunar card shows on the right of its day: tonight's moon and the year's name. */

@@ -9,6 +9,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Home chủ đề: nhìn đang dùng chưa lưu thì tự giữ lại ở ô "Giao diện trước" trước khi đổi chủ đề; chủ đề của bạn nằm riêng mục "Chủ đề của bạn"; lưu có đặt tên (bàn phím TV); giữ OK trên chủ đề (web: nút ⓘ) xem nó chỉnh gì.
 - TV Home hình nền: chia mục Trên mạng, Ảnh của bạn, Video của bạn, Cảnh vẽ, Màu; cài đặt video nằm trong mục Video, chỉ hiện khi có video.
+- TV Home: đóng hộp Telegram hay Quản lý từ điện thoại không còn làm lớp tối nháy.
+- TV Home: áp dụng chủ đề rồi mở trang Widget, danh sách giờ khớp với phần Kết quả (trước còn hiện widget cũ đang bật).
+- TV Home: thẻ Lịch âm nhỏ mà rộng đặt "Tết sau N ngày" sang bên phải thay vì hai dòng chen nhau.
+- Clipboard của TV: clipboard trống giờ hiện ô trống thay vì lỗi "TV không trả lời".
 - Chuột bay (app điện thoại): nút nhỏ ở cuối dải cuộn đổi bên cho người thuận tay trái (dải cuộn sang trái, nút đóng sang phải); nhớ lựa chọn.
 - TV Home: thẻ Điều khiển bằng Telegram ghi rõ cần TV Setup bản nào và TV đang có bản nào (trước chỉ ghi "bản mới nhất").
 - TV Home: video nền nặng không còn ra file hỏng trên TV yếu. Trên BRAVIA, nén video 1080p60 ra 27 Mbps toàn khung hỏng (nền xanh nhòe). Giờ TV hạ xuống 30 fps khi chip không làm nổi, tự kiểm tra file vừa nén (bitrate và giải mã thử), hỏng thì nén lại ở 720p30.
@@ -47,6 +51,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **English**
 - TV Home themes: a look in use that is not saved is kept in a "Previous look" slot before a theme is applied; your themes have their own section; saving asks for a name (TV keyboard); hold OK on a theme (web: the ⓘ button) to see what it sets.
 - TV Home wallpaper: sections Online, Your photos, Your videos, Scenes, Colours; video settings live in the Videos section and show only when there are videos.
+- TV Home: closing the Telegram or Manage from phone box no longer makes the dim flicker.
+- TV Home: after applying a theme, the Widget page's list matches its preview (it still showed the old widgets as on).
+- TV Home: a wide small Lunar card puts "Tết in N days" on the right instead of two crowded lines.
+- TV clipboard: an empty clipboard shows an empty box instead of "the TV did not answer".
 - Air mouse (phone app): a small button at the foot of the scroll strip swaps sides for left-handed use (strip on the left, close button on the right); the choice is remembered.
 - TV Home: the Telegram card says which TV Setup it needs and which one the TV has (it said "the latest version").
 - TV Home: a heavy video background no longer comes out broken on a weak TV. On a BRAVIA, making a 1080p60 video light wrote 27 Mbps of broken frames (a green smear). Now the TV drops to 30 fps when its chip cannot do the rate, checks the file it made (bitrate and a test decode), and makes it again at 720p30 if it is bad.

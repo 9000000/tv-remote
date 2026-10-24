@@ -757,7 +757,10 @@ class Tv(
         }
     }
 
-    /** The text on the TV's clipboard ("" when empty), or null when the TV did not say within [timeoutMs]. Blocks. */
+    /**
+     * The text on the TV's clipboard ("" when empty), or null when the link is gone. Blocks up to [timeoutMs]. scrcpy's server
+     * answers nothing when the clipboard is empty (no clip, or Android 10+ refusing it), so silence on a live link is "".
+     */
     fun clipboard(timeoutMs: Long = 2500): String? {
         carrier?.takeIf { it.control != null && !it.stopped }?.let { return it.clipboard(timeoutMs) }   // the answer comes on its socket
         val before = synchronized(clipLock) { clipGot }
@@ -766,7 +769,7 @@ class Tv(
         synchronized(clipLock) {
             while (clipGot == before) {
                 val left = end - System.currentTimeMillis()
-                if (left <= 0) return null
+                if (left <= 0) return if (!stopped && control != null) "" else null
                 clipLock.wait(left)
             }
             return clip

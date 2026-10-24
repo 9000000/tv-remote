@@ -271,6 +271,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** A small card turned upright: the square larger on top, the words bigger under it, all to the left. */
     internal fun stand(v: View) {
         val p = v as? LinearLayout ?: return
+        (p as? Pill)?.let { it.upright = true; it.beside?.let { v -> it.removeView(v) }; it.beside = null }   // upright, its counts say it (Night)
         val square = p.getChildAt(0); val words = p.getChildAt(1) as LinearLayout
         p.orientation = VERTICAL; p.gravity = Gravity.START or Gravity.CENTER_VERTICAL
         p.setPadding(dp(20), dp(14), dp(20), dp(14))
@@ -317,7 +318,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     }
 
     /** One of the small cards: a coloured square, a title, a line under it ([lines] of it). */
-    internal fun pill(square: View, title: String, sub: String, lines: Int) = LinearLayout(a).apply {
+    internal fun pill(square: View, title: String, sub: String, lines: Int, side: String? = null) = Pill(a, side).apply {
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         Frost.on(this, dp(18).toFloat(), dp(1))
         setPadding(dp(12), dp(8), dp(14), dp(8))
@@ -325,8 +326,31 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         addView(LinearLayout(a).apply {
             orientation = VERTICAL
             addView(text(title, 14f, Color.WHITE).apply { typeface = Font.medium; maxLines = 2 })   // a narrow column wraps, never cuts
-            if (sub.isNotEmpty()) addView(text(sub, 12f, DIM).apply { maxLines = maxOf(lines, 2) })
+            if (sub.isNotEmpty() || side != null) addView(text(sub, 12f, DIM).apply { maxLines = maxOf(lines, 2) }.also { below = it })
         }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+        if (side != null) { under = sub; addView(text(side, 13f, DIM).apply { maxLines = 1; gravity = Gravity.END }.also { beside = it }, LayoutParams(-2, -2).apply { leftMargin = dp(12) }) }
+    }
+
+    /**
+     * A pill with a second fact ([side], the lunar card's "Tết sau 105 ngày"): beside the words when the pill is wide, a line under
+     * them when it is narrow. As two lines always, a pill alone across a column left most of its width empty and the lines crowded.
+     */
+    internal class Pill(c: Context, private val side: String?) : LinearLayout(c) {
+        var under = ""
+        var below: TextView? = null; var beside: TextView? = null       // the line under the title; [side] on the right
+        var upright = false                                             // stand() lays it out its own way
+        override fun onMeasure(w: Int, h: Int) {
+            val sub = below; val right = beside
+            if (side != null && sub != null && right != null && !upright) {
+                val wide = MeasureSpec.getMode(w) != MeasureSpec.UNSPECIFIED && MeasureSpec.getSize(w) >= (WIDE_DP * resources.displayMetrics.density)
+                val text = if (wide) under else if (under.isEmpty()) side else under + "\n" + side
+                if (sub.text.toString() != text) sub.text = text
+                sub.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
+                right.visibility = if (wide) View.VISIBLE else View.GONE
+            }
+            super.onMeasure(w, h)
+        }
+        companion object { const val WIDE_DP = 320 }
     }
 
     /** "3d 17h", "5h 12m", "42m". */

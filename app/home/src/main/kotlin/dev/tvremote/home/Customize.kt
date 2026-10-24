@@ -75,6 +75,8 @@ object Customize {
         var row: View? = null; var head: View? = null; var sum: TextView? = null; var last: View? = null
         var start: (() -> View?)? = null                                 // where a first visit lands, else the first control (Background: its first control, not the photo in use further down)
         var fill: (() -> Unit)? = null                                 // puts the controls in [col]; dropped once it ran
+        var made: (() -> Unit)? = null                                 // the fill that ran, for a page made again
+        var seen = ""                                                  // the settings as this page last showed them
     }
 
     private val EVERY_WORDS = mapOf("off" to R.string.rot_off, "30m" to R.string.rot_30m, "1h" to R.string.rot_1h, "6h" to R.string.rot_6h, "day" to R.string.rot_day, "show" to R.string.rot_show)
@@ -644,8 +646,20 @@ object Customize {
         }
         fun build(g: Group) {
             val f = g.fill ?: return
-            g.fill = null; conf = Store.get(a); col = g.col   // as it is now: another page may have changed it
+            g.fill = null; g.made = f; conf = Store.get(a); col = g.col   // as it is now: another page may have changed it
             f()
+            g.seen = conf.toString()
+        }
+        // every page is made when the panel opens: one changed by another page since (a theme applied: the widgets page still
+        // listed the cards before it while its preview, read live, was empty) is made again as it is now
+        fun fresh(g: Group) {
+            val f = g.made ?: return
+            val now = Store.get(a)
+            if (now.toString() == g.seen) return
+            g.col.removeAllViews(); g.last = null; g.start = null
+            conf = now; col = g.col
+            f()
+            g.seen = Store.get(a).toString()
         }
         // the rest, one page a message once the panel is in place, so a key pressed meanwhile waits for one page at most
         fun buildRest(i: Int = 0) { if (i < groups.size && dialog.isShowing) top.post { build(groups[i]); buildRest(i + 1) } }
@@ -668,13 +682,14 @@ object Customize {
         val stack = FrameLayout(a).apply { clipChildren = false }
         stack.addView(topScroll, FrameLayout.LayoutParams(-1, -1))
         var cur: Group? = null                                         // the page open, null on the first level
+        var keepDim = false                                            // a dialog over this one dims Home itself: see the focus listener
         var gen = 0                                                    // a slide that was cut short by the next one does not finish its hiding
         val shift = panelW / 6f
         var still = at != null                                        // reopened on a page: it is simply there
         fun slides() = !still && Motion.on && !Motion.calm                       // calm and off: the page is simply there
         fun refresh() { val c = Store.get(a); for (g in groups) g.sum?.text = summary(a, g.key, c) }   // one read: ~7 ms each on the FPT box
         fun enter(g: Group) {
-            build(g)
+            build(g); fresh(g)
             cur = g; val n = ++gen
             // a page whose change shows on Home (background, veil, look, layout, widgets) lifts the dim: it is seen as it is
             if (g.key in PREVIEW) dialog.window?.setDimAmount(0f)
@@ -694,6 +709,7 @@ object Customize {
             cur = null; val n = ++gen
             dialog.window?.setDimAmount(Drop.MENU_DIM)
             g.last = g.page.findFocus()
+            g.seen = Store.get(a).toString()                           // its own changes are already on it
             topScroll.animate().cancel(); g.page.animate().cancel()
             topScroll.visibility = View.VISIBLE; topScroll.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
             refresh()
@@ -767,7 +783,7 @@ object Customize {
                 addView(label(a.getString(R.string.mg_row_sub), 13f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
             }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
-            setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
+            setOnClickListener { keepDim = true; PhotoScreen.show(a) { dialog.dismiss() } }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         // Telegram: a plain row (TV Setup is asked only once it is opened, so Customize stays light); without TV Setup the screen says how to get it
         top.addView(LinearLayout(a).apply {
@@ -785,7 +801,7 @@ object Customize {
                 addView(label(a.getString(R.string.tg_row_sub), 13f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
             }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
-            setOnClickListener { TelegramScreen.show(a) }
+            setOnClickListener { keepDim = true; TelegramScreen.show(a) }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         val done = Font.on(TextView(a)).apply {
             text = a.getString(R.string.done); textSize = 16f; setTextColor(0xFF111318.toInt()); gravity = Gravity.CENTER
@@ -831,7 +847,12 @@ object Customize {
             setWindowAnimations(0)                                     // its own slide below, or none when motion is off
         }
         // a window of its own on top (the app picker, quick keys, a stepper, a QR) takes the dim off: the stepper's Home is then seen as it is
-        panel.viewTreeObserver.addOnWindowFocusChangeListener { has -> dialog.window?.setDimAmount(if (has && cur?.key !in PREVIEW) Drop.MENU_DIM else 0f) }
+        // A dialog with a dim of its own (Telegram, Manage from phone: [keepDim]) keeps it on: taken off, closing that dialog showed
+        // Home undimmed for a frame or two before this window had the focus back (the dim flashed off and on)
+        panel.viewTreeObserver.addOnWindowFocusChangeListener { has ->
+            dialog.window?.setDimAmount(if ((has || keepDim) && cur?.key !in PREVIEW) Drop.MENU_DIM else 0f)
+            if (has) keepDim = false
+        }
         dialog.setOnShowListener {
             groups.firstOrNull { it.key == at }?.let { enter(it); still = false; slid = true; buildRest(); return@setOnShowListener }
             groups[0].row?.let {
