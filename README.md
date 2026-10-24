@@ -93,6 +93,8 @@ The **TV app** is shown on the TV as *TV Setup*. It also runs the timers and lim
 | YouTube links, screen off | ✓ | | | |
 
 The picture, files, health and timers need Android TV.
+
+A clean home screen on a Samsung (Tizen), like TV Home on Android: [arn0-tv](https://github.com/NelsonEU/arn0-tv) (a separate project, made for one Q70B, installed through Developer Mode).
 </details>
 
 <details>

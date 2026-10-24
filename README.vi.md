@@ -90,6 +90,8 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 
 Xem hình, tệp, sức khỏe, hẹn giờ cần Android TV. TV làm sai: Giới thiệu → 📋 Gửi nhật ký.
 
+Muốn TV Samsung (Tizen) có màn hình chính gọn như TV Home: xem [arn0-tv](https://github.com/NelsonEU/arn0-tv) (dự án riêng, làm cho một TV Q70B, cài qua Developer Mode).
+
 **Các phần nối với nhau thế nào.** Không có máy chủ nào ở giữa: mọi thứ đi thẳng tới TV.
 
 ```mermaid
