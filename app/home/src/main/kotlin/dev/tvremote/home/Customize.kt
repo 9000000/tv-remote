@@ -1065,7 +1065,7 @@ private val LOOK_WORDS = mapOf("glass" to R.string.c_cardlook_glass, "tonal" to 
                     line.addView(m, LinearLayout.LayoutParams(dp(56), -1).apply { leftMargin = dp(8) })
                     if (focus == k && focusMove) want = m
                 }
-                if (focus == k && !focusMove && !focusSize) want = t
+                if (focus == k && !focusMove && !focusSize && !focusLook) want = t
                 box.addView(line, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap })
             }
             want?.requestFocus()
