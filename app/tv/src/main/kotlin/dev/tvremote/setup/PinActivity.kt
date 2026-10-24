@@ -22,7 +22,7 @@ import kotlin.math.roundToInt
 /**
  * Over a locked app ([Rules.needsPin]: a locked app, or any app in kids mode) the moment it comes to the front ([Guard]): its PIN on the
  * remote's number keys or the keypad here, checked as soon as it has its length. With Google Authenticator on, the same field also takes
- * the 6-digit code, or one of the 8-digit recovery codes (spent once; a lost phone must not lock the parents out) (a PIN of 4 digits is tried at 4, the code at 6: only a wrong ending counts as a wrong try). Back, or ✕, goes to the
+ * the 6-digit code; "Use a backup code" switches it to one of the 8-digit recovery codes (spent once; a lost phone must not lock the parents out) (a PIN of 4 digits is tried at 4, the code at 6: only a wrong ending counts as a wrong try). Back, or ✕, goes to the
  * home screen. Opaque, so the app under it is stopped (a video pauses) and nothing of it shows. Five wrong tries in a row: a wait of a
  * minute, then 5, 15, 60 minutes ([Lockout], kept, so a restart gives no new tries). "Ask a parent" sends the question to Telegram
  * and the screen closes by itself once a parent has answered. Also the way in when the day's total is used up (extra `total`).
@@ -46,6 +46,9 @@ class PinActivity : Activity() {
     private var total = false                                       // opened over the "time is up" screen, not over an app
     private var grant = 0                                           // opened from a notice (bedtime, a limit): minutes the TV opens for on a right code
     private var ask: Button? = null
+    private var useBackup: Button? = null
+    /** Typing an 8-digit backup code (lost phone). Its own button, so a wrong 6-digit code is wrong at once; showing it gives a child nothing: 10^8 codes behind the wait after wrong tries. */
+    private var backup = false
     private val stats by lazy { Stats(this) }
 
     override fun onCreate(b: Bundle?) {
@@ -74,6 +77,9 @@ class PinActivity : Activity() {
         card.addView(pad, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         ask = button(T("pin.ask")) { askParent() }.apply { textSize = 16f; visibility = View.GONE }
         card.addView(ask, LinearLayout.LayoutParams(dp(224), dp(44)).apply { topMargin = dp(6) })
+        useBackup = button(T("pin.use_backup")) { settle(); backup = !backup; typed = ""; useBackup?.text = T(if (backup) "pin.use_main" else "pin.use_backup"); said.text = enterText(); said.setTextColor(MUTED); draw() }
+            .apply { textSize = 16f; visibility = View.GONE }
+        card.addView(useBackup, LinearLayout.LayoutParams(dp(224), dp(44)).apply { topMargin = dp(6) })
         page.addView(card, LinearLayout.LayoutParams(-2, -2))
         setContentView(page)
         buttons[0].isFocusableInTouchMode = true                    // opened from the background, the TV may be in touch mode: OK must land somewhere
@@ -82,7 +88,7 @@ class PinActivity : Activity() {
         tick.run()
     }
 
-    override fun onNewIntent(i: Intent) { super.onNewIntent(i); settle(); read(i); typed = ""; draw() }
+    override fun onNewIntent(i: Intent) { super.onNewIntent(i); settle(); read(i); typed = ""; backup = false; useBackup?.text = T("pin.use_backup"); draw() }
 
     private fun read(i: Intent) {
         pkg = i.getStringExtra("pkg") ?: ""
@@ -107,6 +113,9 @@ class PinActivity : Activity() {
             val left = Lockout.until(this@PinActivity, now) - now
             if (left > 0) { said.text = T("pin.wait_long", "t" to clock(left)); said.setTextColor(BAD); waiting = true }
             else if (waiting) { waiting = false; said.text = enterText(); said.setTextColor(MUTED) }
+            val codes = Rules.recoveryLeft(o) > 0
+            if (!codes && backup) { backup = false; typed = ""; said.text = enterText(); draw() }
+            useBackup?.visibility = if (codes) View.VISIBLE else View.GONE
             ask?.visibility = if (Rules.methods(o).optBoolean("ask") && RemoteService.canAsk()) View.VISIBLE else View.GONE
             ui.postDelayed(this, 1000)
         }
@@ -117,7 +126,7 @@ class PinActivity : Activity() {
 
     /** The line over the dots: what may be typed. */
     private fun enterText(): String = Rules.methods(Rules.load(this)).let { m ->
-        if (total) T("pin.total_enter") else if (!m.optBoolean("pin") && m.optBoolean("totp")) T("pin.enter_totp") else if (m.optBoolean("totp")) T("pin.enter_any") else T("pin.enter")
+        if (backup) T("pin.enter_backup") else if (total) T("pin.total_enter") else if (!m.optBoolean("pin") && m.optBoolean("totp")) T("pin.enter_totp") else if (m.optBoolean("totp")) T("pin.enter_any") else T("pin.enter")
     }
 
     private fun askParent() {
@@ -152,7 +161,7 @@ class PinActivity : Activity() {
         if (k == "⌫" || typed.length !in tryAt()) return
         val o = Rules.load(this)
         val how = if (Rules.pinOk(o, typed)) "pin" else if (Rules.totpOk(o, typed, System.currentTimeMillis(), Clock.driftMs(this))) "totp"
-            else if (typed.length == 8 && Rules.useRecovery(this, typed)) "recovery" else null
+            else if (backup && typed.length == 8 && Rules.useRecovery(this, typed)) "recovery" else null
         if (how != null) {
             pending = false
             Lockout.right(this)
@@ -175,24 +184,19 @@ class PinActivity : Activity() {
         typed = ""; pending = false
         val wait = Lockout.wrong(this, System.currentTimeMillis())
         if (Lockout.streak(this) == 3) RemoteService.wrongCodes(name())                   // the parents hear it at the third, not after the lockout
-        said.text = if (wait > 0) T("pin.wait_long", "t" to clock(wait)) else T("pin.wrong")
+        said.text = if (wait > 0) T("pin.wait_long", "t" to clock(wait)) else T(if (Rules.totpOn(Rules.load(this))) "pin.wrong_code" else "pin.wrong")   // "Wrong PIN" under an Authenticator code reads as the wrong field
         said.setTextColor(BAD)
         waiting = wait > 0
         ui.postDelayed({ draw() }, 150)
     }
 
     /** The lengths a try is made at: the PIN's own, and 6 for an Authenticator code. */
-    private fun tryAt(): Set<Int> = Rules.load(this).let { o -> Rules.methods(o).let { m -> setOfNotNull(len.takeIf { m.optBoolean("pin") }, 6.takeIf { m.optBoolean("totp") }, 8.takeIf { Rules.recoveryLeft(o) > 0 }) } }
+    private fun tryAt(): Set<Int> = Rules.load(this).let { o -> if (backup) setOf(8) else Rules.methods(o).let { m -> setOfNotNull(len.takeIf { m.optBoolean("pin") }, 6.takeIf { m.optBoolean("totp") }) } }
 
     /** The most digits it takes: past that a try is wrong. */
     private fun maxLen(): Int = tryAt().maxOrNull() ?: len
 
-    /** Dots for the PIN / the 6-digit code; they grow to 8 only once a backup code is being typed (8 empty dots under "6-digit code" read as a mistake). */
-    private fun draw() {
-        val main = Rules.methods(Rules.load(this)).let { m -> setOfNotNull(len.takeIf { m.optBoolean("pin") }, 6.takeIf { m.optBoolean("totp") }).maxOrNull() } ?: maxLen()
-        val shown = if (typed.length <= main) main else maxLen()
-        dots.text = "●".repeat(typed.length) + "○".repeat(maxOf(0, shown - typed.length))
-    }
+    private fun draw() { dots.text = "●".repeat(typed.length) + "○".repeat(maxOf(0, maxLen() - typed.length)) }
 
     private fun home() {
         showing = null

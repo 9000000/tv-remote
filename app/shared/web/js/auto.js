@@ -18,6 +18,8 @@ async function loadRules(change, quiet) {
   renderRules(); return r;
 }
 
+const SETTINGS_PKGS = ['com.android.tv.settings', 'com.google.android.tv.settings', 'com.android.settings'];   // Kids.kt SETTINGS
+
 function renderRules() {
   const r = RULES || {};
   const box = $('#autosetup');
@@ -81,7 +83,11 @@ function renderRules() {
       el('div', { className: 'acts' },
         act('🗑', async () => { if (await ask(T('auto.unlock_ask', { name }), { ok: T('auto.unlock') })) await loadRules({ do: 'lock', pkg: l.pkg, on: false }); }, 'danger', T('auto.unlock'))));
   }) : [UI.empty(T('auto.no_locks'))]));
-  $('#lockacts').replaceChildren(act(T(lock.pin ? 'auto.pin_change' : 'auto.pin_first'), () => askPin()));
+  // through the TV's Settings a child uninstalls or clears TV Setup, or moves the clock past bedtime: offer to lock it too
+  const settingsOpen = lock.pin && lock.apps.length && lock.mode !== 'kids' && !lock.apps.some((l) => SETTINGS_PKGS.includes(l.pkg));
+  $('#lockacts').replaceChildren(...(settingsOpen ? [UI.note(T('auto.lock_settings_why'))] : []),
+    act(T(lock.pin ? 'auto.pin_change' : 'auto.pin_first'), () => askPin()),
+    ...(settingsOpen ? [act(T('auto.lock_settings'), () => loadRules({ do: 'lock', pkg: SETTINGS_PKGS[0], on: true }))] : []));
   renderKids(r);                                                       // kids mode, unlock, total time (kids.js)
   // schedules; a TV Setup older than them has no "sched" in its answer
   const scheds = (r.sched || []).map((x) => {

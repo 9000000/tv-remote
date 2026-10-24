@@ -26,6 +26,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home tự cập nhật xong thì TV Setup dịch sẵn lại ngay (trước đây phải chờ tới đêm): mở nhanh hơn ~20-30% trên box yếu (FPT: 457-1332 ms → ~410 ms).
 - Chế độ trẻ em (tab Tự động, cần TV Setup mới): mọi app hỏi mã trừ các app bạn cho phép; Cài đặt TV cũng bị khóa. Mở khóa bằng PIN, mã Google Authenticator (TV tự chỉnh giờ lệch, báo khi giờ TV sai) hoặc nhờ bố mẹ qua Telegram. 8 mã dự phòng khi mất điện thoại. Bàn phím số xáo mỗi lần, nhập sai 5 lần phải chờ 1/5/15/60 phút, sai 3 lần báo Telegram. Mở tạm 30 phút / 1 giờ / hết hôm nay từ web, app hoặc Telegram (/unlock, /lock). Giới hạn tổng giờ xem TV mỗi ngày (/time, /more).
 - Có PIN hoặc Google Authenticator thì màn hình chính và Quản lý của TV Setup trên TV cũng hỏi mã, trẻ không tự tắt khóa được.
+- Khóa app bằng PIN: nếu Cài đặt TV chưa khóa, tab Tự động gợi ý "Khóa luôn Cài đặt TV" (trẻ có thể vào đó gỡ TV Setup hoặc chỉnh giờ).
+- Màn nhập mã: 6 ô cho mã Google Authenticator, nhập sai báo ngay; mã dự phòng 8 số nhập qua nút "Dùng mã dự phòng".
 
 **English**
 - TV Setup: when a device asks to pair but the code screen cannot open (another app is in front), the code still shows as a line on the main screen; the Connection menu has a "Forget all ADB keys" row (asks first, then opens Developer options at the revoke-USB-debugging row, since an app cannot delete the keys itself); TV Home that crashes over and over (3 times in 60 s) opens the TV's Settings so the home app can be changed, instead of relaunching itself.
@@ -47,6 +49,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - After TV Home updates itself, TV Setup compiles it ahead again at once (before, only at night): ~20-30% faster start on slow boxes (FPT: 457-1332 ms → ~410 ms).
 - Kids mode (Automation tab, needs the new TV Setup): every app asks for the code except the ones you allow; the TV's Settings is locked too. Unlock with the PIN, a Google Authenticator code (TV Setup corrects a wrong TV clock and warns about it) or by asking a parent on Telegram. 8 backup codes for a lost phone. The number pad is shuffled each time; 5 wrong tries wait 1/5/15/60 min, 3 wrong tries alert Telegram. Open for 30 min / 1 h / the rest of today from the web, the apps or Telegram (/unlock, /lock). A total daily TV time (/time, /more).
 - With a PIN or Google Authenticator set, TV Setup's own main and Manage screens on the TV ask for the code too, so a child can't turn the lock off there.
+- PIN app lock: when the TV's Settings isn't locked, the Automation tab offers "Lock the TV's Settings too" (a child could uninstall TV Setup there or change the clock).
+- Code screen: 6 dots for the Google Authenticator code, a wrong one says so at once; an 8-digit backup code goes through the "Use a backup code" button.
 
 ## 0.21.0 - 2026-10-24
 
