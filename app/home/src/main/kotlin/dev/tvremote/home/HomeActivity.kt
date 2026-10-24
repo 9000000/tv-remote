@@ -150,6 +150,10 @@ class HomeActivity : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        if (CrashLoop.tripped(this)) {                               // crashing on start again and again: let the person change the home app
+            try { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (ignored: Exception) { }
+            finish(); return
+        }
         wantInputs = intent?.action == InputOpen.INPUTS
         Font.load(this)
         InputOpen.sync(this)

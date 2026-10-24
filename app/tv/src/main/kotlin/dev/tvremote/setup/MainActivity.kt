@@ -39,6 +39,15 @@ class MainActivity : Activity() {
     private lateinit var dot: View
     private lateinit var statusTitle: TextView
     private lateinit var statusDetail: TextView
+    private lateinit var pairLine: TextView                          // the pairing code, whenever this screen is in front instead of PairActivity
+    private val pairPoll = object : Runnable {
+        override fun run() {
+            val c = RemoteService.pairingCode()
+            if (c == null) pairLine.visibility = View.GONE
+            else { pairLine.text = T("tv_main.pair_code_line", "code" to c.substring(0, 3) + " " + c.substring(3)); pairLine.visibility = View.VISIBLE }
+            if (shown) pairLine.postDelayed(this, 1000)
+        }
+    }
     private lateinit var logView: TextView
     private lateinit var scroll: ScrollView
     private lateinit var spinner: ProgressBar
@@ -191,6 +200,12 @@ class MainActivity : Activity() {
         rulesCard.gravity = Gravity.END or Gravity.CENTER_VERTICAL
         status.addView(rulesCard, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(16) })
         left.addView(status, margins(top = 12))
+        // Since Android 10 a service cannot open PairActivity over another app, and the shell route fails when ADB is off: without
+        // this line a phone asking to pair would leave the person with a code nobody can see.
+        pairLine = text("", 20, TvUi.TEXT, true).apply {
+            background = box(TvUi.CARD, 16, 0); setPadding(dp(16), dp(10), dp(16), dp(10)); visibility = View.GONE
+        }
+        left.addView(pairLine, margins(top = 8))
 
         left.addView(section(T("tv_main.actions")), margins(top = 14))
         tsStatus = T("tv_main.away_from_home")
@@ -238,7 +253,7 @@ class MainActivity : Activity() {
         webCol.setPadding(dp(18), dp(14), dp(18), dp(14))
         webBtn = smallButton("") { RemoteService.setEnabled(this, !RemoteService.enabled(this)); showWeb(); webBtn.requestFocus() }
         if (phone) {                                                  // header, status, then the card (what a phone is mostly here for), the tiles, the log
-            left.addView(webCol, 2, margins(top = 16))
+            left.addView(webCol, 3, margins(top = 16))
             scroll.isNestedScrollingEnabled = true
             left.addView(scroll, LinearLayout.LayoutParams(-1, dp(240)).apply { topMargin = dp(8) })
             page.addView(left, LinearLayout.LayoutParams(-1, -2))
@@ -350,6 +365,7 @@ class MainActivity : Activity() {
             startActivity(android.content.Intent(this, PinActivity::class.java).putExtra("pkg", packageName))
         }
         shown = true
+        pairLine.removeCallbacks(pairPoll); pairPoll.run()
         showWeb()
         val s = setup
         if (s != null && !busy) Thread { try { showStatus(s) } catch (ignored: Exception) { } }.start()   // back from Tailscale / Play Store: refresh the IPs
@@ -631,7 +647,7 @@ class MainActivity : Activity() {
     private fun connectionMenu() {
         if (busy) return
         val items = arrayOf(T("tv_main.reconnect") + " · " + T("tv_main.the_tv_s_adb"), T("tv_main.open_developer_options"), keepText(),
-            "Tailscale · " + tsStatus)
+            "Tailscale · " + tsStatus, T("tv_main.forget_adb_keys"))
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(T("tv_main.connection"))
             .setItems(items) { _, i ->
@@ -640,8 +656,22 @@ class MainActivity : Activity() {
                     1 -> devOptions()
                     2 -> { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) }
                     3 -> if (adb == null) log(T("tv_main.needs_adb_turn_on")) else tailscale()
+                    4 -> forgetAdbKeys()
                 }
             }.show()
+    }
+
+    /**
+     * Revoking every ADB key is not something an app can do: /data/misc/adb/adb_keys is system-only and the shell user is denied
+     * too (measured on an Android 14 emulator: "Permission denied"). Developer options has the row that does it, so open that.
+     * TV Setup's own link is revoked as well and asks again on the next connect.
+     */
+    private fun forgetAdbKeys() {
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle(T("tv_main.forget_adb_keys"))
+            .setMessage(T("tv_main.forget_adb_keys_ask"))
+            .setPositiveButton(T("tv_main.open_developer_options")) { _, _ -> howto(T("tv_main.forget_adb_keys_howto")); devOptions() }
+            .setNegativeButton(T("common.cancel"), null).show()
     }
 
     /** Optimize TV: the clean-up and its undo, the home screen to use, the remote buttons the stock launcher answered (KeyFix). */
