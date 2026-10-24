@@ -44,6 +44,8 @@ dev/shots/shots.py web ts tv phone tvapp   # or some
 It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulators running (`dev/test/emu.sh`). The TV's picture
 is the made-up home screen `dev/shots/home-<lang>.html`; the TV is named "TV phòng khách" / "Living room TV". Then check each
 `<img>`'s width and height in `index.html`.
+New pictures under old names: raise the `?v=` every page puts after `img/…` (one replace across `docs/`), or a browser that saw
+the old one keeps it up to a day (`_headers`; it was a week, and the site looked like the last build's for days).
 
 **Live demo** (`/demo/`, a picker of four app cards, no tabs; deep links `#remote` `#home` `#channels` `#games`, `?go=<guide topic>` opens Remote): `index.html` is
 the picker (no hash: a card per app, its real icon `img/icon-*.png`, a line and a real screenshot `img/shot-*.jpg`) and, inside a demo, a slim bar ("All apps", the four icons as a switcher, VI / EN, Reset, the download); Back returns to the picker; each app is a page of this folder in a

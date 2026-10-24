@@ -6,7 +6,7 @@
 <title>TV Remote: dùng thử | live demo</title>
 <meta name="description" content="Try TV Remote, TV Home, TV Channels and TV Games in the browser with a made-up TV. Dùng thử TV Remote, TV Home, TV Channels và TV Games ngay trên trình duyệt.">
 <meta name="theme-color" content="#0a0d14">
-<link rel="icon" href="../img/icon.png">
+<link rel="icon" href="../img/icon.png?v=1024">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
@@ -78,7 +78,7 @@
 <script src="../js/nav.js" data-page="demo" data-root="../"></script>
 <div id="top">
   <div class="bar" id="demobar">
-    <a class="brand" href="../"><img src="../img/icon.png" width="28" height="28" alt="">TV Remote</a>
+    <a class="brand" href="../"><img src="../img/icon.png?v=1024" width="28" height="28" alt="">TV Remote</a>
     <a class="dbtn back" id="back" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6l-6 6 6 6"/></svg><span class="l"><span class="vi">Tất cả app</span><span class="en">All apps</span></span></a>
     <div class="sw" id="sw" role="navigation" aria-label="Apps"></div>
     <div class="tools">
@@ -113,7 +113,7 @@
   // the picker's cards and the switcher's icons
   $('#cards').innerHTML = IDS.map(function (t) {
     var a = TABS[t];
-    return '<a class="card" href="#' + t + '" data-t="' + t + '"><img class="shot' + (a.contain ? ' contain' : '') + '" src="img/shot-' + t + '.jpg" alt="" loading="lazy">' +
+    return '<a class="card" href="#' + t + '" data-t="' + t + '"><img class="shot' + (a.contain ? ' contain' : '') + '" src="img/shot-' + t + '.jpg?v=1024" alt="" loading="lazy">' +
       '<span class="txt"><img src="img/icon-' + t + '.png" alt=""><b>' + a.n + '</b><span><span class="vi">' + a.vi + '</span><span class="en">' + a.en + '</span></span></span></a>';
   }).join('');
   $('#sw').innerHTML = IDS.map(function (t) { return '<a href="#' + t + '" data-t="' + t + '" title="' + TABS[t].n + '" aria-label="' + TABS[t].n + '"><img src="img/icon-' + t + '.png" alt=""></a>'; }).join('');

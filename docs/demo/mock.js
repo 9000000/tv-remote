@@ -85,7 +85,7 @@
   }
   // loaded once as a data: address, so the svg picture (an <img>, no outside files) carries it
   let HOME_IMG = '';
-  fetch(new URL('img/tv-home-screen.jpg', location.href)).then((r) => r.blob()).then((b) => { const f = new FileReader(); f.onload = () => { HOME_IMG = f.result; }; f.readAsDataURL(b); }).catch(() => {});
+  fetch(new URL('img/tv-home-screen.jpg?v=1024', location.href)).then((r) => r.blob()).then((b) => { const f = new FileReader(); f.onload = () => { HOME_IMG = f.result; }; f.readAsDataURL(b); }).catch(() => {});
   const screenSvg = () => screenBase().replace(/<\/svg>$/, inkSvg(960, 540) + '</svg>');
   function screenBase() {
     const W = 960, H = 540;

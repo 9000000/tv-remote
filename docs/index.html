@@ -32,8 +32,8 @@
 <script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})();
 /* pictures that differ by language carry data-lang-src (LANG in the name); set right after the picture, so only one is fetched */
 function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcset)i.srcset=i.dataset.langSrcset.replace(/LANG/g,L);i.src=i.dataset.langSrc.replace(/LANG/g,L)}</script>
-<link rel="icon" href="img/icon.png">
-<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="icon" href="img/icon.png?v=1024">
+<link rel="apple-touch-icon" href="img/icon-180.png?v=1024">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -67,12 +67,12 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
     <div class="pair">
       <figure>
         <span class="htag bad"><span class="vi">Trước</span><span class="en">Before</span></span>
-        <div class="hshot"><img src="img/tv-before-640.webp" srcset="img/tv-before-640.webp 640w, img/tv-before.webp 1280w" sizes="(max-width:700px) 92vw, 540px" width="1280" height="720" alt="" fetchpriority="high"></div>
+        <div class="hshot"><img src="img/tv-before-640.webp?v=1024" srcset="img/tv-before-640.webp?v=1024 640w, img/tv-before.webp?v=1024 1280w" sizes="(max-width:700px) 92vw, 540px" width="1280" height="720" alt="" fetchpriority="high"></div>
         <figcaption><b><span class="vi">Minh hoạ launcher gốc:</span><span class="en">Illustration of a stock home:</span></b> <span class="vi">banner quảng cáo, hàng chục app lạ (hình vẽ, không phải ảnh chụp).</span><span class="en">sponsored banners, dozens of apps you never asked for (drawn, not a screenshot).</span></figcaption>
       </figure>
       <figure>
         <span class="htag good"><span class="vi">Sau</span><span class="en">After</span></span>
-        <div class="hshot"><img data-lang-src="img/tvhome-clean-LANG-640.webp" data-lang-srcset="img/tvhome-clean-LANG-640.webp 640w, img/tvhome-clean-LANG.webp 1280w" sizes="(max-width:700px) 92vw, 540px" width="1280" height="720" alt="" fetchpriority="high"><script>LI(document.currentScript.previousElementSibling)</script></div>
+        <div class="hshot"><img data-lang-src="img/tvhome-clean-LANG-640.webp?v=1024" data-lang-srcset="img/tvhome-clean-LANG-640.webp?v=1024 640w, img/tvhome-clean-LANG.webp?v=1024 1280w" sizes="(max-width:700px) 92vw, 540px" width="1280" height="720" alt="" fetchpriority="high"><script>LI(document.currentScript.previousElementSibling)</script></div>
         <figcaption><b><span class="vi">Với TV Home:</span><span class="en">With TV Home:</span></b> <span class="vi">chỉ app bạn dùng, không quảng cáo, mượt hơn.</span><span class="en">only your apps, no ads, smoother.</span></figcaption>
       </figure>
     </div>
@@ -83,13 +83,13 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <section class="sc" id="remote">
   <div class="wrap reveal">
     <div class="sc-t">
-      <div class="sc-name"><img src="img/app-remote.png" width="56" height="56" alt=""><b>TV Remote</b></div>
+      <div class="sc-name"><img src="img/app-remote.png?v=1024" width="56" height="56" alt=""><b>TV Remote</b></div>
       <h2><span class="vi">Remote đầy đủ trên điện&nbsp;thoại</span><span class="en">A full remote on your phone</span></h2>
       <p><span class="vi"><span class="ln">Mất remote?</span> <span class="ln">Gõ chữ, nói, vuốt touchpad ngay trên màn hình.</span></span><span class="en"><span class="ln">Lost the remote?</span> <span class="ln">Type, talk or swipe a touchpad right on screen.</span></span></p>
       <a class="btn btn-ghost" href="demo/#remote"><span class="vi">Dùng thử</span><span class="en">Try it</span> →</a>
     </div>
     <div class="sc-p port">
-      <div class="hshot"><img data-lang-src="img/phone-remote-LANG-360.webp" data-lang-srcset="img/phone-remote-LANG-360.webp 360w, img/phone-remote-LANG.webp 480w" sizes="260px" width="480" height="1040" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+      <div class="hshot"><img data-lang-src="img/phone-remote-LANG-360.webp?v=1024" data-lang-srcset="img/phone-remote-LANG-360.webp?v=1024 360w, img/phone-remote-LANG.webp?v=1024 480w" sizes="260px" width="480" height="1040" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
     </div>
   </div>
 </section>
@@ -97,13 +97,13 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <section class="sc hflip" id="manage">
   <div class="wrap reveal">
     <div class="sc-t">
-      <div class="sc-name"><img src="img/app-setup.png" width="56" height="56" alt=""><b>TV Setup</b></div>
+      <div class="sc-name"><img src="img/app-setup.png?v=1024" width="56" height="56" alt=""><b>TV Setup</b></div>
       <h2><span class="vi">Quản lý TV từ bất cứ đâu</span><span class="en">Manage the TV from anywhere</span></h2>
       <p><span class="vi"><span class="ln">Cài, gỡ app, hẹn giờ ngủ, giới hạn app cho con, nhiều TV một chỗ.</span> <span class="ln">Ở xa nhà vẫn được, qua Tailscale.</span></span><span class="en"><span class="ln">Install or remove apps, sleep timer, app limits for the kids, many TVs in one place.</span> <span class="ln">Works away from home, over Tailscale.</span></span></p>
       <a class="btn btn-ghost" href="demo/#remote"><span class="vi">Dùng thử</span><span class="en">Try it</span> →</a>
     </div>
     <div class="sc-p">
-      <div class="hshot"><img data-lang-src="img/web-remote-LANG-600.webp" data-lang-srcset="img/web-remote-LANG-600.webp 600w, img/web-remote-LANG.webp 1200w" sizes="(max-width:980px) 92vw, 640px" width="1200" height="640" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+      <div class="hshot"><img data-lang-src="img/web-remote-LANG-600.webp?v=1024" data-lang-srcset="img/web-remote-LANG-600.webp?v=1024 600w, img/web-remote-LANG.webp?v=1024 1200w" sizes="(max-width:980px) 92vw, 640px" width="1200" height="640" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
     </div>
   </div>
 </section>
@@ -111,13 +111,13 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <section class="sc" id="home">
   <div class="wrap reveal">
     <div class="sc-t">
-      <div class="sc-name"><img src="img/app-home.png" width="56" height="56" alt=""><b>TV Home</b></div>
+      <div class="sc-name"><img src="img/app-home.png?v=1024" width="56" height="56" alt=""><b>TV Home</b></div>
       <h2><span class="vi">TV sạch, nhanh</span><span class="en">A clean, fast TV</span></h2>
       <p><span class="vi"><span class="ln">Màn hình chính của riêng bạn.</span> <span class="ln">Một nút “Tối ưu TV” tắt app rác để TV mượt lại.</span></span><span class="en"><span class="ln">A home screen of your own.</span> <span class="ln">One “Optimize TV” button turns off the bloat so the TV feels quick again.</span></span></p>
       <a class="btn btn-ghost" href="demo/#home"><span class="vi">Dùng thử</span><span class="en">Try it</span> →</a>
     </div>
     <div class="sc-p">
-      <div class="hshot"><img data-lang-src="img/tvhome-clean-LANG-640.webp" data-lang-srcset="img/tvhome-clean-LANG-640.webp 640w, img/tvhome-clean-LANG.webp 1280w" width="1280" height="720" sizes="(max-width:980px) 92vw, 640px" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+      <div class="hshot"><img data-lang-src="img/tvhome-clean-LANG-640.webp?v=1024" data-lang-srcset="img/tvhome-clean-LANG-640.webp?v=1024 640w, img/tvhome-clean-LANG.webp?v=1024 1280w" width="1280" height="720" sizes="(max-width:980px) 92vw, 640px" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
     </div>
   </div>
 </section>
@@ -125,13 +125,13 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <section class="sc hflip" id="channels">
   <div class="wrap reveal">
     <div class="sc-t">
-      <div class="sc-name"><img src="img/app-channels.png" width="56" height="56" alt=""><b>TV Channels</b></div>
+      <div class="sc-name"><img src="img/app-channels.png?v=1024" width="56" height="56" alt=""><b>TV Channels</b></div>
       <h2><span class="vi">Hàng nghìn kênh TV miễn&nbsp;phí</span><span class="en">Thousands of free TV channels</span></h2>
       <p><span class="vi"><span class="ln">Kênh của cả thế giới theo nước và thể loại.</span> <span class="ln">Không đầu thu, không đăng ký.</span></span><span class="en"><span class="ln">Channels from all over the world, by country and category.</span> <span class="ln">No box, no sign-up.</span></span></p>
       <a class="btn btn-ghost" href="demo/#channels"><span class="vi">Dùng thử</span><span class="en">Try it</span> →</a>
     </div>
     <div class="sc-p">
-      <div class="hshot"><img data-lang-src="img/tvchannels-LANG-640.webp" data-lang-srcset="img/tvchannels-LANG-640.webp 640w, img/tvchannels-LANG.webp 1280w" sizes="(max-width:980px) 92vw, 640px" width="1280" height="720" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+      <div class="hshot"><img data-lang-src="img/tvchannels-LANG-640.webp?v=1024" data-lang-srcset="img/tvchannels-LANG-640.webp?v=1024 640w, img/tvchannels-LANG.webp?v=1024 1280w" sizes="(max-width:980px) 92vw, 640px" width="1280" height="720" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
     </div>
   </div>
 </section>
@@ -139,7 +139,7 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <section class="sc" id="games">
   <div class="wrap reveal">
     <div class="sc-t">
-      <div class="sc-name"><img src="img/app-games.png" width="56" height="56" alt=""><b>TV Games</b></div>
+      <div class="sc-name"><img src="img/app-games.png?v=1024" width="56" height="56" alt=""><b>TV Games</b></div>
       <h2><span class="vi">Chơi chung, điện&nbsp;thoại&nbsp;là&nbsp;tay&nbsp;cầm</span><span class="en">Play together, phones are the pads</span></h2>
       <p><span class="vi"><span class="ln">Quét mã QR là vào chơi.</span> <span class="ln">Không cần mua tay&nbsp;cầm.</span></span><span class="en"><span class="ln">Scan a QR code and you are in.</span> <span class="ln">No controllers to buy.</span></span></p>
       <a class="btn btn-ghost" href="demo/#games"><span class="vi">Dùng thử</span><span class="en">Try it</span> →</a>
@@ -167,107 +167,107 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
   </div>
   <div class="car-track" id="car" tabindex="0" role="region" aria-label="And more">
         <a class="fc" href="guide#home" id="fc-widgets">
-          <img data-lang-src="img/feat-widgets-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-widgets-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Widget trên TV Home</span><span class="en">TV Home widgets</span></h3>
           <p><span class="vi">Giờ, thời tiết, âm lịch, bộ nhớ ngay trên màn hình chính.</span><span class="en">Clock, weather, lunar date and memory on the home screen.</span></p>
         </a>
         <a class="fc" href="guide#apps" id="fc-apps">
-          <img data-lang-src="img/feat-apps-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-apps-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Cài và gỡ app từ xa</span><span class="en">Install and remove apps remotely</span></h3>
           <p><span class="vi">Tắt, gỡ, cài app trên TV ngay từ điện thoại.</span><span class="en">Turn off, remove or install apps on the TV from your phone.</span></p>
         </a>
         <a class="fc" href="guide#screen-dim" id="fc-dim">
-          <img data-lang-src="img/feat-dim-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-dim-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Giảm sáng, dịu mắt</span><span class="en">Dim the screen, easy on the eyes</span></h3>
           <p><span class="vi">Phủ lớp tối hoặc lọc xanh lên mọi app, ban đêm đỡ chói.</span><span class="en">A dark or blue-light-filter layer over every app, gentle at night.</span></p>
         </a>
         <a class="fc" href="guide#photo" id="fc-photo">
-          <img data-lang-src="img/feat-photo-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-photo-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Chiếu ảnh lên TV</span><span class="en">Show a photo on the TV</span></h3>
           <p><span class="vi">Chọn ảnh hay video trên điện thoại, đưa lên TV một chạm.</span><span class="en">Pick a photo or video on the phone and put it on the TV in one tap.</span></p>
         </a>
         <a class="fc" href="guide#air" id="fc-air">
-          <img data-lang-src="img/feat-air-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-air-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Air Mouse</span><span class="en">Air Mouse</span></h3>
           <p><span class="vi">Cầm điện thoại như remote, xoay cổ tay để di con trỏ.</span><span class="en">Hold the phone like a remote and turn your wrist to move the pointer.</span></p>
         </a>
         <a class="fc" href="guide#draw" id="fc-draw">
-          <img data-lang-src="img/feat-draw-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-draw-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Vẽ lên TV</span><span class="en">Draw on the TV</span></h3>
           <p><span class="vi">Khoanh hay viết thẳng lên màn hình TV cho cả nhà cùng xem.</span><span class="en">Circle or write right on the TV screen for the whole room.</span></p>
         </a>
         <a class="fc" href="guide#ir" id="fc-ir">
-          <img data-lang-src="img/feat-ir-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-ir-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Remote hồng ngoại</span><span class="en">Infrared remote</span></h3>
           <p><span class="vi">Dùng đèn hồng ngoại của điện thoại, học phím từ remote của box.</span><span class="en">Uses the phone's IR LED and learns keys from the box's own remote.</span></p>
         </a>
         <a class="fc" href="guide#listen" id="fc-listen">
-          <img data-lang-src="img/feat-listen-LANG.webp" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-listen-LANG.webp?v=1024" width="720" height="480" alt=""><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Nghe TV trên điện thoại</span><span class="en">Hear the TV on your phone</span></h3>
           <p><span class="vi">Tiếng TV vào tai nghe, không làm phiền ai.</span><span class="en">The TV's sound in your headphones, nobody disturbed.</span></p>
         </a>
         <a class="fc" href="guide#typing" id="fc-typing">
-          <img data-lang-src="img/feat-typing-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-typing-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Gõ chữ, nói với TV</span><span class="en">Type or talk to the TV</span></h3>
           <p><span class="vi">Gõ bằng bàn phím điện thoại, hoặc nói “mở YouTube”.</span><span class="en">Type with the phone keyboard, or say “open YouTube”.</span></p>
         </a>
         <a class="fc" href="guide#scenes" id="fc-scenes">
-          <img data-lang-src="img/feat-scenes-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-scenes-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Cảnh: một nút, nhiều việc</span><span class="en">Scenes: one tap, many steps</span></h3>
           <p><span class="vi">Mở app, chỉnh tiếng, hẹn giờ chỉ bằng một lần bấm.</span><span class="en">Open an app, set the volume and a timer with a single tap.</span></p>
         </a>
         <a class="fc" href="guide#sleep" id="fc-sleep">
-          <img data-lang-src="img/feat-sleep-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-sleep-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Hẹn giờ tắt</span><span class="en">Sleep timer</span></h3>
           <p><span class="vi">Chạy ngay trên TV, nên vẫn tắt khi mọi thiết bị khác đã tắt.</span><span class="en">Runs on the TV itself, so it works with every other device off.</span></p>
         </a>
         <a class="fc" href="guide#notify" id="fc-notify">
-          <img data-lang-src="img/feat-notify-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-notify-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Gửi lời nhắn lên TV</span><span class="en">Message on the TV</span></h3>
           <p><span class="vi">Hiện thẻ tin nhắn ở góc màn hình: “Ăn cơm!”.</span><span class="en">A message card in a corner of the screen: “Dinner is ready!”.</span></p>
         </a>
         <a class="fc" href="guide#limits" id="fc-limits">
-          <img data-lang-src="img/feat-limits-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-limits-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Giới hạn app, khóa bằng PIN</span><span class="en">App limits and PIN lock</span></h3>
           <p><span class="vi">Trẻ chỉ xem trong giờ cho phép; app khóa cần PIN trên TV.</span><span class="en">Kids get only the allowed time; locked apps ask for a PIN on the TV.</span></p>
         </a>
         <a class="fc" href="guide#launchers" id="fc-launchers">
-          <img data-lang-src="img/feat-launchers-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-launchers-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Thư viện màn hình chính</span><span class="en">A library of home screens</span></h3>
           <p><span class="vi">Thử TV Home hay launcher khác, cài một chạm.</span><span class="en">Try TV Home or another launcher, installed in one tap.</span></p>
         </a>
         <a class="fc" href="guide#optimize" id="fc-optimize">
-          <img data-lang-src="img/feat-optimize-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-optimize-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Tối ưu TV</span><span class="en">Optimize the TV</span></h3>
           <p><span class="vi">Tắt app thừa và hiệu ứng để TV chạy nhanh hơn, hoàn tác được.</span><span class="en">Turn off bloat and animations so the TV runs faster, undoable.</span></p>
         </a>
         <a class="fc" href="guide#files" id="fc-files">
-          <img data-lang-src="img/feat-files-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-files-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Duyệt file trên TV</span><span class="en">Browse the TV's files</span></h3>
           <p><span class="vi">Xem, gửi và tải file ngay từ điện thoại.</span><span class="en">See, send and fetch files straight from the phone.</span></p>
         </a>
         <a class="fc" href="guide#home" id="fc-wallpaper">
-          <img data-lang-src="img/feat-wallpaper-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-wallpaper-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Hình nền TV Home</span><span class="en">TV Home wallpapers</span></h3>
           <p><span class="vi">Đổi hình nền, hẹn giờ đổi, chỉnh ngay từ điện thoại.</span><span class="en">Change the wallpaper, rotate it on a timer, set from the phone.</span></p>
         </a>
         <a class="fc" href="guide#many" id="fc-many">
-          <img data-lang-src="img/feat-many-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-many-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Nhiều TV cùng lúc</span><span class="en">Several TVs at once</span></h3>
           <p><span class="vi">Cài app, đổi màn hình chính, khởi động lại cho cả nhà hay khách sạn.</span><span class="en">Install apps, set the home screen, restart: for a house or a hotel.</span></p>
         </a>
         <a class="fc" href="guide#tvguard" id="fc-tvset">
-          <img data-lang-src="img/feat-tvset-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-tvset-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Lọc DNS, màn chờ, tự tắt</span><span class="en">DNS filter, screensaver, auto-off</span></h3>
           <p><span class="vi">Chỉnh cài đặt TV từ xa; TV Setup tự sửa khi bộ lọc DNS làm mất mạng.</span><span class="en">Change TV settings from afar; TV Setup fixes a DNS filter that cuts the TV off.</span></p>
         </a>
         <a class="fc" href="guide#health" id="fc-health">
-          <img data-lang-src="img/feat-health-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-health-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Sức khỏe TV</span><span class="en">TV health</span></h3>
           <p><span class="vi">CPU, RAM, bộ nhớ, nhiệt độ và app tốn máy nhất, xem từ điện thoại.</span><span class="en">CPU, RAM, storage, heat and the hungriest apps, from your phone.</span></p>
         </a>
         <a class="fc" href="guide#welcome" id="fc-welcome">
-          <img data-lang-src="img/feat-welcome-LANG.webp" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
+          <img data-lang-src="img/feat-welcome-LANG.webp?v=1024" width="720" height="480" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script>
           <h3><span class="vi">Màn hình chào khách</span><span class="en">A welcome screen for guests</span></h3>
           <p><span class="vi">Mỗi lần bật TV hiện video hoặc ảnh chào, bấm phím nào cũng tắt.</span><span class="en">A video or picture each time the TV turns on; any key closes it.</span></p>
         </a>
@@ -288,12 +288,12 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
       <li>
         <h3><span class="vi">Cài TV Setup lên TV</span><span class="en">Put TV Setup on the TV</span></h3>
         <p><span class="vi">Mở Downloader trên TV, gõ mã</span><span class="en">Open Downloader on the TV and type</span> <button class="hcode" type="button" data-copy="2397346">2397346</button></p>
-        <div class="th"><img data-lang-src="img/tvapp-LANG-640.webp" width="640" height="360" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+        <div class="th"><img data-lang-src="img/tvapp-LANG-640.webp?v=1024" width="640" height="360" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
       </li>
       <li>
         <h3><span class="vi">Tải app cho máy bạn</span><span class="en">Get the app for your device</span></h3>
         <p><span class="vi">Android, Mac, Windows hay Linux. iPhone thì bỏ qua: dùng trang web của TV.</span><span class="en">Android, Mac, Windows or Linux. On iPhone skip this: use the TV's web page.</span></p>
-        <div class="th"><img data-lang-src="img/phone-remote-LANG-240.webp" width="240" height="520" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+        <div class="th"><img data-lang-src="img/phone-remote-LANG-240.webp?v=1024" width="240" height="520" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
       </li>
       <li>
         <h3><span class="vi">Chọn TV, bấm Cho phép</span><span class="en">Pick the TV, press Allow</span></h3>
@@ -303,7 +303,7 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
       <li>
         <h3><span class="vi">Xong: điều khiển</span><span class="en">Done: control it</span></h3>
         <p><span class="vi">TV Home, TV Channels, TV Games cài thêm ngay từ app khi bạn muốn.</span><span class="en">Add TV Home, TV Channels and TV Games from the app whenever you like.</span></p>
-        <div class="th"><img data-lang-src="img/tvpage-remote-LANG.webp" width="400" height="867" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
+        <div class="th"><img data-lang-src="img/tvpage-remote-LANG.webp?v=1024" width="400" height="867" alt="" loading="lazy"><script>LI(document.currentScript.previousElementSibling)</script></div>
       </li>
     </ol>
 
