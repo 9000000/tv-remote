@@ -1631,7 +1631,7 @@ class HomeActivity : Activity() {
         fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
         for (h in apps.filter { it.pkg in hidden }) rows.add(TvGlass.Item(0, h.label, getString(R.string.add_hidden), false, false) { addToGrid(h.pkg, false) }.also { it.picture = icon(h.pkg) })
         if (Tiles.status(this) == Tiles.OK) for (t in Tiles.available(this).filter { it.key !in onGrid })
-            rows.add(TvGlass.Item(R.drawable.ic_gauge, t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
+            rows.add(TvGlass.Item(Tiles.iconRes(this, t), t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
                 .also { it.picture = icon(HomeConfig.tileProvider(t.key)) })
         if (Pins.can(this)) {
             val l = Pins.report(this, JSONObject()).optJSONArray("pinsAvail")

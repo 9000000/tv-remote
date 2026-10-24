@@ -34,7 +34,14 @@ import dev.tvremote.home.R
  * Calls to it are binder calls to another app: never on the main thread.
  */
 object Tiles {
-    class Info(val key: String, val title: String, val kind: String, val layout: String = "gauge")
+    class Info(val key: String, val title: String, val kind: String, val layout: String = "gauge", val icon: String = "")
+
+    /** The tile's own drawing for a list of tiles ("ram" was TV Setup's list name for its "memory"); a gauge when it names none we have. */
+    fun iconRes(c: Context, t: Info): Int {
+        val n = if (t.icon == "ram") "memory" else t.icon
+        val id = if (n.isEmpty()) 0 else c.resources.getIdentifier("ic_$n", "drawable", c.packageName)
+        return if (id == 0) R.drawable.ic_gauge else id
+    }
 
     const val OK = "ok"                                                 // the provider answered with its list
     const val MISSING = "missing"                                       // no TV Setup, or one older than the tiles
@@ -101,7 +108,7 @@ object Tiles {
                     val l = JSONArray(b.getString("json") ?: "[]")
                     for (i in 0 until l.length()) l.getJSONObject(i).let { all.put(JSONObject().put("key", HomeConfig.tileKey(p, it.getString("id")))
                         .put("title", it.optString("title")).put("kind", it.optString("kind"))
-                        .put("layout", it.optString("layout").ifEmpty { "gauge" })) }
+                        .put("layout", it.optString("layout").ifEmpty { "gauge" }).put("icon", it.optString("icon"))) }
                     state = OK
                 } catch (e: Exception) { }
             }
@@ -117,7 +124,7 @@ object Tiles {
     /** What the providers offered at the last [refresh]; empty when [status] is not [OK]. */
     fun available(c: Context): List<Info> = try {
         val l = JSONArray(prefs(c).getString("list", "[]"))
-        List(l.length()) { l.getJSONObject(it).let { o -> Info(o.getString("key"), o.optString("title"), o.optString("kind"), o.optString("layout", "gauge")) } }
+        List(l.length()) { l.getJSONObject(it).let { o -> Info(o.getString("key"), o.optString("title"), o.optString("kind"), o.optString("layout", "gauge"), o.optString("icon")) } }
     } catch (e: Exception) { emptyList() }
 
     /** The name to show for [key]: the provider's, else (a tile set from a phone before the provider was seen) its id. */

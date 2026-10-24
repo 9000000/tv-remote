@@ -240,7 +240,7 @@ object Picker {
                 val app = Pins.app(a, o.getString("key")) ?: continue
                 got.add(Item(o.getString("key"), o.getString("title"), app, names[o.getString("app")] ?: "", 1))
             }
-            for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 2, R.drawable.ic_gauge))
+            for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 2, Tiles.iconRes(a, t)))
             // the tiles made here too, not yet on a window (as AsyncLayoutInflater does): ~10 ms each on the FPT box's UI thread
             for (it in got.take(cols * 3)) tileFor(it)                    // the first screen only: all of them took ~180 ms there, longer than the wait they saved
             a.runOnUiThread {
