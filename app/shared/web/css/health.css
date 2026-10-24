@@ -64,3 +64,4 @@ i.sl-ts { background:var(--bad); }
 .tag.p-md { --c:var(--warn); }
 .tag.p-lo, .tag.p-gone { --c:var(--muted); }
 .tag.p-gone { text-decoration:line-through; }
+#hhist:not([hidden]) + #herr:not([hidden]) { margin-top:var(--gap); }   /* the crash card under History's cards keeps the cards' gap */

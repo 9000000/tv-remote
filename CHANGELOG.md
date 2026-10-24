@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Sức khỏe → Lịch sử: "Mất mạng" chỉ tô đỏ đúng đoạn mất mạng (trước đây một lần mất mạng không có dòng "có lại" kéo đỏ cả biểu đồ); thẻ "App bị dừng, bị treo" có khoảng cách như các thẻ khác.
 - TV Home: hình nền video hoặc trang web đang tải không còn hiện nút play xám của WebView; chủ đề video hiện ảnh nhỏ của nó (làm mờ) tới khi video chạy.
 - TV Home: giữ OK trên app mở menu có nhóm: Trên màn hình chính, Khởi động & phím (mở khi bật TV, gán phím điều khiển), Khóa & giới hạn (khóa app, giới hạn mỗi ngày 15-120 phút, đã dùng hôm nay; hỏi mã PIN phụ huynh của TV Setup, dùng chung với tab Ứng dụng), Bảo trì (dừng, xóa bộ nhớ đệm, thông tin, gỡ). Mỗi nhóm mở trong cùng một khung (có dòng Quay lại, nút Back về menu chính); gán phím vẽ như remote (bàn phím số, 4 phím màu, app đang giữ từng phím) và bấm thẳng phím số / phím màu trên remote để gán nhanh. Huy hiệu trên ô cập nhật ngay. TV Setup cũ chỉ ẩn nhóm Khóa & giới hạn.
 - TV Home → Chủ đề: ảnh xem trước là bản thu nhỏ của màn hình chính thật (nền, đồng hồ, thẻ, lưới app ở đáy, live widget; không vẽ tên app hay lời chào); chủ đề có sẵn hiện đúng ảnh nền, chủ đề của bạn giữ ảnh nền nhỏ chụp lúc lưu.
@@ -68,6 +69,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- Health → History: "No network" shades only the time the network was really lost (a loss with no "back" line used to paint the whole chart red); the "Apps that stopped or froze" card has the same gap as the other cards.
 - TV Home: a video or web page background still loading no longer shows the WebView's grey play button; a video theme shows its small picture (blurred) until the video plays.
 - TV Home: hold OK on an app opens a grouped menu: On the home screen, Start & keys (open when the TV turns on, assign a remote key), Lock & limits (lock the app, a daily limit of 15-120 min, used today; asks TV Setup's parent PIN, shared with the Apps tab), Maintenance (force stop, clear cache, info, uninstall). Each group opens in the same panel (a Back row, remote Back returns to the main menu); the key page is drawn like the remote (number pad, 4 colour keys, the app on each key) and a number or colour key pressed on the real remote assigns it at once. Badges on tiles refresh at once. An older TV Setup only hides Lock & limits.
 - TV Home Themes: each preview is a miniature of the real home screen (background, clock, cards, the app grid at the bottom, live widgets; no app names or greeting); ready themes show their photo, your saved themes keep a small picture of their background taken when saved.

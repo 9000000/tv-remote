@@ -27,6 +27,26 @@
   const pad = (n) => String(n).padStart(2, '0');
   const dayKey = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 
+  // every time the network went away while the TV was in use; the ones that began while it slept are its own power saving, not a fault.
+  // A "lost" with no "back" after it is closed by the samples (the first one with a link, else the last one), never stretched to the
+  // chart's end: a "back" the log lost would otherwise paint the whole chart red. null as the end = still down now.
+  const statsCuts = (net, samples, from, to) => {
+    const cuts = [], rows = samples || [];
+    const endOf = (t) => {
+      const back = rows.find((r) => r[0] > t && (r[9] === 'wifi' || r[9] === 'eth'));
+      if (back) return back[0];
+      const last = rows.length ? rows[rows.length - 1][0] : t;
+      return to - last < 900 && last >= t ? null : Math.max(last, t + 60);   // fresh samples = down right now; else it ended when they stopped
+    };
+    let open = null;
+    (net || []).forEach((e) => {
+      if (!e[1]) { if (!open) open = e; return; }
+      if (open) { if (open[3] && e[0] >= from && open[0] <= to) cuts.push([open[0], e[0]]); open = null; }
+    });
+    if (open && open[3] && open[0] <= to) { const b = endOf(open[0]); if (b === null || b >= from) cuts.push([open[0], b]); }
+    return cuts;
+  };
+  window.statsCuts = statsCuts;
   window.renderStats = (root, data, vi, reload) => {
     if (!document.getElementById('st-css')) document.head.append(el('style', { id: 'st-css', textContent: css }));
     const dur = (s) => { const m = Math.round(s / 60); return m < 60 ? T('health.minutes_n', { n: m }) : T('stats.dur_hm', { h: Math.floor(m / 60), m: pad(m % 60) }); };
@@ -104,17 +124,6 @@
       return { under, strip, mark, legend };
     };
 
-    // every time the network went away while the TV was in use; the ones that began while it slept are its own power saving, not a fault
-    const cutsIn = (from, to) => {
-      const cuts = [];
-      let open = null;
-      (data.net || []).forEach((e) => {
-        if (!e[1]) { if (!open) open = e; return; }
-        if (open) { if (open[3] && e[0] >= from && open[0] <= to) cuts.push([open[0], e[0]]); open = null; }
-      });
-      if (open && open[3] && open[0] <= to) cuts.push([open[0], null]);
-      return cuts;
-    };
     const mins = (s) => s < 60 ? T('stats.seconds_n', { n: s }) : T('health.minutes_n', { n: Math.round(s / 60) });
 
     const draw = () => {
@@ -145,7 +154,7 @@
         return '<path data-s="' + key + '" d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"' + (off.has(key) ? ' display="none"' : '') + '/>';
       };
       const grid = [0, 25, 50, 75, 100].map((p) => '<line x1="0" x2="' + W + '" y1="' + y(p) + '" y2="' + y(p) + '" stroke="currentColor" stroke-opacity=".12"/>').join('');
-      const track = appTrack(rows, x, W, H), cuts = cutsIn(from, to);
+      const track = appTrack(rows, x, W, H), cuts = statsCuts(data.net, data.samples, from, to);
       const svg = el('div', { className: 'st-chart', innerHTML: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + grid + track.under
         + '<g data-s="cut"' + (off.has('cut') ? ' display="none"' : '') + '>' + cuts.map(([a, b]) => { const x0 = x(Math.max(a, from)), x1 = x(Math.min(b || to, to));
           return '<rect x="' + x0.toFixed(1) + '" width="' + Math.max(2, x1 - x0).toFixed(1) + '" y="0" height="' + H + '" fill="' + CUT + '" fill-opacity=".22"><title>' + (b ? T('stats.cut_span', { from: hm(a), to: hm(b), len: mins(b - a) }) : T('stats.cut_open', { from: hm(a) })) + '</title></rect>'; }).join('') + '</g>'
