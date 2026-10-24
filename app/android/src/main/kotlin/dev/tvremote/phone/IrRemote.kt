@@ -26,7 +26,7 @@ private const val PROFILE = "ir:profile"                           // the chosen
 private const val TARGET = "ir:tv"                                  // the saved TV the codes are for, "" for none
 private const val CUSTOM = "ir:custom"                              // the sets learned from a box: [{"id", "name", "keys"}]
 private const val SAVED = "ir:saved"                                // the remotes kept by name: [{"name", "id"}], for the list (irList)
-private val REPEAT = setOf("UP", "DOWN", "LEFT", "RIGHT", "VOL_UP", "VOL_DOWN", "CH_UP", "CH_DOWN")   // held: the code goes on being sent
+private val ONCE = setOf("POWER")                                   // held, every other key goes on sending, as a remote does (Ir.held)
 
 private object IrState {
     var catalog: List<IrProfile>? = null
@@ -81,7 +81,7 @@ private fun nearest(m: ConsumerIrManager, hz: Int): Int {
 
 private fun MainActivity.irSend(code: String, repeat: Boolean) {
     if (!repeat) IrState.toggle = !IrState.toggle
-    val s = Ir.encode(code, IrState.toggle) ?: return
+    val s = (if (repeat) Ir.held(code, IrState.toggle) else Ir.encode(code, IrState.toggle)) ?: return
     val m = irManager()
     if (m?.hasIrEmitter() != true) { Log.i(TAG, "send $code hz=${s.hz} us=${s.micros} pattern=${s.pattern.joinToString(",")}"); return }
     IrState.io.execute {
@@ -350,17 +350,17 @@ private fun MainActivity.irBind(b: Button, p: IrProfile, key: String, held: andr
     val code = p.keys[key]
     if (code == null) { b.alpha = 0.3f; b.isEnabled = false; return }
     val normal = b.background
-    val again = object : Runnable { override fun run() { irSend(code, true); ui.postDelayed(this, 140) } }
-    val first = Runnable { ui.post(again) }
+    val every = Ir.period(code).toLong()
+    val again = object : Runnable { override fun run() { irSend(code, true); ui.postDelayed(this, every) } }
     b.setOnTouchListener { v, e ->
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 v.background = held
                 buzz()
                 irSend(code, false)
-                if (key in REPEAT) ui.postDelayed(first, 400)
+                if (key !in ONCE) ui.postDelayed(again, every)          // no pause first: a gap reads as let go, the TV waits its own long-press time
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { ui.removeCallbacks(first); ui.removeCallbacks(again); v.background = normal }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { ui.removeCallbacks(again); v.background = normal }
         }
         true
     }

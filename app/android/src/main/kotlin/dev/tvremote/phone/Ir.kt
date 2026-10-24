@@ -37,6 +37,26 @@ internal object Ir {
         s?.takeIf { it.pattern.isNotEmpty() && it.micros <= MAX_MICROS }
     } catch (e: Exception) { null }
 
+    /**
+     * What a real remote sends while the key stays down, every [period] ms after the first frame: NEC its short repeat code
+     * (a TV's decoder takes another full frame for a new press, so a held OK opened the app instead of its menu), the others
+     * the same frame again with the same RC5 / RC6 toggle (one press, held). The TV tells a long press by the signal not stopping.
+     */
+    fun held(code: String, toggle: Boolean): Signal? = when (protocol(code)) {
+        "NEC", "NECext" -> if (encode(code) == null) null else Signal(38000, intArrayOf(9000, 2250, 560))
+        else -> encode(code, toggle)
+    }
+
+    /** Ms from the start of one frame to the next while held, as the protocol's remotes repeat (a longer gap reads as let go). */
+    fun period(code: String): Int = when (protocol(code)) {
+        "NEC", "NECext", "Samsung32" -> 108
+        "SIRC", "SIRC15", "SIRC20" -> 135                               // the signal is already 3 frames 45 ms apart
+        "RC5", "RC5X" -> 114
+        "RC6" -> 107
+        "RCA" -> 80
+        else -> encode(code)?.let { maxOf(108, (it.micros / 1000).toInt() + 40) } ?: 108
+    }
+
     /** The protocol of [code] ("NEC"), for the tests and the list of what a profile uses. */
     fun protocol(code: String): String = code.trim().substringBefore(' ')
 

@@ -117,4 +117,15 @@ class IrTest {
     @Test fun everyPatternStartsWithOn() {                           // a pattern starts with a mark: even-indexed entries are "on"
         for (c in listOf("RC5 1F 3F", "RC5 0 0", "RC6 0 0", "RC6 FF FF", "NEC 0 0", "SIRC 0 0")) assertTrue(c, sig(c).pattern.all { it > 0 })
     }
+
+    @Test fun heldSendsWhatARemoteSends() {                         // a held OK must read as one long press, not presses again and again
+        assertEquals(listOf(9000, 2250, 560), Ir.held("NEC 4 8", false)!!.pattern.toList())
+        assertEquals(listOf(9000, 2250, 560), Ir.held("NECext 7F00 15", false)!!.pattern.toList())
+        assertNull(Ir.held("NEC zz 1", false))
+        assertEquals(sig("Samsung32 7 68").pattern.toList(), Ir.held("Samsung32 7 68", false)!!.pattern.toList())
+        assertEquals(Ir.encode("RC5 0 C", true)!!.pattern.toList(), Ir.held("RC5 0 C", true)!!.pattern.toList())   // same toggle: same press
+        assertEquals(108, Ir.period("NEC 4 8"))
+        for (c in listOf("NEC 4 8", "Samsung32 7 68", "SIRC 1 15", "RC5 0 C", "RC6 0 C", "RCA F 54"))
+            assertTrue(c, Ir.period(c) * 1000L > sig(c).micros)        // the next frame never starts before this one ended
+    }
 }
