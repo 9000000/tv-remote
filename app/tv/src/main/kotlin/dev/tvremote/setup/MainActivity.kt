@@ -656,6 +656,11 @@ class MainActivity : Activity() {
                 val on = !HoldKeys.on(this)
                 Rules.change(this, org.json.JSONObject().put("do", "holdkeys").put("on", on))
                 log(T("hold.tile") + " · " + T(if (on) "hold.on" else "hold.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
+            },
+            TvUi.Item(R.drawable.ic_mic, T("mic.tile"), { T("mic.sub_short") }, on = { MicVoice.on(this) }) {   // MicVoice: a rule too, so the phone and web switch it as well
+                val on = !MicVoice.on(this)
+                Rules.change(this, org.json.JSONObject().put("do", "mic").put("on", on))
+                log(T("mic.tile") + " · " + T(if (on) "mic.on" else "mic.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
             }))
     }
 

@@ -13,6 +13,7 @@ import android.os.Parcel
 import android.util.SparseArray
 import android.widget.Toast
 import android.view.KeyEvent
+import dev.tvremote.core.T
 import dev.tvremote.setup.keys.KeysProtocol
 
 /**
@@ -33,6 +34,7 @@ class KeysBridge : Service() {
     private val ui = Handler(Looper.getMainLooper())
     private var watching = false
     private val gate = HoldKeys.Gate()
+    @Volatile private var mic = false                                 // the rule "mic" and a recognizer on this TV (MicVoice), read in refresh(): no disk in the key path
     @Volatile private var hold = false                                // the rule "holdkeys", read in refresh(): no disk in the key path
     private var armed = -1
     private var hint: Toast? = null
@@ -97,11 +99,27 @@ class KeysBridge : Service() {
             try { if (KeyFix.wanted(this)) for ((k, v) in KeyFix.current(this)) p.put(k, v) } catch (e: Exception) { }   // switched off: the service only holds
             plan = p
             hold = HoldKeys.on(this)
+            mic = MicVoice.on(this) && micAvailable()
             if (p.size() == 0) KeyFix.sync(this)                      // nothing left to bring back (and no hold): out of the key filter
         }, "keyfix").apply { isDaemon = true }.start()
     }
 
+    /** A recognizer is there: else the mic button passes to the system, and a notice says so once (the person may have switched the rule on for a TV without one). */
+    private fun micAvailable(): Boolean {
+        if (MicVoice.available(this)) return true
+        if (!MicVoice.saidNoRecognizer(this)) { MicVoice.sayNoRecognizer(this); ui.post { say(T("mic.no_recognizer")) } }
+        return false
+    }
+
     private fun handle(code: Int, action: Int, repeat: Int, downTime: Long, eventTime: Long): Boolean {
+        if (code in MicVoice.KEYS) when (MicVoice.step(mic && !MicVoice.broken(), MicActivity.live != null, code, action, repeat, downTime, eventTime).also {
+            android.util.Log.i("MicVoice", "key $code action $action repeat $repeat -> $it (on=$mic)")   // adb logcat -s MicVoice: which key a remote's mic button sends
+        }) {
+            MicVoice.Step.PASS -> return false
+            MicVoice.Step.START -> { ui.post { try { MicActivity.open(this) } catch (e: Exception) { } }; return true }
+            MicVoice.Step.STOP, MicVoice.Step.RELEASE -> { MicActivity.enough(); return true }
+            MicVoice.Step.EAT -> return true
+        }
         when (synchronized(gate) { gate.onKey(hold, code, action, repeat, downTime, eventTime) }) {   // binder threads: one key at a time
             HoldKeys.Step.PASS -> { }
             HoldKeys.Step.ARM -> {                                    // a short press does nothing but say how: the hold acts at HOLD_MS
@@ -135,6 +153,7 @@ class KeysBridge : Service() {
     override fun onDestroy() {                                        // the add-on let go (its service is off, or it was updated)
         plan = SparseArray()
         hold = false
+        mic = false
         ui.removeCallbacks(fire)
         if (running === this) running = null
         if (watching) try { unregisterReceiver(packages) } catch (e: Exception) { }

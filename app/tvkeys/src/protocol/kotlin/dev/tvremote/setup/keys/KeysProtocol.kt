@@ -19,7 +19,7 @@ object KeysProtocol {
     /**
      * The only keys the add-on asks about; any other passes with no call at all (every key of a filtering service waits for its
      * answer). A superset of what TV Setup may ever take: the stock launcher's keys (KeyFix.RULES), the colour keys the person may
-     * give an app (KeyFix.COLOUR) and the keys of "hold to use Input / Settings" (HoldKeys.KEYS); a test in :tv keeps it so.
+     * give an app (KeyFix.COLOUR) and the keys of "hold to use Input / Settings" (HoldKeys.KEYS) and the remote's mic button (MicVoice.KEYS: SEARCH, ASSIST, VOICE_ASSIST); a test in :tv keeps it so.
      */
-    val INTEREST: Set<Int> = setOf(170, 178, 176, 190, 191, 192, 195, 284, 183, 184, 185, 186) + (243..251)
+    val INTEREST: Set<Int> = setOf(170, 178, 176, 190, 191, 192, 195, 284, 183, 184, 185, 186, 84, 219, 231) + (243..251)
 }

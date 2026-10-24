@@ -14,7 +14,7 @@
   "remote": {"since": "0.1.0"},
   "typing": {"since": "0.1.0"},
   "clipboard": {"since": "0.1.0"},
-  "voice": {"since": "0.1.0", "pc": "0.10.0"},
+  "voice": {"since": "0.1.0", "pc": "0.10.0", "setup": "0.21.1"},
   "picture": {"since": "0.1.0"},
   "listen": {"since": "0.1.0"},
   "quality": {"since": "0.1.0"},

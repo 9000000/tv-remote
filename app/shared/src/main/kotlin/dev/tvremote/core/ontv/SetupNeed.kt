@@ -30,6 +30,7 @@ object SetupNeed {
         "dim" to "0.12.1",                                             // 🔅 a tint over the whole screen (DimLayer)
         "unextra" to "0.12.1",                                         // ↺ taking back the minutes granted to an app today
         "holdkeys" to "0.19.1",                                        // 🔘 Input / Settings need a 2 s hold (HoldKeys)
+        "mic" to "0.21.1",                                             // 🎤 the remote's mic button opens TV Remote's voice (MicVoice; the release after 0.21.0)
         "checkout" to "0.19.1",                                        // 🧳 check-out: forget the guests' browsers (RulesReceiver "forget_web")
         "schedule" to "0.20.1",                                        // 📅 an app opened only on some days in a window of the day (Rules "sched"; the release after 0.20.0)
         "schedule_windows" to "0.21.1",                                // 📅 several windows in a schedule (Rules "sched" windows; the release after 0.21.0); one window still works on older ones
@@ -66,6 +67,7 @@ object SetupNeed {
             "unextra" -> t("core.need_unextra")
             "home_usage" -> t("core.need_home_usage")
             "holdkeys" -> t("core.need_holdkeys")
+            "mic" -> t("core.need_mic")
             "checkout" -> t("core.need_checkout")
             "telegram" -> t("core.need_telegram")
             "kids" -> t("kids.need_name")

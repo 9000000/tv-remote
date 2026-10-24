@@ -484,7 +484,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 adbDetail = ""
                 retryMs = 5000
                 if (!saidAlive && serving) { saidAlive = true; afterUpdate() }
-                if (!KeepAdb.can(this) || !KeyFix.prepared) Thread({ try { link?.get()?.let { KeepAdb.grant(this, it); KeyFix.prepare(this, it); KeyFix.sync(this) } } catch (e: Exception) { } }, "grant").apply { isDaemon = true }.start()
+                if (!KeepAdb.can(this) || !KeyFix.prepared) Thread({ try { link?.get()?.let { KeepAdb.grant(this, it); KeyFix.prepare(this, it); if (MicVoice.on(this)) MicVoice.grant(this, it); KeyFix.sync(this) } } catch (e: Exception) { } }, "grant").apply { isDaemon = true }.start()
             }
             "closed", "error" -> {                                    // ADB off, TV just booted, session dropped: keep trying
                 if (resting) return                                   // we closed it ourselves

@@ -44,7 +44,7 @@ async function loadHold(now) {
   const r = await api('/api/rules', null, true);
   holdBusy = false;
   if (gen !== holdGen || !r || hmode !== 'now') return;
-  const seen = JSON.stringify([r.holdkeys]) + window.LANG;
+  const seen = JSON.stringify([r.holdkeys, r.mic]) + window.LANG;
   if (seen === holdSeen) return;                                       // nothing new: keep what is on screen
   holdSeen = seen;
   const holdOld = r.holdkeys === undefined;
@@ -53,7 +53,14 @@ async function loadHold(now) {
     const ok = (!holdOld || await setupFor('holdkeys')) && await api('/api/rules', { do: 'holdkeys', on });
     cb.disabled = false; if (!ok) cb.checked = !on; else { holdSeen = ''; toast(on ? T('hold.enabled') : T('hold.disabled')); }
   } }), ' ' + T('hold.switch'));
-  box.replaceChildren(UI.card(T('hold.tile'), {}, hold, UI.note(T('hold.sub'))));
+  // The remote's mic button opens TV Remote's voice on the TV (MicVoice.kt in TV Setup): off by default, a rule like the one above.
+  const micOld = r.mic === undefined;
+  const mic = el('label', { className: 'check' }, el('input', { type: 'checkbox', checked: !!r.mic, onchange: async (e) => {
+    const cb = e.currentTarget, on = cb.checked; cb.disabled = true;
+    const ok = (!micOld || await setupFor('mic')) && await api('/api/rules', { do: 'mic', on });
+    cb.disabled = false; if (!ok) cb.checked = !on; else { holdSeen = ''; toast(on ? T('mic.enabled') : T('mic.disabled')); }
+  } }), ' ' + T('mic.switch'));
+  box.replaceChildren(UI.card(T('hold.tile'), {}, hold, UI.note(T('hold.sub'))), UI.card(T('mic.tile'), {}, mic, UI.note(T('mic.sub'))));
 }
 // The task manager: the apps holding memory, what each is doing, and Stop where stopping cannot hurt the TV (the server
 // decides which: Manage.keepWhy). dumpsys meminfo is slow on a TV, so at most every 45 s while the tab is open.

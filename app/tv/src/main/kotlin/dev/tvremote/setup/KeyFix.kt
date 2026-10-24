@@ -211,7 +211,7 @@ object KeyFix {
             val map = keyMap(c)
             val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
-            val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c)   // a dead key to bring back, or "hold to use Input" (HoldKeys)
+            val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c) || MicVoice.on(c)   // a dead key to bring back, "hold to use Input" (HoldKeys), or the mic button (MicVoice)
             if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
             if (need == has && !old) return
             val t = System.currentTimeMillis()

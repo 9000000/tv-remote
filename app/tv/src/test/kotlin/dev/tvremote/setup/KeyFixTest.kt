@@ -65,7 +65,7 @@ class KeyFixTest {
 
     @Test fun theAddOnIsAskedAboutEveryKeyTheAppMayTake() {
         val asked = dev.tvremote.setup.keys.KeysProtocol.INTEREST
-        assertTrue(asked.containsAll(KeyFix.RULES.keys)); assertTrue(asked.containsAll(KeyFix.COLOUR)); assertTrue(asked.containsAll(HoldKeys.KEYS))
+        assertTrue(asked.containsAll(KeyFix.RULES.keys)); assertTrue(asked.containsAll(KeyFix.COLOUR)); assertTrue(asked.containsAll(HoldKeys.KEYS)); assertTrue(asked.containsAll(MicVoice.KEYS))
     }
 
     @Test fun noAccessibilityServiceInThisApp() {                      // Play Protect blocks one from a browser or Downloader: they live in app/tvkeys

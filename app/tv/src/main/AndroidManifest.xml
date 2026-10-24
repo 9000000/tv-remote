@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />   <!-- the remote's mic button, when switched on (MicVoice); allowed through ADB or asked on the TV -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />   <!-- "Remove TV Setup" without ADB: Android's own uninstall prompt -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />   <!-- drawing over the screen (DrawLayer); allowed through ADB -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />   <!-- ADB debugging back on when switched off (KeepAdb); granted through ADB -->
@@ -65,6 +66,9 @@
              (app/tvkeys, packed in assets/tvkeys.apk, put on the TV over ADB by KeysAddon.kt), because Play Protect blocks an app that declares one
              when it is installed from a browser or Downloader. The add-on has this app's key, and asks this service about each key (KeysBridge.kt) -->
         <service android:name=".KeysBridge" android:exported="true" android:permission="dev.tvremote.setup.permission.KEYS" />
+        <!-- the voice screen the remote's mic button opens, when switched on (MicVoice.kt); started by the key filter's service of this app, and by the shell (DUMP: no app can) for tests -->
+        <activity android:name=".MicActivity" android:exported="true" android:permission="android.permission.DUMP" android:excludeFromRecents="true" android:launchMode="singleTask" android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" android:noHistory="true" />
         <!-- the Input button's picker where the TV has none (KeysBridge) -->
         <activity android:name=".InputsActivity" android:exported="false" android:excludeFromRecents="true" android:taskAffinity=""
             android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar" />
