@@ -1,7 +1,6 @@
 package dev.tvremote.phone
 
 import dev.tvremote.core.T
-import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.net.Uri
@@ -9,10 +8,9 @@ import android.os.Build
 import android.provider.Settings
 import android.view.View
 import dev.tvremote.update.Release
-import java.io.File
-import java.io.FileInputStream
+import dev.tvremote.update.SelfUpdate
 
-// Updates from GitHub releases: checking, asking, downloading and handing the APK to Android's installer.
+// Updates from GitHub releases: checking, asking and the phone's own popups; the download and PackageInstaller session are SelfUpdate.stage (shared with the TV apps).
 
 /** "2.5.4 · 13/10/2026": this app's version and the day it was built. */
 internal fun MainActivity.versionLine(): String = version() + released().let { if (it.isEmpty()) "" else " · $it" }
@@ -81,27 +79,9 @@ private fun MainActivity.download(r: Release) {
     Thread {
         var error: String? = null
         try {
-            val apk = File(cacheDir, "update.apk")
-            r.download(apk) { pct -> ui.post { progress(T("updater.downloading", "version" to r.version, "pct" to pct)) } }
-            val pi = packageManager.packageInstaller
-            val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
-            pi.openSession(id).use { session ->
-                session.openWrite("apk", 0, apk.length()).use { out ->
-                    FileInputStream(apk).use { input ->
-                        val b = ByteArray(65536)
-                        while (true) {
-                            val n = input.read(b)
-                            if (n <= 0) break
-                            out.write(b, 0, n)
-                        }
-                        session.fsync(out)
-                    }
-                }
-                val back = Intent(this, MainActivity::class.java).setAction(INSTALL_RESULT)
-                session.commit(PendingIntent.getActivity(this, id, back,
-                    PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) 0x02000000 /* FLAG_MUTABLE */ else 0)).intentSender)
+            SelfUpdate.stage(this, r, Intent(this, MainActivity::class.java).setAction(INSTALL_RESULT), true) { pct ->
+                ui.post { progress(T("updater.downloading", "version" to r.version, "pct" to pct)) }
             }
-            apk.delete()
         } catch (e: Exception) {
             error = e.message ?: e.javaClass.simpleName
         }
@@ -161,7 +141,7 @@ internal fun MainActivity.installResult(i: Intent): Boolean {
     return true
 }
 
-private fun samsung() = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
+private fun samsung() = SelfUpdate.samsung()      // the Auto Blocker quirk: only this app uses it
 
 /**
  * The install failed: the same file from the browser, opened and installed by hand, still works where only this app's

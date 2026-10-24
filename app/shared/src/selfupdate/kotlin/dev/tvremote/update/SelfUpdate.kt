@@ -73,22 +73,13 @@ class SelfUpdate(private val a: Activity, private val app: String, private val a
         cancelled = false
         Installed.failed = { m -> ui.post { failed(m) } }
         Thread({
-            val apk = File(a.cacheDir, "update.apk")
             try {
                 var last = -1
-                r.download(apk) { pct -> if (cancelled) throw IOException(CANCELLED); if (pct != last) { last = pct; ui.post { progress(pct) } } }
-                val pi = a.packageManager.packageInstaller
-                val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
-                pi.openSession(id).use { s ->
-                    s.openWrite("apk", 0, apk.length()).use { out -> FileInputStream(apk).use { it.copyTo(out, 65536) }; s.fsync(out) }
-                    val back = Intent(a, Installed::class.java)       // explicit: Android 14 refuses a mutable PendingIntent to an open one
-                    s.commit(PendingIntent.getBroadcast(a, id, back,
-                        PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) 0x02000000 /* FLAG_MUTABLE */ else 0)).intentSender)
+                stage(a, r, Intent(a, Installed::class.java), false) { pct ->    // explicit: Android 14 refuses a mutable PendingIntent to an open one
+                    if (cancelled) throw IOException(CANCELLED); if (pct != last) { last = pct; ui.post { progress(pct) } }
                 }
             } catch (e: Exception) {
                 if (e.message != CANCELLED) ui.post { failed(e.message ?: e.javaClass.simpleName) }
-            } finally {
-                apk.delete()                                          // the session holds its own copy
             }
         }, "self-update").apply { isDaemon = true }.start()
         return true
@@ -114,5 +105,28 @@ class SelfUpdate(private val a: Activity, private val app: String, private val a
     companion object {
         private const val HOUR = 3600_000L
         private const val CANCELLED = "cancelled"
+
+        /**
+         * Downloads [r] and commits it to a PackageInstaller session whose answer goes to [back] (a broadcast to [Installed], or
+         * with [toActivity] to an activity: the phone app's own flow). Blocking, off the main thread; throws what went wrong.
+         */
+        fun stage(c: Context, r: Release, back: Intent, toActivity: Boolean, progress: (Int) -> Unit) {
+            val apk = File(c.cacheDir, "update.apk")
+            try {
+                r.download(apk, progress)
+                val pi = c.packageManager.packageInstaller
+                val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
+                pi.openSession(id).use { s ->
+                    s.openWrite("apk", 0, apk.length()).use { out -> FileInputStream(apk).use { it.copyTo(out, 65536) }; s.fsync(out) }
+                    val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) 0x02000000 /* FLAG_MUTABLE */ else 0)
+                    s.commit((if (toActivity) PendingIntent.getActivity(c, id, back, flags) else PendingIntent.getBroadcast(c, id, back, flags)).intentSender)
+                }
+            } finally {
+                apk.delete()                                          // the session holds its own copy
+            }
+        }
+
+        /** Samsung's Auto Blocker refuses installs from outside the store and may say only "cancelled": the phone app words its failure for it. */
+        fun samsung() = Build.MANUFACTURER.equals("samsung", ignoreCase = true)
     }
 }
