@@ -531,4 +531,5 @@
     <string name="home_ov_auto">Default</string>
     <string name="home_ov_mine">Mine</string>
     <string name="home_ov_both">Both</string>
+    <string name="wall_loading">Loading background…</string>
 </resources>

@@ -81,6 +81,7 @@ import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.wall.WebSnap
 import dev.tvremote.home.wall.WebSnapper
 import dev.tvremote.home.wall.WebVideo
+import dev.tvremote.home.wall.NetPicture
 import dev.tvremote.home.widgets.Widgets
 import dev.tvremote.home.ui.Zoom
 
@@ -957,7 +958,9 @@ class HomeActivity : Activity() {
         val again = snap && lastWall == HomeConfig.WEB                // the next picture of the page: the one on screen stays until it is read (no flash of the gradient every few minutes)
         lastWall = id
         backdrop.strength = shadeK()
-        val livePage = id == HomeConfig.WEB && !snap
+        val netPic = if (id == HomeConfig.WEB && !snap) NetPicture.direct(url) else null   // the site's picture theme: a native picture wall, no WebView
+        val livePage = id == HomeConfig.WEB && !snap && netPic == null
+        val wasLive = web != null || video != null                   // a page or a video was the background: its colours stand in, not a stale picture
         if (HomeConfig.isVideo(id)) { netVideo = ""; attachVideo(id) } else if (!livePage) { netVideo = ""; detachVideo() }
         if (livePage) {                                               // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
             picture = null; soft = null
@@ -966,6 +969,8 @@ class HomeActivity : Activity() {
             livePage(url)
             return
         }
+        if (netPic != null) { loadNetPicture(netPic, colors, wasLive, key); return }
+        hideLoading()
         if (snap) attachSnap() else {
             detachWeb()
             bg.execute { WebSnap.clear(this) }                        // not the web wall any more: its last picture is only a file taking room
@@ -991,6 +996,56 @@ class HomeActivity : Activity() {
                 Frost.show(if (moving) null else small, dm.widthPixels, dm.heightPixels, live = moving)
             }
         }
+    }
+
+    private val CHIP_INK = 0xF2FFFFFF.toInt()                          // the loading chip: DESIGN-TV chip words and a dark glass fill
+    private val CHIP_FILL = 0x99000000.toInt()
+    private var loadingChip: android.widget.TextView? = null
+
+    /** A small "loading the background" chip in the bottom corner (DESIGN-TV chip look). */
+    private fun showLoading() {
+        if (loadingChip != null) return
+        val root = scroll.parent as? ViewGroup ?: return
+        val d = resources.displayMetrics.density
+        val t = android.widget.TextView(this).apply {
+            setText(R.string.wall_loading); setTextColor(CHIP_INK); textSize = 13f
+            setPadding((14 * d).toInt(), (6 * d).toInt(), (14 * d).toInt(), (6 * d).toInt())
+            background = android.graphics.drawable.GradientDrawable().apply { setColor(CHIP_FILL); cornerRadius = 30 * d }
+            isFocusable = false; isClickable = false; elevation = 8 * d
+        }
+        root.addView(t, FrameLayout.LayoutParams(-2, -2, android.view.Gravity.BOTTOM or android.view.Gravity.END).apply { setMargins(0, 0, (32 * d).toInt(), (24 * d).toInt()) })
+        loadingChip = t
+    }
+
+    private fun hideLoading() { loadingChip?.let { (it.parent as? ViewGroup)?.removeView(it) }; loadingChip = null }
+
+    /**
+     * The site's `loop.html?i=<jpg>` theme as a native picture ([NetPicture]): the old background stays (colours when a page or video
+     * was there) with the chip until the file is read, then it fades in; a failure after the retries keeps the old wall quietly.
+     */
+    private fun loadNetPicture(pic: String, colors: IntArray, wasLive: Boolean, key: String) {
+        val dm = resources.displayMetrics
+        detachWeb(); detachVideo(); netVideo = ""
+        bg.execute { WebSnap.clear(this) }
+        val f = NetPicture.file(this, pic)
+        val t0 = android.os.SystemClock.elapsedRealtime()
+        val cached = f.isFile && f.length() > 0
+        if (!cached) { showLoading(); if (wasLive) backdrop.show(Backdrop.Look(colors)) }
+        Thread({                                                       // its own thread: the download (3 tries) must not hold up the shared one
+            val file = NetPicture.get(this, pic)
+            val big = file?.let { Wall.load(it, dm.widthPixels, dm.heightPixels) }
+            val small = big?.let { Wall.soft(it) }
+            if (big == null) file?.delete()                            // not a picture (a page the site answered with): not kept
+            runOnUiThread {
+                if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread
+                hideLoading()
+                if (big == null) { android.util.Log.i("TvHomeWall", "picture wall failed: $pic"); return@runOnUiThread }
+                picture = big; soft = small
+                backdrop.show(Backdrop.Look(colors, big))
+                Frost.show(small, dm.widthPixels, dm.heightPixels)
+                android.util.Log.i("TvHomeWall", "picture wall shown in ${android.os.SystemClock.elapsedRealtime() - t0} ms (${if (cached) "cache" else "net"})")
+            }
+        }, "netpic").apply { isDaemon = true }.start()
     }
 
     private val videoRetry = Runnable { if (!isDestroyed && !trimmed && !away && HomeConfig.isVideo(conf.optString("wall"))) { detachVideo(); attachVideo(conf.optString("wall")) } }

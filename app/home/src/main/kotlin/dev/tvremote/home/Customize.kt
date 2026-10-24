@@ -1,5 +1,6 @@
 package dev.tvremote.home
 
+import dev.tvremote.home.wall.NetPicture
 import dev.tvremote.tvui.Motion
 import dev.tvremote.tvui.TvGlass
 import android.app.Activity
@@ -421,6 +422,8 @@ object Customize {
             draw()
             Themes.onThumbs = { a.runOnUiThread { if (!a.isDestroyed && page.isAttachedToWindow) draw() } }   // the ready-made pictures came while the page is open
             Themes.fetchThumbs(a)
+            val pics = HomeConfig.ready.mapNotNull { r -> r.conf.optString("wurl").takeIf { it.isNotEmpty() }?.let { NetPicture.direct(it) } }   // their pictures are cached before one is picked
+            if (pics.isNotEmpty()) Thread({ NetPicture.prefetch(a.applicationContext, pics) }, "themepics").apply { isDaemon = true }.start()
         }
         groups[1].fill = {
             // a photo from a phone on the same Wi-Fi is the first cell of "your photos" (a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background)

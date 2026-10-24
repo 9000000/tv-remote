@@ -529,4 +529,5 @@
     <string name="home_ov_auto">Mặc định</string>
     <string name="home_ov_mine">Của tôi</string>
     <string name="home_ov_both">Cả hai</string>
+    <string name="wall_loading">Đang tải hình nền…</string>
 </resources>
