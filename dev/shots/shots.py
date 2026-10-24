@@ -79,10 +79,11 @@ class Chrome:
         self.prof = tempfile.mkdtemp(prefix="cdp-", dir=TMP)
         self.p = subprocess.Popen([CHROME, "--headless=new", f"--remote-debugging-port={CDP_PORT}", f"--user-data-dir={self.prof}",
                                    f"--window-size={w},{h}", "--hide-scrollbars", "about:blank"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        for _ in range(100):
+        for _ in range(900):                                          # Chrome took 21 s to start beside three emulators
             try:
                 tabs = json.load(urllib.request.urlopen(f"http://127.0.0.1:{CDP_PORT}/json")); break
             except Exception: time.sleep(0.1)
+        else: sys.exit(f"Chrome did not open its DevTools port {CDP_PORT} in 90 s")
         self.ws, self.n = Ws([t for t in tabs if t["type"] == "page"][0]["webSocketDebuggerUrl"]), 0
         self.call("Emulation.setDeviceMetricsOverride", width=w, height=h, deviceScaleFactor=dpr, mobile=w < 700)
         if cookie: self.call("Network.setCookie", name=cookie[0], value=cookie[1], url=url)
@@ -97,7 +98,11 @@ class Chrome:
                 return r.get("result", {})
 
     def open(self, url, wait=3):
-        self.call("Page.navigate", url=url); time.sleep(wait)
+        self.call("Page.navigate", url=url)
+        for _ in range(120):                                          # a fixed wait lost the page's scripts on a busy computer
+            time.sleep(0.25)
+            if self.call("Runtime.evaluate", expression="document.readyState", returnByValue=True)["result"].get("value") == "complete": break
+        time.sleep(wait)
 
     def js(self, code):
         r = self.call("Runtime.evaluate", expression=code, awaitPromise=True, returnByValue=True)
@@ -191,7 +196,7 @@ def shot_web():
           %s
           await W(6000);                                              // the app logos come in
           [...document.querySelectorAll('#quick > *, .appgrid > *')].forEach(e => { if (/com\\./.test(e.textContent)) e.remove() });
-          setChip('#chipTv', 'ok', tr('TV bật')); $('#info').textContent = tr('đã kết nối');
+          setChip('#chipTv', 'ok', T('core.tv_on')); $('#info').textContent = T('core.connected');
           scrollTo(0, 0);
           return (document.querySelector('[role=tablist]') || $('[data-tab]').parentElement).getBoundingClientRect().top;
         })()""" % SHOW_PICTURE
@@ -241,9 +246,9 @@ def tv_cookie(base):
                                                                          headers={"Content-Type": "application/json"}))
     post("/api/pair/start", {})
     time.sleep(2)
-    code = re.search(r'text="(\d{6})"', screen_texts(TV)) or re.search(r"\b(\d{6})\b", screen_texts(TV))
+    code = re.search(r'text="(\d{3} ?\d{3})"', screen_texts(TV))           # shown as "863 801"
     if not code: sys.exit("No pairing code on the TV emulator's screen")
-    r = post("/api/pair/finish", {"code": code.group(1)})
+    r = post("/api/pair/finish", {"code": code.group(1).replace(" ", "")})
     tok = re.search(r"tvr=([^;]+)", r.headers["Set-Cookie"]).group(1)
     adb(TV, "shell", "input", "keyevent", "KEYCODE_BACK")             # the code's screen off the TV
     open(path, "w").write(tok)
@@ -314,7 +319,11 @@ def shot_tvapp():
             adb(TV, "shell", "am", "start", "-n", app + "/.MainActivity"); time.sleep(4)
             img = screencap(TV)
             if img.size != (1920, 1080): sys.exit(f"The TV emulator's screen is {img.size}, the edit below wants 1920×1080")
-            words(img, (158, 266, 790, 302), (25, 29, 35), (162, 267), NAME[lang] + ", Android 14", 26, 400, (140, 150, 163))
+            n = re.search(r'text="[^"]*sdk_[^"]*?(&#10;[^"]*)?" [^>]*bounds="\[(\d+),(\d+)\]\[\d+,(\d+)\]"', screen_texts(TV))
+            if not n: sys.exit("The emulator's model line is not on TV Setup's screen")
+            x, y, b = int(n.group(2)), int(n.group(3)), int(n.group(4))
+            h = (b - y) // (2 if n.group(1) else 1)                   # its first line only: the network line under it stays
+            words(img, (x - 4, y, x + 760, y + h), img.getpixel((x - 6, y + 2)), (x, y + 1), NAME[lang] + ", Android 14", 26, 400, (140, 150, 163))
             img = img.resize((1280, 720), Image.LANCZOS)
             save_webp(img, f"tvapp-{lang}")
     finally:
