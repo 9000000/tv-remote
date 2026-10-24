@@ -10,5 +10,7 @@
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowAnimationStyle">@null</item>
     </style>
-    <style name="Menu" parent="@android:style/Theme.DeviceDefault.Dialog.Alert" />
+    <style name="Menu" parent="@android:style/Theme.DeviceDefault.Dialog.Alert">
+        <item name="android:windowAnimationStyle">@null</item>   <!-- no fade when the window comes back from another activity -->
+    </style>
 </resources>

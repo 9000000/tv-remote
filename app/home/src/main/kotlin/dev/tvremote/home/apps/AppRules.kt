@@ -10,8 +10,8 @@ import org.json.JSONObject
  * One app's lock, daily limit, maintenance and use, asked of TV Setup (HomeInfo "app": it keeps the rules and the ADB link; TV Home has
  * neither). A lock or a limit asks the parent's code, the one TV Setup's PIN screen takes (a PIN, or the Authenticator's code), and TV
  * Setup checks it and counts the wrong tries: this side only asks and passes it on. The code is asked ONCE, on entering Lock & limits
- * ([verify]); it is kept for that panel session only ([forget] when the panel closes) and goes with each change. There is no way to make the
- * first PIN from here: a child holding the remote could lock apps and forget the code (the phone or computer makes it). An older TV Setup
+ * ([verify]); it is kept for that panel session only ([forget] when the panel closes) and goes with each change. The first PIN can also be made from the TV (TV Setup
+ * accepts it only while none is set; [migrate]). An older TV Setup
  * does not know "app": [read] is then null and the menu shows no Lock & limits group. Every answer reaches the screen as words in the
  * panel ([PinPad]), never as a toast alone (a TV box may not show one).
  */
@@ -23,6 +23,20 @@ object AppRules {
     /** The code was right in this panel session. */
     val unlocked get() = code.isNotEmpty()
     fun forget() { code = "" }
+    /** The code was proved right by TV Home's own lock ([HomeLock]): kept for this panel session like TV Setup's. */
+    fun keep(typed: String) { code = typed }
+
+    /**
+     * Makes the first code in TV Setup (it refuses when one is set: only a phone or computer changes it) and, [pkgs] being the apps TV Home
+     * had locked by itself, locks them there too, then [then] with whether it all went through. [make] false: the code already exists, only the locks move.
+     */
+    fun migrate(a: Activity, pkg: String, pin: String, make: Boolean, pkgs: Collection<String>, then: (Boolean) -> Unit) {
+        bg.execute {
+            var ok = !make || call(a, pkg, "pin") { put("pin", pin) }?.optString("result") == "ok"
+            if (ok) for (p in pkgs) if (call(a, p, "lock") { put("on", true); put("code", pin) }?.optString("result") != "ok") ok = false
+            later(a) { if (ok) code = pin; then(ok) }
+        }
+    }
 
     /** TV Setup's answer for [op] ("" reads), or null when it does not answer. Off the main thread. */
     fun call(c: Context, pkg: String, op: String = "", with: JSONObject.() -> Unit = {}): JSONObject? = try {

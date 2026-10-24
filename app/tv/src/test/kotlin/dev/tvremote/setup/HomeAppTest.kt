@@ -40,6 +40,7 @@ class HomeAppTest {
     @Test fun theActionsGoThroughTheSameCleaningAsEveryRemote() {
         val o = JSONObject()
         val now = 1_800_000_000_000L
+        try { Rules.apply(o, HomeApp.rulesAction(d("""{"op":"pin","pin":"12"}"""))!!, now); org.junit.Assert.fail("a 2-digit PIN") } catch (e: IllegalArgumentException) { }
         try { Rules.apply(o, HomeApp.rulesAction(d("""{"op":"lock","pkg":"com.netflix.ninja","on":true}"""))!!, now); org.junit.Assert.fail("locked without a PIN") } catch (e: IllegalArgumentException) { }
         Rules.apply(o, HomeApp.rulesAction(d("""{"op":"pin","pin":"2580"}"""))!!, now)
         Rules.apply(o, HomeApp.rulesAction(d("""{"op":"lock","pkg":"com.netflix.ninja","on":true}"""))!!, now)

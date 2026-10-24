@@ -443,8 +443,16 @@
     <string name="am_pin_enter">Nhập mã PIN của phụ huynh</string>
     <string name="am_pin_wrong">Sai mã PIN. Còn %1$d lần thử</string>
     <string name="am_pin_wait">Nhập sai nhiều lần. Chờ %1$s rồi thử lại</string>
-    <string name="am_pin_none">Chưa có mã PIN phụ huynh. Đặt mã trên app điện thoại hoặc máy tính (thẻ Tự động, mục Khóa app bằng mã PIN), rồi quay lại đây. TV Home không đặt PIN để trẻ không tự khóa app.</string>
     <string name="am_pin_noanswer">TV Setup không trả lời. Thử lại sau ít giây</string>
+    <string name="am_pin_new">Đặt mã PIN 4 số cho phụ huynh</string>
+    <string name="am_pin_again">Nhập lại mã để xác nhận</string>
+    <string name="am_pin_mismatch">Hai mã không giống nhau. Đặt lại</string>
+    <string name="am_pin_made_setup">Đã đặt mã PIN. Quên mã: đổi từ app điện thoại / máy tính (không cần mã cũ).</string>
+    <string name="am_pin_made_own">Đã đặt mã PIN. Quên mã: Cài đặt → Ứng dụng → TV Home → Xóa dữ liệu (mất cả cài đặt TV Home).</string>
+    <string name="am_limit_need">Cần TV Setup</string>
+    <string name="am_limit_need_long">Cần TV Setup để đếm thời gian dùng. Cài TV Setup trên TV này rồi quay lại.</string>
+    <string name="am_lock_scope">Khóa này chặn tới đâu</string>
+    <string name="am_lock_scope_text">Khóa chỉ chặn khi mở app từ TV Home. Mở bằng cách khác (nút app trên remote, Trợ lý, app gần đây) không bị chặn. Cài TV Setup để khóa đủ.</string>
     <string name="am_pin_title">Mã PIN phụ huynh</string>
     <string name="am_pin_ok">OK</string>
     <string name="am_cache_running">Đang dọn…</string>

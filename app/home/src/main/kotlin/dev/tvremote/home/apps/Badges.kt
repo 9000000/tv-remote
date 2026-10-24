@@ -39,6 +39,9 @@ object Badges {
         return Info(by, o.optBoolean("bed"))
     }
 
+    /** [info] with TV Home's own locked apps ([HomeLock]) marked as locked too. */
+    fun withOwn(info: Info, own: Set<String>): Info = if (own.isEmpty()) info else Info(info.by + own.associateWith { LOCK }, info.bed)
+
     /** "20m", "1h05": the time left in a few characters ([m], [h]: the units in the app's language). */
     fun label(minutes: Int, m: String, h: String) =
         if (minutes < 60) "$minutes$m" else "${minutes / 60}$h${(minutes % 60).toString().padStart(2, '0')}"

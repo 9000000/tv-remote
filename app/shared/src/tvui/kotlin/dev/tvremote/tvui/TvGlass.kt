@@ -27,6 +27,7 @@ object TvGlass {
     const val PANEL_TOP = 0xFF161B2B.toInt()
     const val PANEL_BOTTOM = 0xFF0C1020.toInt()
     const val PANEL_EDGE = 0x33FFFFFF
+    const val DIM = 0x8C000000.toInt()                                 // the screen behind a panel (55% black), drawn by the panel itself
     const val ROW_FOCUS = 0x2EFFFFFF                                   // a row of the panel: focused, at rest, its edge
     const val ROW_FILL = 0x12FFFFFF
     const val ROW_EDGE = 0x1FFFFFFF
@@ -71,10 +72,10 @@ object TvGlass {
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
             // The window is the whole screen and the box floats in it: a page of another size then resizes a view, not the window (a window
             // resize reaches the screen a frame after its content, which was the quick flicker inside the panel on a slow box).
-            val root = FrameLayout(a).apply { setOnClickListener { dialog.cancel() }; isFocusable = false }
+            val root = FrameLayout(a).apply { setOnClickListener { dialog.cancel() }; isFocusable = false; setBackgroundColor(DIM) }   // the dim is drawn here, not by the system: a window's own dim fades in again when it comes back from another activity (the flicker, and a dim drawn over the panel)
             root.addView(box, FrameLayout.LayoutParams(dp(420), -2, Gravity.CENTER))
             dialog.setContentView(root)
-            dialog.window?.apply { setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); setLayout(-1, -1); setDimAmount(0.55f) }
+            dialog.window?.apply { setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); setLayout(-1, -1); clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND) }
         }
 
         private fun width(w: Int) { box.layoutParams = FrameLayout.LayoutParams(minOf(dp(w), dm.widthPixels - dp(96)), -2, Gravity.CENTER) }

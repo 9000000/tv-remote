@@ -5,6 +5,7 @@ import android.os.Bundle
 import dev.tvremote.home.Target
 import dev.tvremote.home.apps.App
 import dev.tvremote.home.apps.Apps
+import dev.tvremote.home.apps.HomeLock
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.apps.Tiles
 
@@ -17,8 +18,8 @@ object Targets {
     private val bg = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "home-target").apply { isDaemon = true } }
 
     /** Starts [t]; false when it cannot be (the app is gone, the shortcut was taken back, this is not the home screen). A tile is started in the background: true then. */
-    fun open(c: Context, t: String, o: Bundle? = null): Boolean = when (Target.kind(t)) {
-        Target.Kind.APP -> Apps.launch(c, t, o)
+    fun open(c: Context, t: String, o: Bundle? = null, cleared: Boolean = false): Boolean = when (Target.kind(t)) {
+        Target.Kind.APP -> if (HomeLock.needsPin(HomeLock.locked(c), t, cleared)) false else Apps.launch(c, t, o)   // a lock of TV Home's own: only the PIN pad ([cleared]) opens it
         Target.Kind.PIN -> Pins.start(c, t, o)
         Target.Kind.TILE -> { val app = c.applicationContext; bg.execute { Tiles.press(app, t) { } }; true }
         null -> false

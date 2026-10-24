@@ -15,7 +15,7 @@ import org.json.JSONObject
  *   op lock    {on, code}: changing a lock asks the parent's code (PIN, or the Authenticator's), like every other way in
  *   op limit   {minutes, code}: 0 removes it
  *   op verify  {code}: only asks whether the parent's code is right (TV Home asks it once on entering Lock & limits); wrong carries `left` tries
- *   op pin     refused ("nopin"): the first code is made from the phone or computer (a child holding this remote must not lock apps and forget the code)
+ *   op pin     {pin}: makes the FIRST code (4-8 digits) from the TV; once a code exists it is "bad" (changing it takes a phone or computer, no old code needed)
  *   op manage  opens TV Setup's Manage screen on the Health tab on the TV (TV Home's "See more" on the use chart)
  *   op stop    force stop over this app's ADB link; no code, it only closes an app
  *   op cache / cache_state / cache_cancel / week: clear cache runs on a thread of its own (below), the answer is "running" and TV Home asks
@@ -140,7 +140,10 @@ object HomeApp {
         }
         val action = rulesAction(d) ?: return answer("bad")
         val o = Rules.load(c)
-        if (op == "pin") return answer("nopin")                          // the first code is made on the phone or computer, never with the TV's remote
+        if (op == "pin") {                                               // only while none is set: after that the code changes from a phone or computer
+            if (Rules.hasCode(o)) return answer("bad")
+            return try { Rules.change(c, action); answer("ok") } catch (e: IllegalArgumentException) { answer("bad") }
+        }
         if (!Rules.hasCode(o)) return answer("nopin")
         val gate = check(c, o, d.optString("code"), now, pkg)
         if (gate != null) return answer(gate.first, JSONObject().put("wait", gate.second).put("left", maxOf(0, Lockout.TRIES - Lockout.streak(c))))

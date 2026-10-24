@@ -445,8 +445,16 @@
     <string name="am_pin_enter">Enter the parent PIN</string>
     <string name="am_pin_wrong">Wrong PIN. %1$d tries left</string>
     <string name="am_pin_wait">Too many wrong tries. Wait %1$s, then try again</string>
-    <string name="am_pin_none">No parent PIN yet. Set one in the phone or computer app (Automation tab, Lock apps with a PIN), then come back. TV Home does not make the PIN so a child cannot lock apps by themselves.</string>
     <string name="am_pin_noanswer">TV Setup did not answer. Try again in a few seconds</string>
+    <string name="am_pin_new">Set a 4-digit parent PIN</string>
+    <string name="am_pin_again">Enter it again to confirm</string>
+    <string name="am_pin_mismatch">The two codes differ. Start again</string>
+    <string name="am_pin_made_setup">PIN set. Forgot it: change it from the phone or computer app (no old code needed).</string>
+    <string name="am_pin_made_own">PIN set. Forgot it: Settings → Apps → TV Home → Clear data (this also resets TV Home\'s settings).</string>
+    <string name="am_limit_need">Needs TV Setup</string>
+    <string name="am_limit_need_long">Counting the time an app is used needs TV Setup. Install TV Setup on this TV, then come back.</string>
+    <string name="am_lock_scope">How far this lock reaches</string>
+    <string name="am_lock_scope_text">The lock only stops opening the app from TV Home. Opening it another way (the remote\'s app button, the Assistant, recent apps) is not blocked. Install TV Setup for a full lock.</string>
     <string name="am_pin_title">Parent PIN</string>
     <string name="am_pin_ok">OK</string>
     <string name="am_cache_running">Clearing…</string>

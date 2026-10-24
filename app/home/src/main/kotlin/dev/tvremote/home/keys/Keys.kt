@@ -61,6 +61,10 @@ object Keys {
         if (!conf.optBoolean("keyon")) return false
         val target = HomeConfig.keyApps(conf.optJSONObject("keyapps"))[code] ?: return false
         if (e.repeatCount > 0) return true                             // a held key opens it once
+        if (dev.tvremote.home.apps.HomeLock.isLocked(a, target)) {      // locked by TV Home itself: the PIN pad first
+            (a as? dev.tvremote.home.HomeActivity)?.askPin(Targets.label(a, target)) { Targets.open(a, target, null, true) }
+            return true
+        }
         return Targets.open(a, target)
     }
 

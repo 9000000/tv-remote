@@ -53,6 +53,7 @@ import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
 import dev.tvremote.home.apps.App
 import dev.tvremote.home.apps.AppPages
+import dev.tvremote.home.apps.HomeLock
 import dev.tvremote.home.apps.AppRules
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.wall.Backdrop
@@ -522,7 +523,7 @@ class HomeActivity : Activity() {
     /** The marks on the tiles: asked of TV Setup off the main thread, on coming back and then every minute; the answer is applied only where it differs. */
     private fun badgesRead() {
         bg.execute {
-            val info = Badges.read(this) ?: Badges.NONE
+            val info = Badges.withOwn(Badges.read(this) ?: Badges.NONE, HomeLock.locked(this))
             runOnUiThread { if (!isDestroyed && !(info.bed == badges.bed && info.by == badges.by)) { badges = info; badgeTiles() } }
         }
     }
@@ -861,9 +862,9 @@ class HomeActivity : Activity() {
     private fun makeTile(a: App, w: Int) = Tile(this, a, w, a.label, ::dp, ::tileSays).apply {
         setOnClickListener {
             if (a.live) { pressTile(a); return@setOnClickListener }   // a live tile does its job in place: no app opens, no zoom
-            lastOpened = a.pkg
             fun go(o: Bundle?) { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a, o) else Apps.launch(this@HomeActivity, a.pkg, o))) { zoom.end(); toast(R.string.no_open) } }
-            if (!zoom.open(this, ::go)) go(null)
+            fun start() { lastOpened = a.pkg; if (!zoom.open(this, ::go)) go(null) }
+            if (a.pin == null && HomeLock.isLocked(this@HomeActivity, a.pkg)) askPin(a.label) { start() } else start()   // locked by TV Home itself: the PIN pad first
         }
         setOnLongClickListener { menu(a); true }
         moves(this) { menu(a) }
@@ -1155,8 +1156,8 @@ class HomeActivity : Activity() {
     /** What opening the app by its tile does, without the zoom. */
     private fun launch(a: App) {
         if (a.live) { pressTile(a); return }
-        lastOpened = a.pkg
-        if (!(if (a.pin != null) Pins.open(this, a, null) else Apps.launch(this, a.pkg, null))) toast(R.string.no_open)
+        fun start() { lastOpened = a.pkg; if (!(if (a.pin != null) Pins.open(this, a, null) else Apps.launch(this, a.pkg, null))) toast(R.string.no_open) }
+        if (a.pin == null && HomeLock.isLocked(this, a.pkg)) askPin(a.label) { start() } else start()
     }
 
     private fun subs(a: App, st: JSONObject?): List<Sub> {
@@ -1195,8 +1196,19 @@ class HomeActivity : Activity() {
             start.add(stays(R.drawable.ic_keyboard, R.string.am_key, keys, true) { keyPicker(a, st, null, "") })
             out.add(Sub("start", R.drawable.ic_zap, R.string.am_g_start, keys, start))
         }
-        // 3. lock and limits (TV Setup's rules; a code first)
-        if (st != null && !st.optBoolean("prot")) {
+        // 3. lock and limits (TV Setup's rules, a code first; with no TV Setup, TV Home's own lock: [HomeLock])
+        val own = st == null && !a.grid && a.pin == null && a.pkg != packageName
+        if (own) {
+            val lock = ArrayList<TvGlass.Item>()
+            val me = out.size
+            val locked = HomeLock.isLocked(this, a.pkg)
+            lock.add(stays(R.drawable.ic_lock, if (locked) R.string.am_unlock else R.string.am_lock, if (locked) getString(R.string.am_locked) else "") {
+                HomeLock.set(this, a.pkg, !locked); badgesSoon(); sub(a, st, me, 0)
+            })
+            lock.add(stays(R.drawable.ic_hourglass, R.string.am_limit, getString(R.string.am_limit_need), true) { noteMsg(a, st, me, 1, getString(R.string.am_limit_need_long)) })
+            lock.add(stays(R.drawable.ic_info, R.string.am_lock_scope, "", true) { noteMsg(a, st, me, 2, getString(R.string.am_lock_scope_text)) })
+            out.add(Sub("lock", R.drawable.ic_shield, R.string.am_g_lock, if (locked) getString(R.string.am_locked) else "", lock))
+        } else if (st != null && !st.optBoolean("prot")) {
             val lock = ArrayList<TvGlass.Item>()
             val me = out.size                                         // this page's place among the groups, for coming back to it
             val locked = st.optBoolean("locked"); val limit = st.optInt("limit")
@@ -1276,10 +1288,47 @@ class HomeActivity : Activity() {
         else -> getString(R.string.am_failed)
     }
 
+    /** The words of a refused code of TV Home's own lock. */
+    private fun ownSaid(v: HomeLock.Verdict): String = when (v) {
+        is HomeLock.Verdict.Wrong -> getString(R.string.am_pin_wrong, v.left)
+        is HomeLock.Verdict.Wait -> getString(R.string.am_pin_wait, "%d:%02d".format(v.seconds / 60, v.seconds % 60))
+        else -> ""
+    }
+
+    /** A keypad for TV Home's own PIN in [p]: a wrong code or a wait is said over the dots and the pad is drawn again; a right one goes to [done]. */
+    private fun ownPad(p: TvGlass.Panel, title: String, said: String?, bad: Boolean, back: () -> Unit, done: (String) -> Unit) {
+        val wait = HomeLock.waiting(this)
+        val line = if (said == null && wait > 0) getString(R.string.am_pin_wait, "%d:%02d".format(wait / 60, wait % 60)) else said
+        val pad = AppPages.pin(this, line ?: getString(R.string.am_pin_enter), bad || (said == null && wait > 0), HomeLock.LEN, false) { code ->
+            val v = HomeLock.check(this, code)
+            if (v is HomeLock.Verdict.Ok) done(code) else if (p.dialog.isShowing) ownPad(p, title, ownSaid(v), true, back, done)
+        }
+        p.dialog.setOnKeyListener { _, k, e -> pad.onKey(k, e) }
+        p.view(title, pad.view, 420, pad.focus, back)
+    }
+
+    /** Opening an app TV Home locked by itself: its own panel with the PIN pad; the right code runs [then]. */
+    fun askPin(label: String, then: () -> Unit) {
+        val p = TvGlass.Panel(this, R.style.Menu, R.drawable.ic_left) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+        open = p.dialog
+        ownPad(p, label, null, false, { p.dialog.dismiss() }) { p.dialog.dismiss(); then() }
+        p.show()
+    }
+
+    /** A page of words in the panel (one OK button back to the group page [me], row [row]). */
+    private fun noteMsg(a: App, st: JSONObject?, me: Int, row: Int, text: String) {
+        val p = amPanel ?: return
+        p.dialog.setOnKeyListener(null); amGroup = "note"
+        val back = { sub(a, st, me, row) }
+        val (v, b) = AppPages.message(this, text, false, getString(R.string.ok), back)
+        p.view(ttl(a, getString(R.string.am_g_lock)), v, 420, b, back)
+    }
+
     /**
-     * Lock & limits' door: the parent's PIN on a keypad like TV Setup's own PIN screen ([AppPages.pin]); the wrong code, the wait and
-     * "no answer" are said over the dots. With no PIN set at all it says to make one on the phone or computer: TV Home never makes it
-     * (whoever holds the remote could lock apps and forget the code). A right code opens the group; the same panel keeps it.
+     * Lock & limits' door: the parent's PIN on a keypad like TV Setup's own PIN screen ([AppPages.pin]). A wrong code, a wait or no answer
+     * is said over the dots (nothing about how to reset it: a child could follow it). With TV Setup it checks the code; with none, TV
+     * Home's own ([HomeLock]). With no PIN yet the TV makes one ([createPage]); a PIN of TV Home's own that meets a TV Setup is moved
+     * to it with the apps it locked ([AppRules.migrate]). A right code opens the group; the same panel keeps it.
      */
     private fun pinPage(a: App, st: JSONObject?, at: Int, said: String?, bad: Boolean, answer: JSONObject? = null) {
         val p = amPanel ?: return
@@ -1287,22 +1336,62 @@ class HomeActivity : Activity() {
         amGroup = "pin"
         val back = { top(a, st, at + 1) }
         val title = ttl(a, getString(R.string.am_g_lock))
-        val none = answer?.optString("result") == "nopin" || st == null || !st.optBoolean("pin")
-        if (none) {
-            p.dialog.setOnKeyListener(null)
-            val (v, b) = AppPages.message(this, getString(R.string.am_pin_none), false, getString(R.string.ok), back)
-            p.view(title, v, 420, b, back)
+        val setupPin = st != null && st.optBoolean("pin") && answer?.optString("result") != "nopin"
+        val mine = HomeLock.has(this)
+        if (!setupPin && !mine) return createPage(a, st, at, null, null, false)
+        if (!setupPin) {                                          // TV Home's own PIN (with a TV Setup that has none: its rules win, this moves there)
+            ownPad(p, title, said, bad, back) { code ->
+                if (st == null) { AppRules.keep(code); sub(a, st, at) }
+                else AppRules.migrate(this, a.pkg, code, true, HomeLock.locked(this)) { ok -> moved(a, at, ok) }
+            }
             return
         }
         val line = said ?: pinSaid(answer)
-        val pad = AppPages.pin(this, if (bad) line else getString(R.string.am_pin_enter), bad, st.optInt("len", 4), st.optBoolean("totp")) { code ->
+        val pad = AppPages.pin(this, if (bad) line else getString(R.string.am_pin_enter), bad, st!!.optInt("len", 4), st.optBoolean("totp")) { code ->
             AppRules.verify(this, a.pkg, code) { r ->
                 if (amPanel !== p || !p.dialog.isShowing || amGroup != "pin") return@verify
-                if (r?.optString("result") == "ok") sub(a, st, at) else pinPage(a, st, at, null, true, r)
+                if (r?.optString("result") != "ok") pinPage(a, st, at, null, true, r)
+                else if (mine || HomeLock.locked(this).isNotEmpty()) AppRules.migrate(this, a.pkg, code, false, HomeLock.locked(this)) { ok -> moved(a, at, ok) }   // TV Setup's rules win
+                else sub(a, st, at)
             }
         }
         p.dialog.setOnKeyListener { _, k, e -> pad.onKey(k, e) }
         p.view(title, pad.view, 420, pad.focus, back)
+    }
+
+    /** TV Home's own lock moved to TV Setup (or not): read what TV Setup says now and open the group. */
+    private fun moved(a: App, at: Int, ok: Boolean) {
+        if (ok) { HomeLock.clear(this); badgesSoon() }
+        AppRules.read(this, a.pkg) { n -> if (amPanel != null) sub(a, n, at) }
+    }
+
+    /**
+     * Making the first PIN on the TV: 4 digits twice (a mismatch starts again, said in red). With TV Setup it keeps it ([AppRules.migrate]
+     * with nothing to move), without, [HomeLock] does. The one place that says how to recover it is the page after, for whoever made it.
+     */
+    private fun createPage(a: App, st: JSONObject?, at: Int, first: String?, said: String?, bad: Boolean) {
+        val p = amPanel ?: return
+        amGroup = "pin"
+        val back = { top(a, st, at + 1) }
+        val title = ttl(a, getString(R.string.am_g_lock))
+        val pad = AppPages.pin(this, said ?: getString(if (first == null) R.string.am_pin_new else R.string.am_pin_again), bad, HomeLock.LEN, false) { code ->
+            if (first == null) createPage(a, st, at, code, null, false)
+            else if (code != first) createPage(a, st, at, null, getString(R.string.am_pin_mismatch), true)
+            else if (st != null) AppRules.migrate(this, a.pkg, code, true, emptyList()) { ok ->
+                if (!ok) createPage(a, st, at, null, getString(R.string.am_failed), true)
+                else AppRules.read(this, a.pkg) { n -> made(a, n, at, R.string.am_pin_made_setup) }
+            } else { HomeLock.create(this, code); AppRules.keep(code); made(a, st, at, R.string.am_pin_made_own) }
+        }
+        p.dialog.setOnKeyListener { _, k, e -> pad.onKey(k, e) }
+        p.view(title, pad.view, 420, pad.focus, back)
+    }
+
+    /** The PIN is made: how to recover it (once, here), then the group. */
+    private fun made(a: App, st: JSONObject?, at: Int, words: Int) {
+        val p = amPanel ?: return
+        p.dialog.setOnKeyListener(null)
+        val (v, b) = AppPages.message(this, getString(words), false, getString(R.string.ok)) { sub(a, st, at) }
+        p.view(ttl(a, getString(R.string.am_g_lock)), v, 420, b) { sub(a, st, at) }
     }
 
     /** "Used today" opens this page: a bar per day for the last 7 (TV Setup's "week"), and a button that says where to see more. */
