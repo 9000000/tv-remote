@@ -7,9 +7,9 @@ then fold that list into Bloat.kt and empty it. The site's list can add suggesti
 
 Last read: **2026-10-24**, upstream `Gathin23/cleanyourtv` at `c965ef4b11` (new since `f9f0c5353e`: 12 debloat.txt, 85 packages that
 nothing of ours held; Acer ar55ar2851udpro, Haier hr9216eu, Hotack smart2kpjt, Master-G mga3200, Philips 65oled706 / 65pml9506, RCA
-rc50a21s, Sankey hi3751v350, Thomson 32he5800, Xiaomi aesp0, TCL 43s5k). SUGGEST (13, pure ads / tracking / promo): Philips
-`nettvrecommender` + `recommendation` (Top Picks row, philips-65oled706 / 65pml9506), `adservices.api`, `ondevicepersonalization`,
-`federatedcompute` (acer, hotack; pm may refuse these mainline modules, harmless then), `apps.eshow` (store demo), `apps.mk.wd`
+rc50a21s, Sankey hi3751v350, Thomson 32he5800, Xiaomi aesp0, TCL 43s5k). SUGGEST (10, pure ads / tracking / promo): Philips
+`nettvrecommender` + `recommendation` (Top Picks row, philips-65oled706 / 65pml9506; the mainline three acer / hotack add stay
+in "Not taken"), `apps.eshow` (store demo), `apps.mk.wd`
 (ClickAd boot receiver), `cvte.industries` (push / ad receiver), `whaletv.logger`, `zeasn.tokenapp` (key tracker),
 `zeasn.deviceportal.asdprovider.toptech` / `.certified` (ad portal, rca / hotack), `haier.apps` (promo). KEEP (8 patterns): `printspooler`,
 `aml.dial` / `netflix.dial` (cast), `apps.scast`, `creative.fastscreen.tv` (screen mirroring), `sss.authbridge` (set up from phone),
