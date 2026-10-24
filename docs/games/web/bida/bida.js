@@ -129,12 +129,15 @@ if (table.ok) {
   });
   pad.on('axis', (e) => { wake(); const s = e.player - 1; if (s >= 0 && s < 2) { S.k[s].ax = Math.abs(e.x) > 0.25 ? e.x : 0; S.k[s].ay = Math.abs(e.y) > 0.25 ? e.y : 0; } });
   const KEYS = { ArrowLeft: 'L', ArrowRight: 'R', ArrowUp: 'U', ArrowDown: 'D' };
+  // OK / Space / Z: a remote may send repeats or down+up pairs while held, so one Hold turns them into one press (_lib/hold.js)
+  const okKey = (e) => e.key === ' ' || e.key === 'z' || e.key === 'Z' || e.key === 'Enter';
+  const okHold = Hold.make({ down: () => aDown(0), up: () => aUp(0) });
   document.addEventListener('keydown', (e) => {
     wake();
     if (KEYS[e.key]) S.k[0][KEYS[e.key]] = 1;
-    else if ((e.key === ' ' || e.key === 'z' || e.key === 'Z' || (e.key === 'Enter' && !table.done)) && !e.repeat) aDown(0);
+    else if (okKey(e) && (e.key !== 'Enter' || !table.done)) okHold.down();
   });
-  document.addEventListener('keyup', (e) => { wake(); if (KEYS[e.key]) S.k[0][KEYS[e.key]] = 0; else if (e.key === ' ' || e.key === 'z' || e.key === 'Z' || e.key === 'Enter') aUp(0); });
+  document.addEventListener('keyup', (e) => { wake(); if (KEYS[e.key]) S.k[0][KEYS[e.key]] = 0; else if (okKey(e)) okHold.up(); });
   const watcher = (p) => { if (p > 2) { try { pad.layout(p, { buttons: [], dpad: false }); pad.say(p, W.watch); } catch (e) { /* older TV Games */ } } };
   pad.on('join', (e) => watcher(e.player));
   pad.players().forEach(watcher);

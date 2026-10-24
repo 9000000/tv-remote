@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Bi-a (TV Games): giữ OK để nạp lực không còn bị tụt về 0 giữa chừng khi điều khiển gửi lặp phím hoặc cặp nhấn/nhả liên tục (TV Remote qua ADB, một số remote vật lý); thả OK mới bắn.
 - TV Karaoke (app mới, bản đầu 0.1.0, chưa vào release): TV hiện mã QR, điện thoại quét để tìm bài (khóa API YouTube tùy chọn, không có thì dùng kết quả công khai), cả nhà thêm vào hàng đợi chung; TV phát toàn màn hình bằng trình phát nhúng chính thức của YouTube, bài không cho nhúng thì tự bỏ qua và báo trên điện thoại. Chưa có micro: cắm mic karaoke Bluetooth/USB vào TV hoặc loa.
 - Sức khỏe → Lịch sử: "Mất mạng" chỉ tô đỏ đúng đoạn mất mạng (trước đây một lần mất mạng không có dòng "có lại" kéo đỏ cả biểu đồ); thẻ "App bị dừng, bị treo" có khoảng cách như các thẻ khác.
 - TV Home: hình nền video hoặc trang web đang tải không còn hiện nút play xám của WebView; chủ đề video hiện ảnh nhỏ của nó (làm mờ) tới khi video chạy.
@@ -72,6 +73,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: khóa app không cần TV Setup: mã PIN 4 số tạo ngay trên TV (nhập hai lần), TV Home tự khóa mở app từ lưới, dock, phím gán (chặn mở từ nơi khác thì cần TV Setup); giới hạn mỗi ngày vẫn cần TV Setup. Cài TV Setup sau thì khóa tự chuyển sang. Màn mờ phía sau menu không còn nhấp nháy khi quay về từ app khác (Thông tin app).
 
 **English**
+- Pool (TV Games): holding OK to charge the shot no longer resets to 0 when the remote sends repeated keys or a down/up pair while held (TV Remote over ADB, some physical remotes); the shot fires when OK is released.
 - TV Karaoke (new app, first version 0.1.0, not in a release yet): the TV shows a QR, phones scan it to search songs (optional YouTube API key, public results otherwise) and fill one shared queue; the TV plays each song full screen with YouTube's official embedded player, and a video that refuses embedding is skipped with a note on the phones. No microphone yet: plug a Bluetooth/USB karaoke mic into the TV or speaker.
 
 - TV Home: locking an app no longer needs TV Setup: the 4-digit PIN is made on the TV (typed twice), TV Home itself blocks opening the app from the grid, dock and assigned keys (other ways in need TV Setup); daily limits still need TV Setup. Install TV Setup later and the locks move to it. The dim behind the menu no longer flickers on coming back from another app (App info).- Health → History: "No network" shades only the time the network was really lost (a loss with no "back" line used to paint the whole chart red); the "Apps that stopped or froze" card has the same gap as the other cards.
