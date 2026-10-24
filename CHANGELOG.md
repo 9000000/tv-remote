@@ -16,6 +16,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tối ưu TV: không còn tắt app đang mở nguồn vào (HDMI) hay Cài đặt của TV, dù app đó có trong danh sách gợi ý. Trên vài TV Sony, tắt nhầm app này làm ô nguồn vào không mở được hoặc mất lối vào Cài đặt (theo cleanyourtv).
 - TV Home: TV không có trang "Thông tin app" thì menu nhấn giữ không còn hiện mục này (trước đó bấm vào chỉ báo lỗi).
 - Lịch mở app: một lịch giờ có nhiều khung giờ, mỗi khung có ngày và giờ riêng (ví dụ T2–T6 16:00–18:00, T7 và CN 08:00–22:00), tối đa 8 khung; nút ＋ Thêm khung giờ và ✕ để bỏ. App mở được khi đang nằm trong một khung bất kỳ, khung qua nửa đêm vẫn tính cho ngày bắt đầu. Lịch cũ tự đọc thành một khung. Lưu nhiều khung cần TV Setup mới; một khung thì TV Setup cũ vẫn nhận.
+- Tab Ứng dụng: không cho dừng, tắt hay gỡ app đang mở Cài đặt hoặc nguồn vào của TV, kể cả app Cài đặt riêng của hãng không có trong danh sách tên. Tắt nhầm app Cài đặt có thể làm TV treo ở logo khi khởi động.
 
 **English**
 - Optimize TV: 10 more ad / tracking / promo apps suggested from the new cleanyourtv lists (Philips "Top Picks", the store demo app, Zeasn's key tracker and ad portal, Haier's promo app...); and printing, casting / screen mirroring receivers, set-up from phone, TalkBack and calendar sync are never turned off.
@@ -27,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Optimize TV: never turns off the app that opens the TV's inputs (HDMI) or its Settings, even when it is on the suggested list. On some Sony TVs turning it off left the input tiles dead or Settings unreachable (from cleanyourtv).
 - TV Home: on a TV with no "App info" page the long-press menu no longer shows that entry (it only failed before).
 - App schedule: a schedule can hold several time windows, each with its own days and hours (for example Mon–Fri 16:00–18:00, Sat and Sun 08:00–22:00), up to 8, with ＋ Add a time window and ✕ to remove. The app may open while the time is inside any window; a window past midnight still belongs to the day it starts on. Old schedules read as one window. Saving several windows needs a newer TV Setup; one window still works on older ones.
+- Apps tab: an app that opens the TV's Settings or its inputs can no longer be stopped, turned off or removed, even a brand's own Settings app missing from the name lists. Losing Settings can leave a TV stuck at its boot logo.
 
 ## 0.21.0 - 2026-10-24
 
