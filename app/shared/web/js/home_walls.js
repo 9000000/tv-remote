@@ -201,6 +201,9 @@ function homeThemePaint(cv, conf, tiles, img, look) {
   }
   const cols = Math.min(8, Math.max(4, conf.cols || 5)), gap = w * 0.014, tw = (w - 2 * m - (cols - 1) * gap) / cols, th = tw * 0.56;
   const fit = (h - y + gap) / (th + gap), shown = conf.rows >= 1 ? Math.min(conf.rows, Math.max(fit, 1)) : Math.min(fit, 3), ring = conf.focus === 'ring';
+  // TV Home keeps the grid at the bottom of the screen: whole rows above a margin, a part of a row cut by the screen's edge
+  const whole = Math.abs(shown - Math.round(shown)) < 0.0001;
+  y = Math.max(y, (whole ? h * 0.94 : h) - (shown * (th + gap) - (whole ? gap : 0)));
   for (let i = 0; i < Math.ceil(shown - 0.0001) * cols; i++) {
     const rx = m + (i % cols) * (tw + gap), ry = y + Math.floor(i / cols) * (th + gap), row = Math.floor(i / cols);
     const vis = row + 1 <= shown + 0.0001 ? 1 : Math.min(1, Math.max(0.05, shown - row)), live = i < tiles.length;

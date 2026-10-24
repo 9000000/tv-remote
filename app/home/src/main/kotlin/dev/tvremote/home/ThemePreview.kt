@@ -149,6 +149,9 @@ object ThemePreview {
         val fit = (room + gap) / (th + gap)
         val shown = if (rows >= 1) minOf(rows, fit.coerceAtLeast(1.0)) else minOf(fit, 3.0)
         val whole = Math.ceil(shown - 0.0001).toInt().coerceAtLeast(1)
+        // TV Home keeps the grid at the bottom of the screen: whole rows above a margin, a part of a row cut by the screen's edge
+        val exact = Math.abs(shown - Math.rint(shown)) < 0.0001
+        y = maxOf(y, (if (exact) h * 0.94f else h) - (shown * (th + gap) - (if (exact) gap else 0f)).toFloat())
         val ring = conf.optString("focus", "glass") == "ring"
         for (i in 0 until whole * cols) {
             val rx = m + (i % cols) * (tw + gap); val ry = y + (i / cols) * (th + gap)
