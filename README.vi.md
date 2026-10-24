@@ -224,7 +224,7 @@ Chơi game retro và game web trên TV, dùng điện thoại làm tay cầm.
 
 Làm một lần, bằng remote của TV. Tên menu dưới đây là trên Sony; hãng khác có thể hơi khác.
 
-1. **Bật Tùy chọn nhà phát triển:** Cài đặt → Tùy chọn thiết bị (Google TV, Chromecast: Hệ thống) → Giới thiệu → **Bản dựng** (“Bản dựng Android TV OS”) → bấm OK 7 lần.
+1. **Bật Tùy chọn nhà phát triển:** Cài đặt → Tùy chọn thiết bị (Google TV, Chromecast: Hệ thống) → Giới thiệu → **Bản dựng** (“Bản dựng Android TV OS”) → bấm OK 7 lần. Box nhà mạng (FPT, Viettel…): đừng bấm 7 lần, box có thể đòi mật khẩu hoặc khóa máy. Cài TV Setup trước, app mở thẳng Tùy chọn nhà phát triển.
 2. **Bật ADB:** Cài đặt → Tùy chọn thiết bị (Google TV, Chromecast: Hệ thống) → Tùy chọn nhà phát triển → **Gỡ lỗi ADB** (có TV ghi "Gỡ lỗi USB").
 3. **Nên bật đánh thức từ xa:** Cài đặt → Mạng và Internet → **Khởi động từ xa**. Thiếu bước này thì không bật lại được TV từ xa khi nó đã tắt hẳn.
 
