@@ -314,6 +314,7 @@
  "apps.loading": "Đang tải...",
  "apps.show_system": "Hiện cả app hệ thống",
  "apps.system_apps": "⚙️ App hệ thống",
+ "apps.system_found": "App hệ thống ({n})",
  "apps.uninstall_ask": "Gỡ cài đặt {name} khỏi TV?",
  "apps.remove": "Gỡ",
  "apps.disable_ask": "Tắt {name}? App biến khỏi TV cho tới khi bật lại ở mục “App đã tắt” cuối danh sách này.",

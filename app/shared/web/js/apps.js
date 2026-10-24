@@ -62,6 +62,15 @@ onTvChange(() => {
 });
 let appsBoot = new Set();                                             // the apps that start by themselves when the TV turns on
 let appsFilter = 'all';
+let appsSys = null, appsSysBusy = false;                             // the system apps, read once a search needs them (the chip off): null = not read yet
+async function loadAppsSys() {
+  if (appsSysBusy) return; appsSysBusy = true;
+  const r = await api('/api/apps?system=1', null, true);
+  appsSysBusy = false; appsSys = r ? r.apps : [];
+  appsSys.forEach((a) => { if (!appsInfo.has(a.pkg)) appsInfo.set(a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }); });
+  seedMeta(appsSys); renderApps();
+}
+onTvChange(() => { appsSys = null; });
 // the chips above the list: each narrows it to one kind of app, with how many there are. The same words and colour mark
 // those apps in the list (APP_TAGS), so a colour on a row says what the chip says.
 const APPS_FILTERS = [
@@ -77,7 +86,7 @@ async function loadApps(quiet) {                                       // quiet:
   if (!quiet) $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: T('apps.loading') }));
   const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
   if (!r) { if (!quiet) $('#appslist').replaceChildren(); return; }
-  appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }])); seedMeta(r.apps); renderApps();
+  appsSys = null; appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }])); seedMeta(r.apps); renderApps();
   const b = await api('/api/apps/boot', null, true);                 // after the list: a tag is worth no wait
   if (b) { appsBoot = bootRead(b.text); renderApps(); }
 }
@@ -100,8 +109,7 @@ function renderApps() {
     el('b', { textContent: key === 'open' ? recentsList(q).length : found.filter((p) => ok(p, appsInfo.get(p) || {})).length }))),   // a system app open (Settings) counts too
     el('button', { className: 'sys' + (sys ? ' on' : ''), type: 'button', ariaPressed: String(sys), title: T('apps.show_system'),   // which apps are listed at all: a switch, not a kind
       onclick: () => { $('#appssys').checked = !sys; loadApps(); } }, (sys ? '✓ ' : '') + T('apps.system_apps')));
-  const rows = (open ? recentsList(q) : found.filter((p) => fit[2](p, appsInfo.get(p) || {}))   // open: newest first, as the TV keeps them
-    .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b)))).map((pkg) => {   // turned off: last
+  const mk = (pkg) => {
     const run = async (name, label) => {
       if (name === 'uninstall' && !await ask(T('apps.uninstall_ask', { name: appName(pkg) }), { ok: T('apps.remove'), danger: true })) return;
       if (name === 'disable' && !await ask(T('apps.disable_ask', { name: appName(pkg) }), { ok: T('apps.disable_app') })) return;
@@ -134,14 +142,23 @@ function renderApps() {
     if (META.has(pkg)) row.loadMeta(); else lazyMeta.observe(row);
     row.off = !!info.off;
     return row;
-  });
+  };
+  const rows = (open ? recentsList(q) : found.filter((p) => fit[2](p, appsInfo.get(p) || {}))   // open: newest first, as the TV keeps them
+    .sort((a, b) => (appsInfo.get(a)?.off ? 1 : 0) - (appsInfo.get(b)?.off ? 1 : 0) || appName(a).localeCompare(appName(b)))).map(mk);   // turned off: last
+  // a search also looks in the system apps (YouTube itself is one) and lists what it finds apart, folded, with each package shown
+  if (q && !sys && !open && appsSys === null) loadAppsSys();
+  const have = new Set(appsAll), sysRows = q && !sys && !open && appsSys ? appsSys.map((a) => a.pkg).filter((p) => !have.has(p)
+    && (p.toLowerCase().includes(q) || appName(p).toLowerCase().includes(q)) && fit[2](p, appsInfo.get(p) || {}))
+    .sort((a, b) => appName(a).localeCompare(appName(b))).map(mk) : [];
+  const sysFold = sysRows.length ? [el('details', { className: 'appsoff appssysfound', open: !rows.length },
+    el('summary', { textContent: T('apps.system_found', { n: sysRows.length }) }), ...sysRows)] : [];
   // the disabled apps (Optimize TV's, or "Disable" here) fold away at the end, so "Turn on" is at hand but out of the way
   const fold0 = fit[0] === 'all';                                    // a chip picked: its apps, all in plain sight
   const on = fold0 ? rows.filter((r) => !r.off) : rows, off = fold0 ? rows.filter((r) => r.off) : [];
   const none = !$('#appssys').checked && (fit[0] === 'keep' || fit[0] === 'boot') ? T('apps.none_system_hint') : T('apps.none');
   const fold = off.length ? [el('details', { className: 'appsoff', open: !!q || appsOffOpen, ontoggle: (e) => { if (!q) appsOffOpen = e.target.open; } },
     el('summary', { textContent: T('apps.off_title', { n: off.length }) }), el('p', { className: 'muted', textContent: T('apps.off_note') }), ...off)] : [];
-  $('#appslist').replaceChildren(...(on.length || off.length ? on : [el('div', { className: 'muted', textContent: open ? T('recents.none') : none })]), ...fold, ...(open ? recentsTail() : []));
+  $('#appslist').replaceChildren(...(on.length || off.length || sysFold.length ? on : [el('div', { className: 'muted', textContent: open ? T('recents.none') : none })]), ...fold, ...sysFold, ...(open ? recentsTail() : []));
 }
 $('#appsq').addEventListener('input', renderApps);
 $('#appsf').addEventListener('submit', (e) => e.preventDefault());

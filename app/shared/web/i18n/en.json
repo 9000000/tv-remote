@@ -314,6 +314,7 @@
  "apps.loading": "Loading...",
  "apps.show_system": "Show system apps too",
  "apps.system_apps": "⚙️ System apps",
+ "apps.system_found": "System apps ({n})",
  "apps.uninstall_ask": "Uninstall {name} from the TV?",
  "apps.remove": "Uninstall",
  "apps.disable_ask": "Disable {name}? It disappears from the TV until you turn it back on under “Disabled apps” at the end of this list.",
