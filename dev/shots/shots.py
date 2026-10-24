@@ -2,12 +2,14 @@
 """The screenshots of the intro site (docs/img), taken again from today's UI in one go. See AGENTS.md "Testing".
 
     dev/shots/shots.py                  every picture
-    dev/shots/shots.py web ts           only some: web (computer app's remote), ts (Tailscale box), tv (TV web page),
+    dev/shots/shots.py web ts           only some: web (computer app's remote), ts (Tailscale box), feat [names] (the web cards of the
+                                  home page's "And more", on a gradient), tv (TV web page),
                                   phone (phone app's remote), tvapp (TV Setup's screen), og (the link previews, from TV Home's picture)
 
 Needs: python3 with Pillow, Google Chrome, cwebp, the computer app built (./gradlew :desktop:installDist) and, for tv / phone /
 tvapp, the two emulators running with the apps installed (dev/test/emu.sh). The picture on the TV is the real TV Home of the TV
 emulator, captured before (docs/img/tvhome-widgets-<lang>.webp): no real TV, no one's address in the pictures.
+The page's pictures are taken in the dark theme, like the site (THEME=light for the old look).
 Only the standard library besides Pillow: Chrome is driven through its DevTools protocol over a small WebSocket client below.
 """
 import base64, functools, http.server, json, os, re, shutil, socket, struct, subprocess, sys, tempfile, threading, time
@@ -29,6 +31,7 @@ TV, PHONE = os.environ.get("TV_SERIAL", "emulator-5554"), os.environ.get("PHONE_
 NAME = {"vi": "TV phòng khách", "en": "Living room TV"}
 FONT = os.path.join(ROOT, "dev", "shots", "Roboto.ttf")            # Android's own face, for the words drawn over the emulators' names
 TMP = tempfile.mkdtemp(prefix="tvr-shots-")
+THEME = os.environ.get("THEME", "dark")                           # the site is dark: its pictures of the page are taken dark (THEME=light for the old look)
 
 
 def log(*a): print("·", *a, flush=True)
@@ -86,6 +89,7 @@ class Chrome:
         else: sys.exit(f"Chrome did not open its DevTools port {CDP_PORT} in 90 s")
         self.ws, self.n = Ws([t for t in tabs if t["type"] == "page"][0]["webSocketDebuggerUrl"]), 0
         self.call("Emulation.setDeviceMetricsOverride", width=w, height=h, deviceScaleFactor=dpr, mobile=w < 700)
+        self.call("Emulation.setEmulatedMedia", features=[{"name": "prefers-color-scheme", "value": THEME}])   # the page's theme is "auto" = this
         if cookie: self.call("Network.setCookie", name=cookie[0], value=cookie[1], url=url)
 
     def call(self, method, **params):
@@ -233,6 +237,100 @@ def shot_ts():
         save_webp(c.resize((600, round(c.height * 600 / c.width)), Image.LANCZOS), f"tailscale-{lang}")
 
 
+# ---- the "And more" cards of the home page (docs/img/feat-<name>-<lang>.webp), the web UI on a gradient ---------------------
+# The phone-app cards (air, notify, ...) are the emulator's screen on a vertical gradient; these are the page's cards the same way:
+# a rounded cut of the page, a soft shadow, one of the same gradients (top colour -> bottom colour), 720 x 480. Baked into the image:
+# the home page has no CSS for it (docs/css/home.css .fc img).
+
+GRADIENTS = [((36, 63, 150), (14, 23, 52)), ((121, 48, 159), (25, 15, 48)), ((21, 120, 142), (10, 30, 46)),
+             ((187, 109, 40), (40, 26, 15)), ((151, 60, 111), (37, 16, 35)), ((58, 59, 168), (14, 16, 45)), ((49, 91, 200), (13, 20, 47))]
+
+
+def frame(cut, css_w, n):
+    """`cut`: the card as the browser drew it (2 px per CSS px, `css_w` wide). Returns it on gradient number n, 720 x 480."""
+    top, bot = GRADIENTS[n % len(GRADIENTS)]
+    bg = Image.new("RGB", (720, 480))
+    d = ImageDraw.Draw(bg)
+    for y in range(480):
+        d.line([(0, y), (720, y)], fill=tuple(round(a + (b - a) * y / 479) for a, b in zip(top, bot)))
+    cut = cut.convert("RGB")
+    while cut.height > 40 and max(cut.crop((cut.width // 4, cut.height - 3, cut.width * 3 // 4, cut.height - 2)).getextrema()[i][1] for i in range(3)) < 6:
+        cut = cut.crop((0, 0, cut.width, cut.height - 3))               # the dialog's backdrop under a card that is shorter than its box
+    w = min(648, round(css_w * 1.4))
+    cut = cut.convert("RGB").resize((w, round(cut.height * w / cut.width)), Image.LANCZOS)
+    bleed = cut.height > 450                                          # a tall card runs off the bottom edge, like the phone's screen
+    cut = cut.crop((0, 0, w, 450)) if bleed else cut
+    x, y = (720 - w) // 2, 30 if bleed else max(15, (480 - cut.height) // 2)
+    r = 20
+    mask = Image.new("L", cut.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, cut.width - 1, cut.height - 1 + (r * 2 if bleed else 0)), radius=r, fill=255)
+    shadow = Image.new("L", bg.size, 0)
+    ImageDraw.Draw(shadow).rounded_rectangle((x, y + 12, x + cut.width, y + cut.height + 12), radius=r, fill=140)
+    bg.paste((0, 0, 0), (0, 0), shadow.filter(ImageFilter.GaussianBlur(14)))
+    bg.paste(cut, (x, y), mask)
+    return bg
+
+
+FEAT_NAMES = {"vi": "TV phòng khách", "en": "Living room TV"}
+# name: (page width in CSS px, tab or "", js that makes the card appear, js giving the card to cut: the element, gradient number)
+CLICK = "{ const b = [...document.querySelectorAll(%s)].find(e => e.offsetParent && new RegExp(%s, 'i').test(e.innerText)); if (!b) throw new Error('no button ' + %s); b.click(); await W(1800); }"
+def click(sel, rx): return CLICK % (json.dumps(sel), json.dumps(rx), json.dumps(sel + rx))
+DLG = "document.querySelector('dialog[open] .card')"
+MORE = "if (!$('#more') || $('#more').getBoundingClientRect().height < 10) { $('#morebtn').click(); await W(900); }"
+FEATS = {
+    "apps":     (840, "apps", "await W(2500);", "$('#appsf').closest('section')", 0),
+    "files":    (480, "files", "await W(2500); $('#places button')?.click(); await W(2500);", "$('#filescard')", 1),
+    "health":   (480, "health", "await W(4000);", "[...document.querySelectorAll('.card')].find(c => /CPU/.test(c.textContent) && /RAM/.test(c.textContent) && c.getBoundingClientRect().height < 500)", 2),
+    "tvset":    (480, "tv", "await W(2500); const t = [...document.querySelectorAll('.card')].find(c => /DNS/.test(c.textContent) && c.getBoundingClientRect().height < 900).closest('section, details'); t.style.cssText = 'padding:16px;background:var(--bg2);border-radius:14px';", "t", 3),
+    "welcome":  (480, "auto", "await W(2500);", "$('#welcomecard')", 4),
+    "lock":     (480, "auto", "await W(2500);", "$('#lockcard')", 5),
+    "schedule": (480, "auto", "await W(2500);" + click("#schedcard button", "Thêm|Add"), DLG, 6),
+    "limits":   (480, "auto", "await W(2500);" + click("#limitcard button", "Thêm|Add"), DLG, 0),
+    "optimize": (480, "tv", "await W(2500); $('#setupapply').click(); await W(2500);", DLG, 1),
+    "launchers": (860, "tv", "await W(2500); $('#launchopen').click(); await W(3500);", DLG, 2),
+    "dim":      (460, "", MORE + "$('#r-timer').click(); await W(1500);" + click("dialog[open] button", "Màn hình TV|TV screen") +
+                 click("dialog[open] button", "Giảm độ sáng|Dim the screen"), DLG, 3),
+    "share":    (460, "", MORE + "$('#r-tools').click(); await W(1500);" + click("dialog[open] button", "Chia sẻ|Share") + "await W(1500);" +
+                 "document.querySelectorAll('dialog[open] svg:not(.ic), dialog[open] canvas, dialog[open] img').forEach(e => { if (e.getBoundingClientRect().width > 100) e.style.filter = 'blur(10px)' });", DLG, 4),
+    "brands":   (480, "pick", "await W(1500); $('#savedcard').hidden = true; $('#scanlist').replaceChildren(...[['LG webOS TV', '192.168.1.31', 'lg'], ['Samsung 55 Q60', '192.168.1.32', 'samsung'],"
+                 " ['Roku Ultra', '192.168.1.33', 'roku'], [LANG === 'vi' ? 'TV phòng khách' : 'Living room TV', '192.168.1.20', 'android']]"
+                 ".map(([name, ip, kind]) => scanRow({ name, ip, kind, remote: kind === 'android', adb: true, via: 'lan' })));", "$('#scan').closest('.card, section')", 1),
+    "many":     (480, "pick", "await W(1500); const real = api; api = async (u, b, q) => u === '/api/fleet' ? { blocked: [], tvs: [{ host: STATE.host, state: 'ready', name: LANG === 'vi' ? 'TV phòng khách' : 'Living room TV',"
+                 " android: '14', disk_free: 18.7e9, disk_total: 30.1e9, ram: 3.9e9, setup: '0.21.0', model: 'Streamer 4K' }, { host: '192.168.1.34', state: 'ready', name: LANG === 'vi' ? 'TV phòng ngủ' : 'Bedroom TV',"
+                 " android: '14', disk_free: 18.7e9, disk_total: 30.1e9, ram: 3.9e9, setup: '0.21.0', model: 'Streamer 4K' }] } : real(u, b, q);"
+                 " $('#fleet').hidden = false; $('#fleet').open = true; await W(2500);", "$('#fleet')", 2),
+    "hook":     (480, "", "$('#aboutbtn').click(); await W(1500); $('#hookpick [data-v=on]').click(); await W(1500); $('#hookgroup').style.cssText = 'padding:16px;background:var(--bg2);border-radius:14px'; await W(300);", "$('#hookgroup')", 5),
+}
+OPEN = """const ob = [...document.querySelectorAll('#tvlist button, #savedcard button')].find(b => /^\\s*(Mở|Connect|Open)\\s*$/.test(b.textContent)); if (ob) ob.click(); await W(8000);"""
+RENAME = """(() => { const N = %s, w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n;
+  while (n = w.nextNode()) n.nodeValue = n.nodeValue.replace(/sdk_google_atv64_amati_arm64/g, N).replace(/127\\.0\\.0\\.1/g, '192.168.1.50'); })()"""
+
+
+def shot_feat(only=()):
+    """feat-<name>-<lang>: see FEATS. `shots.py feat apps dim` makes only those."""
+    c = Chrome(480, 1400, 2)
+    try:
+        for lang in ("vi", "en"):
+            for name, (vw, tab, setup, card, g) in FEATS.items():
+                if only and name not in only: continue
+                c.call("Emulation.setDeviceMetricsOverride", width=vw, height=1400, deviceScaleFactor=2, mobile=False)
+                c.open(f"http://127.0.0.1:{WEB_PORT}/?lang={lang}&k={PASS}", 4)
+                c.js("window.W = ms => new Promise(r => setTimeout(r, ms))")
+                tabjs = f"$('[data-tab={tab}]').click(); await W(3500);" if tab not in ("", "pick") else ""
+                opened = "" if tab == "pick" else OPEN
+                try:
+                    r = c.js("(async () => { wantPick = %s; await W(3000); %s %s %s scrollTo(0, 0); await W(500); const e = %s; if (!e) throw new Error('no card'); e.scrollIntoView({ block: 'center' }); await W(1500);"
+                             " const r = e.getBoundingClientRect(); return [r.x + scrollX, r.y + scrollY, r.width, Math.min(r.height, 600)] })()"
+                             % ("true" if tab == "pick" else "false", opened, tabjs, setup, card))
+                    c.js(RENAME % json.dumps(FEAT_NAMES[lang])); time.sleep(0.5)
+                    shot = c.call("Page.captureScreenshot", clip=dict(x=r[0] + 1, y=r[1] + 1, width=r[2] - 2, height=r[3] - 2, scale=2))
+                    png = os.path.join(TMP, f"f{time.time_ns()}.png")
+                    open(png, "wb").write(base64.b64decode(shot["data"]))
+                    save_webp(frame(Image.open(png), r[2], g), f"feat-{name}-{lang}")
+                except Exception as e: log("feat", name, lang, "FAILED:", str(e)[:200])
+    finally: c.close()
+
+
 # ---- the TV web page ----------------------------------------------------------------------------------------------------
 
 def adb(serial, *a, text=True):
@@ -352,18 +450,20 @@ def shot_og():
 # ---- all of it ----------------------------------------------------------------------------------------------------------
 
 def main():
-    want = sys.argv[1:] or ["web", "ts", "tv", "phone", "tvapp", "og"]
-    for w in want:
-        if w not in ("web", "ts", "tv", "phone", "tvapp", "og"): sys.exit(__doc__)
+    MODES = ("web", "ts", "feat", "tv", "phone", "tvapp", "og")
+    args = sys.argv[1:]
+    want = [a for a in args if a in MODES] or ["web", "ts", "feat", "tv", "phone", "tvapp", "og"]
+    only = [a for a in args if a not in MODES]                        # `feat apps dim`: just those cards
+    if only and "feat" not in want: sys.exit(__doc__)
     if not CHROME: sys.exit("Google Chrome not found (set CHROME=…)")
     if not shutil.which("cwebp"): sys.exit("cwebp not found (brew install webp)")
     os.makedirs(CACHE, exist_ok=True)
     pics = srv = None
     try:
         pics = serve_pictures() if {"web", "tv", "phone"} & set(want) else None
-        srv = desktop() if {"web", "ts"} & set(want) else None
+        srv = desktop() if {"web", "ts", "feat"} & set(want) else None
         for w in want:
-            log("…", w); globals()["shot_" + w]()
+            log("…", w); (shot_feat(only) if w == "feat" else globals()["shot_" + w]())
     finally:
         if srv: srv.kill()
         if pics: pics.shutdown()
