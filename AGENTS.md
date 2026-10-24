@@ -187,8 +187,9 @@ so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until
   so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last
   release's archives again, and `versions.json` "web" (the number the computer app's Updater.kt reads) keeps theirs.
 - Release only when the user says so, and keep GitHub Actions runs few: the workflow never runs on push; try things locally.
-- `docs/` changes: commit, let the owner try the site locally (`python3 -m http.server 8899 -d docs`), push only on their ok
-  (a push deploys the site at once).
+  Batch releases: one release once enough features / fixes have gathered, never one per small fix.
+- Push without asking once the work is tested and committed (a push deploys `docs/` at once, so the tests must pass first).
+  Sub-agents still never push; the main session does.
 - Pull requests, issues and comments on other people's repos (cleanyourtv …): no "Generated with" line or session link.
 - Both apps update themselves from GitHub releases (`update/Release.kt`). Every app installs only a file listed in the
   release's `SHA256SUMS` with its SHA-256, signed (`SHA256SUMS.sig`, Ed25519) by a key in `Release.KEYS`; a release without
