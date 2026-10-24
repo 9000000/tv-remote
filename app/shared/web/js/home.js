@@ -27,9 +27,9 @@ const HOME_PHOTO_MAX = 10;                                            // HomeCon
 let homeShots = { mine: {}, ready: {} };                             // the theme previews' backgrounds (TV Home's themeshots), by theme id
 const homeFaces = new Map();                                         // a theme's drawn preview, by what it is made of: drawn once, put back on every redraw
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
-const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'clock'];          // HomeConfig.WIDGETS, in the order drawn
+const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'clock', 'market', 'news'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
-const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'air', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
+const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'air', 'market', 'news', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
 const HOME_W = { big: 100, cal: 120, small: 90, budget: 415, floor: 190 };   // HomeConfig.W_BIG / W_CAL / W_SMALL / BUDGET / FLOOR
 const homeSize = (c, k) => (c.wsize && (c.wsize[k] === 'big' || c.wsize[k] === 'small')) ? c.wsize[k] : (HOME_BIG_KINDS.includes(k) ? 'big' : 'small');
 // HomeConfig.pack, the same rule (tests/home_pack_cases.json holds the cases both are tested with): walk the cards in order, a big
@@ -60,7 +60,7 @@ const HOME_COLS = { row: [[33, 1], [33, 1], [34, 2]], big: [[58, 1], [42, 2]], b
 const HOME_OLD_LAYOUTS = ['row', 'big'];                              // a TV Home without "wlayouts" has only these
 const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'];   // HomeConfig.ROW_CARDS, Widgets.BIG: what "row" shows
 const homeSlots = (k) => k === 'row' || !HOME_COLS[k] ? 0 : HOME_COLS[k].reduce((n, c) => n + c[1], 0);   // HomeConfig.slots: what a fixed layout shows (a pinned note takes one)
-const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather', air: 'home.w_air', clock: 'home.w_clock' };
+const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather', air: 'home.w_air', clock: 'home.w_clock', market: 'home.w_market', news: 'home.w_news' };
 const HOME_STYLE_WORDS = { classic: 'home.style_classic', light: 'home.style_light', minimal: 'home.style_minimal', roman: 'home.style_roman', glass: 'home.style_glass', tonal: 'home.style_tonal' };   // HomeConfig.STYLES
 
 // The packed layout drawn small: a column per weight, its cards stacked, big ones filled (sizes in css/remote.css)
@@ -89,7 +89,8 @@ function layGlyph(k) {
 
 // The words the schema names by id (HomeConfig.options: label `home.o_<option>`, value `home.ov_<value>`), listed so the id check sees them used
 const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman',
-  'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_off', 'home.ov_on'];
+  'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_off', 'home.ov_on',
+  'home.o_layout', 'home.o_show', 'home.o_btc', 'home.o_src', 'home.ov_card', 'home.ov_ticker', 'home.ov_all', 'home.ov_gold', 'home.ov_rates', 'home.ov_auto', 'home.ov_mine', 'home.ov_both'];
 // A card's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
 const homeOpt = (c, k, id) => {
   const o = ((c.wschema || {})[k] || []).find((x) => x.id === id);
@@ -331,6 +332,16 @@ async function homeOpen() {
   const placeAuto = el('button', { type: 'button', textContent: T('home.place_auto'), onclick: () => { place.value = ''; send({ place: '' }); } });
   place.addEventListener('keydown', (e) => { if (e.key === 'Enter') placeSet.click(); });
   const placeHead = el('h3', { textContent: T('home.place') }), placeLine = UI.line(place, placeSet, placeAuto);
+  // the News card's own RSS links (HomeConfig.FEEDS_MAX, "feeds"): a list, added one by one; the card reads them when its Sources say Mine or Both
+  const feedIn = el('input', { type: 'url', maxLength: 300, placeholder: T('home.feeds_ph'), 'aria-label': T('home.feeds') });
+  const feedAdd = el('button', { type: 'button', className: 'primary', textContent: T('home.feeds_add'), onclick: () => {
+    const v = feedIn.value.trim(), l = (homeNow && homeNow.config && homeNow.config.feeds) || [];
+    if (!/^https?:\/\/\S+$/i.test(v)) { toast(T('home.feeds_bad')); return; }
+    if (!l.includes(v)) send({ feeds: [...l, v] });
+    feedIn.value = '';
+  } });
+  feedIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') feedAdd.click(); });
+  const feedHead = el('h3', { textContent: T('home.feeds') }), feedLine = UI.line(feedIn, feedAdd), feedList = el('div', { className: 'list' }), feedNote = el('p', { className: 'note', textContent: T('home.feeds_note') });
   const noteHead = el('h3', { textContent: T('home.note') }), noteLine = UI.line(note, pin, unpin);
   // QR cards (HomeConfig "qrs", home_qr.js): a code of anything, up to four, each its own card among the others (order, size, off in the list above)
   const qrAdd = el('button', { type: 'button', className: 'small', textContent: T('home.qr_add'), onclick: async () => {
@@ -454,7 +465,7 @@ async function homeOpen() {
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     const qrs = c.qrs || {};                                          // the QR cards' fields, by key (absent: a TV Home older than them)
     const has = (k) => !!w && w.includes(k);
-    wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || (HOME_WIDGETS[i] === 'air' && !((c.wschema && c.wschema.air) || (c.wstyles && c.wstyles.air))); });   // weather, air: a TV Home older than them has no card
+    wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || ((HOME_WIDGETS[i] === 'market' || HOME_WIDGETS[i] === 'news') && !c.infoOk) || (HOME_WIDGETS[i] === 'air' && !((c.wschema && c.wschema.air) || (c.wstyles && c.wstyles.air))); });   // weather, air: a TV Home older than them has no card
     wHead.hidden = !w;
     const sized = !!c.wsizes;                                         // this TV Home sizes the cards; an older one has the preset layouts
     const bigs = sized && w ? w.filter((k) => homeSize(c, k) === 'big') : [];
@@ -499,6 +510,12 @@ async function homeOpen() {
     webModeNote.textContent = T(!snap ? 'home.web_mode_note_live' : c.wkeep ? 'home.web_mode_note_keep' : 'home.web_mode_note_snap');
     put(webNow, 'textContent', c.wurl || '');
     placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the card is on
+    const feeds = c.feeds || [];
+    feedHead.hidden = feedLine.hidden = feedNote.hidden = !c.infoOk || !has('news');   // a TV Home older than the News card; and only while the card is on
+    feedList.hidden = feedHead.hidden || !feeds.length;
+    feedAdd.disabled = feeds.length >= 5; feedAdd.title = feeds.length >= 5 ? T('home.feeds_full') : '';
+    feedList.replaceChildren(...feeds.map((u) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: u })),
+      el('div', { className: 'acts' }, tool('✕', T('home.remove'), () => send({ feeds: feeds.filter((x) => x !== u) }))))));
     if (document.activeElement !== place) place.value = c.place || '';
     placeAuto.disabled = !c.place;
     const qrKeys = HOME_QR_KEYS.filter((k) => qrs[k]);
@@ -658,7 +675,7 @@ async function homeOpen() {
     ['look', 'sparkle', 180, 'home.g_look', [el('h3', { className: 'secthead', textContent: T('home.sec_show') }), focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet'),
       el('h3', { className: 'secthead', textContent: T('home.sec_grid') }), colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
-    ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, noteHead, noteLine, qrHead, qrList, qrNote]],
+    ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, feedHead, feedLine, feedList, feedNote, noteHead, noteLine, qrHead, qrList, qrNote]],
     ['system', 'power', 260, 'home.g_system', [check(power, 'home.power'), powerOld, check(dream, 'home.dream')]],
     ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote]],
     ['lang', 'globe', 200, 'home.lang', [langs]],

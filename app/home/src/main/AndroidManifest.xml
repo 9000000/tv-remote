@@ -18,6 +18,7 @@
         <intent><action android:name="android.settings.SOUND_SETTINGS" /></intent>
         <intent><action android:name="android.settings.APPLICATION_DETAILS_SETTINGS" /><data android:scheme="package" /></intent>   <!-- App info shows only where the TV has it -->
 
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>   <!-- the news reader shows "Open in browser" only where one exists -->
         <intent><action android:name="com.android.tv.action.VIEW_INPUTS" /></intent>   <!-- InputOpen.sync: does anything else answer it -->
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:mimeType="vnd.android.cursor.item/channel" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:mimeType="vnd.android.cursor.dir/channel" /></intent>
@@ -55,6 +56,11 @@
             <meta-data android:name="android.service.dream" android:resource="@xml/dream" />
         </service>
         <activity android:name=".DreamSettings" android:exported="true" android:theme="@style/Ghost" android:excludeFromRecents="true"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection" />
+        <!-- the News card's reader and the weather card's map: opened from the home screen only -->
+        <activity android:name=".widgets.NewsActivity" android:exported="false" android:excludeFromRecents="true"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection" />
+        <activity android:name=".widgets.WeatherMapActivity" android:exported="false" android:excludeFromRecents="true"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection" />
         <!-- another app pins a shortcut here (Android 8+): Pins.kt; the request is the system's own object, a forged intent carries none -->
         <activity android:name=".PinActivity" android:exported="true" android:theme="@style/Ghost" android:excludeFromRecents="true"

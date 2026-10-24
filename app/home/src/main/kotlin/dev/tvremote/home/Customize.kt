@@ -942,6 +942,8 @@ object Customize {
         arrayOf<Any>("timer", R.drawable.ic_timer, R.string.w_timer, R.string.c_timer_sub),
         arrayOf<Any>("weather", R.drawable.ic_weather, R.string.w_weather, R.string.c_weather_sub),
         arrayOf<Any>("air", R.drawable.ic_wind, R.string.w_air, R.string.c_air_sub),
+        arrayOf<Any>("market", R.drawable.ic_chart, R.string.w_market, R.string.c_market_sub),
+        arrayOf<Any>("news", R.drawable.ic_message, R.string.w_news, R.string.c_news_sub),
         arrayOf<Any>("clock", R.drawable.ic_clock, R.string.w_clock, R.string.c_clock_sub),
     )
 

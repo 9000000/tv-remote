@@ -248,6 +248,9 @@ class HomeActivity : Activity() {
         head.addView(bar)
         col.addView(head)
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
+        widgets.onOpen = { k -> startActivity(Intent(this, if (k == "news") dev.tvremote.home.widgets.NewsActivity::class.java else dev.tvremote.home.widgets.WeatherMapActivity::class.java).putExtra("i", widgets.newsShown)) }
+        widgets.onUp = { v -> bar.buttons.filter { it.isShown }.minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
+        widgets.onDown = { (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it) } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
 
         // ONE grid: the favourites are its first tiles, then every other app; no panel, the wallpaper stays whole
@@ -828,7 +831,7 @@ class HomeActivity : Activity() {
         val col = (grid.getChildAt(row) as ViewGroup).indexOfChild(v)
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
-            if (dir == Nav.Dir.UP) { topAt = v; up(v) }               // Android 9 (a BRAVIA) found nothing above the first row by itself
+            if (dir == Nav.Dir.UP) { topAt = v; val at = IntArray(2); v.getLocationOnScreen(at); (widgets.nearestHot(at[0] + v.width / 2) ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }

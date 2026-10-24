@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
+    <channel>
+        <title><![CDATA[BBC News]]></title>
+        <description><![CDATA[BBC News - News Front Page]]></description>
+        <link>https://www.bbc.co.uk/news</link>
+        <image>
+            <url>https://news.bbcimg.co.uk/nol/shared/img/bbc_news_120x60.gif</url>
+            <title>BBC News</title>
+            <link>https://www.bbc.co.uk/news</link>
+        </image>
+        <generator>RSS for Node</generator>
+        <lastBuildDate>Sat, 24 Oct 2026 22:21:45 GMT</lastBuildDate>
+        <atom:link href="https://feeds.bbci.co.uk/news/rss.xml" rel="self" type="application/rss+xml"/>
+        <copyright><![CDATA[Copyright: (C) British Broadcasting Corporation, see https://www.bbc.co.uk/usingthebbc/terms-of-use/#15metadataandrssfeeds for terms and conditions of reuse.]]></copyright>
+        <language><![CDATA[en-gb]]></language>
+        <ttl>15</ttl>
+        <item>
+            <title><![CDATA[Almost 1,000 arrested as clashes follow another day of mass protests across France]]></title>
+            <description><![CDATA[Officials have so far managed to avoid a repeat of last weekend's rioting and looting as hundreds of thousands took part in demonstrations.]]></description>
+            <link>https://www.bbc.co.uk/news/articles/c95ynd587ynzo?at_medium=RSS&amp;at_campaign=rss</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/articles/c95ynd587ynzo#1</guid>
+            <pubDate>Sat, 24 Oct 2026 21:09:27 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/6090/live/bf46ec40-cfe6-11f1-93e1-3b657b665bcf.jpg"/>
+        </item><item>
+            <title><![CDATA[Watch: BBC in Paris as police charge protesters and use tear gas during unrest]]></title>
+            <description><![CDATA[Europe correspondent Nick Beake reports from Paris where mostly peaceful protests turned into unrest after nightfall.]]></description>
+            <link>https://www.bbc.co.uk/news/videos/cm89zqw9lx1do?at_medium=RSS&amp;at_campaign=rss</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/videos/cm89zqw9lx1do#1</guid>
+            <pubDate>Sat, 24 Oct 2026 19:37:35 GMT</pubDate>
+            <media:thumbnail width="240" height="135" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/f4f2/live/c78fb360-cfe5-11f1-b441-2b33b063138f.jpg"/>
+        </item><item>
+            <title><![CDATA[Storm Boelo amber warnings kick in as parts of UK brace for 80mph gusts]]></title>
+            <description><![CDATA[Scotland, parts of northern England and Northern Ireland are forecast to be hit with the strongest winds from the country's second storm in as many days.]]></description>
+            <link>https://www.bbc.co.uk/news/articles/cmr4ydglq9r3o?at_medium=RSS&amp;at_campaign=rss</link>
+            <guid isPermaLink="false">https://www.bbc.co.uk/news/articles/cmr4ydglq9r3o#1</guid>
+            <pubDate>Sat, 24 Oct 2026 20:30:43 GMT</pubDate>
+            <media:thumbnail width="240" height="134" url="https://ichef.bbci.co.uk/ace/standard/240/cpsprodpb/7559/live/33cbd240-cfb2-11f1-9012-0172b9f73a72.jpg"/>
+        </item></channel></rss>

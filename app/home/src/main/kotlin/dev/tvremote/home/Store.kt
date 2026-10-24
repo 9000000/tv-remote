@@ -44,6 +44,7 @@ object Store {
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
+            .put("infoOk", true)                                  // the market and news cards, own RSS links ("feeds"), the weather map
             .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now
             .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.tiles)) }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them

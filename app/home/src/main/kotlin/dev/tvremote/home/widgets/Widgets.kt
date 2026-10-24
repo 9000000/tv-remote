@@ -4,6 +4,8 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Color
+import android.os.Build
+import android.view.KeyEvent
 import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
@@ -61,7 +63,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** What a card needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
                 val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null,
-                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0, val air: Weather.Air? = null)
+                val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0, val air: Weather.Air? = null,
+                val market: Market.Snap? = null, val news: List<News.Item> = emptyList())
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
     class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int, val hol: Holidays.Next? = null)
@@ -81,10 +84,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal fun levelColors(part: Float) = when (HomeConfig.level(Math.round(part * 100))) { "bad" -> RED; "warn" -> AMBER; else -> GREEN }
         internal val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         internal const val DIM = 0xA6FFFFFF.toInt()
+        private const val HOT_FILL = 0x14FFFFFF                         // a focused card (weather, news): a faint veil under its white ring
         internal const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
-        private val BIG = setOf("system", "usage", "calendar", "weather", "air")
+        private val BIG = setOf("system", "usage", "calendar", "weather", "air", "market", "news")
         private val TONAL = setOf("system", "weather", "lunar", "air")      // the cards that have the tonal look (HomeConfig.options)
         const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
         private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
@@ -128,6 +132,40 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
 
     /** Set by the screen: the weather arrived (or failed) on its own thread, the cards are read again. */
     var onWeather: (() -> Unit)? = null
+    /** The news card: the headline chosen (D-pad up / down while it is focused), the one drawn, and whether the card has the focus. */
+    internal var newsAt = 0; internal var newsShown = 0; internal var newsFocused = false; internal var newsCount = 0
+
+    /** The cards the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
+    val hot = ArrayList<View>()
+    var onOpen: ((String) -> Unit)? = null
+    var onUp: ((View) -> Unit)? = null
+    var onDown: (() -> Unit)? = null
+
+    /** The hot card nearest above-or-below the x of a tile, for Up from the first row of the grid. */
+    fun nearestHot(x: Int): View? {
+        val at = IntArray(2)
+        return hot.filter { it.isShown }.minByOrNull { h -> h.getLocationOnScreen(at); Math.abs(at[0] + h.width / 2 - x) }
+    }
+
+    private fun hotify(v: View, k: String) {
+        v.isFocusable = true; v.tag = k; hot.add(v)
+        if (Build.VERSION.SDK_INT >= 23) v.foreground = android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(3), Color.WHITE); setColor(HOT_FILL) })
+        }
+        if (k == "news") v.setOnFocusChangeListener { _, f -> newsFocused = f }
+        v.setOnClickListener { onOpen?.invoke(k) }
+        v.setOnKeyListener { _, code, e ->
+            if (e.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            val i = hot.indexOf(v)
+            when (code) {
+                KeyEvent.KEYCODE_DPAD_LEFT -> { hot.getOrNull(i - 1)?.requestFocus(); true }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { hot.getOrNull(i + 1)?.requestFocus(); true }
+                KeyEvent.KEYCODE_DPAD_UP -> { if (k == "news" && newsAt > 0) { newsAt--; onWeather?.invoke() } else onUp?.invoke(v); true }
+                KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else onDown?.invoke(); true }
+                else -> false
+            }
+        }
+    }
 
     internal val sp = a.resources.displayMetrics.scaledDensity
     internal val down = FloatArray(POINTS); internal val up = FloatArray(POINTS)
@@ -189,8 +227,13 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         val air = "air" in want
         if (("weather" in want || air) && Weather.due(a, typed, air = air)) Weather.refresh(a, typed, resources.configuration.locales[0].language, air) { onWeather?.invoke() }
         val wx = if ("weather" in want) Weather.cached(a) else null
+        val btc = opt("market", "btc") == "on"
+        if ("market" in want && Market.due(a, btc)) Market.refresh(a, btc) { onWeather?.invoke() }
+        val feeds = if ("news" in want) News.urls(opt("news", "src"), resources.configuration.locales[0].language, Store.get(a).optJSONArray("feeds").let { l -> List(l?.length() ?: 0) { l!!.getString(it) } }) else emptyList()
+        if (feeds.isNotEmpty() && News.due(a, feeds)) News.refresh(a, feeds) { onWeather?.invoke() }
         return Facts(mem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
-            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy, if (air) Weather.cachedAir(a) else null)
+            cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy, if (air) Weather.cachedAir(a) else null,
+            if ("market" in want) Market.cached(a) else null, if ("news" in want) News.cached(a) else emptyList())
     }
 
     /**
@@ -199,7 +242,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
      * is fixed so the favourites below stay in view. A column's width is its weight's share of the row.
      */
     fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, sizes: JSONObject = JSONObject(), qrs: JSONObject = JSONObject()) {
-        removeAllViews(); speed = null; speedUp = null
+        val keep = hot.firstOrNull { it.hasFocus() }?.tag
+        removeAllViews(); speed = null; speedUp = null; hot.clear()
         val timerView = if ("timer" in want) timer(f.timer) else null
         val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
@@ -239,6 +283,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                         "air" -> airGlass(c, f, true)
                         "calendar" -> calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
                         "weather" -> weather(c, f, w, fixed = true)
+                        "market" -> if (opt("market", "layout") == "ticker") marketTicker(c, f, true) else marketFull(c, f)
+                        "news" -> newsFull(c, f, w)
                         else -> usage(c, f, label, w < dp(340))
                     } else {                                       // the small form: half the height, or a narrow column
                         c.setPadding(dp(16), dp(8), dp(16), dp(8))
@@ -247,15 +293,19 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                             "calendar" -> calendarHalf(c, f, w - dp(32))
                             "weather" -> weatherHalf(c, f, w - dp(32))
                             "air" -> airGlass(c, f, false)
+                            "market" -> if (opt("market", "layout") == "ticker") marketTicker(c, f, false) else marketHalf(c, f)
+                            "news" -> newsHalf(c, f)
                             else -> usageHalf(c, f, label)
                         }
                     }
                 } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
+                if (k == "weather" || k == "news") hotify(v, k)
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
         }
         visibility = View.VISIBLE
+        if (keep != null) hot.firstOrNull { it.tag == keep }?.let { it.requestFocus(); if (keep == "news") newsFocused = true }
     }
 
     /**

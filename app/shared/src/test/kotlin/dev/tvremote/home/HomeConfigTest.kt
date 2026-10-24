@@ -43,13 +43,13 @@ class HomeConfigTest {
         val none = HomeConfig.clean(JSONObject())
         assertEquals(0, none.getJSONObject("wsize").length())                    // nothing chosen: the defaults apply
         assertFalse(none.has("wlayout"))
-        assertEquals(setOf("system", "usage", "calendar", "weather", "air") + HomeQr.KEYS, HomeConfig.bigs(none))   // QR cards are big by default
+        assertEquals(setOf("system", "usage", "calendar", "weather", "air", "market", "news") + HomeQr.KEYS, HomeConfig.bigs(none))   // QR cards are big by default
         val c = HomeConfig.clean(JSONObject().put("wsize", JSONObject().put("system", "small").put("lunar", "big").put("timer", "huge").put("bogus", "big")))
         assertEquals("small", c.getJSONObject("wsize").getString("system"))
         assertEquals("big", c.getJSONObject("wsize").getString("lunar"))
         assertFalse(c.getJSONObject("wsize").has("timer"))                       // an unknown size: dropped
         assertFalse(c.getJSONObject("wsize").has("bogus"))
-        assertEquals(setOf("usage", "calendar", "weather", "air", "lunar") + HomeQr.KEYS, HomeConfig.bigs(c))
+        assertEquals(setOf("usage", "calendar", "weather", "air", "market", "news", "lunar") + HomeQr.KEYS, HomeConfig.bigs(c))
         val m = HomeConfig.merge(JSONObject().put("widgets", JSONArray(listOf("weather", "calendar"))), JSONObject().put("wsize", JSONObject().put("weather", "small")))
         assertEquals("small", m.getJSONObject("wsize").getString("weather"))
         assertEquals("weather", m.getJSONArray("widgets").getString(0))          // moving never sorts them back
@@ -519,5 +519,16 @@ class HomeConfigTest {
         assertEquals(n.toString(), HomeConfig.clean(JSONObject().put("names", n)).getJSONObject("names").toString())
         val m = HomeConfig.merge(HomeConfig.clean(JSONObject().put("names", n)), JSONObject().put("names", JSONObject()))
         assertEquals(0, m.getJSONObject("names").length())             // an empty map clears them all
+    }
+
+    @Test fun marketAndNewsCardsHaveTheirOptionsAndOwnFeeds() {
+        assertEquals(listOf("size", "layout", "show", "btc"), HomeConfig.options("market").map { it.id })
+        assertEquals(listOf("size", "src"), HomeConfig.options("news").map { it.id })
+        assertTrue("market" in HomeConfig.WIDGETS && "news" in HomeConfig.WIDGETS)
+        val c = HomeConfig.clean(JSONObject().put("feeds", JSONArray(listOf("https://a.x/r.xml", "ftp://no", "https://a.x/r.xml", "https://b.x/1", "https://b.x/2", "https://b.x/3", "https://b.x/4", "javascript:1"))))
+        val f = c.getJSONArray("feeds")
+        assertEquals(HomeConfig.FEEDS_MAX, f.length())                           // only web links, once each, at most five
+        assertEquals("https://a.x/r.xml", f.getString(0)); assertEquals("https://b.x/1", f.getString(1))
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("feeds").length())
     }
 }

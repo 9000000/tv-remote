@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "rev": 1,
+  "rates": { "kind": "vcb", "url": "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx", "src": "Vietcombank" },
+  "gold": [
+    { "kind": "btmc", "url": "https://api.btmc.vn/api/BTMCAPI/getpricebtmc?key=3kd8ub1llcg9t45hnoh8hmn7t5kc2v", "src": "BTMC" },
+    { "kind": "pnj", "url": "https://edge-api.pnj.io/ecom-frontend/v1/get-gold-price?zone=00", "src": "PNJ" }
+  ],
+  "crypto": { "kind": "binance", "url": "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT", "src": "Binance" },
+  "news": [
+    { "id": "vnexpress", "name": "VnExpress", "lang": "vi", "url": "https://vnexpress.net/rss/tin-moi-nhat.rss" },
+    { "id": "tuoitre", "name": "Tuổi Trẻ", "lang": "vi", "url": "https://tuoitre.vn/rss/tin-moi-nhat.rss" },
+    { "id": "thanhnien", "name": "Thanh Niên", "lang": "vi", "url": "https://thanhnien.vn/rss/home.rss" },
+    { "id": "dantri", "name": "Dân trí", "lang": "vi", "url": "https://dantri.com.vn/rss/home.rss" },
+    { "id": "vietnamnet", "name": "VietNamNet", "lang": "vi", "url": "https://vietnamnet.vn/rss/thoi-su.rss" },
+    { "id": "bbc", "name": "BBC News", "lang": "en", "url": "https://feeds.bbci.co.uk/news/rss.xml" },
+    { "id": "npr", "name": "NPR", "lang": "en", "url": "https://feeds.npr.org/1001/rss.xml" },
+    { "id": "guardian", "name": "The Guardian", "lang": "en", "url": "https://www.theguardian.com/world/rss" },
+    { "id": "aljazeera", "name": "Al Jazeera", "lang": "en", "url": "https://www.aljazeera.com/xml/rss/all.xml" }
+  ]
+}

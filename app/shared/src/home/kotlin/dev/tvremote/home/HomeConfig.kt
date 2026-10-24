@@ -68,6 +68,12 @@ import org.json.JSONObject
  *           a missing option is its default. Replaces "wstyle" ({"clock": "light"}), which [clean] and [merge] still read once
  *           ([fromStyle]); a client sends only what it changed, [merge] adds it per card and option
  *   place   a city for the weather card, as typed ([PLACE_MAX] characters); empty = automatic
+ *   market  (card) gold (SJC, 9999) and the banks' exchange rates in VND, optionally Bitcoin: public prices fetched by the TV itself,
+ *           the addresses in the site's signed list docs/home/feeds.json; options "layout" card / ticker (one scrolling line), "show"
+ *           all / gold / rates, "btc". news (card) headlines with a picture from RSS feeds (the same list, by the TV's language, and
+ *           [feeds]: the person's own links, [FEEDS_MAX]); option "src" auto (the list) / mine / both. OK on a headline opens the
+ *           reader; OK on the weather card opens its map. A TV Home that has these reports "infoOk": true
+ *   feeds   the person's own RSS links for the news card, [FEEDS_MAX] at most ([feeds]); set from the page, like [place]
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
@@ -185,7 +191,7 @@ object HomeConfig {
         }
         return null
     }
-    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "clock") + HomeQr.KEYS
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "clock", "market", "news") + HomeQr.KEYS
     /**
      * One option of a card, the single source of what the settings dialog offers (TV Home's Customize and the page render it, nobody
      * hardcodes a card's options): [type] "choice" (one of [values]) or "toggle" ("off" / "on", drawn as a switch). [default] is what a
@@ -202,6 +208,8 @@ object HomeConfig {
         return when {
             k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"))
             k in TONAL -> listOf(size, Opt("look", "choice", listOf("glass", "tonal"), "glass"))
+            k == "market" -> listOf(size, Opt("layout", "choice", listOf("card", "ticker"), "card"), Opt("show", "choice", listOf("all", "gold", "rates"), "all"), Opt("btc", "toggle", emptyList(), "off"))
+            k == "news" -> listOf(size, Opt("src", "choice", listOf("auto", "mine", "both"), "auto"))
             k in WIDGETS -> listOf(size)
             else -> emptyList()
         }
@@ -261,7 +269,7 @@ object HomeConfig {
     }
     /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, clock, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
-    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather", "air") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
+    private val BIG_KINDS = setOf("system", "usage", "calendar", "weather", "air", "market", "news") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
     /**
      * Widths as weights (a column's share of the row): a big card, the calendar (seven day columns) a little more, a small column
      * (stacked pills, or one standing) a little less. The row holds [BUDGET] at most: three big cards and a small column fit; a
@@ -324,6 +332,10 @@ object HomeConfig {
     const val NAME_MAX = 30
     const val NAMES_MAX = 100
     const val PLACE_MAX = 60
+    /** The person's own RSS links for the news card: at most [FEEDS_MAX], each an http(s) address of at most [FEED_URL_MAX]. */
+    const val FEEDS_MAX = 5
+    const val FEED_URL_MAX = 300
+    fun feeds(a: JSONArray?): List<String> = strs(a).map { it.trim() }.filter { it.length <= FEED_URL_MAX && WURL.matches(it) }.distinct().take(FEEDS_MAX)
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"
     /** The first TV Setup with the Telegram bot: TV Home's card names it, and SetupNeed.MIN "telegram" is this, so both say one number. */
@@ -546,6 +558,7 @@ object HomeConfig {
             .put("dream", o.optBoolean("dream", false))
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
+            .put("feeds", JSONArray(feeds(o.optJSONArray("feeds"))))
             .put("keyon", o.optBoolean("keyon", false))
             .put("keyapps", JSONObject().also { m -> keyApps(o.optJSONObject("keyapps")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
             .put("autoon", o.optBoolean("autoon", false))

@@ -102,7 +102,7 @@ Miễn phí, không quảng cáo, app nào riêng app đó: chỉ cài app bạn
 Là màn hình chính thay cho Google TV: không quảng cáo, không hàng gợi ý, 0,2 MB.
 
 - Đồng hồ, ba biểu tượng tròn (nguồn vào, mạng, cài đặt) trong một viên kính, rồi một lưới app với app yêu thích đứng đầu. Ẩn app không muốn trẻ con thấy.
-- Widget tùy chọn: hệ thống (RAM, bộ nhớ, IP), thời tiết, lịch âm, lịch tháng, app dùng nhiều và giới hạn, hẹn giờ tắt, ghi chú.
+- Widget tùy chọn: hệ thống (RAM, bộ nhớ, IP), thời tiết (bấm OK mở bản đồ mưa / gió), giá vàng và tỷ giá, tin tức (RSS), lịch âm, lịch tháng, app dùng nhiều và giới hạn, hẹn giờ tắt, ghi chú.
 - Hình nền hoặc ảnh của bạn, đồng hồ 12/24 giờ, mức hiệu ứng.
 - Chỉnh từ điện thoại / máy tính (tab TV → 🏠 → *Tùy chỉnh TV Home*) hoặc ngay trên TV bằng remote. *Tùy chỉnh → Telegram* hiện mã QR ghép bot Telegram của bạn.
 - *Tối ưu TV* tự đặt nó làm màn hình chính; *Về launcher của TV* là trả lại như cũ.
