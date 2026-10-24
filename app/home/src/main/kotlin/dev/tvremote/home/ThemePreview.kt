@@ -100,11 +100,10 @@ object ThemePreview {
 
     private fun layout(cv: Canvas, p: Paint, conf: JSONObject, tiles: List<String>, w: Float, h: Float) {
         val m = w * 0.06f
-        // the head: the time, the date; the buttons at the right as one bar (a preview shows where things are, not each one)
-        bar(cv, p, m, h * 0.07f, w * 0.17f, h * 0.075f, 0xE6)
-        bar(cv, p, m, h * 0.17f, w * 0.10f, h * 0.025f, 0x73)
+        // the head is one row on TV Home (time, greeting, date | buttons): one bar each side, where things are, not each one
+        bar(cv, p, m, h * 0.075f, w * 0.30f, h * 0.07f, 0xCC)
         bar(cv, p, w - m - w * 0.16f, h * 0.085f, w * 0.16f, h * 0.05f, 0x40)
-        var y = h * 0.26f
+        var y = h * 0.21f
         // the cards, in the columns HomeActivity makes of them
         val keys = strs(conf, "widgets")
         val packed = HomeConfig.pack(keys, HomeConfig.bigs(conf))

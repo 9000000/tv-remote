@@ -180,9 +180,9 @@ function homeThemePaint(cv, conf, tiles, img, look) {
     homeVeil(ctx, w, h, 1, user);
   }
   const m = w * 0.06;
-  bar(m, h * 0.07, w * 0.17, h * 0.075, 0.9); bar(m, h * 0.17, w * 0.10, h * 0.025, 0.45);
+  bar(m, h * 0.075, w * 0.30, h * 0.07, 0.8);                           // the time, greeting and date: one row on TV Home, one bar here
   bar(w - m - w * 0.16, h * 0.085, w * 0.16, h * 0.05, 0.25);           // the buttons as one bar: where things are, not each one
-  let y = h * 0.26;
+  let y = h * 0.21;
   const big = HOME_WIDGETS.concat(['qr1', 'qr2', 'qr3', 'qr4']).filter((k) => homeSize(conf, k) === 'big'), packed = homePack((conf.widgets || []).filter((k) => HOME_WIDGETS.includes(k)), big);
   if (packed.cols.length) {
     const rowH = h * 0.30, gap = w * 0.02, room = w - 2 * m - gap * (packed.cols.length - 1), sum = Math.max(HOME_W.floor, packed.cols.reduce((n, c) => n + c.weight, 0));
