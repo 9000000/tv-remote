@@ -30,6 +30,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Khóa app bằng PIN: nếu Cài đặt TV chưa khóa, tab Tự động gợi ý "Khóa luôn Cài đặt TV" (trẻ có thể vào đó gỡ TV Setup hoặc chỉnh giờ).
 - Màn nhập mã: 6 ô cho mã Google Authenticator, nhập sai báo ngay; mã dự phòng 8 số nhập qua nút "Dùng mã dự phòng".
 - TV Setup: menu Tối ưu, Kết nối, Cập nhật có icon và dòng mô tả; công tắc bật/tắt hiện dấu tick hoặc vòng tròn ở cuối dòng thay cho chữ.
+- Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 
 **English**
 - TV Setup and TV Home: every remaining dialog (paired devices, unpair, remove TV Setup, forget ADB keys, Input picker, TV Home's update) now uses the shared look: an icon per row in the app's accent, details on a second line, one confirm sheet with Cancel focused for destructive ones.
@@ -55,6 +56,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - PIN app lock: when the TV's Settings isn't locked, the Automation tab offers "Lock the TV's Settings too" (a child could uninstall TV Setup there or change the clock).
 - Code screen: 6 dots for the Google Authenticator code, a wrong one says so at once; an 8-digit backup code goes through the "Use a backup code" button.
 - TV Setup: the Optimize, Connection and Update menus have icons and a second line; switches show a check or an empty ring at the end instead of words.
+- Site and app pictures re-compressed without a visible change (6% fewer bytes; `dev/optimize_images.py`); the wallpapers and launcher pictures are pinned by hash and stay as they were
 
 ## 0.21.0 - 2026-10-24
 

@@ -9,6 +9,7 @@ Run them from the repo root (`dev/test/emu.sh`, `python3 dev/gen/gen_icons.py`);
 | `gen/` | files made from a recipe: icons, wallpapers, IR codes. Edit the script, never its output |
 | `shots/` | the site's screenshots and the pictures composed from them |
 | `sign/` | the signed lists on the site (`docs/**.json` + `.sig`) |
+| `optimize_images.py` | every tracked PNG / JPEG / WebP made smaller (dry run; `--write` applies; needs Pillow, numpy for the lossy step). Skips the hash-pinned `docs/home/` and `docs/launchers/` |
 | `release/` | releases, update keys and their backup (only when the maintainer says so) |
 
 Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.md` (the TV apps' shared look),

@@ -93,7 +93,7 @@ app/desktop/             the computer app on the shared Kotlin core (JVM, no adb
                          .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
                          data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
 app/shared/tests/        node tests of the page's scripts, and the case tables the Kotlin tests read too (its README.md)
-dev/                     test/ (emu.sh, smoke.py, layout.js, audit.js), gen/ (icons, wallpapers), shots/, sign/ (the site's signed lists), release/ : dev/README.md
+dev/                     test/ (emu.sh, smoke.py, layout.js, audit.js), gen/ (icons, wallpapers), shots/, sign/ (the site's signed lists), release/, optimize_images.py (shrinks tracked pictures; never touches `docs/home/` and `docs/launchers/`: their SHA-256 is signed) : dev/README.md
 ```
 
 ## Rules that matter
