@@ -141,7 +141,7 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 | **List row** | `TvUi.row(c, icon, label, count) { go }` (`tvui/Tv.kt`) | Channels | icon tinted `TEXT`, count in `DIM`; `isActivated` = the one in use |
 | **Dialog sheet** (choices) | `TvUi.sheet(c, R.style.Dialog, w)` + `TvUi.sheetTitle()` + `TvUi.row`s (`tvui/Tv.kt`) | Channels | 380-420 dp wide; Back closes it |
 | **Popup on a scrim** | `scrim(panel(title).apply { addView(menuButton(...).withIcon(R.drawable.ic_x)) })` (`tvui/Tv.kt`, used `LibraryActivity.kt` `popup()`) | Games | always add a Close button; Back closes; first entry focused |
-| **System list menu** | `TvGlass.menu` (glass panel, icon + label rows, as Customize) | Home's app menu; Setup keeps `Theme_DeviceDefault_Dialog_Alert` for plain lists | for plain lists of actions only |
+| **System list menu** | `TvGlass.menu` (glass panel, icon + label rows, as Customize) | Home's app menu; Setup uses `TvUi.menu` (see Dialogs below) | for plain lists of actions only |
 | **Drop-down from a head button** | `Drop.show(a, anchor, rows)` | Home | a Dialog: Home and Back close it |
 | **App / game tile** | Home `Tile` (`HomeActivity.kt:857`); Games `shell()` | Home, Games | 16:9; rings outside the face; name under it, in the row gap |
 | **Action tile** (icon, title, one line) | Setup `Tile` (`MainActivity.kt:73`): `say()`, `work(on)` spinner, `enable()` | Setup | |
@@ -160,6 +160,18 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 2. set a `swallowUp` flag and eat the matching key-up in `dlg.setOnKeyListener`, or the Dialog closes too;
 3. D-pad Down from the field → the list; Up from the list's first row → the field; the IME action key also goes to the list;
 4. empty field or no results: Back behaves normally (closes).
+
+### Dialogs
+
+One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.TvSheet` from `tvui/res`; `:tv` and `:home` both include that res dir). Don't build another.
+
+- **A list of choices: `TvUi.menu(c, R.style.TvSheet, title, items, R.drawable.ic_check, accent)`**, rows are `TvUi.Item(icon, label, sub, on, go)`. Never `AlertDialog` + `setItems`.
+- **A question: `TvUi.confirm(c, theme, title, message, okLabel, cancelLabel, danger, accent) { ok }`.** `danger` (removes or revokes something): Cancel first and focused, OK in red.
+- **Icons, not emoji**: each row has the app's own `R.drawable.ic_*` vector, tinted with the app's accent. No emoji or symbols in labels.
+- **A switch is a ring with the check inside while on** (`on = { state }`), not "✓" / ": off" in the words. Pressing it flips it in place and the menu **stays open**; an **action closes** the menu, then runs.
+- **Detail goes on the second line** (`sub`, dim, up to 3 lines), not joined to the label with " · ".
+- **Dialogs take the app's accent** (`accent =`, like `TvUi.row`): TV Setup passes its blue, the others the default.
+- A progress or one-button notice is a `TvUi.sheet` + `sheetTitle` + `sheetNote` + `TvUi.button`. Full-screen pickers with checkboxes or pictures (Optimize TV's list, the launcher gallery) are screens of their own, not dialogs.
 
 ## 4. Words
 

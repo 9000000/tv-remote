@@ -40,6 +40,7 @@ object TvUi {
     const val TEXT = 0xFFE8EAED.toInt()                                // = tv_ink
     const val DIM = 0xFF9AA0A6.toInt()                                 // = tv_dim
     const val RING_ACCENT = 0xFF2F7DF6.toInt()                         // = tv_ring_accent: the focus ring only
+    const val DANGER = 0xFFF28B82.toInt()                              // the words of a button that removes or revokes
     const val ACCENT = 0xFF5EEAD4.toInt()                              // the default app accent (Channels'): a chosen item, a spinner
     const val ACTIVE_TINT = 0x2E14B8A6                                 // the selected row's fill, under the focus's
     const val BAD = 0xFFF28B82.toInt()
@@ -196,19 +197,20 @@ object TvUi {
     /**
      * A list of choices in a [sheet], each with its icon and an optional second line. A switch ends in a ring, with [check] (the
      * app's own check icon) inside it while on, instead of "✓" / ": off" in its words; pressing it flips it in place.
+     * [accent] is the app's own colour (icons, ring, check), as in [row].
      */
-    fun menu(c: Context, theme: Int, title: String, items: List<Item>, check: Int, w: Int = 460): Dialog {
+    fun menu(c: Context, theme: Int, title: String, items: List<Item>, check: Int, accent: Int = ACCENT, w: Int = 460): Dialog {
         val (dlg, box) = sheet(c, theme, w)
         sheetTitle(box, title)
         items.forEach { item ->
             val sub = text(c, "", SP_COUNT, DIM).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END }
             val ring = FrameLayout(c).apply { val p = dp(c, 4).toInt(); setPadding(p, p, p, p) }
-            val tick = ImageView(c).apply { setImageResource(check); imageTintList = ColorStateList.valueOf(ACCENT) }
+            val tick = ImageView(c).apply { setImageResource(check); imageTintList = ColorStateList.valueOf(accent) }
             ring.addView(tick, FrameLayout.LayoutParams(-1, -1))
             fun show() {
                 val s = item.sub(); sub.text = s; show(sub, s.isNotEmpty())
                 val on = item.on?.invoke() ?: return
-                ring.background = round(Color.TRANSPARENT, dp(c, 12), dp(c, 2).toInt(), if (on) ACCENT else DIM)
+                ring.background = round(Color.TRANSPARENT, dp(c, 12), dp(c, 2).toInt(), if (on) accent else DIM)
                 show(tick, on)
             }
             box.addView(LinearLayout(c).apply {
@@ -218,7 +220,7 @@ object TvUi {
                 background = states(c, Color.TRANSPARENT, dp(c, R_ROW), edge = false)
                 isFocusable = true; isClickable = true
                 setOnClickListener { if (item.on == null) { dlg.dismiss(); item.go() } else { item.go(); show() } }
-                addView(ImageView(c).apply { setImageResource(item.icon); imageTintList = ColorStateList.valueOf(ACCENT) },
+                addView(ImageView(c).apply { setImageResource(item.icon); imageTintList = ColorStateList.valueOf(accent) },
                     LinearLayout.LayoutParams(dp(c, 22).toInt(), dp(c, 22).toInt()).apply { rightMargin = dp(c, 14).toInt() })
                 addView(LinearLayout(c).apply {
                     orientation = LinearLayout.VERTICAL
@@ -231,6 +233,29 @@ object TvUi {
         }
         dlg.show()
         box.getChildAt(1)?.requestFocus()
+        return dlg
+    }
+
+    /**
+     * A yes/no question in a [sheet]: [title] (empty for none), [message], then [cancelLabel] and [okLabel] side by side. [danger]
+     * (it removes or revokes something): Cancel comes first and has the focus, so a stray OK press does nothing, and the OK words
+     * are red; otherwise OK is first and focused. Either button closes it; only OK runs [ok]. [accent] is the app's colour.
+     */
+    fun confirm(c: Context, theme: Int, title: String, message: String, okLabel: String, cancelLabel: String, danger: Boolean = false,
+                accent: Int = ACCENT, ok: () -> Unit): Dialog {
+        val (dlg, box) = sheet(c, theme, 460)
+        if (title.isNotEmpty()) sheetTitle(box, title)
+        sheetNote(box, message)
+        fun btn(label: String, color: Int, go: () -> Unit) = button(c, label) { dlg.dismiss(); go() }.also { it.setTextColor(color) }
+        val yes = btn(okLabel, if (danger) DANGER else accent, ok)
+        val no = btn(cancelLabel, TEXT) { }
+        val bar = LinearLayout(c).apply { gravity = Gravity.END; setPadding(0, dp(c, 6).toInt(), 0, 0) }
+        val gap = dp(c, 12).toInt()
+        val order = if (danger) listOf(no, yes) else listOf(yes, no)
+        order.forEachIndexed { i, b -> bar.addView(b, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) marginStart = gap }) }
+        box.addView(bar)
+        dlg.show()
+        order[0].requestFocus()
         return dlg
     }
 }

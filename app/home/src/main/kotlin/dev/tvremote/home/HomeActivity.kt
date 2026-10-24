@@ -1,7 +1,6 @@
 package dev.tvremote.home
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -49,6 +48,7 @@ import dev.tvremote.tvui.Glass
 import dev.tvremote.tvui.Motion
 import dev.tvremote.tvui.TvGlass
 import dev.tvremote.tvui.TvTile
+import dev.tvremote.tvui.TvUi
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
 import dev.tvremote.home.apps.App
@@ -312,25 +312,36 @@ class HomeActivity : Activity() {
 
     /** A newer TV Home in the latest release (SelfUpdate): Update now / Later / Skip this version; Back is a later too. */
     private fun askUpdate(r: Release) {
-        val acts = listOf<Pair<Int, () -> Unit>>(R.string.upd_now to { updating(r) }, R.string.upd_later to { upd.later() }, R.string.upd_skip to { upd.skip(r) })
-        open = AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.upd_title, r.version) + "\n" + getString(R.string.upd_note, upd.version()))
-            .setItems(acts.map { getString(it.first) }.toTypedArray()) { _, i -> acts[i].second() }.show()
+        // Back closes the menu: a later, as before (dismiss does nothing to the update)
+        val acts = listOf(TvUi.Item(R.drawable.ic_download, getString(R.string.upd_now)) { updating(r) },
+            TvUi.Item(R.drawable.ic_clock, getString(R.string.upd_later)) { upd.later() },
+            TvUi.Item(R.drawable.ic_close, getString(R.string.upd_skip)) { upd.skip(r) })
+        open = TvUi.menu(this, R.style.TvSheet, getString(R.string.upd_title, r.version) + "\n" + getString(R.string.upd_note, upd.version()), acts, R.drawable.ic_check)
     }
 
     /** Its download, with Cancel (and Back, Home); at 100 % Android's installer takes over with its own question. */
     private fun updating(r: Release) {
-        val d = AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.upd_title, r.version)).setMessage(getString(R.string.upd_loading, 0))
-            .setNegativeButton(R.string.upd_cancel, null).setOnDismissListener { upd.cancel() }.show()
+        val (d, box) = TvUi.sheet(this, R.style.TvSheet)
+        TvUi.sheetTitle(box, getString(R.string.upd_title, r.version))
+        val note = TvUi.sheetNote(box, getString(R.string.upd_loading, 0))
+        box.addView(TvUi.button(this, getString(R.string.upd_cancel)) { d.dismiss() }, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
+        d.setOnDismissListener { upd.cancel() }
+        d.show()
         open = d
         val started = upd.install(r, { pct ->
-            d.setMessage(getString(R.string.upd_loading, pct))
+            note.text = getString(R.string.upd_loading, pct)
             if (pct >= 100) { d.setOnDismissListener(null); d.dismiss() }
         }, { m ->
             d.setOnDismissListener(null); d.dismiss()
-            open = AlertDialog.Builder(this, R.style.Menu).setTitle(getString(R.string.upd_title, r.version)).setMessage(getString(R.string.upd_failed, m))
-                .setPositiveButton(android.R.string.ok, null).show()
+            val (f, fb) = TvUi.sheet(this, R.style.TvSheet)
+            TvUi.sheetTitle(fb, getString(R.string.upd_title, r.version))
+            TvUi.sheetNote(fb, getString(R.string.upd_failed, m))
+            fb.addView(TvUi.button(this, getString(android.R.string.ok)) { f.dismiss() }, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
+            f.show(); open = f
+            fb.getChildAt(fb.childCount - 1).requestFocus()
         })
         if (!started) { d.setOnDismissListener(null); d.dismiss() }      // Android's "install unknown apps" first: back from it, onResume goes on
+        else box.getChildAt(box.childCount - 1).requestFocus()
     }
 
     override fun onStart() {

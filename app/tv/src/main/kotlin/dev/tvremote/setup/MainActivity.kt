@@ -442,47 +442,27 @@ class MainActivity : Activity() {
     private fun pairedMenu() {
         val fmt = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.US)
         val now = System.currentTimeMillis()
-        val rows = LinearLayout(this)
-        rows.orientation = LinearLayout.VERTICAL
-        rows.setPadding(dp(24), dp(4), dp(24), dp(4))
-        var dlg: android.app.AlertDialog? = null
-        var firstUnpair: View? = null                                  // the dialog opens with the focus on a button, not on the scroll view
         val list = Paired.list(this)
+        val items = ArrayList<TvUi.Item>()
         for (d in list) {
             val days = ((now - d.seen) / (24 * 3600_000L)).toInt()
             val seen = if (days <= 0) T("tv_main.today") else if (days == 1) T("tv_main.yesterday") else T("tv_main.days_ago", "n" to days)
             val name = d.name.ifEmpty { T("tv_main.older_device") }
-            val row = LinearLayout(this)
-            row.gravity = Gravity.CENTER_VERTICAL
-            row.setPadding(0, dp(8), 0, dp(8))
-            val words = LinearLayout(this)
-            words.orientation = LinearLayout.VERTICAL
-            words.addView(text(name, 15, TvUi.TEXT, true))
-            words.addView(text(listOf(if (d.created > 0) T("tv_main.paired_at", "at" to fmt.format(java.util.Date(d.created))) else "", T("tv_main.used_when", "when" to seen), d.ip)
-                .filter { it.isNotEmpty() }.joinToString("   ·   "), 12, MUTED, false))
-            row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-            val un = smallButton(T("setup.unpair")) { confirmForget(name) { Paired.forget(this, d.id); dlg?.dismiss(); pairedMenu() } }
-            if (firstUnpair == null) firstUnpair = un
-            row.addView(un, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(12) })
-            rows.addView(row)
+            // the details go on the second line (one per line, no " · " join); pressing the row asks to unpair that device
+            val sub = listOf(if (d.created > 0) T("tv_main.paired_at", "at" to fmt.format(java.util.Date(d.created))) else "", T("tv_main.used_when", "when" to seen), d.ip)
+                .filter { it.isNotEmpty() }.joinToString("\n")
+            items.add(TvUi.Item(R.drawable.ic_phone, name, sub) { confirmForget(name, { pairedMenu() }) { Paired.forget(this, d.id) } })
         }
-        if (list.isEmpty()) rows.addView(text(T("tv_main.no_device_yet"), 14, MUTED, false))
-        val scroll = ScrollView(this)
-        scroll.addView(rows)
-        val b = android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(T("tv_main.paired_devices_2"))
-            .setView(scroll)
-            .setNegativeButton(T("common.close"), null)
-        if (list.size > 1) b.setNeutralButton(T("tv_main.unpair_all")) { _, _ -> confirmForget(T("tv_main.every_device")) { RemoteService.forgetAll(this) } }
-        dlg = b.show()
-        (firstUnpair ?: dlg?.getButton(android.app.AlertDialog.BUTTON_NEGATIVE))?.requestFocus()
+        if (list.isEmpty()) items.add(TvUi.Item(R.drawable.ic_info, T("tv_main.no_device_yet")) { })
+        if (list.size > 1) items.add(TvUi.Item(R.drawable.ic_unlink, T("tv_main.unpair_all")) { confirmForget(T("tv_main.every_device")) { RemoteService.forgetAll(this) } })
+        menu(T("tv_main.paired_devices_2"), items)
     }
 
-    private fun confirmForget(what: String, forget: () -> Unit) {
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setMessage(T("tv_main.unpair_what_it_will", "what" to what))
-            .setPositiveButton(T("setup.unpair")) { _, _ -> forget(); log(T("tv_main.unpaired_what", "what" to what)); showWeb() }
-            .setNegativeButton(T("common.cancel"), null).show()
+    /** Unpair asks first (Cancel has the focus); [again] runs after the unpairing, to show the list without that device. */
+    private fun confirmForget(what: String, again: (() -> Unit)? = null, forget: () -> Unit) {
+        TvUi.confirm(this, R.style.TvSheet, "", T("tv_main.unpair_what_it_will", "what" to what), T("setup.unpair"), T("common.cancel"), danger = true, accent = ACCENT) {
+            forget(); log(T("tv_main.unpaired_what", "what" to what)); showWeb(); again?.invoke()
+        }
     }
 
     /** One line per timer or limit that is set, and whether the sleep timer is running; null when nothing is set. */
@@ -639,7 +619,7 @@ class MainActivity : Activity() {
         else T("tv_main.turn_back_on_when_2")
 
     /** The tiles' menus: icons and a second line, a switch's state at the end (TvUi.menu, the TV apps' one list dialog). */
-    private fun menu(title: String, items: List<TvUi.Item>) { TvUi.menu(this, R.style.TvSheet, title, items, R.drawable.ic_check) }
+    private fun menu(title: String, items: List<TvUi.Item>) { TvUi.menu(this, R.style.TvSheet, title, items, R.drawable.ic_check, ACCENT) }
 
     /** Connection: the TV's ADB again, Developer options and whether TV Setup turns ADB debugging back on (KeepAdb), Tailscale. */
     private fun connectionMenu() {
@@ -658,11 +638,9 @@ class MainActivity : Activity() {
      * TV Setup's own link is revoked as well and asks again on the next connect.
      */
     private fun forgetAdbKeys() {
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(T("tv_main.forget_adb_keys"))
-            .setMessage(T("tv_main.forget_adb_keys_ask"))
-            .setPositiveButton(T("tv_main.open_developer_options")) { _, _ -> howto(T("tv_main.forget_adb_keys_howto")); devOptions() }
-            .setNegativeButton(T("common.cancel"), null).show()
+        TvUi.confirm(this, R.style.TvSheet, T("tv_main.forget_adb_keys"), T("tv_main.forget_adb_keys_ask"), T("tv_main.open_developer_options"), T("common.cancel"), accent = ACCENT) {
+            howto(T("tv_main.forget_adb_keys_howto")); devOptions()
+        }
     }
 
     /** Optimize TV: the clean-up and its undo, the home screen to use, the remote buttons the stock launcher answered (KeyFix). */
@@ -1039,10 +1017,7 @@ class MainActivity : Activity() {
     /** Removing this app leaves the TV as it was before it: apps Optimize TV turned off come back on first (Undo). */
     private fun askRemove() {
         if (busy) return
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle(T("tv_main.remove_tv_setup_2"))
-            .setMessage(T("tv_main.apps_turned_off_by"))
-            .setPositiveButton(T("fleet.remove")) { _, _ ->
+        TvUi.confirm(this, R.style.TvSheet, T("tv_main.remove_tv_setup_2"), T("tv_main.apps_turned_off_by"), T("fleet.remove"), T("common.cancel"), danger = true, accent = ACCENT) {
                 val s = setup
                 val a = adb
                 if (s == null || a == null) {                         // no ADB here: Android's own way
@@ -1050,7 +1025,7 @@ class MainActivity : Activity() {
                         if (KeysAddon.installed(this)) startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, android.net.Uri.parse("package:${dev.tvremote.setup.keys.KeysProtocol.ADDON}")))   // its key add-on first
                     } catch (e: Exception) { }
                     try { startActivity(android.content.Intent(android.content.Intent.ACTION_DELETE, android.net.Uri.parse("package:$packageName"))) } catch (e: Exception) { log("✗ " + reason(e)) }
-                    return@setPositiveButton
+                    return@confirm
                 }
                 busy = true
                 spinner.visibility = View.VISIBLE
@@ -1064,8 +1039,7 @@ class MainActivity : Activity() {
                     busy = false
                     ui { spinner.visibility = View.INVISIBLE }
                 }.start()
-            }
-            .setNegativeButton(T("common.cancel"), null).show()
+        }
     }
 
     private fun job(job: Job) {

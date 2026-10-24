@@ -22,6 +22,7 @@ android {
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
     sourceSets["main"].java.srcDirs("../shared/src/home/kotlin", "../shared/src/guard/kotlin", "../shared/src/guard/android", "../shared/src/tvui/kotlin", "../shared/src/sign/kotlin", "../shared/src/selfupdate/kotlin", layout.buildDirectory.dir("generated/qr"))   // Release + SelfUpdate: its own updates
+    sourceSets["main"].res.srcDirs("../shared/src/tvui/res")   // TvSheet (the dialogs' theme): ONE copy for the TV apps, as in :tv
     sourceSets["main"].assets.srcDirs(layout.buildDirectory.dir("generated/assets"))   // homeweb/ (the settings page), packed below
     signingConfigs {
         create("release") {
