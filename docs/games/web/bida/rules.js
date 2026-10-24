@@ -54,7 +54,7 @@
         const dx = x[i] - PK[p], dy = y[i] - PK[p + 1], r = PK[p + 2];
         if (dx * dx + dy * dy < r * r) { inPocket = true; break; }
       }
-      if (inPocket) { pot[i] = 1; vx[i] = 0; vy[i] = 0; s.pots[s.n++] = i; ev(g, 2, 40); continue; }
+      if (inPocket) { pot[i] = 1; vx[i] = 0; vy[i] = 0; s.pots[s.n++] = i; ev(g, 2, i); continue; }
       if (x[i] < R) { x[i] = R; if (vx[i] < 0) { ev(g, 1, -vx[i]); vx[i] = -vx[i] * CUSH; if (s.first >= 0) s.rail = true; } }
       else if (x[i] > W - R) { x[i] = W - R; if (vx[i] > 0) { ev(g, 1, vx[i]); vx[i] = -vx[i] * CUSH; if (s.first >= 0) s.rail = true; } }
       if (y[i] < R) { y[i] = R; if (vy[i] < 0) { ev(g, 1, -vy[i]); vy[i] = -vy[i] * CUSH; if (s.first >= 0) s.rail = true; } }

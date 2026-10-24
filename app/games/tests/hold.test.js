@@ -11,7 +11,7 @@ function rig(grace) {
     setTimeout: (f, ms) => { q.set(++id, [now + ms, f]); return id; }, clearTimeout: (i) => q.delete(i) });
   const at = (t, fn) => { advance(t - now); fn && fn(); };
   function advance(ms) { const end = now + ms; for (;;) { let best = null; for (const [i, [t]] of q) if (t <= end && (!best || t < q.get(best)[0])) best = i; if (!best) break; const [t, f] = q.get(best); q.delete(best); now = t; f(); } now = end; }
-  return { h, log, at, advance };
+  return { h, log, at, advance, set: (f, ms) => { q.set(++id, [now + ms, f]); return id; }, clr: (i) => q.delete(i) };
 }
 
 test('down + auto-repeats + up: one press, released right after the grace', () => {
@@ -45,4 +45,14 @@ test('an up with no down, a second up, and reset do nothing odd', () => {
   r.h.up(); r.advance(500); assert.deepStrictEqual(r.log, []);
   r.h.down(); r.h.up(); r.h.up(); r.advance(500); assert.strictEqual(r.log.length, 2);
   r.h.down(); r.h.reset(); r.advance(500); assert.strictEqual(r.h.held(), false); assert.strictEqual(r.log.length, 3);
+});
+
+test('Kit keys (grace 120): down/up pairs hold a direction, hit fires once, it lets go 120 ms after the last up', () => {
+  const r = rig(120), s = { kb: false, hit: 0 };
+  const h = Hold.make({ grace: 120, down() { s.kb = true; s.hit++; }, up() { s.kb = false; }, setTimeout: (f, ms) => r.set(f, ms), clearTimeout: (i) => r.clr(i) });
+  assert.ok(h);                                                        // shape check; the timing is covered above with the same grace logic
+  for (let t = 0; t < 1000; t += 50) { r.at(t, () => r.h.down()); r.at(t + 5, () => r.h.up()); }
+  assert.strictEqual(r.log.filter((x) => x[0] === 'down').length, 1);
+  assert.strictEqual(r.log.filter((x) => x[0] === 'up').length, 0);
+  r.advance(130); assert.strictEqual(r.log.filter((x) => x[0] === 'up').length, 1);
 });

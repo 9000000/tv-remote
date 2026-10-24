@@ -196,11 +196,37 @@ const bg = document.createElement('canvas'); bg.width = 1280; bg.height = 720;
   }
 })();
 
+// ---------------------------------------------------------------------------------------------- a ball falling into a pocket
+// the ball shrinks into the pocket's mouth while a ring and a few sparks (in the ball's colour) fly out; ~0.5 s, drawn on top of the balls
+const FX = [];
+function pocketFx(g, id) {
+  let bp = 0, bd = 1e9;
+  for (let p = 0; p < 18; p += 3) { const d = (BD.PK[p] - g.x[id]) ** 2 + (BD.PK[p + 1] - g.y[id]) ** 2; if (d < bd) { bd = d; bp = p; } }
+  const fx = { id, x0: g.x[id], y0: g.y[id], px: BD.PK[bp], py: BD.PK[bp + 1], t: 0, sp: [] };
+  for (let k = 0; k < 10; k++) { const a = Math.random() * 6.283, v = 40 + Math.random() * 90; fx.sp.push([Math.cos(a) * v, Math.sin(a) * v]); }
+  if (FX.length > 12) FX.shift();
+  FX.push(fx);
+}
+function drawFx(dt) {
+  for (let i = FX.length - 1; i >= 0; i--) {
+    const f = FX[i]; f.t += dt; const k = f.t / 0.5;
+    if (k >= 1) { FX.splice(i, 1); continue; }
+    const e = Math.min(1, k * 2.2), x = f.x0 + (f.px - f.x0) * e, y = f.y0 + (f.py - f.y0) * e;
+    if (k < 0.45) { const sc = 1 - e * 0.8; cx.save(); cx.translate(OX + x * SC, OY + y * SC); cx.scale(sc, sc); cx.globalAlpha = 1 - e * 0.6; cx.drawImage(spr[f.id], -SZ / 2, -SZ / 2); cx.restore(); }
+    const col = COL[f.id > 8 ? f.id - 8 : f.id] || '#fff', X = OX + f.px * SC, Y = OY + f.py * SC;
+    cx.save(); cx.globalAlpha = (1 - k) * 0.8; cx.strokeStyle = '#fff3c4'; cx.lineWidth = 4 * (1 - k) + 1;
+    cx.beginPath(); cx.arc(X, Y, BR * (0.8 + k * 2.6), 0, 7); cx.stroke();
+    cx.fillStyle = col; cx.globalAlpha = 1 - k;
+    for (const s of f.sp) { cx.beginPath(); cx.arc(X + s[0] * k * 1.1, Y + s[1] * k * 1.1, 3.5 * (1 - k) + 1, 0, 7); cx.fill(); }
+    cx.restore();
+  }
+}
+
 // ---------------------------------------------------------------------------------------------- sound (a click per frame at most)
 function click(f, v, d) { Sfx.tone(f, d, 'triangle', v, 0.55); }   // Sfx owns the AudioContext and ?mute
 function sounds(g) {
   const e = g.ev; let ball = 0, rail = 0, pk = 0;
-  for (let i = 0; i < e.n; i++) { if (e.k[i] === 0) ball = Math.max(ball, e.s[i]); else if (e.k[i] === 1) rail = Math.max(rail, e.s[i]); else pk = 1; }
+  for (let i = 0; i < e.n; i++) { if (e.k[i] === 0) ball = Math.max(ball, e.s[i]); else if (e.k[i] === 1) rail = Math.max(rail, e.s[i]); else { pk = 1; pocketFx(g, e.s[i]); } }
   e.n = 0;
   if (ball > 8) click(900 + Math.min(700, ball), Math.min(0.25, 0.04 + ball / 3000), 0.07);
   if (rail > 15) click(260, Math.min(0.2, 0.03 + rail / 4000), 0.09);
@@ -355,14 +381,14 @@ function render() {
 // last frame is drawn and it sleeps until an input, the table or the clock wakes it: a weak TV box idles at ~0% instead of 60 draws a second.
 let last = performance.now(), raf = 0;
 function busy() {
-  if (S.phase === 'roll' || S.bot || S.charging || S.bannerT > 0 || S.fireT > 0) return true;
+  if (S.phase === 'roll' || S.bot || S.charging || S.bannerT > 0 || S.fireT > 0 || FX.length) return true;
   const k = S.k[table.turn || 0]; return !!(k.L || k.R || k.U || k.D || k.ax || k.ay);
 }
 function wake() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
 function frame(now) {
   raf = 0;
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  logic(dt); render();
+  logic(dt); render(); if (FX.length) drawFx(dt);
   if (busy()) raf = requestAnimationFrame(frame);
 }
 window.__bida = { S, table, BD };

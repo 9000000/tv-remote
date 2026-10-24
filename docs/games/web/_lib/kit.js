@@ -93,11 +93,16 @@
   }
   const KB = { ArrowUp: [1, 'UP'], ArrowDown: [1, 'DOWN'], ArrowLeft: [1, 'LEFT'], ArrowRight: [1, 'RIGHT'], z: [1, 'A'], x: [1, 'B'], Enter: [1, 'START'], ' ': [1, 'A'],
     w: [2, 'UP'], s: [2, 'DOWN'], a: [2, 'LEFT'], d: [2, 'RIGHT'], f: [2, 'A'], g: [2, 'B'], i: [3, 'UP'], k: [3, 'DOWN'], j: [3, 'LEFT'], l: [3, 'RIGHT'], h: [3, 'A'], ',': [4, 'UP'], '.': [4, 'DOWN'], ';': [4, 'A'] };
+  // one Hold per physical key (_lib/hold.js): a remote that sends a down + up pair every ~50 ms while held (or a down without `repeat`)
+  // is one long press, not a press per pair; the key lets go 120 ms after its last up
+  const HK = {};
   const kb = (e, down) => {
-    const m = KB[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!m) return;
-    const s = st(m[0]); if (DIRS.includes(m[1])) { s.kb[m[1]] = down; if (down && !e.repeat) s.hit[m[1]] = true; } else { s.kb[m[1]] = down; if (down && !e.repeat) s.hit[m[1]] = true; }
-    if (e.key === 'Enter') { s.kb.A = down; if (down && !e.repeat) s.hit.A = true; }               // the TV remote's OK: Start on the title, the action button in play
-    if (down) audio(); e.preventDefault();
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key, m = KB[key]; if (!m) return;
+    e.preventDefault();
+    const h = HK[key] || (HK[key] = Hold.make({ grace: 120,
+      down() { const s = st(m[0]); s.kb[m[1]] = true; s.hit[m[1]] = true; if (key === 'Enter') { s.kb.A = true; s.hit.A = true; } audio(); },   // Enter: the TV remote's OK is Start on the title, the action button in play
+      up() { const s = st(m[0]); s.kb[m[1]] = false; if (key === 'Enter') s.kb.A = false; } }));
+    if (down) h.down(); else h.up();
   };
   addEventListener('keydown', (e) => kb(e, true)); addEventListener('keyup', (e) => kb(e, false));
   const strong = (a, b) => (Math.abs(a) >= Math.abs(b) ? a : b);

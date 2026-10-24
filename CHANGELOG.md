@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Bi-a (TV Games): bi vào lỗ có hiệu ứng (bi thu nhỏ rơi vào lỗ, vòng sáng và tia lửa theo màu bi); phím giữ ở các game arcade (Sumo, Tank...) không còn bị nhả giữa chừng khi remote gửi cặp nhấn/nhả.
+- App điện thoại, Nói nhanh (mới, bản demo; nút mic cũ giữ nguyên): Tiện ích → Nói nhanh. Giữ nút to và nói, không có hộp thoại; thấy chữ đang nghe và, phía TRÊN ngón tay, danh sách việc câu đó sẽ làm (phím, âm lượng, mở app / kênh, hẹn giờ, cảnh) cập nhật từng chữ; thả ra là gửi ngay, kéo ra xa rồi thả là hủy. Dùng gói giọng nói offline nếu máy có, micro hỏi lần đầu kèm lý do, từ chối thì quay về cách cũ. Bản web chưa có.
 - Bi-a (TV Games): khi chưa tới lượt, màn hình tay cầm trên điện thoại hiện "Lượt của <tên>" thay vì để trống.
 - Bi-a (TV Games): giữ OK để nạp lực không còn bị tụt về 0 giữa chừng khi điều khiển gửi lặp phím hoặc cặp nhấn/nhả liên tục (TV Remote qua ADB, một số remote vật lý); thả OK mới bắn.
 - TV Karaoke (app mới, bản đầu 0.1.0, chưa vào release): TV hiện mã QR, điện thoại quét để tìm bài (khóa API YouTube tùy chọn, không có thì dùng kết quả công khai), cả nhà thêm vào hàng đợi chung; TV phát toàn màn hình bằng trình phát nhúng chính thức của YouTube, bài không cho nhúng thì tự bỏ qua và báo trên điện thoại. Chưa có micro: cắm mic karaoke Bluetooth/USB vào TV hoặc loa.
@@ -74,6 +76,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: khóa app không cần TV Setup: mã PIN 4 số tạo ngay trên TV (nhập hai lần), TV Home tự khóa mở app từ lưới, dock, phím gán (chặn mở từ nơi khác thì cần TV Setup); giới hạn mỗi ngày vẫn cần TV Setup. Cài TV Setup sau thì khóa tự chuyển sang. Màn mờ phía sau menu không còn nhấp nháy khi quay về từ app khác (Thông tin app).
 
 **English**
+- Pool (TV Games): a potted ball now shrinks into the pocket with a ring and sparks in its colour; keys held in the arcade games (Sumo, Tanks...) no longer let go midway when the remote sends down/up pairs.
+- Phone app, Quick talk (new, a demo; the old mic button is unchanged): Tools → Quick talk. Hold the big button and speak, no dialog; see the live text and, ABOVE the finger, the list of things the sentence will do (keys, volume, open an app / channel, timer, scene) updating word by word; let go to send at once, slide away and let go to cancel. Uses the offline speech pack when the phone has it, asks for the microphone the first time with a reason, falls back to the old way if denied. The web page does not have it yet.
 - Pool (TV Games): when it is not your turn, the phone pad shows "<name> to play" instead of a blank screen.
 - Pool (TV Games): holding OK to charge the shot no longer resets to 0 when the remote sends repeated keys or a down/up pair while held (TV Remote over ADB, some physical remotes); the shot fires when OK is released.
 - TV Karaoke (new app, first version 0.1.0, not in a release yet): the TV shows a QR, phones scan it to search songs (optional YouTube API key, public results otherwise) and fill one shared queue; the TV plays each song full screen with YouTube's official embedded player, and a video that refuses embedding is skipped with a note on the phones. No microphone yet: plug a Bluetooth/USB karaoke mic into the TV or speaker.
