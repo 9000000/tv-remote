@@ -337,4 +337,16 @@ class HomeConfigTest {
         assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("tiles").length())
         assertEquals(HomeConfig.TILES_MAX, HomeConfig.clean(JSONObject().put("tiles", JSONArray((1..30).map { "tile:com.x.y/t$it" }))).getJSONArray("tiles").length())
     }
+
+    @Test fun videoWallsAndTheirSettings() {
+        assertTrue(HomeConfig.isVideo("vid:0a1b2c3d")); assertFalse(HomeConfig.isVideo("vid:0A1B2C3D")); assertFalse(HomeConfig.isVideo("vid:../etc")); assertFalse(HomeConfig.isVideo("vid:1234"))
+        val c = HomeConfig.clean(JSONObject().put("wall", "vid:0a1b2c3d").put("walls", JSONArray(listOf("vid:0a1b2c3d", "vid:zz", "night", "vid:0a1b2c3d")))
+            .put("vsound", true).put("vvol", 77).put("vfps", "24").put("vres", "999"))
+        assertEquals("vid:0a1b2c3d", c.getString("wall"))
+        assertEquals(listOf("vid:0a1b2c3d", "night"), c.getJSONArray("walls").let { a -> List(a.length()) { a.getString(it) } })
+        assertTrue(c.getBoolean("vsound")); assertEquals(75, c.getInt("vvol")); assertEquals("24", c.getString("vfps")); assertEquals("", c.getString("vres"))
+        val d = HomeConfig.clean(JSONObject())
+        assertFalse(d.getBoolean("vsound")); assertEquals(HomeConfig.VOL_DEFAULT, d.getInt("vvol")); assertEquals("", d.getString("vfps"))
+        assertEquals("night", HomeConfig.clean(JSONObject().put("wall", "vid:nothex!!")).getString("wall"))
+    }
 }

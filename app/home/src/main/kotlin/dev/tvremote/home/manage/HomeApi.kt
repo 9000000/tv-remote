@@ -14,6 +14,7 @@ import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.Store
 import dev.tvremote.home.apps.Tiles
 import dev.tvremote.home.wall.Walls
+import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.HomeConfig
 
 /**
@@ -26,6 +27,7 @@ object HomeApi {
     /** [set] changed first (HomeConfig.merge cleans it), [drop] one photo deleted first, [thumbs] the photos' small pictures too. */
     fun snapshot(c: Context, set: JSONObject?, drop: String?, thumbs: Boolean): JSONObject {
         if (drop != null && HomeConfig.isPhoto(drop)) drop(c, drop)
+        else if (drop != null && HomeConfig.isVideo(drop) && !Videos.delete(c, drop, Store.get(c))) throw IllegalStateException("inuse")   // the setting (or a theme) still shows it
         if (set == null) { Tiles.refresh(c); Pins.refresh(c) }         // a client reading: what the providers and the apps offer is as true as this moment
         val config = if (set == null) Store.get(c) else Store.change(c, set)
         val apps = JSONArray()
@@ -37,10 +39,19 @@ object HomeApi {
             photos.put(JSONObject().put("id", id).put("v", f.lastModified()))
             if (thumbs) thumb(c, id)?.let { pictures.put(id, it) }
         }
+        val library = JSONArray()
+        for (v in Videos.list(c)) {
+            library.put(v.json())
+            if (thumbs) thumb(c, v.wall)?.let { pictures.put(v.wall, it) }
+        }
+        val (dw, dh) = Videos.display(c)
         return JSONObject().put("version", c.packageManager.getPackageInfo(c.packageName, 0).versionName)
             .put("config", config).put("apps", apps)
             .put("photo", File(c.getExternalFilesDir(null), "wall.jpg").isFile)
             .put("photos", photos).put("thumbs", pictures)
+            // the media library (Videos.kt): its items, the work under way, the room left and the cap; the screen's real size for previews
+            .put("video", JSONObject().put("items", library).put("job", Videos.job?.json() ?: JSONObject.NULL).put("free", Videos.free(c)).put("max", HomeConfig.VIDEO_MAX_BYTES).put("libmax", HomeConfig.VIDEO_LIB_MAX))
+            .put("display", JSONObject().put("w", dw).put("h", dh))
             .also { o -> Online.info(c)?.let { o.put("bing", it) } }
     }
 
@@ -56,6 +67,30 @@ object HomeApi {
             out.toByteArray().also { cache.writeBytes(it) }
         }
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
+    }
+
+    /**
+     * [file] (in [Videos.staging]) is taken into the media library on a thread of its own (a GIF or a heavy video is made light first:
+     * seconds to minutes, progress in `video.job`), then chosen like a new photo. "ok" (started), or why not: "size", "full", "space", "busy".
+     */
+    fun addVideo(c: Context, file: File, name: String): String {
+        val why = Videos.admit(c, file.length())
+        if (why != null) { file.delete(); return why }
+        if (Videos.job?.let { it.error == null && it.pct < 100 } == true) { file.delete(); return "busy" }   // one at a time: the encoder is one
+        val app = c.applicationContext
+        val conf = Store.get(c)                                       // the quality chosen now (vfps, vres) is what this one is made with
+        Videos.job = Videos.Job(name.take(80))
+        Thread({
+            val item = Videos.ingest(app, file, name, conf)
+            if (item != null) android.os.Handler(android.os.Looper.getMainLooper()).post {
+                val conf = Store.get(app)
+                val set = conf.optJSONArray("walls")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
+                val walls = if (conf.optString("wevery", "off") == "off") listOf(item.wall) else set + item.wall
+                Store.change(app, JSONObject().put("walls", JSONArray(walls)).put("wall", item.wall))
+                ManageServer.listener?.changed()
+            }
+        }, "video-ingest").apply { priority = Thread.MIN_PRIORITY; start() }
+        return "ok"
     }
 
     /** A photo deleted: its file, its place in the set, and the background if it was showing (the next of the set, or Night). */

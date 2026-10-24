@@ -27,6 +27,7 @@ import dev.tvremote.home.manage.HomeApi
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.wall.Online
 import dev.tvremote.home.manage.PhotoScreen
+import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.manage.TelegramScreen
 import dev.tvremote.home.ui.Drop
 import dev.tvremote.home.keys.Picker
@@ -218,7 +219,11 @@ object Customize {
         // backgrounds, five to a row, a ✓ on the one in use (rotation off) or on each of the set it turns through (rotation on)
         var conf = Store.get(a)
         // read when the backgrounds' page fills, not when the panel is built ahead: a photo sent meanwhile is in it
-        val keys by lazy { val have = Walls.photos(a); HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have } }
+        val keys by lazy {
+            val have = Walls.photos(a); val all = HomeConfig.WALLS.filter { !HomeConfig.isPhoto(it) || it in have }
+            val mine = all.takeWhile { it == HomeConfig.BING || it == HomeConfig.WEB || HomeConfig.isPhoto(it) }       // the person's own first, the videos of the library among them
+            mine + Videos.list(a).map { it.wall } + all.drop(mine.size)
+        }
         val tiles = ArrayList<Pair<String, View>>()
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
@@ -305,6 +310,11 @@ object Customize {
             }, LinearLayout.LayoutParams(-1, -2))
             // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
             tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
+            // a video or GIF background (HomeConfig vsound / vvol / vfps / vres): sound and volume now; frame rate and size for the NEXT upload, which is made on a phone through the QR above
+            tile(R.drawable.ic_vol_up, a.getString(R.string.v_sound), null, "vsound")
+            tile(R.drawable.ic_vol_up, a.getString(R.string.v_vol), null, "vvol", listOf(0, 25, 50, 75, 100).map { "$it" to "$it%" })
+            tile(R.drawable.ic_play, a.getString(R.string.v_fps), null, "vfps", HomeConfig.VFPS.map { it to if (it.isEmpty()) a.getString(R.string.v_orig) else a.getString(R.string.v_fps_n, it.toInt()) })
+            tile(R.drawable.ic_image, a.getString(R.string.v_res), null, "vres", HomeConfig.VRES.map { it to if (it.isEmpty()) a.getString(R.string.v_res_screen) else "${it}p" })
             col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
             var chipRow: LinearLayout? = null
             HomeConfig.EVERY.forEachIndexed { i, k ->
@@ -331,7 +341,7 @@ object Customize {
                 val cell = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
                 val t = FrameLayout(a).apply {
                     isFocusable = true; isClickable = true
-                    val c = if (HomeConfig.isPhoto(k) || k == HomeConfig.BING || k == HomeConfig.WEB) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
+                    val c = if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k) || k == HomeConfig.BING || k == HomeConfig.WEB) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
                     background = (if (c.all { it == c[0] }) GradientDrawable().apply { setColor(c[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, c))
                         .apply { cornerRadius = dp(12).toFloat() }                // rounded, so not [wallDrawable]'s ColorDrawable
                     if (WallArt.has(k) || Walls.isPicture(k)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
@@ -341,7 +351,7 @@ object Customize {
                         if (drawn != null) pv.setImageBitmap(drawn)
                         else shots.execute { val b = thumb(a, k, w); a.runOnUiThread {
                             if (b != null) put(pv, b)
-                            else if (HomeConfig.isPhoto(k)) { val (iv, sz) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER)) }   // a photo that cannot be read: a mark, not a blank grey
+                            else if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k)) { val (iv, sz) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER)) }   // a photo that cannot be read: a mark, not a blank grey
                         } }
                     }
                     foreground = StateListDrawable().apply {
@@ -378,10 +388,14 @@ object Customize {
                         markAll()
                     }
                     // a photo sent from a phone: hold OK to delete it, after a question (the same as the phone's ✕: HomeReceiver.drop)
-                    if (HomeConfig.isPhoto(k)) setOnLongClickListener {
-                        android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.photo_del_q).setMessage(R.string.photo_del_note)
+                    if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k)) setOnLongClickListener {
+                        android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(if (HomeConfig.isVideo(k)) R.string.video_del_q else R.string.photo_del_q).setMessage(R.string.photo_del_note)
                             .setPositiveButton(R.string.photo_del) { _, _ ->
-                                HomeApi.drop(a, k)
+                                if (HomeConfig.isVideo(k)) {
+                                    // the library keeps what the setting (or a theme) still shows: said, not silently kept
+                                    if (!Videos.delete(a, k, Store.get(a))) { android.widget.Toast.makeText(a, R.string.video_inuse, android.widget.Toast.LENGTH_LONG).show(); return@setPositiveButton }
+                                    Store.change(a, JSONObject())
+                                } else HomeApi.drop(a, k)
                                 thumbs.keys.removeAll { it.startsWith("$k:") }
                                 // the focus to its neighbour: the hidden tile's focus fell to the panel's first control, far up
                                 val at = tiles.indexOfFirst { it.first == k }
@@ -402,7 +416,7 @@ object Customize {
                 row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
             }
             markAll(); markEvery()
-            if (keys.any { HomeConfig.isPhoto(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
+            if (keys.any { HomeConfig.isPhoto(it) || HomeConfig.isVideo(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         }
         groups[1].fill = {
             tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
@@ -945,6 +959,7 @@ object Customize {
         val w = tileW(a)
         val have = Walls.photos(a)
         for (k in HomeConfig.WALLS) if (WallArt.has(k) || k == HomeConfig.BING || k in have) thumb(a, k, w)
+        for (v in Videos.list(a)) thumb(a, v.wall, w)
     }
 
     /** [b] cropped to [w] x [h] from its middle, with rounded corners, so its tile needs no clip or scaling of its own. */
@@ -967,6 +982,7 @@ object Customize {
     private fun wallName(a: Context, k: String): String = when {
         k == "photo" -> a.getString(R.string.wall_photo)
         HomeConfig.isPhoto(k) -> a.getString(R.string.wall_photo_n, k.removePrefix("photo").toInt())
+        HomeConfig.isVideo(k) -> Videos.list(a).firstOrNull { it.wall == k }?.name?.takeIf { it.isNotBlank() } ?: a.getString(R.string.wall_video)
         else -> a.getString(a.resources.getIdentifier("wall_$k", "string", a.packageName))
     }
 }

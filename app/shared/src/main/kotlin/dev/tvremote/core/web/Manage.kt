@@ -158,6 +158,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     while (off < b.size) { val n = r.body.read(b, off, b.size - off); if (n < 0) break; off += n }
                     return HttpServer.Response.json(dev.tvremote.core.ontv.Home.photo(link.get(), b.copyOf(off)))
                 }
+                "home/video" -> if (post) {                           // a video or GIF, streamed to the TV (200 MB never sits in memory here)
+                    val len = r.length
+                    if (len !in 1..dev.tvremote.home.HomeConfig.VIDEO_MAX_BYTES) throw IllegalArgumentException("video size")
+                    return HttpServer.Response.json(dev.tvremote.core.ontv.Home.video(link.get(), r.q("name"), len) { s ->
+                        val buf = ByteArray(64 * 1024); var left = len
+                        while (left > 0) { val n = r.body.read(buf, 0, minOf(buf.size.toLong(), left).toInt()); if (n < 0) throw IOException("cut"); s.write(buf, 0, n); left -= n }
+                    })
+                }
                 "home/walls" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Wallpapers.json(dev.tvremote.core.ontv.Wallpapers.fetch()))   // the wallpaper gallery (signed list)
                 "home/walls/thumb" -> {
                     val b = dev.tvremote.core.ontv.Wallpapers.thumb(r.q("id"))

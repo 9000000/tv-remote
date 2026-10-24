@@ -88,16 +88,38 @@ object Home {
         return call(sh, JSONObject().put("walls", org.json.JSONArray(walls)).put("wall", id).put("photo", System.currentTimeMillis()))
     }
 
+    /**
+     * A video or GIF as the background: [size] bytes from [feed] go to TV Home's staging folder as they arrive (never all in memory:
+     * up to [HomeConfig.VIDEO_MAX_BYTES]), then TV Home takes the file in by its name, makes it light if it must be and enters it in its
+     * media library; the answer is its settings with `video.job` (the work under way: the client asks again until it ends).
+     */
+    @Throws(IOException::class)
+    fun video(adb: Adb, name: String, size: Long, feed: (Adb.Stream) -> Unit): JSONObject {
+        val ext = name.substringAfterLast('.', "").lowercase()
+        if (ext !in HomeConfig.VIDEO_EXT) throw IllegalArgumentException("video type")
+        if (size <= 0 || size > HomeConfig.VIDEO_MAX_BYTES) throw IllegalArgumentException("video size")
+        val sh: (String) -> String = { adb.shell(it) }
+        val now = call(sh, null)
+        if (!now.optBoolean("installed")) throw IOException("home:missing")
+        if (now.optJSONObject("video") == null) throw IOException("home:video_old")        // a TV Home from before video
+        val free = now.optJSONObject("video")!!.optLong("free")
+        if (free < size * 2 + 100L * 1024 * 1024) throw IOException("home:video_space")
+        val file = "in" + System.currentTimeMillis().toString(36) + "." + ext
+        sh("mkdir -p ${HomeConfig.VIDEO_STAGING}")
+        if (!adb.put(HomeConfig.VIDEO_STAGING + "/" + file, size, true, null, feed)) throw IOException("home:video")
+        return call(sh, null, "--es addvideo $file --es vname " + B64.encode(name.toByteArray(Charsets.UTF_8)))
+    }
+
     /** TV Home's QR screen for a photo from a phone, over its home screen: the page on the TV itself has no photos to pick. */
     @Throws(IOException::class)
     fun photoQr(sh: (String) -> String) {
         if (!sh("am start -a ${HomeConfig.PHOTO_QR} -n ${HomeConfig.PKG}/.HomeActivity 2>&1").contains("Starting")) throw IOException("home:photo")
     }
 
-    /** A photo taken out: TV Home deletes the file and its place in the set (it owns them). */
+    /** A photo or a video taken out: TV Home deletes the file and its place in the set (it owns them); a video the setting still uses stays (error "home:video_inuse"). */
     @Throws(IOException::class)
     fun drop(adb: Adb, id: String): JSONObject {
-        if (!HomeConfig.isPhoto(id)) throw IllegalArgumentException("photo id")
+        if (!HomeConfig.isPhoto(id) && !HomeConfig.isVideo(id)) throw IllegalArgumentException("photo id")
         return call({ adb.shell(it) }, null, "--es drop $id")
     }
 }

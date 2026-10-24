@@ -14,16 +14,17 @@ object Walls {
     fun file(c: Context, id: String): File? = when {
         HomeConfig.isPhoto(id) -> File(c.getExternalFilesDir(null), HomeConfig.photoName(id))
         id == HomeConfig.BING -> Online.file(c)
+        HomeConfig.isVideo(id) -> Videos.poster(c, id)             // the video's first frame: the picture everything but the player uses
         else -> null
     }
 
-    fun isPicture(id: String) = HomeConfig.isPhoto(id) || id == HomeConfig.BING
+    fun isPicture(id: String) = HomeConfig.isPhoto(id) || id == HomeConfig.BING || HomeConfig.isVideo(id)
 
     /** The ones of the person's photos that are on this TV, in order. */
     fun photos(c: Context): List<String> = HomeConfig.PHOTOS.filter { file(c, it)?.isFile == true }
 
     /** Whether [id] can be shown now: drawn and plain ones always, a photo while its file is there, Bing once a picture has come. */
-    fun usable(c: Context, id: String) = file(c, id)?.isFile ?: true
+    fun usable(c: Context, id: String) = (file(c, id)?.isFile ?: true) && (!HomeConfig.isVideo(id) || Videos.file(c, id).isFile)
 
     /** The picture of [id] for a screen of [w] x [h] (null for a drawn wall, or when it cannot be read). */
     fun bitmap(c: Context, id: String, w: Int, h: Int): Bitmap? = file(c, id)?.let { Wall.load(it, w, h) }

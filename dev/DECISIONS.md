@@ -494,3 +494,22 @@ Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~
 - **What happened:** an agent making test clips for TV Home's video background started 6 ffmpeg at once (4 x264 1080p encodes at full threads, 2 GIFs) beside the TV emulator transcoding in software. Load average reached 84 on 12 cores, the emulator crashed (21:40:53) and the 24 GB Mac stopped answering.
 - **Root cause, measured:** the GIFs. `-f lavfi -i testsrc2=… -t 20 -vf "split…palettegen…paletteuse"` never ends: `-t` cuts the output, but palettegen waits for the end of its INPUT, and testsrc2 has none, so it keeps every frame. One such ffmpeg was at 5.4 GB after 5 s; two of them ran. Same clip with `testsrc2=…:duration=8`: under 1 s, a few MB.
 - **Fixes:** `dev/test/media.sh` makes the test clips once in `.cache/media` (length in the source, one at a time, 2 threads; 6 clips in ~10 s); `dev/test/light.sh <cmd>` runs a heavy step under `nice` with one lock, after waiting while load > cores or memory free < 15 % (so the heavy steps of parallel agents queue); `emu.sh` refuses a third emulator (`EMU_MAX`, ~3 GB and 4 cores each). AGENTS.md "Testing" says to use them.
+
+## TV Home: video and GIF backgrounds (`app/home` wall/Videos.kt, Transcode.kt, VideoWall.kt)
+
+- **Library, not a file:** `<ext files>/videos/<hex8>.mp4` + `<hex8>.jpg` (poster, first frame) + `index.json`; the wall id is `vid:<hex8>`. `Walls.file()` gives the poster, so the screensaver, blurred cards and thumbnails need no change. `Videos.delete` refuses a video the setting uses or any `Videos.refs` hook (themes) keeps. Max 200 MB sent, 12 kept, free space >= 2x the file + 100 MB.
+- **Player:** platform MediaPlayer + TextureView behind the grid (no library; APK 2.0 MB before and after). The poster is the window background, so no black flash; released in onStop (an app over it: player count 1 -> 0 on the emulator), restarted in onStart. Looping gap not measurable on the emulator.
+- **Made light on the TV** (MediaCodec + EGL + MediaMuxer, no Media3: its APK cost was not worth it): a GIF always; a video when this TV has no hardware decoder for it, it is bigger than the chosen size, over 8 Mbps, or faster than the chosen frame rate (or than the decoder does at that size, with "Original"). Output H.264, ~0.065 bit/pixel/frame (1080p30 = 4.0 Mbps, 720p30 = 1.8), 2 s GOP, no B-frames. Frame rate (Original / 60 / 30 / 24 / 15) and size (screen / 1080 / 720 / 480) are settings (`vfps`, `vres`), applied to the NEXT upload. **Originals are not kept**: a 200 MB original would eat a weak box's storage twice; to change it, upload again.
+- **Measured on emulator-5554** (Android 14, 1080p; decoder `c2.goldfish.h264.decoder`; 10 s windows, D-pad scrolling the grid; emulator, not a weak box: only relative):
+  | wall | file | TV Home CPU | codec2 CPU | PSS | first frame | janky (scroll) |
+  |---|---|---|---|---|---|---|
+  | picture | - | 0.2 % | 0 | 72 MB | - | 6.5 % |
+  | (a) 1080p60 12 Mbps B-frames, as sent | 31 MB / 20 s | 27.6 % | 61 % | 72.5 MB | 93 ms | 8.0 % (616 frames) |
+  | (a) made light by the app, 1080p30 | 15 MB | 21.2 % | 42 % | 72.8 MB | 104 ms | 3.0 % |
+  | (b) 1080p30 4 Mbps | 10 MB | 5.6 % | 23 % | 72.4 MB | 74 ms | 25.5 % |
+  | (c) 720p30 2 Mbps | 5 MB | 6.6 % | 23 % | 72.6 MB | 106 ms | 32.5 % |
+  | (d) 1080p30 4 Mbps GOP 300 | 10 MB | 7.6 % | 30 % | 72.8 MB | 92 ms | 33.5 % |
+  | GIF 480x270 15 fps | 1.3 MB -> 0.70 MB | 7.0 % | 23 % | 65 MB | 88 ms | 28.3 % |
+  | GIF 800x450 | 5.6 MB -> 1.9 MB | 5.2 % | 20 % | 58 MB | 91 ms | 26.7 % |
+  The "janky" figure counts every video frame the TextureView hands the UI, so it is not smoothness of scrolling by itself (it varied 25-33 % across the 30 fps files and ~3-8 % on the others with no pattern); do not read a winner from it. What is solid: 60 fps / 12 Mbps costs 3-5x the CPU of 30 fps / 4 Mbps; transcoding a 60 fps source to 30 fps cut CPU 21 vs 28 % and codec 42 vs 61 %; a GIF as mp4 is 2-3x smaller and decoded in hardware; memory is flat (+0-12 MB PSS vs a picture). Qemu itself (host CPU) with a 1080p30 video: ~890 % vs 5.6 % with a picture and ~1 % with an app in front: the emulator decodes in software on the host, so run a video background only in 10-60 s windows (it heated the Mac to 91 C).
+- **Not decided by numbers:** SurfaceView vs TextureView (not measured; Backdrop's comment records a SurfaceView costing 45 ms/frame on a BRAVIA, so TextureView stays), seamless loop gap, transcode time on a weak box.

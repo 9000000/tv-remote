@@ -17,6 +17,8 @@ import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.io.File
+import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.HomeConfig
 
@@ -144,8 +146,28 @@ object ManageServer {
                 }
                 post && req.path == "/h/photo/drop" -> {
                     val id = JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8)).optString("id")
-                    if (!HomeConfig.isPhoto(id)) return@use reply(out, 400, "application/json", err("photo id"))
-                    json(out, onMain { HomeApi.snapshot(c, null, id, false) }, true)
+                    if (!HomeConfig.isPhoto(id) && !HomeConfig.isVideo(id)) return@use reply(out, 400, "application/json", err("photo id"))
+                    val snap = try { onMain { HomeApi.snapshot(c, null, id, false) } } catch (e: IllegalStateException) { return@use reply(out, 409, "application/json", err("inuse")) }
+                    json(out, snap, true)
+                }
+                post && req.path == "/h/video" -> {                       // a video or GIF: streamed to a file, never held whole in memory
+                    val name = (req.query["name"] ?: "").take(120)
+                    val ext = name.substringAfterLast('.', "").lowercase()
+                    if (ext !in HomeConfig.VIDEO_EXT) return@use reply(out, 415, "application/json", err("type"))
+                    val why = Videos.admit(c, req.length.toLong())
+                    if (why != null) return@use reply(out, if (why == "size") 413 else 409, "application/json", err(why))
+                    val staged = File(Videos.staging(c), "in" + System.currentTimeMillis().toString(36) + "." + ext)
+                    try {
+                        k.soTimeout = 30_000
+                        staged.outputStream().use { f ->
+                            val chunk = ByteArray(65536); var left = req.length
+                            while (left > 0) { val n = req.body.read(chunk, 0, minOf(chunk.size, left)); if (n < 0) throw java.io.IOException("cut"); f.write(chunk, 0, n); left -= n }
+                        }
+                    } catch (e: Exception) { staged.delete(); throw e }
+                    touch()
+                    val code = onMain { HomeApi.addVideo(c, staged, name) }
+                    if (code != "ok") reply(out, 409, "application/json", err(code))
+                    else json(out, onMain { HomeApi.snapshot(c, null, null, false) }, true)
                 }
                 post && req.path == "/h/photo" -> {
                     val jpeg = read(req, MAX_PHOTO)
@@ -236,7 +258,7 @@ object ManageServer {
 
     private fun reply(out: java.io.OutputStream, code: Int, type: String, body: String, extra: String = "") = reply(out, code, type, body.toByteArray(), extra)
     private fun reply(out: java.io.OutputStream, code: Int, type: String, body: ByteArray, extra: String = "") {
-        val name = when (code) { 200 -> "OK"; 302 -> "Found"; 401 -> "Unauthorized"; 403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 415 -> "Unsupported Media Type"; else -> "Error" }
+        val name = when (code) { 200 -> "OK"; 302 -> "Found"; 401 -> "Unauthorized"; 403 -> "Forbidden"; 404 -> "Not Found"; 409 -> "Conflict"; 413 -> "Payload Too Large"; 415 -> "Unsupported Media Type"; else -> "Error" }
         val head = "HTTP/1.1 $code $name\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\n" + (if (extra.contains("Cache-Control")) "" else "Cache-Control: no-store\r\n") +
             "Referrer-Policy: no-referrer\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n$extra\r\n"
         out.write(head.toByteArray()); out.write(body); out.flush()

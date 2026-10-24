@@ -39,11 +39,21 @@ test("direct: TV Home's own /h routes, and nothing for what only a host has", as
   assert.equal(link.app.meta, '/h/app/meta?pkg=');
 });
 
+test('a video goes to its own route with its name, the bytes counted', async () => {
+  for (const [direct, base] of [[false, '/api/home/video?name='], [true, '/h/video?name=']]) {
+    const calls = [];
+    const link = homeLinkFor(direct, async () => null, async (p, b, on) => { calls.push([p, b, on]); return { installed: true }; });
+    const f = { name: 'sea & sky.mp4' }, on = () => {};
+    await link.video(f, on);
+    assert.deepEqual(calls, [[base + encodeURIComponent('sea & sky.mp4'), f, on]]);
+  }
+});
+
 test('every route TV Home answers is one its server has', () => {
   // ManageServer.kt (app/home) names each /h/ route in its `when`; a route the page asks and the TV lacks would be a 404 in the field
   const kt = fs.readFileSync(path.join(__dirname, '../../home/src/main/kotlin/dev/tvremote/home/manage/ManageServer.kt'), 'utf8');
   const d = HOME_PATHS.direct;
-  for (const p of [d.read, d.drop, d.photo, d.app.meta.split('?')[0], d.app.icon.split('?')[0]]) assert.ok(kt.includes('"' + p + '"'), p + ' is not served by ManageServer.kt');
+  for (const p of [d.read, d.drop, d.photo, d.video.split('?')[0], d.app.meta.split('?')[0], d.app.icon.split('?')[0]]) assert.ok(kt.includes('"' + p + '"'), p + ' is not served by ManageServer.kt');
 });
 
 test('home.html loads only files that exist, and home.js asks no /api path itself', () => {

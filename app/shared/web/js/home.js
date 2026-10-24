@@ -106,7 +106,7 @@ async function homeUpdate() {
 async function homeOpen() {
   if (!homeLink.direct && await needAdbSoon()) return;                // TV Home's own page has no ADB to wait for
   let r = await homeLink.read(true); if (!r) return;
-  const keepThumbs = (n) => { for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
+  const keepThumbs = (n) => { for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id) || ((n.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
   keepThumbs(r);
   if (!r.installed) { homeCard(); toast(T('home.missing')); goTo('tv', 'launchcard'); return; }   // from the remote's More: where to get it
   const apps = () => r.apps.map((a) => a.pkg);
@@ -157,6 +157,26 @@ async function homeOpen() {
   // right over the pictures, filled: a tile among thirty went unseen, and in the head over "Change automatically" nobody
   // looked back up for it (eyes go down to the pictures)
   const upload = el('button', { type: 'button', className: 'primary', textContent: T('home.upload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : file.click() });   // on the TV: TV Home's QR, a photo comes from a phone
+  // a video or GIF as the background (HomeConfig vid:..., vsound / vvol / vfps / vres; app/home wall/Videos.kt): the media library
+  const vfile = el('input', { type: 'file', accept: 'video/mp4,video/webm,image/gif,.mp4,.webm,.gif', hidden: true, onchange: async () => {
+    const f = vfile.files[0]; vfile.value = ''; if (!f) return;
+    const mx = (r.video || {}).max || 0;
+    if (mx && f.size > mx) { toast(T('home.v_big', { mb: Math.round(mx / 1048576) })); return; }
+    const back = UI.busy(vupload, T('home.v_up', { pct: 0 }));
+    try { const n = await homeVideo(f, (t) => put(vstate, 'textContent', t)); if (n) await after(n); } finally { back(); put(vstate, 'textContent', ''); }
+  } });
+  const vupload = el('button', { type: 'button', className: 'primary', textContent: T('home.vupload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : vfile.click() });
+  const vstate = el('p', { className: 'state', role: 'status' }), vnote = el('p', { className: 'note', textContent: T('home.v_note') });
+  const vsound = el('input', { type: 'checkbox', onchange: () => send({ vsound: vsound.checked }) });
+  const vvolOut = el('output'); let vvolWait = 0;
+  const vvolIn = el('input', { type: 'range', min: 0, max: 100, step: 5, ariaLabel: T('home.v_vol'), oninput: () => {
+    vvolOut.textContent = vvolIn.value + '%';
+    clearTimeout(vvolWait); vvolWait = setTimeout(() => send({ vvol: +vvolIn.value }), 150);
+  } });
+  const vvol = el('div', { className: 'vol boost' }, vvolIn, vvolOut);
+  const vfpsHead = el('h3', { textContent: T('home.v_fps') }), vfps = el('div', { className: 'fchips' });
+  const vresHead = el('h3', { textContent: T('home.v_res') }), vres = el('div', { className: 'fchips' });
+  const vHead = el('h3', { textContent: T('home.v_head') });
   const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
     // one at a time (the TV takes a photo per ADB push); a TV Home without rotation has room for one only
@@ -306,6 +326,15 @@ async function homeOpen() {
       el('button', { type: 'button', className: (c.motion || '') === k ? 'on' : '', onclick: () => send({ motion: k }) }, T(id))));
     shadeHead.hidden = shade.hidden = shadeNote.hidden = !c.shadeOk;
     if (document.activeElement !== shadeIn) { shadeIn.value = String(c.shade ?? 50); shadeOut.textContent = (c.shade ?? 50) + '%'; }
+    const vOk = !!r.video;                                        // a TV Home from before video has no library
+    vupload.hidden = vstate.hidden = !vOk;
+    for (const x of [vHead, vsound.parentNode || vsound, vvol, vfpsHead, vfps, vresHead, vres, vnote]) x.hidden = !vOk;
+    vsound.checked = !!c.vsound;
+    if (document.activeElement !== vvolIn) { vvolIn.value = String(c.vvol ?? 50); vvolOut.textContent = (c.vvol ?? 50) + '%'; }
+    vvol.hidden = !vOk || !c.vsound;
+    const chips = (box, key, list, word) => box.replaceChildren(...list.map((k) => el('button', { type: 'button', className: (c[key] || '') === k ? 'on' : '', 'aria-pressed': String((c[key] || '') === k), textContent: word(k), onclick: () => send({ [key]: k }) })));
+    chips(vfps, 'vfps', ['', '60', '30', '24', '15'], (k) => k ? T('home.v_fps_n', { n: k }) : T('home.v_orig'));
+    chips(vres, 'vres', ['', '1080', '720', '480'], (k) => k ? T('home.v_res_n', { n: k }) : T('home.v_res_screen'));
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
@@ -419,8 +448,16 @@ async function homeOpen() {
       if (window.ONTV) { del.hidden = true; holdDrop(cell.firstChild, p.id); }
       return cell;
     });
-    holdNote.hidden = !(window.ONTV && photos.length);
-    walls.replaceChildren(bing, ...webTile, ...photos, ...art, ...plain);         // as on the TV (HomeConfig.WALLS): what changes by itself and the person's own first
+    const videos = ((r.video || {}).items || []).map((v) => {
+      const t = homeThumbs[v.id + ':' + v.added], face = el('i', {}, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : '🎬');
+      const used = isOn(v.id) || c.wall === v.id || set.includes(v.id);         // TV Home refuses to delete one in use; the button says so before
+      const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: used ? T('home.v_in_use') : T('home.v_remove'), 'aria-label': T('home.v_remove'), disabled: used, onclick: () => dropPhoto(v.id) });
+      const cell = tile(v.id, face, v.name || T('home.wall_video'), del);
+      if (window.ONTV) { del.hidden = true; if (!used) holdDrop(cell.firstChild, v.id); }
+      return cell;
+    });
+    holdNote.hidden = !(window.ONTV && (photos.length || videos.length));
+    walls.replaceChildren(bing, ...webTile, ...photos, ...videos, ...art, ...plain);         // as on the TV (HomeConfig.WALLS): what changes by itself and the person's own first
     every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
     put(everyNote, 'textContent', multi ? T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
     everyNote.hidden = !multi;
@@ -432,7 +469,7 @@ async function homeOpen() {
   const page = homeLink.direct;
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const GROUPS = [
-    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, el('div', { className: 'actions' }, upload), walls, holdNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, file, galHead, gal, credit]],
+    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, el('div', { className: 'actions' }, upload, vupload), vstate, walls, holdNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, vHead, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres, vnote, file, vfile, galHead, gal, credit]],
     ['look', 'sparkle', 180, 'home.g_look', [focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet')]],
     ['layout', 'apps', 265, 'home.g_layout', [colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden]],
@@ -466,6 +503,7 @@ async function homeOpen() {
   if (page) addEventListener('popstate', onPop);
   const onOff = (v) => T(v ? 'home.sum_on' : 'home.sum_off');
   const wallWord = (c) => c.wall === 'web' ? T('home.wall_web') : /^photo\d*$/.test(c.wall) ? T('home.wall_photo_n', { n: (+c.wall.slice(5) || 1) })
+    : /^vid:/.test(c.wall) ? (((r.video || {}).items || []).find((v) => v.id === c.wall) || {}).name || T('home.wall_video')
     : c.wall === 'bing' ? T('home.wall_bing') : HOME_WALL_WORDS[c.wall] ? T(HOME_WALL_WORDS[c.wall]) : c.wall;
   // the line under each group's name, as the TV's Customize writes it (summary())
   function sums(c) {
@@ -568,12 +606,61 @@ async function homeGallery(box, credit, head, done) {
   }));
 }
 
+// The TV's real shape for a preview, from what TV Home reports (snapshot "display": the panel's physical size): 1920 wide, as tall as
+// the panel is. Without it (an older TV Home) 16:9.
+function homeShape() {
+  const d = homeNow && homeNow.display;
+  return d && d.w > 0 && d.h > 0 ? [1920, Math.max(1, Math.round(1920 * d.h / d.w))] : [1920, 1080];
+}
+
+// A video or GIF as the background: shown in the TV's frame first (the TV covers the screen with it, as this box does), then sent
+// (progress by the bytes), then waited for while the TV makes it light (progress by TV Home's job). [say] writes the state line.
+async function homeVideo(f, say) {
+  try {
+    if (!await homeVideoAsk(f)) return null;
+    return await homeVideoWait(await homeLink.video(f, (pct) => say(T('home.v_up', { pct }))), say);
+  } catch (e) { toast(T('common.error_msg', { msg: friendly(e.message) })); return null; }
+}
+
+// Until TV Home's job ends: the answer's video.job {pct, error}. A few failed reads in a row end the wait (the TV went away).
+async function homeVideoWait(n, say) {
+  let lost = 0;
+  while (n && n.video && n.video.job && n.video.job.error == null && n.video.job.pct < 100 && lost < 5) {
+    say(T('home.v_make', { pct: n.video.job.pct }));
+    await new Promise((ok) => setTimeout(ok, 1500));
+    const t = await homeLink.read(false, true);
+    if (t) { n = t; lost = 0; } else lost++;
+  }
+  const j = n && n.video && n.video.job;
+  if (j && j.error) throw new Error('home:video_' + j.error);
+  toast(T('home.v_done'));
+  return n;
+}
+
+function homeVideoAsk(f) {
+  return new Promise((ok) => {
+    const [W, H] = homeShape(), url = URL.createObjectURL(f);
+    const gif = /\.gif$/i.test(f.name) || f.type === 'image/gif';
+    const m = gif ? el('img', { src: url, alt: '' }) : el('video', { src: url, loop: true, playsInline: true });
+    if (!gif) { m.muted = true; m.autoplay = true; m.play().catch(() => {}); }
+    const box = el('div', { className: 'vidprev' }, m); box.style.setProperty('--ar', W + ' / ' + H);
+    let yes = false;
+    const d = el('dialog', { className: 'ask' }, el('div', { className: 'card' },
+      el('h2', { textContent: T('home.v_title') }), box, el('p', { className: 'note', textContent: T('home.v_hint') }),
+      el('div', { className: 'actions' },
+        el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() }),
+        el('button', { type: 'button', className: 'primary', textContent: '🎬 ' + T('home.crop_send'), onclick: () => { yes = true; d.close(); } }))));
+    d.addEventListener('close', () => { URL.revokeObjectURL(url); d.remove(); ok(yes); });
+    document.body.append(d); d.showModal();
+  });
+}
+
 // A photo as the background: made the TV's size here (a phone's 12 MP photo would take a while over ADB and fill the
 // TV's memory), shown in the TV's frame first so the crop can be moved (photofit.js, the same as TV Home's own phone page), then sent
 async function homePhoto(f, done) {
   try {
     const img = await photoOpen(f);
-    const W = 1920, H = 1080;
+    const [W, H] = homeShape();
     const view = await homeCropAsk(img, W, H);
     if (!view) return false;                                          // cancelled: nothing sent, nothing said
     toast(T('home.sending_photo'));
@@ -586,11 +673,30 @@ async function homePhoto(f, done) {
 
 // A picture put to [path] (the JPEG the crop made); the answer is TV Home's settings. The X-Tvh header is what a page of another site
 // cannot send without a preflight: TV Home's own page takes no cross-site post.
-async function homeSend(path, blob) {
+async function homeSend(path, blob, onPct) {
+  if (onPct) return homeSendProgress(path, blob, onPct);
   const x = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Tvh': '1' }, body: blob });
   const n = await x.json().catch(() => ({}));
   if (!x.ok) throw new Error(n.error || x.statusText);
   return n;
+}
+
+// Same with the bytes counted (fetch cannot say how far an upload is): a video of 100 MB takes a while. The direct page's refusals
+// come as bare words (size, full, space, busy, type): said as the hosts say them, so one table of words (friendly) serves both.
+function homeSendProgress(path, blob, onPct) {
+  return new Promise((ok, no) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', path);
+    x.setRequestHeader('Content-Type', 'application/octet-stream'); x.setRequestHeader('X-Tvh', '1');
+    x.upload.onprogress = (e) => { if (e.lengthComputable) onPct(Math.min(99, Math.round(100 * e.loaded / e.total))); };
+    x.onerror = () => no(new Error('network'));
+    x.onload = () => {
+      let n = {}; try { n = JSON.parse(x.responseText); } catch (e) { /* not JSON */ }
+      if (x.status >= 200 && x.status < 300) ok(n);
+      else no(new Error(/^(size|full|space|busy|type)$/.test(n.error || '') ? 'home:video_' + n.error : n.error || x.statusText));
+    };
+    x.send(blob);
+  });
 }
 
 // The photo in the TV's shape, to move and widen before it is sent; resolves with the crop's view, or null when cancelled.

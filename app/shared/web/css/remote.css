@@ -241,3 +241,7 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homeorder.dragging .cell:not(.lift) { transition:transform .12s; }
 dialog.ask.homeweb .card { width:min(560px, 94vw); }
 
+
+/* a video or GIF in the TV's own shape (home.js homeVideoAsk): --ar is the panel's width / height, the media covers it as TV Home does */
+.vidprev { width:100%; aspect-ratio:var(--ar, 16 / 9); border-radius:12px; overflow:hidden; background:#000; }
+.vidprev video, .vidprev img { width:100%; height:100%; display:block; object-fit:cover; }

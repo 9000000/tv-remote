@@ -207,8 +207,8 @@
     <string name="upd_loading">Downloading… %1$d%%</string>
     <string name="upd_cancel">Cancel</string>
     <string name="upd_failed">Could not update (%1$s). The TV Remote app on a phone can update it too.</string>
-    <string name="wall_phone">Your photo from a phone</string>
-    <string name="wall_phone_sub">Scan a code with the phone, pick a photo</string>
+    <string name="wall_phone">Your photo or video from a phone</string>
+    <string name="wall_phone_sub">Scan a code with the phone, pick a photo, video or GIF</string>
     <string name="pq_addr">Or type this address in the phone\'s browser (same Wi-Fi):</string>
     <string name="pq_time">The code stops working after 10 minutes or when you close this screen.</string>
     <string name="pq_none">The TV has no Wi-Fi or cable connection, so a phone cannot reach it.</string>
@@ -344,4 +344,14 @@
     <string name="tg_need_code">Install or update it with Downloader: code %1$s</string>
     <string name="tg_open_dl">Open Downloader</string>
     <string name="tg_need_phone">Or send it to the TV from the TV Remote app on your phone</string>
+    <string name="wall_video">Video</string>
+    <string name="video_del_q">Delete this video?</string>
+    <string name="video_inuse">It is the background now. Choose another first.</string>
+    <string name="v_sound">Video sound</string>
+    <string name="v_vol">Video volume</string>
+    <string name="v_fps">Video frame rate (next upload)</string>
+    <string name="v_orig">Original</string>
+    <string name="v_fps_n">%1$d fps</string>
+    <string name="v_res">Video size (next upload)</string>
+    <string name="v_res_screen">Screen size</string>
 </resources>

@@ -73,6 +73,8 @@ import dev.tvremote.home.wall.Wall
 import dev.tvremote.home.wall.WallArt
 import dev.tvremote.home.wall.Walls
 import dev.tvremote.home.wall.WebWall
+import dev.tvremote.home.wall.VideoWall
+import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.wall.WebSnap
 import dev.tvremote.home.wall.WebSnapper
 import dev.tvremote.home.widgets.Widgets
@@ -109,6 +111,7 @@ class HomeActivity : Activity() {
     private var web: android.webkit.WebView? = null                 // the "web" wall's page, behind the grid and over the window's gradient; null for every other wall
     private var webDim: View? = null
     private var webOf = ""                                          // the address [web] shows
+    private var video: VideoWall? = null                           // a video or GIF wall: the player behind the grid (the poster is the window's background until it moves)
     private var snapper: WebSnapper? = null                         // "web" in snap mode: takes the pictures that are the background (no page on screen)
     private lateinit var head: LinearLayout
     private var scrollAnim: ObjectAnimator? = null
@@ -277,7 +280,7 @@ class HomeActivity : Activity() {
         Store.onChange = null
         open?.dismiss()
         ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(webRetry); ui.removeCallbacks(tileTick)
-        detachWeb()
+        detachWeb(); detachVideo()
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
         super.onDestroy()
@@ -349,10 +352,10 @@ class HomeActivity : Activity() {
         if (locked) return
         if (away) Store.advance(this, true)                           // Home is shown again: "each time" moves on here, and a timed one that fell due while away
         if (trimmed) untrim()
-        WebWall.wake(web); snapper?.resume()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
+        WebWall.wake(web); snapper?.resume(); video?.start()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
     }
 
-    override fun onStop() { away = true; zoom.hidden(); ManageServer.release(); WebWall.sleep(web); snapper?.pause(); super.onStop() }   // the QR stops opening the page; a phone already on it goes on until idle
+    override fun onStop() { away = true; zoom.hidden(); ManageServer.release(); WebWall.sleep(web); snapper?.pause(); video?.stop(); super.onStop() }   // the QR stops opening the page; a phone already on it goes on until idle
 
     /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
     override fun onTrimMemory(level: Int) {
@@ -876,7 +879,7 @@ class HomeActivity : Activity() {
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "")   // a photo put over the old file, another day's Bing picture: a new one
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
         if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
@@ -897,6 +900,7 @@ class HomeActivity : Activity() {
         val again = snap && lastWall == HomeConfig.WEB                // the next picture of the page: the one on screen stays until it is read (no flash of the gradient every few minutes)
         lastWall = id
         backdrop.strength = shadeK()
+        if (HomeConfig.isVideo(id)) attachVideo(id) else detachVideo()
         if (id == HomeConfig.WEB && !snap) {                          // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
             picture = null; soft = null
             Frost.show(null, dm.widthPixels, dm.heightPixels, live = true)
@@ -926,9 +930,26 @@ class HomeActivity : Activity() {
                 picture = big; soft = small
                 val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
                 backdrop.show(look)
-                Frost.show(small, dm.widthPixels, dm.heightPixels)
+                val moving = HomeConfig.isVideo(id)                      // the cards' blurred copy is still, the video is not: translucent cards like over the live page
+                Frost.show(if (moving) null else small, dm.widthPixels, dm.heightPixels, live = moving)
             }
         }
+    }
+
+    private val videoRetry = Runnable { if (!isDestroyed && !trimmed && !away && HomeConfig.isVideo(conf.optString("wall"))) { detachVideo(); attachVideo(conf.optString("wall")) } }
+
+    /** The player of a video wall behind the grid. A file the codec cannot play leaves the poster (a picture), tried again in 2 minutes. */
+    private fun attachVideo(id: String) {
+        val f = Videos.file(this, id).takeIf { it.isFile } ?: return detachVideo()   // deleted: the poster (or the gradient) stays
+        val root = scroll.parent as? ViewGroup ?: return
+        val v = video ?: VideoWall(this, root, ui) { detachVideo(); ui.postDelayed(videoRetry, 120_000) }.also { video = it }
+        v.show(f, shadeK(), conf.optBoolean("vsound", false), conf.optInt("vvol", HomeConfig.VOL_DEFAULT))
+        if (away) v.stop()                                            // made while away (a rotation, a phone): [onStart] plays it
+    }
+
+    private fun detachVideo() {
+        ui.removeCallbacks(videoRetry)
+        video?.detach(); video = null
     }
 
     private val webRetry = Runnable { if (!isDestroyed && !trimmed && web == null && conf.optString("wall") == HomeConfig.WEB && conf.optString("wmode") != "snap") attachWeb() }

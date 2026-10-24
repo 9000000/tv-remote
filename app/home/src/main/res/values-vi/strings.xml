@@ -205,8 +205,8 @@
     <string name="upd_loading">Đang tải… %1$d%%</string>
     <string name="upd_cancel">Hủy</string>
     <string name="upd_failed">Không cập nhật được (%1$s). App TV Remote trên điện thoại cũng cập nhật được.</string>
-    <string name="wall_phone">Ảnh của bạn từ điện thoại</string>
-    <string name="wall_phone_sub">Quét mã bằng điện thoại, chọn ảnh</string>
+    <string name="wall_phone">Ảnh hoặc video từ điện thoại</string>
+    <string name="wall_phone_sub">Quét mã bằng điện thoại, chọn ảnh, video hoặc GIF</string>
     <string name="pq_addr">Hoặc gõ địa chỉ này vào trình duyệt điện thoại (cùng Wi-Fi):</string>
     <string name="pq_time">Mã hết hạn sau 10 phút hoặc khi đóng màn hình này.</string>
     <string name="pq_none">TV chưa có Wi-Fi hoặc dây mạng nên điện thoại không kết nối được.</string>
@@ -342,4 +342,14 @@
     <string name="tg_need_code">Cài hoặc cập nhật bằng Downloader: mã %1$s</string>
     <string name="tg_open_dl">Mở Downloader</string>
     <string name="tg_need_phone">Hoặc gửi sang TV từ app TV Remote trên điện thoại</string>
+    <string name="wall_video">Video</string>
+    <string name="video_del_q">Xoá video này?</string>
+    <string name="video_inuse">Đang là hình nền. Chọn hình khác trước.</string>
+    <string name="v_sound">Âm thanh video</string>
+    <string name="v_vol">Âm lượng video</string>
+    <string name="v_fps">Khung hình video (lần tải sau)</string>
+    <string name="v_orig">Gốc</string>
+    <string name="v_fps_n">%1$d fps</string>
+    <string name="v_res">Kích thước video (lần tải sau)</string>
+    <string name="v_res_screen">Bằng màn hình</string>
 </resources>

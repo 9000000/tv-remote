@@ -16,6 +16,11 @@ import org.json.JSONObject
  *   wurl    the page the "web" wall shows (an Immich Kiosk, a dashboard): only http:// or https:// (LAN pages are mostly plain http),
  *           at most [WURL_MAX]; anything else is dropped. "web" with no good wurl is an unknown wall: the default gradient. "web" is
  *           never turned through: choosing it makes [walls] just that one, and a set sent with it elsewhere loses it
+ *   vid:<8 hex> a wall too: a looping video or animated GIF from TV Home's media library (app/home wall/Videos.kt: the file is
+ *           `videos/<id>.mp4` there, GIFs are turned into mp4 on arrival). Any such id is accepted here; whether its file is there is the
+ *           launcher's to know ([Walls.usable]), so a deleted one is skipped by the rotation and falls to Night when shown
+ *   vsound  the video's own sound on (default off: a home screen that talks is a surprise); vvol 0..100 its volume
+ *   vfps, vres  how a GIF or a heavy video is made light at upload ([VFPS], [VRES]); "" = the source's own / the screen's own size. Applies to the next uploads
  *   photo   when a photo last changed, so the launcher reads it again
  *   shade   how dark the veil over a photo, a drawn scene or the web page is, 0..100 % in steps of [SHADE_STEP]: 0 none,
  *           [SHADE_DEFAULT] the usual one (darker at the top and the bottom, where the clock and the names are), 100 an even veil
@@ -110,6 +115,22 @@ object HomeConfig {
     val PHOTOS = listOf("photo") + (2..PHOTO_MAX).map { "photo$it" }
     /** In the order the pickers list them: Bing, the web page and the person's photos first (the ones people come to change), then the scenes, the plain colours last. */
     val WALLS = listOf(BING, WEB) + PHOTOS + ART + PLAIN
+    /** A video or GIF of the media library: "vid:" + 8 hex (a theme refers to it by this id, and so does "wall"). */
+    const val VIDEO_PREFIX = "vid:"
+    private val VIDEO = Regex("vid:[0-9a-f]{8}")
+    fun isVideo(id: String) = VIDEO.matches(id)
+    /** What the library takes: the biggest file as sent, how many it keeps, and the types ([VIDEO_EXT]). */
+    const val VIDEO_MAX_BYTES = 200L * 1024 * 1024
+    const val VIDEO_LIB_MAX = 12
+    val VIDEO_EXT = listOf("mp4", "webm", "gif")
+    const val VOL_DEFAULT = 50
+    /** How a GIF or a heavy video is made light, for the NEXT uploads (originals are not kept: see DECISIONS.md): "" the source's own frame rate / the screen's own size, else frames a second / the short side in px. */
+    val VFPS = listOf("", "60", "30", "24", "15")
+    val VRES = listOf("", "1080", "720", "480")
+    /** Where a client puts a file before TV Home takes it in (HomeReceiver "addvideo" names it); the shell may write there. */
+    const val VIDEO_STAGING = "/sdcard/Android/data/$PKG/files/videos/in"
+    /** A wall id this config knows: a gradient, a scene, Bing, the page, a photo slot or a library video. */
+    fun knownWall(id: String) = id in WALLS || isVideo(id)
     const val WALLS_MAX = 40
     val EVERY = listOf("off", "30m", "1h", "6h", "day", "show")
     /** Where a client puts the first photo (the shell may write there; the app reads it with no permission). */
@@ -240,10 +261,10 @@ object HomeConfig {
         val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS && (it !in HomeQr.KEYS || qrs.has(it)) }.distinct()
         val dock = pkgs(o.optJSONArray("dock"), DOCK_MAX)
         val wurl = wurl(o.optString("wurl"))
-        val wall = o.optString("wall").takeIf { it in WALLS && (it != WEB || wurl.isNotEmpty()) } ?: "night"
+        val wall = o.optString("wall").takeIf { knownWall(it) && (it != WEB || wurl.isNotEmpty()) } ?: "night"
         // the page is not a stop of the rotation (it never ends, and a turn away from it would not come back): it is the whole set or not in it
         var walls = if (wall == WEB) listOf(WEB)
-            else o.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WALLS && it != WEB }.distinct().take(WALLS_MAX)
+            else o.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { knownWall(it) && it != WEB }.distinct().take(WALLS_MAX)
         if (walls.isEmpty()) walls = listOf(wall)
         return JSONObject()
             .put("dock", JSONArray(dock))
@@ -258,6 +279,10 @@ object HomeConfig {
             .put("wevery", o.optString("wevery").takeIf { it in EVERY } ?: "off")
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
             .put("shade", o.optInt("shade", SHADE_DEFAULT).coerceIn(0, 100) / SHADE_STEP * SHADE_STEP)
+            .put("vfps", o.optString("vfps").takeIf { it in VFPS } ?: "")
+            .put("vres", o.optString("vres").takeIf { it in VRES } ?: "")
+            .put("vsound", o.optBoolean("vsound", false))
+            .put("vvol", o.optInt("vvol", VOL_DEFAULT).coerceIn(0, 100) / 5 * 5)
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
