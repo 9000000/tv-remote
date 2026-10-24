@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">TV Setup Keys</string>
+    <string name="keys_fix">TV Setup Keys: remote buttons</string>
+    <string name="keys_wake">TV Setup Keys: wake only (on by itself while the screen is off)</string>
     <string name="keys_about">Part of TV Setup: gives back the remote\'s buttons that nothing answers, and keeps the TV\'s remote from also opening an app when it only wakes the screen. Reads no screen content.</string>
 </resources>

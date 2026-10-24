@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="keys_fix">TV Setup Keys: nút remote</string>
+    <string name="keys_wake">TV Setup Keys: đánh thức (tự bật khi màn hình tắt)</string>
+    <string name="keys_about">Một phần của TV Setup: trả lại các nút remote không app nào nhận, và giữ cho remote chỉ bật màn hình khi đánh thức TV, không mở thêm app. Không đọc nội dung màn hình.</string>
+</resources>

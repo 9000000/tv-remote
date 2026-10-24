@@ -6,13 +6,13 @@
     <queries><package android:name="dev.tvremote.setup" /></queries>
     <application android:label="@string/app_name" android:icon="@android:drawable/sym_def_app_icon" android:allowBackup="false">
         <!-- the first key of the TV's remote after the screen off only turns it on (KeyCatch.kt); on only while it is off, set by the shell -->
-        <service android:name=".KeyCatch" android:exported="false" android:label="@string/app_name"
+        <service android:name=".KeyCatch" android:exported="false" android:label="@string/keys_wake"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/keycatch" />
         </service>
         <!-- the remote's buttons that only the stock launcher answered (Input, YouTube...), and the hold keys; TV Setup decides (KeyFixService.kt) -->
-        <service android:name=".KeyFixService" android:exported="false" android:label="@string/app_name"
+        <service android:name=".KeyFixService" android:exported="false" android:label="@string/keys_fix"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/keyfix" />
