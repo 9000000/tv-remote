@@ -5,7 +5,8 @@ if (window.ONTV) (() => {
   const SEL = 'button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
   const DIR = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
   const seen = (e) => { if (e.disabled || e.closest('[hidden], [inert]')) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
-  const scope = () => [...document.querySelectorAll('dialog[open]')].pop() || document;   // an open dialog keeps the focus in it
+  // an open "..." menu (popover() in core.js) keeps the focus in it, over a dialog too; else an open dialog does
+  const scope = () => (typeof popEl !== 'undefined' && popEl && popEl.isConnected && popEl) || [...document.querySelectorAll('dialog[open]')].pop() || document;
   // a field drawn as something else (a file picker inside a label that looks like a button) is reached through its label
   const stand = (e) => {
     if (seen(e) || !e.matches('input, select, textarea')) return e;
@@ -50,7 +51,7 @@ if (window.ONTV) (() => {
   document.addEventListener('focusout', (ev) => { const e = ev.target; if (e.dataset && e.dataset.im) { e.inputMode = e.dataset.im === '-' ? '' : e.dataset.im; delete e.dataset.im; } }, true);
   // what had the focus before a dialog opened: closing it goes back there (Settings, a row's "..." menu), not to the tabs
   let opener = null;
-  document.addEventListener('focusin', (ev) => { if (ev.target !== document.body && !ev.target.closest('dialog')) opener = ev.target; }, true);
+  document.addEventListener('focusin', (ev) => { if (ev.target !== document.body && !ev.target.closest('dialog, [role=menu]')) opener = ev.target; }, true);
   const home = () => (opener && opener.isConnected && seen(opener) && scope().contains(opener)) ? opener : start();
   const go = (e) => { if (!e) return false; quiet(e); e.focus({ preventScroll: true }); e.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; };
 
@@ -129,6 +130,7 @@ if (window.ONTV) (() => {
 
   // Back: a dialog closes (as Esc would), then the focus goes back to the tabs; at the tabs the app leaves the page
   window.tvBack = () => {
+    if (typeof popEl !== 'undefined' && popEl && popEl.isConnected) { const a = popEl.anchor; closePop(); go(a); return true; }   // the "..." menu: closed, the focus back on its button
     const d = [...document.querySelectorAll('dialog[open]')].pop();
     if (d) { if (d.dispatchEvent(new Event('cancel', { cancelable: true }))) d.close(); setTimeout(() => go(home()), 50); return true; }
     if (!document.activeElement?.closest('.tabs')) return go(start());

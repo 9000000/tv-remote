@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Quản lý trên TV: menu "…" của mỗi dòng (Ứng dụng, Tệp…) giờ giữ phím mũi tên bên trong menu; Back chỉ đóng menu và trả tiêu điểm về nút "…" (trước đó Back nhảy lên thanh tab, phải Back thêm lần nữa mới thoát). Hộp thoại Tối ưu TV: vòng tiêu điểm của nút Chạy tối ưu / Hủy không còn bị cắt ở mép dưới, đầu hộp thoại không còn lộ dải nội dung phía trên.
 - TV Setup, Quản lý trên TV: mở nhanh hơn khoảng 1 giây (trên FPT: hiện "đã kết nối" sau 3,7 s thay vì 4,7–5,3 s).
 - TV Games: dòng nhỏ dưới game đang chọn (số người · thể loại · hệ máy) không còn bị cắt "W…": ô hẹp thì bỏ hệ máy.
 - TV Games, thử giao diện bằng phím điều khiển: ô tìm kiếm không còn "nhảy" xuống lưới game khi bấm Phải ở cuối hàng đầu; thẻ Tạm dừng khi chơi game retro thấp lại (nút 50dp thay 56dp: thẻ cao 483 thay vì 519 trên 540dp, lề 28dp thay vì 11dp, trước đây gần chạm mép màn hình).
@@ -70,6 +71,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games, gõ vào ô tìm game: không còn giật theo từng phím. Trước đây mỗi phím dựng lại toàn bộ ô game (~2,6 ms/ô trên máy ảo, 19 ô = 50 ms, TV yếu gấp nhiều lần); nay chờ 200 ms sau phím cuối (gõ 5 phím nhanh = 1 lần dựng thay vì 5) và dùng lại ô đã dựng (19 ô: 13 ms). Menu giữ OK: ẩn gợi ý / xoá game / gỡ game không còn làm mất focus (nhảy lên đầu trang, phải bấm phím mới có focus), focus chuyển sang ô kế bên.
 
 **English**
+- Manage on the TV: the "..." menu on each row (Apps, Files...) now keeps the arrow keys inside it; Back only closes the menu and returns the focus to the "..." button (before, Back jumped up to the tabs and one more Back was needed to leave). Optimize TV dialog: the focus ring of Optimize / Cancel is no longer cut at the bottom edge, and the dialog's head no longer shows a strip of content above it.
 - TV Setup, Manage on the TV: opens about 1 s sooner (on an FPT box "connected" shows after 3.7 s, was 4.7–5.3 s).
 - TV Games: the line under the chosen game (players · genre · system) is no longer cut to "W…": a narrow tile drops the system.
 - TV Games, D-pad pass: the search field no longer jumps down to the game grid on Right at the end of the first row; the game's Paused card is shorter (50 dp buttons instead of 56: 483 dp tall instead of 519 on a 540 dp screen, 28 dp margins instead of 11, it nearly touched the screen edge).
