@@ -57,12 +57,12 @@ private val PK_HUES = intArrayOf(0xFF27324A.toInt(), 0xFF2E3B2F.toInt(), 0xFF432
  * glass ([glassy]). [tag] is a small pill on a corner, [mark] a check, [dead] a tile that cannot be used (greyed, no focus).
  */
 class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: String, label: String, art: App?, hue: String,
-               tag: String = "", icon: Int = 0, plus: Boolean = false, color: Int = 0, flat: Boolean = false) : TvTile(c, w, dpx) {
+               tag: String = "", icon: Int = 0, plus: Boolean = false, color: Int = 0, flat: Boolean = false) : TvTile(c, w, dpx, if (flat) 78 else 56) {
     private val check = ImageView(c).apply { setImageResource(R.drawable.ic_check); imageTintList = android.content.res.ColorStateList.valueOf(Color.WHITE)
         background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(PK_CHECK) }; setPadding(dpx(3), dpx(3), dpx(3), dpx(3)); visibility = View.GONE }
     private val tagView = Font.on(TextView(c)).apply { textSize = 11f; setTextColor(Color.WHITE); maxLines = 1; setPadding(dpx(7), dpx(2), dpx(7), dpx(2))
         background = GradientDrawable().apply { cornerRadius = dpx(9).toFloat(); setColor(PK_TAG) }; visibility = View.GONE }
-    private val h = w * 9 / 16
+    private val h = w * (if (flat) 78 else 56) / 100
     override val grows get() = false                                  // the ring alone: growing, 24 moves cost ~8.4 s of CPU and ~610 frames on the FPT box, ~1.2 s and ~27 without
     override val glassy get() = false                                 // a window over Home: the glass's layer, composed over two see-through windows, made half the frames late (emulator: 50% janky, 48 ms median)
     var deadAlpha = 0.38f                                             // the key pad keeps a missing key's name readable
@@ -78,12 +78,14 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
             fill(ImageView(c).apply { setImageDrawable(banner.constantState?.newDrawable(c.resources) ?: banner); scaleType = ImageView.ScaleType.CENTER_CROP })
             name.text = label
         } else {
-            val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dpx(6), dpx(if (tag.isEmpty()) 4 else if (flat) 24 else 22), dpx(6), dpx(4)) }   // a tag sits on the top edge: the picture starts under it
-            val pic = art?.icon ?: if (flat) art?.banner else null   // an app with only a banner: the banner small, like an icon
+            val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dpx(6), dpx(if (tag.isEmpty()) 4 else if (flat) 28 else 22), dpx(6), dpx(4)) }   // a tag sits on the top edge: the picture starts under it
+            val pic = if (flat) art?.banner ?: art?.icon else art?.icon   // a key pad tile: the banner when there is one, it is what people know the app by
+            val side = if (flat) h - dpx(28 + 20 + 3) else h * 42 / 100            // under the chip, over the name
+            val wide = flat && art?.banner != null && pic === art.banner
             inner.addView(ImageView(c).apply {
-                if (pic != null) setImageDrawable(pic.constantState?.newDrawable(c.resources) ?: pic)   // a copy: the grid's tile has the same picture
+                if (pic != null) { setImageDrawable(pic.constantState?.newDrawable(c.resources) ?: pic); scaleType = ImageView.ScaleType.FIT_CENTER }   // a copy: the grid's tile has the same picture
                 else { setImageResource(if (plus) R.drawable.ic_plus else icon.takeIf { it != 0 } ?: R.drawable.ic_apps); imageTintList = android.content.res.ColorStateList.valueOf(if (plus) PK_FAINT else Color.WHITE) }
-            }, LayoutParams(h * (if (flat) 27 else 42) / 100, h * (if (flat) 27 else 42) / 100))
+            }, LayoutParams(if (wide) side * 16 / 9 else if (plus) side * 3 / 4 else side, if (plus) side * 3 / 4 else side))
             if (label.isNotEmpty()) inner.addView(Font.on(TextView(c)).apply {
                 text = label; textSize = 12f; setTextColor(if (plus) PK_SOFT else Color.WHITE); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dpx(if (flat) 1 else 4), 0, 0)

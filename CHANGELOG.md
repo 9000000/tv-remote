@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home, Tuỳ chỉnh → Phím nhanh: dùng chung bàn phím với "Gán phím điều khiển" (1-9, 0, 4 phím màu, rồi Khi bật TV và các phím remote không có); ô đã gán hiện banner/icon app to, nút số hoặc màu thật trên remote chọn đúng ô; ô trực tiếp có icon riêng.
 - TV Home, Widget: mỗi thẻ đang bật có MỘT nút ⚙ thay cho nút cỡ và nút kiểu; mở hộp cài đặt riêng của thẻ (vẽ từ một bảng chung `HomeConfig.options`), xem trước thật + dải bố cục có thẻ này được viền, đổi tới đâu áp dụng ngay vào màn hình chính. Đồng hồ có cỡ, mặt (cổ điển / tối giản / La Mã) và giao diện (tối / sáng) độc lập nhau; thời tiết, hệ thống, lịch âm, không khí có cỡ và kiểu thẻ. Có trên app TV Home và trang web. Cài đặt cũ (`wstyle`) tự chuyển sang `wopt`.
 - TV Home, sửa lỗi sập khi di chuyển ô (hộp FPT: "The specified child already has a parent"): lối tắt đã ghim nằm trong cả hai danh sách nên bị thêm vào lưới hai lần.
 - TV Home: lối tắt ghim (VTV1...) có mục Di chuyển như app, chung một thứ tự với app; khi di chuyển màn hình tự cuộn theo ô đang cầm (cả hai chiều, cả ô trực tiếp).
@@ -94,6 +95,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Cập nhật: hết lượt hỏi GitHub (lỗi "GitHub HTTP 403" khi nhà có nhiều máy cùng kiểm tra) thì app đọc bản mới thẳng từ trang release, vẫn kiểm chữ ký như cũ.
 
 **English**
+- TV Home, Customize → Quick keys: the same keypad as "Assign remote keys" (1-9, 0, the 4 colour keys, then Power-on and the keys the remote lacks); an assigned app shows its banner / icon large, a real number or colour key on the remote picks its tile; live tiles show their own icon.
 - TV Home, Widget: each card that is on has ONE ⚙ button instead of the size and look buttons; it opens that card's own settings dialog (drawn from one shared schema, `HomeConfig.options`) with a live preview and the layout strip with this card framed; each change applies to the home screen at once. The clock has size, face (classic / minimal / roman) and theme (dark / light) independently; weather, system, lunar and air have size and card look. On TV Home and the web page. Old `wstyle` settings migrate to `wopt`.
 - TV Home, fixed a crash when moving a tile (FPT box: "The specified child already has a parent"): a pinned shortcut sat in two lists and was added to the grid twice.
 - TV Home: pinned shortcuts (VTV1...) have Move like apps, in one shared order with them; while moving, the screen scrolls to follow the carried tile (both ways, live tiles too).

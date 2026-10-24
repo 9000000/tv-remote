@@ -1554,7 +1554,7 @@ class HomeActivity : Activity() {
         pad.addView(note(getString(R.string.am_key_hint), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2))
         if (said.isEmpty()) pad.addView(note(getString(R.string.am_key_move), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })
         else pad.addView(note(said, Color.WHITE), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })      // what the last key did, in the place of the note
-        pad.addView(dev.tvremote.home.keys.Keypad.build(this, ::dp, emptyList(), ::slot, ::toggle, tiles), LinearLayout.LayoutParams(-1, -2))
+        pad.addView(android.widget.ScrollView(this).apply { isVerticalScrollBarEnabled = false; clipChildren = true; clipToPadding = true; setPadding(dp(8), dp(8), dp(8), dp(8)); addView(dev.tvremote.home.keys.Keypad.build(this@HomeActivity, ::dp, emptyList(), ::slot, ::toggle, tiles)) }, LinearLayout.LayoutParams(-1, 0, 1f))   // the taller tiles (a banner each) scroll with the focus
         p.dialog.setOnKeyListener { _, code, e ->
             if (code in tiles.keys && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS) {   // the real key: assign it without walking to its button; its up and repeats are eaten too
                 if (e.action == KeyEvent.ACTION_DOWN && e.repeatCount == 0) toggle(code)

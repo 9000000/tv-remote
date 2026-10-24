@@ -20,7 +20,7 @@ import android.widget.TextView
  * The shell has no content: the app puts its picture in with [fill] and may add its own views to [face] after (badges).
  * [dp] is the app's own conversion; the ring lies OUTSIDE the face, so the tile keeps its place and the card is that much larger.
  */
-open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
+open class TvTile(c: Context, w: Int, dp: (Number) -> Int, hPct: Int = 56) : LinearLayout(c) {   // hPct: the face's height in % of its width (56 = 16:9)
     protected val card = FrameLayout(c)                             // what grows: the face and, round it, the ring
     protected val face = FrameLayout(c)                             // the picture, clipped to its rounded corners
     private val ring = View(c)
@@ -43,7 +43,7 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     init {
         orientation = VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
         clipChildren = false; clipToPadding = false
-        val h = w * 9 / 16
+        val h = w * hPct / 100
         face.clipToOutline = true
         shine.background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(SHINE_TOP, SHINE_MID, SHINE_END))
         shine.alpha = 0f; shine.translationY = -lift
