@@ -28,3 +28,6 @@ app/gradle/local.properties
 dev/node_modules/
 dev/package.json
 dev/package-lock.json
+
+# per-machine speed baselines (dev/perf): never committed
+dev/perf/.local/
