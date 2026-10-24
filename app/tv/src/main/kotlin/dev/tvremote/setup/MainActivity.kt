@@ -346,6 +346,9 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        if (Rules.hasCode(Rules.load(this)) && !Guard.isOpen(packageName) && PinActivity.showing == null) {   // a child must not turn the lock off here
+            startActivity(android.content.Intent(this, PinActivity::class.java).putExtra("pkg", packageName))
+        }
         shown = true
         showWeb()
         val s = setup

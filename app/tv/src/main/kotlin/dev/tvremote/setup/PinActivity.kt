@@ -101,6 +101,7 @@ class PinActivity : Activity() {
             val now = System.currentTimeMillis()
             val open = if (total) Rules.unlockUntil(o, now) > 0 || (Rules.totalLeftSec(o, try { stats.today(now, true).first } catch (e: Exception) { JSONObject() }, Kids.free(this@PinActivity, now), now) ?: 1L) > 0
                 else if (grant > 0) Rules.unlockUntil(o, now) > 0
+                else if (pkg == packageName) !Rules.hasCode(o)             // TV Setup's rule screens: free for kids mode, never without the code
                 else !Rules.needsPin(o, pkg, now, Kids.free(this@PinActivity, now))
             if (open) { if (!total) Guard.unlock(pkg); showing = null; finish(); return }
             val left = Lockout.until(this@PinActivity, now) - now

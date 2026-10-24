@@ -34,6 +34,10 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         fun volumeFixed(c: Context): Boolean = (c.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isVolumeFixed
         /** The right PIN was given for [pkg] on [PinActivity]: open until another app comes to the front. */
         fun unlock(pkg: String) { running?.unlocked = pkg }
+        /** [pkg] was opened with a code and nothing else came to the front since (or no Guard: nothing to ask then). */
+        fun isOpen(pkg: String): Boolean = running?.let { it.unlocked == pkg } ?: true
+        /** TV Setup's own screens that change the rules: with a code set they ask it, else a child turns the lock off from there. */
+        val RULE_SCREENS = setOf(MainActivity::class.java.name, ManageActivity::class.java.name)
         /** "Free RAM" on the notice: the apps waiting in the background closed; the MB that came back, null without ADB. */
         fun freeNow(): Long? = running?.free()
 
@@ -204,6 +208,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     // ---- app locks
     @Volatile private var unlocked = ""                               // the app the PIN was given for, until another comes to the front
     private var front = ""
+    private var frontClass = ""                                       // the activity on screen: TV Setup's PIN and notice screens are free, its rule screens are not
     private var eventsTo = 0L
     private var pinAt = 0L
     private val usage by lazy { c.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager }
@@ -218,7 +223,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val heavyOn = Heavy.on(o)
         val sched = Rules.schedApps(o)
         val kids = Rules.kidsMode(o)
-        if (apps.isEmpty() && !kids && sched.isEmpty() && !heavyOn) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
+        val code = Rules.hasCode(o)
+        if (apps.isEmpty() && !kids && sched.isEmpty() && !heavyOn && !code) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
         if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
             unlocked = ""
@@ -231,8 +237,12 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             lastStop[app] = now                                       // outside its window: closed here, before any PIN could be asked
             close(app, "sched")
         }
-        if (apps.isEmpty() && !kids) return if (sched.isEmpty()) 3_000 else 1_500   // a schedule's edge is noticed within a second and a half
         if (app.isNotEmpty() && app != unlocked && app != c.packageName) unlocked = ""
+        if (code && app == c.packageName && frontClass in RULE_SCREENS && unlocked != app && PinActivity.showing == null && now - pinAt > 2_000) {
+            askPin(app, now - pinAt < 5_000)                          // MainActivity asks at once itself; this catches Manage brought back from Recents
+            pinAt = now
+        }
+        if (apps.isEmpty() && !kids) return if (sched.isEmpty() && !code) 3_000 else 1_500   // a schedule's edge is noticed within a second and a half
         if (app != unlocked && Rules.needsPin(o, app, now, if (kids) Kids.free(c, now) else emptySet()) && PinActivity.showing == null && now - pinAt > 2_000) {
             askPin(app, now - pinAt < 5_000)                          // asked a moment ago and not shown: Android kept it back
             pinAt = now
@@ -247,7 +257,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         while (events.hasNextEvent()) {
             events.getNextEvent(e)
             when (e.eventType) {
-                android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> front = e.packageName ?: ""
+                android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> { front = e.packageName ?: ""; frontClass = e.className ?: "" }
                 android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> if (front == e.packageName) front = ""
             }
             eventsTo = maxOf(eventsTo, e.timeStamp)                   // asked again from that moment: the same events come twice, to the same end

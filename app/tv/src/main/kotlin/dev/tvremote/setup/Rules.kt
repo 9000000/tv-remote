@@ -377,6 +377,9 @@ internal object Rules {
         return JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true && m?.optBoolean("pin", true) != false).put("totp", totpOn(o)).put("ask", m?.optBoolean("ask") == true)
     }
 
+    /** A PIN or an Authenticator is set: TV Setup's own rule screens then ask it too ([Guard.RULE_SCREENS]). */
+    fun hasCode(o: JSONObject): Boolean = methods(o).let { it.optBoolean("pin") || it.optBoolean("totp") }
+
     fun kidsMode(o: JSONObject): Boolean = o.optJSONObject("lock")?.optString("mode") == "kids"
 
     /** In kids mode, the apps a child may open without a code. */
