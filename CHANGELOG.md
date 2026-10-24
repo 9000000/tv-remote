@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Home, giao diện có hình nền ảnh (Tết...): hiện ngay thay vì chờ rất lâu trên box yếu (không còn mở WebView; ảnh tải một lần rồi lưu, lần sau và khi mất mạng hiện tức thì), có nhãn "Đang tải hình nền…" trong lúc chờ; mở trang Giao diện thì ảnh được tải sẵn.
+
+**English**
+- TV Home, picture-background themes (Tết...): the background now shows at once instead of taking very long on a weak box (no WebView; the picture is downloaded once and kept, so the next pick or an offline start is instant), with a small "Loading background…" chip meanwhile; opening the Themes page pre-loads their pictures.
+
 ## 0.22.0 - 2026-10-25
 
 Web 0.22.0 · app điện thoại 0.22.0 · app TV 0.22.0 · TV Home 0.9.0 · TV Channels 0.6.0 · TV Games 0.6.0
