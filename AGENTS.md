@@ -236,6 +236,8 @@ What it takes care of, for doing it by hand:
   two emulators (`emu.sh` refuses a third: reuse the running one); heavy steps (ffmpeg, Gradle builds, `audit.js`) one at a time
   through `dev/test/light.sh <cmd>` (waits for room, `nice`, one lock), never several with `&`; test videos / GIFs from
   `dev/test/media.sh` (made once in `.cache/media`), and any ffmpeg on `lavfi` sets the length in the source (`:duration=`), never only `-t`.
+  A video background left looping on TV Home makes the TV emulator take ~9.5 cores (software codec + CPU-drawn GPU; 0.4% with TV
+  Home in the background, measured 2026-10-24): play it only while measuring, then a picture background or another app in front.
 - Unit tests (no device needed): `node --test app/shared/tests/ app/games/tests/` (also run by `dev/hooks/pre-push` before every push, since a push deploys `docs/`, and by `release.sh`; set up once per clone: `git config core.hooksPath dev/hooks`) (the web games' rules and bots: `app/games/tests`, beside the app that packs them, not in `docs/`, which the site publishes),
   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
   (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
