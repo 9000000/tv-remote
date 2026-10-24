@@ -70,7 +70,10 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          * emulator's to com.android.tv.provision). One shell call, made only before turning one off, clearing or removing it.
          */
         fun inUse(sh: (String) -> String, p: String): Boolean = inUse(
-            sh("dumpsys package $p 2>/dev/null | grep -c 'android.permission.TV_INPUT_HARDWARE'; dumpsys wifi 2>/dev/null | grep -cE 'cname=$p([ ,]|$)'"))
+            sh("dumpsys package $p 2>/dev/null | grep -c 'android.permission.TV_INPUT_HARDWARE'; dumpsys wifi 2>/dev/null | grep -cE 'cname=$p([ ,]|$)'" +
+                // the TV's Settings and inputs, whatever the brand calls them: a Sony whose Settings another tool removed hung at its logo
+                "; cmd package query-activities --brief -a android.settings.SETTINGS 2>/dev/null | grep -c '^ *$p/'" +
+                "; cmd package query-activities --brief -a android.intent.action.VIEW -t vnd.android.cursor.item/channel 2>/dev/null | grep -c '^ *$p/'"))
         fun inUse(out: String): Boolean = out.lines().any { (it.trim().toIntOrNull() ?: 0) > 0 }
         /** What this project turned off beyond its own lists, so Undo can turn exactly that back on. Kept on the TV. */
         const val OFF_LIST = "/data/local/tmp/tvr-disabled.txt"
