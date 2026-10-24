@@ -401,4 +401,8 @@
     <string name="c_cardlook_sub">weather, system, lunar, air: glass or tonal</string>
     <string name="c_cardlook_glass">Glass</string>
     <string name="c_cardlook_tonal">Tonal</string>
+    <string name="auto_on">Open when the TV turns on</string>
+    <string name="auto_off">Don\'t open when the TV turns on</string>
+    <string name="auto_needs_setup">Saved · needs the TV Setup app to open on power-on</string>
+    <string name="uninstall">Uninstall</string>
 </resources>

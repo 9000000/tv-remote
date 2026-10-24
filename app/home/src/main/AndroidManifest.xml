@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />   <!-- its own update, asked first (SelfUpdate) -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />   <!-- "Uninstall" in an app's menu: the system asks first -->
     <uses-permission android:name="android.permission.INTERNET" />               <!-- the weather card (Weather: Open-Meteo, the place from the internet address) -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   <!-- Wi-Fi, cable or offline on the network button -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />      <!-- the Wi-Fi signal on the system card (Widgets) -->

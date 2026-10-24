@@ -399,4 +399,8 @@
     <string name="c_cardlook_sub">thời tiết, hệ thống, âm lịch, không khí: kính hoặc tông màu</string>
     <string name="c_cardlook_glass">Kính</string>
     <string name="c_cardlook_tonal">Tông màu</string>
+    <string name="auto_on">Mở khi bật TV</string>
+    <string name="auto_off">Thôi mở khi bật TV</string>
+    <string name="auto_needs_setup">Đã lưu · cần app TV Setup để mở khi bật TV</string>
+    <string name="uninstall">Gỡ cài đặt</string>
 </resources>

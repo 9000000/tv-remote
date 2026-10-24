@@ -1090,6 +1090,11 @@ class HomeActivity : Activity() {
             acts.add(Triple(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
             acts.add(Triple(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
                 .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
+            val powerApp = conf.optBoolean("autoon") && conf.optString("autoapp") == a.pkg
+            acts.add(Triple(R.drawable.ic_power, if (powerApp) R.string.auto_off else R.string.auto_on) {   // the app that opens when the TV turns on: TV Setup does it (Keys.push)
+                Store.change(this, if (powerApp) JSONObject().put("autoon", false) else JSONObject().put("autoapp", a.pkg).put("autoon", true))
+                if (!Keys.setup(this)) toast(R.string.auto_needs_setup)   // saved anyway: it works the day TV Setup is there
+            })
             acts.add(Triple(R.drawable.ic_sparkle, if (Motion.on) R.string.anim_off else R.string.anim_on) { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
             if (a.grid) acts.add(Triple(R.drawable.ic_trash, R.string.tile_remove) {   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
                 fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
@@ -1097,6 +1102,10 @@ class HomeActivity : Activity() {
             }) else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))
                 .takeIf { packageManager.resolveActivity(it, 0) != null }   // a CVTE TV has no App info page: no entry rather than one that fails (cleanyourtv #1202)
                 ?.let { i -> acts.add(Triple(R.drawable.ic_info, R.string.info) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }
+            val removable = try { packageManager.getApplicationInfo(a.pkg, 0).let { (it.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0 || (it.flags and android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0 } } catch (e: Exception) { false }
+            if (a.pkg != packageName && removable) Intent(Intent.ACTION_DELETE, Uri.parse("package:" + a.pkg))
+                .takeIf { packageManager.resolveActivity(it, 0) != null }   // the same CVTE gap: no installer page, no entry
+                ?.let { i -> acts.add(Triple(if (a.grid) R.drawable.ic_close else R.drawable.ic_trash, R.string.uninstall) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }   // the trash is "remove from grid" there; the list follows PACKAGE_REMOVED
         }
         open = TvGlass.menu(this, R.style.Menu, a.label, acts.map { TvGlass.Item(it.first, getString(it.second), it.third) }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
     }
