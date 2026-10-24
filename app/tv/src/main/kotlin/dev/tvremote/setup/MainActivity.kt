@@ -288,6 +288,10 @@ class MainActivity : Activity() {
             (tiles.firstOrNull { it.view.isEnabled } ?: tiles[1]).view.let { it.isFocusableInTouchMode = true; it.requestFocus(); it.isFocusableInTouchMode = false }
             return true
         }
+        if (e.keyCode == android.view.KeyEvent.KEYCODE_BACK && scroll.hasFocus()) {   // Back from the log goes up to the buttons; the log keeps its place
+            if (e.action == android.view.KeyEvent.ACTION_UP) (scroll.focusSearch(View.FOCUS_UP) ?: tiles[0].view).requestFocus()
+            return true
+        }
         return super.dispatchKeyEvent(e)
     }
 
@@ -1125,12 +1129,14 @@ class MainActivity : Activity() {
             val row = android.text.SpannableString("$at  ${drawable(line)}\n")
             row.setSpan(android.text.style.ForegroundColorSpan(TvUi.DIM), 0, at.length, 0)   // the time stays quiet
             if (tint != null) row.setSpan(android.text.style.ForegroundColorSpan(tint), at.length, row.length, 0)
+            val atEnd = scroll.scrollY + scroll.height >= logView.bottom + scroll.paddingBottom - dp(8)   // read before the append: a reader higher up is not yanked down
             logView.append(row)
             if (logView.lineCount > 300) logView.editableText?.let { e ->        // the oldest go, the colours of the rest stay
                 var cut = 0; repeat(100) { cut = e.indexOf('\n', cut) + 1 }
                 e.delete(0, cut)
             }
-            scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+            // not fullScroll(): when nothing can scroll it hands the focus to the log (it is focusable), which is what pulled the focus down on its own
+            if (atEnd || !scroll.hasFocus()) scroll.post { scroll.scrollTo(0, maxOf(0, logView.bottom + scroll.paddingBottom - scroll.height)); scroll.invalidate() }
         }
     }
 
