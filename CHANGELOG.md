@@ -12,6 +12,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: kênh trong Yêu thích và nhóm tự tạo giờ có thêm các nguồn mới của chính kênh đó. Trước đây kênh chỉ giữ những link có lúc bấm lưu, nên nhóm "VTV" đã lưu vẫn mờ dù danh mục VTV đã có nguồn sống.
 - TV Channels (Việt Nam): thêm 11 kênh nước ngoài đang phát được: thiếu nhi (Cartoon Network, PBS Kids, Moonbug Kids, Baby Shark TV, Kartoon Channel, Lego Channel), nhạc (Movie Music by Stingray), giải trí (E!, BBC America, AsianCrush, Asian Drama). Đã thử phát từng link; kênh nào chết thì không được thêm.
 - TV Home: thẻ âm lịch không còn bị cắt dòng cuối ("tới Tết") vào ngày rằm, mùng 1 và Tết. Dòng "Hôm nay rằm" giờ nằm thành cột bên cạnh số ngày, thay vì đè lên trên.
+- Tối ưu TV: không còn tắt app đang mở nguồn vào (HDMI) hay Cài đặt của TV, dù app đó có trong danh sách gợi ý. Trên vài TV Sony, tắt nhầm app này làm ô nguồn vào không mở được hoặc mất lối vào Cài đặt (theo cleanyourtv).
+- TV Home: TV không có trang "Thông tin app" thì menu nhấn giữ không còn hiện mục này (trước đó bấm vào chỉ báo lỗi).
 
 **English**
 - TV Channels: VTV2 → VTV10, VTV5 Tây Nam Bộ and VTV5 Tây Nguyên are no longer greyed out. The new source is VTVgo's free player (VTV's own, no account needed), with 2–4 servers per channel; when a server does not answer, the next one is used. Before this, all 12 of iptv-org's VTV links were dead: the FPT links answered with an expired token and the other server did not answer at all.
@@ -19,6 +21,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Channels: channels in Favourites and in your own groups now also get that channel's newer sources. They used to keep only the links they had when saved, so a saved "VTV" group stayed greyed out while the VTV category had live sources.
 - TV Channels (Vietnam): 11 more foreign channels that play: kids (Cartoon Network, PBS Kids, Moonbug Kids, Baby Shark TV, Kartoon Channel, Lego Channel), music (Movie Music by Stingray), entertainment (E!, BBC America, AsianCrush, Asian Drama). Each link was played first; dead ones were left out.
 - TV Home: the lunar card no longer loses its last line ("to Tết") on full-moon, new-moon and Tết days. "Full moon today" now sits in a column beside the day counts instead of above them.
+- Optimize TV: never turns off the app that opens the TV's inputs (HDMI) or its Settings, even when it is on the suggested list. On some Sony TVs turning it off left the input tiles dead or Settings unreachable (from cleanyourtv).
+- TV Home: on a TV with no "App info" page the long-press menu no longer shows that entry (it only failed before).
 
 ## 0.21.0 - 2026-10-24
 

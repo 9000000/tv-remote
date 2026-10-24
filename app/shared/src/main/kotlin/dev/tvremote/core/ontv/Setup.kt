@@ -138,13 +138,14 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         tvOnly()
         Bloat.fresh()
         val enabled = sh("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
-        val suggest = suggested().filter { it in enabled }
+        val guard = handlers()
+        val suggest = suggested().filter { it in enabled && it !in guard }
         val home = homeNow()
         val shown = HashSet<String>()
         for (cat in arrayOf("LEANBACK_LAUNCHER", "LAUNCHER"))              // the apps a person sees on the TV
             for (line in sh("cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.$cat 2>/dev/null").split("\n"))
                 if (line.contains('/')) shown.add(line.trim().substringBefore('/'))
-        val others = shown.filter { it in enabled && it !in suggest && it != home && !kept(it) }.sortedBy { (label(it) ?: it).lowercase() }
+        val others = shown.filter { it in enabled && it !in suggest && it != home && !kept(it) && it !in guard }.sortedBy { (label(it) ?: it).lowercase() }
         fun item(p: String) = org.json.JSONObject().put("pkg", p).put("label", Bloat.suggest()[p] ?: label(p) ?: NAMES[p] ?: p.split('.').let { s -> if (s.last().length <= 3 && s.size > 1) s.takeLast(2).joinToString(".") else s.last() })
         return org.json.JSONObject()
             .put("anim", sh("settings get global window_animation_scale").trim() != "0.0")
@@ -173,7 +174,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
 
         Bloat.fresh()
         val pick = c.disable ?: suggested()
-        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) HOME_PKG else "")   // whatever the list says, the TV keeps a home and a keyboard
+        val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) HOME_PKG else "") + handlers()   // whatever the list says, the TV keeps a home, a keyboard, its inputs and Settings
         var off = 0
         for (p in pick.distinct()) {
             if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p) || inUse(sh, p)) continue
@@ -216,6 +217,14 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     private fun suggested(): List<String> = (GOOGLE + SONY).filterNot { Bloat.dropped(it) } + Bloat.suggest().keys
 
     private fun kept(p: String) = mustKeep(p)
+
+    /**
+     * The apps that open an input (VIEW of a channel: TV Home's input tiles, InputOpen) and Settings, asked of the TV rather than by
+     * name: one turned off left the input tiles dead on a Sony W800G and Settings unreachable on a W800C (cleanyourtv 6fa18972).
+     * Empty where the shell has no query-activities (Android 8 and older): the name lists alone, as before.
+     */
+    private fun handlers(): Set<String> = sh("cmd package query-activities --brief -a android.intent.action.VIEW -t vnd.android.cursor.item/channel 2>/dev/null;" +
+        " cmd package query-activities --brief -a android.settings.SETTINGS 2>/dev/null").split("\n").filter { it.contains('/') }.map { it.trim().substringBefore('/') }.toSet()
 
     /** The app the Home button opens now ("android" when Android asks which one). */
     private fun homeNow(): String = last(sh(RESOLVE_HOME)).substringBefore('/')

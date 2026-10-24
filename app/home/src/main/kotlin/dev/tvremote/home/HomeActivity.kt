@@ -1044,9 +1044,9 @@ class HomeActivity : Activity() {
             if (a.grid) acts.add(Triple(R.drawable.ic_trash, R.string.tile_remove) {   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
                 fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
                 Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
-            }) else acts.add(Triple(R.drawable.ic_info, R.string.info) {
-                try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))) } catch (e: Exception) { toast(R.string.no_open) }
-            })
+            }) else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))
+                .takeIf { packageManager.resolveActivity(it, 0) != null }   // a CVTE TV has no App info page: no entry rather than one that fails (cleanyourtv #1202)
+                ?.let { i -> acts.add(Triple(R.drawable.ic_info, R.string.info) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }
         }
         open = TvGlass.menu(this, R.style.Menu, a.label, acts.map { TvGlass.Item(it.first, getString(it.second), it.third) }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
     }
