@@ -7,12 +7,14 @@
     install: '<path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/>',
     guide: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 21.5V5.5M8 7h8"/>',
     apps: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/>',
+    tvs: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
     demo: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z"/>'
   };
   // the same links on every page, in this order (a page's own sections are not here: the bar must look the same everywhere)
   var LINKS = [
     { id: "guide", href: "guide", vi: "Hướng dẫn", en: "Guide" },
     { id: "apps", href: "apps", vi: "Các app", en: "The apps" },
+    { id: "tvs", href: "tvs", vi: "TV đã chạy", en: "TVs it ran on" },
     { id: "demo", href: "demo/", vi: "Dùng thử", en: "Live demo" }
   ];
   var own = page === "home" || page === "tour";                       // pages with their own Install part

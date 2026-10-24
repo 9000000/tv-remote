@@ -16,6 +16,11 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://tvremote.pages.dev/apps?lang=en"/>
   </url>
   <url>
+    <loc>https://tvremote.pages.dev/tvs</loc>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://tvremote.pages.dev/tvs?lang=vi"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://tvremote.pages.dev/tvs?lang=en"/>
+  </url>
+  <url>
     <loc>https://tvremote.pages.dev/demo/</loc>
   </url>
 </urlset>

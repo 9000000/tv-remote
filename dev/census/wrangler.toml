@@ -1,0 +1,9 @@
+name = "tvr-census"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tvr-census"
+database_id = "d66784e7-a940-4372-a939-c1d747d30339"

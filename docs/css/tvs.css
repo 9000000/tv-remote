@@ -1,0 +1,40 @@
+/* The census list (js/tvs.js): on tvs.html and the home page. Tokens from site.css. */
+.tvs-box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.tv-tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.tv-q{flex:1 1 240px;min-width:0;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg2);color:var(--text);font:inherit;font-size:15px}
+.tv-q:focus{outline:2px solid var(--blue);outline-offset:1px}
+.tv-chips{display:flex;flex-wrap:wrap;gap:8px}
+.tv-chips button{height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.tv-chips button:hover{color:var(--text)}
+.tv-chips button[aria-pressed="true"]{background:rgba(91,140,255,.16);border-color:var(--blue);color:var(--text)}
+.tv-chips .n{color:var(--dim);font-weight:500;margin-left:4px}
+.tv-sum{margin:14px 2px 10px;color:var(--muted);font-size:14px;min-height:1.5em}
+.tv-list{columns:2 360px;column-gap:16px}
+.tv-brand{padding:0;break-inside:avoid;margin:0 0 14px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.tv-brand h3{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0;padding:10px 14px;font-size:15px;letter-spacing:0;background:var(--card2);border-bottom:1px solid var(--line)}
+.tv-brand h3 b{font-size:12px;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--line2);border-radius:999px;padding:1px 9px}
+.tv-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:6px 10px;padding:9px 14px;border-top:1px solid var(--line);font-size:14.5px}
+.tv-brand h3+.tv-row{border-top:0}
+.tv-m{overflow-wrap:anywhere;font-weight:600}
+.tv-a{color:var(--muted);font-size:13px;white-space:nowrap}
+.tv-c{color:var(--dim);font-size:13px;font-family:"JetBrains Mono",ui-monospace,monospace;min-width:2.2em;text-align:right}
+.tv-b{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+.tv-b.k-box{color:var(--orange);border-color:rgba(255,163,26,.45)}
+.tv-b.k-projector{color:#e06ad6;border-color:rgba(224,106,214,.45)}
+.tv-b.k-tv{color:var(--blue);border-color:rgba(91,140,255,.45)}
+.tv-note{color:var(--muted);padding:28px 8px;text-align:center;column-span:all}
+.tv-more{display:flex;width:fit-content;margin:6px auto 0;column-span:all}
+@media(max-width:560px){
+  .tvs-box{padding:14px}
+  .tv-chips{width:100%}
+  .tv-row{grid-template-columns:minmax(0,1fr) auto auto;padding:9px 12px}
+  .tv-a{grid-column:1;grid-row:2}.tv-b{grid-column:3;grid-row:1}.tv-c{grid-column:2;grid-row:1}
+}
+.tvs-home{padding:64px 0 24px}
+.tvs-home .wrap>h2{text-align:center}.tvs-home .lead{margin:0 auto 24px;text-align:center}
+.tvs-home .tvs-box{max-width:980px;margin:0 auto}
+.tvs-home .tv-list{max-height:none}
+.tvs-foot{margin-top:14px;color:var(--dim);font-size:13px}
+.tvp{padding-top:40px;padding-bottom:64px}
+.tvp h1{font-size:clamp(28px,4vw,40px);font-weight:800;margin:10px 0 12px}
+.tvp .tvs-box{margin-top:24px}

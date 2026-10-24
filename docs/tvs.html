@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV đã chạy · TV Remote</title>
+<meta name="description" content="Những mẫu TV, box và máy chiếu mà TV Remote đã chạy, tổng hợp ẩn danh từ các app. / The TVs, boxes and projectors TV Remote has run on, counted anonymously by the apps.">
+<meta name="theme-color" content="#0a0d14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TV đã chạy / TVs it ran on">
+<meta property="og:image" content="https://tvremote.pages.dev/img/og-vi.jpg">
+<meta property="og:url" content="https://tvremote.pages.dev/tvs">
+<meta property="og:site_name" content="TV Remote">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://tvremote.pages.dev/tvs">
+<link rel="alternate" hreflang="vi" href="https://tvremote.pages.dev/tvs?lang=vi">
+<link rel="alternate" hreflang="en" href="https://tvremote.pages.dev/tvs?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tvremote.pages.dev/tvs">
+<script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})()</script>
+<link rel="icon" href="img/icon.png?v=1024">
+<link rel="apple-touch-icon" href="img/icon-180.png?v=1024">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/tvs.css">
+</head>
+<body>
+
+<script src="js/nav.js" data-page="tvs"></script>
+
+<main class="wrap tvp">
+  <span class="eyebrow"><span class="vi">Cộng đồng</span><span class="en">Community</span></span>
+  <h1><span class="vi">TV đã chạy</span><span class="en">TVs it ran on</span></h1>
+  <p class="lead"><span class="vi">Các mẫu TV, box và máy chiếu mà app đã chạy trên đó. Mỗi cài đặt gửi một báo cáo ẩn danh mỗi ngày: hãng, mẫu, bản Android và các tính năng chạy được. Không có IP, không có tài khoản.</span><span class="en">The TVs, boxes and projectors the apps have run on. Each install sends one anonymous report a day: brand, model, Android version and which features worked. No IP, no account.</span></p>
+  <div class="tvs-box" data-tvs></div>
+  <p class="tvs-foot"><span class="vi">Số liệu cập nhật mỗi 10 phút.</span><span class="en">Numbers refresh every 10 minutes.</span></p>
+</main>
+<script>
+(function(){
+  var root = document.documentElement, T = { vi: "TV đã chạy · TV Remote", en: "TVs it ran on · TV Remote" };
+  function setLang(l){
+    root.dataset.lang = l; root.lang = l; document.title = T[l];
+    document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
+    try { localStorage.setItem("lang", l); } catch(e){}
+  }
+  setLang(root.dataset.lang);
+  document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
+})();
+</script>
+<script src="js/tvs.js"></script>
+</body>
+</html>
