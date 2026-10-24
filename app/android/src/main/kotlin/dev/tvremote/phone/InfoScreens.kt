@@ -61,7 +61,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(T("info_screens.the_phone_s_volume")), gap(18))
     lateinit var vol: Button
-    val volLabel = { vol.setLabel((if (prefs.getBoolean("volKeysTv", true)) "@check|" else "@close|") + T("info_screens.set_the_tv_s")) }
+    val volLabel = { vol.setToggle(prefs.getBoolean("volKeysTv", true), T("info_screens.set_the_tv_s")) }
     vol = row("") {
         prefs.edit().putBoolean("volKeysTv", !prefs.getBoolean("volKeysTv", true)).apply()
         volLabel()
@@ -71,7 +71,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(T("info_screens.when_pressing_a_key")), gap(18))
     lateinit var buzzRow: Button
-    val buzzLabel = { buzzRow.setLabel((if (prefs.getBoolean("buzz", true)) "@check|" else "@close|") + T("about.vibrate")) }
+    val buzzLabel = { buzzRow.setToggle(prefs.getBoolean("buzz", true), T("about.vibrate")) }
     buzzRow = row("") {
         prefs.edit().putBoolean("buzz", !prefs.getBoolean("buzz", true)).apply()
         buzzLabel()
@@ -82,7 +82,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(T("info_screens.tv_keyboard")), gap(18))
     lateinit var kbdRow: Button
-    val kbdLabel = { kbdRow.setLabel((if (prefs.getBoolean("kbdAuto", true)) "@check|" else "@close|") + T("about.tv_keyboard_auto")) }
+    val kbdLabel = { kbdRow.setToggle(prefs.getBoolean("kbdAuto", true), T("about.tv_keyboard_auto")) }
     kbdRow = row("") {
         prefs.edit().putBoolean("kbdAuto", !prefs.getBoolean("kbdAuto", true)).apply()
         kbdLabel()
@@ -92,7 +92,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(T("info_screens.updates")), gap(18))
     lateinit var auto: Button
-    val autoLabel = { auto.setLabel((if (prefs.getBoolean("autoUpdate", true)) "@check|" else "@close|") + T("info_screens.check_for_updates_automatically")) }
+    val autoLabel = { auto.setToggle(prefs.getBoolean("autoUpdate", true), T("info_screens.check_for_updates_automatically")) }
     auto = row("") {
         prefs.edit().putBoolean("autoUpdate", !prefs.getBoolean("autoUpdate", true)).apply()
         autoLabel()

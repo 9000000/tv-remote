@@ -165,6 +165,39 @@ internal fun TextView.setLabel(s: String) {
     post { IconBesideText.place(this) }                               // new words on a button of the same size: no layout follows
 }
 
+/**
+ * A switch's row: a ring before the words, a filled accent disc with a white check while on (app/DESIGN-TV.md: a switch is a
+ * ring, never "✓" / "✗" in front of the words, which read as plain text).
+ */
+internal fun TextView.setToggle(on: Boolean, s: String) {
+    text = s
+    val z = (textSize * 1.25f).roundToInt()
+    val d = Toggle(on, ACCENT, DIM)
+    d.setBounds(0, 0, z, z)
+    setCompoundDrawablesRelative(d, null, null, null)
+    compoundDrawablePadding = (10 * resources.displayMetrics.density).roundToInt()
+    removeOnLayoutChangeListener(IconBesideText); addOnLayoutChangeListener(IconBesideText)
+    post { IconBesideText.place(this) }
+}
+
+private class Toggle(val on: Boolean, val fill: Int, val off: Int) : android.graphics.drawable.Drawable() {
+    private val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    override fun draw(c: android.graphics.Canvas) {
+        val b = bounds; val r = b.width() / 2f; val cx = b.exactCenterX(); val cy = b.exactCenterY(); val w = r / 6f
+        if (on) {
+            p.style = android.graphics.Paint.Style.FILL; p.color = fill; c.drawCircle(cx, cy, r, p)
+            p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = w * 1.3f; p.color = Color.WHITE
+            p.strokeCap = android.graphics.Paint.Cap.ROUND; p.strokeJoin = android.graphics.Paint.Join.ROUND
+            c.drawPath(android.graphics.Path().apply { moveTo(cx - r * .45f, cy + r * .02f); lineTo(cx - r * .12f, cy + r * .33f); lineTo(cx + r * .45f, cy - r * .3f) }, p)
+        } else {
+            p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = w; p.color = off; c.drawCircle(cx, cy, r - w / 2, p)
+        }
+    }
+    override fun setAlpha(a: Int) { p.alpha = a }
+    override fun setColorFilter(f: android.graphics.ColorFilter?) { p.colorFilter = f }
+    @Deprecated("Deprecated in Java") override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+}
+
 /** [setLabel] with a turning ring in the icon's place: a button that is busy (Scan the Wi-Fi) shows it is, not only says so. */
 internal fun TextView.setBusy(s: String) {
     text = s.replace(Regex("^[^\\p{L}\\p{N}]+"), "")                     // its ⏳ would be a second icon

@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- App điện thoại, Cài đặt: các nút bật/tắt (nút âm lượng, Rung, Bàn phím TV, Tự kiểm tra bản mới) là vòng tròn, bật thì tròn xanh có dấu tích, thay cho ✓ / ✗ trơn.
 - Gửi lên TV > Phát nhạc / tệp khác: video và nhạc mở bằng trình phát của TV Setup (giữ đúng tỉ lệ khung hình, viền đen, tự phát lại; OK = tạm dừng, trái/phải = ±10 giây, Back = đóng) thay vì trình phát có sẵn của TV hay kéo giãn video dọc và chỉ phát một lần. TV Setup cũ vẫn dùng trình phát của TV.
 - TV Home: thẻ sống "Đã xem" (TV Setup): số giờ TV đã bật màn hình hôm nay trong vòng tròn (đầy ở 8 giờ, vàng từ 6 giờ, đỏ từ 10 giờ), "Hôm qua …" bên dưới; dùng đúng số của thẻ "App dùng nhiều". Cần TV Setup mới (bản cũ không có thẻ này trong danh sách).
 - TV Home chủ đề: nhìn đang dùng chưa lưu thì tự giữ lại ở ô "Giao diện trước" trước khi đổi chủ đề; chủ đề của bạn nằm riêng mục "Chủ đề của bạn"; lưu có đặt tên (bàn phím TV); giữ OK trên chủ đề (web: nút ⓘ) xem nó chỉnh gì.
@@ -49,8 +50,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Màn nhập mã: 6 ô cho mã Google Authenticator, nhập sai báo ngay; mã dự phòng 8 số nhập qua nút "Dùng mã dự phòng".
 - TV Setup: menu Tối ưu, Kết nối, Cập nhật có icon và dòng mô tả; công tắc bật/tắt hiện dấu tick hoặc vòng tròn ở cuối dòng thay cho chữ.
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
+- Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- Phone app settings: switches (TV volume keys, Vibrate, TV keyboard, Check for updates) show a ring, a filled blue disc with a check while on, instead of a bare ✓ / ✗.
+- TV dialogs with a single button (a notice, details): they open with the D-pad on the button, so one OK press closes them.
 - Send to TV > Play music / other file: video and songs open in TV Setup's own player (picture shape kept with black bars, loops; OK = pause, left/right = 10 s, Back closes) instead of the TV's own player, which stretched a portrait video and played it once. An older TV Setup still uses the TV's player.
 - TV Home: a "Watched" live tile (TV Setup): how long the TV's screen was on in apps today, in a ring (full at 8 h, amber from 6 h, red from 10 h), "Yest. …" under it; the same count as the usage card. Needs a newer TV Setup (an older one does not list it).
 - TV Home themes: a look in use that is not saved is kept in a "Previous look" slot before a theme is applied; your themes have their own section; saving asks for a name (TV keyboard); hold OK on a theme (web: the ⓘ button) to see what it sets.
