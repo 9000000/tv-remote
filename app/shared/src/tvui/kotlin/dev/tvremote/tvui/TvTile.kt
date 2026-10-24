@@ -24,6 +24,9 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     protected val card = FrameLayout(c)                             // what grows: the face and, round it, the ring
     protected val face = FrameLayout(c)                             // the picture, clipped to its rounded corners
     private val ring = View(c)
+    /** The name's alpha while not focused: 0, or 1 for a tile whose name always shows (a renamed app on TV Home). */
+    var nameRest = 0f
+        set(v) { field = v; if (!hasFocus()) name.alpha = v }
     val name = TextView(c)                                          // under the card, shown while focused; the app sets its font
     private val shine = View(c)
     private var content: View = face                                // the picture, scaled inside the face
@@ -97,12 +100,12 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     fun focus(on: Boolean) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
         if (grows) card.setLayerType(if (on) LAYER_TYPE_NONE else LAYER_TYPE_HARDWARE, null)   // before withLayer(), which puts this back after
-        if (!grows) { ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; return }
+        if (!grows) { ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else nameRest; name.translationY = 0f; return }
         if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
             val s = if (on) GROW else 1f
             card.translationX = 0f; card.translationY = 0f
             card.scaleX = s; card.scaleY = s; card.translationZ = if (on) lift else 0f; content.scaleX = if (on) 1.05f else 1f; content.scaleY = content.scaleX
-            ring.alpha = if (on && !glassy) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; shine.alpha = 0f
+            ring.alpha = if (on && !glassy) 1f else 0f; name.alpha = if (on) 1f else nameRest; name.translationY = 0f; shine.alpha = 0f
             return
         }
         // in on a spring, out on a plain glide a little slower: the next tile's rise leads, the last one sinks behind it
@@ -112,7 +115,7 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
         card.translationX = 0f; card.translationY = 0f
         if (Motion.calm) {                                            // one animator, not five: the rest is set at once
             card.translationZ = 0f; content.scaleX = 1f; content.scaleY = 1f; shine.alpha = 0f; name.translationY = 0f
-            ring.alpha = if (on && !glassy) 1f else 0f; name.alpha = if (on) 1f else 0f
+            ring.alpha = if (on && !glassy) 1f else 0f; name.alpha = if (on) 1f else nameRest
             card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
             return
         }
@@ -122,7 +125,7 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
         card.animate().scaleX(s).scaleY(s).setDuration(t).setInterpolator(ip).withLayer().start()
         content.animate().scaleX(if (on) 1.05f else 1f).scaleY(if (on) 1.05f else 1f).setDuration(t).setInterpolator(ip).start()
         ring.animate().alpha(if (on && !glassy) 1f else 0f).setDuration(if (on) 200L else 160L).setInterpolator(Motion.glide).start()
-        name.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
+        name.animate().alpha(if (on) 1f else nameRest).translationY(if (on || nameRest > 0f) 0f else -lift / 3).setDuration(if (on) 360L else 200L).setInterpolator(Motion.glide).start()
         // the gloss: light from above that settles on the card as it rises, rather than a sweep on every move (busy when stepping fast)
         shine.animate().alpha(if (on) 1f else 0f).translationY(if (on) 0f else -lift).setDuration(if (on) 420L else 200L).setInterpolator(Motion.glide).start()
     }

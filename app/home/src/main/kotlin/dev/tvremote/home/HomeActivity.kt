@@ -1268,12 +1268,8 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             content = inner
         }
         face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-        name.text = if (banner != null && app?.renamed != true) label else ""                 // a tile without a banner already shows its name inside
-        if (banner != null && app?.renamed == true) face.addView(Font.on(TextView(c)).apply {   // the person's own name stays on a banner (two YouTubes look the same), not only while focused
-            text = label; textSize = 11f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END
-            setPadding(dp(7), dp(2), dp(7), dp(3)); typeface = Font.medium
-            background = GradientDrawable().apply { setColor(Customize.NAME_SCRIM); cornerRadius = dp(10).toFloat() }
-        }, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(6), 0, dp(6), dp(6)) })
+        name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
+        if (banner != null && app?.renamed == true) nameRest = 1f       // the person's name stays under the banner (two YouTubes look the same), not only while focused
     }
 
     /** A live tile's newest state from its provider (null: no answer); [animate] when motion is on and not calm. */
