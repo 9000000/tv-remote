@@ -79,6 +79,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home, Tùy chỉnh → Widget: mỗi thẻ có nút kiểu riêng (bấm OK đổi sang kiểu kế tiếp của thẻ đó: Kính / Tông màu, đồng hồ Cổ điển / Sáng / Tối giản / La Mã), thay cho công tắc "Kiểu thẻ" chung; bỏ dòng nhắc ⌃⌄.
 
 - TV Home, Chủ đề: chủ đề có nền video (hoặc trang web chỉ là một video) có dấu ▶ ở góc ảnh xem trước, trên TV và trên trang cài đặt.
+- Cập nhật: hết lượt hỏi GitHub (lỗi "GitHub HTTP 403" khi nhà có nhiều máy cùng kiểm tra) thì app đọc bản mới thẳng từ trang release, vẫn kiểm chữ ký như cũ.
 - Giọng nói, nói gì cũng hiểu hơn: "ra màn hình chính", "mở tivi game", "mở tivi channel", "mở vtv3", "tắt youtube" (đóng app, cần ADB; không bao giờ đóng TV Setup / TV Home), mở cài đặt, lên xuống trái phải, OK, menu; cả tiếng Anh. Các câu nói giờ là danh sách có chữ ký trên trang web (docs/voice/phrases.json), thêm câu mới không cần cập nhật app; có bản đóng gói sẵn khi không có mạng.
 **English**
 - TV Setup, mic button on the TV's remote (new, off by default): turn it on in the Health tab or in TV Setup and the mic button opens TV Remote's voice on the TV itself (live text and the action: keys, volume, open app, channel, timer, scenes) instead of Google Assistant. No recognizer or no network: the button stays as it was. Needs a newer TV Setup (and TV Setup Keys).
@@ -152,6 +153,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Site and app pictures re-compressed without a visible change (6% fewer bytes; `dev/optimize_images.py`); the wallpapers and launcher pictures are pinned by hash and stay as they were
 - TV Home, Customize → Widgets: each card has its own look button (OK steps to that card's next look: Glass / Tonal, the clock Classic / Light / Minimal / Roman), replacing the one shared "Card look" switch; the ⌃⌄ hint is gone.
 - TV Home, Themes: a theme with a video background (or a web page that is only a video) shows ▶ in the corner of its preview, on the TV and on the settings page.
+- Updates: when GitHub's API is out of asks ("GitHub HTTP 403", several devices at home checking), the apps read the latest release from its page instead, with the same signed checksums.
 
 ## 0.21.0 - 2026-10-24
 - Voice understands more: "go to the home screen", "open tivi game", "open tivi channel", "open vtv3", "close youtube" (closes the app, needs ADB; never TV Setup / TV Home), open settings, up / down / left / right, OK, menu; in Vietnamese and English. The phrases are now a signed list on the site (docs/voice/phrases.json), so new ones arrive without an app update; a packed copy is the offline fallback.

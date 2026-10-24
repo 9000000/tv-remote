@@ -71,9 +71,10 @@ class Release private constructor(val version: String, val url: String, val note
             c.setRequestProperty("Accept", "application/vnd.github+json")
             try {
                 if (c.responseCode == 404) return null                // no release published yet
+                if ((c.responseCode == 403 || c.responseCode == 429) && api == "https://api.github.com") return byTag(current, app, asset)
                 if (c.responseCode != 200) throw IOException("GitHub HTTP " + c.responseCode)
                 val o = JSONObject(text(c))
-                var version = o.getString("tag_name").replaceFirst(Regex("^v"), "")
+                val version = o.getString("tag_name").replaceFirst(Regex("^v"), "")
                 var apk: String? = null
                 var versions: String? = null
                 var sums: String? = null
@@ -90,17 +91,47 @@ class Release private constructor(val version: String, val url: String, val note
                     }
                 }
                 if (apk == null || sums == null || sig == null) return null   // still being put together (or from before the checksums)
-                if (versions != null) version = JSONObject(get(versions)).optString(app, version)
-                if (compare(version, current) <= 0) return null
-                val list = get(sums)
-                if (!signed(list.toByteArray(Charsets.UTF_8), get(sig))) throw IOException(UNSIGNED)
-                val signedVersion = signedVersion(list, app)
-                if (signedVersion != null && signedVersion != version) throw IOException(UNSIGNED)   // an old signed list under a newer version.json
-                val sha = sum(list, asset) ?: return null
-                return Release(version, apk, o.optString("body", "").trim(), sha)
+                return checked(current, app, asset, version, apk, versions, sums, sig, o.optString("body", "").trim())
             } finally {
                 c.disconnect()
             }
+        }
+
+        /**
+         * The API's 60 asks an hour are per address, and one home shares one: a phone, a computer and the TV apps checking
+         * used them up (GitHub HTTP 403). The release page is not counted that way: its redirect names the latest tag, and the
+         * files sit at fixed links under it. The notes are not there; the signed checksums are, so nothing is trusted less.
+         */
+        private fun byTag(current: String, app: String, asset: String): Release? {
+            val c = open("https://github.com/$REPO/releases/latest")
+            c.instanceFollowRedirects = false
+            val tag = try {
+                c.getHeaderField("Location")?.substringAfterLast("/tag/", "")?.takeIf { it.isNotEmpty() && it.length < 40 }
+            } finally { c.disconnect() } ?: throw IOException("GitHub HTTP 403")
+            val base = "https://github.com/$REPO/releases/download/$tag/"
+            val sums = base + "SHA256SUMS"
+            if (!exists(sums)) return null                            // still being put together (or from before the checksums)
+            val versions = (base + "versions.json").takeIf { exists(it) }
+            return checked(current, app, asset, tag.replaceFirst(Regex("^v"), ""), base + asset, versions, sums, base + "SHA256SUMS.sig", "")
+        }
+
+        private fun exists(url: String): Boolean {
+            val c = open(url)
+            c.requestMethod = "HEAD"
+            try { return c.responseCode == 200 } finally { c.disconnect() }
+        }
+
+        private fun checked(current: String, app: String, asset: String, tagVersion: String, apk: String, versions: String?,
+                            sums: String, sig: String, body: String): Release? {
+            var version = tagVersion
+            if (versions != null) version = JSONObject(get(versions)).optString(app, version)
+            if (compare(version, current) <= 0) return null
+            val list = get(sums)
+            if (!signed(list.toByteArray(Charsets.UTF_8), get(sig))) throw IOException(UNSIGNED)
+            val signedVersion = signedVersion(list, app)
+            if (signedVersion != null && signedVersion != version) throw IOException(UNSIGNED)   // an old signed list under a newer version.json
+            val sha = sum(list, asset) ?: return null
+            return Release(version, apk, body, sha)
         }
 
         private fun get(url: String): String {
