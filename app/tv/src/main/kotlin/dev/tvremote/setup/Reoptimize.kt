@@ -75,7 +75,7 @@ internal class Reoptimize(private val c: Context, private val adb: () -> Adb?) {
         var turned = 0
         if (listed.isNotEmpty()) {
             val hist = history(); val now = System.currentTimeMillis(); val given = gaveUp().toMutableSet()
-            val back = plan(listed, pkgs("pm list packages"), pkgs("pm list packages -d"), { Setup.mustKeep(it) }, given)
+            val back = plan(listed, pkgs("pm list packages"), pkgs("pm list packages -d"), { Setup.mustKeep(it) || it == dev.tvremote.home.HomeConfig.PKG }, given)
             for (p in back) {
                 val times = (0 until (hist.optJSONArray(p)?.length() ?: 0)).map { hist.getJSONArray(p).getLong(it) }.filter { now - it < DAY_MS }
                 if (fightsBack(times, now)) { given.add(p); WireLog.all.add("·", "reoptimize: gave up on $p, it keeps coming back"); continue }

@@ -62,7 +62,7 @@ class HomeTilesTest {
         val running = listOf("dev.tvremote.home", "dev.tvremote.setup", "dev.tvremote.channels", "com.netflix.ninja", "com.mitv.launcher",
             "com.google.android.inputmethod.latin", "com.acme.access", "com.android.systemui", "com.google.android.gms", "android.process.acore",
             "com.tailscale.ipn", "com.spotify.tv.android", "com.disney.disneyplus")
-        assertEquals(listOf("com.spotify.tv.android", "com.disney.disneyplus"), HomeTiles.targets(running, front, safe))
+        assertEquals(listOf("dev.tvremote.channels", "com.spotify.tv.android", "com.disney.disneyplus"), HomeTiles.targets(running, front, safe))   // TV Channels is an ordinary app; TV Home and TV Setup are spared
         assertTrue(HomeTiles.protectedPkg("dev.tvremote.home", "", emptySet()))
         assertTrue(HomeTiles.protectedPkg("dev.tvremote.setup", "", emptySet()))
     }

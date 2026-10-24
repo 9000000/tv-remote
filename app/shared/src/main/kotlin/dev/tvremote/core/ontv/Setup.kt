@@ -62,7 +62,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          */
         val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata)" +
             "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
-            "|dev\\.tvremote\\..*|com\\.tailscale\\.ipn")
+            "|dev\\.tvremote\\.setup(\\.keys)?|com\\.tailscale\\.ipn")   // TV Home only while it is the home screen (callers check); TV Channels, TV Games and the Phone app are ordinary apps
         /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
         fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.keep(p)
         /**

@@ -48,7 +48,7 @@ internal class HeavyMode(private val c: Context, private val adb: () -> Adb?) {
         if (!Heavy.on(rules) || !awake || a == null) { synchronized(tracker) { tracker.later(pkg, now) }; return }   // off, TV in standby or no ADB: not now
         fun sh(cmd: String) = try { a.shell(cmd) } catch (e: Exception) { "" }
         val front = Foreground.parse(sh(Foreground.CMD))               // the usage events can be a few seconds late
-        val v = if (front == pkg) Heavy.Verdict.NEVER else Heavy.verdict(pkg, front, keep, { Setup.mustKeep(it) }, safe(),
+        val v = if (front == pkg) Heavy.Verdict.NEVER else Heavy.verdict(pkg, front, keep, { Setup.mustKeep(it) || it == dev.tvremote.home.HomeConfig.PKG }, safe(),
             playing(::sh), if (Heavy.foregroundMedia(sh("dumpsys activity services " + q(pkg)))) setOf(pkg) else emptySet())
         synchronized(tracker) {
             when (v) {

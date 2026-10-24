@@ -146,11 +146,11 @@ internal object HomeTiles {
         ps.lines().map { it.trim().substringBefore(':') }.filter { PKG.matches(it) }.distinct()
 
     /**
-     * Never closed, whatever is running: TV Home, TV Setup and the rest of this project, Android itself and the brands' must-keep
+     * Never closed, whatever is running: TV Home, TV Setup (TV Channels and TV Games close like any app), Android itself and the brands' must-keep
      * apps ([Setup.mustKeep], the Apps tab's own list), the app on screen, launchers, keyboards and accessibility services.
      */
     fun protectedPkg(pkg: String, front: String, safe: Set<String>) =
-        Setup.mustKeep(pkg) || pkg == front || pkg in safe || pkg.startsWith("android.")   // android.process.acore & co: Android's shared processes, not apps
+        Setup.mustKeep(pkg) || pkg == dev.tvremote.home.HomeConfig.PKG || pkg == front || pkg in safe || pkg.startsWith("android.")   // android.process.acore & co: Android's shared processes, not apps
 
     /** The packages to close out of those running; `am kill` itself only takes a cached process, so this is a second lock, not the only one. */
     fun targets(running: List<String>, front: String, safe: Set<String>): List<String> = running.filter { !protectedPkg(it, front, safe) }

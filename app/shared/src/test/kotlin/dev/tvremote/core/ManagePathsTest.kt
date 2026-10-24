@@ -1,6 +1,7 @@
 package dev.tvremote.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import dev.tvremote.core.web.Manage
 
@@ -94,6 +95,9 @@ Total PSS by category:
             Proc("com.android.se", 4, "system", "system"),
         ), Manage.procsOf(sample, keep))
         assertEquals("us", Manage.keepWhy("dev.tvremote.setup", keep))
+        assertEquals("us", Manage.keepWhy("dev.tvremote.setup.keys", keep))
+        assertEquals("us", Manage.keepWhy("com.tailscale.ipn", keep))
+        for (p in listOf("dev.tvremote.channels", "dev.tvremote.games", "dev.tvremote.phone")) assertNotEquals("us", Manage.keepWhy(p, keep), p)   // ordinary apps
         assertEquals(emptyList<Proc>(), Manage.procsOf("nothing", keep))
     }
 

@@ -20,8 +20,8 @@ object Checkout {
         "com.android.chrome" to "Chrome", "org.mozilla.firefox" to "Firefox", "com.brave.browser" to "Brave", "com.microsoft.emmx" to "Edge",
         "com.opera.browser" to "Opera", "com.puffin.tv" to "Puffin TV Browser", "com.tv.browser" to "TV Browser")
 
-    /** Never cleared, whatever the owner picks (on top of [Setup.mustKeep]: the TV's system, Play services / Store, settings, every dev.tvremote app, Tailscale). */
-    private val ALSO = Regex("com\\.android\\.(tv\\..*|launcher.*|provision.*|managedprovisioning|keychain|certinstaller|location|server.*|inputdevices|nfc|dynsystem)" +
+    /** Never cleared, whatever the owner picks (on top of [Setup.mustKeep]: the TV's system, Play services / Store, settings, TV Setup, Tailscale) and every dev.tvremote app (their data is the owner's favourites and pads). */
+    private val ALSO = Regex("dev\\.tvremote\\..*|com\\.android\\.(tv\\..*|launcher.*|provision.*|managedprovisioning|keychain|certinstaller|location|server.*|inputdevices|nfc|dynsystem)" +
         "|com\\.google\\.android\\.(tv|apps\\.tv\\.).*|com\\.google\\.android\\.(setupwizard|partnersetup|onetimeinitializer|backuptransport|syncadapters.*|ext\\..*|webview|trichromelibrary.*|play\\.games\\.tv)" +
         "|.*launcher.*|.*\\.systemui|.*\\.settings")
 

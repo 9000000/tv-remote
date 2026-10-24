@@ -21,7 +21,7 @@ class RescueTest {
         assertFalse(stops("", "dev.tvremote.home"))                                  // nothing known on screen
         assertFalse(stops("com.google.android.apps.tv.launcherx", "com.google.android.apps.tv.launcherx"))
         assertFalse(stops("com.some.launcher", "com.some.launcher"))                 // whatever Home opens, even an unknown one
-        assertFalse(stops("dev.tvremote.home", "com.some.launcher"))                 // TV Home
+        assertTrue(stops("dev.tvremote.home", "com.some.launcher"))                  // TV Home when it is not the home screen: an ordinary app (as the home it is spared above)
         assertFalse(stops("dev.tvremote.setup", "dev.tvremote.home"))                // TV Setup
         assertFalse(stops("com.android.systemui", "dev.tvremote.home"))
         assertFalse(stops("com.android.tv.settings", "dev.tvremote.home"))

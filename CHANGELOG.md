@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Tab Ứng dụng: "Cần giữ" chỉ đánh dấu TV Setup (và TV Setup Keys), Tailscale, và TV Home khi nó là màn hình chính; TV Channels, TV Games, app điện thoại là app thường (dừng, tắt, gỡ được). Bộ dọn RAM vẫn không đóng TV Home.
 - TV Home: đồng hồ lớn đứng cạnh hai thẻ lớn khác hiện ngày ngắn ("CN, 25/10") thay vì cắt ngày dài; chủ đề Hiện đại dùng đồng hồ nhỏ, mặt kim đầy thẻ.
 - TV Home: chủ đề mới "Hiện đại" (đầu danh sách: nền xanh đêm, đồng hồ kim, thời tiết và lịch âm cỡ lớn, lời chào). Các chủ đề có sẵn giờ nằm trong danh sách ký của trang web (`docs/home/themes.json`), thêm hay sửa không cần app mới; app giữ bản cũ và bản đóng gói khi không có mạng. Hộp thoại chi tiết chủ đề (và các thông báo một nút) mở với tiêu điểm ở nút OK: bấm OK một lần là đóng.
 - App điện thoại, Cài đặt: các nút bật/tắt (nút âm lượng, Rung, Bàn phím TV, Tự kiểm tra bản mới) là vòng tròn, bật thì tròn xanh có dấu tích, thay cho ✓ / ✗ trơn.
@@ -55,6 +56,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- Apps tab: "Must keep" now marks only TV Setup (and TV Setup Keys), Tailscale, and TV Home while it is the home screen; TV Channels, TV Games and the Phone app are ordinary apps (stop, turn off, remove). The RAM cleaner still never closes TV Home.
 - TV Home: a big clock beside two other big cards shows the short date ("Sun 25 Oct") instead of cutting the long one; Modern's clock is the small one, its face filling the card.
 - TV Home: new theme "Modern" (first in the list: dark navy background, analog clock, big weather and lunar cards, greeting). The ready-made themes now come from the site's signed list (`docs/home/themes.json`), so adding or changing one needs no new app; the app keeps the last copy and a packed one for offline. The theme detail dialog (and one-button notices) opens with focus on OK: one press closes it.
 - Phone app settings: switches (TV volume keys, Vibrate, TV keyboard, Check for updates) show a ring, a filled blue disc with a check while on, instead of a bare ✓ / ✗.

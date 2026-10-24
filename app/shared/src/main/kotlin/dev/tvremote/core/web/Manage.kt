@@ -1474,7 +1474,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
 
         /** Why [pkg] may not be stopped ("us", "home", "keyboard", "system"), or null when it may. */
         internal fun keepWhy(pkg: String, k: Keep): String? = when {
-            pkg.startsWith("dev.tvremote.") || pkg == "com.tailscale.ipn" -> "us"   // this remote, and the way to it from outside
+            pkg.startsWith("dev.tvremote.setup") || pkg == "com.tailscale.ipn" -> "us"   // TV Setup (+ its keys add-on), and the way to the TV from outside; TV Home is "home" below while it is the home screen
             pkg == k.home -> "home"
             pkg == k.keyboard -> "keyboard"
             Setup.PROTECTED.matches(pkg) || pkg !in k.people -> "system"   // and Android's shared processes (android.process.acore)

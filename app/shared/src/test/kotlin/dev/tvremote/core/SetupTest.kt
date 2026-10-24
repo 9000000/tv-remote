@@ -91,6 +91,8 @@ class SetupTest {
     }
 
     @Test fun cvtesOwnHomeStaysOn() {                                   // a JVC hung on its boot animation without it (cleanyourtv #741)
+        assertTrue(Setup.mustKeep("dev.tvremote.setup")); assertTrue(Setup.mustKeep("dev.tvremote.setup.keys")); assertTrue(Setup.mustKeep("com.tailscale.ipn"))
+        assertFalse(Setup.mustKeep("dev.tvremote.channels")); assertFalse(Setup.mustKeep("dev.tvremote.games")); assertFalse(Setup.mustKeep("dev.tvremote.phone"))
         assertTrue(Setup.mustKeep("com.cvte.tv.launcher.space"))
         assertFalse(Setup.mustKeep("com.cvte.tv.pictorial"))                // its screensaver ads are still suggested
     }
