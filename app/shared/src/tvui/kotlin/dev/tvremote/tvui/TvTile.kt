@@ -36,6 +36,16 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
     val pane: View get() = face                                     // where the glass goes
     val corner = dp(TvUi.R_TILE).toFloat()
     var nudged: ((Float, Float) -> Unit)? = null                   // the glass leans with the card
+    private val ringOut = dp(TvUi.RING_DP)
+
+    /**
+     * -1 the first tile of its row, 1 one that reaches the row's right side, 0 the others. An edge tile grows inward: grown from its
+     * centre the first app stood 20 px left of the widgets over it (1080p), and the row's sides looked out of line.
+     */
+    val edge: Int get() {
+        val p = parent as? View ?: return 0
+        return when { left - p.paddingLeft < width / 2 -> -1; p.width - p.paddingRight - right < width / 2 -> 1; else -> 0 }   // half a tile: the widths are rounded (a full row ended 2 px short)
+    }
 
     init {
         orientation = VERTICAL; isFocusable = true; isClickable = true; isLongClickable = true
@@ -98,6 +108,11 @@ open class TvTile(c: Context, w: Int, dp: (Number) -> Int) : LinearLayout(c) {
         card.animate().cancel(); ring.animate().cancel(); name.animate().cancel(); content.animate().cancel(); shine.animate().cancel()
         if (grows) card.setLayerType(if (on) LAYER_TYPE_NONE else LAYER_TYPE_HARDWARE, null)   // before withLayer(), which puts this back after
         if (!grows) { ring.alpha = if (on) 1f else 0f; name.alpha = if (on) 1f else 0f; name.translationY = 0f; return }
+        if (on) {                                                     // the side it grows from, kept while it shrinks back
+            val e = edge
+            card.pivotX = when (e) { -1 -> ringOut.toFloat(); 1 -> (card.width - ringOut).toFloat(); else -> card.width / 2f }
+            name.translationX = -e * (card.width - 2 * ringOut) * (GROW - 1f) / 2f   // under the grown card's middle
+        }
         if (!Motion.on) {                                             // the end state at once, grown too: at 1x the glass (sized for GROW) stood round a small tile and nothing told which was chosen
             val s = if (on) GROW else 1f
             card.translationX = 0f; card.translationY = 0f

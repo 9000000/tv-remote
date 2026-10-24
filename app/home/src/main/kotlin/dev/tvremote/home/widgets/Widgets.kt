@@ -283,10 +283,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         }
         words.layoutParams = LayoutParams(-1, -2).apply { topMargin = dp(14) }
         (p.tag as? Night)?.takeIf { it.counts.isNotEmpty() }?.let { n ->
-            val sub = words.getChildAt(0) as? TextView
-            if (n.line != null) sub?.text = n.line else sub?.let { words.removeView(it) }   // "Hôm nay rằm" stays a line; counts go in columns
+            (words.getChildAt(0) as? TextView)?.let { words.removeView(it) }
             words.addView(LinearLayout(a).apply {
                 orientation = HORIZONTAL
+                // "Hôm nay rằm" is a column beside the counts: as a line over them it pushed "tới Tết" off the card's bottom
+                n.line?.let { addView(text(it, 17f, Color.WHITE).apply { typeface = Font.medium; isSingleLine = false; maxLines = 2 }, LayoutParams(0, -2, 1f).apply { rightMargin = dp(8) }) }
                 n.counts.forEach { (days, label) ->
                     addView(LinearLayout(a).apply {
                         orientation = VERTICAL

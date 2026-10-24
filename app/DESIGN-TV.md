@@ -113,7 +113,7 @@ Use the steps already in use: **4 · 6 · 8 · 10 · 12 · 14 · 16 · 20 · 24 
 
 | Thing | Treatment | Helper |
 |---|---|---|
-| **Tile** (app, game, poster) | TV Home's: ring 3 dp `tv_ring_accent` outside the face + 1 dp white inside (`RING_OUT` / `tv_ring`); card grows to **1.12** (`GROW`) on `Motion.spring` 520 ms in / glide 300 ms out; picture ×1.05 inside it; shine; name fades in under it. Optional **glass** instead of the ring (`Glass.kt`, Home setting `focus`) | Home `Tile.focus` (`HomeActivity.kt:941`); Games copies it: `shell()` + `focusTile()` (`LibraryActivity.kt:734,845`) |
+| **Tile** (app, game, poster) | TV Home's: ring 3 dp `tv_ring_accent` outside the face + 1 dp white inside (`RING_OUT` / `tv_ring`); card grows to **1.12** (`GROW`) on `Motion.spring` 520 ms in / glide 300 ms out, from its centre, or inward from the row's side for the first and last tile (`TvTile.edge`: the row's sides stay in line with the widgets); picture ×1.05 inside it; shine; name fades in under it. Optional **glass** instead of the ring (`Glass.kt`, Home setting `focus`) | Home `Tile.focus` (`HomeActivity.kt:941`); Games copies it: `shell()` + `focusTile()` (`LibraryActivity.kt:734,845`) |
 | **Card / action tile** (smaller) | Same ring via `ring()` / `Ui.ring()`, scale **1.06** | Channels `Ui.states(c, fill, r)` (`channels/Ui.kt:38`); Setup `ring()` (`MainActivity.kt:1044`) |
 | **Row of a plain list** | light fill `0x33FFFFFF`, no ring; *activated* (the one in use) `0x2214B8A6` | `Ui.states(..., edge = false)` / `Ui.row` |
 | **Button / menu entry** | Games: dark `#2A3042` → white fill + 4 dp white edge, words go dark (`menuButton`); Home: white fill, dark words/icons (`ui/Drop.kt:53`, `ui/TopBar.kt:20`), ×1.06 (`Motion.pop` `:1098`) | per app (§7) |
