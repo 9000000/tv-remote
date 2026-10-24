@@ -40,3 +40,43 @@
 }
 .am .foot{margin-top:28px;color:var(--muted);font-size:14px}
 .am .foot a{color:var(--blue);text-decoration:underline}
+
+/* interaction: fat invisible hit strokes, highlight / dim, popover */
+#map .e{pointer-events:none;transition:opacity .15s,stroke-width .15s}
+#map .hit{fill:none;stroke:transparent;stroke-width:22;pointer-events:stroke;cursor:pointer;outline:none}
+#map .node,#map .tag{cursor:pointer;outline:none}
+#map .node rect,#map .tag rect,#map .grp{transition:opacity .15s,stroke .15s}
+#map .node,#map .tag,#map .grp,#map .e{transition:opacity .15s}
+#map svg.dim .e,#map svg.dim .node,#map svg.dim .tag,#map svg.dim .grp,#map svg.dim .grpl{opacity:.2}
+#map svg.dim .e.on,#map svg.dim .node.on,#map svg.dim .tag.on,#map svg.dim .grp.on{opacity:1}
+#map .e.on{stroke-width:4}#map .e.silent.on{stroke-width:5}
+#map .node.on rect{stroke:var(--blue);fill:var(--card)}
+#map .grp.on{stroke:var(--blue)}
+#map .tag.on rect{stroke:var(--blue)}
+#map .node:focus-visible rect{stroke:var(--blue);stroke-width:2.5}
+#map .e.flashe{animation:amflash .6s ease-in-out 3}
+@keyframes amflash{50%{stroke-width:8}}
+.am tr[data-i],.am tr[data-n]{transition:background .15s}
+.am tr.on{background:color-mix(in srgb,var(--blue) 14%,transparent)}
+.am tr.flash{animation:amrow 1.6s ease-out}
+@keyframes amrow{0%,40%{background:color-mix(in srgb,var(--blue) 30%,transparent)}100%{background:transparent}}
+.am .up{font:inherit;font-size:12px;color:var(--blue);background:none;border:1px solid var(--line2);border-radius:99px;padding:2px 9px;margin-left:6px;cursor:pointer;white-space:nowrap}
+.am .up:hover,.am .up:focus-visible{border-color:var(--blue)}
+.am .hint{margin:12px 0 0;color:var(--muted);font-size:13.5px}
+.ampop{position:fixed;z-index:60;left:0;top:0;width:max-content;background:var(--card2);color:var(--text);border:1px solid var(--line2);border-radius:14px;padding:12px 14px;box-shadow:0 12px 36px rgba(0,0,0,.45);font-size:14px;line-height:1.45;pointer-events:auto}
+.ampop[hidden]{display:none}
+.ampop p{margin:8px 0 0}
+.ampop .ph{display:flex;align-items:center;gap:8px}
+.ampop .pn{font:700 12px "JetBrains Mono",ui-monospace,monospace;color:var(--muted)}
+.ampop .pw{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin-top:8px}
+.ampop .ends{display:flex;flex-wrap:wrap;gap:4px 8px}
+.ampop .chip{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ampop .chip img{border-radius:5px}.ampop .gi{fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ampop .arr{color:var(--muted)}
+.ampop .pwhat{font-weight:600}.ampop .phow{color:var(--muted);font-size:13px}.ampop .pmiss{font-size:13px}
+.ampop .pgo{margin-top:10px;font:inherit;font-size:13px;color:var(--blue);background:none;border:1px solid var(--line2);border-radius:99px;padding:3px 11px;cursor:pointer}
+.ampop .pgo:hover,.ampop .pgo:focus-visible{border-color:var(--blue)}
+.ampop .pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap;border:1px solid}
+.ampop .pill.ok{color:var(--green)}.ampop .pill.partial{color:var(--orange)}.ampop .pill.silent{color:var(--red)}
+@media(max-width:600px){.am .tbl .up{display:inline-block;margin:6px 0 0 0}.am .tbl td:last-child{padding-bottom:8px}}
+@media(prefers-reduced-motion:reduce){#map .e,#map .node,#map .tag,#map .grp,.am tr[data-i],.am tr[data-n]{transition:none}#map .e.flashe{animation:none;stroke-width:6}.am tr.flash{animation:none;background:color-mix(in srgb,var(--blue) 22%,transparent)}}
