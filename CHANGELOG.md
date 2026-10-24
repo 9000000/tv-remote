@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Setup, Nút mic trên điều khiển TV (mới, mặc định tắt): bật ở tab Sức khoẻ hoặc trong TV Setup, nút mic mở giọng nói của TV Remote ngay trên TV (hiện chữ đang nghe và việc sẽ làm; phím, âm lượng, mở app, kênh, hẹn giờ, cảnh) thay vì Trợ lý Google. TV không có nhận giọng nói hoặc mất mạng thì nút giữ như cũ. Cần TV Setup mới (cả TV Setup Keys).
+- TV Games: khi TV Games bị đóng đột ngột (hết giới hạn thời gian của TV Setup, trình dọn app) tay cầm trên điện thoại hiện ngay "TV Games đã đóng trên TV" sau khoảng 1,2 giây (trước đây chỉ "Đang kết nối lại…", 15 giây sau mới có chữ), tự thử lại và tự vào lại trong 3 giây sau khi mở lại.
 - Bi-a (TV Games): bi vào lỗ có hiệu ứng (bi thu nhỏ rơi vào lỗ, vòng sáng và tia lửa theo màu bi); phím giữ ở các game arcade (Sumo, Tank...) không còn bị nhả giữa chừng khi remote gửi cặp nhấn/nhả.
 - App điện thoại, Nói nhanh (mới, bản demo; nút mic cũ giữ nguyên): Tiện ích → Nói nhanh. Giữ nút to và nói, không có hộp thoại; thấy chữ đang nghe và, phía TRÊN ngón tay, danh sách việc câu đó sẽ làm (phím, âm lượng, mở app / kênh, hẹn giờ, cảnh) cập nhật từng chữ; thả ra là gửi ngay, kéo ra xa rồi thả là hủy. Dùng gói giọng nói offline nếu máy có, micro hỏi lần đầu kèm lý do, từ chối thì quay về cách cũ. Bản web chưa có.
 - Bi-a (TV Games): khi chưa tới lượt, màn hình tay cầm trên điện thoại hiện "Lượt của <tên>" thay vì để trống.
@@ -76,6 +78,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: khóa app không cần TV Setup: mã PIN 4 số tạo ngay trên TV (nhập hai lần), TV Home tự khóa mở app từ lưới, dock, phím gán (chặn mở từ nơi khác thì cần TV Setup); giới hạn mỗi ngày vẫn cần TV Setup. Cài TV Setup sau thì khóa tự chuyển sang. Màn mờ phía sau menu không còn nhấp nháy khi quay về từ app khác (Thông tin app).
 
 **English**
+- TV Setup, mic button on the TV's remote (new, off by default): turn it on in the Health tab or in TV Setup and the mic button opens TV Remote's voice on the TV itself (live text and the action: keys, volume, open app, channel, timer, scenes) instead of Google Assistant. No recognizer or no network: the button stays as it was. Needs a newer TV Setup (and TV Setup Keys).
+- TV Games: when TV Games is killed without warning (TV Setup's time limit, a task killer) the phone's pad now shows "TV Games was closed on the TV" after about 1.2 s (it used to say only "Reconnecting…", with a hint after 15 s), keeps retrying quietly and joins back within 3 s of TV Games reopening.
 - Pool (TV Games): a potted ball now shrinks into the pocket with a ring and sparks in its colour; keys held in the arcade games (Sumo, Tanks...) no longer let go midway when the remote sends down/up pairs.
 - Phone app, Quick talk (new, a demo; the old mic button is unchanged): Tools → Quick talk. Hold the big button and speak, no dialog; see the live text and, ABOVE the finger, the list of things the sentence will do (keys, volume, open an app / channel, timer, scene) updating word by word; let go to send at once, slide away and let go to cancel. Uses the offline speech pack when the phone has it, asks for the microphone the first time with a reason, falls back to the old way if denied. The web page does not have it yet.
 - Pool (TV Games): when it is not your turn, the phone pad shows "<name> to play" instead of a blank screen.

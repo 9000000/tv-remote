@@ -16,8 +16,8 @@ const W = VI
     s1: 'Tap Safari’s Share button (the square with an up arrow)', s2: 'Choose “Add to Home Screen”', s3: 'Open the pad from the new icon: fullscreen', fs: 'Fullscreen', sp: 'This game takes {n} players at most: you are watching', rd: 'Ready', rdOn: 'Ready ✓', lb: 'Lobby: try the buttons, then tap Ready', cl: 'Starting in' };
 // the TV left TV Games (Home) or closed it: the pad says so instead of looking healthy
 Object.assign(W, VI
-  ? { aw: 'TV Games đang không mở trên TV', awh: 'Các nút chưa điều khiển được gì lúc này.', awo: 'Mở lại TV Games', awr: 'Mở TV Games bằng remote của TV', cs: 'TV Games đã đóng', csh: 'Mở lại TV Games trên TV, điện thoại sẽ tự vào lại.' }
-  : { aw: 'TV Games is not open on the TV', awh: 'The buttons do nothing right now.', awo: 'Open TV Games again', awr: 'Open TV Games with the TV remote', cs: 'TV Games was closed', csh: 'Open TV Games on the TV again; this phone joins back by itself.' });
+  ? { aw: 'TV Games đang không mở trên TV', awh: 'Các nút chưa điều khiển được gì lúc này.', awo: 'Mở lại TV Games', awr: 'Mở TV Games bằng remote của TV', cs: 'TV Games đã đóng trên TV', csh: 'Mở lại TV Games trên TV, điện thoại sẽ tự vào lại.' }
+  : { aw: 'TV Games is not open on the TV', awh: 'The buttons do nothing right now.', awo: 'Open TV Games again', awr: 'Open TV Games with the TV remote', cs: 'TV Games was closed on the TV', csh: 'Open TV Games on the TV again; this phone joins back by itself.' });
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const $ = (s) => document.querySelector(s);
 const store = {
@@ -233,12 +233,15 @@ function lost() {
   $('#ms').textContent = '—'; $('#ms').className = '';
   show(0);
   if (!downSince) downSince = Date.now();
+  // force-stop (a time limit, the TV's task killer) leaves no goodbye: a seated pad whose link is still down 1.2 s later says "closed" now
+  // and keeps retrying quietly; the hello answer clears the card
+  if (mySlot > 0 && !closed && !closeTimer) closeTimer = setTimeout(() => { closeTimer = 0; if (downSince && !gaveUp && !replaced) { closed = true; setAway(false, false); } }, 1200);
   if (downSince && Date.now() - downSince > 15000 && mySlot > 0) say(W.rch);
   fetch('/layouts.json?k=' + encodeURIComponent(K), { cache: 'no-store' }).then((r) => { if (r.status === 403) rescan(); else again(); }).catch(again);
 }
 function again() { if (gaveUp || replaced) return; if (document.hidden) return;     // a background tab reconnects when it is shown again
-  setTimeout(connect, retry); retry = Math.min(retry * 1.6, closed ? 10000 : 3000); }   // TV Games closed: ask less often, 10 s at most
-let opened = 0;
+  setTimeout(connect, retry); retry = Math.min(retry * 1.6, 3000); }   // also while "closed": back within 3 s of TV Games opening
+let opened = 0, closeTimer = 0;
 function connect() {
   if (gaveUp || replaced) return;
   if (ws && ws.readyState <= 1) return;                       // shown again while a reconnect was on its way: two sockets for one phone kicked each other
