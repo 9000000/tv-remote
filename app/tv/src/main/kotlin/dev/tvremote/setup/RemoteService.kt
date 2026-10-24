@@ -341,6 +341,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         connect()
         guard = Guard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         dev.tvremote.core.ontv.Launchers.useTestFile(getExternalFilesDir(null))
+        dev.tvremote.core.ontv.Launchers.dir = java.io.File(cacheDir, "launchers")   // the gallery's list and pictures kept: it opens without waiting on the network
         launcherGuard = LauncherGuard(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         tsWatch = TailscaleWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }
         dnsWatch = DnsWatch(this) { try { link?.get() } catch (e: Exception) { null } }.also { it.start() }

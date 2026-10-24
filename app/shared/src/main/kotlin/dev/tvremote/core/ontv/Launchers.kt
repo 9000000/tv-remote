@@ -54,12 +54,18 @@ object Launchers {
     class Fit(val ok: Boolean, val why: String)
 
     @Throws(IOException::class)
-    fun facts(sh: (String) -> String): Facts = Facts(
-        sdk = sh("getprop ro.build.version.sdk").trim().toIntOrNull() ?: 0,
-        abis = sh("getprop ro.product.cpu.abilist").trim().split(',').map { it.trim() }.filter { it.isNotEmpty() },
-        leanback = sh("pm has-feature android.software.leanback").trim() != "false",   // as Setup.tvOnly: an old pm without has-feature is not turned away
-        googleTv = sh("pm path ${Setup.LAUNCHERX}").contains("package:"),
-        fire = sh("getprop ro.product.manufacturer").trim().equals("amazon", true) || sh("pm path com.amazon.tv.launcher").contains("package:"))
+    fun facts(sh: (String) -> String): Facts {
+        // one round trip, not six (~45 ms each through adb): a part per question, between lines of "@@"
+        val p = sh("getprop ro.build.version.sdk; echo @@; getprop ro.product.cpu.abilist; echo @@; pm has-feature android.software.leanback; echo @@; " +
+            "pm path ${Setup.LAUNCHERX}; echo @@; getprop ro.product.manufacturer; echo @@; pm path com.amazon.tv.launcher")
+            .replace("\r", "").split("\n@@\n", "@@\n").map { it.trim() } + List(6) { "" }
+        return Facts(
+            sdk = p[0].toIntOrNull() ?: 0,
+            abis = p[1].split(',').map { it.trim() }.filter { it.isNotEmpty() },
+            leanback = p[2] != "false",                                  // as Setup.tvOnly: an old pm without has-feature is not turned away
+            googleTv = p[3].contains("package:"),
+            fire = p[4].equals("amazon", true) || p[5].contains("package:"))
+    }
 
     fun fits(e: Entry, f: Facts): Fit = when {
         !f.leanback -> Fit(false, "not_tv")
@@ -145,18 +151,49 @@ object Launchers {
 
     @Volatile private var cache: Pair<Long, Gallery>? = null
 
-    /** The signed list from the first place that has one: a minute's memory, so the screens' reopening costs nothing. */
+    /**
+     * The signed list from the first place that has one: a minute's memory, so the screens' reopening costs nothing. Past that, the
+     * copy kept in [dir] (its signature checked again) is answered at once and the site read behind it for the next opening: the
+     * gallery waited ~1 s on the network every time. An install checks the APK against the list it was shown, as before.
+     */
     @Throws(IOException::class)
     fun fetch(fresh: Boolean = false): Gallery {
         cache?.let { if (!fresh && System.currentTimeMillis() - it.first < 60_000) return it.second }
-        return first(testBase?.let { listOf(it) } ?: bases, "launchers.json") { list, _, b -> parse(list, b).also { cache = System.currentTimeMillis() to it } }
+        val kept = if (fresh || testBase != null) null else dir?.let { File(it, "launchers.json") }?.let { f ->
+            SignedList.kept(f, KEYS + testKeys)?.let { l -> try { parse(l, File(f.path + ".base").readText()) } catch (e: IOException) { null } } }
+        if (kept != null) {
+            cache = System.currentTimeMillis() to kept
+            Thread({ try { Thread.sleep(2000); load() } catch (e: Exception) { } }, "launchers").apply { isDaemon = true; priority = Thread.MIN_PRIORITY }.start()   // after the screen is drawn: the check is CPU
+            return kept
+        }
+        return load()
     }
 
-    /** A thumbnail's bytes, checked against the signed list's hash. */
+    private fun load(): Gallery = first(testBase?.let { listOf(it) } ?: bases, "launchers.json") { list, sig, b ->
+        parse(list, b).also {
+            cache = System.currentTimeMillis() to it
+            if (testBase == null) dir?.let { d -> try { d.mkdirs(); SignedList.keep(File(d, "launchers.json"), list, sig); File(d, "launchers.json.base").writeText(b) } catch (e: IOException) { } }
+        }
+    }
+
+    /** Where an app keeps the list ([fetch]) and the thumbnails by their hash ([thumb]): set once by the app, null = memory only (the computer). */
+    @Volatile var dir: File? = null
+    private val thumbs = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+
+    /**
+     * A thumbnail's bytes, checked against the signed list's hash. Kept in memory and in [dir]: the 13 pictures are ~0.9 MB
+     * and took ~4 s one by one, the gallery waited for them every time it opened. A file on disk is checked again before use.
+     */
     @Throws(IOException::class)
     fun thumb(g: Gallery, e: Entry): ByteArray {
+        val key = e.thumbSha.ifEmpty { g.base + e.thumb }
+        thumbs[key]?.let { return it }
+        val f = if (e.thumbSha.isNotEmpty()) dir?.let { File(it, e.thumbSha + ".jpg") } else null
+        try { f?.takeIf { it.isFile }?.readBytes()?.takeIf { hex(MessageDigest.getInstance("SHA-256").digest(it)) == e.thumbSha }?.let { thumbs[key] = it; return it } } catch (x: IOException) { }
         val b = get(g.base + e.thumb)
         if (e.thumbSha.isNotEmpty() && hex(MessageDigest.getInstance("SHA-256").digest(b)) != e.thumbSha) throw IOException(MISMATCH)
+        thumbs[key] = b
+        if (f != null) try { f.parentFile?.mkdirs(); f.writeBytes(b) } catch (x: IOException) { }
         return b
     }
 

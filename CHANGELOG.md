@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Thư viện launcher trong TV Setup mở nhanh hơn: 2,5–3,6 s → ~0,4 s (emulator). List hiện ngay, ảnh tải 4 ảnh một lúc rồi điền dần; list và ảnh được lưu lại để lần sau không chờ mạng; các list có ký (launcher, game, kênh, Downloader) tải chữ ký song song và chỉ kiểm chữ ký đầy đủ một lần cho mỗi bản lưu.
 - Ảnh nền Bing của TV Home và biểu tượng app trong hộp "gỡ app trên nhiều TV" (app điện thoại) tải 4 ảnh một lúc thay vì lần lượt (8 ảnh: 2,0 s → 0,4 s); ảnh thư viện launcher giải mã đúng cỡ thẻ, tiết kiệm bộ nhớ.
 - TV Setup và TV Home: mọi hộp thoại còn lại (thiết bị đã ghép, hủy ghép, gỡ TV Setup, quên khóa ADB, chọn nguồn vào, cập nhật TV Home) dùng chung giao diện mới: mỗi hàng một biểu tượng theo màu của app, chi tiết ở dòng thứ hai, một mẫu hỏi xác nhận với nút Hủy được chọn sẵn khi hành động không hoàn tác được.
 - TV Setup: khi thiết bị muốn ghép đôi mà màn hình mã không mở được (đang ở app khác), mã vẫn hiện thành một dòng trên màn hình chính; menu Kết nối có hàng "Quên mọi khóa ADB" (hỏi lại rồi mở Tùy chọn nhà phát triển ở mục thu hồi quyền gỡ lỗi USB, vì app không tự xóa được khóa); TV Home lỗi liên tục (3 lần trong 60 giây) thì mở Cài đặt của TV để đổi app màn hình chính thay vì tự mở lại.
@@ -34,6 +35,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 
 **English**
+- TV Setup's launcher gallery opens faster: 2.5–3.6 s → ~0.4 s (emulator). The list shows at once, pictures load four at a time and fill in; the list and pictures are kept so later openings don't wait on the network; signed lists (launchers, games, channels, Downloader) fetch their signature in parallel and run the full signature check once per kept copy.
 - TV Home's Bing wallpapers and the app icons in the phone app's "remove apps from several TVs" box load four at a time instead of one by one (8 pictures: 2.0 s to 0.4 s); the launcher gallery's pictures are decoded at the card's size, saving memory.
 - TV Setup and TV Home: every remaining dialog (paired devices, unpair, remove TV Setup, forget ADB keys, Input picker, TV Home's update) now uses the shared look: an icon per row in the app's accent, details on a second line, one confirm sheet with Cancel focused for destructive ones.
 - TV Setup: when a device asks to pair but the code screen cannot open (another app is in front), the code still shows as a line on the main screen; the Connection menu has a "Forget all ADB keys" row (asks first, then opens Developer options at the revoke-USB-debugging row, since an app cannot delete the keys itself); TV Home that crashes over and over (3 times in 60 s) opens the TV's Settings so the home app can be changed, instead of relaunching itself.

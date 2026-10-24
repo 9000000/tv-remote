@@ -72,7 +72,9 @@ class SignedListTest {
             assertNull(SignedList.kept(f))
             SignedList.keep(f, list, sig)
             assertArrayEquals(list, SignedList.kept(f))
-            f.writeBytes(list + 1)                                                  // altered on disk: refused
+            assertTrue(File(d, "l.json.ok").isFile)                                 // checked once: the next read compares a hash
+            assertArrayEquals(list, SignedList.kept(f))
+            f.writeBytes(list + 1)                                                  // altered on disk: refused, the old mark does not cover it
             assertNull(SignedList.kept(f))
             val assets = mapOf("l.json" to list, "l.json.sig" to sig.toByteArray())
             val open = { n: String -> ByteArrayInputStream(assets[n] ?: throw FileNotFoundException(n)) }

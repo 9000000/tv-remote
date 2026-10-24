@@ -474,3 +474,12 @@ once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.
 - Settings is locked in kids mode even though Google TV lists it as a HOME handler: through Settings a child could clear or uninstall TV Setup or change the clock.
 - TV Setup hosts the PIN screen, so it is always free; its own rule screens (MainActivity, ManageActivity) still ask the code when a PIN or Authenticator is set (MainActivity at once in onResume; Guard catches Manage brought back from Recents via the UsageEvents class name). Opened once, it stays open until another app comes to the front.
 - Verified on emulator-5554 (Android 14): computer app → `totp` + `kids` → opening TV Channels shows the PIN screen → the current Authenticator code opens it; TV Setup with a PIN asks, right PIN opens, leaving and coming back asks again.
+
+## Launcher gallery opening (`MainActivity.chooseLauncher`, `Launchers.fetch/thumb`, `SignedList.kept`, 2026-10-24)
+Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~0.4 s (0.33–0.73) after.
+- The 13 thumbnails (960x540, ~0.9 MB) came one by one (~4 s on a Mac link) and the list waited for all: now the list is drawn first, pictures come 4 at a time into their cards, decoded with inSampleSize to the card's size, and are kept in memory + `cache/launchers/<sha>.jpg` (hash checked again on read).
+- The list itself: launchers.json and .sig were two sequential round trips (`SignedList.fetch` now gets the .sig alongside), and the network was waited on at every opening (~1 s): a kept signed copy is answered at once and the site read 2 s later at low priority for the next opening. Installs still check the APK hash pinned by the list that was shown.
+- Ed25519 in BigInteger costs ~0.5–1 s per check on Android: `SignedList.kept` checks a kept copy once, then writes `<file>.ok` = SHA-256(list, 0, sig) and compares only that. The signature guards against a taken-over site or repository; whoever can write the app's private files can change the app anyway.
+- `Launchers.facts` asks its six questions in one shell round trip; facts, `pm list packages` and the home lookup run side by side (Adb multiplexes streams on one connection).
+- Not measured on a real box: the FPT box runs a release-signed build, a debug install would need an uninstall (its rules lost).
+

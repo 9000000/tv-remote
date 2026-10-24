@@ -841,7 +841,7 @@ class MainActivity : Activity() {
         val a = adb ?: return
         if (busy) return
         log(T("launcher.loading"))
-        val wait = launcherWait()                                      // the list and its pictures take seconds: the popup is there at once
+        val wait = launcherWait()                                      // the list takes a moment: the popup is there at once
         Thread {
             val g0: dev.tvremote.core.ontv.Launchers.Gallery
             val g: dev.tvremote.core.ontv.Launchers.Gallery
@@ -849,15 +849,38 @@ class MainActivity : Activity() {
             val have: Set<String>
             val home: String
             try {
-                g0 = dev.tvremote.core.ontv.Launchers.fetch()
+                // the list (network) and the TV's three answers (adb streams run side by side on one connection) all at once
+                fun <T> go(f: () -> T) = java.util.concurrent.FutureTask(f).also { Thread(it).start() }
+                fun <T> java.util.concurrent.FutureTask<T>.take(): T = try { get() } catch (x: java.util.concurrent.ExecutionException) { throw (x.cause as? Exception) ?: x }
+                val list = go { dev.tvremote.core.ontv.Launchers.fetch() }
+                val pkgs = go { a.shell("pm list packages").split("\n").map { it.removePrefix("package:").trim() }.toSet() }
+                val now = go { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow().substringBefore('/') }
                 facts = dev.tvremote.core.ontv.Launchers.facts { a.shell(it) }
-                have = a.shell("pm list packages").split("\n").map { it.removePrefix("package:").trim() }.toSet()
-                home = dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow().substringBefore('/')
+                have = pkgs.take()
+                home = now.take()
+                g0 = list.take()
             } catch (e: Exception) { ui { log("✗ " + reason(e)); wait.second.text = "✗ " + reason(e); wait.third.visibility = View.GONE }; return@Thread }
             g = dev.tvremote.core.ontv.Launchers.Gallery(g0.updated, g0.entries + installedLaunchers(g0), g0.base)
-            val pics = g.entries.associate { e -> e.id to try { dev.tvremote.core.ontv.Launchers.thumb(g, e).let { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) } } catch (x: Exception) { null } }
-            ui { if (wait.first.isShowing) { showLaunchers(a, g, facts, have, home, pics); wait.first.dismiss() } }   // closed while loading: nothing opens
+            ui { if (wait.first.isShowing) { showLaunchers(a, g, facts, have, home); wait.first.dismiss() } }   // closed while loading: nothing opens
         }.start()
+    }
+
+    /**
+     * A gallery picture into its card once it is here: four at a time (they came one by one, ~4 s for 13, and the list waited for
+     * all of them), decoded at the card's size (960x540 each was 2 MB of memory for a 128 dp picture).
+     */
+    private fun launcherPics(g: dev.tvremote.core.ontv.Launchers.Gallery, into: List<Pair<dev.tvremote.core.ontv.Launchers.Entry, ImageView>>) {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+        for ((e, pic) in into) pool.execute {
+            val b = try { dev.tvremote.core.ontv.Launchers.thumb(g, e) } catch (x: Exception) { return@execute }
+            val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size, o)
+            var n = 1
+            while (o.outWidth / (n * 2) >= dp(128)) n *= 2
+            val bmp = android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size, android.graphics.BitmapFactory.Options().apply { inSampleSize = n }) ?: return@execute
+            ui { pic.setImageBitmap(bmp) }
+        }
+        pool.shutdown()
     }
 
     /** The launcher popup's frame while its list loads: the same card, a wheel and Close; the list opens over it, then it goes. */
@@ -903,8 +926,8 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showLaunchers(a: Adb, g: dev.tvremote.core.ontv.Launchers.Gallery, facts: dev.tvremote.core.ontv.Launchers.Facts, have: Set<String>, home: String,
-                              pics: Map<String, android.graphics.Bitmap?>) {
+    private fun showLaunchers(a: Adb, g: dev.tvremote.core.ontv.Launchers.Gallery, facts: dev.tvremote.core.ontv.Launchers.Facts, have: Set<String>, home: String) {
+        val pics = ArrayList<Pair<dev.tvremote.core.ontv.Launchers.Entry, ImageView>>()
         val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         val root = android.widget.FrameLayout(this)
         root.setBackgroundColor(SCRIM)
@@ -953,7 +976,8 @@ class MainActivity : Activity() {
             r.isClickable = true
             val pic = ImageView(this)
             pic.scaleType = ImageView.ScaleType.CENTER_CROP
-            pics[e.id]?.let { pic.setImageBitmap(it) } ?: try {          // one already on the TV: its own banner or icon
+            pic.background = box(TILE, 8, 0)                             // the picture's place while it loads
+            if (e.thumb.isNotEmpty()) pics.add(e to pic) else try {       // one already on the TV: its own banner or icon
                 pic.scaleType = ImageView.ScaleType.FIT_CENTER
                 pic.setImageDrawable(packageManager.getApplicationBanner(e.pkg) ?: packageManager.getApplicationIcon(e.pkg))
             } catch (x: Exception) { }
@@ -991,6 +1015,7 @@ class MainActivity : Activity() {
             return r
         }
         for (e in g.entries) list.addView(card(e), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        launcherPics(g, pics)
         val most = (resources.displayMetrics.heightPixels * 0.62).toInt()
         val scroll = object : ScrollView(this) {
             override fun onMeasure(w: Int, h: Int) = super.onMeasure(w, View.MeasureSpec.makeMeasureSpec(most, View.MeasureSpec.AT_MOST))

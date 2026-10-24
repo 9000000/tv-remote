@@ -179,6 +179,7 @@ private fun MainActivity.fleetCheckoutAsk(ips: List<String>, cfg: Checkout.Confi
 /** A home screen from the gallery on several TVs: one download (kept in the cache), each TV checked and put back on its own if its home does not hold. */
 private fun MainActivity.fleetLauncher() {
     dev.tvremote.core.ontv.Launchers.useTestFile(getExternalFilesDir(null))   // a test list, when one was put there
+    dev.tvremote.core.ontv.Launchers.dir = java.io.File(cacheDir, "launchers")   // the gallery's list and pictures kept: it opens without waiting on the network
     val wait = Popup.Builder(this).setMessage(T("launcher.loading")).setCancelable(false).show()
     Thread {
         var why = ""

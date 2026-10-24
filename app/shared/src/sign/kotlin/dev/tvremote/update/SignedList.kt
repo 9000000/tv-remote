@@ -3,6 +3,7 @@ package dev.tvremote.update
 import dev.tvremote.core.B64
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.security.MessageDigest
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
@@ -61,18 +62,38 @@ object SignedList {
                         connectMs: Int = 10000, readMs: Int = 30000, use: (list: ByteArray, sig: String, base: String) -> T?): T {
         var last = IOException("no $name")
         for (b in bases) try {
+            // the signature while the list comes: two round trips one after the other were most of a gallery's opening (~1 s on a TV)
+            val sigTask = java.util.concurrent.FutureTask { String(get("$b$name.sig", cap, connectMs, readMs), Charsets.UTF_8) }
+            Thread(sigTask, "sig").apply { isDaemon = true }.start()
             val list = get(b + name, cap, connectMs, readMs)
-            val sig = String(get("$b$name.sig", cap, connectMs, readMs), Charsets.UTF_8)
+            val sig = try { sigTask.get() } catch (x: java.util.concurrent.ExecutionException) { throw (x.cause as? IOException) ?: IOException(x.cause) }
             if (!verify(list, sig, keys)) throw IOException(unsigned)
             return use(list, sig, b) ?: continue
         } catch (e: IOException) { last = e }
         throw last
     }
 
-    /** The copy kept in [f] (with its [f].sig beside it), if the signature still checks; null when missing or altered. */
+    /**
+     * The copy kept in [f] (with its [f].sig beside it), if the signature still checks; null when missing or altered. Once checked,
+     * [f].ok holds the SHA-256 of list and signature: later reads compare that (ms) instead of Ed25519 in BigInteger, ~0.5-1 s on a
+     * TV box at every opening. The signature is against a taken-over site or repository; whoever can write this app's own files
+     * can change the app anyway.
+     */
     fun kept(f: File, keys: List<String> = KEYS): ByteArray? {
         val s = File(f.path + ".sig")
-        return try { if (f.isFile && s.isFile) f.readBytes().takeIf { verify(it, s.readText(), keys) } else null } catch (e: IOException) { null }
+        val ok = File(f.path + ".ok")
+        return try {
+            if (!f.isFile || !s.isFile) return null
+            val list = f.readBytes()
+            val sig = s.readText()
+            val sum = sha(list, sig)
+            if (ok.isFile && ok.readText() == sum) return list
+            list.takeIf { verify(it, sig, keys) }?.also { try { ok.writeText(sum) } catch (e: IOException) { } }
+        } catch (e: IOException) { null }
+    }
+
+    private fun sha(list: ByteArray, sig: String): String = MessageDigest.getInstance("SHA-256").run {
+        update(list); update(0.toByte()); update(sig.trim().toByteArray(Charsets.UTF_8)); digest().joinToString("") { String.format("%02x", it) }
     }
 
     /** The copy packed in the APK: [open] gives the asset [name] and [name].sig (any failure: null); null when missing or unsigned. */
