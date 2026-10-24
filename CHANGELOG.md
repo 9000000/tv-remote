@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Home: mọi thẻ trừ đồng hồ (lịch, dùng nhiều, hẹn giờ, thị trường, tin tức, thẻ QR) có thêm kiểu "tonal" (thẻ ấm, một đường vẽ chung với thời tiết/hệ thống/âm lịch/không khí), chọn trong ⚙ của thẻ ở mọi app. Giao diện Tết: lịch âm + lịch tháng cùng tonal; giao diện Buổi sáng: đồng hồ sáng cho cùng một họ.
+
+**English**
+- TV Home: every card except the clock (calendar, most used, timer, market, news, QR cards) now has the "tonal" look (warm card, one shared drawing path with weather / system / lunar / air), chosen in the card's ⚙ on every client. Tết theme: lunar + calendar both tonal; Morning theme: light clock to match the tonal family.
+
 ## 0.22.1 - 2026-10-25
 
 Web 0.22.1 · app điện thoại 0.22.0 · app TV 0.22.0 · TV Home 0.9.1 · TV Channels 0.6.0 · TV Games 0.6.0

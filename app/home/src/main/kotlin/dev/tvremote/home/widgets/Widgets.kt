@@ -49,7 +49,7 @@ import dev.tvremote.home.R
 
  *   air      the air quality index and PM2.5 ([Weather.Air]: Open-Meteo's air-quality API, same place and cache as the weather)
  *   calendar the month, today a filled circle, a lunar day only on its 1st and 15th ([Month], one View; the lunar days from [Lunar], once a day)
- * weather, system, lunar and air also have the "tonal" look (HomeConfig "wopt" look, [Tonal]); calendar etc. stay glass.
+ * every card but the clock also has the "tonal" look (HomeConfig "wopt" look, HomeConfig.TONAL, drawn only by [Tonal] / tonalFill).
  * and, smaller, stacked in a column beside them:
  *   clock   an analog clock: a face (classic, minimal, roman) in a theme (dark, light) (HomeConfig "wopt"); a face in a stack, standing, or big with the time beside it
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
@@ -89,7 +89,6 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
         private val BIG = setOf("system", "usage", "calendar", "weather", "air", "market", "news")
-        private val TONAL = setOf("system", "weather", "lunar", "air")      // the cards that have the tonal look (HomeConfig.options)
         const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
         private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
 
@@ -260,7 +259,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             in HomeQr.KEYS -> qrCard(qrs.getJSONObject(k))
             else -> noteView
         }
-        fun tonal(k: String) = k in TONAL && opt(k, "look") == "tonal"                  // the default look, glass, is what a missing one means
+        fun tonal(k: String) = k in HomeConfig.TONAL && opt(k, "look") == "tonal"                  // the default look, glass, is what a missing one means
         val gap = dp(20)
         val room = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (packed.cols.size - 1)
         val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight })
@@ -270,14 +269,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             col.keys.forEachIndexed { j, k ->
                 val alone = col.keys.size == 1                         // a lone card has the column's whole height
                 val full = alone && k in big && w >= dp(FULL_MIN)
-                val v: View = if (tonal(k)) tonalCard(!full).also { c ->     // the same parts at both sizes: a figure, a caption, a badge
-                    when (k) {
-                        "system" -> systemTonal(c, f, !full)
-                        "weather" -> weatherTonal(c, f, w, !full)
-                        "air" -> airTonal(c, f, w, !full)
-                        else -> f.moon?.let { lunarTonal(c, it, w, !full) }
-                    }
-                } else if (k in BIG) card().also { c ->
+                val v: View = if (tonal(k)) tonalCard(!full).also { c -> tonalFill(k, c, f, w, !full, label, qrs) }     // one path for every card: a figure, a caption, a badge
+                else if (k in BIG) card().also { c ->
                     if (full) when (k) {
                         "system" -> system(c, f, w)
                         "air" -> airGlass(c, f, true)

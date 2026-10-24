@@ -70,7 +70,8 @@ class HomeConfigTest {
         assertEquals("tonal", HomeConfig.optValue(c, "weather", "look"))
         assertEquals("glass", HomeConfig.optValue(c, "air", "look"))                              // missing: the default
         assertEquals("roman", HomeConfig.optValue(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "roman"))), "clock", "face"))
-        assertEquals("", HomeConfig.optValue(c, "calendar", "look"))
+        assertEquals("", HomeConfig.optValue(c, "clock", "look"))                                  // the clock has no look
+        assertEquals("glass", HomeConfig.optValue(c, "calendar", "look")); assertEquals("glass", HomeConfig.optValue(c, "qr1", "look"))   // every other card has it
         assertFalse(HomeConfig.clean(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "classic")))).getJSONObject("wopt").has("clock"))   // a default is not kept
         assertEquals("big", HomeConfig.optValue(c, "weather", "size")); assertEquals("small", HomeConfig.optValue(c, "clock", "size"))   // the size is read from "wsize"
     }
@@ -115,7 +116,8 @@ class HomeConfigTest {
         assertEquals("classic", face.getString("default")); assertEquals("home.o_face", face.getString("label"))
         assertEquals(listOf("classic", "minimal", "roman"), List(3) { face.getJSONArray("values").getJSONObject(it).getString("id") })
         assertEquals("home.ov_minimal", face.getJSONArray("values").getJSONObject(1).getString("w"))
-        assertEquals(1, s.getJSONArray("calendar").length())
+        assertEquals(2, s.getJSONArray("calendar").length())                                  // size + look
+        for (k in HomeConfig.WIDGETS) assertEquals(k != "clock", HomeConfig.options(k).any { it.id == "look" })   // the look is on every card but the clock
         assertEquals("look", s.getJSONArray("weather").getJSONObject(1).getString("id"))
         for (k in HomeConfig.WIDGETS) for (o in HomeConfig.options(k)) assertTrue(o.default in (if (o.type == "toggle") listOf("off", "on") else o.values))
     }
@@ -522,8 +524,8 @@ class HomeConfigTest {
     }
 
     @Test fun marketAndNewsCardsHaveTheirOptionsAndOwnFeeds() {
-        assertEquals(listOf("size", "layout", "show", "btc"), HomeConfig.options("market").map { it.id })
-        assertEquals(listOf("size", "src"), HomeConfig.options("news").map { it.id })
+        assertEquals(listOf("size", "look", "layout", "show", "btc"), HomeConfig.options("market").map { it.id })
+        assertEquals(listOf("size", "look", "src"), HomeConfig.options("news").map { it.id })
         assertTrue("market" in HomeConfig.WIDGETS && "news" in HomeConfig.WIDGETS)
         val c = HomeConfig.clean(JSONObject().put("feeds", JSONArray(listOf("https://a.x/r.xml", "ftp://no", "https://a.x/r.xml", "https://b.x/1", "https://b.x/2", "https://b.x/3", "https://b.x/4", "javascript:1"))))
         val f = c.getJSONArray("feeds")

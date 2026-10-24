@@ -164,7 +164,7 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 
 ### Tonal cards (TV Home's home screen cards, style "tonal")
 
-The other look of the weather, system, lunar and air cards (option `look` in `wopt`, `HomeConfig.options`; "glass" stays the default). One helper draws all of them: `widgets/Tonal.kt` (`tonalCard`, `Scallop`, `tonalBar`); a card never hand-paints its own.
+The other look of EVERY home screen card but the clock (weather, system, lunar, air, calendar, usage, timer, market, news and the QR cards; option `look` in `wopt`, `HomeConfig.options` / `HomeConfig.TONAL`; "glass" stays the default; the clock has its own face and theme). One path draws all of them: `widgets/Tonal.kt` (`tonalFill` says what each card shows, through `tonalBody` / `systemTonal` on `tonalCard`, `Scallop`, `TonalBar`); a card never hand-paints its own tonal style, and a new card gets the look by joining `HomeConfig.TONAL` and one line in `tonalFill`. The settings dialog on every client draws the option from the schema, nothing else to add. Per card: calendar = weekday / day number / date + lunar date; usage = the week's time / top app; timer = time left / when it ends; market = first price / the next two (the ticker layout is the glass card only); news = one headline (a sentence, not a figure: `tonalBody(headline = true)`) / source and time; QR = the code on its white square in the tonal card, words in `Tonal.INK`. In a ready theme all cards are one family: glass with glass, tonal with tonal (and a light clock beside tonal).
 
 | Part | Value |
 |---|---|

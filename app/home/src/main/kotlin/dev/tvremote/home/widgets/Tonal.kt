@@ -17,12 +17,13 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.LinearLayout.VERTICAL
 import android.widget.TextView
 import dev.tvremote.home.Font
+import dev.tvremote.home.HomeQr
 import dev.tvremote.home.R
 import dev.tvremote.home.widgets.Widgets.Facts
 import dev.tvremote.home.widgets.Widgets.Moon
 
 /**
- * The "tonal" look of the weather, system, lunar and air cards (HomeConfig "wopt" look; app/DESIGN-TV.md "Tonal cards"): an opaque warm
+ * The "tonal" look of every card but the clock (HomeConfig.TONAL: weather, system, lunar, air, calendar, usage, timer, market, news, QR) (HomeConfig "wopt" look; app/DESIGN-TV.md "Tonal cards"): an opaque warm
  * card, a label, a very large figure, a caption, and a scalloped badge with the card's icon. One fixed warm tone: TV Home does not
  * pick a colour from the wallpaper. Every part is drawn here so the four cards cannot drift apart.
  */
@@ -103,13 +104,17 @@ internal fun Widgets.ink(t: String, size: Float, color: Int = Tonal.INK) = Font.
  * The three lines and the badge: [label] on top, [value] large, [caption] under it, the badge at the top right ([olive]: dark with a
  * light icon, else pale with a dark one). [width] is the card's width in px; [compact]: half the height, the figure smaller.
  */
-internal fun Widgets.tonalBody(card: LinearLayout, label: String, value: String, caption: String, icon: Int, olive: Boolean, width: Int, compact: Boolean) {
+internal fun Widgets.tonalBody(card: LinearLayout, label: String, value: String, caption: String, icon: Int, olive: Boolean, width: Int, compact: Boolean, headline: Boolean = false) {
     val side = dp(if (compact) 48 else Tonal.badge(((width - dp(40)) / dp(1)).coerceAtLeast(1)))
     val root = FrameLayout(a)
     val col = LinearLayout(a).apply { orientation = VERTICAL }
     val room = side + dp(8)                                            // the label and the figure stop short of the badge; the caption has the full width
     col.addView(ink(label, if (compact) 12f else 14f), LayoutParams(-1, -2).apply { rightMargin = room })
-    col.addView(Shrink(a, if (compact) 26f else 64f, if (compact) 18f else 34f).apply {
+    if (headline) col.addView(TextView(a).apply {                        // a sentence (news): a few lines, not one figure
+        text = value; setTextColor(Tonal.INK); textSize = if (compact) 14f else 20f; typeface = Font.medium
+        maxLines = if (compact) 2 else 4; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.CENTER_VERTICAL or Gravity.START
+    }, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4); bottomMargin = dp(4); rightMargin = room })
+    else col.addView(Shrink(a, if (compact) 26f else 64f, if (compact) 18f else 34f).apply {
         text = value; setTextColor(Tonal.INK); maxLines = 1; typeface = Font.regular; includeFontPadding = false; gravity = Gravity.CENTER_VERTICAL or Gravity.START
     }, LayoutParams(-1, 0, 1f).apply { rightMargin = room })
     col.addView(Shrink(a, if (compact) 12f else 14f, 10f).apply {            // one line, smaller before cut
@@ -193,4 +198,80 @@ internal fun Widgets.systemTonal(card: LinearLayout, f: Facts, compact: Boolean)
         box.addView(line, LayoutParams(-1, 0, 1f))
     }
     card.addView(box, LayoutParams(-1, -1))
+}
+
+/**
+ * Fills a tonal [card] for card [k]: the ONE place that says what each card shows in the look, all through [tonalBody] (a label, a
+ * figure, a caption, a badge) and [systemTonal]'s rows; a card never paints its own tonal style. [w] is the column's width in px.
+ */
+internal fun Widgets.tonalFill(k: String, card: LinearLayout, f: Facts, w: Int, compact: Boolean, label: (String) -> String, qrs: org.json.JSONObject) {
+    when (k) {
+        "system" -> systemTonal(card, f, compact)
+        "weather" -> weatherTonal(card, f, w, compact)
+        "air" -> airTonal(card, f, w, compact)
+        "lunar" -> f.moon?.let { lunarTonal(card, it, w, compact) }
+        "calendar" -> calendarTonal(card, f, w, compact)
+        "usage" -> usageTonal(card, f, label, w, compact)
+        "timer" -> timerTonal(card, f.timer, w, compact)
+        "market" -> marketTonal(card, f, w, compact)
+        "news" -> newsTonal(card, f, w, compact)
+        else -> if (k in HomeQr.KEYS) qrTonal(card, qrs.optJSONObject(k), compact)
+    }
+}
+
+/** Today: the weekday over the day's number, the date and the lunar date under it. */
+internal fun Widgets.calendarTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+    val c = f.cal ?: return
+    val r = a.resources; val loc = resources.configuration.locales[0]; val now = java.util.Date()
+    val d = c.moon
+    val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
+    val dayWord = if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString()
+    val caption = java.text.SimpleDateFormat("d MMMM", loc).format(now) + " · " + a.getString(R.string.lunar_title, dayWord, month)
+    tonalBody(card, java.text.SimpleDateFormat("EEEE", loc).format(now), java.text.SimpleDateFormat("d", loc).format(now), caption, R.drawable.ic_calendar, false, width, compact)
+}
+
+/** The week's screen time over the most used app. */
+internal fun Widgets.usageTonal(card: LinearLayout, f: Facts, appLabel: (String) -> String, width: Int, compact: Boolean) {
+    val label = a.getString(R.string.w_week)
+    val u = f.usage
+    if (u == null) { tonalBody(card, label, "—", a.getString(R.string.w_need_setup), R.drawable.ic_chart, false, width, compact); return }
+    val days = u.optJSONArray("days"); var total = 0L
+    if (days != null) for (i in 0 until days.length()) total += days.optLong(i)
+    val top = u.optJSONArray("week")?.optJSONObject(0)
+    val caption = top?.let { appLabel(it.optString("pkg")) + " · " + span(it.optLong("sec") * 1000) } ?: a.getString(R.string.w_none)
+    tonalBody(card, label, if (total > 0) span(total * 1000) else "—", caption, R.drawable.ic_chart, false, width, compact)
+}
+
+/** The sleep timer or bedtime: its time left over when it ends. */
+internal fun Widgets.timerTonal(card: LinearLayout, o: org.json.JSONObject?, width: Int, compact: Boolean) {
+    val (title, sub) = timerLine(o) ?: return
+    tonalBody(card, a.getString(R.string.w_timer), sub.ifEmpty { "—" }, title, R.drawable.ic_timer, true, width, compact)
+}
+
+/** The first price big, the others in one line under it. */
+internal fun Widgets.marketTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+    val m = f.market
+    val l = if (m == null || m.empty) emptyList() else lines(m, opt("market", "show"), opt("market", "btc") == "on")
+    if (l.isEmpty()) { tonalBody(card, a.getString(R.string.w_market), "—", a.getString(R.string.mk_none), R.drawable.ic_gold, false, width, compact); return }
+    val first = l[0]
+    val chg = first.pct?.takeIf { Math.abs(it) >= 0.05 }?.let { (if (it > 0) " ▲" else " ▼") + String.format(java.util.Locale.getDefault(), "%.1f%%", Math.abs(it)) }.orEmpty()
+    tonalBody(card, first.name + chg, first.value, l.drop(1).take(if (compact) 1 else 2).joinToString("  ·  ") { it.name + " " + it.value }, R.drawable.ic_gold, false, width, compact)
+}
+
+/** One headline (the chosen one while the card is focused, else turning every two minutes), its source and time under it. */
+internal fun Widgets.newsTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+    val items = f.news
+    if (items.isEmpty()) { tonalBody(card, a.getString(R.string.w_news), "—", a.getString(R.string.nw_none), R.drawable.ic_news, true, width, compact); return }
+    newsCount = minOf(items.size, 3); newsAt = newsAt.coerceIn(0, newsCount - 1)
+    val i = if (newsFocused) newsAt else ((System.currentTimeMillis() / 120_000) % items.size).toInt()
+    newsShown = i
+    tonalBody(card, a.getString(R.string.w_news), items[i].title, listOf(items[i].src, ago(items[i].at)).filter { it.isNotEmpty() }.joinToString(" · "), R.drawable.ic_news, true, width, compact, headline = true)
+}
+
+/** A QR card: the code on its white square in the tonal card, the caption and password in the card's ink (the card is the one tonal path, so no bespoke fill). */
+internal fun Widgets.qrTonal(card: LinearLayout, c: org.json.JSONObject?, compact: Boolean) {
+    c ?: return
+    card.setPadding(dp(14), dp(14), dp(16), dp(14))
+    val v = qrView(c, tonal = true) ?: return
+    card.addView(v, LinearLayout.LayoutParams(-1, -1))
 }

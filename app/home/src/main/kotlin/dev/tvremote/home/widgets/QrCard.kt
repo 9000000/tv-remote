@@ -22,13 +22,13 @@ import dev.tvremote.home.Font
  * in the middle it floated. Modules are drawn as whole pixels so the edges stay sharp; no bitmap is kept. Only to look at, like
  * the other cards. The text is built by [HomeQr.payload] from the card's fields; nothing here is logged.
  */
-class QrCard(c: Context, private val grid: Array<BooleanArray>, private val caption: String, private val secretLabel: String, private val secret: String, private val hint: String = "") : View(c) {
+class QrCard(c: Context, private val grid: Array<BooleanArray>, private val caption: String, private val secretLabel: String, private val secret: String, private val hint: String = "", tonal: Boolean = false) : View(c) {
     private val d = resources.displayMetrics.density
     private val paper = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = PAPER }
     private val ink = Paint().apply { color = INK }
-    private val cap = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = WORDS; setShadowLayer(4 * d, 0f, d, SHADOW); textSize = 15f * d; typeface = Font.bold }
-    private val lab = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = LABEL; setShadowLayer(4 * d, 0f, d, SHADOW); textSize = 11f * d; typeface = Font.medium }
-    private val sec = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = WORDS; setShadowLayer(4 * d, 0f, d, SHADOW); textSize = 14f * d; typeface = Typeface.MONOSPACE }
+    private val cap = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = if (tonal) Tonal.INK else WORDS; setShadowLayer(if (tonal) 0f else 4 * d, 0f, d, SHADOW); textSize = 15f * d; typeface = Font.bold }
+    private val lab = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = if (tonal) Tonal.SUB else LABEL; setShadowLayer(if (tonal) 0f else 4 * d, 0f, d, SHADOW); textSize = 11f * d; typeface = Font.medium }
+    private val sec = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = if (tonal) Tonal.INK else WORDS; setShadowLayer(if (tonal) 0f else 4 * d, 0f, d, SHADOW); textSize = 14f * d; typeface = Typeface.MONOSPACE }
     private var text: List<Pair<StaticLayout, Float>> = emptyList()   // each line and its top
     private var box = RectF()                                          // where the code's modules go (a square), set with the text
     private var module = 0f

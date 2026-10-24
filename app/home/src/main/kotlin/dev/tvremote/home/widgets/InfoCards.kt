@@ -56,9 +56,9 @@ internal fun changeChip(c: android.content.Context, d: Float, pct: Double, size:
 }
 
 /** One row of the card: a badge, a muted name, the one figure in big tabular type on the right, and the change since yesterday. */
-private class Line(val kind: String, val key: String, val icon: Int, val sign: String, val tint: Int, val name: String, val value: String, val pct: Double?)
+internal class Line(val kind: String, val key: String, val icon: Int, val sign: String, val tint: Int, val name: String, val value: String, val pct: Double?)
 
-private fun Widgets.lines(m: Market.Snap, show: String, btc: Boolean): List<Line> {
+internal fun Widgets.lines(m: Market.Snap, show: String, btc: Boolean): List<Line> {
     val tr = a.getString(R.string.mk_tr)
     fun g(key: String, name: Int, sell: Long) = Line("gold", key, R.drawable.ic_gold, "", GOLD_BAR, a.getString(name), fmtMil(sell) + " " + tr, Market.trend(a, key, sell.toDouble()))
     val gold = if (show == "rates") emptyList() else m.gold?.let { listOf(g("sjc", R.string.mk_sjc, it.sjcSell), g("ring", R.string.mk_ring, it.ringSell)) }.orEmpty()
