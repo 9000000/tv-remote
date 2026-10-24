@@ -100,56 +100,65 @@ class Hook(
         val p = params(r)
         val named = ACTIONS.filter { p.optString(it).isNotEmpty() }
         if (named.size != 1) throw IllegalArgumentException(if (named.isEmpty()) "say what to do: key, scene, app, text, volume or power" else "one thing per call: " + named.joinToString(", "))
-        val what = named[0]
-        val v = p.optString(what).trim()
-        val out = when (what) {
+        val out = perform(named[0], p.optString(named[0]), run)
+        return if (out.status in 200..299) HttpServer.Response.json(JSONObject().put("ok", true)) else out
+    }
+
+    /**
+     * One action of [ACTIONS], with no token check: the callers have their own (the hook's token; the Telegram bot's paired chat).
+     * [via] is the router that runs the request it builds, so a caller with less right than the owner passes one that checks
+     * its scope (RemoteService). An IllegalArgumentException is a bad value; a 404 for a scene carries the names that exist.
+     */
+    fun perform(what: String, value: String, via: (HttpServer.Request) -> HttpServer.Response): HttpServer.Response {
+        val v = value.trim()
+        return when (what) {
             "key" -> {
                 val k = v.uppercase(Locale.ROOT)
                 if (k !in Scenes.KEYS) throw IllegalArgumentException("unknown key")
-                send("/api/key", JSONObject().put("key", k))
+                send(via, "/api/key", JSONObject().put("key", k))
             }
             "scene" -> {
                 val list = scenes().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }
                 val sc = list.firstOrNull { it.optString("id") == v } ?: list.firstOrNull { it.optString("name").trim().equals(v, ignoreCase = true) }
                     ?: return HttpServer.Response.json(404, JSONObject().put("error", "no such scene").put("scenes", JSONArray(list.map { it.optString("name") })))
-                send("/api/scene/run", JSONObject().put("id", sc.optString("id")))
+                send(via, "/api/scene/run", JSONObject().put("id", sc.optString("id")))
             }
             "app" -> {
                 if (!PKG.matches(v)) throw IllegalArgumentException("app: a package name, like com.netflix.ninja")
-                send("/api/app", JSONObject().put("link", v))
+                send(via, "/api/app", JSONObject().put("link", v))
             }
-            "text" -> send(routes.text, JSONObject().put("text", v.take(500)))
-            "volume" -> volume(v)
-            else -> power(v)
+            "text" -> send(via, routes.text, JSONObject().put("text", v.take(500)))
+            "volume" -> volume(via, v)
+            else -> power(via, v)
         }
-        return if (out.status in 200..299) HttpServer.Response.json(JSONObject().put("ok", true)) else out
     }
 
-    private fun volume(v: String): HttpServer.Response {
+    private fun volume(via: (HttpServer.Request) -> HttpServer.Response, v: String): HttpServer.Response {
         val key = mapOf("up" to "VOL_UP", "down" to "VOL_DOWN", "mute" to "MUTE")[v.lowercase(Locale.ROOT)]
-        if (key != null) return send("/api/key", JSONObject().put("key", key))
+        if (key != null) return send(via, "/api/key", JSONObject().put("key", key))
         val level = v.toIntOrNull()?.takeIf { it in 0..100 } ?: throw IllegalArgumentException("volume: 0 to 100, up, down or mute")
-        return if (routes.volume != null) send(routes.volume, JSONObject().put("level", level))
-        else send("/api/scene/run", JSONObject().put("steps", JSONArray().put(JSONObject().put("do", "volume").put("level", level))))
+        return if (routes.volume != null) send(via, routes.volume, JSONObject().put("level", level))
+        else send(via, "/api/scene/run", JSONObject().put("steps", JSONArray().put(JSONObject().put("do", "volume").put("level", level))))
     }
 
-    private fun power(v: String): HttpServer.Response = when (v.lowercase(Locale.ROOT)) {
+    private fun power(via: (HttpServer.Request) -> HttpServer.Response, v: String): HttpServer.Response = when (v.lowercase(Locale.ROOT)) {
         "on" -> {                                                  // Wake-on-LAN for a TV in deep standby, then the key for one that only sleeps
-            if (routes.wake != null) try { send(routes.wake, JSONObject()) } catch (e: Exception) { }
-            send("/api/key", JSONObject().put("key", "WAKE"))
+            if (routes.wake != null) try { send(via, routes.wake, JSONObject()) } catch (e: Exception) { }
+            send(via, "/api/key", JSONObject().put("key", "WAKE"))
         }
-        "off" -> send("/api/key", JSONObject().put("key", "SLEEP"))
-        "toggle" -> send("/api/key", JSONObject().put("key", "POWER"))
+        "off" -> send(via, "/api/key", JSONObject().put("key", "SLEEP"))
+        "toggle" -> send(via, "/api/key", JSONObject().put("key", "POWER"))
         else -> throw IllegalArgumentException("power: on, off or toggle")
     }
 
-    private fun send(path: String, body: JSONObject): HttpServer.Response {
+    /** [path] with [body] as the request the page itself would have sent, run by [via] (never the caller's own request). */
+    fun send(via: (HttpServer.Request) -> HttpServer.Response, path: String, body: JSONObject, method: String = "POST"): HttpServer.Response {
         val bytes = body.toString().toByteArray(Charsets.UTF_8)
         val q = HttpServer.Request()
-        q.method = "POST"; q.path = path; q.peer = "127.0.0.1"
+        q.method = method; q.path = path; q.peer = "127.0.0.1"
         q.headers["content-type"] = "application/json"
         q.body = ByteArrayInputStream(bytes); q.length = bytes.size.toLong()
-        return try { run(q) } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message ?: "bad request") }
+        return try { via(q) } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message ?: "bad request") }
     }
 
     /** Query first, then a JSON body: Home Assistant's rest_command sends either. */
@@ -167,7 +176,7 @@ class Hook(
     private fun same(a: String, b: String) = MessageDigest.isEqual(a.toByteArray(Charsets.UTF_8), b.toByteArray(Charsets.UTF_8))
 
     /** What a home-automation rule needs: on or off, the volume, what is open. Never the TV's name, address or anything stored. */
-    private fun brief(s: JSONObject): JSONObject {
+    fun brief(s: JSONObject): JSONObject {
         val o = JSONObject().put("ok", true).put("connected", s.optBoolean("connected", true))
         o.put("on", if (s.isNull("is_on") || !s.has("is_on")) JSONObject.NULL else s.optBoolean("is_on"))
         val v = s.optJSONObject("volume")

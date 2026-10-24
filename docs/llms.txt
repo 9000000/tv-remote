@@ -22,6 +22,7 @@ Works on TVs that run Android TV / Google TV (Sony, TCL, Xiaomi, Philips, Google
 - Parental controls on the TV itself: daily limits per app, bedtime, sleep timer; enforced by the TV with every phone off.
 - Draw on the picture: the strokes show on the TV over any app (to guide someone far away).
 - Several TVs at once: install / restart on all; scenes (a list of steps run with one tap).
+- Telegram: the TV answers your own bot (made with @BotFather, token pasted in Settings of TV Setup's page, chats paired with a one-time 6-digit code): /status /off /on /vol /key /open /scene /timer /say /shot /remote. Long polling, no open port. Needs TV Setup 0.21.1.
 - Home Assistant and iPhone Shortcuts (Siri): a home-network link with its own token (off until switched on in Settings) presses keys, opens apps, runs scenes, sets volume / power: `/api/hook?k=<token>&key=HOME`, `/api/hook/state`. In TV Setup's web page and the computer app (which opens one extra port only while on).
 - Infrared remote (Phone app, on phones with an IR blaster): works with no network and no TV picked; Samsung, LG, Sony, TCL, Philips and more from Flipper-IRDB (CC0), and "Find code" for a box that is in no list.
 - Game controller as a remote: plug or pair a pad into the device running the app, press a button once; D-pad / stick = arrows, A OK, B Back, X play/pause, Y mute, LB/RB volume, LT/RT channel, Start Home, Select Menu; while the picture is shown the buttons go to the TV as real gamepad buttons.

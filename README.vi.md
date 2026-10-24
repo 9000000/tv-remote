@@ -75,6 +75,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 | Widget, ô Cài đặt nhanh, phím âm lượng của máy | ✓ | | |
 | 🎮 Tay cầm chơi game | ✓ | ✓ | ✓ |
 | Link cho Home Assistant, Phím tắt (Siri) | | ✓ | ✓, mở cổng riêng khi bật |
+| Bot Telegram (tắt/bật, tiếng, app, chụp màn hình) | cần TV Setup | cài đặt tại đây | cần TV Setup |
 | Cần cài gì trên máy điều khiển | app | không, hợp với iPhone | app |
 | TV LG, Samsung, Roku, VIDAA | ✓ | | ✓ |
 

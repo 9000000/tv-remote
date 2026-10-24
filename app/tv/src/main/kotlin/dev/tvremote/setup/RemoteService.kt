@@ -25,6 +25,7 @@ import dev.tvremote.core.web.HttpServer
 import dev.tvremote.core.web.Invite
 import dev.tvremote.core.web.Manage
 import dev.tvremote.core.scenes.Scenes
+import dev.tvremote.core.ontv.Notify
 import dev.tvremote.core.ontv.Setup
 import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.core.picture.Tv
@@ -175,6 +176,31 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }, dev.tvremote.core.web.Hook.Routes(), { used(it.path); route(it, "127.0.0.1", ME) }, { state("127.0.0.1") }, { scenes() },
             { lanIp().takeIf { it.isNotEmpty() }?.let { "http://$it:$PORT" } ?: "" })
     }
+
+    // The Telegram bot (Telegram.kt): long polling from here, so no port; it lives as long as this service. Its commands go through
+    // route() like the hook's, with the scope of the chat that sent them (a REMOTE chat is refused where a REMOTE browser is).
+    private val telegram: dev.tvremote.core.web.Telegram by lazy {
+        dev.tvremote.core.web.Telegram(object : dev.tvremote.core.web.Telegram.Store {
+            override var enabled: Boolean get() = prefs.getBoolean("tg_on", false); set(v) { prefs.edit().putBoolean("tg_on", v).apply() }
+            override var token: String get() = prefs.getString("tg_token", "") ?: ""; set(v) { prefs.edit().putString("tg_token", v).apply() }
+            override var offset: Long get() = prefs.getLong("tg_offset", 0); set(v) { prefs.edit().putLong("tg_offset", v).apply() }
+            override var lang: String get() = prefs.getString("tg_lang", "") ?: ""; set(v) { prefs.edit().putString("tg_lang", v).apply() }
+            override var bot: String get() = prefs.getString("tg_bot", "") ?: ""; set(v) { prefs.edit().putString("tg_bot", v).apply() }
+            override var chats: String get() = prefs.getString("tg_chats", "[]") ?: "[]"; set(v) { prefs.edit().putString("tg_chats", v).apply() }
+        }, dev.tvremote.core.web.TelegramHttp(telegramBase()), hook,
+            { r, scope -> used(r.path); route(r, "127.0.0.1", Paired.Entry("tv", "", "Telegram", "127.0.0.1", 0L, 0L, "tv", false, scope)) },
+            { state("127.0.0.1") },
+            { val a = apps(); (0 until a.length()).map { a.getJSONObject(it) }.filter { !it.optBoolean("off") }.map { it.optString("pkg") to it.optJSONObject("meta")!!.optString("label") } },
+            { code -> ui.post { NotifyLayer.show(this, Notify.clean(JSONObject().put("title", T("telegram.card_title")).put("text", T("telegram.card_text", "code" to code)).put("seconds", 60))) } }).also { telegramStarted = true }
+    }
+    @Volatile private var telegramStarted = false
+
+    /** Telegram's address; another one (a fake server for tests) is read from a file only in a debuggable build. */
+    private fun telegramBase(): String {
+        val debug = applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
+        val u = if (!debug) null else try { java.io.File(getExternalFilesDir(null), "telegram-url.txt").takeIf { it.isFile }?.readText()?.trim() } catch (e: Exception) { null }
+        return u?.takeIf { it.startsWith("http") }?.trimEnd('/') ?: "https://api.telegram.org"
+    }
     private val random = SecureRandom()
     private val icons: MutableMap<String, ByteArray> = ConcurrentHashMap()
     private val held = HashMap<Int, Runnable>()
@@ -271,6 +297,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         welcome = WelcomeWatch(this).also { it.start() }
         autoOpen = AutoOpenWatch(this).also { it.start() }
         updates = AutoUpdate(this, version, { try { link?.get() } catch (e: Exception) { null } }) { busyWhy() }.also { it.start() }
+        telegram.sync()                                               // on only when the owner switched it on and gave a token
         ui.postDelayed(rest, 30000)
         ui.postDelayed(diary, 20000)
         stats.watchNet()
@@ -300,6 +327,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         welcome?.stop()
         autoOpen?.stop()
         updates?.stop()
+        if (telegramStarted) telegram.stop()
         stats.stopNet()
         stats.stopPower()
         link?.close()
@@ -499,6 +527,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 return out
             }
             "/api/hook/config" -> return hook.config(r)               // Scope.allows keeps everyone but the owner out
+            "/api/telegram" -> return telegram.config(r)              // the same: the token is never sent back, only masked
             "/api/state" -> return HttpServer.Response.json(state(host).put("scope", me.scope))
             "/api/share" -> if (post) return HttpServer.Response.json(Invite.link(lanIp(), newInvite(r.json().optString("scope")), host))   // a paired page shares the TV it is on
             "/api/about" -> return HttpServer.Response.json(state(host))

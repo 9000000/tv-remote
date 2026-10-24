@@ -47,7 +47,7 @@ class WireLog(private val max: Int = 500) {
     }
 
     companion object {
-        private val SECRET = Regex("(\"(?:client-key|token)\"\\s*:\\s*\")[^\"]*(\")|([?&]token=)[^&\\s\"]*")
+        private val SECRET = Regex("(\"(?:client-key|token)\"\\s*:\\s*\")[^\"]*(\")|([?&]token=)[^&\\s\"]*|(?<=/bot)\\d+:[A-Za-z0-9_-]+")
         /** What every app sends behind "Gửi nhật ký". */
         val all = WireLog()
         /** Which app and version, set by each app when it starts. */

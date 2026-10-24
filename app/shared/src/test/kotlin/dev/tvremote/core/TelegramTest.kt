@@ -1,0 +1,407 @@
+package dev.tvremote.core
+
+import dev.tvremote.core.web.Hook
+import dev.tvremote.core.web.HttpServer
+import dev.tvremote.core.web.Telegram
+import org.json.JSONArray
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import java.io.IOException
+
+class TelegramTest {
+    private class Mem : Telegram.Store {
+        override var enabled = true; override var token = "123456789:AAH-fake_token_for_tests_0123456789abc"
+        override var offset = 0L; override var lang = "en"; override var bot = "@tvbot"; override var chats = "[]"
+    }
+
+    /** A Telegram that answers from a script and remembers every call (the token is never part of what it remembers). */
+    private class Fake : Telegram.Api {
+        val calls = ArrayList<Pair<String, JSONObject>>()
+        val photos = ArrayList<Pair<Long, Int>>()
+        val queue = HashMap<String, ArrayDeque<() -> Telegram.Reply>>()
+        var aborted = 0
+        fun on(method: String, r: () -> Telegram.Reply) { queue.getOrPut(method) { ArrayDeque() }.addLast(r) }
+        override fun call(token: String, method: String, params: JSONObject, timeoutS: Int): Telegram.Reply {
+            calls.add(method to params)
+            return queue[method]?.removeFirstOrNull()?.invoke() ?: Telegram.Reply(200, JSONObject("""{"ok":true,"result":[]}"""))
+        }
+        override fun photo(token: String, chat: Long, png: ByteArray, caption: String): Telegram.Reply { photos.add(chat to png.size); return Telegram.Reply(200, JSONObject("""{"ok":true}""")) }
+        override fun abort() { aborted++ }
+        fun sent(chat: Long) = calls.filter { it.first == "sendMessage" && it.second.optLong("chat_id") == chat }.map { it.second.optString("text") }
+        fun named(m: String) = calls.filter { it.first == m }.map { it.second }
+    }
+
+    private class Seen(val path: String, val method: String, val body: JSONObject, val scope: String)
+
+    private val store = Mem()
+    private val api = Fake()
+    private var now = 1_700_000_000_000L
+    private val seen = ArrayList<Seen>()
+    private var answer: (HttpServer.Request) -> HttpServer.Response = { HttpServer.Response.ok() }
+    private val state = JSONObject("""{"is_on":true,"volume":{"level":7,"max":15,"muted":false},"app":"com.netflix.ninja","app_label":"Netflix"}""")
+    private val scenes = JSONArray("""[{"id":"s1","name":"Movie","steps":[]}]""")
+    private val hook = Hook(object : Hook.Store { override var enabled = true; override var token = "x" }, Hook.Routes(), { HttpServer.Response.ok() }, { state }, { scenes }, { "" }, { now })
+    private val apps = listOf("com.netflix.ninja" to "Netflix", "com.google.android.youtube.tv" to "YouTube", "com.google.android.youtube.tvmusic" to "YouTube Music")
+    private var shown = ""
+    private lateinit var bot: Telegram
+
+    @Before fun setUp() {
+        Words.lang = "en"
+        bot = Telegram(store, api, hook, { r, scope ->
+            seen.add(Seen(r.path, r.method, if (r.method == "POST") r.json() else JSONObject(), scope))
+            answer(r)
+        }, { state }, { apps }, { shown = it }, { now }, java.util.Random(7), background = false)
+    }
+
+    private fun msg(chat: Long, text: String, id: Long = 1, type: String = "private", date: Long = now / 1000) = JSONObject(
+        """{"update_id":$id,"message":{"date":$date,"text":${JSONObject.quote(text)},"chat":{"id":$chat,"type":"$type","first_name":"An"}}}""")
+
+    private fun pairChat(chat: Long = 42, scope: String = "remote") {
+        val c = bot.newCode()
+        assertTrue(bot.pair(chat, "An", c))
+        if (scope != "remote") assertTrue(bot.setScope(chat, scope))
+        now += 5000
+    }
+
+    // ---------------------------------------------------------------- parsing, backoff
+    @Test fun commandsAreParsed() {
+        assertEquals("vol" to "30", bot.let { Telegram.parse("/vol@TvBot 30", "@tvbot")!!.let { c -> c.name to c.arg } })
+        assertEquals("key" to "HOME", Telegram.parse("/KEY   HOME ", "")!!.let { it.name to it.arg })
+        assertEquals("say" to "ăn cơm nhé", Telegram.parse("/say ăn cơm nhé", "")!!.let { it.name to it.arg })
+        assertNull(Telegram.parse("/key@otherbot HOME", "@tvbot"))      // for another bot in the same group
+        assertNull(Telegram.parse("hello", ""))
+        assertNull(Telegram.parse("/", ""))
+        assertEquals("", Telegram.parse("/help", "")!!.arg)
+        assertEquals("OK", Telegram.parse("/key\nOK", "")!!.arg)
+    }
+
+    @Test fun backoffDoublesFromFiveSecondsToAMinute() {
+        var d = 0L; val seq = ArrayList<Long>()
+        repeat(7) { d = Telegram.next(d); seq.add(d) }
+        assertEquals(listOf(5000L, 10000L, 20000L, 40000L, 60000L, 60000L, 60000L), seq)
+    }
+
+    // ---------------------------------------------------------------- who may talk
+    @Test fun aStrangerIsIgnoredEvenWithACommand() {
+        bot.onUpdate(msg(7, "/off")); bot.onUpdate(msg(7, "/help", 2)); bot.onUpdate(msg(7, "/pair 000000", 3))
+        assertTrue(api.calls.isEmpty()); assertTrue(seen.isEmpty())     // nothing sent, nothing pressed, not even an answer
+    }
+
+    @Test fun theRightCodePairsWithRemoteScopeAndIsUsedUp() {
+        val code = bot.newCode()
+        assertEquals(code, shown); assertEquals(6, code.length)
+        bot.onUpdate(msg(42, "/pair $code"))
+        val list = bot.chats()
+        assertEquals(1, list.size); assertEquals("remote", list[0].scope); assertEquals(42L, list[0].id); assertEquals("An", list[0].name)
+        assertTrue(api.sent(42)[0].contains("Paired"))
+        assertFalse(bot.pair(43, "B", code))                            // one use
+    }
+
+    @Test fun aCodeExpiresAfterFiveMinutes() {
+        val code = bot.newCode()
+        assertEquals(300, bot.codeLeftS())
+        now += 5 * 60_000L + 1
+        assertFalse(bot.pair(42, "An", code)); assertEquals(0, bot.codeLeftS()); assertTrue(bot.chats().isEmpty())
+    }
+
+    @Test fun fiveWrongCodesCancelItAndLockPairingUntilTheOwnerAsksAgain() {
+        val code = bot.newCode()
+        repeat(4) { assertFalse(bot.pair(9, "x", "00000$it")) }
+        assertEquals(0, bot.lockedLeftS())
+        assertFalse(bot.pair(9, "x", "999999"))                         // the fifth
+        assertTrue(bot.lockedLeftS() > 0); assertEquals(0, bot.codeLeftS())
+        assertFalse(bot.pair(42, "An", code))                           // even the right one: it is dead and pairing is locked
+        now += 15 * 60_000L + 1
+        assertEquals(0, bot.lockedLeftS())
+        val fresh = bot.newCode(); assertTrue(bot.pair(42, "An", fresh))
+    }
+
+    @Test fun anOwnerWhoMakesANewCodeLiftsTheLock() {
+        bot.newCode(); repeat(5) { bot.pair(9, "x", "11111$it") }
+        assertTrue(bot.lockedLeftS() > 0)
+        val c = bot.newCode(); assertEquals(0, bot.lockedLeftS()); assertTrue(bot.pair(42, "An", c))
+    }
+
+    @Test fun aGroupIsPairedByItsNegativeId() {
+        val c = bot.newCode()
+        bot.onUpdate(JSONObject("""{"update_id":1,"message":{"date":${now / 1000},"text":"/pair@tvbot $c","chat":{"id":-100123,"type":"supergroup","title":"Family"}}}"""))
+        assertEquals("Family", bot.chats().single().name); assertEquals(-100123L, bot.chats().single().id)
+    }
+
+    // ---------------------------------------------------------------- rate limit, stale messages
+    @Test fun oneCommandASecondPerChat() {
+        pairChat()
+        bot.onUpdate(msg(42, "/key HOME", 1)); bot.onUpdate(msg(42, "/key UP", 2))
+        assertEquals(1, seen.size)
+        now += 1000; bot.onUpdate(msg(42, "/key UP", 3))
+        assertEquals(2, seen.size)
+        bot.onUpdate(msg(42, "/key DOWN", 4)); assertEquals(2, seen.size)
+    }
+
+    @Test fun theLimitIsPerChat() {
+        pairChat(42); pairChat(43)
+        bot.onUpdate(msg(42, "/key HOME", 1)); bot.onUpdate(msg(43, "/key HOME", 2))
+        assertEquals(2, seen.size)
+    }
+
+    @Test fun aMessageThatWaitedInTelegramIsNotRun() {
+        pairChat()
+        bot.onUpdate(msg(42, "/off", 1, date = now / 1000 - 600))
+        assertTrue(seen.isEmpty())
+    }
+
+    // ---------------------------------------------------------------- what the commands do
+    @Test fun keyOffAndOnUseTheCoresOwnRoutes() {
+        pairChat()
+        bot.onUpdate(msg(42, "/key home", 1)); now += 1000
+        bot.onUpdate(msg(42, "/off", 2)); now += 1000
+        bot.onUpdate(msg(42, "/on", 3))
+        assertEquals(listOf("HOME", "SLEEP", "WAKE"), seen.map { it.body.optString("key") })
+        assertTrue(seen.all { it.path == "/api/key" && it.scope == "remote" })
+    }
+
+    @Test fun volumeKeysStayRemoteAndALevelIsTheOneThingARemoteChatMayDoWithSteps() {
+        pairChat()
+        bot.onUpdate(msg(42, "/vol up", 1)); now += 1000
+        bot.onUpdate(msg(42, "/vol 30", 2))
+        assertEquals("VOL_UP", seen[0].body.optString("key")); assertEquals("remote", seen[0].scope)
+        assertEquals("/api/scene/run", seen[1].path); assertEquals(30, seen[1].body.getJSONArray("steps").getJSONObject(0).getInt("level")); assertEquals("full", seen[1].scope)
+        now += 1000; bot.onUpdate(msg(42, "/vol 300", 3))
+        assertEquals(2, seen.size); assertTrue(api.sent(42).last().startsWith("❌") || api.sent(42).last().contains("volume"))
+    }
+
+    @Test fun timerSetsAndZeroCancels() {
+        pairChat()
+        bot.onUpdate(msg(42, "/timer 30", 1)); now += 1000
+        bot.onUpdate(msg(42, "/timer 0", 2)); now += 1000
+        bot.onUpdate(msg(42, "/timer abc", 3))
+        assertEquals(2, seen.size)
+        assertEquals("sleep" to 30, seen[0].body.getString("do") to seen[0].body.getInt("minutes"))
+        assertEquals(0, seen[1].body.getInt("minutes"))
+        assertTrue(api.sent(42)[0].contains("30")); assertTrue(api.sent(42)[1].contains("cancelled")); assertTrue(api.sent(42)[2].startsWith("Use"))
+    }
+
+    @Test fun sceneByNameAndTheListWhenThereIsNone() {
+        pairChat()
+        bot.onUpdate(msg(42, "/scene movie", 1)); now += 1000
+        assertEquals("s1", seen[0].body.optString("id"))
+        bot.onUpdate(msg(42, "/scene Nope", 2))
+        assertTrue(api.sent(42).last().contains("Movie"))
+    }
+
+    @Test fun openFindsAnAppByNameAndRefusesWhatTheHomeScreenDoesNotShow() {
+        pairChat()
+        bot.onUpdate(msg(42, "/open netflix", 1)); now += 1000
+        assertEquals("com.netflix.ninja", seen[0].body.optString("link"))
+        bot.onUpdate(msg(42, "/open tube", 2)); now += 1000             // two match: asks, opens nothing
+        assertEquals(1, seen.size); assertTrue(api.sent(42).last().contains("YouTube Music"))
+        bot.onUpdate(msg(42, "/open com.android.settings", 3)); now += 1000
+        assertEquals(1, seen.size)                                      // a REMOTE chat opens only what the home screen shows
+        assertTrue(bot.setScope(42, "full"))
+        bot.onUpdate(msg(42, "/open com.android.settings", 4))
+        assertEquals("com.android.settings", seen[1].body.optString("link")); assertEquals("full", seen[1].scope)
+    }
+
+    @Test fun sayShowsACardAndStatusReadsTheState() {
+        pairChat()
+        bot.onUpdate(msg(42, "/say Dinner is ready", 1)); now += 1000
+        assertEquals("/api/notify", seen[0].path); assertEquals("Dinner is ready", seen[0].body.optString("text"))
+        bot.onUpdate(msg(42, "/status", 2))
+        val s = api.sent(42).last()
+        assertTrue(s.contains("on") && s.contains("7/15") && s.contains("Netflix"))
+    }
+
+    @Test fun statusWithNoAppRunningDoesNotSayNull() {
+        pairChat(); state.put("app", JSONObject.NULL).put("app_label", JSONObject.NULL)
+        bot.onUpdate(msg(42, "/status")); assertFalse(api.sent(42).last().contains("null"))
+        state.put("app", "com.netflix.ninja").put("app_label", "Netflix")
+    }
+
+    @Test fun shotSendsThePngAsAPhoto() {
+        pairChat()
+        answer = { HttpServer.Response.of("image/png", ByteArray(1234)) }
+        bot.onUpdate(msg(42, "/shot"))
+        assertEquals("/api/screen", seen[0].path); assertEquals("GET", seen[0].method)
+        assertEquals(listOf(42L to 1234), api.photos)
+    }
+
+    @Test fun whenTheCoreRefusesTheScopeTheChatIsToldAndNothingIsHidden() {
+        pairChat()
+        answer = { HttpServer.Response.json(403, JSONObject().put("error", "scope")) }
+        bot.onUpdate(msg(42, "/key HOME"))
+        assertTrue(api.sent(42).last().contains("may not"))
+    }
+
+    @Test fun adbNotReadyIsSaidInPlainWords() {
+        pairChat()
+        answer = { HttpServer.Response.error(503, "adb:connecting") }
+        bot.onUpdate(msg(42, "/key HOME"))
+        assertTrue(api.sent(42).last().contains("not ready"))
+    }
+
+    @Test fun theKeypadTapPressesTheKeyAndAnswersTheCallback() {
+        pairChat()
+        bot.onUpdate(msg(42, "/remote", 1))
+        val kb = api.named("sendMessage").last().getJSONObject("reply_markup").getJSONArray("inline_keyboard")
+        val data = (0 until kb.length()).flatMap { r -> (0 until kb.getJSONArray(r).length()).map { kb.getJSONArray(r).getJSONObject(it).getString("callback_data") } }
+        assertTrue(data.containsAll(listOf("k:UP", "k:DOWN", "k:LEFT", "k:RIGHT", "k:OK", "k:BACK", "k:HOME", "k:VOL_UP", "k:VOL_DOWN", "k:MUTE")))
+        now += 1000
+        bot.onUpdate(JSONObject("""{"update_id":2,"callback_query":{"id":"cb1","data":"k:UP","message":{"chat":{"id":42}}}}"""))
+        assertEquals("UP", seen.last().body.optString("key"))
+        assertEquals("cb1", api.named("answerCallbackQuery").last().optString("callback_query_id"))
+        bot.onUpdate(JSONObject("""{"update_id":3,"callback_query":{"id":"cb2","data":"k:UP","message":{"chat":{"id":42}}}}"""))   // under 0.4 s
+        assertEquals(1, seen.count { it.body.optString("key") == "UP" })
+        now += 1000
+        bot.onUpdate(JSONObject("""{"update_id":4,"callback_query":{"id":"cb3","data":"k:POWER","message":{"chat":{"id":42}}}}"""))   // not on the keypad
+        assertEquals(1, seen.count { it.body.optString("key") == "UP" }); assertTrue(seen.none { it.body.optString("key") == "POWER" })
+        bot.onUpdate(JSONObject("""{"update_id":5,"callback_query":{"id":"cb4","data":"k:UP","message":{"chat":{"id":7}}}}"""))      // a stranger's tap
+        assertEquals(1, seen.count { it.body.optString("key") == "UP" })
+    }
+
+    @Test fun inTheOtherLanguageTheWordsFollow() {
+        pairChat(); store.lang = "vi"
+        bot.onUpdate(msg(42, "/off"))
+        assertTrue(api.sent(42).last().contains("Đã tắt"))
+    }
+
+    // ---------------------------------------------------------------- the loop: offset, webhook, errors
+    private fun updates(vararg u: JSONObject) = Telegram.Reply(200, JSONObject().put("ok", true).put("result", JSONArray(u.toList())))
+
+    @Test fun theOffsetMovesPastTheBatchBeforeAnyCommandRuns() {
+        pairChat()
+        var offsetWhenRun = -1L
+        answer = { offsetWhenRun = store.offset; HttpServer.Response.ok() }
+        bot.handle(JSONArray(listOf(msg(42, "/key HOME", 10), msg(7, "x", 12), msg(42, "/key UP", 11))))
+        assertEquals(13L, store.offset); assertEquals(13L, offsetWhenRun)
+    }
+
+    @Test fun theFirstStartSkipsWhatWasSentWhileNobodyListened() {
+        pairChat()
+        api.on("getUpdates") { updates(msg(42, "/off", 55)) }           // the backlog: answered by offset=-1, never run
+        api.on("getUpdates") { updates() }
+        assertEquals(0L, bot.step())
+        assertEquals(56L, store.offset); assertTrue(seen.isEmpty())
+        val polls = api.named("getUpdates")
+        assertEquals(-1, polls[0].getInt("offset")); assertEquals(56L, polls[1].getLong("offset"))
+        assertEquals(50, polls[1].getInt("timeout"))
+        assertEquals(listOf("message", "callback_query"), (0 until 2).map { polls[1].getJSONArray("allowed_updates").getString(it) })
+    }
+
+    @Test fun theWebhookIsClearedAndTheCommandsSetOnceThenOnlyPolling() {
+        store.offset = 5
+        bot.step(); bot.step(); bot.step()
+        assertEquals(1, api.named("deleteWebhook").size); assertEquals(1, api.named("setMyCommands").size)
+        assertEquals(3, api.named("getUpdates").size)
+        assertEquals(12, api.named("setMyCommands")[0].getJSONArray("commands").length())
+        assertEquals("ok", bot.status)
+    }
+
+    @Test fun anErrorWaitsFiveThenTenSecondsAndAGoodAnswerStartsOver() {
+        store.offset = 5
+        api.on("getMe") { throw IOException("down") }
+        api.on("getMe") { throw IOException("down") }
+        assertEquals(5000L, bot.step()); assertEquals("error", bot.status)
+        assertEquals(10000L, bot.step())
+        assertEquals(0L, bot.step()); assertEquals("ok", bot.status)
+        api.on("getUpdates") { Telegram.Reply(500, JSONObject()) }
+        assertEquals(5000L, bot.step())
+    }
+
+    @Test fun telegramAskingToSlowDownIsHonoured() {
+        store.offset = 5
+        api.on("getMe") { Telegram.Reply(429, JSONObject("""{"ok":false,"parameters":{"retry_after":30}}""")) }
+        assertEquals(30000L, bot.step())
+    }
+
+    @Test fun aRefusedTokenStopsTheLoopUntilANewOne() {
+        api.on("getMe") { Telegram.Reply(401, JSONObject("""{"ok":false,"description":"Unauthorized"}""")) }
+        assertEquals(-1L, bot.step()); assertEquals("badtoken", bot.status)
+    }
+
+    @Test fun conflictWithAWebhookClearsItAgain() {
+        store.offset = 5
+        api.on("getUpdates") { Telegram.Reply(409, JSONObject("""{"ok":false,"description":"Conflict"}""")) }
+        assertEquals(5000L, bot.step())
+        bot.step()
+        assertEquals(2, api.named("deleteWebhook").size)
+    }
+
+    @Test fun offOrNoTokenMakesNoCall() {
+        store.enabled = false
+        assertEquals(-1L, bot.step()); assertEquals("off", bot.status)
+        store.enabled = true; store.token = ""
+        assertEquals(-1L, bot.step()); assertTrue(api.calls.isEmpty())
+    }
+
+    // ---------------------------------------------------------------- the owner's page: secrets and undo
+    private fun post(o: JSONObject): HttpServer.Response {
+        val r = HttpServer.Request(); r.method = "POST"; r.path = "/api/telegram"
+        val b = o.toString().toByteArray(); r.body = b.inputStream(); r.length = b.size.toLong()
+        return bot.config(r)
+    }
+
+    @Test fun theTokenIsNeverSentBack() {
+        val t = store.token
+        val j = bot.json().toString()
+        assertFalse(j.contains(t)); assertFalse(j.contains(t.substringAfter(':')))
+        assertEquals("123456789:••••9abc", bot.json().getString("masked"))
+        val body = String(post(JSONObject().put("do", "scope").put("id", 1).put("scope", "full")).body)
+        assertFalse(body.contains(t.substringAfter(':')))
+    }
+
+    @Test fun savingATokenChecksItAndTurnsTheBotOn() {
+        store.enabled = false; store.token = ""
+        assertEquals(400, post(JSONObject().put("do", "token").put("token", "nonsense")).status)
+        api.on("getMe") { Telegram.Reply(401, JSONObject()) }
+        assertEquals(400, post(JSONObject().put("do", "token").put("token", "123456789:AAH-fake_token_for_tests_0123456789abc")).status)
+        assertEquals("", store.token)
+        api.on("getMe") { Telegram.Reply(200, JSONObject("""{"ok":true,"result":{"username":"my_bot"}}""")) }
+        val r = post(JSONObject().put("do", "token").put("token", " 123456789:AAH-fake_token_for_tests_0123456789abc "))
+        assertEquals(200, r.status); assertTrue(store.enabled); assertEquals("@my_bot", store.bot)
+        bot.stop()
+    }
+
+    @Test fun offKeepsTheTokenAndChatsRemoveForgetsEverything() {
+        pairChat()
+        post(JSONObject().put("do", "off"))
+        assertFalse(store.enabled); assertTrue(store.token.isNotEmpty()); assertEquals(1, bot.chats().size)
+        post(JSONObject().put("do", "remove"))
+        assertEquals("", store.token); assertTrue(bot.chats().isEmpty()); assertFalse(store.enabled); assertEquals(0L, store.offset)
+        assertEquals(400, post(JSONObject().put("do", "on")).status)    // no token to turn on
+    }
+
+    @Test fun aSingleChatCanBeRemovedOrRaised() {
+        pairChat(42); pairChat(43)
+        post(JSONObject().put("do", "scope").put("id", 42).put("scope", "full"))
+        assertEquals("full", bot.chats().first { it.id == 42L }.scope); assertEquals("remote", bot.chats().first { it.id == 43L }.scope)
+        post(JSONObject().put("do", "forget").put("id", 42))
+        assertEquals(listOf(43L), bot.chats().map { it.id })
+        assertEquals(400, post(JSONObject().put("do", "scope").put("id", 99).put("scope", "full")).status)
+        assertEquals(400, post(JSONObject().put("do", "scope").put("id", 43).put("scope", "root")).status)
+        bot.onUpdate(msg(42, "/off", 1)); assertTrue(seen.isEmpty())    // forgotten: a stranger again
+    }
+
+    @Test fun makingACodeShowsItOnTheTvAndInTheState() {
+        val j = JSONObject(String(post(JSONObject().put("do", "code")).body))
+        assertEquals(shown, j.getString("code")); assertEquals(300, j.getInt("code_left"))
+        assertFalse(bot.json().optBoolean("on").not())
+    }
+
+    @Test fun theLogNeverHoldsTheToken() {
+        pairChat()
+        bot.onUpdate(msg(42, "/say secret words", 1))
+        api.on("getMe") { throw IOException("https://api.telegram.org/bot${store.token}/getMe failed") }
+        bot.step()
+        val log = WireLog.all.text()
+        assertFalse(log.contains(store.token)); assertFalse(log.contains("AAH-fake_token")); assertFalse(log.contains("secret words"))
+        assertTrue(log.contains("telegram"))
+        assertNotNull(bot.json().optString("error"))
+        assertFalse(bot.json().toString().contains("AAH-fake_token"))
+    }
+}

@@ -457,6 +457,37 @@
         <p class="note" data-i18n="about.anyone_with_this_link">Ai có đường dẫn này bấm được phím trên TV. Đổi mã mới thì đường dẫn cũ hết dùng.</p>
       </div>
     </div>
+    <div class="group" id="tggroup" data-for="tv"><h3 data-i18n="telegram_ui.title">💬 Điều khiển bằng Telegram</h3>
+      <p class="note" data-i18n="telegram_ui.why">Nhắn tin cho bot của bạn để tắt/bật TV, chỉnh tiếng, mở app, chụp màn hình. Bot do bạn tự tạo, chạy ngay trên TV, không cần mở cổng. Ảnh chụp màn hình đi qua máy chủ Telegram.</p>
+      <div class="places" id="tgpick"><button data-v="off" data-i18n="about.off">Không bật</button><button data-v="on" data-i18n="about.on">Cho dùng</button></div>
+      <div class="group" id="tgbody" hidden>
+        <div class="group" id="tgsetup" hidden>
+          <p class="note" data-i18n="telegram_ui.step1">1. Trong Telegram, mở @BotFather, gửi /newbot và đặt tên.</p>
+          <p class="note" data-i18n="telegram_ui.step2">2. Chép token BotFather trả về (dạng 123456:ABC…) và dán vào đây:</p>
+          <form class="line" id="tgform"><input id="tgtoken" type="password" autocomplete="off" spellcheck="false" placeholder="Dán token của bot" aria-label="Token của bot Telegram" data-i18n-placeholder="telegram_ui.token_ph" data-i18n-aria-label="telegram_ui.token_label"><button class="primary" data-i18n="telegram_ui.save">Lưu</button></form>
+          <p class="note"><a href="https://tvremote.pages.dev/guide#telegram" target="_blank" rel="noopener" data-i18n="telegram_ui.guide">Xem hướng dẫn từng bước</a></p>
+        </div>
+        <div class="group" id="tgready" hidden>
+          <p class="state" id="tgstate"></p>
+          <h3 data-i18n="telegram_ui.pair_h">Ghép đôi một chat</h3>
+          <p class="note" data-i18n="telegram_ui.pair_note">Bấm Tạo mã, rồi gửi “/pair mã” cho bot, trong chat riêng hoặc trong nhóm. Mã dùng một lần, 5 phút, cũng hiện trên màn hình TV. Chat lạ gửi gì bot cũng không trả lời.</p>
+          <div class="actions"><button class="primary" id="tgcode" data-i18n="telegram_ui.make_code">Tạo mã ghép đôi</button></div>
+          <p class="state" id="tgcodeline" hidden></p>
+          <h3 data-i18n="telegram_ui.chats_h">Chat được phép</h3>
+          <div id="tgchats"></div>
+          <h3 data-i18n="telegram_ui.lang_h">Ngôn ngữ của bot</h3>
+          <div class="places" id="tglang"><button data-v="" data-i18n="telegram_ui.lang_auto">Theo TV</button><button data-v="vi" data-i18n="telegram_ui.lang_vi">Tiếng Việt</button><button data-v="en" data-i18n="telegram_ui.lang_en">English</button></div>
+        </div>
+      </div>
+      <div class="group" id="tgkept" hidden>
+        <p class="note" data-i18n="telegram_ui.off_note">Tắt là bot dừng ngay, token và chat vẫn giữ. Xoá token là quên hết.</p>
+        <div class="actions"><button class="small danger" id="tgremove" data-i18n="telegram_ui.remove">Xoá token</button></div>
+      </div>
+    </div>
+    <div class="group" id="tghint" data-for="pc phone"><h3 data-i18n="telegram_ui.title">💬 Điều khiển bằng Telegram</h3>
+      <p class="note" data-i18n="telegram_ui.hint">Bot Telegram chạy ngay trên TV, trong TV Setup. Mở trang web của TV (hoặc TV Setup trên TV) → 🛠️ Cài đặt để bật.</p>
+      <div class="actions"><button class="small" id="tgcheck" data-i18n="telegram_ui.check">Kiểm tra TV Setup</button></div>
+    </div>
     <div class="group about"><h3 data-i18n="about.about">Giới thiệu</h3>
     <p><b>TV Remote</b> <span class="muted" id="aboutver"></span></p>
     <p data-i18n="about.control_an_android_tv">Điều khiển Android TV / Google TV từ máy tính và điện thoại: nút remote, xem màn hình, ứng dụng, tệp, cài APK.</p>
@@ -569,6 +600,7 @@
 <script src="js/welcome.js"></script>
 <script src="js/diagnose.js"></script>
 <script src="js/setup.js"></script>
+<script src="js/telegram.js"></script>
 <script src="js/launchers.js"></script>
 <script src="js/home_walls.js"></script>
 <script src="js/home_qr.js"></script>

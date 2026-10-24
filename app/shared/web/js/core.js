@@ -180,6 +180,7 @@ const FRIENDLY = [
   [SETUP_RE, setupSay],
   [/the home network is out of reach under the VPN/, T('core.fr_vpn_blocked')],   // Lan.BLOCKED: the phone's Manage screen
   [/notify:nooverlay/, T('core.fr_notify_no_overlay')],
+  [/telegram: bad token/, T('telegram_ui.bad_token')],
   [/welcome:toobig/, () => T('core.fr_welcome_toobig', { max: fmtSize(200 * 1048576) })],   // Welcome.MAX_BYTES
   [/welcome:kind/, T('core.fr_welcome_kind')],
   [/welcome:unreadable/, T('core.fr_welcome_unreadable')],
