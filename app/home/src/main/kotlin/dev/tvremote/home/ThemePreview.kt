@@ -30,6 +30,7 @@ object ThemePreview {
     private const val LIVE_A = 0xFF4FC3A1.toInt(); private const val LIVE_B = 0xFFFFC857.toInt(); private const val LIVE_C = 0xFF8AB4F8.toInt(); private const val LIVE_D = 0xFFF28B82.toInt()
     private val LIVE = intArrayOf(LIVE_A, LIVE_B, LIVE_C, LIVE_D)
     private const val NO_WALL = 0xFF2A2F3A.toInt()                  // a background nothing is known of yet: the Themes page's own plain tile
+    private const val PLAY_BG = 0xB3000000.toInt()                  // the "moves" pill: dark at 70% so the white triangle reads on a bright wall
 
     private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) { override fun sizeOf(k: String, b: Bitmap) = b.byteCount }
     fun cached(key: String): Bitmap? = cache.get(key)
@@ -74,6 +75,7 @@ object ThemePreview {
         p.shader = null
         cv.save(); cv.clipRect(0f, 0f, w.toFloat(), h.toFloat())
         layout(cv, p, conf, tiles, w.toFloat(), h.toFloat())
+        if (moving(conf)) play(cv, p, w.toFloat(), h.toFloat())
         cv.restore()
         return out
     }
@@ -164,6 +166,24 @@ object ThemePreview {
                 else { p.color = (0x40 shl 24) or (INK and 0xFFFFFF); cv.drawRoundRect(rx - tw * 0.04f, ry - th * 0.06f, rx + tw * 1.04f, bottom + th * 0.06f, h * 0.036f, h * 0.036f, p) }
             }
         }
+    }
+
+    /** The wall moves (a video, or a web page that is one video): the picture alone cannot say so. js/home_walls.js `homeThemeMoving` is its twin. */
+    fun moving(conf: JSONObject): Boolean {
+        val wall = conf.optString("wall")
+        if (HomeConfig.isVideo(wall)) return true
+        if (wall != HomeConfig.WEB) return false
+        val u = conf.optString("wurl").lowercase()
+        return u.contains("/home/loop.html?v=") || Regex("\\.(mp4|webm|m3u8|mkv|mov)(\\?|#|$)").containsMatchIn(u)
+    }
+
+    /** A dark pill with a play triangle in the top right corner, over the head's buttons. */
+    private fun play(cv: Canvas, p: Paint, w: Float, h: Float) {
+        val bh = h * 0.17f; val bw = bh * 1.6f; val x = w - w * 0.04f - bw; val y = h * 0.05f
+        p.color = PLAY_BG; cv.drawRoundRect(x, y, x + bw, y + bh, bh / 2, bh / 2, p)
+        val t = bh * 0.42f; val cx = x + bw / 2 + t * 0.12f; val cy = y + bh / 2
+        p.color = INK
+        cv.drawPath(android.graphics.Path().apply { moveTo(cx - t * 0.45f, cy - t * 0.55f); lineTo(cx + t * 0.6f, cy); lineTo(cx - t * 0.45f, cy + t * 0.55f); close() }, p)
     }
 
     private fun strs(o: JSONObject, k: String) = o.optJSONArray(k)?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty()

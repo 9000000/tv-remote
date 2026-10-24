@@ -917,7 +917,8 @@ object Customize {
         android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()
     }
 
-    private val LOOK_WORDS = mapOf("glass" to R.string.c_cardlook_glass, "tonal" to R.string.c_cardlook_tonal, "classic" to R.string.c_look_classic,   // HomeConfig.STYLES
+    private const val CHIP_FOCUS = 0x2EFFFFFF; private const val CHIP_REST = 0x12FFFFFF; private const val CHIP_EDGE = 0x1FFFFFFF   // a widget row's look button, as its size button
+private val LOOK_WORDS = mapOf("glass" to R.string.c_cardlook_glass, "tonal" to R.string.c_cardlook_tonal, "classic" to R.string.c_look_classic,   // HomeConfig.STYLES
         "light" to R.string.c_look_light, "minimal" to R.string.c_look_minimal, "roman" to R.string.c_look_roman)
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
         arrayOf<Any>("system", R.drawable.ic_gauge, R.string.w_system, R.string.c_system_sub),
@@ -1019,8 +1020,8 @@ object Customize {
                         gravity = Gravity.CENTER; isFocusable = true; isClickable = true
                         contentDescription = a.getString(R.string.c_cardlook)
                         background = StateListDrawable().apply {
-                            addState(intArrayOf(android.R.attr.state_focused), glass(16, 0x2EFFFFFF, Color.WHITE))
-                            addState(intArrayOf(), glass(16, 0x12FFFFFF, 0x1FFFFFFF))
+                            addState(intArrayOf(android.R.attr.state_focused), glass(16, CHIP_FOCUS, Color.WHITE))
+                            addState(intArrayOf(), glass(16, CHIP_REST, CHIP_EDGE))
                         }
                         addView(label(a.getString(LOOK_WORDS[cur] ?: R.string.c_cardlook), 14f, Color.WHITE).apply { gravity = Gravity.CENTER; maxLines = 1 })
                         onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }

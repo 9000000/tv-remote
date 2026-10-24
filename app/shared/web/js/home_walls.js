@@ -168,6 +168,13 @@ function homeVeil(ctx, w, h, k, user) {
 // the live tiles first and the focus on the first one. Rounded shapes only; `img` (a loaded Image) is the background of a photo / page /
 // video, else the drawn look or the colours.
 const HOME_PREV = { ink: '255,255,255', live: ['#4fc3a1', '#ffc857', '#8ab4f8', '#f28b82'], none: '#2a2f3a' };
+// the wall moves (a video, or a web page that is one video): the picture alone cannot say so (ThemePreview.moving is the twin)
+function homeThemeMoving(conf) {
+  if (/^vid:/.test(conf.wall || '')) return true;
+  if (conf.wall !== 'web') return false;
+  const u = String(conf.wurl || '').toLowerCase();
+  return u.includes('/home/loop.html?v=') || /\.(mp4|webm|m3u8|mkv|mov)(\?|#|$)/.test(u);
+}
 function homeThemePaint(cv, conf, tiles, img, look) {
   const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, wall = conf.wall, user = (conf.shade ?? 50) / 50;
   const bar = (x, y, bw, bh, a) => { ctx.fillStyle = `rgba(${HOME_PREV.ink},${a})`; ctx.beginPath(); ctx.roundRect(x, y, bw, bh, bh / 2); ctx.fill(); };
@@ -214,5 +221,10 @@ function homeThemePaint(cv, conf, tiles, img, look) {
       if (ring) { ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, h * 0.012); ctx.beginPath(); ctx.roundRect(rx - 1, ry - 1, tw + 2, th * vis + 2, h * 0.03); ctx.stroke(); }
       else { ctx.fillStyle = `rgba(${HOME_PREV.ink},0.25)`; box(rx - tw * 0.04, ry - th * 0.06, tw * 1.08, th * vis + th * 0.12, h * 0.036); }
     }
+  }
+  if (homeThemeMoving(conf)) {                                    // a dark pill with a play triangle, top right
+    const bh = h * 0.17, bw = bh * 1.6, x = w - w * 0.04 - bw, y = h * 0.05, t = bh * 0.42, cx = x + bw / 2 + t * 0.12, cy = y + bh / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; box(x, y, bw, bh, bh / 2);
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(cx - t * 0.45, cy - t * 0.55); ctx.lineTo(cx + t * 0.6, cy); ctx.lineTo(cx - t * 0.45, cy + t * 0.55); ctx.closePath(); ctx.fill();
   }
 }
