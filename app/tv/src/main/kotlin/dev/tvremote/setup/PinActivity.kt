@@ -187,7 +187,12 @@ class PinActivity : Activity() {
     /** The most digits it takes: past that a try is wrong. */
     private fun maxLen(): Int = tryAt().maxOrNull() ?: len
 
-    private fun draw() { dots.text = "●".repeat(typed.length) + "○".repeat(maxOf(0, maxLen() - typed.length)) }
+    /** Dots for the PIN / the 6-digit code; they grow to 8 only once a backup code is being typed (8 empty dots under "6-digit code" read as a mistake). */
+    private fun draw() {
+        val main = Rules.methods(Rules.load(this)).let { m -> setOfNotNull(len.takeIf { m.optBoolean("pin") }, 6.takeIf { m.optBoolean("totp") }).maxOrNull() } ?: maxLen()
+        val shown = if (typed.length <= main) main else maxLen()
+        dots.text = "●".repeat(typed.length) + "○".repeat(maxOf(0, shown - typed.length))
+    }
 
     private fun home() {
         showing = null
