@@ -204,6 +204,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "launchers" -> return HttpServer.Response.json(launcherApi.list())
                 "launcher/thumb" -> return launcherApi.thumb(r.q("id"))
                 "launcher/install" -> return HttpServer.Response.json(launcherApi.install(r.json().optString("id"), r.lang))
+                "launcher/theme" -> return HttpServer.Response.json(launcherApi.theme(r.json().optString("id"), r.lang))
                 "launcher/play" -> return HttpServer.Response.json(launcherApi.play(r.json().optString("id")))
                 "launcher/answer" -> return HttpServer.Response.json(launcherApi.answer(r.json().optBoolean("keep")))
                 "launcher/restore" -> return HttpServer.Response.json(launcherApi.restore())

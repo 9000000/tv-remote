@@ -28,3 +28,4 @@ app/gradle/local.properties
 dev/node_modules/
 dev/package.json
 dev/package-lock.json
+.agent/
