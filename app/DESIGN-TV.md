@@ -164,7 +164,7 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 
 ### Tonal cards (TV Home's home screen cards, style "tonal")
 
-The other look of the weather, system, lunar and air cards (`wstyle`, `HomeConfig.STYLES`; "glass" stays the default). One helper draws all of them: `widgets/Tonal.kt` (`tonalCard`, `Scallop`, `tonalBar`); a card never hand-paints its own.
+The other look of the weather, system, lunar and air cards (option `look` in `wopt`, `HomeConfig.options`; "glass" stays the default). One helper draws all of them: `widgets/Tonal.kt` (`tonalCard`, `Scallop`, `tonalBar`); a card never hand-paints its own.
 
 | Part | Value |
 |---|---|

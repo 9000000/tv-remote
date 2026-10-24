@@ -114,15 +114,14 @@ object ThemePreview {
             val gap = w * 0.02f
             val room = w - 2 * m - gap * (packed.cols.size - 1)
             val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight }).toFloat()
-            val styles = conf.optJSONObject("wstyle")
-            var x = m
+                        var x = m
             for (col in packed.cols) {
                 val cw = room * col.weight / sum
                 val n = col.keys.size
                 val ch = (rowH - (n - 1) * gap * 0.6f) / n
                 col.keys.forEachIndexed { j, k ->
                     val cy = y + j * (ch + gap * 0.6f)
-                    val tonal = styles?.optString(k) == "tonal"
+                    val tonal = HomeConfig.optValue(conf, k, "look") == "tonal"
                     p.color = (((if (tonal) FILL_TONAL else FILL_GLASS) shl 24) or (INK and 0xFFFFFF))
                     cv.drawRoundRect(x, cy, x + cw, cy + ch, h * 0.035f, h * 0.035f, p)
                     val pad = h * 0.03f

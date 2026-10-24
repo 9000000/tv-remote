@@ -179,9 +179,6 @@
     <string name="c_moving">Lên / Xuống, rồi OK</string>
     <string name="w_layout">Kết quả</string>
     <string name="w_layout_empty">Chưa bật widget nào: bật ở bên dưới</string>
-    <string name="c_size_big">To</string>
-    <string name="c_size_small">Nhỏ</string>
-    <string name="c_size">Cỡ</string>
     <string name="c_waits">chưa hiện</string>
     <string name="c_lang">Ngôn ngữ</string>
     <string name="c_motion">Mức chuyển động</string>
@@ -415,13 +412,6 @@
     <string name="h_duanwu">Tết Đoan Ngọ</string>
     <string name="h_vulan">Vu Lan</string>
     <string name="h_midautumn">Trung thu</string>
-    <string name="c_cardlook">Kiểu thẻ</string>
-    <string name="c_cardlook_glass">Kính</string>
-    <string name="c_cardlook_tonal">Tông màu</string>
-    <string name="c_look_classic">Cổ điển</string>
-    <string name="c_look_light">Sáng</string>
-    <string name="c_look_minimal">Tối giản</string>
-    <string name="c_look_roman">La Mã</string>
     <string name="auto_on">Mở khi bật TV</string>
     <string name="auto_off">Thôi mở khi bật TV</string>
     <string name="auto_needs_setup">Đã lưu · cần app TV Setup để mở khi bật TV</string>
@@ -481,4 +471,20 @@
     <string name="am_on">Bật</string>
     <string name="am_off">Tắt</string>
     <string name="am_saved">Đã lưu</string>
+    <string name="c_wsettings">Cài đặt thẻ</string>
+    <string name="home_o_size">Cỡ</string>
+    <string name="home_o_face">Mặt đồng hồ</string>
+    <string name="home_o_theme">Giao diện</string>
+    <string name="home_o_look">Kiểu thẻ</string>
+    <string name="home_ov_big">To</string>
+    <string name="home_ov_small">Nhỏ</string>
+    <string name="home_ov_classic">Cổ điển</string>
+    <string name="home_ov_minimal">Tối giản</string>
+    <string name="home_ov_roman">La Mã</string>
+    <string name="home_ov_dark">Tối</string>
+    <string name="home_ov_light">Sáng</string>
+    <string name="home_ov_glass">Kính</string>
+    <string name="home_ov_tonal">Tông màu</string>
+    <string name="home_ov_off">Tắt</string>
+    <string name="home_ov_on">Bật</string>
 </resources>

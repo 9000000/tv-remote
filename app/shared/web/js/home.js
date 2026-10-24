@@ -64,12 +64,13 @@ const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', cale
 const HOME_STYLE_WORDS = { classic: 'home.style_classic', light: 'home.style_light', minimal: 'home.style_minimal', roman: 'home.style_roman', glass: 'home.style_glass', tonal: 'home.style_tonal' };   // HomeConfig.STYLES
 
 // The packed layout drawn small: a column per weight, its cards stacked, big ones filled (sizes in css/remote.css)
-function packGlyph(p, big) {
+// [x]: the settings dialog's strip, { mark: the card framed, conf: the settings the cards are drawn with (tonal warm, a light clock pale) }
+function packGlyph(p, big, x = {}) {
   const g = el('div', { className: 'packview', role: 'img', 'aria-label': T('home.pack_alt') });
   const sum = Math.max(HOME_W.floor, p.cols.reduce((n, c) => n + c.weight, 0));
   for (const c of p.cols) {
     const col = el('b'); col.style.setProperty('--w', c.weight / sum * 100);
-    for (const k of c.keys) col.append(el('s', { className: big.includes(k) ? 'big' : '' }));
+    for (const k of c.keys) col.append(el('s', { className: [big.includes(k) ? 'big' : '', k === x.mark ? 'mark' : '', x.conf && homeOpt(x.conf, k, 'look') === 'tonal' ? 'tonal' : '', x.conf && k === 'clock' && homeOpt(x.conf, k, 'theme') === 'light' ? 'pale' : ''].filter(Boolean).join(' ') }));
     g.append(col);
   }
   return g;
@@ -84,6 +85,75 @@ function layGlyph(k) {
     g.append(col);
   }
   return g;
+}
+
+// The words the schema names by id (HomeConfig.options: label `home.o_<option>`, value `home.ov_<value>`), listed so the id check sees them used
+const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman',
+  'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_off', 'home.ov_on'];
+// A card's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
+const homeOpt = (c, k, id) => {
+  const o = ((c.wschema || {})[k] || []).find((x) => x.id === id);
+  const v = id === 'size' ? homeSize(c, k) : (((c.wopt || {})[k] || {})[id]);
+  return o && o.values.some((x) => x.id === v) ? v : o ? o.default : '';
+};
+
+// The card itself at the chosen options, drawn small: the clock as a face (10:10) in its face and theme, any other card as a glass or tonal card
+function homeCardPrev(k, c) {
+  const big = homeSize(c, k) === 'big';
+  if (k === 'clock') {
+    const face = homeOpt(c, k, 'face'), light = homeOpt(c, k, 'theme') === 'light';
+    let t = '';
+    for (let i = 0; i < 12; i++) {
+      const quarter = i % 3 === 0, a = i * 30 * Math.PI / 180;
+      if (face === 'minimal' && !quarter) continue;
+      if (face === 'roman' && !quarter) continue;
+      const r1 = face === 'minimal' ? 38 : quarter ? 41 : 44, x1 = 50 + 46 * Math.sin(a), y1 = 50 - 46 * Math.cos(a);
+      t += `<line x1="${50 + r1 * Math.sin(a)}" y1="${50 - r1 * Math.cos(a)}" x2="${x1}" y2="${y1}" class="tick"/>`;
+    }
+    const num = face === 'roman' ? [['XII', 50, 25], ['III', 75, 50], ['VI', 50, 75], ['IX', 25, 50]] : face === 'classic' ? [['12', 50, 25], ['3', 75, 50], ['6', 50, 75], ['9', 25, 50]] : [];
+    t += num.map(([n, x, y]) => `<text x="${x}" y="${y}" class="num">${n}</text>`).join('');
+    const thin = face === 'minimal';
+    t += `<line x1="50" y1="50" x2="${50 + 22 * Math.sin(305 * Math.PI / 180)}" y2="${50 - 22 * Math.cos(305 * Math.PI / 180)}" class="hand ${thin ? 'thin' : ''}"/><line x1="50" y1="50" x2="${50 + 34 * Math.sin(60 * Math.PI / 180)}" y2="${50 - 34 * Math.cos(60 * Math.PI / 180)}" class="hand ${thin ? 'thin' : ''}"/><circle cx="50" cy="50" r="3" class="pin"/>`;
+    return el('div', { className: 'wprev wclock ' + face + (light ? ' light' : ' dark') + (big ? ' big' : ''), role: 'img', 'aria-label': T('home.w_clock'), innerHTML: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="49" class="disc"/>${t}</svg>` });
+  }
+  const tonal = homeOpt(c, k, 'look') === 'tonal';
+  return el('div', { className: 'wprev wcard ' + (tonal ? 'tonal' : 'glass') + (big ? ' big' : '') },
+    el('small', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : k }), el('b', { textContent: '··' }), el('i'));
+}
+
+// One dialog for every card, drawn from the schema: the layout strip of the cards that are on with this one framed, the card at the
+// chosen options, a row of chips per option. Each press goes to the TV at once ([send]) and repaints the strip and the card here.
+function homeWidgetDlg(k, c0, title, send) {
+  const w = c0.widgets || [], opts = (c0.wschema || {})[k] || [];
+  const c = { ...c0, wsize: { ...(c0.wsize || {}) }, wopt: JSON.parse(JSON.stringify(c0.wopt || {})) };
+  const strip = el('div', { className: 'wstrip' }), stage = el('div', { className: 'wstage' }), rows = el('div', { className: 'wopts' });
+  const d = el('dialog', { className: 'ask wset' }, el('div', { className: 'card' },
+    el('div', { className: 'card-head' }, el('h2', { textContent: title }), el('div', { className: 'tools' },
+      el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() }))),
+    strip, stage, rows));
+  const set = (o, v) => {
+    if (o.store === 'wsize') {
+      c.wsize = Object.fromEntries([...new Set([...HOME_WIDGETS, ...w])].map((x) => [x, x === k ? v : homeSize(c, x)]));
+      send({ wsize: c.wsize });
+    } else {
+      c.wopt[k] = { ...(c.wopt[k] || {}), [o.id]: v };
+      send({ wopt: { [k]: { [o.id]: v } } });
+    }
+    paint();
+  };
+  const paint = () => {
+    const bigs = w.filter((x) => homeSize(c, x) === 'big');
+    strip.replaceChildren(packGlyph(homePack(w, bigs, !!c.note), bigs, { mark: k, conf: c }));
+    stage.replaceChildren(homeCardPrev(k, c));
+    rows.replaceChildren(...opts.map((o) => el('div', { className: 'wopt' }, el('span', { className: 'lbl', textContent: T(o.label) }),
+      el('div', { className: 'fchips', role: 'group', 'aria-label': T(o.label) }, ...o.values.map((v) => {
+        const on = homeOpt(c, k, o.id) === v.id;
+        return el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), textContent: T(v.w), onclick: () => set(o, v.id) });
+      })))));
+  };
+  paint();
+  d.addEventListener('close', () => d.remove());
+  document.body.append(d); d.showModal();
 }
 
 // The 🏠 card's line and its Customize button: only where TV Home is on the TV
@@ -385,7 +455,7 @@ async function homeOpen() {
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     const qrs = c.qrs || {};                                          // the QR cards' fields, by key (absent: a TV Home older than them)
     const has = (k) => !!w && w.includes(k);
-    wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || (HOME_WIDGETS[i] === 'air' && !(c.wstyles && c.wstyles.air)); });   // weather, air: a TV Home older than them has no card
+    wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || (HOME_WIDGETS[i] === 'air' && !((c.wschema && c.wschema.air) || (c.wstyles && c.wstyles.air))); });   // weather, air: a TV Home older than them has no card
     wHead.hidden = !w;
     const sized = !!c.wsizes;                                         // this TV Home sizes the cards; an older one has the preset layouts
     const bigs = sized && w ? w.filter((k) => homeSize(c, k) === 'big') : [];
@@ -403,14 +473,15 @@ async function homeOpen() {
     const wstyle = (k, v) => send({ wstyle: { ...(c.wstyle || {}), [k]: v } });
     const styleChips = (k) => el('div', { className: 'fchips wstyle', role: 'group', 'aria-label': T('home.style') },
       ...c.wstyles[k].map((v) => el('button', { type: 'button', className: styleOf(k) === v ? 'on' : '', 'aria-pressed': String(styleOf(k) === v), textContent: HOME_STYLE_WORDS[v] ? T(HOME_STYLE_WORDS[v]) : v, onclick: () => wstyle(k, v) })));
+    const gear = (k) => tool('🛠️', T('home.wset'), () => homeWidgetDlg(k, c, HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : qrs[k] ? homeQrName(qrs[k]) : k, send));
     wList.replaceChildren(...(w || []).map((k, i) => el('div', { className: 'item' },
       el('div', { className: 'name' }, el('span', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : qrs[k] ? homeQrName(qrs[k]) : T('home.w_newer', { k }) }), ...(waits(k, i) ? [el('small', { textContent: waits(k, i) })] : [])),
       el('div', { className: 'acts' },
-        ...(sized ? [sizeChips(k)] : []),
+        ...(c.wschema ? [gear(k)] : sized ? [sizeChips(k)] : []),
         tool('↑', T('home.up'), () => wmove(i, i - 1), i === 0),
         tool('↓', T('home.down'), () => wmove(i, i + 1), i === w.length - 1),
         tool('✕', T('home.w_off'), () => send({ widgets: w.filter((x) => x !== k) }))),
-      ...(c.wstyles && c.wstyles[k] ? [styleChips(k)] : []))));
+      ...(!c.wschema && c.wstyles && c.wstyles[k] ? [styleChips(k)] : []))));
     wList.hidden = !w || !w.length;
     packHead.hidden = packBox.hidden = packNote.hidden = !sized || !w || !(w.length || c.note);
     if (packed) packBox.replaceChildren(packGlyph(packed, bigs));
@@ -537,8 +608,8 @@ async function homeOpen() {
     : k === 'photo' ? T('home.wall_photo') : /^photo\d+$/.test(k) ? T('home.wall_photo_n', { n: +k.slice(5) }) : k;
   const themeRows = (conf) => {
     const on = (v) => T(v ? 'home.td_on' : 'home.td_off'), none = T('home.td_none');
-    const set = conf.walls || [], size = conf.wsize || {}, sty = conf.wstyle || {};
-    const cards = (conf.widgets || []).map((k) => (HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : k) + ' (' + [T(size[k] === 'big' ? 'home.size_big' : 'home.size_small'), ...(sty[k] ? [HOME_STYLE_WORDS[sty[k]] ? T(HOME_STYLE_WORDS[sty[k]]) : sty[k]] : [])].join(', ') + ')');
+    const set = conf.walls || [], size = conf.wsize || {}, sty = conf.wstyle || {}, looks = (k) => Object.values((conf.wopt || {})[k] || {}).filter((v) => /^[a-z]+$/.test(v)).map((v) => { const w = HOME_OPT_WORDS.find((x) => x === 'home.ov_' + v); return w ? T(w) : v; });   // a theme keeps the options that are not the default
+    const cards = (conf.widgets || []).map((k) => (HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : k) + ' (' + [T(size[k] === 'big' ? 'home.size_big' : 'home.size_small'), ...(sty[k] ? [HOME_STYLE_WORDS[sty[k]] ? T(HOME_STYLE_WORDS[sty[k]]) : sty[k]] : looks(k))].join(', ') + ')');
     return [
       [T('home.wall'), themeWall(conf.wall) + (set.length > 1 ? ' · ' + T('home.td_set', { n: set.length, every: T(HOME_EVERY[conf.wevery] || HOME_EVERY.off).toLowerCase() }) : '')],
       [T('home.shade'), (conf.shade ?? 50) + '%'],

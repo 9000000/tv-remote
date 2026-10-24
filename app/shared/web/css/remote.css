@@ -207,6 +207,43 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .packview b { display:flex; flex-direction:column; gap:4px; flex:var(--w) 1 0; min-width:0; }
 .packview s { flex:1; border-radius:5px; background:var(--btn-hi); }
 .packview s.big { background:var(--sel); box-shadow:inset 0 0 0 1.5px var(--accent); }
+.packview s.tonal { background:var(--wtonal); }   /* the strip in a card's settings: a tonal card warm, a light clock pale, the framed one outlined */
+.packview s.pale { background:var(--wpale); }
+.packview s.mark { outline:2px solid var(--text); outline-offset:1px; }
+dialog.wset .card { width:min(520px, 94vw); }
+.wset .wstrip { padding:4px 3px; }
+.wset .wstage { display:flex; justify-content:center; align-items:center; height:160px; border-radius:var(--r, 12px); background:var(--btn); padding:14px; }   /* the card at the chosen options */
+.wset .wopts { display:flex; flex-direction:column; gap:10px; }
+.wset .wopt { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.wset .wopt .lbl { font-weight:600; }
+.packview, .wprev { --wtonal:#f6e9e0; --wpale:#f4f4f6; --wink:#3b2a22; }   /* TV Home's Tonal.FILL / INK and the light clock's face */
+.wprev.wcard { width:150px; height:110px; border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box; }
+.wprev.wcard.big { width:250px; height:130px; }
+.wprev.wcard.glass { background:var(--btn-hi); }
+.wprev.wcard.tonal { background:var(--wtonal); color:var(--wink); }
+.wprev.wcard b { font-size:34px; font-weight:400; line-height:1.1; }
+.wprev.wcard i { margin-top:auto; height:6px; width:60%; border-radius:3px; background:currentColor; opacity:.25; }
+.wprev.wclock { width:120px; height:120px; }
+.wprev.wclock.big { width:150px; height:150px; }
+.wprev.wclock svg { width:100%; height:100%; }
+.wclock .disc { fill:#1c1c1e; stroke:rgba(255,255,255,.2); stroke-width:1; }
+.wclock.minimal.dark .disc { fill:#161618; }
+.wclock.roman.dark .disc { fill:#211c17; }
+.wclock.light .disc { fill:#f4f4f6; stroke:rgba(0,0,0,.13); }
+.wclock.roman.light .disc { fill:#f6f0e4; }
+.wclock .tick { stroke:#fff; stroke-width:1.6; }
+.wclock .num { fill:#fff; font-size:11px; text-anchor:middle; dominant-baseline:central; }
+.wclock .hand { stroke:#fff; stroke-width:3.6; stroke-linecap:round; }
+.wclock .hand.thin { stroke-width:2; }
+.wclock .pin { fill:#ff9500; }
+.wclock.light .tick, .wclock.light .num, .wclock.light .hand { stroke:#1c1c1e; fill:#1c1c1e; }
+.wclock.light .num { stroke:none; }
+.wclock.roman.dark .tick, .wclock.roman.dark .hand { stroke:#e9d8a6; }
+.wclock.roman.dark .num { fill:#e9d8a6; }
+.wclock.roman.light .tick, .wclock.roman.light .hand { stroke:#8c6d1f; }
+.wclock.roman.light .num { fill:#8c6d1f; }
+.wclock .num, .wclock .pin { stroke:none; }
+.wclock .hand { fill:none; }
 .homeqr .homeqr-tpl, .homeqr .homeqr-sec { flex-wrap:wrap; overflow:visible; mask-image:none; }   /* seven templates: they wrap rather than scroll */
 .homeqr-form { display:flex; flex-direction:column; gap:10px; }
 .homeqr-field { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--muted); }

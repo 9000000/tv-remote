@@ -47,9 +47,9 @@ import dev.tvremote.home.R
 
  *   air      the air quality index and PM2.5 ([Weather.Air]: Open-Meteo's air-quality API, same place and cache as the weather)
  *   calendar the month, today a filled circle, a lunar day only on its 1st and 15th ([Month], one View; the lunar days from [Lunar], once a day)
- * weather, system, lunar and air also have the "tonal" look (HomeConfig "wstyle", [Tonal]); calendar etc. stay glass.
+ * weather, system, lunar and air also have the "tonal" look (HomeConfig "wopt" look, [Tonal]); calendar etc. stay glass.
  * and, smaller, stacked in a column beside them:
- *   clock   an analog clock, four looks (HomeConfig "wstyle"); a face in a stack, standing, or big with the time beside it
+ *   clock   an analog clock: a face (classic, minimal, roman) in a theme (dark, light) (HomeConfig "wopt"); a face in a stack, standing, or big with the time beside it
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
  *   timer   the sleep timer or bedtime and the time left (TV Setup's rules, through the same provider); none while neither is set
  *   note    the family's note (HomeConfig "note"), while there is one
@@ -85,7 +85,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
         private val BIG = setOf("system", "usage", "calendar", "weather", "air")
-        private val TONAL = setOf("system", "weather", "lunar", "air")      // the cards that have the tonal look (HomeConfig.STYLES)
+        private val TONAL = setOf("system", "weather", "lunar", "air")      // the cards that have the tonal look (HomeConfig.options)
         const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
         private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
 
@@ -216,8 +216,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             in HomeQr.KEYS -> qrCard(qrs.getJSONObject(k))
             else -> noteView
         }
-        val looks = Store.get(a).optJSONObject("wstyle")
-        fun tonal(k: String) = k in TONAL && looks?.optString(k) == "tonal"             // the first style, glass, is what a missing one means
+        fun tonal(k: String) = k in TONAL && opt(k, "look") == "tonal"                  // the default look, glass, is what a missing one means
         val gap = dp(20)
         val room = (if (width > 0) width else a.resources.displayMetrics.widthPixels - dp(96)) - gap * (packed.cols.size - 1)
         val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight })
@@ -258,6 +257,13 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         }
         visibility = View.VISIBLE
     }
+
+    /**
+     * The options the cards are drawn with: the saved ones (HomeConfig "wopt"), or [options] when something else is looking at a card with
+     * choices not saved yet (the settings dialog's preview). Reads the same way for both, so the preview is the card.
+     */
+    var options: JSONObject? = null
+    internal fun opt(k: String, id: String): String = HomeConfig.optValue(options ?: Store.get(a), k, id)
 
     internal fun hm(t: Long) = SimpleDateFormat(if (Store.get(a).optBoolean("clock24", true)) "HH:mm" else "h:mm a", resources.configuration.locales[0]).format(Date(t))
 

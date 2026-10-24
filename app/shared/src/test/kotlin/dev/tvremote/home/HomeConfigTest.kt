@@ -55,22 +55,81 @@ class HomeConfigTest {
         assertEquals("weather", m.getJSONArray("widgets").getString(0))          // moving never sorts them back
     }
 
-    @Test fun stylesAreKnownOnesOfKnownCards() {
-        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONObject("wstyle").length())            // nothing chosen: the first style
-        val c = HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("clock", "light").put("lunar", "light").put("zzz", "x")))
-        assertEquals("light", c.getJSONObject("wstyle").getString("clock"))
-        assertEquals(1, c.getJSONObject("wstyle").length())                      // a card without looks, an unknown card: dropped
-        assertEquals(0, HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("clock", "neon"))).getJSONObject("wstyle").length())
-        val f = HomeConfig.forward(JSONObject().put("wstyle", JSONObject().put("clock", "roman").put("future", "bold").put("Bad Key", "x")))
-        assertEquals("roman", f.getJSONObject("wstyle").getString("clock"))
-        assertEquals("bold", f.getJSONObject("wstyle").getString("future"))      // a newer TV Home's card keeps its look
-        assertFalse(f.getJSONObject("wstyle").has("Bad Key"))
-        assertEquals("classic", HomeConfig.STYLES["clock"]!![0])
-        for (k in listOf("weather", "system", "lunar", "air")) assertEquals("glass", HomeConfig.STYLES[k]!![0])   // today's look stays the default
-        val t = HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("weather", "tonal").put("air", "tonal").put("system", "wood")))
-        assertEquals("tonal", t.getJSONObject("wstyle").getString("weather")); assertEquals("tonal", t.getJSONObject("wstyle").getString("air"))
-        assertFalse(t.getJSONObject("wstyle").has("system"))
-        assertEquals("light", HomeConfig.merge(JSONObject(), JSONObject().put("wstyle", JSONObject().put("clock", "light"))).getJSONObject("wstyle").getString("clock"))
+    @Test fun optionsAreKnownOnesOfKnownCards() {
+        val none = HomeConfig.clean(JSONObject())
+        assertEquals(0, none.getJSONObject("wopt").length())                                       // nothing chosen: the defaults apply
+        assertFalse(none.has("wstyle"))
+        val c = HomeConfig.clean(JSONObject().put("wopt", JSONObject()
+            .put("clock", JSONObject().put("face", "minimal").put("theme", "light").put("zzz", "x")).put("lunar", JSONObject().put("face", "roman")).put("bogus", JSONObject().put("look", "tonal"))
+            .put("weather", JSONObject().put("look", "tonal")).put("system", JSONObject().put("look", "wood"))))
+        assertEquals("minimal", c.getJSONObject("wopt").getJSONObject("clock").getString("face"))     // independent axes: minimal AND light
+        assertEquals("light", c.getJSONObject("wopt").getJSONObject("clock").getString("theme"))
+        assertEquals(2, c.getJSONObject("wopt").getJSONObject("clock").length())                  // an unknown option: dropped
+        assertFalse(c.getJSONObject("wopt").has("lunar"))                                          // an option the card does not have
+        assertFalse(c.getJSONObject("wopt").has("bogus")); assertFalse(c.getJSONObject("wopt").has("system"))
+        assertEquals("tonal", HomeConfig.optValue(c, "weather", "look"))
+        assertEquals("glass", HomeConfig.optValue(c, "air", "look"))                              // missing: the default
+        assertEquals("roman", HomeConfig.optValue(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "roman"))), "clock", "face"))
+        assertEquals("", HomeConfig.optValue(c, "calendar", "look"))
+        assertFalse(HomeConfig.clean(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "classic")))).getJSONObject("wopt").has("clock"))   // a default is not kept
+        assertEquals("big", HomeConfig.optValue(c, "weather", "size")); assertEquals("small", HomeConfig.optValue(c, "clock", "size"))   // the size is read from "wsize"
+    }
+
+    @Test fun oldStylesBecomeOptions() {
+        val c = HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("clock", "light").put("weather", "tonal").put("lunar", "light").put("zzz", "x")))
+        assertFalse(c.has("wstyle"))
+        assertEquals("classic", HomeConfig.optValue(c, "clock", "face")); assertEquals("light", HomeConfig.optValue(c, "clock", "theme"))   // "light" was a light classic
+        assertEquals("tonal", HomeConfig.optValue(c, "weather", "look"))
+        assertEquals(2, c.getJSONObject("wopt").length())
+        val mn = HomeConfig.clean(JSONObject().put("wstyle", JSONObject().put("clock", "minimal")))
+        assertEquals("minimal", HomeConfig.optValue(mn, "clock", "face")); assertEquals("dark", HomeConfig.optValue(mn, "clock", "theme"))   // "minimal" was forced dark
+        // wopt wins over a leftover wstyle for a card that has an entry
+        val both = HomeConfig.clean(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "roman"))).put("wstyle", JSONObject().put("clock", "light")))
+        assertEquals("roman", HomeConfig.optValue(both, "clock", "face")); assertEquals("dark", HomeConfig.optValue(both, "clock", "theme"))
+        // an older client's write: its "wstyle" turns into options, and replaces the card's whole face
+        val base = JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "roman").put("theme", "light")))
+        val m = HomeConfig.merge(base, JSONObject().put("wstyle", JSONObject().put("clock", "minimal")))
+        assertEquals("minimal", HomeConfig.optValue(m, "clock", "face")); assertEquals("dark", HomeConfig.optValue(m, "clock", "theme"))
+    }
+
+    @Test fun optionDeltasMergePerCardAndOption() {
+        val base = JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "minimal")))
+        val m = HomeConfig.merge(base, JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("theme", "light")).put("weather", JSONObject().put("look", "tonal"))))
+        assertEquals("minimal", HomeConfig.optValue(m, "clock", "face")); assertEquals("light", HomeConfig.optValue(m, "clock", "theme")); assertEquals("tonal", HomeConfig.optValue(m, "weather", "look"))
+        val back = HomeConfig.merge(m, JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("theme", "dark"))))      // set back to the default
+        assertEquals("dark", HomeConfig.optValue(back, "clock", "theme")); assertEquals("minimal", HomeConfig.optValue(back, "clock", "face"))
+        val f = HomeConfig.forward(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("theme", "dark").put("face", "neon")).put("future", JSONObject().put("tone", "bold")).put("Bad Key", JSONObject().put("a", "b"))))
+        assertEquals("dark", f.getJSONObject("wopt").getJSONObject("clock").getString("theme"))     // a default reaches the TV: it is a change
+        assertFalse(f.getJSONObject("wopt").getJSONObject("clock").has("face"))
+        assertEquals("bold", f.getJSONObject("wopt").getJSONObject("future").getString("tone"))     // a newer TV Home's card keeps its option
+        assertFalse(f.getJSONObject("wopt").has("Bad Key"))
+    }
+
+    @Test fun schemaListsWhatEachCardOffers() {
+        val s = HomeConfig.schema()
+        for (k in HomeConfig.WIDGETS) assertEquals("size", s.getJSONArray(k).getJSONObject(0).getString("id"))   // every card has a size, in "wsize"
+        assertEquals("wsize", s.getJSONArray("clock").getJSONObject(0).getString("store"))
+        val clock = s.getJSONArray("clock")
+        assertEquals(listOf("size", "face", "theme"), List(clock.length()) { clock.getJSONObject(it).getString("id") })
+        val face = clock.getJSONObject(1)
+        assertEquals("classic", face.getString("default")); assertEquals("home.o_face", face.getString("label"))
+        assertEquals(listOf("classic", "minimal", "roman"), List(3) { face.getJSONArray("values").getJSONObject(it).getString("id") })
+        assertEquals("home.ov_minimal", face.getJSONArray("values").getJSONObject(1).getString("w"))
+        assertEquals(1, s.getJSONArray("calendar").length())
+        assertEquals("look", s.getJSONArray("weather").getJSONObject(1).getString("id"))
+        for (k in HomeConfig.WIDGETS) for (o in HomeConfig.options(k)) assertTrue(o.default in (if (o.type == "toggle") listOf("off", "on") else o.values))
+    }
+
+    @Test fun themesKeepTheirLooksAsOptions() {
+        val old = HomeConfig.pickTheme(JSONObject().put("widgets", JSONArray(listOf("clock"))).put("wstyle", JSONObject().put("clock", "light")))   // a theme saved before the options
+        assertEquals("light", old.getJSONObject("wopt").getJSONObject("clock").getString("theme"))
+        val n = HomeConfig.merge(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "roman"))),
+            JSONObject().put("theme", JSONObject().put("save", "x")))
+        val id = n.getJSONArray("themes").getJSONObject(0).getString("id")
+        val m = HomeConfig.merge(JSONObject().put("themes", JSONArray().put(JSONObject().put("id", "t9").put("name", "Old").put("conf", JSONObject().put("wstyle", JSONObject().put("weather", "tonal"))))),
+            JSONObject().put("theme", JSONObject().put("apply", "t9")))
+        assertEquals("tonal", HomeConfig.optValue(m, "weather", "look")); assertEquals("classic", HomeConfig.optValue(m, "clock", "face"))   // a theme replaces the looks
+        assertTrue(id.isNotEmpty())
     }
 
     @Test fun anOldLayoutBecomesTheSizesThatGaveTheSamePicture() {

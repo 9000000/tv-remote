@@ -17,7 +17,7 @@ KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/l
 LOOKS = ["dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon", "night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember",
          "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss"]   # HomeConfig.ART + PLAIN: what a tile's picture can be drawn from
 TILE = re.compile(r"tile:[a-z][a-z0-9_.]*/[a-z0-9_]+")
-THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle",
+THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle", "wopt",
               "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]   # HomeConfig.THEME_KEYS
 
 

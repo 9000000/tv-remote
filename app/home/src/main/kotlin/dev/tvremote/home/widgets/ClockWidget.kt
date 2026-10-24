@@ -14,7 +14,6 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.LinearLayout.VERTICAL
 import android.widget.TextView
 import dev.tvremote.home.Font
-import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.Store
 import dev.tvremote.home.ui.Frost
 import dev.tvremote.home.widgets.Widgets.Companion.DIM
@@ -24,10 +23,10 @@ import java.util.Date
 
 /**
  * The clock card, [mode] 0: a pill in a stack (the face, the time and the date), 1: standing alone, the face filling the card,
- * 2: big, the face with the time and the date beside it. The look is HomeConfig "wstyle"; the digits follow the face (see [ClockFace]).
+ * 2: big, the face with the time and the date beside it. The face (classic, minimal, roman) and its theme (dark, light) are HomeConfig "wopt", independent of each other (see [ClockFace]).
  */
 internal fun Widgets.clock(mode: Int): View {
-    val style = Store.get(a).optJSONObject("wstyle")?.optString("clock")?.takeIf { it in HomeConfig.STYLES["clock"]!! } ?: "classic"
+    val face0 = opt("clock", "face"); val light0 = opt("clock", "theme") == "light"
     val locale = resources.configuration.locales[0]
     val h24 = Store.get(a).optBoolean("clock24", true)
     val timeF = SimpleDateFormat(if (h24) "HH:mm" else "h:mm", locale)
@@ -46,7 +45,7 @@ internal fun Widgets.clock(mode: Int): View {
         date.text = if (fits) full else (if (locale.language == "vi") viDay(now) + ", " else "") + shortF.format(now)
     }
     if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown) } }
-    val face = ClockFace(this@clock, a, style) { now -> time.text = timeF.format(now); put(now) }
+    val face = ClockFace(this@clock, a, face0, light0) { now -> time.text = timeF.format(now); put(now) }
     return LinearLayout(a).apply {
         Frost.on(this, dp(if (mode == 0) 18 else 22).toFloat(), dp(1))
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
@@ -73,17 +72,17 @@ internal fun Widgets.viDay(d: Date) = Calendar.getInstance().apply { time = d }.
  * second redrew Home on the thread a panel over it shares, and held Customize's opening on the FPT box.
  * [onMinute] gets the time each time the minute changes (the digits beside it).
  */
-internal class ClockFace(private val host: Widgets, c: Context, val style: String, val onMinute: (Date) -> Unit) : View(c) {
+internal class ClockFace(private val host: Widgets, c: Context, val style: String, light: Boolean, val onMinute: (Date) -> Unit) : View(c) {
     private fun dp(n: Number) = host.dp(n)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cal = Calendar.getInstance()
     private var minute = -1
     private val serif = style == "roman"
-    private val dark = style != "light"
+    private val dark = !light
     private val ink = if (dark) Color.WHITE else 0xFF1C1C1E.toInt()
     private val dim = if (dark) 0x66FFFFFF else 0x55000000
     private val orange = 0xFFFF9500.toInt()
-    private val gold = 0xFFE9D8A6.toInt()
+    private val gold = if (light) GOLD_LIGHT else GOLD      // the roman face's ink: pale gold on dark, deep gold on light
     private val frame = Runnable { invalidate() }
     override fun onVisibilityAggregated(v: Boolean) { super.onVisibilityAggregated(v); if (v) invalidate() }
     override fun onDraw(cv: Canvas) {
@@ -95,7 +94,7 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
         val min = cal.get(Calendar.MINUTE).toFloat()
         val hr = cal.get(Calendar.HOUR) + min / 60f
         paint.style = Paint.Style.FILL
-        paint.color = when (style) { "light" -> 0xFFF4F4F6.toInt(); "roman" -> 0xFF211C17.toInt(); "minimal" -> 0xFF161618.toInt(); else -> 0xFF1C1C1E.toInt() }
+        paint.color = if (dark) (when (style) { "roman" -> DISC_ROMAN; "minimal" -> DISC_MINIMAL; else -> DISC_DARK }) else if (serif) DISC_ROMAN_LIGHT else DISC_LIGHT
         cv.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.STROKE; paint.strokeWidth = maxOf(1f, r * 0.012f)
         paint.color = if (dark) 0x33FFFFFF else 0x22000000
@@ -149,3 +148,8 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
         cv.drawLine(cx + co * from, cy + si * from, cx + co * to, cy + si * to, p)
     }
 }
+
+// the face's disc by face and theme, and the roman face's gold (dark theme / light theme)
+private const val DISC_DARK = 0xFF1C1C1E.toInt(); private const val DISC_MINIMAL = 0xFF161618.toInt(); private const val DISC_ROMAN = 0xFF211C17.toInt()
+private const val DISC_LIGHT = 0xFFF4F4F6.toInt(); private const val DISC_ROMAN_LIGHT = 0xFFF6F0E4.toInt()
+private const val GOLD = 0xFFE9D8A6.toInt(); private const val GOLD_LIGHT = 0xFF8C6D1F.toInt()

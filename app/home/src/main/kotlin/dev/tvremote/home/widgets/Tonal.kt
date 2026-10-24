@@ -22,7 +22,7 @@ import dev.tvremote.home.widgets.Widgets.Facts
 import dev.tvremote.home.widgets.Widgets.Moon
 
 /**
- * The "tonal" look of the weather, system, lunar and air cards (HomeConfig "wstyle"; app/DESIGN-TV.md "Tonal cards"): an opaque warm
+ * The "tonal" look of the weather, system, lunar and air cards (HomeConfig "wopt" look; app/DESIGN-TV.md "Tonal cards"): an opaque warm
  * card, a label, a very large figure, a caption, and a scalloped badge with the card's icon. One fixed warm tone: TV Home does not
  * pick a colour from the wallpaper. Every part is drawn here so the four cards cannot drift apart.
  */

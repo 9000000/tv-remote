@@ -14,8 +14,8 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
 const RAW = {
   tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 3, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
     'PinActivity.kt': 5, 'WarnActivity.kt': 6 },
-  home: { 'Customize.kt': 32, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 55, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
-    'Widgets.kt': 4, 'CalendarWidget.kt': 7, 'ClockWidget.kt': 12, 'LunarWidget.kt': 2, 'SystemWidget.kt': 2, 'UsageWidget.kt': 2,
+  home: { 'Customize.kt': 27, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 55, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
+    'Widgets.kt': 4, 'CalendarWidget.kt': 7, 'ClockWidget.kt': 7, 'LunarWidget.kt': 2, 'SystemWidget.kt': 2, 'UsageWidget.kt': 2,
     'WeatherWidget.kt': 6, 'WidgetViews.kt': 2, 'Zoom.kt': 3 },
   channels: { 'BrowseActivity.kt': 4, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1 },
   games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 34, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,

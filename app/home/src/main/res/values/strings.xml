@@ -181,9 +181,6 @@
     <string name="c_moving">Up / Down, then OK</string>
     <string name="w_layout">Result</string>
     <string name="w_layout_empty">No widget is on: turn one on below</string>
-    <string name="c_size_big">Big</string>
-    <string name="c_size_small">Small</string>
-    <string name="c_size">Size</string>
     <string name="c_waits">not shown yet</string>
     <string name="c_lang">Language</string>
     <string name="c_motion">Motion level</string>
@@ -417,13 +414,6 @@
     <string name="h_duanwu">Mid-year Festival</string>
     <string name="h_vulan">Vu Lan</string>
     <string name="h_midautumn">Mid-Autumn</string>
-    <string name="c_cardlook">Card look</string>
-    <string name="c_cardlook_glass">Glass</string>
-    <string name="c_cardlook_tonal">Tonal</string>
-    <string name="c_look_classic">Classic</string>
-    <string name="c_look_light">Light</string>
-    <string name="c_look_minimal">Minimal</string>
-    <string name="c_look_roman">Roman</string>
     <string name="auto_on">Open when the TV turns on</string>
     <string name="auto_off">Don\'t open when the TV turns on</string>
     <string name="auto_needs_setup">Saved · needs the TV Setup app to open on power-on</string>
@@ -483,4 +473,20 @@
     <string name="am_on">On</string>
     <string name="am_off">Off</string>
     <string name="am_saved">Saved</string>
+    <string name="c_wsettings">Card settings</string>
+    <string name="home_o_size">Size</string>
+    <string name="home_o_face">Face</string>
+    <string name="home_o_theme">Theme</string>
+    <string name="home_o_look">Look</string>
+    <string name="home_ov_big">Big</string>
+    <string name="home_ov_small">Small</string>
+    <string name="home_ov_classic">Classic</string>
+    <string name="home_ov_minimal">Minimal</string>
+    <string name="home_ov_roman">Roman</string>
+    <string name="home_ov_dark">Dark</string>
+    <string name="home_ov_light">Light</string>
+    <string name="home_ov_glass">Glass</string>
+    <string name="home_ov_tonal">Tonal</string>
+    <string name="home_ov_off">Off</string>
+    <string name="home_ov_on">On</string>
 </resources>

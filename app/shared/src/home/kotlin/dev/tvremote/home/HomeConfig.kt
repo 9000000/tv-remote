@@ -63,8 +63,10 @@ import org.json.JSONObject
  *           in a row stack in one, a small card alone is a narrow column; what does not fit waits. A TV Home that has this reports
  *           "wsizes": true (the page offers the old layout chips to one that does not). Replaces "wlayout" (row / big / big2 /
  *           flip / quad), which [clean] still reads once, as sizes giving the same picture, when there are no "wsize" yet
- *   wstyle  how a card looks, for the cards that have looks ([STYLES]): {"clock": "light", ...}; missing = the card's first style.
- *           A TV Home that has this reports "wstyles": {kind: [styles]} (the page reads the choices from it; one without it has none)
+ *   wopt    a card's own options besides its size, by card: {"clock": {"face": "minimal", "theme": "light"}, "weather": {"look": "tonal"}}.
+ *           What each card offers is [options] (one schema, reported as "wschema" and rendered by TV Home's settings dialog and the page's);
+ *           a missing option is its default. Replaces "wstyle" ({"clock": "light"}), which [clean] and [merge] still read once
+ *           ([fromStyle]); a client sends only what it changed, [merge] adds it per card and option
  *   place   a city for the weather card, as typed ([PLACE_MAX] characters); empty = automatic
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
@@ -185,12 +187,78 @@ object HomeConfig {
     }
     val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "clock") + HomeQr.KEYS
     /**
-     * The looks of the cards that have more than one, the first is the default ("wstyle"). "glass" is the look every card had; "tonal"
-     * (weather, system, lunar, air) is an opaque warm card with a big figure and a scalloped badge (app/DESIGN-TV.md "Tonal cards").
+     * One option of a card, the single source of what the settings dialog offers (TV Home's Customize and the page render it, nobody
+     * hardcodes a card's options): [type] "choice" (one of [values]) or "toggle" ("off" / "on", drawn as a switch). [default] is what a
+     * missing value means. [store] is where the value is kept: "wopt" ({"clock": {"face": "minimal"}}, only values that are not the
+     * default), or "wsize" for the size, which the layout ([pack], the themes, older clients) has always read there.
+     * The words go by id: the option's `home.o_<id>`, a value's `home.ov_<value>` (strings.xml / i18n: dots become underscores).
      */
-    val STYLES: Map<String, List<String>> = mapOf("clock" to listOf("classic", "light", "minimal", "roman"),
-        "weather" to listOf("glass", "tonal"), "system" to listOf("glass", "tonal"), "lunar" to listOf("glass", "tonal"), "air" to listOf("glass", "tonal"))
-    fun styles(): JSONObject = JSONObject().also { o -> STYLES.forEach { (k, v) -> o.put(k, JSONArray(v)) } }
+    class Opt(val id: String, val type: String, val values: List<String>, val default: String, val store: String = "wopt")
+    private val SIZES = listOf("big", "small")
+    private val TONAL = setOf("system", "weather", "lunar", "air")        // cards with the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
+    /** What a card really implements (the drawing code in app/home widgets): the options below are all it offers, every combination is drawn. */
+    fun options(k: String): List<Opt> {
+        val size = Opt("size", "choice", SIZES, defaultSize(k), "wsize")
+        return when {
+            k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"))
+            k in TONAL -> listOf(size, Opt("look", "choice", listOf("glass", "tonal"), "glass"))
+            k in WIDGETS -> listOf(size)
+            else -> emptyList()
+        }
+    }
+    private fun optValues(o: Opt) = if (o.type == "toggle") listOf("off", "on") else o.values
+    /** The schema as the clients get it ("wschema" in what TV Home reports): {card: [{id, type, store, default, label, values: [{id, w}]}]}. */
+    fun schema(): JSONObject = JSONObject().also { out ->
+        for (k in WIDGETS) out.put(k, JSONArray(options(k).map { o ->
+            JSONObject().put("id", o.id).put("type", o.type).put("store", o.store).put("default", o.default).put("label", "home.o_${o.id}")
+                .put("values", JSONArray(optValues(o).map { JSONObject().put("id", it).put("w", "home.ov_$it") }))
+        }))
+    }
+    /** The value of option [id] of card [k] in a cleaned [conf]: what was chosen, else the default ("" for a card or option that does not exist). */
+    fun optValue(conf: JSONObject, k: String, id: String): String {
+        val o = options(k).firstOrNull { it.id == id } ?: return ""
+        val v = if (o.store == "wsize") conf.optJSONObject("wsize")?.optString(k) else conf.optJSONObject("wopt")?.optJSONObject(k)?.optString(id)
+        return v?.takeIf { it in optValues(o) } ?: o.default
+    }
+    /** The old "wstyle" of a card as the options that give the same picture (the clock's "light" was a light classic; "minimal" was forced dark). */
+    private fun fromStyle(k: String, s: String): Map<String, String> = when (k) {
+        "clock" -> when (s) { "light" -> mapOf("face" to "classic", "theme" to "light"); "minimal", "roman" -> mapOf("face" to s, "theme" to "dark"); "classic" -> mapOf("face" to "classic", "theme" to "dark"); else -> emptyMap() }
+        else -> mapOf("look" to s)
+    }
+    /**
+     * "wopt" of [o] cleaned against the schema: unknown cards, options and values dropped, a value equal to the default not kept. A card
+     * with no entry takes its old "wstyle" ([fromStyle]) when there is one: that is the migration, nothing else reads "wstyle" now.
+     */
+    fun cleanWopt(o: JSONObject): JSONObject {
+        val out = JSONObject(); val given = o.optJSONObject("wopt"); val old = o.optJSONObject("wstyle")
+        for (k in WIDGETS) {
+            val src = given?.optJSONObject(k)
+            val migrated = if (src == null) old?.optString(k)?.takeIf { it.isNotEmpty() }?.let { fromStyle(k, it) } else null
+            val e = JSONObject()
+            for (op in options(k)) {
+                if (op.store != "wopt") continue
+                val v = (src?.optString(op.id) ?: migrated?.get(op.id))?.takeIf { it in optValues(op) && it != op.default } ?: continue
+                e.put(op.id, v)
+            }
+            if (e.length() > 0) out.put(k, e)
+        }
+        return out
+    }
+    /** [change] (a "wopt" delta, or an older client's "wstyle") on top of [now]'s "wopt", per card and option: a client sends what it changed. */
+    private fun woptMerge(now: JSONObject?, change: JSONObject): JSONObject {
+        val out = JSONObject(now?.toString() ?: "{}")
+        val delta = change.optJSONObject("wopt"); val old = change.optJSONObject("wstyle")
+        for (k in WIDGETS) {
+            val d = JSONObject()
+            old?.optString(k)?.takeIf { it.isNotEmpty() }?.let { s -> fromStyle(k, s).forEach { (a, b) -> d.put(a, b) } }   // an old look names the whole face
+            delta?.optJSONObject(k)?.let { g -> for (x in g.keys()) d.put(x, g.get(x)) }
+            if (d.length() == 0) continue
+            val e = out.optJSONObject(k) ?: JSONObject()
+            for (x in d.keys()) e.put(x, d.get(x))
+            out.put(k, e)
+        }
+        return out
+    }
     /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, clock, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
     private val BIG_KINDS = setOf("system", "usage", "calendar", "weather", "air") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
@@ -278,14 +346,15 @@ object HomeConfig {
     const val THEME_NAME_MAX = 24
     /** The settings a theme holds and an apply switches . */
     val THEME_KEYS = listOf("wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol",
-        "widgets", "wsize", "wstyle", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
+        "widgets", "wsize", "wopt", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
     private val THEME_ID = Regex("t[0-9]{1,4}")
 
     /** [c] (a cleaned config) cut down to a theme's settings, the QR cards left out: their codes (and a Wi-Fi password) are not a look. */
     fun pickTheme(c: JSONObject): JSONObject {
         val out = JSONObject()
-        for (k in THEME_KEYS) if (c.has(k)) out.put(k, when (k) {
+        for (k in THEME_KEYS) if (c.has(k) || (k == "wopt" && c.has("wstyle"))) out.put(k, when (k) {
             "widgets" -> JSONArray(strs(c.optJSONArray(k)).filter { it !in HomeQr.KEYS })
+            "wopt" -> cleanWopt(c)
             "wsize" -> JSONObject().also { m -> c.optJSONObject(k)?.let { g -> for (x in g.keys()) if (x !in HomeQr.KEYS) m.put(x, g.get(x)) } }
             else -> c.get(k)
         })
@@ -419,6 +488,7 @@ object HomeConfig {
             // a look saved nowhere would be lost by this switch: kept in the one slot (replaced each time), so there is a way back
             if (id != themeNow(n) && themeNow(n).isEmpty()) n.put(BEFORE, pickTheme(now))
             for (k in conf.keys()) n.put(k, conf.get(k))
+            n.put("wopt", cleanWopt(conf)).remove("wstyle")                  // a theme saved before the options has "wstyle": the same looks, as options
             // the QR cards stay as they are, where they are in the order
             val qr = strs(now.optJSONArray("widgets")).filter { it in HomeQr.KEYS }
             n.put("widgets", JSONArray(strs(conf.optJSONArray("widgets")) + qr))
@@ -487,10 +557,7 @@ object HomeConfig {
             .also { out -> before(o)?.let { out.put(BEFORE, it) } }
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
-            .put("wstyle", JSONObject().also { out ->
-                val g = o.optJSONObject("wstyle")
-                if (g != null) for ((k, v) in STYLES) g.optString(k).takeIf { it in v }?.let { out.put(k, it) }
-            })
+            .put("wopt", cleanWopt(o))
     }
 
     /** [r] to tenths, 1..[ROWS_MAX]; anything under 1 (or not a number) is 0, by itself. */
@@ -511,11 +578,24 @@ object HomeConfig {
             c.put("wsize", out)
         }
         themeOp(o.optJSONObject("theme"))?.let { c.put("theme", it) }   // an operation, not a setting: it is not in [clean]
-        o.optJSONObject("wstyle")?.let { g ->                           // the looks of cards this client does not know
-            val out = c.optJSONObject("wstyle") ?: JSONObject()
-            for (k in g.keys()) if (k !in STYLES && CARD.matches(k)) g.optString(k).takeIf { CARD.matches(it) }?.let { out.put(k, it) }
-            c.put("wstyle", out)
+        // "wopt" is a delta (what the client changed, defaults included: a value set back to the default must reach the TV); the options
+        // of cards this client does not know (a newer TV Home's, read back from it) pass too, TV Home's own [clean] decides
+        c.remove("wopt")
+        o.optJSONObject("wopt")?.let { g ->
+            val out = JSONObject()
+            for (k in g.keys()) {
+                val e = g.optJSONObject(k) ?: continue
+                val x = JSONObject()
+                for (i in e.keys()) {
+                    val v = e.optString(i)
+                    val op = options(k).firstOrNull { it.id == i }
+                    if (if (k in WIDGETS) op != null && op.store == "wopt" && v in optValues(op) else CARD.matches(k) && CARD.matches(i) && CARD.matches(v)) x.put(i, v)
+                }
+                if (x.length() > 0) out.put(k, x)
+            }
+            if (out.length() > 0) c.put("wopt", out)
         }
+        o.optJSONObject("wstyle")?.let { c.put("wstyle", JSONObject().also { w -> for (k in WIDGETS) it.optString(k).takeIf { v -> CARD.matches(v) }?.let { v -> w.put(k, v) } }) }   // an older client's looks: [merge] turns them into options
         return c
     }
 
@@ -537,7 +617,8 @@ object HomeConfig {
     /** [old] with the fields [change] has (any of them), cleaned. [usable]: whether a wall's file is there, [tileOk] whether a live tile is on offer (a theme's apply passes over one that is not). */
     fun merge(old: JSONObject, change: JSONObject, tileOk: (String) -> Boolean = { true }, usable: (String) -> Boolean = { true }): JSONObject {
         val n = JSONObject(clean(old).toString())
-        for (k in change.keys()) if (k != "theme") n.put(k, change.get(k))
+        for (k in change.keys()) if (k != "theme" && k != "wopt" && k != "wstyle") n.put(k, change.get(k))
+        if (change.has("wopt") || change.has("wstyle")) n.put("wopt", woptMerge(clean(old).optJSONObject("wopt"), change))
         if (change.has("wall") && !change.has("walls")) n.put("walls", JSONArray().put(change.get("wall")))   // a client that picks one: the set is that one
         themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable, tileOk) }
         return clean(n)
