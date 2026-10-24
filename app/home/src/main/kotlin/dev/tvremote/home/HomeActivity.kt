@@ -628,7 +628,7 @@ class HomeActivity : Activity() {
             val keep = l.filter { !(Target.kind(it).let { t -> t == Target.Kind.PIN || t == Target.Kind.TILE } && gone(Target.pkg(it))) }
             if (keep.size != l.size) change.put(k, org.json.JSONArray(keep))
         }
-        if (change.length() > 0) Store.change(this, change)
+        if (change.length() > 0) runOnUiThread { if (!isDestroyed) Store.change(this, change) }   // its listeners redraw: the main thread only (a dialog "Only the original thread…" on the FPT box)
         if (pkg != null) { Pins.refresh(this); Tiles.refresh(this) }
     }
 
