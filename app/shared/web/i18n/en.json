@@ -2104,6 +2104,7 @@
  "hold.off": "off",
  "hold.input": "Hold for 2 seconds to change the input",
  "hold.settings": "Hold for 2 seconds to open Settings",
+ "hold.sub_short": "Hold the key 2 s to switch, a stray press does nothing",
  "hold.sub": "A quick press of the TV remote's Input / Settings key does nothing; hold it for 2 seconds to switch (no more pressing it by mistake and thinking the TV broke). Keys from the phone app or the web still act at once.",
  "hold.switch": "Hold for 2 seconds to change the input / open Settings",
  "hold.enabled": "On: the key must be held for 2 seconds",

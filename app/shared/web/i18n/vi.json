@@ -2038,6 +2038,7 @@
  "hold.off": "đang tắt",
  "hold.input": "Giữ 2 giây để đổi nguồn vào",
  "hold.settings": "Giữ 2 giây để mở Cài đặt",
+ "hold.sub_short": "Giữ phím 2 giây mới đổi, bấm nhầm không sao",
  "hold.sub": "Bấm nhanh phím Nguồn vào / Cài đặt trên remote TV thì không làm gì, giữ 2 giây mới đổi (tránh bấm nhầm rồi tưởng TV hỏng). Bấm từ app điện thoại hoặc web vẫn đổi ngay.",
  "hold.switch": "Giữ 2 giây mới đổi nguồn vào / mở Cài đặt",
  "hold.enabled": "Đã bật: phải giữ phím 2 giây",

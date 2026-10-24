@@ -499,11 +499,12 @@ class MainActivity : Activity() {
     }
 
     private fun qr(link: String): View? {
-        val bmp = dev.tvremote.core.web.Qr.bitmap(link, 6) ?: return null
+        // 2 modules of white and no padding: with the standard 4 plus padding the code itself was a third smaller and hard to scan from the sofa
+        val bmp = dev.tvremote.core.web.Qr.bitmap(link, 1, quiet = 2) ?: return null
         val img = ImageView(this)
-        img.setImageBitmap(bmp)
-        img.background = box(Color.WHITE, 10, 0)
-        img.setPadding(dp(6), dp(6), dp(6), dp(6))
+        img.setImageDrawable(android.graphics.drawable.BitmapDrawable(resources, bmp).apply { isFilterBitmap = false })   // sharp module edges when scaled up
+        img.scaleType = ImageView.ScaleType.FIT_XY
+        img.background = box(Color.WHITE, 8, 0)
         return img
     }
 
@@ -673,7 +674,7 @@ class MainActivity : Activity() {
             TvUi.Item(R.drawable.ic_undo, T("setup.undo_ok"), T("tv_main.as_before_optimize"), go = needsAdb { job { it.undo() } }),
             TvUi.Item(R.drawable.ic_home, T("launcher.tile"), T("launcher.tile_sub"), go = needsAdb { chooseLauncher() }),
             TvUi.Item(R.drawable.ic_wrench, T("keyfix.tile"), { keysSub() }, on = { KeyFix.wanted(this) }) { KeyFix.want(this, !KeyFix.wanted(this)); log(T("keyfix.tile") + " · " + keysSub()) },
-            TvUi.Item(R.drawable.ic_input, T("hold.tile"), { T("hold.sub") }, on = { HoldKeys.on(this) }) {   // HoldKeys: stored as a rule, so the phone and web switch it too
+            TvUi.Item(R.drawable.ic_input, T("hold.tile"), { T("hold.sub_short") }, on = { HoldKeys.on(this) }) {   // HoldKeys: stored as a rule, so the phone and web switch it too
                 val on = !HoldKeys.on(this)
                 Rules.change(this, org.json.JSONObject().put("do", "holdkeys").put("on", on))
                 log(T("hold.tile") + " · " + T(if (on) "hold.on" else "hold.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))

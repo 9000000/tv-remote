@@ -15,9 +15,9 @@ object Qr {
     private fun lenBits(v: Int) = if (v < 10) 8 else 16               // the length field grows at version 10
 
     /** The code as a picture, [scale] pixels per module, with the white margin readers need. null when [text] is too long. */
-    fun bitmap(text: String, scale: Int): Bitmap? {
+    /** [quiet]: the white border in modules. The standard's 4 is for print on anything; on a white card of its own 2 scans fine and the code is bigger. */
+    fun bitmap(text: String, scale: Int, quiet: Int = 4): Bitmap? {
         val m = modules(text) ?: return null
-        val quiet = 4
         val n = m.size + quiet * 2
         val px = IntArray(n * scale * n * scale) { Color.WHITE }
         for (y in m.indices) for (x in m.indices) if (m[y][x])
