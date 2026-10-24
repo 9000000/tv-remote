@@ -51,6 +51,11 @@ object Customize {
     private const val DOOR_FOCUS = 0x2EFFFFFF                          // a settings row that opens a screen: fill under focus, at rest, its edge
     private const val DOOR_REST = 0x12FFFFFF
     private const val DOOR_EDGE = 0x1FFFFFFF
+    private const val NO_PIC = 0xFF2A2F3A.toInt()                      // a theme tile whose picture is not made yet
+    private const val CHECK_INK = 0xFF0B1020.toInt()
+    private const val NAME_SCRIM = 0x99000000.toInt()
+    private const val RING_REST = 0x33FFFFFF
+    private const val TINT_THEMES = 0xFFFFC857.toInt()
     private const val TINT_BG = 0xFF6F8DFF.toInt()                      // each group's chip hue on the first level: its icon in full, the chip a fifth of it
     private const val TINT_LOOK = 0xFFB48CFF.toInt()
     private const val TINT_LAYOUT = 0xFF5EEAD4.toInt()
@@ -61,7 +66,7 @@ object Customize {
     private const val CHIP_ALPHA = 0x33000000                           // OR-ed into a tint
 
     /** One group of settings: a row on the first level and a page of controls behind it. [last] is where the focus was when it was left. */
-    private val PREVIEW = setOf("bg", "look", "widgets")              // pages seen on Home as they change: no dim over it (layout opens its own stepper, the panel hidden)
+    private val PREVIEW = setOf("themes", "bg", "look", "widgets")              // pages seen on Home as they change: no dim over it (layout opens its own stepper, the panel hidden)
 
     private class Group(c: Context, val key: String, val name: Int, val icon: Int, val tint: Int) {
         val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
@@ -78,6 +83,7 @@ object Customize {
     private fun summary(a: Context, key: String, c: JSONObject): String {
         fun on(k: String) = a.getString(if (c.optBoolean(k, true)) R.string.w_on else R.string.w_off)
         return when (key) {
+            "themes" -> c.optString("theme").let { id -> if (id.isEmpty()) a.getString(R.string.th_custom) else themeName(a, c, id) }
             "bg" -> {
                 val set = c.optString("wevery") != "off"
                 val what = if (set) a.getString(R.string.g_bg_set, c.getJSONArray("walls").length(), a.getString(EVERY_WORDS.getValue(c.optString("wevery"))).lowercase()) else wallName(a, c.optString("wall"))
@@ -204,6 +210,7 @@ object Customize {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         val groups = listOf(
+            Group(a, "themes", R.string.g_themes, R.drawable.ic_star, TINT_THEMES),
             Group(a, "bg", R.string.bg, R.drawable.ic_image, TINT_BG), Group(a, "look", R.string.g_look, R.drawable.ic_sparkle, TINT_LOOK),
             Group(a, "layout", R.string.g_layout, R.drawable.ic_apps, TINT_LAYOUT), Group(a, "widgets", R.string.w_widgets, R.drawable.ic_gauge, TINT_WIDGETS),
             Group(a, "system", R.string.g_system, R.drawable.ic_power, TINT_SYSTEM), Group(a, "keys", R.string.g_keys, R.drawable.ic_keyboard, TINT_KEYS),
@@ -295,6 +302,84 @@ object Customize {
         // each page is filled when it is first opened, or once the panel has slid in: all seven built before it showed took
         // ~650 ms on the FPT box, which held its first frame for a second
         groups[0].fill = {
+            val page = col
+            val shotsW = (panelW - dp(56) - gap) / 2                   // two to a row: the wall's picture and the theme's name over it
+            val themeTiles = ArrayList<Pair<String, View>>()
+            fun mark() { val now = Store.get(a).optString("theme"); for ((k, v) in themeTiles) { v.isSelected = k == now; v.findViewWithTag<View>("check")?.visibility = if (k == now) View.VISIBLE else View.GONE } }
+            fun apply(op: JSONObject) { Store.change(a, JSONObject().put("theme", op)) }
+            lateinit var draw: () -> Unit
+            fun themeTile(id: String, name: String, wall: String, mine: Boolean): View {
+                val t = FrameLayout(a).apply {
+                    isFocusable = true; isClickable = true
+                    val cc = if (HomeConfig.isPhoto(wall) || HomeConfig.isVideo(wall) || wall == HomeConfig.BING || wall == HomeConfig.WEB) intArrayOf(NO_PIC) else wallColors(wall)
+                    background = (if (cc.all { it == cc[0] }) GradientDrawable().apply { setColor(cc[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, cc)).apply { cornerRadius = dp(12).toFloat() }
+                    if (WallArt.has(wall) || Walls.isPicture(wall)) {
+                        val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }
+                        addView(pv, FrameLayout.LayoutParams(-1, -1))
+                        val drawn = thumbs[thumbKey(a, wall, shotsW)]
+                        if (drawn != null) pv.setImageBitmap(drawn) else shots.execute { val b = thumb(a, wall, shotsW); a.runOnUiThread { if (b != null) put(pv, b) } }
+                    }
+                    foreground = StateListDrawable().apply {
+                        addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
+                        addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
+                        addState(intArrayOf(), ring(d, 1, RING_REST))
+                    }
+                    addView(label(name, 13f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(10), dp(4), dp(10), dp(5)); background = GradientDrawable().apply { setColor(NAME_SCRIM); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat()) } },
+                        FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+                    addView(FrameLayout(a).apply {
+                        tag = "check"
+                        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
+                        val (iv, sz) = icon(R.drawable.ic_check, CHECK_INK, dp(14)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER))
+                    }, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
+                    setOnClickListener { apply(JSONObject().put("apply", id)); mark() }
+                    if (mine) setOnLongClickListener {                  // OK held on one of mine: delete, after a question (as a photo)
+                        android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_del_q).setMessage(R.string.th_del_note)
+                            .setPositiveButton(R.string.photo_del) { _, _ -> apply(JSONObject().put("del", id)); draw() }.setNegativeButton(android.R.string.cancel, null).show()
+                        true
+                    }
+                }
+                themeTiles.add(id to t)
+                return t
+            }
+            fun grid(items: List<View>) {
+                items.chunked(2).forEachIndexed { i, pair ->
+                    val row = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }
+                    pair.forEachIndexed { j, v -> row.addView(v, LinearLayout.LayoutParams(shotsW, shotsW * 9 / 16).apply { if (j > 0) leftMargin = gap }) }
+                    page.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = if (i > 0) gap else 0 })
+                }
+            }
+            draw = {
+                page.removeAllViews(); themeTiles.clear()
+                val c = Store.get(a)
+                col = page
+                section(a.getString(R.string.th_ready))
+                grid(HomeConfig.BUILTIN.map { (id, cf) -> themeTile(id, themeName(a, c, id), cf.optString("wall"), false) })
+                val mine = c.optJSONArray("themes")
+                if (mine != null && mine.length() > 0) {
+                    section(a.getString(R.string.th_mine))
+                    grid((0 until mine.length()).map { mine.getJSONObject(it) }.map { themeTile(it.getString("id"), it.getString("name"), it.getJSONObject("conf").optString("wall"), true) })
+                    page.addView(label(a.getString(R.string.th_hold), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
+                }
+                val full = (mine?.length() ?: 0) >= HomeConfig.THEMES_MAX
+                val save = LinearLayout(a).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                    setPadding(dp(14), dp(12), dp(14), dp(12)); background = TvGlass.rowBg(a, 16)
+                    val (iv, sz) = icon(R.drawable.ic_save, ACCENT, dp(26)); addView(iv, LinearLayout.LayoutParams(sz, sz))
+                    addView(label(a.getString(R.string.th_save), 15f, Color.WHITE), LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+                    onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
+                    setOnClickListener {
+                        if (full) { android.widget.Toast.makeText(a, R.string.th_full, android.widget.Toast.LENGTH_LONG).show(); return@setOnClickListener }
+                        apply(JSONObject().put("save", a.getString(R.string.th_name_n, (mine?.length() ?: 0) + 1)))
+                        draw(); themeTiles.lastOrNull()?.second?.requestFocus()
+                    }
+                }
+                page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+                mark()
+            }
+            draw()
+        }
+        groups[1].fill = {
             // first, seen without scrolling past every background. A photo from a phone on the same Wi-Fi: a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background
             col.addView(LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
@@ -396,7 +481,8 @@ object Customize {
                                     // the library keeps what the setting (or a theme) still shows: said, not silently kept
                                     if (!Videos.delete(a, k, Store.get(a))) { android.widget.Toast.makeText(a, R.string.video_inuse, android.widget.Toast.LENGTH_LONG).show(); return@setPositiveButton }
                                     Store.change(a, JSONObject())
-                                } else HomeApi.drop(a, k)
+                                } else if (Videos.kept(k)) { android.widget.Toast.makeText(a, R.string.photo_inuse, android.widget.Toast.LENGTH_LONG).show(); return@setPositiveButton }
+                                else HomeApi.drop(a, k)
                                 thumbs.keys.removeAll { it.startsWith("$k:") }
                                 // the focus to its neighbour: the hidden tile's focus fell to the panel's first control, far up
                                 val at = tiles.indexOfFirst { it.first == k }
@@ -419,7 +505,7 @@ object Customize {
             markAll(); markEvery()
             if (keys.any { HomeConfig.isPhoto(it) || HomeConfig.isVideo(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         }
-        groups[1].fill = {
+        groups[2].fill = {
             tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
             tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
             tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
@@ -428,11 +514,11 @@ object Customize {
             tile(R.drawable.ic_eye, a.getString(R.string.c_focus), null, "focus",
                 listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
         }
-        groups[2].fill = {
+        groups[3].fill = {
             tile(R.drawable.ic_apps, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
             tile(R.drawable.ic_updown, a.getString(R.string.c_rows), null, "rows")
         }
-        groups[3].fill = {
+        groups[4].fill = {
             val preview = PackGlyph(a)
             // the result first, where it is seen as the cards below change (at the end it took scrolling past every card)
             col.addView(label(a.getString(R.string.w_layout).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(10) })
@@ -459,7 +545,7 @@ object Customize {
                 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
             }
         }
-        groups[4].fill = {
+        groups[5].fill = {
             tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
             tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
             // another launcher as the home screen: TV Home has no ADB to turn the TV's own one off (without that Home goes on landing on it,
@@ -485,10 +571,10 @@ object Customize {
                 }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
-        groups[5].fill = {
+        groups[6].fill = {
             launchPage(a, col, ::glass, ::label, gap)
         }
-        groups[6].fill = {
+        groups[7].fill = {
             // every language at once, each in its own words, the one in use ticked: one tile stepping through them hid which
             // there were, and each press built Home again before the next could be seen
             val sys = android.content.res.Resources.getSystem().configuration.locales[0]
@@ -507,7 +593,7 @@ object Customize {
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener { if (k != Store.get(a).optString("lang")) Store.change(a, JSONObject().put("lang", k)) }   // Home is built again in it
                 }
-                if (k == now) groups[6].start = { row }
+                if (k == now) groups[7].start = { row }
                 col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (col.childCount > 0) topMargin = dp(8) })
             }
         }
@@ -978,6 +1064,12 @@ object Customize {
     }
 
     private fun ring(d: Float, w: Int, color: Int) = GradientDrawable().apply { cornerRadius = 12 * d; setStroke((w * d).toInt(), color); setColor(Color.TRANSPARENT) }
+
+    /** A theme's name: the person's own as saved, a ready-made one from the strings. */
+    private fun themeName(a: Context, c: JSONObject, id: String): String {
+        c.optJSONArray("themes")?.let { m -> for (i in 0 until m.length()) m.getJSONObject(i).let { if (it.optString("id") == id) return it.optString("name") } }
+        return a.getString(a.resources.getIdentifier("th_$id", "string", a.packageName))
+    }
 
     /** The name under a background's tile: from the strings, "Photo 3" for the person's third photo. */
     private fun wallName(a: Context, k: String): String = when {

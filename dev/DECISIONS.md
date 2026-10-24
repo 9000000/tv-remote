@@ -513,3 +513,10 @@ Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~
   | GIF 800x450 | 5.6 MB -> 1.9 MB | 5.2 % | 20 % | 58 MB | 91 ms | 26.7 % |
   The "janky" figure counts every video frame the TextureView hands the UI, so it is not smoothness of scrolling by itself (it varied 25-33 % across the 30 fps files and ~3-8 % on the others with no pattern); do not read a winner from it. What is solid: 60 fps / 12 Mbps costs 3-5x the CPU of 30 fps / 4 Mbps; transcoding a 60 fps source to 30 fps cut CPU 21 vs 28 % and codec 42 vs 61 %; a GIF as mp4 is 2-3x smaller and decoded in hardware; memory is flat (+0-12 MB PSS vs a picture). Qemu itself (host CPU) with a 1080p30 video: ~890 % vs 5.6 % with a picture and ~1 % with an app in front: the emulator decodes in software on the host, so run a video background only in 10-60 s windows (it heated the Mac to 91 C).
 - **Not decided by numbers:** SurfaceView vs TextureView (not measured; Backdrop's comment records a SurfaceView costing 45 ms/frame on a BRAVIA, so TextureView stays), seamless loop gap, transcode time on a weak box.
+
+## TV Home themes (2026-10-24)
+
+- A theme is a cut of the settings that already exist (`HomeConfig.THEME_KEYS`), kept on the TV in the config as `themes` and changed by ONE field every client sends, `theme: {apply|save|del}`, resolved in `HomeConfig.merge` on the TV. So the page, the phone, the computer and the QR page needed no new route, and the logic is written once (Kotlin).
+- Left out on purpose: the apps (dock, hidden, order, tiles), QR cards (a Wi-Fi password), keys, language, screensaver, power button: they are not a look. Applying keeps the QR cards in `widgets` / `wsize`.
+- A saved theme keeps its photo or video: `Videos.refs` (set in `HomeApp`) makes the library's delete and the photos' delete refuse (409 `inuse`). The cost is that a photo must be freed by deleting the theme first; the other way round (copying the file into the theme) would double the TV's storage.
+- "Which theme is on" (`themeNow`) compares the look as sorted-key text, not JSON text: org.json keeps key order on Android and not on the JVM tests.

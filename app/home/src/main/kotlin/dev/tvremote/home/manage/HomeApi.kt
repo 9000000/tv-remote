@@ -26,6 +26,7 @@ import dev.tvremote.home.HomeConfig
 object HomeApi {
     /** [set] changed first (HomeConfig.merge cleans it), [drop] one photo deleted first, [thumbs] the photos' small pictures too. */
     fun snapshot(c: Context, set: JSONObject?, drop: String?, thumbs: Boolean): JSONObject {
+        if (drop != null && HomeConfig.isPhoto(drop) && Videos.kept(drop)) throw IllegalStateException("inuse")   // a saved theme keeps this photo
         if (drop != null && HomeConfig.isPhoto(drop)) drop(c, drop)
         else if (drop != null && HomeConfig.isVideo(drop) && !Videos.delete(c, drop, Store.get(c))) throw IllegalStateException("inuse")   // the setting (or a theme) still shows it
         if (set == null) { Tiles.refresh(c); Pins.refresh(c) }         // a client reading: what the providers and the apps offer is as true as this moment

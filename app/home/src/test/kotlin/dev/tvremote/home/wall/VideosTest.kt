@@ -44,4 +44,16 @@ class VideosTest {
         assertEquals(1_797_120, Videos.bitrate(1280, 720, 30))
         assertEquals(600_000, Videos.bitrate(160, 90, 15)); assertEquals(6_000_000, Videos.bitrate(3840, 2160, 60))
     }
+
+    @Test fun aThemeKeepsAVideoOutOfDelete() {
+        val saved = org.json.JSONObject().put("themes", org.json.JSONArray().put(org.json.JSONObject().put("id", "t1").put("name", "A")
+            .put("conf", org.json.JSONObject().put("wall", "vid:0a1b2c3d").put("walls", org.json.JSONArray(listOf("vid:0a1b2c3d", "photo2"))))))
+        val hook: (String) -> Boolean = { dev.tvremote.home.HomeConfig.themeUses(saved, it) }
+        val now = org.json.JSONObject().put("wall", "night").put("walls", org.json.JSONArray(listOf("night")))
+        assertEquals(false, Videos.inUse(now, "vid:0a1b2c3d"))                // nothing keeps it yet
+        Videos.refs.add(hook)
+        try {
+            assertEquals(true, Videos.inUse(now, "vid:0a1b2c3d")); assertEquals(true, Videos.kept("photo2")); assertEquals(false, Videos.kept("photo3"))
+        } finally { Videos.refs.remove(hook) }
+    }
 }

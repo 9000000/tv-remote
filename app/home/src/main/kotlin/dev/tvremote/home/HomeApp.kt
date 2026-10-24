@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import dev.tvremote.guard.Guard
 import dev.tvremote.guard.GuardWords
+import dev.tvremote.home.wall.Videos
 
 /** Before any screen or receiver: the error guard (shared/src/guard), its words from strings.xml (no :shared here, so no i18n files). */
 class HomeApp : Application() {
@@ -14,6 +15,8 @@ class HomeApp : Application() {
                 c.getString(R.string.err_share), c.getString(R.string.err_close)) { n -> c.getString(R.string.err_repeat, n) }
         })
         CrashLoop.watch(this)
+        // a saved theme keeps its photo / video: the library and the photos' delete refuse to remove one a theme shows (409 "inuse")
+        Videos.refs.add { wall -> HomeConfig.themeUses(Store.get(this), wall) }
     }
 }
 

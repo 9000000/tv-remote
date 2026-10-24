@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: chủ đề. 6 giao diện có sẵn (Dịu mắt, Rạp phim, Ban ngày, Thiên nhiên, Công nghệ, Tối giản) và nút "Lưu giao diện này" (tối đa 12, đặt tên): một lần bấm đổi cả hình nền và bộ xoay, độ phủ tối, widget cùng cỡ và kiểu, số cột và hàng, viền chọn, chuyển động, đồng hồ. Không đụng tới app, thẻ QR, phím, ngôn ngữ. Lưu trên TV; có ở Tùy chỉnh trên TV, trang web (app điện thoại, app máy tính, web của TV) và trang QR. Chủ đề giữ ảnh / video của nó: xoá ảnh hoặc video đang nằm trong chủ đề bị từ chối.
 - TV Home: video hoặc GIF làm hình nền (MP4 / WebM / GIF, tối đa 200 MB, thư viện tối đa 12 mục): xem trước đúng tỉ lệ màn hình TV, GIF và video nặng được làm nhẹ trên TV (H.264, giải mã bằng phần cứng), chọn tốc độ khung hình và kích thước, bật tiếng + âm lượng, tạm dừng khi mở app khác.
 - Thư viện launcher trong TV Setup mở nhanh hơn: 2,5–3,6 s → ~0,4 s (emulator). List hiện ngay, ảnh tải 4 ảnh một lúc rồi điền dần; list và ảnh được lưu lại để lần sau không chờ mạng; các list có ký (launcher, game, kênh, Downloader) tải chữ ký song song và chỉ kiểm chữ ký đầy đủ một lần cho mỗi bản lưu.
 - Ảnh nền Bing của TV Home và biểu tượng app trong hộp "gỡ app trên nhiều TV" (app điện thoại) tải 4 ảnh một lúc thay vì lần lượt (8 ảnh: 2,0 s → 0,4 s); ảnh thư viện launcher giải mã đúng cỡ thẻ, tiết kiệm bộ nhớ.
@@ -36,6 +37,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh trên trang web và trong app được nén lại, mắt thường không thấy khác (nhẹ hơn 6%; `dev/optimize_images.py`); ảnh nền và ảnh launcher được ghim bằng hash nên giữ nguyên
 
 **English**
+- TV Home: themes. 6 ready-made looks (Calm, Cinema, Daylight, Nature, Tech, Minimal) and "Save this look" (up to 12, named): one press switches the background and its rotation, the veil, the cards with their sizes and looks, columns and rows, focus, motion and clock. Apps, QR cards, keys and language are left alone. Kept on the TV; in Customize on the TV, the web page (Phone app, Computer app, TV web page) and the QR page. A theme keeps its photos / videos: deleting one a theme uses is refused.
 - TV Home: a video or animated GIF as the background (MP4 / WebM / GIF, 200 MB at most, up to 12 in the library): previewed in the TV's real shape, GIFs and heavy videos are made light on the TV (H.264, hardware-decoded), frame rate and size are your choice, optional sound and volume, paused while another app is open.
 - TV Setup's launcher gallery opens faster: 2.5–3.6 s → ~0.4 s (emulator). The list shows at once, pictures load four at a time and fill in; the list and pictures are kept so later openings don't wait on the network; signed lists (launchers, games, channels, Downloader) fetch their signature in parallel and run the full signature check once per kept copy.
 - TV Home's Bing wallpapers and the app icons in the phone app's "remove apps from several TVs" box load four at a time instead of one by one (8 pictures: 2.0 s to 0.4 s); the launcher gallery's pictures are decoded at the card's size, saving memory.

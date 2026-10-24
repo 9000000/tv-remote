@@ -344,7 +344,7 @@
     <string name="tg_need_phone">Hoặc gửi sang TV từ app TV Remote trên điện thoại</string>
     <string name="wall_video">Video</string>
     <string name="video_del_q">Xoá video này?</string>
-    <string name="video_inuse">Đang là hình nền. Chọn hình khác trước.</string>
+    <string name="video_inuse">Đang là hình nền hoặc nằm trong một chủ đề đã lưu. Hãy đổi trước.</string>
     <string name="v_sound">Âm thanh video</string>
     <string name="v_vol">Âm lượng video</string>
     <string name="v_fps">Khung hình video (lần tải sau)</string>
@@ -352,4 +352,21 @@
     <string name="v_fps_n">%1$d fps</string>
     <string name="v_res">Kích thước video (lần tải sau)</string>
     <string name="v_res_screen">Bằng màn hình</string>
+    <string name="g_themes">Chủ đề</string>
+    <string name="th_custom">Giao diện riêng</string>
+    <string name="th_ready">Có sẵn</string>
+    <string name="th_mine">Của tôi</string>
+    <string name="th_save">Lưu giao diện này thành chủ đề</string>
+    <string name="th_name_n">Chủ đề của tôi %1$d</string>
+    <string name="th_del_q">Xoá chủ đề này?</string>
+    <string name="th_del_note">Ảnh và video của nó vẫn còn.</string>
+    <string name="th_hold">Giữ OK trên chủ đề của bạn để xoá</string>
+    <string name="th_full">Tối đa 12 chủ đề. Hãy xoá bớt một cái.</string>
+    <string name="photo_inuse">Một chủ đề đã lưu đang dùng ảnh này. Hãy xoá chủ đề đó trước.</string>
+    <string name="th_calm">Dịu mắt</string>
+    <string name="th_cinema">Rạp phim</string>
+    <string name="th_day">Ban ngày</string>
+    <string name="th_nature">Thiên nhiên</string>
+    <string name="th_tech">Công nghệ</string>
+    <string name="th_minimal">Tối giản</string>
 </resources>

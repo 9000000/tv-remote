@@ -75,6 +75,9 @@ object Videos {
         return refs.any { it(wall) }
     }
 
+    /** Whether a theme keeps [wall] (a video or a photo) alive. Themes are saved in the settings; [HomeApp] adds the check. */
+    fun kept(wall: String) = refs.any { it(wall) }
+
     /** Removes [wall] from the library unless [inUse]; true when it is gone. */
     fun delete(c: Context, wall: String, conf: JSONObject): Boolean {
         if (!HomeConfig.isVideo(wall) || inUse(conf, wall)) return false

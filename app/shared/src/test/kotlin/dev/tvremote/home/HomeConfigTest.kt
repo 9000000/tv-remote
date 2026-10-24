@@ -349,4 +349,76 @@ class HomeConfigTest {
         assertFalse(d.getBoolean("vsound")); assertEquals(HomeConfig.VOL_DEFAULT, d.getInt("vvol")); assertEquals("", d.getString("vfps"))
         assertEquals("night", HomeConfig.clean(JSONObject().put("wall", "vid:nothex!!")).getString("wall"))
     }
+
+    // ---- themes ----
+    private fun op(vararg kv: Pair<String, String>) = JSONObject().put("theme", JSONObject().also { o -> kv.forEach { (k, v) -> o.put(k, v) } })
+    private fun themes(c: JSONObject) = c.getJSONArray("themes").let { a -> List(a.length()) { a.getJSONObject(it) } }
+
+    @Test fun builtinThemesAreWholeCleanLooks() {
+        assertTrue(HomeConfig.BUILTIN.size >= 4)
+        for ((id, conf) in HomeConfig.BUILTIN) {
+            assertEquals(id, HomeConfig.THEME_KEYS.sorted(), conf.keys().asSequence().toList().sorted())              // every key, in order: an apply leaves nothing of the look before
+            assertEquals(id, HomeConfig.pickTheme(HomeConfig.clean(conf)).length(), conf.length())   // already clean: cleaning changes nothing
+            assertTrue(HomeConfig.knownWall(conf.getString("wall")))
+        }
+    }
+
+    @Test fun applySwitchesTheLookAndKeepsTheRest() {
+        val old = JSONObject().put("dock", JSONArray(listOf("com.a.b"))).put("lang", "vi").put("keyon", true).put("wall", "ocean").put("cols", 8).put("focus", "ring")
+            .put("qrs", JSONObject().put("qr1", JSONObject().put("tpl", "link").put("f", JSONObject().put("url", "https://x.dev")).put("cap", "x").put("show", true)))
+            .put("widgets", JSONArray(listOf("system", "qr1")))
+        val n = HomeConfig.merge(old, op("apply" to "cinema"))
+        assertEquals("black", n.getString("wall")); assertEquals(80, n.getInt("shade")); assertEquals(6, n.getInt("cols")); assertEquals("ring", n.getString("focus"))
+        assertEquals(listOf("com.a.b"), dock(n)); assertEquals("vi", n.getString("lang")); assertTrue(n.getBoolean("keyon"))      // the apps, language, keys are not a look
+        assertEquals(listOf("qr1"), n.getJSONArray("widgets").let { a -> List(a.length()) { a.getString(it) } })              // the cards go, the QR card stays
+        assertTrue(n.getJSONObject("qrs").has("qr1"))
+        assertEquals("cinema", HomeConfig.themeNow(n))
+        assertFalse(n.has("theme"))                                                                                            // an operation, never stored
+    }
+
+    @Test fun saveApplyDeleteMine() {
+        var c = HomeConfig.merge(JSONObject(), JSONObject().put("wall", "teal").put("cols", 7).put("shade", 70))
+        c = HomeConfig.merge(c, op("save" to "  Evening  "))
+        assertEquals(1, themes(c).size); assertEquals("Evening", themes(c)[0].getString("name")); assertEquals("t1", themes(c)[0].getString("id"))
+        assertEquals("t1", HomeConfig.themeNow(c))
+        val t1 = themes(c)[0].getJSONObject("conf")
+        assertEquals("teal", t1.getString("wall")); assertEquals(7, t1.getInt("cols"))
+        c = HomeConfig.merge(c, JSONObject().put("wall", "ocean").put("cols", 4))
+        assertEquals("", HomeConfig.themeNow(c))
+        c = HomeConfig.merge(c, op("save" to "evening"))                                                                       // same name: saved over, not a second
+        assertEquals(1, themes(c).size); assertEquals("ocean", themes(c)[0].getJSONObject("conf").getString("wall"))
+        c = HomeConfig.merge(c, op("save" to "Day"))
+        assertEquals(listOf("t1", "t2"), themes(c).map { it.getString("id") })
+        c = HomeConfig.merge(c, op("apply" to "calm")); c = HomeConfig.merge(c, op("apply" to "t1"))
+        assertEquals("ocean", c.getString("wall")); assertEquals(4, c.getInt("cols"))
+        c = HomeConfig.merge(c, op("del" to "t1"))
+        assertEquals(listOf("t2"), themes(c).map { it.getString("id") })
+        assertEquals(themes(c).size, themes(HomeConfig.merge(c, op("apply" to "nothing"))).size); assertEquals(c.getString("wall"), HomeConfig.merge(c, op("apply" to "nothing")).getString("wall"))                                  // an unknown id changes nothing
+        // survives clean and a trip through forward (what the clients send)
+        assertEquals(1, themes(HomeConfig.clean(c)).size)
+        assertEquals("t2", HomeConfig.forward(JSONObject().put("theme", JSONObject().put("apply", "t2").put("junk", 1))).getJSONObject("theme").let { it.getString("apply") })
+        assertFalse(HomeConfig.forward(JSONObject().put("theme", JSONObject())).has("theme"))
+    }
+
+    @Test fun themesAreCapped() {
+        var c = JSONObject()
+        for (i in 1..HomeConfig.THEMES_MAX + 3) c = HomeConfig.merge(c, op("save" to "T$i"))
+        assertEquals(HomeConfig.THEMES_MAX, themes(c).size)
+        assertEquals(HomeConfig.THEME_NAME_MAX, themes(HomeConfig.merge(JSONObject(), op("save" to "x".repeat(60))))[0].getString("name").length)
+        val bad = JSONObject().put("themes", JSONArray().put(JSONObject().put("id", "../x").put("name", "a").put("conf", JSONObject())).put(JSONObject().put("id", "t1").put("name", " ").put("conf", JSONObject())))
+        assertEquals(0, themes(HomeConfig.clean(bad)).size)
+    }
+
+    @Test fun aThemeKeepsItsFilesAliveAndAGoneOneIsSkipped() {
+        val vid = "vid:0a1b2c3d"
+        var c = HomeConfig.merge(JSONObject(), JSONObject().put("wall", vid).put("walls", JSONArray(listOf(vid, "photo2"))).put("wevery", "1h"))
+        c = HomeConfig.merge(c, op("save" to "Mine"))
+        c = HomeConfig.merge(c, JSONObject().put("wall", "night"))
+        assertTrue(HomeConfig.themeUses(c, vid)); assertTrue(HomeConfig.themeUses(c, "photo2")); assertFalse(HomeConfig.themeUses(c, "photo3"))
+        assertFalse(HomeConfig.themeUses(HomeConfig.merge(c, op("del" to "t1")), vid))                                         // the theme gone: free to delete
+        // the video's file is gone: the photo of the set shows, never a black screen on a missing file
+        val n = HomeConfig.merge(c, op("apply" to "t1")) { it != vid }
+        assertEquals("photo2", n.getString("wall")); assertEquals(listOf("photo2"), walls(n))
+        assertEquals("night", HomeConfig.merge(c, op("apply" to "t1")) { false }.getString("wall"))
+    }
 }

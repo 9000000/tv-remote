@@ -21,6 +21,8 @@ const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'ho
 const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.key_yellow', 186: 'home.key_blue', 170: 'home.key_tv', 178: 'home.key_input',
   190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
+const HOME_THEME_WORDS = { calm: 'home.theme_calm', cinema: 'home.theme_cinema', day: 'home.theme_day', nature: 'home.theme_nature', tech: 'home.theme_tech', minimal: 'home.theme_minimal' };   // HomeConfig.BUILTIN
+const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'clock'];          // HomeConfig.WIDGETS, in the order drawn
@@ -298,6 +300,7 @@ async function homeOpen() {
   function draw() {
     const c = r.config;
     drawTiles(c);
+    drawThemes(c);
     orderHead.hidden = orderBox.hidden = c.order === undefined;      // a TV Home older than its own order
     if (c.order !== undefined) orderDraw(c, r.apps);
     hidden.replaceChildren(...c.hidden.map((p) => row(p, [el('button', { type: 'button', className: 'small', textContent: T('home.show'), onclick: () => send({ hidden: c.hidden.filter((x) => x !== p) }) })])));
@@ -443,14 +446,14 @@ async function homeOpen() {
     const webTile = c.wweb ? [tile('web', el('i', { className: 'add', textContent: '🖥️' }), T('home.wall_web'))] : [];
     const photos = (r.photos || []).map((p, i) => {
       const t = homeThumbs[p.id + ':' + p.v], face = el('i', {}, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : '🖼️');
-      const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.photo_remove'), 'aria-label': T('home.photo_remove'), onclick: () => dropPhoto(p.id) });
+      const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: themeUses(c, p.id) ? T('home.v_in_use') : T('home.photo_remove'), 'aria-label': T('home.photo_remove'), disabled: themeUses(c, p.id), onclick: () => dropPhoto(p.id) });
       const cell = tile(p.id, face, T('home.wall_photo_n', { n: i + 1 }), del);
       if (window.ONTV) { del.hidden = true; holdDrop(cell.firstChild, p.id); }
       return cell;
     });
     const videos = ((r.video || {}).items || []).map((v) => {
       const t = homeThumbs[v.id + ':' + v.added], face = el('i', {}, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : '🎬');
-      const used = isOn(v.id) || c.wall === v.id || set.includes(v.id);         // TV Home refuses to delete one in use; the button says so before
+      const used = isOn(v.id) || c.wall === v.id || set.includes(v.id) || themeUses(c, v.id);         // TV Home refuses to delete one in use; the button says so before
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: used ? T('home.v_in_use') : T('home.v_remove'), 'aria-label': T('home.v_remove'), disabled: used, onclick: () => dropPhoto(v.id) });
       const cell = tile(v.id, face, v.name || T('home.wall_video'), del);
       if (window.ONTV) { del.hidden = true; if (!used) holdDrop(cell.firstChild, v.id); }
@@ -466,9 +469,41 @@ async function homeOpen() {
   // TV Home's own page (home.html) has nothing else to show: the settings are the page itself, not a box over an empty one.
   // Seven groups as on the TV (Customize.kt): a row each with what is set now under its name, a page of controls behind it. All
   // at once was a page of forty controls nobody found anything in. On TV Home's own page the phone's Back goes back to the list.
+  // Themes (HomeConfig "theme"; ready-made ones and the person's, kept on the TV): one tap switches the background and its set, the veil, the cards,
+  // the grid, the focus, the motion and the clock at once. A saved one keeps its photo / video (the TV refuses to delete one a theme shows).
+  const themeReady = el('div', { className: 'fchips homewalls themes' }), themeMineHead = el('h3', { textContent: T('home.theme_mine') }), themeMine = el('div', { className: 'fchips homewalls themes' });
+  const themeName = el('input', { type: 'text', maxLength: 24, placeholder: T('home.theme_name_ph'), 'aria-label': T('home.theme_name') });
+  const themeSave = el('button', { type: 'button', className: 'primary', textContent: T('home.theme_save'), onclick: () => { const n = themeName.value.trim(); if (n) { send({ theme: { save: n } }); themeName.value = ''; } } });
+  themeName.addEventListener('keydown', (e) => { if (e.key === 'Enter') themeSave.click(); });
+  const themeNote = el('p', { className: 'note', textContent: T('home.theme_note') });
+  const themeHead = el('h3', { textContent: T('home.theme_save_head') }), themeLine = UI.line(themeName, themeSave);
+  const wallFace = (k) => {
+    if (HOME_WALLS[k]) { const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')'); return dot; }
+    if (HOME_ART_IDS.includes(k)) { const cv = el('canvas', { width: 128, height: 72 }); homeArtPaint(cv.getContext('2d'), 128, 72, k); return el('i', {}, cv); }
+    const p = (r.photos || []).find((x) => x.id === k) || ((r.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === k), t = p && homeThumbs[k + ':' + p.v];
+    return el('i', t ? {} : { className: 'add' }, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : k === 'bing' ? '🌐' : k === 'web' ? '🖥️' : /^vid:/.test(k) ? '🎬' : '🖼️');
+  };
+  const themeUses = (c, id) => (c.themes || []).some((t) => t.conf.wall === id || (t.conf.walls || []).includes(id));   // HomeConfig.themeUses
+  function drawThemes(c) {
+    const tile = (id, name, conf, mine) => {
+      const on = c.theme === id;
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, wallFace(conf.wall), el('span', { textContent: name }));
+      if (!mine) return b;
+      const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),
+        onclick: async () => { if (await ask(T('home.theme_del_q'), { ok: T('home.theme_del'), danger: true })) send({ theme: { del: id } }); } });
+      return el('span', { className: 'wallcell' }, b, del);
+    };
+    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, T(HOME_THEME_WORDS[t.id]), t.conf, false)));
+    themeMine.replaceChildren(...(c.themes || []).map((t) => tile(t.id, t.name, t.conf, true)));
+    themeMineHead.hidden = themeMine.hidden = !(c.themes || []).length;
+    themeSave.disabled = (c.themes || []).length >= HOME_THEMES_MAX;
+    put(themeNote, 'textContent', T(themeSave.disabled ? 'home.theme_full' : 'home.theme_note'));
+  }
+
   const page = homeLink.direct;
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const GROUPS = [
+    ['themes', 'star', 45, 'home.themes', [themeReady, themeMineHead, themeMine, themeHead, themeLine, themeNote]],
     ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, el('div', { className: 'actions' }, upload, vupload), vstate, walls, holdNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote, shadeHead, shade, shadeNote, vHead, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres, vnote, file, vfile, galHead, gal, credit]],
     ['look', 'sparkle', 180, 'home.g_look', [focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet')]],
     ['layout', 'apps', 265, 'home.g_layout', [colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
@@ -507,6 +542,8 @@ async function homeOpen() {
     : c.wall === 'bing' ? T('home.wall_bing') : HOME_WALL_WORDS[c.wall] ? T(HOME_WALL_WORDS[c.wall]) : c.wall;
   // the line under each group's name, as the TV's Customize writes it (summary())
   function sums(c) {
+    rows.themes.hidden = !c.themesOk;                                // a TV Home older than the themes
+    put(subs.themes, 'textContent', !c.themesOk ? '' : !c.theme ? T('home.theme_custom') : ((c.themes || []).find((t) => t.id === c.theme) || {}).name || T(HOME_THEME_WORDS[c.theme]));
     const set = c.wrotate && c.wevery && c.wevery !== 'off' && c.wall !== 'web';
     put(subs.bg, 'textContent', [set ? T('home.sum_bg_set', { n: (c.walls || []).length }) : wallWord(c), c.shadeOk ? T('home.sum_shade', { n: c.shade ?? 50 }) : ''].filter(Boolean).join(' · '));
     put(subs.look, 'textContent', [c.focus !== undefined ? T(c.focus === 'ring' ? 'home.focus_ring' : 'home.focus_glass') : '',

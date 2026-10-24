@@ -346,7 +346,7 @@
     <string name="tg_need_phone">Or send it to the TV from the TV Remote app on your phone</string>
     <string name="wall_video">Video</string>
     <string name="video_del_q">Delete this video?</string>
-    <string name="video_inuse">It is the background now. Choose another first.</string>
+    <string name="video_inuse">It is the background or in a saved theme. Change those first.</string>
     <string name="v_sound">Video sound</string>
     <string name="v_vol">Video volume</string>
     <string name="v_fps">Video frame rate (next upload)</string>
@@ -354,4 +354,21 @@
     <string name="v_fps_n">%1$d fps</string>
     <string name="v_res">Video size (next upload)</string>
     <string name="v_res_screen">Screen size</string>
+    <string name="g_themes">Themes</string>
+    <string name="th_custom">Your own look</string>
+    <string name="th_ready">Ready-made</string>
+    <string name="th_mine">Mine</string>
+    <string name="th_save">Save this look as my theme</string>
+    <string name="th_name_n">My theme %1$d</string>
+    <string name="th_del_q">Delete this theme?</string>
+    <string name="th_del_note">Its pictures and videos stay.</string>
+    <string name="th_hold">Hold OK on one of yours to delete it</string>
+    <string name="th_full">12 themes at most. Delete one first.</string>
+    <string name="photo_inuse">A saved theme uses it. Delete that theme first.</string>
+    <string name="th_calm">Calm</string>
+    <string name="th_cinema">Cinema</string>
+    <string name="th_day">Daylight</string>
+    <string name="th_nature">Nature</string>
+    <string name="th_tech">Tech</string>
+    <string name="th_minimal">Minimal</string>
 </resources>

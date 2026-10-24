@@ -77,6 +77,13 @@ import org.json.JSONObject
  *   keyon   remote keys that open something (default off); keyapps: {"183": target} the key code to its [Target] (a package, "pin:pkg/id"
  *           or "tile:provider/id"; a plain package is how older configs saved it), only keys [keyFree] allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
  *           A TV Home that has this reports "keysOk": true, "keysSetup" (TV Setup took the map) and "keysDead" (the keys it found dead)
+ *   themes  the person's own themes, [THEMES_MAX]: [{id, name, conf}], conf = the look at the moment of saving ([THEME_KEYS]: background and its
+ *           set, shade, video sound, cards with sizes and looks, grid, focus, motion, clock; NOT the apps, the QR cards (a Wi-Fi password),
+ *           keys, language, screensaver, power button). Kept on the TV with the rest. Changed by ONE field every client sends,
+ *           "theme": {"apply": id} | {"save": name} | {"del": id} ([merge] reads it, it is never stored); [BUILTIN] are the ready-made
+ *           ones (ids, words by `theme.<id>` / `theme_<id>`). A TV Home that has this reports "themesOk": true, "themesBuiltin":
+ *           [{id, conf}] and "theme": the id of the one whose look is on now ("" none). A theme's pictures and videos stay while it
+ *           keeps them ([themeUses], Videos.refs)
  *   autoon  open [autoapp] (a [Target] too) once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
  *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
  */
@@ -255,6 +262,126 @@ object HomeConfig {
     fun tileProvider(k: String) = k.removePrefix("tile:").substringBefore('/')
     fun tileId(k: String) = k.substringAfter('/')
 
+    // ---- themes: the look as a set of existing settings, switched at once ----
+    const val THEMES_MAX = 12
+    const val THEME_NAME_MAX = 24
+    /** The settings a theme holds and an apply switches . */
+    val THEME_KEYS = listOf("wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol",
+        "widgets", "wsize", "wstyle", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
+    private val THEME_ID = Regex("t[0-9]{1,4}")
+
+    /** [c] (a cleaned config) cut down to a theme's settings, the QR cards left out: their codes (and a Wi-Fi password) are not a look. */
+    fun pickTheme(c: JSONObject): JSONObject {
+        val out = JSONObject()
+        for (k in THEME_KEYS) if (c.has(k)) out.put(k, when (k) {
+            "widgets" -> JSONArray(strs(c.optJSONArray(k)).filter { it !in HomeQr.KEYS })
+            "wsize" -> JSONObject().also { m -> c.optJSONObject(k)?.let { g -> for (x in g.keys()) if (x !in HomeQr.KEYS) m.put(x, g.get(x)) } }
+            else -> c.get(k)
+        })
+        return out
+    }
+
+    private fun lit(vararg kv: Pair<String, Any>) = JSONObject().also { o -> kv.forEach { (k, v) -> o.put(k, v) } }
+    private fun arr(vararg s: String) = JSONArray(s.toList())
+    /**
+     * The ready-made themes: only existing settings, nothing new to draw. Each is a whole look (every key of [THEME_KEYS]), so applying
+     * one never leaves a bit of the one before. Their names are words by id.
+     */
+    val BUILTIN: List<Pair<String, JSONObject>> by lazy {
+        fun t(id: String, o: JSONObject) = id to pickTheme(clean(o))
+        listOf(
+            t("calm", lit("wall" to "dusk", "shade" to 55, "widgets" to arr("lunar", "clock"), "wsize" to lit("clock" to "small", "lunar" to "small"), "wstyle" to lit("clock" to "light"),
+                "cols" to 5, "focus" to "glass", "motion" to "calm", "greet" to true)),
+            t("cinema", lit("wall" to "black", "shade" to 80, "widgets" to arr(), "cols" to 6, "rows" to 1.2, "focus" to "ring", "motion" to "calm", "greet" to false)),
+            t("day", lit("wall" to "dawn", "shade" to 40, "widgets" to arr("weather", "calendar", "clock"), "wsize" to lit("weather" to "big", "calendar" to "big", "clock" to "small"),
+                "wstyle" to lit("clock" to "classic"), "cols" to 5, "focus" to "glass", "motion" to "full")),
+            t("nature", lit("wall" to "peaks", "walls" to arr("peaks", "meadow", "waves", "dunes"), "wevery" to "day", "shade" to 45, "widgets" to arr("weather", "lunar"),
+                "wsize" to lit("weather" to "big", "lunar" to "small"), "cols" to 5, "focus" to "glass", "motion" to "full")),
+            t("tech", lit("wall" to "midnight", "shade" to 60, "widgets" to arr("system", "usage", "clock"), "wsize" to lit("system" to "big", "usage" to "big", "clock" to "small"),
+                "wstyle" to lit("clock" to "minimal"), "cols" to 7, "focus" to "ring", "motion" to "calm", "clock24" to true)),
+            t("minimal", lit("wall" to "graphite", "shade" to 50, "widgets" to arr(), "cols" to 6, "focus" to "ring", "motion" to "calm", "anim" to false, "greet" to false)),
+        )
+    }
+
+    private fun customThemes(o: JSONObject?): List<JSONObject> {
+        val a = o?.optJSONArray("themes") ?: return emptyList()
+        val seen = HashSet<String>(); val out = ArrayList<JSONObject>()
+        for (i in 0 until a.length()) {
+            val t = a.optJSONObject(i) ?: continue
+            val id = t.optString("id"); val name = themeName(t.optString("name")); val conf = t.optJSONObject("conf")
+            if (!THEME_ID.matches(id) || name.isEmpty() || conf == null || !seen.add(id)) continue
+            out += JSONObject().put("id", id).put("name", name).put("conf", pickTheme(conf))   // picked, not cleaned again: an apply cleans it
+            if (out.size >= THEMES_MAX) break
+        }
+        return out
+    }
+    private fun themeName(s: String) = s.replace(Regex("\\s+"), " ").trim().take(THEME_NAME_MAX).trim()
+
+    /** The theme [id] (the person's or a ready-made one) as its settings, or null. */
+    fun theme(c: JSONObject, id: String): JSONObject? =
+        customThemes(c).firstOrNull { it.optString("id") == id }?.optJSONObject("conf") ?: BUILTIN.firstOrNull { it.first == id }?.second
+
+    /** [v] as text with the keys of every object in order: two looks are the same whatever order a JSON library kept their keys in. */
+    private fun canon(v: Any?): String = when (v) {
+        is JSONObject -> v.keys().asSequence().sorted().joinToString(",", "{", "}") { k -> k + ":" + canon(v.get(k)) }
+        is JSONArray -> (0 until v.length()).joinToString(",", "[", "]") { canon(v.get(it)) }
+        is Number -> if (v.toDouble() == Math.rint(v.toDouble())) v.toLong().toString() else v.toDouble().toString()
+        else -> v.toString()
+    }
+
+    /** The id of the theme whose look is on now (the person's first), or "". */
+    fun themeNow(c: JSONObject): String {
+        val now = canon(pickTheme(clean(c)))
+        return customThemes(c).firstOrNull { canon(it.optJSONObject("conf")) == now }?.optString("id")
+            ?: BUILTIN.firstOrNull { canon(it.second) == now }?.first ?: ""
+    }
+
+    /** Whether a saved theme keeps [wall] (a photo, a video of the library) alive: Videos.refs and the photos' delete ask this. */
+    fun themeUses(c: JSONObject, wall: String): Boolean = customThemes(c).any { t ->
+        val conf = t.optJSONObject("conf") ?: return@any false
+        conf.optString("wall") == wall || strs(conf.optJSONArray("walls")).contains(wall)
+    }
+
+    /** Only the three words of the "theme" field, each a short string (what [forward] lets through). */
+    fun themeOp(o: JSONObject?): JSONObject? {
+        if (o == null) return null
+        val out = JSONObject()
+        o.optString("apply").takeIf { it.length in 1..12 }?.let { out.put("apply", it) }
+        o.optString("save").let { themeName(it) }.takeIf { it.isNotEmpty() }?.let { out.put("save", it) }
+        o.optString("del").takeIf { it.length in 1..12 }?.let { out.put("del", it) }
+        return if (out.length() == 0) null else out
+    }
+
+    /** [n] (cleaned) with the "theme" field [op] done: apply (what is gone, [usable], is passed over), save the look now, delete. */
+    private fun doTheme(n: JSONObject, op: JSONObject, usable: (String) -> Boolean): JSONObject {
+        val mine = customThemes(n).toMutableList()
+        op.optString("del").takeIf { it.isNotEmpty() }?.let { id -> mine.removeAll { it.optString("id") == id } }
+        op.optString("save").takeIf { it.isNotEmpty() }?.let { name ->
+            val look = pickTheme(clean(n))
+            val same = mine.indexOfFirst { it.optString("name").equals(name, ignoreCase = true) }      // the same name: that theme is saved over
+            if (same >= 0) mine[same] = JSONObject().put("id", mine[same].optString("id")).put("name", name).put("conf", look)
+            else if (mine.size < THEMES_MAX) {
+                val id = "t" + ((mine.mapNotNull { it.optString("id").drop(1).toIntOrNull() }.maxOrNull() ?: 0) + 1)
+                mine += JSONObject().put("id", id).put("name", name).put("conf", look)
+            }
+        }
+        n.put("themes", JSONArray(mine))
+        op.optString("apply").takeIf { it.isNotEmpty() }?.let { id ->
+            val conf = theme(n, id) ?: return n
+            val now = clean(n)
+            for (k in conf.keys()) n.put(k, conf.get(k))
+            // the QR cards stay as they are, where they are in the order
+            val qr = strs(now.optJSONArray("widgets")).filter { it in HomeQr.KEYS }
+            n.put("widgets", JSONArray(strs(conf.optJSONArray("widgets")) + qr))
+            n.put("wsize", JSONObject(conf.optJSONObject("wsize")?.toString() ?: "{}").also { m -> now.optJSONObject("wsize")?.let { g -> for (x in g.keys()) if (x in HomeQr.KEYS) m.put(x, g.get(x)) } })
+            // a picture or video that is gone is skipped, as the rotation skips it; nothing usable at all: Night
+            val walls = strs(conf.optJSONArray("walls")).filter(usable)
+            val wall = conf.optString("wall").takeIf(usable) ?: walls.firstOrNull() ?: "night"
+            n.put("walls", JSONArray(walls.ifEmpty { listOf(wall) })).put("wall", wall)
+        }
+        return n
+    }
+
     /** [o] made safe: unknown fields dropped, lists of real package names without repeats, every value in range. */
     fun clean(o: JSONObject): JSONObject {
         val qrs = HomeQr.cards(o.optJSONObject("qrs"))
@@ -301,6 +428,7 @@ object HomeConfig {
             .put("autoapp", Target.clean(o.optString("autoapp")))
             .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
             .put("qrs", qrs)
+            .put("themes", JSONArray(customThemes(o)))
             .put("widgets", JSONArray(widgets))
             .put("wsize", sizes(o, widgets))
             .put("wstyle", JSONObject().also { out ->
@@ -326,6 +454,7 @@ object HomeConfig {
             for (k in g.keys()) if (CARD.matches(k)) g.optString(k).takeIf { it == "big" || it == "small" }?.let { out.put(k, it) }
             c.put("wsize", out)
         }
+        themeOp(o.optJSONObject("theme"))?.let { c.put("theme", it) }   // an operation, not a setting: it is not in [clean]
         o.optJSONObject("wstyle")?.let { g ->                           // the looks of cards this client does not know
             val out = c.optJSONObject("wstyle") ?: JSONObject()
             for (k in g.keys()) if (k !in STYLES && CARD.matches(k)) g.optString(k).takeIf { CARD.matches(it) }?.let { out.put(k, it) }
@@ -349,11 +478,12 @@ object HomeConfig {
         return out
     }
 
-    /** [old] with the fields [change] has (any of them), cleaned. */
-    fun merge(old: JSONObject, change: JSONObject): JSONObject {
+    /** [old] with the fields [change] has (any of them), cleaned. [usable]: whether a wall's file is there (a theme's apply passes over one that is not). */
+    fun merge(old: JSONObject, change: JSONObject, usable: (String) -> Boolean = { true }): JSONObject {
         val n = JSONObject(clean(old).toString())
-        for (k in change.keys()) n.put(k, change.get(k))
+        for (k in change.keys()) if (k != "theme") n.put(k, change.get(k))
         if (change.has("wall") && !change.has("walls")) n.put("walls", JSONArray().put(change.get("wall")))   // a client that picks one: the set is that one
+        themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable) }
         return clean(n)
     }
 

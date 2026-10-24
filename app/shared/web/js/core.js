@@ -253,7 +253,7 @@ const FRIENDLY = [
   [/home:video_space/, T('core.fr_home_video_space')],
   [/home:video_busy/, T('core.fr_home_video_busy')],
   [/home:video_old/, T('core.fr_home_video_old')],
-  [/home:video_inuse|^inuse$/, T('core.fr_home_video_inuse')],
+  [/home:video_inuse|\binuse$/, T('core.fr_home_video_inuse')],
   [/home:video_(video|gif|transcode|type)|video type/, T('core.fr_home_video_bad')],
   [/home:photos_full/, T('home.photos_full', { n: 10 })],   // before home:photo, which it starts with
   [/home:video$/, T('core.fr_home_photo')],

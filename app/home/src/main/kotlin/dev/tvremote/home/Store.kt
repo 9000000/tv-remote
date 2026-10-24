@@ -43,6 +43,8 @@ object Store {
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
+            .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now
+            .put("themesBuiltin", org.json.JSONArray(HomeConfig.BUILTIN.map { (id, c) -> JSONObject().put("id", id).put("conf", c) }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
             .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
             .let { Pins.report(c, it) }                           // shortcuts: "pinsOk", what the apps offer ([Target] "pin:...")
@@ -63,10 +65,11 @@ object Store {
     /** @throws SecurityException "dream" without WRITE_SECURE_SETTINGS (a client grants it over ADB first; the TV's own switch falls back to the system's screen) */
     fun change(c: Context, change: JSONObject): JSONObject {
         if (change.has("dream")) Dream.set(c, change.optBoolean("dream"))
-        val n = HomeConfig.merge(get(c), change)
+        val n = HomeConfig.merge(get(c), change) { Walls.usable(c, it) }
         val e = prefs(c).edit().putString("conf", n.toString())
-        if (change.has("anim")) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs
-        if (change.has("wall") || change.has("walls") || change.has("wevery")) e.putLong("wlast", System.currentTimeMillis())   // a new choice gets its whole turn
+        val applied = change.optJSONObject("theme")?.has("apply") == true      // a theme sets the motion and the background too
+        if (change.has("anim") || applied) e.putBoolean("anim_chosen", true)  // from now on the choice is theirs
+        if (change.has("wall") || change.has("walls") || change.has("wevery") || applied) e.putLong("wlast", System.currentTimeMillis())   // a new choice gets its whole turn
         e.apply()
         if (listOf("keyon", "keyapps", "autoon", "autoapp").any { change.has(it) }) Keys.push(c)   // TV Setup does the keys everywhere and the power-on app
         val out = effective(c, JSONObject(n.toString()))

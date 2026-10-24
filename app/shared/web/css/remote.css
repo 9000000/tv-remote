@@ -178,6 +178,7 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .dimc i { width:14px; height:14px; border-radius:50%; background:var(--c); border:1px solid var(--line); flex:none; }
 .fchips.homewalls { display:grid; grid-template-columns:repeat(auto-fill, minmax(72px, 1fr)); gap:8px; overflow:visible; }   /* a tile per wall: the colour itself, its name under it */
 .fchips.homewalls button { display:flex; flex-direction:column; gap:4px; padding:4px; border-radius:10px; font-size:12px; min-width:0; }
+.fchips.homewalls.themes { grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); }   /* a theme's name is a word or two: wider than a wall's tile */
 .homewalls i { display:grid; place-items:center; aspect-ratio:16/9; border-radius:6px; background:var(--c); border:1px solid var(--line); font-style:normal; font-size:18px; }
 .homewalls i.add { background:transparent; border-style:dashed; }
 .homewalls span { overflow:hidden; text-overflow:ellipsis; }
