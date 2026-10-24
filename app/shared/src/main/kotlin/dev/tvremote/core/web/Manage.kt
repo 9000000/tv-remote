@@ -101,7 +101,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val post = r.method == "POST"
         try {
             when (what) {
-                "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
+                "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1", r.q("launch") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
                 "privacy" -> if (!post) return HttpServer.Response.json(privacy.snapshot(r.q("since").toIntOrNull() ?: 0, r.q("id").toIntOrNull() ?: -1))   // the scan under way or the last one (Privacy.kt); a route nobody but the owner may use (Scope allows none of it)
                 "recents" -> if (!post) return HttpServer.Response.json(recents())
@@ -400,11 +400,16 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         return o.put("labels", names)
     }
 
-    private fun apps(system: Boolean): JSONObject {
+    /** [launch]: also the system apps with a tile on the home screen (YouTube, Netflix: preinstalled, so `-3` leaves them out), for choosing an app. */
+    private fun apps(system: Boolean, launch: Boolean = false): JSONObject {
         val pkgs = ArrayList<String>()
         // the apps turned off are always listed, so "Turn on" is at hand without showing every system app
         val listing = sh("pm list packages" + (if (system) "" else " -3") + "; echo '#~#'; pm list packages -d; echo '#~#'; " +
-            "dumpsys package packages | grep -E '^  Package \\[|^    versionName='").split("#~#")   // every version in one go: ~0.2 s
+            "dumpsys package packages | grep -E '^  Package \\[|^    versionName='" +   // every version in one go: ~0.2 s
+            (if (launch && !system) "; echo '#~#'; for c in LEANBACK_LAUNCHER LAUNCHER; do cmd package query-activities --brief -a android.intent.action.MAIN" +
+                " -c android.intent.category.\$c 2>/dev/null; done" else "")).split("#~#")
+        for (line in listing.getOrElse(3) { "" }.jsplit("\n"))
+            if (line.contains('/')) line.trim().substringBefore('/').let { if (it !in pkgs) pkgs.add(it) }
         val versions = HashMap<String, String>()
         var at: String? = null
         for (line in listing.getOrElse(2) { "" }.jsplit("\n")) {
