@@ -523,7 +523,22 @@ Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~
   The TextureView makes Home draw a frame for every video frame (852 in 28 s, 98 % "janky" in gfxinfo: the count is of video frames, not of lost smoothness) and a GPU copy; the SurfaceView hands the frames to the compositor and Home draws only what changes (the 10-14 frames are its own UI). Surfaceflinger stayed at 0-2 % in both (the emulator composes on the host, so qemu is where the difference shows; qemu itself decodes in software: it is the emulator's cost, not a TV's). MediaCodec direct was not tried: MediaPlayer already gives 1 % CPU, a codec loop would only add code. Checked on SurfaceView: the veil and the whole grid draw over it, translucent cards show the video through them (screenshots in .cache/shots/tvhome_video_surface*.png), and leaving Home for Settings and coming back shows a frame at 0.4 s, no black (a poster ImageView, sharing the window background's drawable so no second bitmap, covers the SurfaceView's hole from `play()` to the first frame and again whenever the player is let go).
   **Why not what Backdrop's comment says** (a BRAVIA with a SurfaceView behind the window blended two full-screen layers on its GPU: 45 ms a frame): that was a picture wall on a SurfaceView plus the window's own layer, on a video wall there is one decoder layer and the window, which is what hardware composers do best. It could still be a box with a single overlay plane; the self-measurement below is the net for that (a slow box falls back to the poster), and `VideoWall` is the one place to change if a real box shows otherwise. Not checked: any real box.
 - **TV Home measures itself** (`VideoWall` + `Videos.Verdict` + `Videos.measured`): 20 s (`Verdict.WINDOW_MS`) after the first frame of each start, `MediaPlayer.metrics` (`android.media.mediaplayer.frames` / `.dropped`, Long values: `getInt` returns 0) give frames shown against the clip's own rate, plus this process's CPU (`Process.getElapsedCpuTime`, % of one core: the decoder's own work is in the media process, so this is Home's side only). One `postDelayed`, removed in `release()` (Home stopped, screensaver, another app): nothing runs or measures when Home is not on screen. Verdict (pure, `VideosTest`): shown/wanted >= 0.9 "ok", >= 0.6 "choppy", under it "slow"; two slow in a row for the same video (`slow` count, new start or after the app in front) sets `off` and Home shows the poster alone (`attachVideo` skips an `off` video). Choosing the video again (`Store.change` with `wall`, also the rotation coming back to it) forgets the record and gives it another try. The last record is in prefs (`vperf`) and rides in the snapshot as `video.perf {id, fps, want, cpu, at, level, slow, off}`; the web card (`homePerf` in `js/home.js`) writes one line from it. Seen on the emulator: ok (31 fps / 30), and with the thresholds temporarily raised: slow, then `off` after the second start, player count 0, qemu 3-9 %, the poster on screen. The emulator could not be made slow (4K60 and 1080p60 12 Mbps both ran at full rate, 6 busy guest loops changed nothing: the decoder runs on the host), so a real slow box is not seen.
-- **Still open:** seamless loop gap, transcode time on a weak box.
+- **Real TVs (2026-10-24, the self-measure's numbers):**
+
+  | TV | clip | upload / make light | shown | TV Home CPU |
+  |---|---|---|---|---|
+  | FPT Play 650 (Realtek, 4 cores, 1.8 GB, Android 14) | 1080p30 4M | kept as sent | 30 of 30 | 14 % |
+  | FPT Play 650 | 1080p60 12M | 4 s / 92 s -> 1080p60 6 MB | 56 of 60 | 29 % |
+  | BRAVIA 4K GB ATV3 (MTK, 2 GB, Android 9) | 1080p30 4M | kept as sent | 30 of 30 | 11 % |
+  | BRAVIA | 1080p60 12M, before the fix | 3 s / 95 s -> **27 Mbps of broken frames** (green smear on screen, MediaPlayer error) | - | - |
+  | BRAVIA | 1080p60 12M, after | 3 s / 71 s -> 720p30 1.8 MB, 0 decode errors | 30 of 30 | 7 % |
+
+  The BRAVIA's MTK encoder asked for 1080p60 at 6 Mbps ignored the rate and wrote frames ffmpeg cannot decode; nothing checked.
+  Now (`Videos.outFps`, `Transcode.sane`): a made video drops to 30 fps when this TV's encoder or decoder says it cannot do the
+  rate at that size; what comes out must be near the bitrate asked (2x + 1 Mbps) and decode its first 60 frames, else it is made
+  once more at 30 fps / 720p, else the upload fails. On the BRAVIA 1080p30 was refused too, 720p30 was kept. Backdrop's
+  45 ms/frame did not show on this BRAVIA with a SurfaceView video: 30 of 30.
+- **Still open:** seamless loop gap.
 
 ## TV Home themes (2026-10-24)
 

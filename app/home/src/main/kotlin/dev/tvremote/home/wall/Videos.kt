@@ -161,6 +161,16 @@ object Videos {
     class Opts(val fps: Int, val side: Int)
     fun opts(conf: JSONObject) = Opts(conf.optString("vfps").toIntOrNull() ?: 0, conf.optString("vres").toIntOrNull() ?: 0)
 
+    /**
+     * The frame rate a made video gets (0: the source's own): the one chosen, else the source's, down to 30 when this TV's encoder
+     * or decoder cannot do it at [w] x [h] (making a 60 fps video again at 60 helps nobody whose decoder stops at 30).
+     */
+    fun outFps(p: Probe, o: Opts, w: Int, h: Int, enc: (Int, Int, Int) -> Boolean, dec: (String, Int, Int, Int) -> Boolean): Int {
+        if (p.kind == "gif") return o.fps
+        val f = if (o.fps > 0) o.fps else p.fps
+        return if (f > 30 && (!enc(w, h, f) || !dec(MediaFormat.MIMETYPE_VIDEO_AVC, w, h, f))) 30 else o.fps
+    }
+
     /** The biggest picture a video may be on a [sw] x [sh] screen: the screen's, or its shape with the short side at most [Opts.side]. */
     fun limit(sw: Int, sh: Int, o: Opts): Pair<Int, Int> =
         if (o.side <= 0 || o.side >= sh) sw to sh else (o.side.toLong() * sw / sh).toInt() / 2 * 2 to o.side
@@ -229,8 +239,15 @@ object Videos {
                 if (!staged.renameTo(out)) { staged.copyTo(out, true); staged.delete() }
             } else {
                 val (lw, lh) = limit(sw, sh, o)
-                val (tw, th) = target(p.w, p.h, lw, lh)
-                val r = Transcode.run(c, staged, out, p, tw, th, o.fps) { j.pct = it } ?: throw Failure("transcode")
+                var (tw, th) = target(p.w, p.h, lw, lh)
+                var fps = outFps(p, o, tw, th, Transcode::encodes, ::hwRate)
+                var r = Transcode.run(c, staged, out, p, tw, th, fps) { j.pct = it }
+                if (r == null || !Transcode.sane(out, tw, th, if (fps > 0) fps else p.fps.takeIf { it > 0 } ?: 30)) {   // once more, lighter: 30 fps, at most 720p
+                    out.delete()
+                    target(tw, th, 1280, 720).let { tw = it.first; th = it.second }; fps = 30
+                    r = Transcode.run(c, staged, out, p, tw, th, fps) { j.pct = it }
+                    if (r == null || !Transcode.sane(out, tw, th, fps)) throw Failure("transcode")
+                }
                 ms = r.ms; w = tw; h = th
             }
             val q = probe(out) ?: run { out.delete(); throw Failure("video") }

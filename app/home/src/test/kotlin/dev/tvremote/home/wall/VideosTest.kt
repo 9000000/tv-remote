@@ -73,4 +73,14 @@ class VideosTest {
         assertEquals(0, c.optInt("slow")); assertEquals(false, c.optBoolean("off")); assertEquals(29, c.optInt("fps"))
         assertEquals(1, Verdict.next(a, "vid:other", 14f, 30f, 40, 4L).optInt("slow"))   // another video starts its own count
     }
+
+    @Test fun madeAgainAtARateThisTvDoes() {                         // a BRAVIA's encoder asked for 1080p60 wrote broken frames
+        val enc30: (Int, Int, Int) -> Boolean = { _, _, f -> f <= 30 }
+        val encAll: (Int, Int, Int) -> Boolean = { _, _, _ -> true }
+        assertEquals(30, Videos.outFps(v(1920, 1080, 60, 12_000_000), Videos.Opts(0, 0), 1920, 1080, enc30, rateAll))
+        assertEquals(30, Videos.outFps(v(1920, 1080, 60), Videos.Opts(0, 0), 1920, 1080, encAll) { _, _, _, f -> f <= 30 })
+        assertEquals(0, Videos.outFps(v(1920, 1080, 60, 12_000_000), Videos.Opts(0, 0), 1920, 1080, encAll, rateAll))   // both do 60: the source's own
+        assertEquals(0, Videos.outFps(v(1920, 1080, 30, 12_000_000), Videos.Opts(0, 0), 1920, 1080, enc30, rateAll))
+        assertEquals(24, Videos.outFps(v(1920, 1080, 60), Videos.Opts(24, 0), 1920, 1080, enc30, rateAll))
+    }
 }

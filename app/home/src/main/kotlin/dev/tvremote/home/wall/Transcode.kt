@@ -41,6 +41,51 @@ object Transcode {
         if (p.kind == "gif") gif(src, dst, w, h, if (cap in 1 until GIF_FPS) cap else GIF_FPS, progress) else video(src, dst, w, h, cap, if (cap > 0) cap else p.fps.takeIf { it > 0 } ?: 30, progress)
     } catch (e: Throwable) { android.util.Log.w("TvHomeVideo", "transcode failed", e); dst.delete(); null }
 
+    /** The AVC encoder [encoder] gets says it does [w] x [h] at [fps]: a BRAVIA's MTK encoder asked for 1080p60 wrote 27 Mbps of broken frames. */
+    fun encodes(w: Int, h: Int, fps: Int): Boolean = try {
+        val e = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
+        try { e.codecInfo.getCapabilitiesForType(MediaFormat.MIMETYPE_VIDEO_AVC).videoCapabilities?.areSizeAndRateSupported(w, h, fps.toDouble()) != false } finally { e.release() }
+    } catch (e: Throwable) { true }
+
+    /**
+     * What came out is a video this TV plays: near the bitrate asked (an encoder past what it can do ignores it and writes garbage,
+     * measured on a BRAVIA), and its first [frames] frames decode. A false result is made again lighter, never shown.
+     */
+    fun sane(f: File, w: Int, h: Int, fps: Int, frames: Int = 60): Boolean {
+        val p = Videos.probe(f) ?: return false
+        if (p.bitrate > Videos.bitrate(w, h, fps) * 2L + 1_000_000L) { android.util.Log.i("TvHomeVideo", "made ${w}x$h@$fps at ${p.bitrate} bps: the encoder ignored the rate"); return false }
+        val ex = MediaExtractor()
+        var dec: MediaCodec? = null
+        return try {
+            ex.setDataSource(f.path)
+            val vt = (0 until ex.trackCount).first { ex.getTrackFormat(it).getString(MediaFormat.KEY_MIME)!!.startsWith("video/") }
+            val vf = ex.getTrackFormat(vt)
+            ex.selectTrack(vt)
+            val d = MediaCodec.createDecoderByType(vf.getString(MediaFormat.KEY_MIME)!!).also { dec = it }
+            d.configure(vf, null, null, 0); d.start()
+            val info = MediaCodec.BufferInfo()
+            var out = 0; var fed = false; var idle = 0
+            while (out < frames && idle < 200) {                       // ~2 s without a frame: the decoder choked
+                if (!fed) {
+                    val i = d.dequeueInputBuffer(10_000)
+                    if (i >= 0) {
+                        val n = ex.readSampleData(d.getInputBuffer(i)!!, 0)
+                        if (n < 0) { d.queueInputBuffer(i, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM); fed = true }
+                        else { d.queueInputBuffer(i, 0, n, ex.sampleTime, 0); ex.advance() }
+                    }
+                }
+                val o = d.dequeueOutputBuffer(info, 10_000)
+                if (o >= 0) {
+                    if (info.size > 0) out++
+                    d.releaseOutputBuffer(o, false); idle = 0
+                    if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
+                } else idle++
+            }
+            (out >= minOf(frames, 10)).also { if (!it) android.util.Log.i("TvHomeVideo", "made ${w}x$h@$fps: $out frames decoded") }
+        } catch (e: Throwable) { android.util.Log.w("TvHomeVideo", "made video does not play", e); false }
+        finally { try { dec?.stop() } catch (e: Throwable) { }; try { dec?.release() } catch (e: Throwable) { }; ex.release() }
+    }
+
     private fun encoder(w: Int, h: Int, fps: Int): MediaCodec {
         val f = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, w, h).apply {
             setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
