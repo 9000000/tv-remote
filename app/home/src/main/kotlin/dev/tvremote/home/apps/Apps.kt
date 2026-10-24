@@ -11,7 +11,10 @@ import dev.tvremote.home.Target
  * An app the TV can open from a home screen, with the picture it gives for one: a TV banner (16:9), else its icon. Or a shortcut
  * another app pinned here ([pin], a ShortcutInfo: [Pins]); its [pkg] is then "pin:<app>/<id>", the key of its tile.
  */
-class App(val pkg: String, val label: String, val info: ActivityInfo?, val pin: Any? = null) {
+class App(val pkg: String, val orig: String, val info: ActivityInfo?, val pin: Any? = null) {
+    /** The name shown everywhere: the person's own ([Apps.names], "names" of the settings) else the app's. */
+    val label: String get() = Apps.names[pkg] ?: orig
+    val renamed: Boolean get() = Apps.names.containsKey(pkg)
     /** A live tile ([Tiles]) rather than an app: its pkg is "tile:<provider>/<id>", it has no pictures, a press runs its action. */
     val live: Boolean get() = HomeConfig.isTile(pkg)
     /** On the grid by the settings' "tiles" (a live tile or a shortcut the picker added), not an installed app. */
@@ -46,6 +49,9 @@ private fun sharp(c: Context, info: ActivityInfo): Drawable? = try {
 fun wide(w: Int, h: Int) = w <= 0 || h <= 0 || w >= h * 1.4f
 
 object Apps {
+    /** The person's names for apps (HomeConfig "names"); HomeActivity keeps it in step with the settings. */
+    @Volatile var names: Map<String, String> = emptyMap()
+
     /**
      * TV apps first (LEANBACK_LAUNCHER), then phone apps that have a launcher entry; not this one. A phone-only entry of the
      * firmware's own (never updated) is left out: makers leave such tools behind (a Hisense FPT Play box: SystemNotification,

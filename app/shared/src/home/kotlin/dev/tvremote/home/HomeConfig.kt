@@ -70,6 +70,8 @@ import org.json.JSONObject
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
+ *   names   the person's own names for apps and shortcuts: {"<package or pin:...>": "name"}, at most [NAMES_MAX], each [NAME_MAX] characters;
+ *           shown wherever TV Home shows the app's name, and always on a banner tile (two YouTubes look the same). Not a theme key
  *   tiles   live tiles ("tile:<provider package>/<id>", [isTile]) and launcher shortcuts ("pin:<package>/<id>", [Target.isPin]) on the app grid, at most [TILES_MAX]. A provider (TV Setup's RAM
  *           tile: tile:dev.tvremote.setup/ram, and its sleep timer; TV Channels' tile:dev.tvremote.channels/next) draws a tile's value
  *           itself, in the tile's layout (gauge / next / toggle); the key then sits in dock / hidden / order like an app's package name.
@@ -251,6 +253,8 @@ object HomeConfig {
         return out
     }
     const val NOTE_MAX = 140
+    const val NAME_MAX = 30
+    const val NAMES_MAX = 100
     const val PLACE_MAX = 60
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"
@@ -473,6 +477,7 @@ object HomeConfig {
             .put("autoapp", Target.clean(o.optString("autoapp")))
             .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
             .put("qrs", qrs)
+            .put("names", names(o.optJSONObject("names")))
             .put("themes", JSONArray(customThemes(o)))
             .also { out -> before(o)?.let { out.put(BEFORE, it) } }
             .put("widgets", JSONArray(widgets))
@@ -531,6 +536,19 @@ object HomeConfig {
         if (change.has("wall") && !change.has("walls")) n.put("walls", JSONArray().put(change.get("wall")))   // a client that picks one: the set is that one
         themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable, tileOk) }
         return clean(n)
+    }
+
+    /** {target: name}: apps and shortcuts only (a live tile has its own title), a name trimmed to one line of [NAME_MAX]; an empty one is no entry. */
+    fun names(g: JSONObject?): JSONObject {
+        val out = JSONObject()
+        if (g == null) return out
+        for (k in g.keys().asSequence().sorted()) {
+            if (out.length() >= NAMES_MAX) break
+            if (!Target.valid(k) || isTile(k)) continue
+            val v = g.optString(k).replace(Regex("\\s+"), " ").trim().take(NAME_MAX).trim()
+            if (v.isNotEmpty()) out.put(k, v)
+        }
+        return out
     }
 
     private fun strs(a: JSONArray?) = if (a == null) emptyList() else (0 until a.length()).map { a.optString(it) }

@@ -141,13 +141,23 @@ async function homeOpen() {
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, name), el('div', { className: 'acts' }, ...acts));
   };
   const isTile = (p) => /^tile:[^/]+\/[a-z][a-z0-9_]{0,15}$/.test(p);
-  const appLabel = (pkg) => { if (Target.kind(pkg) === 'pin') return qkLabel(r.config, r.apps, pkg); if (isTile(pkg)) { const t = (r.config.tilesAvail || []).find((x) => x.key === pkg); return (t && t.title) || pkg.split('/').pop(); } const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
+  const appLabel = (pkg) => { const own = (r.config.names || {})[pkg]; if (own) return own; if (Target.kind(pkg) === 'pin') return qkLabel(r.config, r.apps, pkg); if (isTile(pkg)) { const t = (r.config.tilesAvail || []).find((x) => x.key === pkg); return (t && t.title) || pkg.split('/').pop(); } const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
   const tool = (text, title, fn, off) => el('button', { type: 'button', className: 'small iconbtn', textContent: text, title, 'aria-label': title, disabled: !!off, onclick: fn });
 
   // live tiles (HomeConfig "tiles"): what TV Setup offers, each on or off the app grid; only a TV Home that reports "tilesOk"
   const tilesHead = el('h3', { textContent: T('home.tiles_head') }), tilesNote = el('p', { className: 'note' }), tilesList = el('div', { className: 'list' });
   // no favourites any more: TV Home is one grid, and its order is edited as that grid (home_order.js), saved in one go
   const hidden = el('div', { className: 'list' });
+  // the person's own names for apps (HomeConfig "names"); a TV Home older than them reports none, and the part stays hidden
+  const names = el('div', { className: 'list' }), namesNote = el('p', { className: 'empty', textContent: T('home.rename_none') });
+  const setName = async (p) => {
+    const v = await ask(T('home.rename_q'), { value: appLabel(p), ok: T('home.rename_ok') });
+    if (v !== null && v !== undefined) send({ names: { ...(r.config.names || {}), [p]: String(v).trim() } });
+  };
+  const addName = el('button', { type: 'button', className: 'small', textContent: T('home.rename_add'), onclick: async () => {
+    const p = await chooseApp(T('home.pick_rename'), apps()); if (p) setName(p);
+  } });
+  const namesHead = el('div', { className: 'card-head' }, el('h3', { textContent: T('home.names') }), addName);
   const orderHead = el('h3', { textContent: T('home.order') }), orderBox = el('div', { className: 'group' });
   const orderFace = (k) => { if (Target.kind(k) !== 'app') return qkLogo(r.config, k); const i = appIcon(k); onMeta(k, (m) => i.fill(m)); return i; };
   const orderDraw = homeOrderBox(orderBox, orderFace, (k) => appLabel(k), (change) => send(change));
@@ -309,6 +319,11 @@ async function homeOpen() {
     orderHead.hidden = orderBox.hidden = c.order === undefined;      // a TV Home older than its own order
     if (c.order !== undefined) orderDraw(c, r.apps);
     hidden.replaceChildren(...c.hidden.map((p) => row(p, [el('button', { type: 'button', className: 'small', textContent: T('home.show'), onclick: () => send({ hidden: c.hidden.filter((x) => x !== p) }) })])));
+    namesHead.hidden = names.hidden = c.names === undefined;
+    names.replaceChildren(...Object.keys(c.names || {}).map((p) => row(p, [
+      el('button', { type: 'button', className: 'small', textContent: T('home.rename_edit'), onclick: () => setName(p) }),
+      el('button', { type: 'button', className: 'small', textContent: T('home.rename_orig'), onclick: () => { const n = { ...c.names }; delete n[p]; send({ names: n }); } })])));
+    if (c.names && !Object.keys(c.names).length) names.append(namesNote);
     if (!c.hidden.length) hidden.append(el('p', { className: 'empty', textContent: T('home.none_hidden') }));
     upload.disabled = !!c.wrotate && (r.photos || []).length >= HOME_PHOTO_MAX;
     for (const x of [hOnline, wOnline, hScenes, wScenes, hColours]) x.hidden = !c.wrotate;      // a TV Home without rotation has the one box
@@ -554,7 +569,7 @@ async function homeOpen() {
       hScenes, wScenes, hColours, walls]],
     ['look', 'sparkle', 180, 'home.g_look', [focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet')]],
     ['layout', 'apps', 265, 'home.g_layout', [colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
-      el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden]],
+      el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
     ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, noteHead, noteLine, qrHead, qrList, qrNote]],
     ['system', 'power', 260, 'home.g_system', [check(power, 'home.power'), powerOld, check(dream, 'home.dream')]],
     ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, check(autoOn, 'home.auto_on'), autoNote]],

@@ -81,7 +81,7 @@
     <string name="err_close">Đóng</string>
     <string name="err_share">Chia sẻ</string>
     <string name="err_repeat">lặp lại %d lần</string>
-    <!-- ô sống trên lưới của TV Home (HomeInfo) -->
+    <!-- live widget trên lưới của TV Home (HomeInfo) -->
     <string name="tile_next_title">Xem tiếp kênh</string>
     <string name="tile_next_empty">Chưa có kênh</string>
     <string name="tile_next_empty_line">Bấm để chọn kênh</string>

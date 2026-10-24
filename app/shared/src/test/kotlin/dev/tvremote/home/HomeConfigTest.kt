@@ -444,4 +444,21 @@ class HomeConfigTest {
         assertEquals("photo2", n.getString("wall")); assertEquals(listOf("photo2"), walls(n))
         assertEquals("night", HomeConfig.merge(c, op("apply" to "t1")) { false }.getString("wall"))
     }
+
+    @Test fun namesAreCleaned() {
+        val long = "x".repeat(50)
+        val g = JSONObject().put("com.google.android.youtube.tv", "  YouTube   TV ").put("dev.cobalt.youtube", long).put("pin:dev.a.b/c", "Kids")
+            .put("tile:dev.tvremote.setup/ram", "Tile").put("bad pkg", "Nope").put("com.empty.app", "   ")
+        val n = HomeConfig.clean(JSONObject().put("names", g)).getJSONObject("names")
+        assertEquals("YouTube TV", n.getString("com.google.android.youtube.tv"))
+        assertEquals(HomeConfig.NAME_MAX, n.getString("dev.cobalt.youtube").length)
+        assertEquals("Kids", n.getString("pin:dev.a.b/c"))
+        assertEquals(3, n.length())                                    // a live tile, a bad key and an empty name are dropped
+        val many = JSONObject().also { o -> (1..150).forEach { o.put("com.app.n$it", "N$it") } }
+        assertEquals(HomeConfig.NAMES_MAX, HomeConfig.clean(JSONObject().put("names", many)).getJSONObject("names").length())
+        assertEquals(0, HomeConfig.clean(JSONObject()).getJSONObject("names").length())
+        assertEquals(n.toString(), HomeConfig.clean(JSONObject().put("names", n)).getJSONObject("names").toString())
+        val m = HomeConfig.merge(HomeConfig.clean(JSONObject().put("names", n)), JSONObject().put("names", JSONObject()))
+        assertEquals(0, m.getJSONObject("names").length())             // an empty map clears them all
+    }
 }

@@ -53,7 +53,7 @@ object Customize {
     private const val DOOR_EDGE = 0x1FFFFFFF
     private const val NO_PIC = 0xFF2A2F3A.toInt()                      // a theme tile whose picture is not made yet
     private const val CHECK_INK = 0xFF0B1020.toInt()
-    private const val NAME_SCRIM = 0x99000000.toInt()
+    const val NAME_SCRIM = 0x99000000.toInt()
     private const val RING_REST = 0x33FFFFFF
     private const val TINT_THEMES = 0xFFFFC857.toInt()
     private const val TINT_BG = 0xFF6F8DFF.toInt()                      // each group's chip hue on the first level: its icon in full, the chip a fifth of it

@@ -172,7 +172,7 @@ class HomeActivity : Activity() {
             return
         }
         Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
-        conf = Store.get(this)
+        conf = Store.get(this); readNames()
         val root = FrameLayout(this)
         backdrop = Backdrop(window.decorView)
 
@@ -252,7 +252,7 @@ class HomeActivity : Activity() {
         scroll.addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (b - t != ob - ot) peek() }
 
         setContentView(root)
-        Store.onChange = { conf = Store.get(this); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck(); peek() } }
+        Store.onChange = { conf = Store.get(this); readNames(); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck(); peek() } }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -617,7 +617,7 @@ class HomeActivity : Activity() {
         val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
         val hidden = Store.list(this, "hidden").toSet()
         val shownPins = pins.filter { it.pkg !in byPkg }                // a shortcut put on the grid by the picker shows as that tile, not twice
-        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order")
+        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names")
         if (key == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
@@ -842,10 +842,17 @@ class HomeActivity : Activity() {
     }
 
     private fun tile(a: App, w: Int, made: HashMap<String, Tile>): Tile {
-        val k = "${a.pkg}|$w"
+        val k = "${a.pkg}|$w|${a.label}"
         val t = tileCache[k]?.takeIf { it.app === a } ?: makeTile(a, w)
         made[k] = t
         return t
+    }
+
+    /** The person's names for apps into [Apps.names]; a tile is cached by its name too, so a renamed one is made again. */
+    private fun readNames() {
+        val g = conf.optJSONObject("names")
+        Apps.names = if (g == null) emptyMap() else g.keys().asSequence().associateWith { g.optString(it) }
+        apps = apps.sortedBy { it.label.lowercase() }
     }
 
     private fun makeTile(a: App, w: Int) = Tile(this, a, w, a.label, ::dp, ::tileSays).apply {
@@ -1087,9 +1094,11 @@ class HomeActivity : Activity() {
         if (a.pin != null && !a.grid) {                               // a pinned shortcut: only taken away here; its app decides the rest
             acts.add(Triple(R.drawable.ic_close, R.string.unpin) { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() })
             acts.add(Triple(R.drawable.ic_sliders, R.string.customize) { customize() })
+            if (!a.live) acts.add(Triple(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
         } else {                                                      // no "add to / take from the favourites": they are only the first places, and Move puts an app there
             acts.add(Triple(R.drawable.ic_sliders, R.string.customize) { customize() })
             acts.add(Triple(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
+            if (!a.live) acts.add(Triple(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
             acts.add(Triple(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
                 .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
             val powerApp = conf.optBoolean("autoon") && conf.optString("autoapp") == a.pkg
@@ -1110,6 +1119,29 @@ class HomeActivity : Activity() {
                 ?.let { i -> acts.add(Triple(if (a.grid) R.drawable.ic_close else R.drawable.ic_trash, R.string.uninstall) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }   // the trash is "remove from grid" there; the list follows PACKAGE_REMOVED
         }
         open = TvGlass.menu(this, R.style.Menu, a.label, acts.map { TvGlass.Item(it.first, getString(it.second), it.third) }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+    }
+
+    /** Rename [a]: a field with the TV's keyboard, prefilled with the name shown; "Original name" takes the person's name away. */
+    private fun rename(a: App) {
+        val box = dev.tvremote.tvui.TvField(this).apply {
+            Font.on(this); textSize = 16f; isSingleLine = true; maxLines = 1
+            filters = arrayOf(android.text.InputFilter.LengthFilter(HomeConfig.NAME_MAX))
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            setText(a.label); setSelection(text.length)
+        }
+        fun save(name: String) {
+            val g = JSONObject(conf.optJSONObject("names")?.toString() ?: "{}")
+            if (name.isEmpty() || name == a.orig) g.remove(a.pkg) else g.put(a.pkg, name)
+            Store.change(this, JSONObject().put("names", g))
+        }
+        val b = android.app.AlertDialog.Builder(this, R.style.Menu).setTitle(R.string.rename_q)
+            .setView(FrameLayout(this).apply { setPadding(dp(24), dp(4), dp(24), 0); addView(box) })
+            .setPositiveButton(R.string.ok) { _, _ -> save(box.text.toString().trim()) }.setNegativeButton(android.R.string.cancel, null)
+        if (a.renamed) b.setNeutralButton(R.string.rename_orig) { _, _ -> save("") }
+        val dlg = b.create()
+        box.setOnEditorActionListener { _, _, _ -> save(box.text.toString().trim()); dlg.dismiss(); true }
+        open = dlg
+        dlg.show()
     }
 
     private var panel: android.app.Dialog? = null
@@ -1236,7 +1268,12 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             content = inner
         }
         face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-        name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
+        name.text = if (banner != null && app?.renamed != true) label else ""                 // a tile without a banner already shows its name inside
+        if (banner != null && app?.renamed == true) face.addView(Font.on(TextView(c)).apply {   // the person's own name stays on a banner (two YouTubes look the same), not only while focused
+            text = label; textSize = 11f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END
+            setPadding(dp(7), dp(2), dp(7), dp(3)); typeface = Font.medium
+            background = GradientDrawable().apply { setColor(Customize.NAME_SCRIM); cornerRadius = dp(10).toFloat() }
+        }, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(6), 0, dp(6), dp(6)) })
     }
 
     /** A live tile's newest state from its provider (null: no answer); [animate] when motion is on and not calm. */
