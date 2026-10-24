@@ -224,6 +224,7 @@ const FRIENDLY = [
   [/apk is built for (\S+), the tv runs (\S+)/i, (m) => T('core.fr_abi_other', { apk: m[1].replace(/,/g, ', '), tv: m[2].replace(/,/g, ', ') })],
   [/not a changeable permission|SYSTEM_FIXED|POLICY_FIXED|cannot (grant|revoke) system/i, T('core.fr_perm_fixed')],
   [/has not requested permission|Unknown permission/i, T('core.fr_perm_not_asked')],
+  [/builtin app: (\S+)/, (m) => T('core.fr_builtin_app', { pkg: m[1] })],
   [/INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match/i, T('core.fr_signature_differs')],
   [/INSTALL_FAILED_VERSION_DOWNGRADE/i, T('core.fr_newer_installed')],
   [/INSTALL_FAILED_OLDER_SDK/i, T('core.fr_older_sdk')],

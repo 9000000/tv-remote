@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Cài APK trùng app có sẵn trong TV (app hệ thống) báo rõ: app có sẵn nên không thể thay hay gỡ, và có thể cài bản đổi tên gói bên cạnh; thay lời khuyên "gỡ bản đang có" không làm được. Lời báo sai chip ("thường là armeabi-v7a") nay nêu đúng chip của TV.
 - Tab Ứng dụng: gõ tìm cũng tìm trong app hệ thống, kết quả nằm trong nhóm gập "App hệ thống (N)" dưới danh sách (tự mở khi danh sách thường trống), mỗi dòng vẫn ghi tên gói.
 - TV Home: 18 chủ đề có sẵn, mỗi cái cho một kiểu người xem (Buổi sáng, Khung ảnh, Game thủ, Bóng đá, Bé vui, Dễ nhìn, Tết, Đi ngủ, Rạp phim...); chủ đề có thể đặt sẵn ô sống (Đi ngủ: Hẹn giờ tắt ở đầu; Game thủ: Dọn RAM; Bóng đá: Xem tiếp kênh), thêm vào đầu và giữ nguyên ô bạn đã ghim, thiếu app thì bỏ qua. Ba chủ đề dùng nền web: ảnh Sa Pa và hai video (biển, thành phố đêm) qua `docs/home/loop.html` (nguồn Wikimedia Commons, CC0); Rạp phim bỏ nền đen phẳng. Danh sách ký có `rev`: bản của app mới hơn site thì site chưa deploy không ghi đè.
 - Trang Chủ đề (TV và web): lời nhắc ở đầu trang, rồi "Chủ đề của bạn" (không có thì không có tiêu đề), nút "Lưu giao diện đang có thành chủ đề", rồi các chủ đề có sẵn; tiêu điểm đầu tiên rơi vào mục đầu trang.
@@ -62,6 +63,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- Installing an APK whose package is a built-in system app now says it is built into the TV and cannot be replaced or removed, and that a copy with another package name can go beside it (instead of the impossible "uninstall it first"). The wrong-chip message no longer says "usually armeabi-v7a", it names the TV's chip.
 - Apps tab: a search also looks in the system apps; matches sit in a folded "System apps (N)" group under the list (opened when the normal list is empty), each row still showing its package.
 - TV Home: 18 ready-made themes, each for one kind of viewer (Morning news, Photo frame, Gamer, Match day, Kids, Easy to read, Lunar New Year, Bedtime, Cinema...); a theme can set live tiles (Bedtime: the sleep timer first; Gamer: Clean RAM; Match day: Continue watching), added first with the person's own pins kept, skipped when the app is missing. Three themes use a web background: a Sa Pa photo and two videos (beach, night city) through `docs/home/loop.html` (Wikimedia Commons, CC0); Cinema no longer a flat black. The signed list has a `rev`: a site not yet deployed cannot overwrite a newer list packed in the app.
 - Themes page (TV and web): the hint first, then "Your themes" (no header when there are none), the "Save the current look as a theme" button, then the ready-made ones; the first focus lands on the first item.

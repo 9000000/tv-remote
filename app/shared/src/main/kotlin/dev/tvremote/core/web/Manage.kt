@@ -893,6 +893,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         cancel?.check()
         out = PmInstall.fallback(out, { adb.shell(it, 600000) }, q, size.toLongOrNull() ?: 0) { cancel?.check() }   // firmware that refuses pm install: a session instead
         cancel?.check()
+        if (!out.contains("Success") && pkg != null && Regex("INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match").containsMatchIn(out)
+            && adb.shell("pm list packages -s $pkg 2>/dev/null; echo .").lines().any { it.trim() == "package:$pkg" })
+            throw IOException("builtin app: $pkg")                  // "uninstall it first" cannot be done to a system app: say so
         if (!out.contains("Success")) throw IOException(if (out.trim().isEmpty()) "install failed" else out.trim())
         // some boxes (FPT Play...) uninstall the apps they do not allow the moment they land, so "Success" alone proves nothing
         if (pkg != null) {
