@@ -118,7 +118,6 @@ internal fun MainActivity.runScene(sc: JSONObject) {
 }
 
 // ---- what the 🎤 hears
-private val OPEN_APP = Regex("^(mo|bat|vao|chay|xem|open|launch|start|play) ")
 
 /** Carries out a sentence here when it can (Voice.kt); otherwise the TV's search / Assistant gets it, as before. */
 internal fun MainActivity.voice(sentence: String) {
@@ -126,7 +125,7 @@ internal fun MainActivity.voice(sentence: String) {
     Voice.parse(sentence, appNames, scenes)?.let { doVoice(it); return }
     val tv = tv
     val ip = host
-    if (appNamesFor != ip && ip != null && tv != null && tv.ready() && OPEN_APP.containsMatchIn(Voice.fold(sentence))) {
+    if (appNamesFor != ip && ip != null && tv != null && tv.ready() && Voice.wantsApp(sentence)) {
         Thread {                                                      // "open <app>": the names of this TV's apps, asked once per TV
             val link = AdbLink(filesDir, ip)
             val names = try { RemoteLabels(link, { assets.open("tvr-helper.jar").use { it.readBytes() } }).names() } catch (e: Exception) { emptyMap() } finally { link.close() }

@@ -2,7 +2,9 @@ package dev.tvremote.core
 
 import dev.tvremote.core.scenes.Voice.Command
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import dev.tvremote.core.scenes.Voice
 
@@ -15,6 +17,11 @@ class VoiceTest {
     @Test fun fold() {
         assertEquals("mo youtube", Voice.fold("  Mở YouTube! "))
         assertEquals("dat hen gio", Voice.fold("Đặt hẹn giờ"))
+    }
+
+    @Test fun wantsApp() {
+        assertTrue(Voice.wantsApp("Mở YouTube!")); assertTrue(Voice.wantsApp("open the app")); assertTrue(Voice.wantsApp("chạy ứng dụng zing tv"))
+        assertFalse(Voice.wantsApp("tăng âm lượng")); assertFalse(Voice.wantsApp("mở")); assertFalse(Voice.wantsApp(""))
     }
 
     @Test fun apps() {

@@ -20,6 +20,7 @@ unused class, `guide.test.js` the user guide short (40 words a block, 250 of pro
 | `home_qr_cases.json` | `home_qr.test.js` (`js/home_qr.js`) | `HomeQrTest.kt` (`HomeQr.kt`) |
 | `tvshell_cases.json` | (what `js/tvread.js` reads) | `TvShellTest.kt` (`TvShell.kt`) |
 | `fleet_cases.json` | | `FleetTest.kt` (`Fleet.kt`) |
+| `sleep_cases.json` | `sleep.test.js` (`sleepMinutes` in `js/auto.js`) | `SleepTest.kt` in `:android` (`sleepMinutes` in `Automation.kt`) |
 
 A case found on a real TV goes into the table, then both sides are made to pass it. The Kotlin side:
 `cd app/gradle && ./gradlew :shared:testDebugUnitTest`.

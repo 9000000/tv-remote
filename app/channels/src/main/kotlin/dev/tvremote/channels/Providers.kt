@@ -1,7 +1,7 @@
 package dev.tvremote.channels
 
 import android.content.Context
-import dev.tvremote.update.Ed25519
+import dev.tvremote.update.SignedList
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -10,7 +10,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.text.Normalizer
-import java.util.Base64
 
 /**
  * Channels from other places than iptv-org, by a list the site keeps: docs/channels/providers.json (dev/sign/sign_providers.py).
@@ -23,7 +22,6 @@ import java.util.Base64
  * URL is a link of ours, "<provider>:<key>", turned into the real one only when played ([resolve]): those carry a token.
  */
 object Providers {
-    private val KEYS = listOf("de2714846a352ea4e0e5b5dcf2272fee9b10bd2da6ebdea8cff858bac1c3f6ea")   // Launchers.KEYS
     private val BASES = listOf("https://tvremote.pages.dev/channels/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/channels/")
     private const val DAY = 24 * 3600_000L
 
@@ -51,11 +49,6 @@ object Providers {
 
     fun kind(p: Provider): Kind? = KINDS[p.kind]
 
-    fun verified(list: ByteArray, sig: String): Boolean {
-        val raw = try { Base64.getDecoder().decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
-        return KEYS.any { k -> Ed25519.verify(ByteArray(32) { k.substring(it * 2, it * 2 + 2).toInt(16).toByte() }, list, raw) }
-    }
-
     /** The providers that are on and whose kind this app knows; a shape that is not ours is no provider, not a crash. */
     fun parse(text: String): List<Provider> = try {
         val o = JSONObject(text)
@@ -79,7 +72,7 @@ object Providers {
         val f = File(c.filesDir, "providers.json")
         var fresh = true
         val text = if (f.exists() && System.currentTimeMillis() - f.lastModified() < DAY) f.readText() else
-            fetchSigned()?.also { File(c.filesDir, "providers.json.tmp").apply { writeText(it); renameTo(f) } }
+            fetchSigned()?.also { SignedList.keep(f, it.toByteArray(Charsets.UTF_8)) }
                 ?: run { fresh = false; null }
                 ?: f.takeIf { it.exists() }?.readText()
                 ?: try { c.assets.open("providers.json").bufferedReader().readText() } catch (e: IOException) { "" }
@@ -87,14 +80,9 @@ object Providers {
         return parse(text).also { mem = (System.currentTimeMillis() - if (fresh) 0 else DAY - 30 * 60_000L) to it }
     }
 
-    private fun fetchSigned(): String? {
-        for (b in BASES) try {
-            val list = Catalog.get(b + "providers.json")?.takeIf { it.isNotEmpty() } ?: continue
-            val sig = Catalog.get(b + "providers.json.sig") ?: continue
-            if (verified(list.toByteArray(Charsets.UTF_8), sig)) return list
-        } catch (e: Exception) {}
-        return null
-    }
+    private fun fetchSigned(): String? = try {
+        SignedList.fetch(BASES, "providers.json", 1 shl 20, connectMs = 6000, readMs = 8000) { list, _, _ -> String(list, Charsets.UTF_8).takeIf { it.isNotEmpty() } }
+    } catch (e: Exception) { null }
 
     /** [iptv] (a country's playlist) with the providers' channels of that country merged in. */
     fun merge(c: Context, cc: String, iptv: List<Channel>, fresh: Boolean): List<Channel> {

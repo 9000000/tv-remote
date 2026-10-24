@@ -207,11 +207,7 @@ object Bloat {
         val t = System.currentTimeMillis()
         if (t - asked < if (extra != null) 6 * 3600_000L else 30 * 60_000L) return
         asked = t
-        for (b in testBase?.let { listOf(it) } ?: bases) try {
-            val list = Launchers.get(b + "bloat.json")
-            if (!Launchers.signed(list, String(Launchers.get(b + "bloat.json.sig"), Charsets.UTF_8))) throw java.io.IOException(Launchers.UNSIGNED)
-            extra = parse(list); return
-        } catch (e: java.io.IOException) {}
+        try { extra = Launchers.first(testBase?.let { listOf(it) } ?: bases, "bloat.json") { list, _, _ -> parse(list) } } catch (e: java.io.IOException) {}
     }
 
     fun suggest(): Map<String, String> = extra?.let { x -> SUGGEST.filterKeys { it !in x.drop } + x.suggest } ?: SUGGEST

@@ -42,13 +42,7 @@ object Wallpapers {
     @Throws(IOException::class)
     fun fetch(): Gallery {
         cache?.let { if (System.currentTimeMillis() - it.first < 60_000) return it.second }
-        var last = IOException("no wallpaper list")
-        for (b in testBase?.let { listOf(it) } ?: bases) try {
-            val list = Launchers.get(b + "wallpapers.json")
-            if (!Launchers.signed(list, String(Launchers.get(b + "wallpapers.json.sig"), Charsets.UTF_8))) throw IOException(Launchers.UNSIGNED)
-            return parse(list, b).also { cache = System.currentTimeMillis() to it }
-        } catch (e: IOException) { last = e }
-        throw last
+        return Launchers.first(testBase?.let { listOf(it) } ?: bases, "wallpapers.json") { list, _, b -> parse(list, b).also { cache = System.currentTimeMillis() to it } }
     }
 
     /** What the page lists: no file names, only what it shows (the thumbnail is its own route). */

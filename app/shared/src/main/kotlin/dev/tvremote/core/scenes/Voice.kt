@@ -38,6 +38,9 @@ object Voice {
     private val CHANNEL = Regex("^((mo|xem|chuyen|bat|chuyen sang|chuyen qua) )?kenh (.+)$|^(open |watch )?channel (.+)$|^tune to (.+)$")
     private val OPEN = Regex("^(mo|bat|vao|chay|xem|open|launch|start|play)( ung dung| app)? (.+)$")
 
+    /** True when [sentence] asks to open something ("mo youtube"): the Phone app then asks the TV for its app names before giving up on it. */
+    fun wantsApp(sentence: String): Boolean = OPEN.matches(fold(sentence))
+
     /** The link TV Channels (dev.tvremote.channels) takes; spaces as %20, not +. */
     fun channelLink(name: String): String = "tvchannels://find/" + java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20")
 

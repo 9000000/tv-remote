@@ -13,8 +13,8 @@ class ProvidersTest {
 
     @Test fun theSitesListIsSignedAndRead() {
         val list = File(docs, "providers.json").readBytes()
-        assertTrue(Providers.verified(list, File(docs, "providers.json.sig").readText()))
-        assertFalse(Providers.verified(list + ' '.code.toByte(), File(docs, "providers.json.sig").readText()))   // one byte more: refused
+        assertTrue(dev.tvremote.update.SignedList.verify(list, File(docs, "providers.json.sig").readText()))
+        assertFalse(dev.tvremote.update.SignedList.verify(list + ' '.code.toByte(), File(docs, "providers.json.sig").readText()))   // one byte more: refused
         assertEquals(listOf("tv360", "vieon", "vtvgo"), Providers.parse(String(list)).map { it.id })
     }
 

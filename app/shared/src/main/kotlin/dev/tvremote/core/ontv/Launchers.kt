@@ -1,6 +1,6 @@
 package dev.tvremote.core.ontv
 import dev.tvremote.update.Release
-import dev.tvremote.update.Ed25519
+import dev.tvremote.update.SignedList
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -19,8 +19,8 @@ import dev.tvremote.core.B64
  * Nothing but links is hosted here: each APK stays on its author's release page.
  */
 object Launchers {
-    /** Raw Ed25519 public keys a list may be signed with: the one in use (and, when made, a spare kept apart from it). */
-    val KEYS = listOf("de2714846a352ea4e0e5b5dcf2272fee9b10bd2da6ebdea8cff858bac1c3f6ea")
+    /** Raw Ed25519 public keys a list may be signed with: [SignedList.KEYS], the one reader every app shares. */
+    val KEYS = SignedList.KEYS
     var testKeys = emptyList<String>()                            // tests / a local list only: a key made for them
     /** The site first, the repository's own copy if the site fails. TVR_LAUNCHERS (computer) or the apps' override file: a test list. */
     var bases = listOf("https://tvremote.pages.dev/launchers/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/launchers/")
@@ -116,10 +116,12 @@ object Launchers {
     }
 
     /** True when [sig] (base64) is a signature of exactly [list] by one of [KEYS]. */
-    fun signed(list: ByteArray, sig: String): Boolean {
-        val raw = try { B64.decode(sig.trim()) } catch (e: IllegalArgumentException) { return false }
-        return (KEYS + testKeys).any { k -> Ed25519.verify(ByteArray(32) { k.substring(it * 2, it * 2 + 2).toInt(16).toByte() }, list, raw) }
-    }
+    fun signed(list: ByteArray, sig: String): Boolean = SignedList.verify(list, sig, KEYS + testKeys)
+
+    /** The first of [places] that has [name] signed and that [use] accepts; Bloat, Wallpapers and Downloader read theirs through it too. */
+    @Throws(IOException::class)
+    fun <T : Any> first(places: List<String>, name: String, use: (list: ByteArray, sig: String, base: String) -> T?): T =
+        SignedList.fetch(places, name, MAX, KEYS + testKeys, UNSIGNED, use = use)
 
     /** Reads a list whose signature was already checked. A shape that is not ours is an error, not a partial list. */
     @Throws(IOException::class)
@@ -147,13 +149,7 @@ object Launchers {
     @Throws(IOException::class)
     fun fetch(fresh: Boolean = false): Gallery {
         cache?.let { if (!fresh && System.currentTimeMillis() - it.first < 60_000) return it.second }
-        var last: IOException = IOException("no launcher list")
-        for (b in testBase?.let { listOf(it) } ?: bases) try {
-            val list = get(b + "launchers.json")
-            if (!signed(list, String(get(b + "launchers.json.sig"), Charsets.UTF_8))) throw IOException(UNSIGNED)
-            return parse(list, b).also { cache = System.currentTimeMillis() to it }
-        } catch (e: IOException) { last = e }
-        throw last
+        return first(testBase?.let { listOf(it) } ?: bases, "launchers.json") { list, _, b -> parse(list, b).also { cache = System.currentTimeMillis() to it } }
     }
 
     /** A thumbnail's bytes, checked against the signed list's hash. */
@@ -201,21 +197,5 @@ object Launchers {
         return c
     }
 
-    internal fun get(url: String): ByteArray {
-        val c = open(url)
-        try {
-            if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
-            val out = ByteArrayOutputStream()
-            c.inputStream.use { i ->
-                val buf = ByteArray(1 shl 14)
-                while (true) {
-                    val n = i.read(buf)
-                    if (n <= 0) break
-                    out.write(buf, 0, n)
-                    if (out.size() > MAX) throw IOException("launcher list too big")
-                }
-            }
-            return out.toByteArray()
-        } finally { c.disconnect() }
-    }
+    internal fun get(url: String): ByteArray = SignedList.get(url, MAX)
 }

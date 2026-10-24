@@ -1,4 +1,5 @@
 package dev.tvremote.core
+import dev.tvremote.update.SignedList
 import dev.tvremote.core.ontv.Launchers
 import org.json.JSONObject
 import java.io.File
@@ -63,15 +64,12 @@ object Downloader {
     /** Asks the places in order for a signed list and keeps the first that verifies; true when one did. */
     fun refresh(): Boolean {
         val d = dir ?: return false
-        for (b in bases) try {
-            val list = Launchers.get(b + "downloader.json")
-            val sig = String(Launchers.get(b + "downloader.json.sig"), Charsets.UTF_8)
-            if (accept(list, sig) == null) continue                      // unsigned or altered: ignored, the next place is tried
-            File(d, "downloader.json.sig").writeText(sig)
-            File(d, "downloader.json.tmp").apply { writeBytes(list); renameTo(File(d, "downloader.json")) }
-            return true
-        } catch (e: IOException) { }
-        return false
+        return try {
+            Launchers.first(bases, "downloader.json") { list, sig, _ ->
+                if (accept(list, sig) == null) null                      // unsigned or altered, or not our shape: ignored, the next place is tried
+                else { SignedList.keep(File(d, "downloader.json"), list, sig); true }
+            }
+        } catch (e: IOException) { false }
     }
 
     fun json(): JSONObject = JSONObject().apply { codes().forEach { (k, v) -> put(k, v) } }

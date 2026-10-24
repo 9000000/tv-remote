@@ -1,0 +1,29 @@
+{
+ "INFO": "sleepMinutes(text) from the clock 'now' (HH:MM on one day): minutes to sleep, 0 = not understood. js/auto.js and Automation.kt (sleepMinutes) both read this table.",
+ "now": "22:00",
+ "cases": [
+  {"in": "40", "min": 40},
+  {"in": " 90 ", "min": 90},
+  {"in": "1", "min": 1},
+  {"in": "1440", "min": 1440},
+  {"in": "1441", "min": 0},
+  {"in": "0", "min": 0},
+  {"in": "", "min": 0},
+  {"in": "abc", "min": 0},
+  {"in": "23:30", "min": 90},
+  {"in": "23h30", "min": 90},
+  {"in": "23H30", "min": 90},
+  {"in": "23h", "min": 60},
+  {"in": "23g15", "min": 75},
+  {"in": "23 : 30", "min": 90},
+  {"in": "21.30", "min": 1410},
+  {"in": "21:59", "min": 1439},
+  {"in": "22:00", "min": 1440},
+  {"in": "1h", "min": 180},
+  {"in": "7h", "min": 540},
+  {"in": "24:00", "min": 0},
+  {"in": "23:60", "min": 0},
+  {"in": "23:5", "min": 0},
+  {"in": "-5", "min": 0}
+ ]
+}
