@@ -17,6 +17,7 @@ names (README, code comments, the site; Vietnamese in brackets):
 | **TV Home** | `app/home` | | the project's own launcher (`dev.tvremote.home`), first in the launcher gallery; set up from every client over ADB |
 | **TV Channels** | `app/channels` | | iptv-org's free channels on the TV (`dev.tvremote.channels`); knows nothing of the other apps: they reach it only by its links (`tvchannels://play/<id>`, `group/<id>`, `find/<name>`); installed and opened from every client over ADB (`core/ontv/Channels.kt`, `js/channels.js`) |
 | **TV Games** | `app/games` | | retro games (libretro cores, GPL-3: `app/games/LICENSE`) and web games on the TV, played with phones as pads (`dev.tvremote.games`): its own server on 8780 + a QR, no ADB and no TV Setup needed to play; installed, opened and updated from every client over ADB like TV Channels (`core/ontv/Games.kt`, `OwnApp.kt`, `js/games.js`) |
+| **TV Karaoke** | `app/karaoke` | | songs on the TV, queue filled from phones (`dev.tvremote.karaoke`): its own server on 8790 + a QR, YouTube's embedded player in a WebView (ads stay, no download); not yet in release.sh, the site or the clients |
 
 What each can do, and diagrams of how they connect: README "Three apps and a web page" / README.vi "Ba app và một trang web".
 Keep that table true when a feature lands on only some of them.
@@ -85,6 +86,7 @@ app/games/               TV Games: LibraryActivity (the games, Suggestions from 
                          the pad page `assets/pad`, uploads, WebSocket slots 1-4), Systems (extension -> system -> core, pad layout), Catalog +
                          Cores (`docs/games/games.json`, signed by `dev/sign/sign_games.py` with the launcher list's key: cores downloaded by sha256 from
                          the `cores-1` release made by `dev/release/cores.sh`, suggested web games, free homebrew; fceumm packed as the offline fallback)
+app/karaoke/             TV Karaoke: MainActivity (queue screen + WebView player), KaraokeServer (8790: pad page `assets/pad`, WebSocket), Session (queue, key, volume), KaraokeQueue + Search (`SearchParse`: API / InnerTube / HTML, unit-tested) + KeyRules; plain Views, no :shared
 app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
 app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
                          (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
