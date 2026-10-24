@@ -448,6 +448,10 @@ class HomeActivity : Activity() {
 
     /** "rows" a whole number: the rows under them stay hidden in the half row left clear until the focus goes down into them. */
     private fun veil(glide: Boolean = true) {
+        if (moving != null) {                                         // a step takes the carried tile out and back: focus leaves for a moment, and the
+            for (i in 0 until grid.childCount) grid.getChildAt(i).let { it.animate().cancel(); it.alpha = 1f }   // fade it started (to 0) outlived the call that wanted 1: every other step hid the rows
+            return
+        }
         val r = conf.optDouble("rows", 0.0)
         val n = if (r >= 1 && r - Math.floor(r) < 0.05) Math.floor(r).toInt() else Int.MAX_VALUE
         var v: View? = currentFocus
@@ -1770,7 +1774,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     }
 }
 
-const val DIM = 0.35f                                                 // the tiles that are not being moved
+const val DIM = 0.6f                                                  // the tiles that are not being moved
 /** The most rows of apps the first screen can show (to tenths), as the last layout measured; 0 = not measured yet. */
 @Volatile var rowsFit = 0.0
 
