@@ -74,6 +74,10 @@
         <activity android:name=".WelcomeActivity" android:exported="true" android:permission="android.permission.DUMP" android:excludeFromRecents="true"
             android:launchMode="singleTask" android:taskAffinity="" android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize" />
+        <!-- plays a file sent from a client (looping, aspect kept); started by explicit component from the shell only -->
+        <activity android:name=".PlayActivity" android:exported="true" android:permission="android.permission.DUMP" android:excludeFromRecents="true"
+            android:launchMode="singleTask" android:taskAffinity="" android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize" />
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -614,6 +614,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             else -> {                                                 // open on the TV with whatever app handles the type
                 val real = if (path.startsWith("/sdcard")) "/storage/emulated/0" + path.substring(7) else path
                 val args = "-a android.intent.action.VIEW -d " + Adb.q("file://" + real.split('/').joinToString("/") { URLEncoder.encode(it, "UTF-8").replace("+", "%20") }) + " -t " + Adb.q(mime(path))
+                // a video or song: TV Setup's own player (aspect kept, loops) when it is there; the TV's own player stretches and plays once
+                val m = mime(path)
+                if ((m.startsWith("video/") || m.startsWith("audio/")) && playOwn(real, m)) return HttpServer.Response.ok()
                 // Google TV answers files it cannot show with a do-nothing stub (frameworkpackagestubs): that is "no app" too
                 out = if (sh("cmd package resolve-activity --brief $args 2>&1").contains("frameworkpackagestubs")) "Error" else sh("am start $args 2>&1")
                 out = if (out.contains("Error") || out.lowercase(Locale.ROOT).contains("unable to resolve")) "the TV has no app that can open this" else ""
@@ -621,6 +624,19 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         }
         if (out.trim().isNotEmpty()) throw IllegalArgumentException(out.trim())
         return HttpServer.Response.ok()
+    }
+
+    /**
+     * Plays [real] in TV Setup's PlayActivity. TV Setup has no storage permission, so the shell copies the file into its own folder
+     * (one file kept, the last). False when TV Setup is missing or older: the caller falls back to the TV's own player.
+     */
+    private fun playOwn(real: String, mime: String): Boolean {
+        val dir = "/sdcard/Android/data/dev.tvremote.setup/files/play"
+        val name = "play." + real.substringAfterLast('.', "mp4").filter { it.isLetterOrDigit() }.take(5)
+        val out = sh("cmd package resolve-activity --brief -n dev.tvremote.setup/.PlayActivity 2>&1 | grep -q PlayActivity || exit 3; " +
+            "mkdir -p $dir && rm -f $dir/* && cp " + Adb.q(real) + " $dir/$name || exit 4; " +
+            "am start -n dev.tvremote.setup/.PlayActivity -d file://$dir/$name -t " + Adb.q(mime) + " 2>&1")
+        return !out.contains("Error") && !out.contains("Exception") && out.contains("Starting")
     }
 
     /** The TV's settings for the page; a stock launcher a swap turned off is listed still: picking it is the way back ([homeSet]). */
