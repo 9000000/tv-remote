@@ -60,6 +60,8 @@
         <!-- the News card's reader and the weather card's map: opened from the home screen only -->
         <activity android:name=".widgets.NewsActivity" android:exported="false" android:excludeFromRecents="true"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection" />
+        <activity android:name=".widgets.MarketActivity" android:exported="false" android:excludeFromRecents="true"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection" />
         <activity android:name=".widgets.WeatherMapActivity" android:exported="false" android:excludeFromRecents="true"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection" />
         <!-- another app pins a shortcut here (Android 8+): Pins.kt; the request is the system's own object, a forged intent carries none -->

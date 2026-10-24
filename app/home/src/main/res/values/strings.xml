@@ -512,6 +512,13 @@
     <string name="map_clouds">Clouds</string>
     <string name="map_pm">PM2.5</string>
     <string name="map_none">No place yet: set the city in the weather card</string>
+    <string name="map_loading">Loading the map…</string>
+    <string name="mk_tr">M</string>
+    <string name="mk_buy">Buy</string>
+    <string name="mk_sell">Sell</string>
+    <string name="mk_src">Source: %1$s</string>
+    <string name="rd_more">More headlines</string>
+    <string name="map_days">Next days</string>
     <string name="home_o_layout">Layout</string>
     <string name="home_o_show">Show</string>
     <string name="home_o_btc">Bitcoin</string>

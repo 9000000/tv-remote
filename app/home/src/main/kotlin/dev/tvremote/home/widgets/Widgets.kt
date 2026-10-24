@@ -299,7 +299,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                         }
                     }
                 } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
-                if (k == "weather" || k == "news") hotify(v, k)
+                if (k == "weather" || k == "news" || k == "market") hotify(v, k)
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })

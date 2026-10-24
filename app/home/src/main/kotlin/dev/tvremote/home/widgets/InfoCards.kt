@@ -21,62 +21,91 @@ import java.util.Locale
 
 private val UP = 0xFF6BE8A6.toInt()
 private val DOWN = 0xFFFF8A80.toInt()
+private const val BADGE_A = 0x33000000
+private const val CHIP_A = 0x26000000
 private const val SHADOW = 0x80000000.toInt()
 private const val THUMB = 0x26FFFFFF                                     // a picture's place while it loads
 
-private fun Widgets.vnd(v: Double): String = String.format(Locale.getDefault(), if (v >= 1000) "%,.0f" else "%.2f", v)
-private fun Widgets.million(v: Long): String = String.format(Locale.getDefault(), "%.1f", v / 1_000_000.0)
+internal fun fmtVnd(v: Double): String = String.format(Locale.getDefault(), if (v >= 1000) "%,.0f" else "%.2f", v)
+internal fun fmtMil(v: Long): String = String.format(Locale.getDefault(), "%.1f", v / 1_000_000.0)
 
-/** One line of the card: a dim name on the left, the figure on the right, shrunk before it is cut. */
-private fun Widgets.row(name: String, value: String, size: Float, tint: Int = Color.WHITE) = LinearLayout(a).apply {
-    orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-    addView(text(name, size, DIM), LayoutParams(-2, -2))
-    addView(Shrink(a, size, 9f).apply {
-        text = value; setTextColor(tint); maxLines = 1; typeface = Font.medium; gravity = Gravity.END; includeFontPadding = false
-        setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), SHADOW)
-    }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(10) })
+internal const val GOLD_BAR = 0xFFF2C14E.toInt()
+internal const val C_USD = 0xFF4CAF7A.toInt(); internal const val C_EUR = 0xFF5B8DEF.toInt(); internal const val C_JPY = 0xFFEF6B6B.toInt()
+internal const val C_KRW = 0xFF7C8CF8.toInt(); internal const val C_CNY = 0xFFE5534B.toInt(); internal const val C_GBP = 0xFFB07CF2.toInt()
+internal const val C_BTC = 0xFFF7931A.toInt()
+internal val SYMBOL = mapOf("USD" to ("$" to C_USD), "EUR" to ("€" to C_EUR), "JPY" to ("¥" to C_JPY), "KRW" to ("₩" to C_KRW),
+    "CNY" to ("¥" to C_CNY), "GBP" to ("£" to C_GBP), "BTC" to ("₿" to C_BTC))
+
+/** A round badge: the line icon (gold) or a currency sign, tinted on a faint disc of the same colour. */
+internal fun badgeView(c: android.content.Context, size: Int, icon: Int, sign: String, tint: Int): View {
+    val box = android.widget.FrameLayout(c)
+    box.background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor((tint and 0xFFFFFF) or BADGE_A) }
+    if (icon != 0) box.addView(ImageView(c).apply { setImageResource(icon); imageTintList = android.content.res.ColorStateList.valueOf(tint) },
+        android.widget.FrameLayout.LayoutParams(size * 5 / 9, size * 5 / 9, Gravity.CENTER))
+    else box.addView(android.widget.TextView(c).apply { text = sign; setTextColor(tint); textSize = size / c.resources.displayMetrics.scaledDensity * 0.52f; typeface = android.graphics.Typeface.DEFAULT_BOLD; gravity = Gravity.CENTER; includeFontPadding = false },
+        android.widget.FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
+    return box
 }
 
-/** The lines the card can show, in order: [kind] "gold" / "rate" / "btc", the name, the figure, a colour. */
-private class Line(val kind: String, val name: String, val value: String, val tint: Int = Color.WHITE)
+/** The ▲ / ▼ chip of a change since yesterday. */
+internal fun changeChip(c: android.content.Context, d: Float, pct: Double, size: Float): View = Font.on(android.widget.TextView(c)).apply {
+    val up = pct >= 0; val col = if (up) UP else DOWN
+    text = (if (up) "▲ " else "▼ ") + String.format(Locale.getDefault(), "%.1f%%", Math.abs(pct)); textSize = size; typeface = Font.medium; setTextColor(col); maxLines = 1; gravity = Gravity.CENTER
+    setPadding((8 * d).toInt(), (2 * d).toInt(), (8 * d).toInt(), (2 * d).toInt())
+    background = GradientDrawable().apply { cornerRadius = 12 * d; setColor((col and 0xFFFFFF) or CHIP_A) }
+}
+
+/** One row of the card: a badge, a muted name, the one figure in big tabular type on the right, and the change since yesterday. */
+private class Line(val kind: String, val key: String, val icon: Int, val sign: String, val tint: Int, val name: String, val value: String, val pct: Double?)
 
 private fun Widgets.lines(m: Market.Snap, show: String, btc: Boolean): List<Line> {
-    val out = ArrayList<Line>()
-    val unit = a.getString(R.string.mk_unit)
-    if (show != "rates") m.gold?.let { g ->
-        out += Line("gold", a.getString(R.string.mk_sjc), "${million(g.sjcBuy)} / ${million(g.sjcSell)} $unit")
-        out += Line("gold", a.getString(R.string.mk_ring), "${million(g.ringBuy)} / ${million(g.ringSell)} $unit")
+    val tr = a.getString(R.string.mk_tr)
+    fun g(key: String, name: Int, sell: Long) = Line("gold", key, R.drawable.ic_gold, "", GOLD_BAR, a.getString(name), fmtMil(sell) + " " + tr, Market.trend(a, key, sell.toDouble()))
+    val gold = if (show == "rates") emptyList() else m.gold?.let { listOf(g("sjc", R.string.mk_sjc, it.sjcSell), g("ring", R.string.mk_ring, it.ringSell)) }.orEmpty()
+    val rates = if (show == "gold") emptyList() else m.rates.map { r ->
+        val (sign, col) = SYMBOL[r.code] ?: (r.code to Color.WHITE)
+        Line("rate", r.code, 0, sign, col, r.code, fmtVnd(r.sell) + " ₫", Market.trend(a, r.code, r.sell))
     }
-    if (show != "gold") for (r in m.rates.take(if (show == "rates") 5 else 3))
-        out += Line("rate", r.code, if (r.buy > 0) "${vnd(r.buy)} / ${vnd(r.sell)}" else vnd(r.sell))
-    if (btc) m.btc?.let { b -> out += Line("btc", "BTC", "$" + String.format(Locale.getDefault(), "%,.0f", b.usd) + "  " + (if (b.pct >= 0) "▲" else "▼") + String.format(Locale.getDefault(), "%.1f%%", Math.abs(b.pct)), if (b.pct >= 0) UP else DOWN) }
-    return out
+    val coin = if (btc) m.btc?.let { b -> Line("btc", "BTC", 0, "₿", SYMBOL.getValue("BTC").second, "BTC", "$" + String.format(Locale.getDefault(), "%,.0f", b.usd), b.pct) }?.let { listOf(it) }.orEmpty() else emptyList()
+    return gold + rates.take(1) + coin + rates.drop(1)
 }
 
 private fun Widgets.updated(m: Market.Snap) = a.getString(R.string.mk_upd, hm(m.at))
 
-/** The card at its full height: the title with the time of the last update, a line per price. */
+private fun Widgets.priceRow(x: Line, big: Boolean, dense: Boolean = false) = LinearLayout(a).apply {
+    orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+    val bs = dp(if (big) 34 else 24)
+    addView(badgeView(a, bs, x.icon, x.sign, x.tint), LayoutParams(bs, bs))
+    val who = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }
+    who.addView(text(x.name, if (dense) 12f else if (big) 14f else 12f, DIM).apply { maxLines = 1; includeFontPadding = false })
+    x.pct?.takeIf { Math.abs(it) >= 0.05 && big }?.let { who.addView(changeChip(a, a.resources.displayMetrics.density, it, if (dense) 9f else 10f).apply { if (dense) setPadding(dp(6), 0, dp(6), 0) }, LayoutParams(-2, -2).apply { topMargin = dp(if (dense) 1 else 2) }) }
+    addView(who, LayoutParams(0, -2, 1f).apply { leftMargin = dp(if (big) 12 else 8) })
+    addView(Font.on(android.widget.TextView(a)).apply {
+        text = x.value; textSize = if (big) 21f else 15f; typeface = Font.medium; setTextColor(Color.WHITE); maxLines = 1; gravity = Gravity.END
+        fontFeatureSettings = "tnum"; includeFontPadding = false; setShadowLayer(dp(4).toFloat(), 0f, dp(1).toFloat(), SHADOW)
+    }, LayoutParams(-2, -2))
+}
+
+/** The card at its full height: the title with the time of the last update, up to four prices, one figure each. */
 internal fun Widgets.marketFull(card: LinearLayout, f: Facts) {
     val m = f.market
     if (m == null || m.empty) { card.addView(head(a.getString(R.string.w_market), "")); card.addView(note(a.getString(R.string.mk_none))); return }
     card.gravity = Gravity.CENTER_VERTICAL
     card.addView(head(a.getString(R.string.w_market), hm(m.at)))
-    val l = lines(m, opt("market", "show"), opt("market", "btc") == "on")
+    val l = lines(m, opt("market", "show"), opt("market", "btc") == "on").take(4)
     val box = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }
-    for (x in l) box.addView(row(x.name, x.value, 13f, x.tint), LayoutParams(-1, 0, 1f))
+    for (x in l) box.addView(priceRow(x, true, l.size >= 4), LayoutParams(-1, 0, 1f))
     card.addView(box, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
 }
 
-/** Half the height, or a narrow column: the first two prices and the time. */
+/** Half the height, or a narrow column: two prices (gold, then the dollar) and the time. */
 internal fun Widgets.marketHalf(card: LinearLayout, f: Facts) {
     val m = f.market
     card.gravity = Gravity.CENTER_VERTICAL
     if (m == null || m.empty) { card.addView(head(a.getString(R.string.w_market), "")); card.addView(note(a.getString(R.string.mk_none))); return }
     val l = lines(m, opt("market", "show"), opt("market", "btc") == "on")
-    // the headline pair: the gold sell price and the dollar, whichever the options leave
     val pick = (l.filter { it.kind == "gold" }.take(1) + l.filter { it.kind == "rate" }.take(1) + l.filter { it.kind == "btc" }).ifEmpty { l }.take(2)
-    for ((i, x) in pick.withIndex()) card.addView(row(x.name, x.value, 12f, x.tint), LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(2) })
-    card.addView(text(updated(m), 11f, DIM), LayoutParams(-1, -2).apply { topMargin = dp(2) })
+    for ((i, x) in pick.withIndex()) card.addView(priceRow(x, false), LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
 }
 
 /** One scrolling line: every price after the other. The marquee runs only where motion is on and not calm (a weak box would redraw the cards each frame). */
@@ -87,9 +116,15 @@ internal fun Widgets.marketTicker(card: LinearLayout, f: Facts, big: Boolean) {
     val l = lines(m, opt("market", "show"), opt("market", "btc") == "on")
     val moving = Motion.on && !Motion.calm
     val sep = "   ·   "
-    val line = l.joinToString(sep) { it.name + " " + it.value.substringAfter(" / ", it.value).removeSuffix(" " + a.getString(R.string.mk_unit)) }       // the sell figures only: a line to glance at
+    val parts = l.map { it.name + " " + it.value }
+    val line = parts.joinToString(sep)
     val tv = text(if (moving) line + sep + line else line, if (big) 20f else 15f, Color.WHITE).apply {
         typeface = Font.medium
+        if (!moving) addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->           // still: whole prices only, never one cut in the middle
+            val t = v as android.widget.TextView; var n = parts.size
+            while (n > 1 && t.paint.measureText(parts.take(n).joinToString(sep)) > t.width - t.paddingLeft - t.paddingRight) n--
+            val want = parts.take(n).joinToString(sep); if (t.text.toString() != want && t.width > 0) t.text = want
+        }
         if (moving) { ellipsize = TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit = -1; isSelected = true; isFocusable = false }
     }
     card.addView(text(a.getString(R.string.w_market) + " · " + hm(m.at), 11f, DIM), LayoutParams(-1, -2).apply { bottomMargin = dp(4) })

@@ -510,6 +510,13 @@
     <string name="map_clouds">Mây</string>
     <string name="map_pm">PM2.5</string>
     <string name="map_none">Chưa có địa điểm: chọn thành phố ở thẻ thời tiết</string>
+    <string name="map_loading">Đang tải bản đồ…</string>
+    <string name="mk_tr">tr</string>
+    <string name="mk_buy">Mua</string>
+    <string name="mk_sell">Bán</string>
+    <string name="mk_src">Nguồn: %1$s</string>
+    <string name="rd_more">Tin khác</string>
+    <string name="map_days">Các ngày tới</string>
     <string name="home_o_layout">Kiểu</string>
     <string name="home_o_show">Hiện</string>
     <string name="home_o_btc">Bitcoin</string>

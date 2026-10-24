@@ -98,6 +98,19 @@ object Market {
             b?.let { Btc(it.getDouble("usd"), it.optDouble("pct")) }, o.optLong("ratesAt"), o.optLong("goldAt"), o.optLong("btcAt"))
     } catch (e: Exception) { null }
 
+    /** The value to compare with: the last one seen on an earlier day than [today] (kept as [ref] until a newer day replaces it). */
+    fun refStep(day: String, cur: Double?, ref: Double?, today: String): Double? = if (day != today && cur != null) cur else ref
+
+    /** Percent change of [v] since yesterday's last value; null until one exists (the first day has nothing to compare with). */
+    fun trend(c: Context, key: String, v: Double, today: String = java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US).format(java.util.Date())): Double? {
+        val p = prefs(c)
+        val day = p.getString("d_$key", "") ?: ""
+        val cur = p.getString("c_$key", null)?.toDoubleOrNull(); val old = p.getString("r_$key", null)?.toDoubleOrNull()
+        val ref = refStep(day, cur, old, today)
+        if (day != today || cur != v || ref != old) p.edit().putString("d_$key", today).putString("c_$key", v.toString()).also { e -> ref?.let { e.putString("r_$key", it.toString()) } }.apply()
+        return if (ref != null && ref > 0 && v > 0) (v - ref) / ref * 100 else null
+    }
+
     // ---- the network and the prefs, the thin part ----
 
     private fun prefs(c: Context) = c.getSharedPreferences("market", Context.MODE_PRIVATE)

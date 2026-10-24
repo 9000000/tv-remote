@@ -248,7 +248,7 @@ class HomeActivity : Activity() {
         head.addView(bar)
         col.addView(head)
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
-        widgets.onOpen = { k -> startActivity(Intent(this, if (k == "news") dev.tvremote.home.widgets.NewsActivity::class.java else dev.tvremote.home.widgets.WeatherMapActivity::class.java).putExtra("i", widgets.newsShown)) }
+        widgets.onOpen = { k -> startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> bar.buttons.filter { it.isShown }.minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
         widgets.onDown = { (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it) } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })

@@ -14,10 +14,12 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.FrameLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import dev.tvremote.home.Font
 import dev.tvremote.home.R
+import dev.tvremote.tvui.TvGlass
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -30,25 +32,58 @@ private const val CHIP_REST = 0x1FFFFFFF
 private const val EDGE = 0xFF62D2FF.toInt()
 private const val BODY = 0xE6FFFFFF.toInt()
 
-/** A focusable text button: a faint pill, a bright one with the focus. */
-internal fun Activity.pillButton(label: String, on: Boolean = false, click: () -> Unit): TextView {
+private const val CHIP_FOCUS_INK = 0xFF0B0E14.toInt()
+
+private fun Activity.pillBg(focused: Boolean, on: Boolean) = GradientDrawable().apply {
     val d = resources.displayMetrics.density
-    fun bg(f: Boolean) = GradientDrawable().apply {
-        cornerRadius = 22 * d; setColor(if (f) WHITE else if (on) CHIP_ON else CHIP_REST)
-        if (on && !f) setStroke((2 * d).toInt(), EDGE)
+    cornerRadius = 22 * d; setColor(if (focused) WHITE else if (on) CHIP_ON else CHIP_REST)
+    if (on && !focused) setStroke((2 * d).toInt(), EDGE)
+}
+
+/** A focusable text button with a line icon: a faint pill, a bright one with the focus, a blue-edged one while [on] (the one choice in use). */
+internal fun Activity.pillButton(label: String, on: Boolean = false, icon: Int = 0, start: Boolean = false, click: () -> Unit): TextView {
+    val d = resources.displayMetrics.density
+    val ico = if (icon != 0) resources.getDrawable(icon).mutate().also { it.setBounds(0, 0, (22 * d).toInt(), (22 * d).toInt()) } else null
+    fun paint(v: TextView, f: Boolean) {
+        v.background = pillBg(f, v.tag == true)
+        val ink = if (f) CHIP_FOCUS_INK else Color.WHITE
+        v.setTextColor(ink); ico?.setTint(ink)
     }
     return Font.on(TextView(this)).apply {
-        text = label; textSize = 16f; typeface = Font.medium; gravity = Gravity.CENTER; setSingleLine(true)
-        setTextColor(Color.WHITE); background = bg(false); isFocusable = true; isClickable = true
-        setPadding((20 * d).toInt(), (10 * d).toInt(), (20 * d).toInt(), (10 * d).toInt())
-        setOnFocusChangeListener { v, f -> background = bg(f); (v as TextView).setTextColor(if (f) INK else Color.WHITE) }
+        tag = on
+        text = label; textSize = 16f; typeface = Font.medium; gravity = if (start) Gravity.CENTER_VERTICAL or Gravity.START else Gravity.CENTER; setSingleLine(true)
+        isFocusable = true; isClickable = true
+        if (ico != null) { setCompoundDrawables(ico, null, null, null); compoundDrawablePadding = (12 * d).toInt() }
+        setPadding((18 * d).toInt(), (10 * d).toInt(), (18 * d).toInt(), (10 * d).toInt())
+        paint(this, false)
+        setOnFocusChangeListener { v, f -> paint(v as TextView, f) }
         setOnClickListener { click() }
     }
 }
 
+/** The one on-state of a [pillButton], kept in step with what it chooses. */
+internal fun Activity.setPillOn(v: TextView, on: Boolean) {
+    v.tag = on
+    v.background = pillBg(v.isFocused, on)
+}
+
+private fun Activity.dpx(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
+
+private fun Activity.roundedPic(): ImageView = ImageView(this).apply {
+    scaleType = ImageView.ScaleType.CENTER_CROP
+    background = GradientDrawable().apply { cornerRadius = dpx(16).toFloat(); setColor(CHIP_REST) }
+    clipToOutline = true
+    outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dpx(16).toFloat()) } }
+}
+
+private fun Activity.label(t: String, size: Float, color: Int, bold: Boolean = false) = Font.on(TextView(this)).apply {
+    text = t; textSize = size; setTextColor(color); if (bold) typeface = Font.bold
+}
+
 /**
  * The reader of one headline, from the News card: the picture, the source and time, the title and the summary the feed gave in big
- * text, "previous / next" and "Open in browser" (only where an app answers a web link). The article itself is never fetched here.
+ * text, the next headlines to jump to, "previous / next" and "Open in browser" (only where an app answers a web link). The article
+ * itself is never fetched here. A glass panel on the dark screen, as Customize.
  */
 class NewsActivity : Activity() {
     override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(dev.tvremote.home.Lang.wrap(base))
@@ -67,100 +102,215 @@ class NewsActivity : Activity() {
     }
 
     private fun draw() {
-        val d = resources.displayMetrics.density
-        fun dp(v: Number) = (v.toFloat() * d).toInt()
         val it = items[i]
         root.removeAllViews()
         root.orientation = LinearLayout.HORIZONTAL
-        root.setPadding(dp(64), dp(40), dp(64), dp(40))
-        val pic = ImageView(this).apply {
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            background = GradientDrawable().apply { cornerRadius = dp(16).toFloat(); setColor(CHIP_REST) }
-            clipToOutline = true
-            outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(16).toFloat()) } }
-        }
-        if (it.image.isNotEmpty()) Pics.into(this, pic, it.image, dp(640))
+        root.setPadding(dpx(48), dpx(32), dpx(48), dpx(32))
+        val pic = roundedPic()
+        if (it.image.isNotEmpty()) Pics.into(this, pic, it.image, dpx(640))
         root.addView(pic, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 4f))
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = TvGlass.panelBg(this@NewsActivity); setPadding(dpx(28), dpx(22), dpx(28), dpx(22)); clipToPadding = false }
         val ago = it.at.takeIf { t -> t > 0 }?.let { t -> SimpleDateFormat("HH:mm · d/M", Locale.getDefault()).format(t) }
-        col.addView(Font.on(TextView(this)).apply { text = listOf(it.src, ago).filterNotNull().filter { s -> s.isNotEmpty() }.joinToString("  ·  "); textSize = 16f; setTextColor(DIMC) })
-        col.addView(Font.on(TextView(this)).apply { text = it.title; textSize = 30f; typeface = Font.bold; setTextColor(Color.WHITE); maxLines = 4; ellipsize = TextUtils.TruncateAt.END; setPadding(0, dp(8), 0, dp(12)) })
+        val who = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        who.addView(badgeView(this, dpx(40), R.drawable.ic_news, "", EDGE), LinearLayout.LayoutParams(dpx(40), dpx(40)))
+        val names = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        names.addView(label(it.src.ifEmpty { getString(R.string.w_news) }, 18f, Color.WHITE, true).apply { setSingleLine(true) })
+        if (ago != null) names.addView(label(ago, 14f, DIMC))
+        who.addView(names, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dpx(12) })
+        who.addView(label("${i + 1} / ${items.size}", 14f, DIMC))
+        col.addView(who)
+        col.addView(label(it.title, 28f, Color.WHITE, true).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END; setPadding(0, dpx(14), 0, dpx(8)) })
         val sum = ScrollView(this).apply { isFocusable = false; isVerticalScrollBarEnabled = false }
-        sum.addView(Font.on(TextView(this)).apply { text = it.summary.ifEmpty { it.link }; textSize = 21f; setLineSpacing(0f, 1.15f); setTextColor(BODY) })
+        sum.addView(label(it.summary.ifEmpty { it.link }, 19f, BODY).apply { setLineSpacing(0f, 1.12f) })
         col.addView(sum, LinearLayout.LayoutParams(-1, 0, 1f))
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(16), 0, 0); clipChildren = false; clipToPadding = false }
-        val gap = LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dp(12) }
         var first: View? = null
-        if (i > 0) bar.addView(pillButton("‹ " + getString(R.string.rd_prev)) { i--; draw() }.also { f -> first = first ?: f }, gap)
-        if (i < items.size - 1) bar.addView(pillButton(getString(R.string.rd_next) + " ›") { i++; draw() }.also { f -> first = f }, gap)
+        val rest = (1..2).map { n -> (i + n) % items.size }.filter { n -> n != i }.distinct()
+        if (rest.isNotEmpty()) {
+            col.addView(label(getString(R.string.rd_more), 13f, DIMC).apply { setPadding(0, dpx(8), 0, dpx(4)) })
+            for (n in rest) {
+                val h = items[n]
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                    background = TvGlass.rowBg(this@NewsActivity, 16); setPadding(dpx(8), dpx(4), dpx(14), dpx(4))
+                    setOnClickListener { i = n; draw() }
+                }
+                val th = ImageView(this).apply {
+                    scaleType = ImageView.ScaleType.CENTER_CROP; clipToOutline = true
+                    background = GradientDrawable().apply { cornerRadius = dpx(8).toFloat(); setColor(CHIP_REST) }
+                    outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dpx(8).toFloat()) } }
+                }
+                if (h.image.isNotEmpty()) Pics.into(this, th, h.image, dpx(120))
+                row.addView(th, LinearLayout.LayoutParams(dpx(60), dpx(40)))
+                row.addView(label(h.title, 14f, Color.WHITE).apply { maxLines = 2; ellipsize = TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dpx(12) })
+                col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(5) })
+            }
+        }
+        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dpx(10), 0, 0); clipChildren = false; clipToPadding = false }
+        val gap = LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dpx(12) }
         val view = Intent(Intent.ACTION_VIEW, Uri.parse(it.link))
         if (view.resolveActivity(packageManager) != null)
-            bar.addView(pillButton(getString(R.string.rd_open)) { try { startActivity(view) } catch (e: Exception) { } }, gap)
+            bar.addView(pillButton(getString(R.string.rd_open), true, R.drawable.ic_external) { try { startActivity(view) } catch (e: Exception) { } }.also { f -> first = f }, gap)
+        if (i > 0) bar.addView(pillButton(getString(R.string.rd_prev), false, R.drawable.ic_left) { i--; draw() }.also { f -> first = first ?: f }, gap)
+        if (i < items.size - 1) bar.addView(pillButton(getString(R.string.rd_next), false, R.drawable.ic_right) { i++; draw() }.also { f -> first = first ?: f }, gap)
         col.addView(bar)
-        root.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 6f).apply { leftMargin = dp(40) })
-        (first ?: bar.getChildAt(0))?.requestFocus()
+        root.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 6f).apply { leftMargin = dpx(28) })
+        (first ?: col.getChildAt(0))?.requestFocus()
     }
 }
 
 /**
+ * The Market card's detail, on OK: every price with buy and sell, the time of the last update and the sources. The card shows one
+ * figure per row; this is where both live.
+ */
+class MarketActivity : Activity() {
+    override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(dev.tvremote.home.Lang.wrap(base))
+
+    private fun cell(t: String, w: Int, size: Float, color: Int, bold: Boolean = false) = label(t, size, color, bold).apply {
+        gravity = Gravity.END; setSingleLine(true); fontFeatureSettings = "tnum"; layoutParams = LinearLayout.LayoutParams(dpx(w), -2)
+    }
+
+    override fun onCreate(b: Bundle?) {
+        super.onCreate(b)
+        val root = FrameLayout(this).apply { setBackgroundColor(INK) }
+        setContentView(root)
+        val m = Market.cached(this)
+        val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = TvGlass.panelBg(this@MarketActivity); setPadding(dpx(32), dpx(22), dpx(32), dpx(20)) }
+        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }          // the rows: they scroll when a long list does not fit
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        head.addView(badgeView(this, dpx(44), R.drawable.ic_banknote, "", EDGE), LinearLayout.LayoutParams(dpx(44), dpx(44)))
+        head.addView(label(getString(R.string.w_market), 26f, Color.WHITE, true), LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dpx(14) })
+        if (m != null) head.addView(label(getString(R.string.mk_upd, SimpleDateFormat("HH:mm", Locale.getDefault()).format(m.at)), 15f, DIMC))
+        outer.addView(head)
+        val tr = getString(R.string.mk_tr)
+        fun line(icon: Int, sign: String, tint: Int, name: String, buy: String, sell: String, pct: Double?) {
+            val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dpx(12), dpx(4), dpx(12), dpx(4)); background = TvGlass.glass(this@MarketActivity, 16, TvGlass.ROW_FILL, TvGlass.ROW_EDGE) }
+            r.addView(badgeView(this, dpx(32), icon, sign, tint), LinearLayout.LayoutParams(dpx(32), dpx(32)))
+            r.addView(label(name, 18f, Color.WHITE).apply { setSingleLine(true) }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dpx(14) })
+            r.addView(cell(buy, 130, 19f, DIMC)); r.addView(cell(sell, 130, 21f, Color.WHITE, true))
+            r.addView(FrameLayout(this).apply { pct?.takeIf { Math.abs(it) >= 0.05 }?.let { addView(changeChip(this@MarketActivity, resources.displayMetrics.density, it, 13f), FrameLayout.LayoutParams(-2, -2, Gravity.END or Gravity.CENTER_VERTICAL)) } }, LinearLayout.LayoutParams(dpx(96), -2).apply { leftMargin = dpx(8) })
+            panel.addView(r, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dpx(6) })
+        }
+        var src: View? = null
+        if (m == null || m.empty) panel.addView(label(getString(R.string.mk_none), 18f, DIMC).apply { setPadding(0, dpx(24), 0, dpx(24)) })
+        else {
+            val cols = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dpx(12), dpx(16), dpx(12), 0) }
+            cols.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+            cols.addView(cell(getString(R.string.mk_buy), 130, 14f, DIMC)); cols.addView(cell(getString(R.string.mk_sell), 130, 14f, DIMC))
+            cols.addView(View(this), LinearLayout.LayoutParams(dpx(104), 1))
+            outer.addView(cols)
+            m.gold?.let { g ->
+                line(R.drawable.ic_gold, "", GOLD_BAR, getString(R.string.mk_sjc), fmtMil(g.sjcBuy) + " " + tr, fmtMil(g.sjcSell) + " " + tr, Market.trend(this, "sjc", g.sjcSell.toDouble()))
+                line(R.drawable.ic_gold, "", GOLD_BAR, getString(R.string.mk_ring), fmtMil(g.ringBuy) + " " + tr, fmtMil(g.ringSell) + " " + tr, Market.trend(this, "ring", g.ringSell.toDouble()))
+            }
+            fun rate(r: Market.Rate) { val s = SYMBOL[r.code]
+                line(0, s?.first ?: r.code, s?.second ?: Color.WHITE, r.code, if (r.buy > 0) fmtVnd(r.buy) + " ₫" else "", fmtVnd(r.sell) + " ₫", Market.trend(this, r.code, r.sell)) }
+            m.rates.take(1).forEach { rate(it) }
+            m.btc?.let { c -> line(0, "₿", SYMBOL.getValue("BTC").second, "BTC", "", "$" + String.format(Locale.getDefault(), "%,.0f", c.usd), c.pct) }
+            m.rates.drop(1).forEach { rate(it) }
+            val srcs = listOfNotNull(m.gold?.src?.takeIf { it.isNotEmpty() }, Sources.now.rates?.name?.takeIf { m.rates.isNotEmpty() && it.isNotEmpty() }, if (m.btc != null) Sources.now.crypto?.name else null).distinct()
+            if (srcs.isNotEmpty()) src = label(getString(R.string.mk_src, srcs.joinToString(" · ")), 14f, DIMC).apply { setPadding(dpx(4), dpx(12), 0, 0) }
+        }
+        panel.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->                    // a row that does not fit whole is left out, never half shown
+            val g = v as LinearLayout; var room = g.height
+            for (n in 0 until g.childCount) { val c = g.getChildAt(n); c.measure(View.MeasureSpec.makeMeasureSpec(g.width, View.MeasureSpec.EXACTLY), 0)
+                room -= c.measuredHeight + ((c.layoutParams as? LinearLayout.LayoutParams)?.topMargin ?: 0)
+                val vis = if (room >= 0) View.VISIBLE else View.GONE; if (c.visibility != vis) c.visibility = vis }
+        }
+        outer.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f).apply { }.also { })
+        src?.let { outer.addView(it) }
+        val close = pillButton(getString(R.string.pq_close), false, R.drawable.ic_close) { finish() }
+        outer.addView(close, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dpx(12) })
+        root.addView(outer, FrameLayout.LayoutParams(dpx(760), -1, Gravity.CENTER).apply { topMargin = dpx(24); bottomMargin = dpx(24) })
+        close.requestFocus()
+    }
+
+}
+
+/**
  * The weather map, from the weather card: Windy's own embedded map at the card's place, with the layer to look at (rain, wind,
- * temperature, clouds, PM2.5) and the next days beside it. Back closes. Needs the internet, and says so before it shows a blank page.
+ * temperature, clouds, PM2.5) and the next days beside it, in a glass panel with the card's own sky icons. Back closes. Needs the
+ * internet, and says so before it shows a blank page.
  */
 class WeatherMapActivity : Activity() {
     override fun attachBaseContext(base: android.content.Context) = super.attachBaseContext(dev.tvremote.home.Lang.wrap(base))
     private var web: WebView? = null
     private var lat = 0.0; private var lon = 0.0
-    private val layers = listOf("rain" to R.string.map_rain, "wind" to R.string.map_wind, "temp" to R.string.map_temp, "clouds" to R.string.map_clouds, "pm2p5" to R.string.map_pm)
+    private val layers = listOf(Triple("rain", R.string.map_rain, R.drawable.ic_rain), Triple("wind", R.string.map_wind, R.drawable.ic_wind), Triple("temp", R.string.map_temp, R.drawable.ic_thermometer),
+        Triple("clouds", R.string.map_clouds, R.drawable.ic_cloud), Triple("pm2p5", R.string.map_pm, R.drawable.ic_gauge))
     private val chips = HashMap<String, TextView>()
+    private var loading: View? = null
 
     private fun url(layer: String) = "https://embed.windy.com/embed2.html?lat=$lat&lon=$lon&detailLat=$lat&detailLon=$lon&width=900&height=700&zoom=7&level=surface" +
         "&overlay=$layer&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
-        val d = resources.displayMetrics.density
-        fun dp(v: Number) = (v.toFloat() * d).toInt()
-        val root = LinearLayout(this).apply { setBackgroundColor(INK); setPadding(dp(48), dp(32), dp(48), dp(32)) }
+        val root = LinearLayout(this).apply { setBackgroundColor(INK); setPadding(dpx(48), dpx(32), dpx(48), dpx(32)) }
         setContentView(root)
         val place = try { JSONObject(getSharedPreferences("weather", MODE_PRIVATE).getString("place", "") ?: "") } catch (e: Exception) { null }
         if (place == null || !place.has("lat")) {
             root.gravity = Gravity.CENTER
-            root.addView(Font.on(TextView(this)).apply { text = getString(R.string.map_none); textSize = 22f; setTextColor(DIMC); gravity = Gravity.CENTER })
+            root.addView(label(getString(R.string.map_none), 22f, DIMC).apply { gravity = Gravity.CENTER })
             return
         }
         lat = place.optDouble("lat"); lon = place.optDouble("lon")
         val wv = WebView(this).apply {
             settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             isFocusable = false; isFocusableInTouchMode = false                        // the D-pad stays on the chips: a map would swallow it
-            setBackgroundColor(INK); webViewClient = WebViewClient()
+            setBackgroundColor(INK)
+            webViewClient = object : WebViewClient() { override fun onPageFinished(v: WebView?, u: String?) { loading?.visibility = View.GONE } }
             clipToOutline = true
-            outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dp(16).toFloat()) } }
+            outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dpx(16).toFloat()) } }
         }
         web = wv
-        root.addView(wv, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 7f))
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-        col.addView(Font.on(TextView(this)).apply { text = place.optString("name"); textSize = 26f; typeface = Font.bold; setTextColor(Color.WHITE); maxLines = 2; ellipsize = TextUtils.TruncateAt.END })
-        val strip = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(14), 0, dp(14)); clipChildren = false; clipToPadding = false }
-        for ((k, w) in layers) {
-            val c = pillButton(getString(w), k == "rain") { show(k) }
-            chips[k] = c; strip.addView(c, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+        val box = FrameLayout(this)
+        box.addView(wv, FrameLayout.LayoutParams(-1, -1))
+        loading = LinearLayout(this).apply {                                         // Windy takes ~10 s: say so over the grey box
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(INK)
+            addView(android.widget.ProgressBar(this@WeatherMapActivity))
+            addView(label(getString(R.string.map_loading), 18f, DIMC).apply { gravity = Gravity.CENTER; setPadding(0, dpx(12), 0, 0) })
         }
-        col.addView(strip)
+        box.addView(loading, FrameLayout.LayoutParams(-1, -1))
+        root.addView(box, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 7f))
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; background = TvGlass.panelBg(this@WeatherMapActivity); setPadding(dpx(16), dpx(16), dpx(16), dpx(12)); clipChildren = false; clipToPadding = false }
         val fc = Weather.cached(this)
+        val head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        if (fc != null) head.addView(Sky(this, fc.kind, fc.night), LinearLayout.LayoutParams(dpx(52), dpx(52)))
+        val who = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        if (fc != null) who.addView(label("${fc.temp}°", 34f, Color.WHITE, true).apply { includeFontPadding = false })
+        who.addView(label(place.optString("name"), 16f, if (fc != null) DIMC else Color.WHITE, fc == null).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
+        head.addView(who, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = if (fc != null) dpx(10) else 0 })
+        col.addView(head, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(12) })
+        for ((k, w, ic) in layers) {
+            val c = pillButton(getString(w), k == "rain", ic, true) { show(k) }
+            chips[k] = c; col.addView(c, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(6) })
+        }
+        val days = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = true; setPadding(dpx(6), dpx(6), dpx(6), 0) }
+        col.addView(days, LinearLayout.LayoutParams(-1, 0, 1f))
+        days.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->                // a row that does not fit whole is hidden, never half shown
+            val g = v as LinearLayout; var room = g.height - g.paddingTop
+            for (n in 0 until g.childCount) { val c = g.getChildAt(n); c.measure(View.MeasureSpec.makeMeasureSpec(g.width - g.paddingLeft - g.paddingRight, View.MeasureSpec.EXACTLY), 0); room -= c.measuredHeight
+                val vis = if (room >= 0) View.VISIBLE else View.GONE; if (c.visibility != vis) c.visibility = vis }
+        }
         if (fc != null) {
             val fmtIn = SimpleDateFormat("yyyy-MM-dd", Locale.US); val fmtOut = SimpleDateFormat("EEE d/M", Locale.getDefault())
             for (day in fc.days) {
                 val name = try { fmtOut.format(fmtIn.parse(day.date)!!) } catch (e: Exception) { day.date }
-                col.addView(Font.on(TextView(this)).apply { text = "$name   ${day.max}° / ${day.min}°"; textSize = 17f; setTextColor(BODY); setPadding(0, dp(4), 0, dp(4)) })
+                val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, dpx(3), 0, dpx(3)) }
+                r.addView(label(name, 15f, BODY).apply { setSingleLine(true) }, LinearLayout.LayoutParams(0, -2, 1f))
+                r.addView(Sky(this, day.kind, false), LinearLayout.LayoutParams(dpx(30), dpx(30)).apply { leftMargin = dpx(6); rightMargin = dpx(8) })
+                r.addView(label("${day.max}° / ${day.min}°", 15f, Color.WHITE, true).apply { setSingleLine(true); fontFeatureSettings = "tnum" })
+                days.addView(r)
             }
         }
-        root.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 3f).apply { leftMargin = dp(32) })
+        root.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 3f).apply { leftMargin = dpx(24) })
         show("rain")
         chips["rain"]?.requestFocus()
     }
 
     private fun show(layer: String) {
-        for ((k, c) in chips) c.alpha = if (k == layer) 1f else 0.75f
+        for ((k, c) in chips) setPillOn(c, k == layer)
+        loading?.visibility = View.VISIBLE
         web?.loadUrl(url(layer))
     }
 

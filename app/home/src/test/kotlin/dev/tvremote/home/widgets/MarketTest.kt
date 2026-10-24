@@ -44,3 +44,11 @@ class MarketTest {
         assertEquals(s.rates.size, b.rates.size); assertEquals(s.gold!!.sjcSell, b.gold!!.sjcSell); assertNotNull(b.btc); assertEquals(3L, b.at)
     }
 }
+
+class MarketTrendTest {
+    @org.junit.Test fun `yesterday's last value becomes the reference on a new day`() {
+        org.junit.Assert.assertEquals(100.0, Market.refStep("20261024", 100.0, null, "20261025")!!, 0.0)
+        org.junit.Assert.assertEquals(90.0, Market.refStep("20261025", 100.0, 90.0, "20261025")!!, 0.0)    // same day: keep the one from before
+        org.junit.Assert.assertNull(Market.refStep("", null, null, "20261025"))                           // the first day: nothing to compare with
+    }
+}

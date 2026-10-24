@@ -29,7 +29,7 @@ internal fun Widgets.weatherHalf(card: LinearLayout, f: Facts, room: Int) {
     if (w == null) { card.addView(head(a.getString(R.string.w_weather), "")); card.addView(note(a.getString(R.string.wx_none))); return }
     val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val narrow = room < dp(240)                                        // no room for the picture beside the words: the words keep whole
-    if (!narrow) row.addView(Sky(this@weatherHalf, a, w.kind, w.night), LayoutParams(dp(52), dp(52)))
+    if (!narrow) row.addView(Sky(a, w.kind, w.night), LayoutParams(dp(52), dp(52)))
     row.addView(text("${w.temp}°", 30f, Color.WHITE).apply { typeface = Font.medium }, LayoutParams(-2, -2).apply { if (!narrow) leftMargin = dp(10) })
     val words = LinearLayout(a).apply { orientation = VERTICAL }
     words.addView(text(w.place.ifEmpty { a.getString(R.string.wx_near) }, 14f, Color.WHITE).apply { typeface = Font.medium; if (narrow) maxLines = 2 })       // a long city wraps rather than cuts
@@ -65,7 +65,7 @@ internal fun Widgets.weather(card: LinearLayout, f: Facts, width: Int, fixed: Bo
     if (!beside && hiLo.paint.measureText(hiLo.text.toString()) > width - dp(40) - dp(icon + 12))       // a narrow card cut it to "Cao 32° · Th…"
         hiLo.text = "↑${today.max}°  ↓${today.min}°"
     val nowW = (dp(icon) + dp(if (beside) 10 else 12) + (if (beside) tempW + dp(10) + lines else maxOf(tempW, lines))).toInt()
-    now.addView(Sky(this@weather, a, w.kind, w.night), LayoutParams(dp(icon), dp(icon)))
+    now.addView(Sky(a, w.kind, w.night), LayoutParams(dp(icon), dp(icon)))
     val words = LinearLayout(a).apply { orientation = if (beside) HORIZONTAL else VERTICAL; gravity = Gravity.CENTER_VERTICAL }
     words.addView(temp)
     if (beside) words.addView(LinearLayout(a).apply { orientation = VERTICAL; addView(sky); addView(hiLo) }, LayoutParams(-2, -2).apply { leftMargin = dp(10) })
@@ -83,7 +83,7 @@ internal fun Widgets.weather(card: LinearLayout, f: Facts, width: Int, fixed: Bo
             val col = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
             val dow = try { Calendar.getInstance().apply { time = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(d.date)!! }.get(Calendar.DAY_OF_WEEK) - 1 } catch (e: Exception) { -1 }
             col.addView(text(names.getOrElse(dow) { "" }, 12f, DIM).apply { gravity = Gravity.CENTER })
-            col.addView(Sky(this@weather, a, d.kind, false), LayoutParams(dp(if (fixed && !beside) 22 else 28), dp(if (fixed && !beside) 22 else 28)).apply { topMargin = dp(if (fixed && !beside) 0 else 2) })
+            col.addView(Sky(a, d.kind, false), LayoutParams(dp(if (fixed && !beside) 22 else 28), dp(if (fixed && !beside) 22 else 28)).apply { topMargin = dp(if (fixed && !beside) 0 else 2) })
             col.addView(text("${d.max}° ${d.min}°", 12f, Color.WHITE).apply { gravity = Gravity.CENTER })
             days.addView(col, if (side) LayoutParams(dayW, -2).apply { if (i > 0) leftMargin = dp(2) } else LayoutParams(0, -2, 1f))
         }
@@ -107,7 +107,7 @@ internal fun Widgets.kindWords(k: Weather.Kind) = when (k) {
 }
 
 /** A sky in one drawn square (sun or moon, cloud, rain, snow, bolt, fog) in the cards' colours; paints made once, drawing allocates nothing. */
-internal class Sky(private val host: Widgets, c: Context, val kind: Weather.Kind, val night: Boolean) : View(c) {
+internal class Sky(c: Context, val kind: Weather.Kind, val night: Boolean) : View(c) {
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val line = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
     private val path = Path(); private val cut = Path(); private val box = RectF()
