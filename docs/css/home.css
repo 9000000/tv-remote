@@ -45,6 +45,12 @@
 .steps4 .th img{height:100%;width:auto;max-width:100%;object-fit:contain}
 .steps4 .th.emo{font-size:72px}
 .steps4[hidden]{display:none}
+.steps4 .th.dls{flex-direction:column;align-items:stretch;justify-content:center;gap:8px;padding:16px;border:0;background:none}
+.steps4 .th.dls .btn{justify-content:flex-start;padding:12px 18px;font-size:15px}
+.steps4 .th.dlcode{flex-direction:column;gap:10px}
+.steps4 .th.dlcode small{color:var(--muted);font-size:14px}
+.steps4 .hcode.big{font-size:40px;padding:10px 22px;letter-spacing:.06em}
+.steps4 .th.dls .btn.mine{border-color:var(--blue);color:var(--blue)}
 .paths{display:flex;justify-content:center;gap:12px;margin-top:28px;flex-wrap:wrap}
 .path{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 18px;display:flex;flex-direction:column;gap:2px;text-align:left;color:inherit;font:inherit;cursor:pointer;transition:border-color .2s,background .2s}
 .path:hover{border-color:var(--line2)}
@@ -52,12 +58,7 @@
 .path b{font-size:16px}
 .path small{color:var(--muted);font-size:13.5px}
 .hcode{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-weight:700;background:var(--card2);border:1px solid var(--line2);color:var(--text);border-radius:8px;padding:2px 8px;cursor:pointer;font-size:14px}
-.h-dl{margin-top:36px;text-align:center}
-.h-dl .hrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
-.h-dl .btn{padding:12px 18px;font-size:15px}
-.h-dl .btn.mine{border-color:var(--blue);color:var(--blue)}
-.h-dl small{display:block;color:var(--dim);font-size:14px;margin-top:14px}
-.h-dl small a,.h-note a{color:var(--blue)}
+.h-note a{color:var(--blue)}
 .h-guides{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
 .h-guides .btn{min-height:48px;padding:12px 20px;font-size:16px;text-align:center}
 .h-note{text-align:center;color:var(--dim);font-size:14px;margin-top:10px}
