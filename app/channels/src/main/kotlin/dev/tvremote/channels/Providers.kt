@@ -100,7 +100,7 @@ object Providers {
     fun merge(c: Context, cc: String, iptv: List<Channel>, fresh: Boolean): List<Channel> {
         val ps = all(c).filter { it.country == cc && it.o.has("list") }
         if (ps.isEmpty()) return iptv
-        val byName = iptv.groupBy { key(it.name) }
+        val byName = HashMap<String, Channel>(); for (ch in iptv) byName.putIfAbsent(key(ch.name), ch)
         val before = HashMap<String, MutableList<Channel>>()             // a provider's stream to put ahead of a channel's own
         val after = ArrayList<Channel>()
         val gots = ps.map { p -> java.util.concurrent.CompletableFuture.supplyAsync {          // each provider is its own server: asked together, not one after another
@@ -108,21 +108,27 @@ object Providers {
         } }
         for ((p, g) in ps.zip(gots)) {
             val got = g.join()
+            val own = ArrayList<Channel>()
             for (ch in got) {
                 val k = ch.url.substringAfter(':')
                 if (k in p.skip) continue
-                val same = byName[key(p.aliases[k] ?: ch.name)]?.first()
-                if (same == null) { after.add(ch); continue }
+                val same = byName[key(p.aliases[k] ?: ch.name)]
+                if (same == null) { after.add(ch); own.add(ch); continue }
                 val logo = if (p.first) ch.logo.ifEmpty { same.logo } else same.logo.ifEmpty { ch.logo }   // the card shows the first stream's
                 val s = ch.copy(id = same.id, name = same.name, logo = logo, group = same.group)
                 if (p.first) before.getOrPut(same.id) { ArrayList() }.add(s) else after.add(s)
             }
+            for (ch in own) byName.putIfAbsent(key(ch.name), ch)       // a later provider's same channel joins this one: VTVgo's Nghệ An under VieON's, not a second card
         }
         val out = ArrayList<Channel>(iptv.size + after.size)
         val done = HashSet<String>()
         for (ch in iptv) { if (done.add(ch.id)) before[ch.id]?.let { out.addAll(it) }; out.add(ch) }
         val known = iptv.map { it.id }.toSet()
-        return out + after.filter { it.id in known } + after.filter { it.id !in known }   // the same id groups together (byChannel)
+        for (ch in after.filter { it.id in known } + after.filter { it.id !in known }) {   // the same id groups together (byChannel)
+            if (ch.id !in known && done.add(ch.id)) before[ch.id]?.let { out.addAll(it) }   // a "first" provider ahead of another provider's channel too
+            out.add(ch)
+        }
+        return out
     }
 
     /** A name as both lists would agree on it: no accents, no "HD" / "TV" / spaces ("Vĩnh Long 1 HD" = "Vinh Long TV 1"). */
@@ -242,19 +248,28 @@ object Vieon : Providers.Kind {
 
 /**
  * VTVgo (vtvgo.vn), VTV's own free player: the same calls its web page makes, without an account. The channels are the ids the
- * list names ("ids"), their names and logos asked in one call (`{data: {"<id>": {...}}}`; "mustLogin" ones left out). Playing
+ * list names ("ids"), their names and logos asked in one call (`{data: {"<id>": {...}}}`; "mustLogin" ones left out; "strip" a
+ * regex taken off the names). Playing
  * asks the channel's sources (a JSON POST): plain HLS (drmTypeID "none") on two to four servers, signed for about 4 hours
  * ("expire", seconds). One server of them has answered 404 while the others played (2026-10-24): the first that answers is played.
  */
 object Vtvgo : Providers.Kind {
-    override fun list(p: Providers.Provider, get: (String) -> String?): List<Channel> =
-        get(p.o.getString("list").replace("{ids}", p.o.optString("ids")))?.let { parseList(it, p) }.orEmpty()
+    override fun list(p: Providers.Provider, get: (String) -> String?): List<Channel> {
+        val all = JSONObject()
+        for (part in p.o.optString("ids").split(',').map { it.trim() }.filter { it.isNotEmpty() }.chunked(20)) {   // 21 ids or more: 400 TOO_MANY_CHANNELS (2026-10-24)
+            val d = get(p.o.getString("list").replace("{ids}", part.joinToString(",")))?.let { try { JSONObject(it).optJSONObject("data") } catch (e: org.json.JSONException) { null } }
+                ?: return emptyList()                                  // a part missing: the last whole list is kept rather than half of one
+            d.keys().forEach { all.put(it, d.get(it)) }
+        }
+        return parseList(JSONObject().put("data", all).toString(), p).orEmpty()
+    }
 
     fun parseList(text: String, p: Providers.Provider): List<Channel>? = try {
         val d = JSONObject(text).optJSONObject("data")
         val order = p.o.optString("ids").split(',').map { it.trim() }
+        val strip = p.o.optString("strip").takeIf { it.isNotEmpty() }?.let { try { Regex(it) } catch (e: Exception) { null } }   // "Truyền hình Nghệ An" -> "Nghệ An", the name the other lists use
         d?.let { o -> order.mapNotNull { o.optJSONObject(it) } }?.mapNotNull { o ->
-            val id = o.optString("id"); val name = o.optString("name").trim()
+            val id = o.optString("id"); val name = o.optString("name").trim().let { n -> strip?.replace(n, "")?.trim()?.ifEmpty { n } ?: n }
             if (id.isEmpty() || name.isEmpty() || o.optBoolean("mustLogin")) null
             else Channel("vtvgo$id.${p.country}@${p.id}", name, o.optString("logo"), "General", "${p.id}:$id", "")
         }

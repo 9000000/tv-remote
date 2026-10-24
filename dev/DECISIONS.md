@@ -408,5 +408,18 @@ once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.
 - Result: VTV2–VTV10, VTV5 TNB and VTV5 TN played on 2–4 servers each, with segments of 200 KB–1.2 MB. They were played on the FPT box from both the category and a saved group. VTV1 also stays on iptv-org.
 - `"first": true` puts VTVgo ahead of iptv-org's stream of the same channel.
 - Other ids found and not added yet: QPVN 103, ANTV 89, Hà Nội 1 111, Hà Nội 2 17, about 55 local stations (117–255).
+- More channels from VTVgo (2026-10-24): all 57 other ids were played through master → variant → segment.
+  - 32 played. The others were 404, 403, gone from DNS, or failed TLS (an incomplete chain, and 404 behind it).
+  - 237 (Bình Định) shows Gia Lai's GTV since the provinces merged, so it is left out.
+  - The list call takes at most 20 ids (21 or more: 400 TOO_MANY_CHANNELS), so `Vtvgo.list` asks in parts of 20. A missing part gives no list, so the last whole one is kept.
+  - "strip" takes "Truyền hình " / "Đài PTTH tỉnh " off the names. With that, `merge` can match them, and "aliases" covers the rest (QPVN HD, An Ninh TV, HanoiTV1, Huế…).
+- `merge` also matches a provider's channel to an earlier provider's channel, not only to iptv-org's.
+  - Why: VieON already has about 28 of the same local stations. Without this, each one showed two cards.
+  - A "first" provider goes ahead there too, so VTVgo is the first stream and VieON the backup.
+  - Checked on the FPT box: of 164 VN cards, no name appears twice. Nghệ An, Bình Định/Gia Lai and QPVN played.
+- What the other apps in the `ximao_tv` emulator show is not taken. Their extra channels are:
+  - dead FPT links;
+  - football restreams (cltvap.cc, chuoichientv.net, watchtivo);
+  - film sites (phim.nguonc.com, saigonphim.net).
 - Saved channels (favourites, groups) keep the streams they had when saved. `BrowseActivity.live` puts the country's current streams of the same id first, so a provider added later reaches them too. Before this, a saved "VTV" group stayed greyed out with only the dead FPT links.
 

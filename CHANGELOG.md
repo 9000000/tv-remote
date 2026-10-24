@@ -8,10 +8,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Channels: VTV2 → VTV10, VTV5 Tây Nam Bộ, VTV5 Tây Nguyên hết bị mờ. Nguồn mới là trình phát miễn phí của VTVgo (của chính VTV, không cần tài khoản), có 2–4 máy chủ cho mỗi kênh; máy chủ nào không trả lời thì app tự dùng máy khác. Trước đây cả 12 link VTV của iptv-org đều chết: link FPT báo hết hạn token, máy chủ còn lại không trả lời.
+- TV Channels: thêm nguồn VTVgo cho QPVN, ANTV, Hà Nội 1/2 và 28 đài địa phương (Nghệ An, Thanh Hóa, Đà Nẵng, Cần Thơ, Huế…). Phần lớn là nguồn dự phòng, đứng trước nguồn VieON hoặc iptv-org của cùng kênh, nên không có thẻ trùng; Lai Châu là kênh mới. Lý do không lấy thêm từ các app xem TV khác: kênh "nhiều" của chúng là link FPT đã chết, VTVprime có DRM, bóng đá và phim phát lại không chính chủ.
 - TV Channels: kênh trong Yêu thích và nhóm tự tạo giờ có thêm các nguồn mới của chính kênh đó. Trước đây kênh chỉ giữ những link có lúc bấm lưu, nên nhóm "VTV" đã lưu vẫn mờ dù danh mục VTV đã có nguồn sống.
 
 **English**
 - TV Channels: VTV2 → VTV10, VTV5 Tây Nam Bộ and VTV5 Tây Nguyên are no longer greyed out. The new source is VTVgo's free player (VTV's own, no account needed), with 2–4 servers per channel; when a server does not answer, the next one is used. Before this, all 12 of iptv-org's VTV links were dead: the FPT links answered with an expired token and the other server did not answer at all.
+- TV Channels: VTVgo sources for QPVN, ANTV, Hà Nội 1/2 and 28 local stations (Nghệ An, Thanh Hóa, Đà Nẵng, Cần Thơ, Huế…). Most are backups placed ahead of the same channel's VieON or iptv-org stream, so no card appears twice; Lai Châu is new. Why not more from other TV apps: their "many channels" are dead FPT links, VTVprime with DRM, and unofficial football and film restreams.
 - TV Channels: channels in Favourites and in your own groups now also get that channel's newer sources. They used to keep only the links they had when saved, so a saved "VTV" group stayed greyed out while the VTV category had live sources.
 
 ## 0.21.0 - 2026-10-24

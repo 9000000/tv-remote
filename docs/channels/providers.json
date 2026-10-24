@@ -200,7 +200,18 @@
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
       },
       "list": "https://api.vtvdigital.org/display/v21.0/channels/details?channelIDs={ids}",
-      "ids": "1,2,3,4,5,13,27,36,39,6,7,163",
+      "ids": "1,2,3,4,5,13,27,36,39,6,7,163,103,89,111,17,175,119,120,121,125,127,133,145,181,183,185,218,219,221,223,224,228,229,230,231,234,235,236,238,243,248,255",
+      "strip": "^(Truyền hình|Đài PTTH tỉnh) ",
+      "aliases": {
+        "103": "QPVN HD",
+        "89": "An Ninh TV",
+        "111": "HanoiTV1",
+        "127": "Huế",
+        "133": "Dong Thap TV",
+        "231": "An Giang TV 1",
+        "243": "Cần Thơ",
+        "255": "Tây Ninh"
+      },
       "play": "https://api.vtvdigital.org/live-channel/v21.0/playback/source",
       "body": "{\"channelId\":\"{id}\",\"platform\":\"webPC\"}"
     }

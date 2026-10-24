@@ -62,6 +62,20 @@ class ProvidersTest {
         assertEquals("vtvgo:13", l[1].url)
         assertEquals("vn", l[1].country)
         assertNull(Vtvgo.parseList("oops", v))
+        val w = Providers.parse("""{"v":1,"providers":[{"id":"vtvgo","kind":"vtvgo","country":"vn","ids":"121,1","strip":"^(Truyền hình|Đài PTTH tỉnh) "}]}""")[0]
+        assertEquals(listOf("Nghệ An", "Truyền hình"), Vtvgo.parseList("""{"data":{"121":{"id":"121","name":"Truyền hình Nghệ An"},
+            "1":{"id":"1","name":"Truyền hình"}}}""", w)!!.map { it.name })   // the other lists' name; a name that is all prefix stays
+    }
+
+    @Test fun vtvgoListInParts() {
+        val ids = (1..45).joinToString(",")
+        val v = Providers.parse("""{"v":1,"providers":[{"id":"vtvgo","kind":"vtvgo","country":"vn","list":"https://x/?c={ids}","ids":"$ids"}]}""")[0]
+        val asked = ArrayList<String>()
+        val l = Vtvgo.list(v) { u -> val c = u.substringAfter("c=").also { asked.add(it) }.split(',')
+            """{"data":{${c.joinToString(",") { """"$it":{"id":"$it","name":"C$it"}""" }}}}""" }
+        assertEquals(listOf(20, 20, 5), asked.map { it.split(',').size })   // the API takes 20 at most
+        assertEquals((1..45).map { "C$it" }, l.map { it.name })
+        assertEquals(emptyList<Channel>(), Vtvgo.list(v) { u -> if ("c=21," in u) null else """{"data":{}}""" })   // a part lost: no half list
     }
 
     @Test fun vtvgoPlay() {
