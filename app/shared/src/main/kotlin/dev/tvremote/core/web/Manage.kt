@@ -635,7 +635,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val dir = "/sdcard/Android/data/dev.tvremote.setup/files/play"
         val name = "play." + real.substringAfterLast('.', "mp4").filter { it.isLetterOrDigit() }.take(5)
         val out = sh("cmd package resolve-activity --brief -n dev.tvremote.setup/.PlayActivity 2>&1 | grep -q PlayActivity || exit 3; " +
-            "mkdir -p $dir && rm -f $dir/* && cp " + Adb.q(real) + " $dir/$name || exit 4; " +
+            "mkdir -p $dir && rm -f $dir/* && cp " + Adb.q(real) + " $dir/$name && chmod 644 $dir/$name || exit 4; " +   // cp makes it 600, the shell's: TV Setup could not read it and closed (FPT)
             "am start -n dev.tvremote.setup/.PlayActivity -d file://$dir/$name -t " + Adb.q(mime) + " 2>&1")
         return !out.contains("Error") && !out.contains("Exception") && out.contains("Starting")
     }
