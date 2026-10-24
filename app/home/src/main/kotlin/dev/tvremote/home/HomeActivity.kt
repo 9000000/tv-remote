@@ -1299,13 +1299,13 @@ class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
 
     override fun onMeasure(w: Int, h: Int) {
-        setMeasuredDimension((dp(8) + dp(15) + (if (label.isEmpty()) 0f else dp(4) + textW) + dp(8)).toInt(), dp(24))
+        setMeasuredDimension(if (label.isEmpty()) dp(24) else (dp(8) + dp(15) + dp(4) + textW + dp(8)).toInt(), dp(24))   // an icon alone: a circle
     }
 
     override fun onDraw(canvas: android.graphics.Canvas) {
         box.set(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawRoundRect(box, height / 2f, height / 2f, bgPaint)
-        val s = dp(15); val x = dp(8); val y = (height - s) / 2
+        val s = dp(15); val x = if (label.isEmpty()) (width - s) / 2 else dp(8); val y = (height - s) / 2
         icon.setBounds(x, y, x + s, y + s); icon.draw(canvas)
         if (label.isNotEmpty()) canvas.drawText(label, (x + s + dp(4)).toFloat(), height / 2f - (text.ascent() + text.descent()) / 2f, text)
     }
