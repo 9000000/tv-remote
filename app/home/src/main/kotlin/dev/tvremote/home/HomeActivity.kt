@@ -80,6 +80,7 @@ import dev.tvremote.home.wall.VideoWall
 import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.wall.WebSnap
 import dev.tvremote.home.wall.WebSnapper
+import dev.tvremote.home.wall.WebVideo
 import dev.tvremote.home.widgets.Widgets
 import dev.tvremote.home.ui.Zoom
 
@@ -115,6 +116,8 @@ class HomeActivity : Activity() {
     private var webDim: View? = null
     private var webOf = ""                                          // the address [web] shows
     private var video: VideoWall? = null                           // a video or GIF wall: the player behind the grid (the poster is the window's background until it moves)
+    private var netVideo = ""                                       // the direct video a web wall plays instead of a WebView ([WebVideo]); "" = none
+    private val netBad = HashSet<String>()                          // those the player could not play this run: the page is shown instead
     private var snapper: WebSnapper? = null                         // "web" in snap mode: takes the pictures that are the background (no page on screen)
     private lateinit var head: LinearLayout
     private var scrollAnim: ObjectAnimator? = null
@@ -548,7 +551,8 @@ class HomeActivity : Activity() {
     private val tick = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
             // a screensaver over Home: Android 11+ stops the activity, older TVs only lay a window over it and the video went on decoding
-            when (i.action) { Intent.ACTION_DREAMING_STARTED -> return video?.stop() ?: Unit; Intent.ACTION_DREAMING_STOPPED -> return if (!away) video?.start() ?: Unit else Unit }
+            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { video?.stop(); WebWall.sleep(web); return }
+                Intent.ACTION_DREAMING_STOPPED -> { if (!away) { video?.start(); WebWall.wake(web) }; return } }   // the live page sleeps under it too: it was drawing frames nobody sees
             clockAndDay(); bingCheck()                                // Bing: a new day's picture seen while Home stays on
         }
     }
@@ -920,13 +924,13 @@ class HomeActivity : Activity() {
         val again = snap && lastWall == HomeConfig.WEB                // the next picture of the page: the one on screen stays until it is read (no flash of the gradient every few minutes)
         lastWall = id
         backdrop.strength = shadeK()
-        if (HomeConfig.isVideo(id)) attachVideo(id) else detachVideo()
-        if (id == HomeConfig.WEB && !snap) {                          // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
+        val livePage = id == HomeConfig.WEB && !snap
+        if (HomeConfig.isVideo(id)) { netVideo = ""; attachVideo(id) } else if (!livePage) { netVideo = ""; detachVideo() }
+        if (livePage) {                                               // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
             picture = null; soft = null
             Frost.show(null, dm.widthPixels, dm.heightPixels, live = true)
             backdrop.show(Backdrop.Look(colors))                      // the gradient is what shows while the page loads, and if it never does
-            attachWeb()
-            webDim?.background = WebWall.veil(shadeK())               // the same page, a new strength: attachWeb kept the page as it was
+            livePage(url)
             return
         }
         if (snap) attachSnap() else {
@@ -963,7 +967,7 @@ class HomeActivity : Activity() {
         val f = Videos.file(this, id).takeIf { it.isFile } ?: return detachVideo()   // deleted: the poster (or the gradient) stays
         if (Videos.off(this, id)) return detachVideo()                // too slow for this TV twice: the poster stays until the video is chosen again
         val root = scroll.parent as? ViewGroup ?: return
-        val v = video ?: VideoWall(this, root, ui, { m -> videoMeasured(conf.optString("wall"), m) }) { detachVideo(); ui.postDelayed(videoRetry, 120_000) }.also { video = it }
+        val v = video ?: videoWall(root)
         v.show(f, shadeK(), conf.optBoolean("vsound", false), conf.optInt("vvol", HomeConfig.VOL_DEFAULT))
         if (away) v.stop()                                            // made while away (a rotation, a phone): [onStart] plays it
     }
@@ -988,6 +992,40 @@ class HomeActivity : Activity() {
         detachWeb()
         val root = scroll.parent as? ViewGroup ?: return
         val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) }) ?: return
+    /**
+     * The live "web" wall: a page that is only one video is played by the platform's player on a SurfaceView ([WebVideo] decides, once
+     * per address); a real page gets its WebView. Until the answer is in, neither is made (the gradient shows): the WebView is the cost.
+     */
+    private fun livePage(url: String) {
+        WebVideo.resolve(this, url) { media ->
+            android.util.Log.i("TvHomeVideo", "web wall: " + (media?.let { "video, " + (if (it in netBad) "failed before" else "played natively") } ?: "a page, WebView"))
+            if (isDestroyed || conf.optString("wall") != HomeConfig.WEB || conf.optString("wmode") == "snap" || conf.optString("wurl") != url) return@resolve
+            if (media != null && media !in netBad) {
+                detachWeb()
+                val root = scroll.parent as? ViewGroup ?: return@resolve
+                val v = video ?: videoWall(root)
+                netVideo = media
+                v.showUrl(media, shadeK())
+                if (away) v.stop()
+            } else {
+                netVideo = ""; detachVideo()
+                attachWeb()
+                webDim?.background = WebWall.veil(shadeK())           // the same page, a new strength: attachWeb kept the page as it was
+            }
+        }
+    }
+
+    /** The player of a video that would not play from the net: the page is shown as it is, and the address is not tried again until Home restarts. */
+    private fun netFailed() {
+        netBad += netVideo; netVideo = ""
+        detachVideo()
+        if (!isDestroyed && !trimmed && conf.optString("wall") == HomeConfig.WEB) livePage(conf.optString("wurl"))
+    }
+
+    private fun videoWall(root: ViewGroup) = VideoWall(this, root, ui, { m -> if (netVideo.isEmpty()) videoMeasured(conf.optString("wall"), m) }) {
+        if (netVideo.isNotEmpty()) netFailed() else { detachVideo(); ui.postDelayed(videoRetry, 120_000) }
+    }.also { video = it }
+
         val dim = WebWall.dim(this, shadeK())
         root.addView(v, 0, FrameLayout.LayoutParams(-1, -1))
         root.addView(dim, 1, FrameLayout.LayoutParams(-1, -1))

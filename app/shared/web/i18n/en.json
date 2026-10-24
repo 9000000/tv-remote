@@ -2811,7 +2811,7 @@
  "home.web_set": "Use",
  "home.web_clear": "Remove",
  "home.web_bad": "The address must start with http:// or https://",
- "home.web_note": "Shown behind the home screen and as the screensaver (turn the screensaver on). If the page cannot load, the TV shows a plain gradient.",
+ "home.web_note": "Shown behind the home screen and as the screensaver (turn the screensaver on). If the page cannot load, the TV shows a plain gradient. A live page uses the most memory: if it is only a video, a video background is lighter on weak TVs (a link straight to the video file is played without the browser).",
  "home.web_mode": "How it updates",
  "home.web_mode_live": "Live page",
  "home.web_mode_snap": "Snapshot",

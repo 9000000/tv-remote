@@ -76,6 +76,7 @@ object PhotoScreen {
             left.addView(qr, LinearLayout.LayoutParams(side, side))
             right.addView(label(a.getString(if (web) R.string.pq_web_step else R.string.mg_step), if (web) 14f else 16f, SOFT).apply { gravity = Gravity.START },
                 LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+            if (web) right.addView(label(a.getString(R.string.pq_web_cost), 12f, FAINT).apply { gravity = Gravity.START }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
             left.addView(label(a.getString(R.string.pq_addr), 12f, DIM), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
             addr.text = s.url; addr.textSize = 14f
             left.addView(addr, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(2) })

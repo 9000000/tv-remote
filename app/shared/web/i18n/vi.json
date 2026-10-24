@@ -2727,7 +2727,7 @@
  "home.web_set": "Dùng",
  "home.web_clear": "Gỡ",
  "home.web_bad": "Địa chỉ phải bắt đầu bằng http:// hoặc https://",
- "home.web_note": "Hiện trang này sau hình nền và cả khi TV ở chế độ chờ màn hình (cần bật Bảo vệ màn hình). Trang không tải được thì TV dùng nền màu.",
+ "home.web_note": "Hiện trang này sau hình nền và cả khi TV ở chế độ chờ màn hình (cần bật Bảo vệ màn hình). Trang không tải được thì TV dùng nền màu. Trang web chạy tốn RAM nhất: nếu chỉ là một video thì dùng nền video sẽ nhẹ hơn trên TV yếu (link thẳng tới file video thì TV phát không qua trình duyệt).",
  "home.web_mode": "Cách cập nhật",
  "home.web_mode_live": "Trang chạy trực tiếp",
  "home.web_mode_snap": "Chụp ảnh trang",

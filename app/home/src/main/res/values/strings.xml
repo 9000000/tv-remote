@@ -219,6 +219,7 @@
     <string name="wall_web">Web page</string>
     <string name="pq_web_title">Web page as the background</string>
     <string name="pq_web_step">1. Point the phone\'s camera at the code\n2. On the page, choose Web page as the background and paste the link</string>
+    <string name="pq_web_cost">A live page uses the most memory. If it is only a video, a video background is lighter on weak TVs (a link straight to the video file is played without the browser).</string>
     <string name="pq_web_hint">Type the page\'s link here</string>
     <string name="pq_web_use">Use</string>
     <string name="pq_web_bad">That link does not look right (e.g. example.com/page)</string>

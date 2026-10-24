@@ -44,6 +44,7 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
     private var player: MediaPlayer? = null
     private var surface: Surface? = null
     private var file: File? = null
+    private var url: String? = null                                 // a video from the net ([showUrl]): streamed, not in the library, so not measured
     private var vw = 0; private var vh = 0
     private var level = 0f
     private var begun = 0L
@@ -65,6 +66,11 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
     fun show(f: File, user: Float, sound: Boolean, volume: Int) {
         level = if (sound) volume / 100f else 0f
         player?.setVolume(level, level)
+        veil(user)
+        if (file != f || url != null) { release(); file = f; url = null; play() }
+    }
+
+    private fun veil(user: Float) {
         if (veil == null) {
             root.addView(view, 0, FrameLayout.LayoutParams(-1, -1))
             poster = ImageView(app).apply {                                     // a SurfaceView is a hole in the window: the poster fills it until the first frame
@@ -74,7 +80,16 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
             veil = WebWall.dim(app, user).also { root.addView(it, 2, FrameLayout.LayoutParams(-1, -1)) }
         }
         veil?.background = WebWall.veil(user)
-        if (file != f) { release(); file = f; play() }
+    }
+
+    /**
+     * A direct video link (a web wall that was only a video, [WebVideo]) behind the grid, played like a library video. No file, no
+     * verdict: when the player cannot play it, [failed] runs and the caller falls back to the page in a WebView.
+     */
+    fun showUrl(u: String, user: Float) {
+        level = 0f
+        veil(user)
+        if (url != u) { release(); file = null; url = u; play() }
     }
 
     /** Home is on screen: play (the player was let go in [stop]). */
@@ -89,19 +104,20 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
         (view.parent as? ViewGroup)?.removeView(view)
         poster?.let { (it.parent as? ViewGroup)?.removeView(it) }; poster = null
         veil?.let { (it.parent as? ViewGroup)?.removeView(it) }
-        veil = null; file = null
+        veil = null; file = null; url = null
     }
 
     private fun play() {
-        val f = file ?: return
+        val f = file
+        val u = url
         val s = surface ?: return                                       // the view is not ready: its listener calls again
-        if (player != null || !f.isFile) return
+        if (player != null || (u == null && (f == null || !f.isFile))) return
         begun = SystemClock.elapsedRealtime(); errors = 0
         covered(true)
         try {
             player = MediaPlayer().also { p ->
                 p.setSurface(s)
-                p.setDataSource(f.path)
+                p.setDataSource(u ?: f!!.path)
                 p.isLooping = true
                 p.setVolume(level, level)
                 p.setOnVideoSizeChangedListener { _, w, h -> vw = w; vh = h; cover() }
@@ -109,7 +125,7 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
                     if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
                         Log.i(TAG, "first frame ${SystemClock.elapsedRealtime() - begun} ms")
                         covered(false)
-                        beginMeasure(p, f)
+                        if (f != null && u == null) beginMeasure(p, f)
                     }
                     false
                 }
