@@ -42,7 +42,20 @@
     "com.sony.dtv.smarthelp": "Sony help guide",
     "com.nvidia.app.messaging": "NVIDIA notifications",
     "com.nvidia.shield.registration": "NVIDIA product registration",
-    "com.nvidia.shield.welcome": "NVIDIA welcome tutorial"
+    "com.nvidia.shield.welcome": "NVIDIA welcome tutorial",
+    "org.droidtv.nettvrecommender": "Philips Top Picks row (promotion)",
+    "org.droidtv.recommendation": "Philips recommendation backend (Top Picks)",
+    "com.android.adservices.api": "Android ad services (ad topics)",
+    "com.android.ondevicepersonalization.services": "Android on-device personalization (ads)",
+    "com.android.federatedcompute.services": "Android federated compute (ads / personalization)",
+    "com.apps.eshow": "Store demo / promo",
+    "com.apps.mk.wd": "Ad boot receiver (ClickAd)",
+    "com.cvte.industries": "CVTE push messenger and ad receiver",
+    "com.whaletv.logger": "WhaleTV logger",
+    "com.zeasn.tokenapp": "Zeasn token / key tracker",
+    "com.zeasn.deviceportal.asdprovider.toptech": "Zeasn ad / device portal",
+    "com.zeasn.deviceportal.asdprovider.certified": "Zeasn device portal client",
+    "com.haier.apps": "Haier promo content app"
   },
   "drop": [
     "com.xm.webcontent"
@@ -58,7 +71,15 @@
     "com\\.android\\.devicelockcontroller",
     "com\\.nvidia\\.(ControllerMapper|NvCPLSvc|avsync|blakepairing|bluetooth\\.ShieldBluetoothManager|irtuner|nvaudiosvc|overscancomp|packagemanagerservice|remotelocator|shield\\.remote\\.server|shieldservice|shieldtech\\..*|wifi\\.countrycode|ota)",
     "org\\.droidtv\\.(bluetoothremote|tv\\.productfeatures|tv\\.tpvaudiomanager|tv\\.tpvvideomanager|ui\\.strings2?)",
-    "com\\.xiaomi\\.mitv\\.updateservice"
+    "com\\.xiaomi\\.mitv\\.updateservice",
+    "com\\.android\\.printspooler",
+    "com\\.(aml|netflix)\\.dial",
+    "com\\.apps\\.scast",
+    "com\\.creative\\.fastscreen\\.tv",
+    "com\\.google\\.android\\.sss\\.authbridge",
+    "com\\.google\\.android\\.marvin\\.talkback",
+    "com\\.android\\.providers\\.calendar",
+    "com\\.google\\.android\\.syncadapters\\.calendar"
   ],
   "factory": []
 }
