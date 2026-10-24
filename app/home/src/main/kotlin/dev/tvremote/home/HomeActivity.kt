@@ -526,7 +526,9 @@ class HomeActivity : Activity() {
 
     private fun badgeTiles() {
         val m = getString(R.string.b_m); val h = getString(R.string.b_h)
-        for (t in tileCache.values) t.app?.let { a -> t.mark(badges.of(a.pkg)) { Badges.label(it, m, h) } }
+        val conf = Store.get(this)
+        val power = if (conf.optBoolean("autoon")) conf.optString("autoapp") else ""
+        for (t in tileCache.values) t.app?.let { a -> t.mark(badges.of(a.pkg) ?: Badges.POWER.takeIf { a.pkg == power }) { Badges.label(it, m, h) } }
     }
 
     private fun firstGridTile(): View? = (grid.getChildAt(0) as? ViewGroup)?.getChildAt(0)
@@ -616,7 +618,7 @@ class HomeActivity : Activity() {
         val hidden = Store.list(this, "hidden").toSet()
         val shownPins = pins.filter { it.pkg !in byPkg }                // a shortcut put on the grid by the picker shows as that tile, not twice
         val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order")
-        if (key == shownKey) return                                   // nothing that decides the tiles changed: not one view is rebuilt
+        if (key == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
         val width = resources.displayMetrics.widthPixels - dp(96)
@@ -1248,7 +1250,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     fun mark(m: Badges.Mark?, label: (Int) -> String) {
         if (m == shownMark) return
         shownMark = m
-        badge.set(m, m?.let { if (it.locked) "" else label(it.minutes) } ?: "")
+        badge.set(m, m?.let { if (it.locked || it.power) "" else label(it.minutes) } ?: "")
     }
 
     /** A dark colour of its own per app, for those without a TV banner. */
@@ -1265,9 +1267,10 @@ const val DIM = 0.35f                                                 // the til
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 private const val HEAD_DIM = 0xB3FFFFFF.toInt()                       // the greeting over the day
 private const val HEAD_RULE = 0x40FFFFFF                             // the line between the clock and the day
+private const val POWER_INK = 0xFF7EE0A1.toInt()                    // the power mark: the green of "on", apart from the lock's red and the limit's amber
 
 /**
- * A pill on a tile's corner: a lock, or an hourglass and the time left. Drawn by hand with the paints and icons made once, and
+ * A pill on a tile's corner: a lock, an hourglass and the time left, or the power mark of the app opened at power-on. Drawn by hand with the paints and icons made once, and
  * measured only when the mark changes: nothing is allocated while it is drawn (or while the tile grows).
  */
 class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
@@ -1277,6 +1280,7 @@ class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
     private val lock = c.getDrawable(R.drawable.ic_lock)!!.mutate().also { it.setTint(0xFFFF8A80.toInt()) }
     private val glass = c.getDrawable(R.drawable.ic_hourglass)!!.mutate().also { it.setTint(0xFFFFD27A.toInt()) }
+    private val power = c.getDrawable(R.drawable.ic_power)!!.mutate().also { it.setTint(POWER_INK) }
     private val box = android.graphics.RectF()
     private var icon: Drawable = lock
     private var label = ""
@@ -1286,11 +1290,11 @@ class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
 
     fun set(m: Badges.Mark?, label: String) {
         if (m == null) { visibility = GONE; return }
-        icon = if (m.locked) lock else glass
+        icon = if (m.locked) lock else if (m.power) power else glass
         this.label = label
         textW = if (label.isEmpty()) 0f else text.measureText(label)
         visibility = VISIBLE
-        contentDescription = if (m.locked) context.getString(R.string.b_locked) else label
+        contentDescription = if (m.locked) context.getString(R.string.b_locked) else if (m.power) context.getString(R.string.b_power) else label
         requestLayout(); invalidate()
     }
 

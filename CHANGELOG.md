@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: app được đặt tự mở khi bật TV có huy hiệu ⏻ xanh trên ô, nhìn trang chủ là biết.
 - Đã bỏ "Chế độ 1 app nặng" (Health): đo trên TV 1,8 GB RAM, app bị bỏ lại chỉ giữ ~40 MB, đóng đi thì lần mở sau chậm gấp 7-8 lần (khởi động nguội 1216 ms thay vì 159 ms); Android tự dọn khi cần. TV còn giữ cài đặt cũ thì bỏ qua.
 - VIDAA ghi rõ "thử nghiệm, chưa thử trên TV thật" ở danh sách TV tìm thấy (web và app điện thoại) và bảng README.
 - Tab Ứng dụng: "Cần giữ" chỉ đánh dấu TV Setup (và TV Setup Keys), Tailscale, và TV Home khi nó là màn hình chính; TV Channels, TV Games, app điện thoại là app thường (dừng, tắt, gỡ được). Bộ dọn RAM vẫn không đóng TV Home.
@@ -58,6 +59,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- TV Home: the app set to open when the TV turns on carries a small green power mark on its tile, so the setting is visible on the home screen.
 - Removed "One heavy app mode" (Health): measured on a 1.8 GB TV, a leftover app held only ~40 MB and closing it made the next launch 7-8x slower (cold start 1216 ms vs 159 ms); Android frees memory by itself when needed. A TV that still stores the old setting ignores it.
 - VIDAA is labelled "beta, not tested on a real TV" in the found-TV lists (web page and phone app) and the README tables.
 - Apps tab: "Must keep" now marks only TV Setup (and TV Setup Keys), Tailscale, and TV Home while it is the home screen; TV Channels, TV Games and the Phone app are ordinary apps (stop, turn off, remove). The RAM cleaner still never closes TV Home.

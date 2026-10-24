@@ -11,8 +11,9 @@ import org.json.JSONObject
  * (its signing key); an older TV Setup does not know the question, and then there are no marks, nothing else changes.
  */
 object Badges {
-    /** [minutes] left today (>= 0) of a limit, or [locked]; at most one is shown, the lock first. */
-    data class Mark(val locked: Boolean, val minutes: Int)
+    /** [minutes] left today (>= 0) of a limit, or [locked], or [power]: the app TV Home's setting opens at power-on (its own
+     *  config, no TV Setup needed to show it). At most one is shown: the lock, then the time left, then the power mark. */
+    data class Mark(val locked: Boolean, val minutes: Int, val power: Boolean = false)
 
     /** The marks by app; [bed]: bedtime is on, which locks every app. */
     class Info(val by: Map<String, Mark>, val bed: Boolean) {
@@ -20,6 +21,7 @@ object Badges {
     }
 
     val LOCK = Mark(true, 0)
+    val POWER = Mark(false, 0, power = true)
     val NONE = Info(emptyMap(), false)
 
     /** TV Setup's {limits: [{pkg, min, used (s)}], locked: [pkg], bed}; a limit with nothing left is a lock. */

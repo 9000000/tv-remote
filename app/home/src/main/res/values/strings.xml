@@ -153,6 +153,7 @@
     <string name="b_m">m</string>
     <string name="b_h">h</string>
     <string name="b_locked">Locked</string>
+    <string name="b_power">Opens when the TV turns on</string>
     <string name="w_weather">Weather</string>
     <string name="c_weather_sub">place by itself, next 3 days</string>
     <string name="wx_none">No weather yet: waiting for the internet</string>
