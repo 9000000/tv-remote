@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: giữ OK trên app mở menu có nhóm: Trên màn hình chính, Khởi động & phím (mở khi bật TV, gán phím điều khiển), Khóa & giới hạn (khóa app, giới hạn mỗi ngày 15-120 phút, đã dùng hôm nay; hỏi mã PIN phụ huynh của TV Setup, dùng chung với tab Ứng dụng), Bảo trì (dừng, xóa bộ nhớ đệm, thông tin, gỡ). Mỗi nhóm mở trong cùng một khung (có dòng Quay lại, nút Back về menu chính); gán phím vẽ như remote (bàn phím số, 4 phím màu, app đang giữ từng phím) và bấm thẳng phím số / phím màu trên remote để gán nhanh. Huy hiệu trên ô cập nhật ngay. TV Setup cũ chỉ ẩn nhóm Khóa & giới hạn.
 - TV Home → Chủ đề: ảnh xem trước là bản thu nhỏ của màn hình chính thật (nền, đồng hồ, thẻ, lưới app, ô sống); chủ đề có sẵn hiện đúng ảnh nền, chủ đề của bạn giữ ảnh nền nhỏ chụp lúc lưu.
 - Gửi APK trùng app hệ thống của TV: nút "Cài thành app riêng" viết lại file thành `<gói>.copy` (nhãn thêm " (2)"), ký lại bằng khóa riêng của máy này và cài cạnh app có sẵn; chạy thử 5 giây, tự đóng thì báo và có nút Gỡ. Không xong với file .apks / .xapk.
 - TV Home: đổi tên app (giữ OK trên app → Đổi tên, hoặc tab TV Home → Bố cục → Tên app riêng trên điện thoại/máy tính); tên mới luôn hiện trên ô banner, phân biệt hai app trùng tên như hai YouTube.
@@ -66,6 +67,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- TV Home: hold OK on an app opens a grouped menu: On the home screen, Start & keys (open when the TV turns on, assign a remote key), Lock & limits (lock the app, a daily limit of 15-120 min, used today; asks TV Setup's parent PIN, shared with the Apps tab), Maintenance (force stop, clear cache, info, uninstall). Each group opens in the same panel (a Back row, remote Back returns to the main menu); the key page is drawn like the remote (number pad, 4 colour keys, the app on each key) and a number or colour key pressed on the real remote assigns it at once. Badges on tiles refresh at once. An older TV Setup only hides Lock & limits.
 - TV Home Themes: each preview is a miniature of the real home screen (background, clock, cards, grid, live tiles); ready themes show their photo, your saved themes keep a small picture of their background taken when saved.
 - Sending an APK that clashes with a TV system app: an "Install as a separate app" button rewrites the file as `<package>.copy` (label gets " (2)"), signs it with this device's own key and installs it beside the built-in app; it is started and checked after 5 s, and if it closes the page says so with a Remove button. Not for .apks / .xapk files.
 - TV Home: rename an app (hold OK on it → Rename, or TV Home → Layout → App names on the phone/computer); the new name always shows on a banner tile, to tell two apps with the same name apart, like two YouTubes.

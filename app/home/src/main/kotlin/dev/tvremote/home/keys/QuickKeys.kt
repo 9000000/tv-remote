@@ -29,7 +29,7 @@ import org.json.JSONObject
  * the first one chosen switches the keys on (HomeConfig keyon / keyapps / autoon / autoapp, the same settings the phone's page edits).
  */
 object QuickKeys {
-    private val COLOUR = mapOf(183 to 0xFFB3261E.toInt(), 184 to 0xFF2E7D32.toInt(), 185 to 0xFFB58105.toInt(), 186 to 0xFF1D5FBF.toInt())
+    internal val COLOUR = mapOf(183 to 0xFFB3261E.toInt(), 184 to 0xFF2E7D32.toInt(), 185 to 0xFFB58105.toInt(), 186 to 0xFF1D5FBF.toInt())
     private const val POWER = -1                                     // the power-on slot's place among the keys
 
     fun show(a: Activity): Dialog {

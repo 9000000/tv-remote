@@ -75,6 +75,10 @@ class KeysBridge : Service() {
         /** The map of TV Home's keys changed: the plan is made again at once (a bridge that is not up yet reads it when the add-on binds). */
         fun poke() { running?.refresh() }
 
+        @Volatile private var captureUntil = 0L
+        /** TV Home's assign-a-key page is open ([on]): for 3 minutes (a page that never says it closed lets go by itself) a mapped key passes to the screen under. */
+        fun capture(on: Boolean) { captureUntil = if (on) android.os.SystemClock.elapsedRealtime() + 180_000 else 0L }
+
         /**
          * A key sent by a client (not a finger on the remote): `input keyevent` is injected after the key filter, so the same
          * decision is made here, on request: TV Home's map first, then the dead-key rule. False: nothing to do, press it plainly.
@@ -109,6 +113,7 @@ class KeysBridge : Service() {
             HoldKeys.Step.FIRE -> { ui.post { held(code) }; return true }
             HoldKeys.Step.EAT -> { if (action == KeyEvent.ACTION_UP) ui.removeCallbacks(fire); return true }   // released early: the timer must not act
         }
+        if (android.os.SystemClock.elapsedRealtime() < captureUntil) return false   // TV Home is asking which key to give an app: it hears the key, nothing opens
         val rule = plan.get(code) ?: return false
         if (action == KeyEvent.ACTION_DOWN && repeat == 0) ui.post { act(rule) }
         return true                                                   // its up and its repeats too, or the app under would see half a press

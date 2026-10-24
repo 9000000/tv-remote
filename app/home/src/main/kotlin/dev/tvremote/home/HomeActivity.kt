@@ -52,6 +52,7 @@ import dev.tvremote.tvui.TvUi
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
 import dev.tvremote.home.apps.App
+import dev.tvremote.home.apps.AppRules
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.wall.Backdrop
 import dev.tvremote.home.apps.Badges
@@ -252,6 +253,7 @@ class HomeActivity : Activity() {
         scroll.addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (b - t != ob - ot) peek() }
 
         setContentView(root)
+        ThemeShots.live = { webShot() }                                // a theme saved on a web wall: the page as it is drawn now
         Store.onChange = { conf = Store.get(this); readNames(); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck(); peek() } }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
@@ -278,7 +280,7 @@ class HomeActivity : Activity() {
     override fun onDestroy() {
         Customize.forget(this)
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
-        Store.onChange = null
+        Store.onChange = null; ThemeShots.live = null
         open?.dismiss()
         ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(webRetry); ui.removeCallbacks(tileTick)
         detachWeb(); detachVideo()
@@ -990,6 +992,12 @@ class HomeActivity : Activity() {
         web = v; webDim = dim; webOf = url
     }
 
+    /** The live web wall drawn small (a theme's preview picture), or null when no page is up; main thread. */
+    private fun webShot(): android.graphics.Bitmap? = web?.takeIf { it.width > 0 && it.height > 0 }?.let { v ->
+        val k = ThemeShots.W.toFloat() / v.width
+        android.graphics.Bitmap.createBitmap(ThemeShots.W, (v.height * k).toInt().coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888).also { b -> val cv = android.graphics.Canvas(b); cv.scale(k, k); v.draw(cv) }
+    }
+
     /** The snapshots of the page every `wsnap` minutes; kept as it is while the choice is the same (a change of the wall does not start the wait again). */
     private fun attachSnap() {
         val url = conf.optString("wurl")
@@ -1088,37 +1096,212 @@ class HomeActivity : Activity() {
 
     // ---- what the buttons and the menu do ----
 
-    /** The long-press / Menu menu of an app: the glass panel of Customize ([TvGlass.menu]), one row per action with its line icon. */
+    /** One group of the menu: a row on the first level (its [hint] says how it is set) and a page of rows behind it. */
+    private class Sub(val icon: Int, val title: Int, val hint: String, val items: List<TvGlass.Item>)
+
+    /**
+     * The long-press / Menu menu of an app: the glass panel of Customize ([TvGlass.menu]). "Open" first, then groups that open a page
+     * of rows in the same panel (Back comes up a level, onto the group just left). A real app first asks TV Setup how it is locked and
+     * limited ([AppRules]); no answer = no Lock & limits group and no force stop / cache, everything else is here without it.
+     */
     private fun menu(a: App) {
-        val acts = ArrayList<Triple<Int, Int, () -> Unit>>()          // icon, words, what it does
-        if (a.pin != null && !a.grid) {                               // a pinned shortcut: only taken away here; its app decides the rest
-            acts.add(Triple(R.drawable.ic_close, R.string.unpin) { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() })
-            acts.add(Triple(R.drawable.ic_sliders, R.string.customize) { customize() })
-            if (!a.live) acts.add(Triple(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
-        } else {                                                      // no "add to / take from the favourites": they are only the first places, and Move puts an app there
-            acts.add(Triple(R.drawable.ic_sliders, R.string.customize) { customize() })
-            acts.add(Triple(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
-            if (!a.live) acts.add(Triple(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
-            acts.add(Triple(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
+        if (a.grid || a.pin != null || a.pkg == packageName) { menu(a, null); return }
+        AppRules.read(this, a.pkg) { st -> menu(a, st) }
+    }
+
+    private var amPanel: TvGlass.Panel? = null                         // the one dialog of the app menu: its pages swap inside it, so the dim behind never fades in and out
+
+    private fun menu(a: App, st: JSONObject?) {
+        val p = TvGlass.Panel(this, R.style.Menu, R.drawable.ic_left) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+        amPanel = p; open = p.dialog
+        p.dialog.setOnDismissListener { capture(false); if (amPanel === p) amPanel = null }
+        top(a, st, 0)
+        p.show()
+    }
+
+    /** The first page: "Open", a row per group (the one at [at] focused: where Back from a group lands), Customize. */
+    private fun top(a: App, st: JSONObject?, at: Int) {
+        val p = amPanel ?: return
+        capture(false); p.dialog.setOnKeyListener(null)
+        val rows = ArrayList<TvGlass.Item>()
+        rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.am_open)) { launch(a) })
+        subs(a, st).forEachIndexed { i, s -> rows.add(TvGlass.Item(s.icon, getString(s.title), s.hint, true, true) { sub(a, st, i) }) }
+        rows.add(TvGlass.Item(R.drawable.ic_sliders, getString(R.string.customize)) { customize() })
+        p.page(a.label, rows, at)
+    }
+
+    /** A group's page, in the same amPanel; Back (the row on top, or the remote's key) returns to the first page on that group. */
+    private fun sub(a: App, st: JSONObject?, i: Int, focus: Int = 0) {
+        val p = amPanel ?: return
+        capture(false); p.dialog.setOnKeyListener(null)
+        val s = subs(a, st).getOrNull(i) ?: return top(a, st, 0)
+        p.page("${a.label} · ${getString(s.title)}", s.items, focus, back = { top(a, st, i + 1) })
+    }
+
+    /** TV Setup lets the remote's mapped keys through to the screen while the assign-a-key page is open (an older one: they open their apps as ever). */
+    private fun capture(on: Boolean) {
+        if (!on && !capturing) return
+        capturing = on
+        Thread({ try { contentResolver.call(Uri.parse(HomeConfig.USAGE), "capture", if (on) "1" else "0", null) } catch (e: Exception) { } }, "home-capture").apply { isDaemon = true }.start()
+    }
+    private var capturing = false
+
+    /** What opening the app by its tile does, without the zoom. */
+    private fun launch(a: App) {
+        if (a.live) { pressTile(a); return }
+        lastOpened = a.pkg
+        if (!(if (a.pin != null) Pins.open(this, a, null) else Apps.launch(this, a.pkg, null))) toast(R.string.no_open)
+    }
+
+    private fun subs(a: App, st: JSONObject?): List<Sub> {
+        val out = ArrayList<Sub>()
+        fun item(icon: Int, words: Int, hint: String = "", go: () -> Unit) = TvGlass.Item(icon, getString(words), hint, false, false, go)
+        fun stays(icon: Int, words: Int, hint: String = "", more: Boolean = false, go: () -> Unit) = TvGlass.Item(icon, getString(words), hint, more, true, go)   // the panel stays: the action swaps its page
+        fun again(s: JSONObject?, sub: Int) = sub(a, s ?: st, sub)       // the same page, with what TV Setup said now
+        val dockedPin = a.pin != null && !a.grid
+        // 1. where it sits on the home screen
+        val home = ArrayList<TvGlass.Item>()
+        if (dockedPin) home.add(item(R.drawable.ic_close, R.string.unpin) { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() })
+        else home.add(item(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
+        if (!a.live) home.add(item(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
+        if (!dockedPin) {
+            home.add(item(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
                 .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })
+            if (a.grid) home.add(item(R.drawable.ic_trash, R.string.tile_remove) {   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
+                fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
+                Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
+            })
+        }
+        out.add(Sub(R.drawable.ic_home, R.string.am_g_home, "", home))
+        // 2. what starts it: the power-on app, a remote key
+        if (!dockedPin) {
+            val start = ArrayList<TvGlass.Item>()
             val powerApp = conf.optBoolean("autoon") && conf.optString("autoapp") == a.pkg
-            acts.add(Triple(R.drawable.ic_power, if (powerApp) R.string.auto_off else R.string.auto_on) {   // the app that opens when the TV turns on: TV Setup does it (Keys.push)
+            start.add(item(R.drawable.ic_power, if (powerApp) R.string.auto_off else R.string.auto_on) {   // the app that opens when the TV turns on: TV Setup does it (Keys.push)
                 Store.change(this, if (powerApp) JSONObject().put("autoon", false) else JSONObject().put("autoapp", a.pkg).put("autoon", true))
                 if (!Keys.setup(this)) toast(R.string.auto_needs_setup)   // saved anyway: it works the day TV Setup is there
             })
-            acts.add(Triple(R.drawable.ic_sparkle, if (Motion.on) R.string.anim_off else R.string.anim_on) { Store.change(this, JSONObject().put("anim", !conf.optBoolean("anim", true))) })
-            if (a.grid) acts.add(Triple(R.drawable.ic_trash, R.string.tile_remove) {   // off the grid: it leaves "tiles" and its places in the dock, the order and the hidden list
-                fun without(k: String) = org.json.JSONArray(Store.list(this, k) - a.pkg)
-                Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
-            }) else Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))
+            val mine = HomeConfig.keyApps(conf.optJSONObject("keyapps")).filterValues { it == a.pkg }.keys.sorted()
+            val keys = mine.take(2).joinToString(" ") { Keys.name(this, it) } + if (mine.size > 2) " +${mine.size - 2}" else ""   // a short line: the page has them all
+            start.add(stays(R.drawable.ic_keyboard, R.string.am_key, keys, true) { keyPicker(a, st, null, "") })
+            out.add(Sub(R.drawable.ic_zap, R.string.am_g_start, keys, start))
+        }
+        // 3. lock and limits (TV Setup's rules; a code first)
+        if (st != null && !st.optBoolean("prot")) {
+            val lock = ArrayList<TvGlass.Item>()
+            val me = out.size                                         // this page's place among the groups, for coming back to it
+            val locked = st.optBoolean("locked"); val limit = st.optInt("limit")
+            fun mins(m: Int) = if (m > 0) getString(R.string.am_limit_min, m) else getString(R.string.am_limit_off)
+            lock.add(stays(R.drawable.ic_lock, if (locked) R.string.am_unlock else R.string.am_lock, if (locked) getString(R.string.am_locked) else "") {
+                AppRules.change(this, a.pkg, "lock", st, { put("on", !locked) }) { n -> badgesSoon(); again(n, me) }
+            })
+            lock.add(stays(R.drawable.ic_hourglass, R.string.am_limit, mins(limit), true) { limitMenu(a, st) })
+            lock.add(stays(R.drawable.ic_chart, R.string.am_used, getString(R.string.am_limit_min, (st.optLong("used") + 30) / 60)) { again(null, me) })
+            out.add(Sub(R.drawable.ic_shield, R.string.am_g_lock, if (locked) getString(R.string.am_locked) else if (limit > 0) mins(limit) else "", lock))
+        }
+        // 4. maintenance: an app's own screens and, with TV Setup's ADB, stop and cache
+        if (!a.grid && a.pin == null) {
+            val fix = ArrayList<TvGlass.Item>()
+            if (st != null && st.optBoolean("adb") && !st.optBoolean("prot")) {
+                fun run(op: String, done: Int) = AppRules.act(this, a.pkg, op) { r -> toast(when (r) { "ok" -> done; "noadb" -> R.string.am_noadb; else -> R.string.am_failed }) }
+                fix.add(item(R.drawable.ic_stop, R.string.am_stop) { run("stop", R.string.am_stopped) })
+                fix.add(item(R.drawable.ic_eraser, R.string.am_cache) { run("cache", R.string.am_cached) })
+            }
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))
                 .takeIf { packageManager.resolveActivity(it, 0) != null }   // a CVTE TV has no App info page: no entry rather than one that fails (cleanyourtv #1202)
-                ?.let { i -> acts.add(Triple(R.drawable.ic_info, R.string.info) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }
+                ?.let { i -> fix.add(item(R.drawable.ic_info, R.string.info) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }
             val removable = try { packageManager.getApplicationInfo(a.pkg, 0).let { (it.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0 || (it.flags and android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0 } } catch (e: Exception) { false }
             if (a.pkg != packageName && removable) Intent(Intent.ACTION_DELETE, Uri.parse("package:" + a.pkg))
                 .takeIf { packageManager.resolveActivity(it, 0) != null }   // the same CVTE gap: no installer page, no entry
-                ?.let { i -> acts.add(Triple(if (a.grid) R.drawable.ic_close else R.drawable.ic_trash, R.string.uninstall) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }   // the trash is "remove from grid" there; the list follows PACKAGE_REMOVED
+                ?.let { i -> fix.add(item(R.drawable.ic_trash, R.string.uninstall) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }
+            out.add(Sub(R.drawable.ic_wrench, R.string.am_g_maint, "", fix))
         }
-        open = TvGlass.menu(this, R.style.Menu, a.label, acts.map { TvGlass.Item(it.first, getString(it.second), it.third) }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+        return out.filter { it.items.isNotEmpty() }
+    }
+
+    /** The daily limit's choices, a page of the same panel; a code first (in [AppRules.change]). Back returns to the Lock & limits page. */
+    private fun limitMenu(a: App, st: JSONObject) {
+        val p = amPanel ?: return
+        val cur = st.optInt("limit")
+        val choices = listOf(15, 30, 60, 90, 120, 0)
+        val rows = choices.map { m ->
+            TvGlass.Item(if (m == cur) R.drawable.ic_check else 0, if (m > 0) getString(R.string.am_limit_min, m) else getString(R.string.am_limit_off), "", false, true) {
+                if (m == cur) sub(a, st, 2, 1)
+                else AppRules.change(this, a.pkg, "limit", st, { put("minutes", m) }) { n -> badgesSoon(); sub(a, n, 2, 1) }
+            }
+        }
+        p.page("${a.label} · ${getString(R.string.am_limit)}", rows, choices.indexOf(cur).coerceAtLeast(0), back = { sub(a, st, 2, 1) })
+    }
+
+    /** Tiles' marks (lock, hourglass) re-read once TV Setup has the change. */
+    private fun badgesSoon() = ui.postDelayed({ badgesRead() }, 400)
+
+    /**
+     * The assign-a-key page: the remote as a keypad (1-9, 0 under, the four colour keys as a row), each key a [PickTile] showing the app
+     * on it now (empty looks empty), this app's own marked. A press or the physical key itself gives the key to this app (taking it from
+     * another one) or, on its own, takes it away; the page stays open and says what happened in [said]. TV Setup passes the keys through
+     * to this screen meanwhile ([capture]). [focusCode]: the key to leave focused after a change.
+     */
+    private fun keyPicker(a: App, st: JSONObject?, focusCode: Int?, said: String) {
+        val p = amPanel ?: return
+        val conf = Store.get(this)
+        val map = HomeConfig.keyApps(conf.optJSONObject("keyapps"))
+        val have = Keys.have(this)?.let { j -> (0 until j.length()).map { j.getInt(it) }.toSet() }
+        val dead = Keys.dead(this).filter { it in HomeConfig.KEY_DEAD }
+        Thread({
+            val art = HashMap<Int, App?>()
+            for ((code, who) in map) if (who.isNotEmpty()) art[code] = try { dev.tvremote.home.keys.Targets.app(this, who) } catch (e: Exception) { null }
+            runOnUiThread { if (!isDestroyed && amPanel === p && p.dialog.isShowing) drawKeypad(p, a, st, map, art, have, dead, focusCode, said) }
+        }, "home-keypad").apply { isDaemon = true }.start()
+    }
+
+    private fun drawKeypad(p: TvGlass.Panel, a: App, st: JSONObject?, map: Map<Int, String>, art: Map<Int, App?>, have: Set<Int>?, dead: List<Int>, focusCode: Int?, said: String) {
+        fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
+        val gap = dp(6)
+        val tiles = HashMap<Int, dev.tvremote.home.keys.PickTile>()
+        fun toggle(code: Int) {
+            val mine = map[code] == a.pkg
+            val o = JSONObject(); for ((k, v) in (if (mine) map - code else map + (code to a.pkg))) o.put(k.toString(), v)
+            Store.change(this, JSONObject().put("keyapps", o).also { if (!mine) it.put("keyon", true) })   // the first one chosen switches the keys on, like the quick keys screen
+            capture(true)
+            keyPicker(a, st, code, if (mine) getString(R.string.am_key_gone) else getString(R.string.am_key_set, Keys.name(this, code), a.label))
+        }
+        fun tile(code: Int): View {
+            val tw = dp(if (code in HomeConfig.KEY_COLOURS) 130 else 108)         // the colour keys wider: their name sits on the top edge
+            val who = map[code].orEmpty(); val pic = art[code]
+            val missing = who.isNotEmpty() && pic == null
+            val colour = dev.tvremote.home.keys.QuickKeys.COLOUR[code]
+            val t = dev.tvremote.home.keys.PickTile(this, tw, ::dp, "k$code", if (pic != null) pic.label else if (missing) dev.tvremote.home.keys.Targets.label(this, who) else "", pic, "k$code",
+                tag = Keys.name(this, code), plus = who.isEmpty(), color = if (pic == null) colour ?: dev.tvremote.home.keys.PK_EMPTY else 0)
+            t.dead = who.isEmpty() && have != null && code !in have
+            t.mark(who == a.pkg)
+            t.setOnClickListener { toggle(code) }
+            tiles[code] = t
+            return t
+        }
+        fun row(codes: List<Int>) = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false; clipToPadding = false
+            codes.forEachIndexed { i, c -> addView(tile(c), LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = gap }) }
+        }
+        fun note(t: String, colour: Int) = TextView(this).apply { Font.on(this); text = t; textSize = 13f; setTextColor(colour); gravity = Gravity.CENTER; maxLines = 2 }
+        val n = HomeConfig.KEY_NUMBERS
+        val pad = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+        pad.addView(note(getString(R.string.am_key_hint), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2))
+        if (said.isEmpty()) pad.addView(note(getString(R.string.am_key_move), TvGlass.HINT), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })
+        else pad.addView(note(said, Color.WHITE), LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = gap })      // what the last key did, in the place of the note
+        val digits = n.drop(1) + n.first()                                // KEYCODE_1..9, then 0
+        for (r in listOf(digits.subList(0, 3), digits.subList(3, 6), digits.subList(6, 9), digits.subList(9, 10)))
+            pad.addView(row(r), LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+        pad.addView(row(HomeConfig.KEY_COLOURS), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        if (dead.isNotEmpty()) pad.addView(row(dead.take(4)), LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+        p.dialog.setOnKeyListener { _, code, e ->
+            if (code in tiles.keys && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS) {   // the real key: assign it without walking to its button; its up and repeats are eaten too
+                if (e.action == KeyEvent.ACTION_DOWN && e.repeatCount == 0) toggle(code)
+                true
+            } else false
+        }
+        capture(true)
+        p.view("${a.label} · ${getString(R.string.am_key)}", pad, 600, focusCode?.let { tiles[it] } ?: tiles[digits[0]], back = { sub(a, st, 1, 1) })
     }
 
     /** Rename [a]: a field with the TV's keyboard, prefilled with the name shown; "Original name" takes the person's name away. */
@@ -1269,7 +1452,6 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         }
         face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
         name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
-        if (banner != null && app?.renamed == true) nameRest = 1f       // the person's name stays under the banner (two YouTubes look the same), not only while focused
     }
 
     /** A live tile's newest state from its provider (null: no answer); [animate] when motion is on and not calm. */
