@@ -67,4 +67,31 @@ object Voice {
         }
         return null
     }
+
+    /** What a sentence would do, in words ([id] in i18n with [args]), without doing it: the Phone app's hold-to-talk preview. */
+    data class Say(val id: String, val args: Map<String, String> = emptyMap())
+    /** [command] null: the sentence goes to the TV's search / Assistant, as [parse] says. */
+    data class Plan(val command: Command?, val say: Say)
+
+    // whole ids, not built from the key name: tests/i18n.test.js finds the words in use by reading them
+    private val KEY_SAY = mapOf("MUTE" to "talk.k_mute", "PLAY_PAUSE" to "talk.k_play_pause", "HOME" to "talk.k_home", "BACK" to "talk.k_back",
+        "NEXT" to "talk.k_next", "PREV" to "talk.k_prev", "CH_UP" to "talk.k_ch_up", "CH_DOWN" to "talk.k_ch_down", "SLEEP" to "talk.k_sleep",
+        "WAKE" to "talk.k_wake", "VOL_UP" to "talk.k_vol_up", "VOL_DOWN" to "talk.k_vol_down")
+    private val KEY_N = mapOf("VOL_UP" to "talk.k_vol_up_n", "VOL_DOWN" to "talk.k_vol_down_n")
+
+    fun say(c: Command): Say = when (c) {
+        is Command.Key -> if (c.times > 1) Say(KEY_N[c.key] ?: "talk.k_vol_up_n", mapOf("n" to c.times.toString())) else Say(KEY_SAY[c.key] ?: "talk.k_home")
+        is Command.App -> Say("talk.open_app", mapOf("name" to c.name))
+        is Command.Channel -> Say("talk.channel", mapOf("name" to c.name))
+        is Command.Timer -> if (c.minutes == 0) Say("talk.timer_off") else Say("talk.timer", mapOf("n" to c.minutes.toString()))
+        is Command.Scene -> Say("talk.scene")
+    }
+
+    /** [parse] plus its words; null for nothing heard. A scene is named from [scenes]. Pure: the preview calls it on every partial result. */
+    fun preview(text: String, apps: Map<String, String>, scenes: Map<String, String>): Plan? {
+        if (fold(text).isEmpty()) return null
+        val c = parse(text, apps, scenes) ?: return Plan(null, Say("talk.ask", mapOf("sentence" to text.trim())))
+        val say = if (c is Command.Scene) Say("talk.scene", mapOf("name" to (scenes[c.id] ?: ""))) else say(c)
+        return Plan(c, say)
+    }
 }

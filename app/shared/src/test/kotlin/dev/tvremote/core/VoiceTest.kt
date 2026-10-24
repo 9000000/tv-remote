@@ -75,4 +75,25 @@ class VoiceTest {
         assertEquals(Command.Scene("s1"), p("đi ngủ"))
         assertEquals(Command.Scene("s2"), p("cảnh xem phim"))
     }
+
+    @Test fun previewSaysWhatItWouldDo() {
+        fun say(t: String) = Voice.preview(t, apps, scenes)!!.say
+        assertEquals(Voice.Say("talk.k_mute"), say("tắt tiếng"))
+        assertEquals(Voice.Say("talk.k_vol_up_n", mapOf("n" to "3")), say("tăng âm lượng"))
+        assertEquals(Voice.Say("talk.k_vol_down_n", mapOf("n" to "5")), say("giảm âm lượng 5"))
+        assertEquals(Voice.Say("talk.open_app", mapOf("name" to "YouTube")), say("mở youtube"))
+        assertEquals(Voice.Say("talk.channel", mapOf("name" to "vtv1")), say("mở kênh vtv1"))
+        assertEquals(Voice.Say("talk.timer", mapOf("n" to "90")), say("hẹn giờ tắt 90 phút"))
+        assertEquals(Voice.Say("talk.timer_off"), say("hủy hẹn giờ"))
+        assertEquals(Voice.Say("talk.scene", mapOf("name" to "Xem phim")), say("xem phim"))
+        assertEquals(Voice.Say("talk.ask", mapOf("sentence" to "thời tiết hôm nay")), say(" thời tiết hôm nay "))
+    }
+
+    @Test fun previewAgreesWithParseAndIsNullWhenNothingHeard() {
+        for (t in listOf("tắt tiếng", "mở netflix", "mở spotify", "tăng âm lượng 4", "bài tiếp", "đi ngủ")) {
+            assertEquals(p(t), Voice.preview(t, apps, scenes)!!.command)
+        }
+        assertNull(Voice.preview("", apps, scenes)); assertNull(Voice.preview("  !! ", apps, scenes))
+        assertNull(Voice.preview("mở spotify", apps, scenes)!!.command)             // not known: the TV's search, said so
+    }
 }
