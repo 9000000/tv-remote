@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.22.0 - 2026-10-25
+
+Web 0.22.0 · app điện thoại 0.22.0 · app TV 0.22.0 · TV Home 0.9.0 · TV Channels 0.6.0 · TV Games 0.6.0
 
 **Tiếng Việt**
 - TV Home, 3 thứ mới: thẻ **Thị trường** (giá vàng SJC và nhẫn 9999 theo lượng, tỷ giá USD/EUR/JPY/KRW/CNY/GBP của Vietcombank, tuỳ chọn Bitcoin; dạng thẻ hoặc dòng chạy chữ; lấy thẳng từ BTMC (hoặc PNJ) / Vietcombank / Binance, không qua máy chủ nào, làm mới mỗi ~20 phút, mất mạng thì giữ số cũ kèm giờ cập nhật), thẻ **Tin tức** (tiêu đề + ảnh từ RSS VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, VietnamNet; máy tiếng Anh dùng BBC, NPR, Guardian, Al Jazeera; thêm tối đa 5 link RSS của bạn từ điện thoại; bấm OK mở màn hình đọc chữ lớn với ảnh, tóm tắt, nguồn, giờ và nút mở bằng trình duyệt nếu TV có) và **bản đồ thời tiết** (bấm OK ở thẻ Thời tiết: bản đồ Windy toàn màn hình tại thành phố của bạn, chọn lớp mưa / gió / nhiệt độ / mây / PM2.5, kèm dự báo vài ngày; Back để đóng). Địa chỉ nguồn nằm trong danh sách ký số `docs/home/feeds.json` nên đổi được không cần APK mới. Thẻ Thời tiết và Tin tức giờ dừng được bằng phím mũi tên (viền trắng).
