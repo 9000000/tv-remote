@@ -3265,9 +3265,14 @@
  "scheddlg.max_120": "At most 2 h",
  "scheddlg.block": "Block entirely",
  "scheddlg.save": "Save",
+ "scheddlg.add_window": "＋ Add a time window",
+ "scheddlg.remove_window": "Remove this window",
+ "scheddlg.window": "Window {n}",
+ "auto.sched_too_many": "At most 8 windows",
  "warn.sched_title": "{name} can't be opened right now",
- "warn.sched_body": "It may be opened on: {days}, {from} – {to}. The app was closed.",
+ "warn.sched_body": "It may be opened on: {when}. The app was closed.",
  "warn.sched_never": "This app is blocked. The app was closed.",
  "guard.sched_closed": "{name} can't be opened right now",
- "core.need_schedule": "App schedules"
+ "core.need_schedule": "App schedules",
+ "core.need_schedule_windows": "Several time windows in an app schedule"
 }

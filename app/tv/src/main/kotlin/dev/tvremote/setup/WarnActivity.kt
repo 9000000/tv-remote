@@ -60,7 +60,7 @@ class WarnActivity : Activity() {
             "ram" -> T("warn.in_use", "pct" to (total - avail) * 100 / maxOf(1L, total), "used" to total - avail, "total" to total)
             "bed" -> T("warn.bed_range", "from" to (bed?.optString("from") ?: ""), "to" to (bed?.optString("to") ?: ""))
             "sched" -> if (sched == null || sched.optBoolean("block")) T("warn.sched_never")
-                else T("warn.sched_body", "days" to Rules.dayText(sched.optJSONArray("days")), "from" to sched.optString("from"), "to" to sched.optString("to"))
+                else T("warn.sched_body", "when" to Rules.windowsText(sched))
             else -> T("warn.the_app_was_closed")
         }, 16, false).apply { setTextColor(Color.rgb(170, 178, 189)); maxWidth = dp(560) }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         count = text("", 22, true)

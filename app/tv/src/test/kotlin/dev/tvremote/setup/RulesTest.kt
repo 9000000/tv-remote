@@ -191,4 +191,54 @@ class RulesTest {
         assertEquals("06:05", s.getString("from"))
         assertEquals(1440, s.getInt("max"))
     }
+
+    // ---- several windows in one schedule
+    private val two = """{"do":"sched","pkg":"$yt","windows":[{"days":[1,2,3,4,5],"from":"16:00","to":"18:00"},{"days":[6,7],"from":"8:00","to":"22:00"}]}"""
+
+    @Test fun severalWindowsAllowTheAppInAnyOne() {
+        val o = sched(two)                                                        // 2026-10-23 Fri, 24 Sat, 25 Sun
+        assertTrue(Rules.allowedNow(o, yt, at(23, 17, 0)))                        // weekday window
+        assertFalse(Rules.allowedNow(o, yt, at(23, 10, 0)))                       // the weekend window does not apply on a Friday
+        assertFalse(Rules.allowedNow(o, yt, at(24, 7, 59)))                    // Saturday before 08:00
+        assertTrue(Rules.allowedNow(o, yt, at(24, 8, 0)))
+        assertTrue(Rules.allowedNow(o, yt, at(25, 21, 59)))
+        assertFalse(Rules.allowedNow(o, yt, at(25, 22, 0)))
+        assertEquals("08:00", Rules.windows(o.getJSONObject("sched").getJSONObject(yt)).getJSONObject(1).getString("from"))   // "8:00" was padded
+    }
+
+    @Test fun severalWindowsCrossingMidnightEachBelongToTheirOwnDay() {
+        val o = sched("""{"do":"sched","pkg":"$yt","windows":[{"days":[5],"from":"22:00","to":"02:00"},{"days":[6],"from":"01:00","to":"03:00"}]}""")
+        assertTrue(Rules.allowedNow(o, yt, at(24, 1, 30)))                        // Friday's night window, and Saturday's own one, both open
+        assertTrue(Rules.allowedNow(o, yt, at(24, 2, 30)))                        // only Saturday's own one is left
+        assertFalse(Rules.allowedNow(o, yt, at(24, 3, 0)))
+        assertTrue(Rules.allowedNow(o, yt, at(23, 23, 0)))
+        assertFalse(Rules.allowedNow(o, yt, at(25, 1, 30)))                       // Sunday 01:30: Saturday's night window was never set
+    }
+
+    @Test fun oneWindowIsKeptAlsoAsDaysFromTo() {
+        val s = Rules.clean(d(two))
+        assertEquals(2, s.getJSONArray("windows").length())
+        assertEquals("[1,2,3,4,5]", s.getJSONArray("days").toString())            // what a TV Setup before windows reads
+        assertEquals("16:00", s.getString("from"))
+        assertEquals("08:00", s.getJSONArray("windows").getJSONObject(1).getString("from"))
+    }
+
+    @Test fun oldSavedDataReadsAsOneWindow() {
+        val old = JSONObject("""{"sched":{"$yt":{"days":[1,2,3],"from":"16:00","to":"18:00","max":0}}}""")   // as saved before windows
+        assertEquals("""[{"days":[1,2,3],"from":"16:00","to":"18:00"}]""", Rules.windows(old.getJSONObject("sched").getJSONObject(yt)).toString())
+        assertTrue(Rules.allowedNow(old, yt, at(21, 17, 0)))                      // Wednesday 21st
+        assertFalse(Rules.allowedNow(old, yt, at(23, 17, 0)))                     // Friday
+        assertEquals(0, Rules.windows(JSONObject("""{"block":true}""")).length())
+        assertTrue(Rules.windowsText(JSONObject("""{"days":[1,2],"from":"16:00","to":"18:00"}""")).endsWith(" 16:00–18:00"))   // the words of the days come from the language files
+    }
+
+    @Test fun windowsAreChecked() {
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","windows":[]}""")
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","windows":[{"days":[1],"from":"16:00","to":"18:00"},{"days":[],"from":"16:00","to":"18:00"}]}""")
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","windows":[{"days":[1],"from":"16:00","to":"18:00"},{"days":[2],"from":"9:00","to":"09:00"}]}""")
+        val nine = (1..9).joinToString(",") { """{"days":[1],"from":"0$it:00","to":"0$it:30"}""" }
+        bad(JSONObject(), """{"do":"sched","pkg":"$yt","windows":[$nine]}""")        // more than 8
+        val eight = (1..8).joinToString(",") { """{"days":[1],"from":"0$it:00","to":"0$it:30"}""" }
+        assertEquals(8, Rules.clean(d("""{"windows":[$eight]}""")).getJSONArray("windows").length())
+    }
 }

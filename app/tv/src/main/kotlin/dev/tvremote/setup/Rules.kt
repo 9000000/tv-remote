@@ -19,7 +19,7 @@ import java.util.Locale
  *   memory        a notice over whatever is on when the TV's memory stays fuller than a set share, to free it or not
  *   one heavy app a video app left for another is closed after 15 s, for TVs with little RAM ([Heavy]); off until turned on
  *   app locks     a PIN asked over an app before it can be used, again each time another app was opened ([PinActivity])
- *   schedules     an app that may be opened only on some days in a window of the day (Mon–Fri 16:00–18:00), with optional minutes inside it; or never
+ *   schedules     an app that may be opened only in some windows (days + hours: Mon–Fri 16:00–18:00, Sat 08:00–22:00; max 8), with optional minutes inside it; or never
  *
  * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
  * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
@@ -59,7 +59,7 @@ internal object Rules {
      * One action from a remote, then the state they show. Actions ("do"): sleep {minutes} (0 cancels), sleep_add {minutes},
      * bedtime {on, ranges: [{from, to}] ("22:00"), or from, to for one}, snooze {minutes} (bedtime paused, 0 resumes), limit {pkg, minutes} (0 removes),
      * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list),
-     * sched {pkg, days: [1..7], from, to, max, or block: true; on: false removes} (an app opened only on those days inside the window, at most max minutes in it),
+     * sched {pkg, windows: [{days: [1..7], from, to}] (or the older days, from, to for one), max, or block: true; on: false removes} (an app opened only on those days inside the window, at most max minutes in it),
      * ram {on, pct} (the memory notice, at pct% used), heavy {on}, heavy_keep {pkg, on}, heavy_clear (the list of closes), pin {pin} (4 to 8 digits), lock {pkg, on} (a PIN must be set first).
      * An empty "do" only reads.
      */
@@ -145,17 +145,37 @@ internal object Rules {
 
     const val SCHED_MAX = 50
 
-    /** One schedule as stored: days sorted and unique, padded times, the cap in range; a bad one throws, so nothing odd is kept. */
+    const val WINDOWS_MAX = 8
+
+    /**
+     * One schedule as stored: {windows: [{days, from, to}], max}, or {block}. Days sorted and unique, padded times, the cap in range; a bad one
+     * throws, so nothing odd is kept. A client older than windows sends days / from / to: they read as the one window. The first window is
+     * also kept as days / from / to, which a TV Setup older than windows (and a page that reads only those) understands.
+     */
     internal fun clean(d: JSONObject): JSONObject {
         if (d.optBoolean("block")) return JSONObject().put("block", true)
-        val given = d.optJSONArray("days") ?: JSONArray()
-        val days = java.util.TreeSet<Int>()
-        for (i in 0 until given.length()) days.add(given.optInt(i).also { if (it !in 1..7) throw IllegalArgumentException("bad day") })
-        if (days.isEmpty()) throw IllegalArgumentException("no days")
-        val from = d.optString("from"); val to = d.optString("to")
-        if (!HHMM.matches(from) || !HHMM.matches(to) || pad(from) == pad(to)) throw IllegalArgumentException("bad time")   // the same time twice is never a window
-        return JSONObject().put("days", JSONArray(days.toList())).put("from", pad(from)).put("to", pad(to)).put("max", d.optInt("max").coerceIn(0, 24 * 60))
+        val list = windows(d)
+        if (list.length() == 0) throw IllegalArgumentException("no days")
+        if (list.length() > WINDOWS_MAX) throw IllegalArgumentException("too many windows")
+        val out = JSONArray()
+        for (i in 0 until list.length()) {
+            val w = list.optJSONObject(i) ?: throw IllegalArgumentException("bad window")
+            val given = w.optJSONArray("days") ?: JSONArray()
+            val days = java.util.TreeSet<Int>()
+            for (j in 0 until given.length()) days.add(given.optInt(j).also { if (it !in 1..7) throw IllegalArgumentException("bad day") })
+            if (days.isEmpty()) throw IllegalArgumentException("no days")
+            val from = w.optString("from"); val to = w.optString("to")
+            if (!HHMM.matches(from) || !HHMM.matches(to) || pad(from) == pad(to)) throw IllegalArgumentException("bad time")   // the same time twice is never a window
+            out.put(JSONObject().put("days", JSONArray(days.toList())).put("from", pad(from)).put("to", pad(to)))
+        }
+        val first = out.getJSONObject(0)
+        return JSONObject().put("windows", out).put("days", first.get("days")).put("from", first.get("from")).put("to", first.get("to"))
+            .put("max", d.optInt("max").coerceIn(0, 24 * 60))
     }
+
+    /** The windows of a schedule as saved or asked for: "windows", or the older single days / from / to as one window (none for a block). */
+    fun windows(s: JSONObject): JSONArray = s.optJSONArray("windows")
+        ?: if (s.has("days")) JSONArray().put(JSONObject().put("days", s.optJSONArray("days")).put("from", s.optString("from")).put("to", s.optString("to"))) else JSONArray()
 
     /** At most 8 {from, to} ranges ("H:MM" padded to "HH:MM"), each with a "max" percent when [withMax]; a bad time throws. */
     private fun ranges(given: JSONArray, withMax: Boolean): JSONArray {
@@ -249,13 +269,25 @@ internal object Rules {
     fun allowedNow(o: JSONObject, pkg: String, now: Long): Boolean {
         val s = o.optJSONObject("sched")?.optJSONObject(pkg) ?: return true
         if (s.optBoolean("block")) return false
-        val days = s.optJSONArray("days") ?: return false
+        val list = windows(s)
+        return (0 until list.length()).any { inWindow(list.optJSONObject(it) ?: return@any false, now) }   // any one window is enough
+    }
+
+    /** [now] inside one window {days, from, to}: the time by [within] (midnight crossing as bedtime's ranges), the day it began on. */
+    private fun inWindow(w: JSONObject, now: Long): Boolean {
+        val days = w.optJSONArray("days") ?: return false
+        val from = w.optString("from"); val to = w.optString("to")
+        if (!within(from, to, now)) return false
         val today = isoDay(now)
         val has = { day: Int -> (0 until days.length()).any { days.optInt(it) == day } }
-        val from = s.optString("from"); val to = s.optString("to")
-        if (!within(from, to, now)) return false
         val past = Calendar.getInstance().apply { timeInMillis = now }.let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) } < from.split(":")[0].toInt() * 60 + from.split(":")[1].toInt()
         return has(if (past) (today + 5) % 7 + 1 else today)       // before "from" inside a window = the night of the day before
+    }
+
+    /** "Mon – Fri 16:00–18:00 · Sat, Sun 08:00–22:00": a schedule's windows in a sentence (the page's schedText does the same). */
+    fun windowsText(s: JSONObject): String {
+        val list = windows(s)
+        return (0 until list.length()).joinToString(" · ") { val w = list.getJSONObject(it); dayText(w.optJSONArray("days")) + " " + w.optString("from") + "–" + w.optString("to") }
     }
 
     /** The minutes [pkg] may use today before it is closed (extra grants not counted): the lowest of its daily limit and its schedule's cap inside the window; null for none. */
@@ -325,7 +357,7 @@ internal object Rules {
         }
         val sched = JSONArray()
         o.optJSONObject("sched")?.let { l ->
-            for (pkg in l.keys()) sched.put(JSONObject(l.getJSONObject(pkg).toString()).put("pkg", pkg).put("label", label(c, pkg))
+            for (pkg in l.keys()) sched.put(JSONObject(l.getJSONObject(pkg).toString()).also { if (!it.optBoolean("block")) it.put("windows", windows(it)) }.put("pkg", pkg)   // data saved before windows reads as one.put("label", label(c, pkg))
                 .put("now", allowedNow(o, pkg, now)).put("used", used.optLong(pkg) / 60).put("extra", extra(o, pkg, now)))
         }
         val sleepAt = o.optLong("sleep_at").let { if (it > now) it else 0L }

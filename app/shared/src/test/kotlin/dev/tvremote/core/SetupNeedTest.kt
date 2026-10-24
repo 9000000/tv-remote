@@ -20,6 +20,13 @@ class SetupNeedTest {
         assertTrue(SetupNeed.ok("", "unknown"))                     // a feature not in the table needs nothing
     }
 
+    @Test fun severalScheduleWindowsNeedTheNewerSetupButOneWindowDoesNot() {
+        assertFalse(SetupNeed.ok("0.21.0", "schedule_windows"))
+        assertTrue(SetupNeed.ok("0.21.1", "schedule_windows"))
+        assertTrue(SetupNeed.ok("0.21.0", "schedule"))                  // the old shape (one window) is the older feature
+        assertEquals("setup:old:schedule_windows:0.21.1:0.21.0", SetupNeed.Missing("schedule_windows", "0.21.0").message)
+    }
+
     @Test fun words() {                                             // the words js/core.js (SETUP_RE) reads back from a server
         assertEquals("setup:old:pic:0.1.0:2.20.0", SetupNeed.Missing("pic", "2.20.0").message)
         assertEquals("setup:missing:draw:0.1.0:", SetupNeed.Missing("draw", "").message)

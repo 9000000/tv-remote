@@ -3163,9 +3163,14 @@
  "scheddlg.max_120": "Tối đa 2 giờ",
  "scheddlg.block": "Chặn hẳn",
  "scheddlg.save": "Lưu",
+ "scheddlg.add_window": "＋ Thêm khung giờ",
+ "scheddlg.remove_window": "Bỏ khung giờ này",
+ "scheddlg.window": "Khung giờ {n}",
+ "auto.sched_too_many": "Tối đa 8 khung giờ",
  "warn.sched_title": "{name} chưa được mở lúc này",
- "warn.sched_body": "Chỉ được mở vào: {days}, {from} – {to}. App đã được đóng.",
+ "warn.sched_body": "Chỉ được mở vào: {when}. App đã được đóng.",
  "warn.sched_never": "App này đang bị chặn. App đã được đóng.",
  "guard.sched_closed": "{name} chưa được mở lúc này",
- "core.need_schedule": "Lịch mở app"
+ "core.need_schedule": "Lịch mở app",
+ "core.need_schedule_windows": "Nhiều khung giờ trong một lịch mở app"
 }

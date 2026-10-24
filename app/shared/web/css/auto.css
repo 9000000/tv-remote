@@ -17,8 +17,11 @@ form > .timerow + .line { margin-top:10px; }
 #volf .line { display:flex; gap:8px; margin-top:8px; }
 #volf select { flex:1; min-width:0; }
 #volf button { padding:0 16px; }
-#scheddays { flex-wrap:nowrap; justify-content:space-between; }   /* seven day chips share one line, also at 400 px */
-#scheddays button { padding:0 8px; flex:1; }
+.schedwins { display:flex; flex-direction:column; gap:14px; }
+.schedwin { display:flex; flex-direction:column; gap:8px; }
+.schedays { flex-wrap:nowrap; justify-content:space-between; }   /* seven day chips share one line, also at 400 px */
+.schedays button { padding:0 8px; flex:1; }
+.schedwin .timerow .iconbtn { flex:none; }
 #limits .name .bar { max-width:260px; }
 .scenebox { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
 .scenebox h3 { margin:4px 0 0; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }

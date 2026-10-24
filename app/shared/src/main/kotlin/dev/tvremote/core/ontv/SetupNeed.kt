@@ -33,6 +33,7 @@ object SetupNeed {
         "heavy" to "0.19.1",                                           // 🧠 one heavy app at a time: a video app left behind is closed (Heavy)
         "checkout" to "0.19.1",                                        // 🧳 check-out: forget the guests' browsers (RulesReceiver "forget_web")
         "schedule" to "0.20.1",                                        // 📅 an app opened only on some days in a window of the day (Rules "sched"; the release after 0.20.0)
+        "schedule_windows" to "0.21.1",                                // 📅 several windows in a schedule (Rules "sched" windows; the release after 0.21.0); one window still works on older ones
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )
 
@@ -59,6 +60,7 @@ object SetupNeed {
             "launcher" -> t("core.need_launcher")
             "lock" -> t("core.need_lock")
             "schedule" -> t("core.need_schedule")
+            "schedule_windows" -> t("core.need_schedule_windows")
             "dim" -> t("core.need_dim")
             "unextra" -> t("core.need_unextra")
             "home_usage" -> t("core.need_home_usage")

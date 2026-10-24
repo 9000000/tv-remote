@@ -86,7 +86,7 @@ function renderRules() {
   const scheds = (r.sched || []).map((x) => {
     const icon = appIcon(x.pkg); onMeta(x.pkg, (m) => icon.fill(m));
     const name = x.label || appName(x.pkg), total = (x.max || 0) + (x.extra || 0);
-    const when = x.block ? T('auto.sched_never') : dayText(x.days) + ' · ' + x.from + ' – ' + x.to + (x.max ? ' · ' + T('auto.sched_max', { time: minsShort(x.max) }) : '');
+    const when = x.block ? T('auto.sched_never') : schedText(x) + (x.max ? ' · ' + T('auto.sched_max', { time: minsShort(x.max) }) : '');
     const now = x.block ? '' : !x.now ? T('auto.sched_closed_now') : x.max ? T('auto.limit_used', { used: minsShort(x.used), total: minsShort(total) }) : T('auto.sched_open_now');
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, el('span', { textContent: name }), el('small', { textContent: when }), now ? el('small', { textContent: now }) : null),
       el('div', { className: 'acts' },
@@ -214,21 +214,43 @@ const dayText = (days) => {
   for (const d of days) { const last = runs[runs.length - 1]; if (last && last[1] === d - 1) last[1] = d; else runs.push([d, d]); }
   return runs.map(([a, b]) => a === b ? dayName(a) : dayName(a) + (b === a + 1 ? ', ' : ' – ') + dayName(b)).join(', ');
 };
-let schedDays = new Set(), schedBlock = false;
+// a schedule is a list of windows (days + from / to, max 8); an answer from a TV Setup older than that has only days / from / to: one window
+const SCHED_WINDOWS_MAX = 8;
+const schedWindows = (x) => x.windows || (x.days ? [{ days: x.days, from: x.from, to: x.to }] : []);
+const schedText = (x) => schedWindows(x).map((w) => dayText(w.days) + ' ' + w.from + '–' + w.to).join(' · ');
+let schedWins = [], schedBlock = false;
 function drawSched() {
-  $('#scheddays').replaceChildren(...[1, 2, 3, 4, 5, 6, 7].map((d) => el('button', { type: 'button', className: schedDays.has(d) ? 'on' : '', textContent: dayName(d),
-    onclick: () => { schedDays.has(d) ? schedDays.delete(d) : schedDays.add(d); drawSched(); } })));
-  $('#scheddays').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.classList.contains('on')));
+  $('#schedwins').replaceChildren(...schedWins.map((w, i) => {
+    const days = el('div', { className: 'fchips schedays' }, ...[1, 2, 3, 4, 5, 6, 7].map((d) => el('button', { type: 'button', className: w.days.has(d) ? 'on' : '', textContent: dayName(d),
+      onclick: () => { w.days.has(d) ? w.days.delete(d) : w.days.add(d); drawSched(); } })));
+    days.setAttribute('role', 'group'); days.setAttribute('aria-label', schedWins.length > 1 ? T('scheddlg.window', { n: i + 1 }) : T('scheddlg.days'));
+    days.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.classList.contains('on')));
+    const time = (key) => el('input', { type: 'time', value: w[key], required: true, oninput: (e) => { w[key] = e.target.value; } });
+    const rm = schedWins.length > 1 ? el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('scheddlg.remove_window'),
+      onclick: () => { schedWins.splice(i, 1); drawSched(); } }) : null;
+    if (rm) rm.setAttribute('aria-label', T('scheddlg.remove_window'));
+    return el('div', { className: 'schedwin' }, days,
+      el('div', { className: 'timerow' }, el('label', {}, T('common.from') + ' ', time('from')), el('label', {}, T('common.to') + ' ', time('to')), rm));
+  }));
+  put('#schedwinadd', 'disabled', schedWins.length >= SCHED_WINDOWS_MAX);
   $('#schedblock').replaceChildren(el('button', { type: 'button', className: schedBlock ? 'on' : '', textContent: T('scheddlg.block'), 'aria-pressed': schedBlock,
     onclick: () => { schedBlock = !schedBlock; drawSched(); } }));
-  for (const id of ['scheddays', 'schedwin', 'schedmax']) put('#' + id, 'hidden', schedBlock);   // never: no days and no window to ask for
+  for (const id of ['schedwins', 'schedwinadd', 'schedmax']) put('#' + id, 'hidden', schedBlock);   // never: no days and no window to ask for
 }
 function openSched(x) {
-  schedDays = new Set(x && x.days || [1, 2, 3, 4, 5]); schedBlock = !!(x && x.block);
+  schedWins = (x && schedWindows(x).length ? schedWindows(x) : [{ days: [1, 2, 3, 4, 5], from: '16:00', to: '18:00' }]).map((w) => ({ days: new Set(w.days), from: w.from, to: w.to }));
+  schedBlock = !!(x && x.block);
   appChoice($('#schedpkg'), x ? x.pkg : '');
-  $('#schedfrom').value = x && x.from || '16:00'; $('#schedto').value = x && x.to || '18:00'; $('#schedmax').value = String(x && x.max || 0);
+  $('#schedmax').value = String(x && x.max || 0);
   drawSched(); $('#scheddlg').showModal();
 }
+$('#schedwinadd').addEventListener('click', () => {
+  if (schedWins.length >= SCHED_WINDOWS_MAX) return toast(T('auto.sched_too_many'));
+  const last = schedWins[schedWins.length - 1];   // a new window starts as the day set the last one left out, then at its hours
+  const rest = [1, 2, 3, 4, 5, 6, 7].filter((d) => !schedWins.some((w) => w.days.has(d)));
+  schedWins.push({ days: new Set(rest.length ? rest : last ? last.days : [1]), from: last ? last.from : '16:00', to: last ? last.to : '18:00' });
+  drawSched();
+});
 $('#schedadd').addEventListener('click', async () => {
   if (RULES && RULES.sched === undefined && !await setupFor('schedule')) return;
   if (!pickApps.length) await loadPickApps();
@@ -243,9 +265,12 @@ $('#schedf').addEventListener('submit', async (e) => {
   const d = { do: 'sched', pkg, on: true };
   if (schedBlock) d.block = true;
   else {
-    if (!schedDays.size) return toast(T('auto.sched_no_days'));
-    Object.assign(d, { days: [...schedDays].sort(), from: $('#schedfrom').value || '16:00', to: $('#schedto').value || '18:00', max: +$('#schedmax').value });
-    if (d.from === d.to) return toast(T('auto.times_differ'));
+    const windows = schedWins.map((w) => ({ days: [...w.days].sort(), from: w.from || '16:00', to: w.to || '18:00' }));
+    if (windows.some((w) => !w.days.length)) return toast(T('auto.sched_no_days'));
+    if (windows.some((w) => w.from === w.to)) return toast(T('auto.times_differ'));
+    d.max = +$('#schedmax').value;
+    if (windows.length === 1) Object.assign(d, windows[0]);                // one window keeps the old shape, which any TV Setup reads
+    else { d.windows = windows; if (!await setupFor('schedule_windows')) return; }
   }
   if (RULES && RULES.sched === undefined && !await setupFor('schedule')) return;
   if (await loadRules(d)) $('#scheddlg').close(), toast(T('auto.sched_added', { name: appName(pkg) }));
