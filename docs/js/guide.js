@@ -228,7 +228,7 @@
     topics.forEach(function(x){ x.classList.toggle("cur", x === t); });
     groups.forEach(function(g){ g.classList.toggle("cur", g.contains(t)); });
     if (cur && links[cur]){ links[cur].classList.remove("on"); links[cur].removeAttribute("aria-current"); }
-    cur = t.id; var a = links[cur]; a.classList.add("on"); a.setAttribute("aria-current", "page");
+    cur = t.id; var a = links[cur]; if (a){ a.classList.add("on"); a.setAttribute("aria-current", "page"); }
     if (side.scrollHeight > side.clientHeight){                  // keep it in view inside the menu without moving the page
       if (a.offsetTop < side.scrollTop + 30) side.scrollTop = a.offsetTop - 60;
       else if (a.offsetTop + a.offsetHeight > side.scrollTop + side.clientHeight - 30) side.scrollTop = a.offsetTop - side.clientHeight + a.offsetHeight + 60;

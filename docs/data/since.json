@@ -34,7 +34,7 @@
   "home-qr": {"since": "0.21.0"},
   "home-tiles": {"since": "0.21.0"},
   "home-themes": {"since": "next"},
-  "home-app-menu": {"since": "next", "setup": "next"},
+  "home-app-menu": {"since": "next"},
   "keymap": {"since": "0.21.0"},
   "keyfix": {"since": "0.21.0"},
   "channels": {"since": "0.16.0"},
