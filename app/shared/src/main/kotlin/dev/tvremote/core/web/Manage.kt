@@ -796,6 +796,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         current.set(cancel)
         try {
             if (r.q("kind") == "install") { installUpload(r); return done("install $name", "installed") }
+            if (r.q("kind") == "installcopy") { val pkg = installCopy(r); return done("install $name", "installed $pkg") }
             if (r.q("kind") == "restore") { restore(r); return done("restore $name", "restored") }
             if (r.q("kind") == "welcome") { welcomeUpload(r, name); return done("welcome $name", Words.get(r.lang, "welcome.saved")) }
             val dest = safePath(r.q("dest")) + "/" + name
@@ -935,6 +936,36 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         } finally {
             sh("rm -f $TMP_APK")
         }
+    }
+
+    /**
+     * "Install as a separate app" ([dev.tvremote.core.ontv.AppCopy]): the same APK again, rewritten as `<package>.copy`, signed with
+     * this client's own key, installed beside the built-in app; then started, and checked still alive after 5 s (an app that checks its
+     * own signature closes at once: that is said, and the page offers Remove). Not a background job, as with installUpload.
+     */
+    private fun installCopy(r: HttpServer.Request): String {
+        if (r.length <= 0) throw IllegalArgumentException("empty upload")
+        val cancel = current.get()
+        val src = java.io.File.createTempFile("tvr-copy-", ".apk"); val out = java.io.File.createTempFile("tvr-copy-", ".out.apk")
+        try {
+            src.outputStream().use { o ->
+                val b = ByteArray(65536); var left = r.length
+                while (left > 0) { cancel?.check(); val n = r.body.read(b, 0, minOf(b.size.toLong(), left).toInt()); if (n < 0) break; o.write(b, 0, n); left -= n }
+            }
+            val pkg = try { dev.tvremote.core.ontv.AppCopy.make(src, out, dir) { cancel?.check() } }
+                      catch (e: Cancelled) { throw e } catch (e: IOException) { throw IllegalArgumentException(e.message) }
+            try {
+                out.inputStream().use { push(it, out.length(), TMP_APK, null, 2) }
+                pmInstall(TMP_APK)
+            } catch (e: Cancelled) { throw e } catch (e: IOException) { throw IllegalArgumentException(e.message) } finally { sh("rm -f $TMP_APK") }
+            val adb = link.get()
+            val started = adb.shell("monkey -p $pkg -c android.intent.category.LEANBACK_LAUNCHER 1 2>&1; monkey -p $pkg -c android.intent.category.LAUNCHER 1 2>&1", 30000)
+            if (started.contains("Events injected: 1")) {
+                for (i in 0 until 5) { cancel?.check(); Thread.sleep(1000) }
+                if (adb.shell("pidof $pkg 2>/dev/null; echo .").trim() == ".") throw IllegalArgumentException("copy closed: $pkg")
+            }
+            return pkg
+        } finally { src.delete(); out.delete() }
     }
 
     /** 📥 a backup made by 💾, sent to the TV whole, then installed and put back there. Not a background job, as with installUpload. */

@@ -22,6 +22,7 @@ kotlin {
 sourceSets["main"].kotlin.exclude("**/core/picture/TvAndroid.kt", "**/core/picture/AudioOut.kt", "**/core/web/Qr.kt", "**/core/Upright.kt")
 
 dependencies {
+    implementation("com.android.tools.build:apksig:8.9.2")           // AppCopy: signs the rewritten APK (the same jar the Android build uses)
     implementation("org.json:json:20240303")                         // on Android org.json is part of the system
     implementation("org.conscrypt:conscrypt-openjdk-uber:2.7.0")    // adb pairing: TLS 1.3 and the exported keying material (natives of every system inside)
     implementation("net.java.dev.jna:jna:5.15.0")                    // the window: Window.kt calls native/<system>/webview

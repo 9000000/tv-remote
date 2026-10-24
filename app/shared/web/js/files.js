@@ -143,7 +143,16 @@ async function upload(file, kind, dest, after, src) {
     if (xhr.status === 410) { row.status = 'cancelled'; showJob(row); mark(src, row); return; }
     if (xhr.status !== 200) {
       const why = r.error || xhr.statusText;
-      row.status = 'error'; row.msg = friendly(why); showJob(row); mark(src, row); needSetup(why); return;   // a TV Setup that is missing or old becomes the Install / Update question
+      row.status = 'error'; row.msg = friendly(why); const jr = showJob(row); mark(src, row); needSetup(why);
+      const builtin = /builtin app: (\S+)/.exec(why), closed = /copy closed: (\S+)/.exec(why);
+      if (builtin && kind === 'install') {                          // a system app of the TV: it cannot be replaced, but it can go beside as another app
+        const go = el('button', { type: 'button', className: 'small primary', textContent: T('files.copy_install'), onclick: () => { go.disabled = true; upload(file, 'installcopy', dest, after, src); } });
+        jr.root.append(el('div', { className: 'actions' }, go), el('p', { className: 'note', textContent: T('files.copy_note') }));
+      } else if (closed) {                                          // the copy closed itself at once: offer to take it away
+        const rm = el('button', { type: 'button', className: 'small', textContent: T('files.copy_remove'), onclick: async () => { rm.disabled = true; if (await api('/api/app/uninstall', { pkg: closed[1] })) { rm.remove(); appsStale(); } } });
+        jr.root.append(el('div', { className: 'actions' }, rm));
+      }
+      return;   // a TV Setup that is missing or old becomes the Install / Update question
     }
     jobEls[row.id].root.remove(); delete jobEls[row.id]; trackJob(r, file.name, after, src);
   };

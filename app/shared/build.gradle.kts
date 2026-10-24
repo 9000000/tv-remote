@@ -20,6 +20,7 @@ android {
 // Unit tests of the plain logic (scenes, voice commands, the sound downmix, paths): ./gradlew :shared:testDebugUnitTest.
 // org.json is the real library here: Android's own is only a stub off a device.
 dependencies {
+    api("com.android.tools.build:apksig:8.9.2")                      // AppCopy: signs the rewritten APK (Apache-2.0, ~0.4 MB; JVM, and Android 8+ for the phone app)
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }

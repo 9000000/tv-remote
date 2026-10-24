@@ -132,6 +132,13 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   a YouTube left behind held only ~38-45 MB of MemAvailable and a force-stop gave back 45 MB, but the next launch became a cold start of
   1216 ms instead of a warm 159 ms (7-8x slower); Android's low-memory killer frees that memory by itself when it is needed. A stored
   `heavy` key in a TV's rules is simply ignored. `sharedUserId` to share one process between our apps was rejected: adding it to shipped apps breaks updates.
+- **"Install as a separate app" (`core/ontv/AppCopy.kt`, `Axml.kt`) renames the package to `<pkg>.copy`, signed with ONE key per client** (`appcopy.key/.crt`
+  beside the ADB keys, made once): a built-in system app cannot be replaced or removed, so the only way to run another build is another package.
+  `.copy` is a fixed suffix so a later copy of the same app has the same name and, with the same key, updates over the first. The key is never a
+  release key of this repo. The manifest is edited as binary (new strings appended to the pool, attributes repointed), not with apktool; authorities
+  and the app's own permissions follow the name (else CONFLICTING_PROVIDER / DUPLICATE_PERMISSION), class names do not. resources.arsc stays.
+  Limits: .apks / .xapk are refused; an app that checks its own signature closes at once (started and checked after 5 s, then Remove is offered).
+  apksig (Apache-2.0, ~0.5 MB) is in :shared; its Android 8+ behaviour was not run on a phone.
 - **Key shortcuts and "open an app at power-on" (TV Home settings, default off) are done by TV Setup, pushed by TV Home.** TV Home has no
   ADB, no key filter, and does not run in standby, so it sends the whole setting (`keyon/keyapps/autoon/autoapp`) through the
   signature-checked HomeInfo provider (method "keys") on every change and start; TV Setup keeps it (`HomeKeys`, prefs) and works after a

@@ -51,6 +51,10 @@ object Errors {
             }
             all.contains(dev.tvremote.core.adb.PmInstall.BLOCKED) || all.contains("disabled from pm") -> t("errors.install_blocked")
             all.contains("removed by the TV right after install") -> t("errors.tv_said_installed_app")
+            all.contains(dev.tvremote.core.ontv.AppCopy.SPLIT) -> t("errors.copy_split")
+            all.contains(dev.tvremote.core.ontv.AppCopy.ODD) -> t("errors.copy_odd")
+            Regex("copy closed: (\\S+)").find(all) != null -> t("errors.copy_closed", "pkg" to Regex("copy closed: (\\S+)").find(all)!!.groupValues[1])
+            Regex("INSTALL_FAILED_CONFLICTING_PROVIDER|INSTALL_FAILED_DUPLICATE_PERMISSION").containsMatchIn(all) -> t("errors.copy_conflict")
             Regex("builtin app: (\\S+)").find(all) != null -> t("errors.builtin_app", "pkg" to Regex("builtin app: (\\S+)").find(all)!!.groupValues[1])
             Regex("INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("errors.tv_has_app_from")
