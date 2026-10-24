@@ -298,7 +298,7 @@ class TelegramTest {
         bot.step(); bot.step(); bot.step()
         assertEquals(1, api.named("deleteWebhook").size); assertEquals(1, api.named("setMyCommands").size)
         assertEquals(3, api.named("getUpdates").size)
-        assertEquals(22, api.named("setMyCommands")[0].getJSONArray("commands").length())
+        assertEquals(26, api.named("setMyCommands")[0].getJSONArray("commands").length())
         assertEquals("ok", bot.status)
     }
 
@@ -572,5 +572,90 @@ class TelegramTest {
         val code = bot.newCode()
         val j = bot.json()
         assertEquals("https://t.me/tvbot", j.optString("bot_link")); assertEquals("https://t.me/tvbot?start=$code", j.optString("link"))
+    }
+
+    // ---------------------------------------------------------------- kids mode
+    private fun rulesPosts() = seen.filter { it.method == "POST" && it.path == "/api/rules" }.map { it.body }
+
+    @Test fun unlockLockTimeAndMoreAreFullChatCommands() {
+        pairChat(42, "full")
+        val total = JSONObject("""{"total":{"min":120,"used":45,"extra":0,"days":[]},"unlock_until":0,"now":$now}""")
+        answer = { r -> if (r.path == "/api/rules" && r.method == "GET") HttpServer.Response.json(total) else HttpServer.Response.ok() }
+        say(42, "/unlock", 1); say(42, "/unlock 90", 2); say(42, "/unlock 0", 3); say(42, "/lock", 4)
+        assertEquals(listOf(30, 90, 0), rulesPosts().map { it.optInt("minutes") })
+        assertTrue(api.sent(42).any { it.contains("30 minutes") }); assertTrue(api.sent(42).any { it.startsWith("Usage: /unlock") }); assertTrue(api.sent(42).any { it.contains("Locked again") })
+        say(42, "/time", 5)
+        assertTrue(api.sent(42).last().contains("45 of 120") && api.sent(42).last().contains("75 min left"))
+        say(42, "/more 30", 6); say(42, "/more x", 7)
+        assertEquals(JSONObject("""{"do":"total_extra","minutes":30}""").toString(), rulesPosts().last().toString())
+        assertTrue(api.named("sendMessage").any { it.toString().contains("\"z:") })                 // with an Undo
+        assertTrue(api.sent(42).last().startsWith("Usage: /more"))
+    }
+
+    @Test fun remoteChatsMayLookAtTheTimeButNotChangeIt() {
+        pairChat(42, "remote")
+        answer = { r -> if (r.method == "GET") HttpServer.Response.json(JSONObject("""{"total":{"min":0}}""")) else HttpServer.Response.ok() }
+        say(42, "/time", 1); say(42, "/unlock 30", 2); say(42, "/lock", 3); say(42, "/more 30", 4)
+        assertTrue(api.sent(42)[0].contains("No limit")); assertTrue(rulesPosts().isEmpty())
+        assertEquals(3, api.sent(42).count { it.contains("only look") })
+    }
+
+    @Test fun askAParentGoesToFullChatsOnceInTwoMinutesAndAButtonGrantsIt() {
+        pairChat(42, "full"); pairChat(43, "remote")
+        assertTrue(bot.hasParent())
+        assertEquals("sent", bot.askParent("com.netflix.ninja", "Netflix", "Living room"))
+        assertTrue(api.sent(42)[0].contains("Netflix") && api.sent(42)[0].contains("Living room")); assertTrue(api.sent(43).isEmpty())
+        val kb = api.named("sendMessage").last().toString()
+        for (d in listOf("u:30:com.netflix.ninja", "u:60:com.netflix.ninja", "u:d:com.netflix.ninja", "u:n")) assertTrue(d, kb.contains(d))
+        now += 60_000; assertEquals("wait", bot.askParent("com.netflix.ninja", "Netflix", "Living room"))      // debounced
+        assertEquals(1, api.sent(42).size)
+        tap(42, "u:30:com.netflix.ninja", 5)
+        assertEquals(JSONObject("""{"do":"unlock","minutes":30,"pkg":"com.netflix.ninja"}""").toString(), rulesPosts().last().toString())
+        assertTrue(api.named("editMessageReplyMarkup").isNotEmpty())                                         // the buttons go
+        now += 61_000; assertEquals("sent", bot.askParent("", "", "Living room"))                           // two minutes passed
+        assertTrue(api.sent(42).last().contains("more TV time"))
+        tap(42, "u:d:", 6)
+        assertTrue(rulesPosts().last().optBoolean("today")); assertFalse(rulesPosts().last().has("pkg"))
+        tap(42, "u:n", 7); assertEquals(2, rulesPosts().size)
+        assertTrue(bot.json().optJSONArray("chats") != null)
+    }
+
+    @Test fun noParentChatMeansNoQuestionAndARemoteChatCannotAnswer() {
+        pairChat(43, "remote")
+        assertFalse(bot.hasParent()); assertEquals("nochat", bot.askParent("com.netflix.ninja", "Netflix", "TV"))
+        tap(43, "u:30:com.netflix.ninja", 5)
+        assertTrue(rulesPosts().isEmpty())
+    }
+
+    @Test fun unlockAndAskAppearInTheHistory() {
+        pairChat(42, "full")
+        say(42, "/unlock 20", 1); bot.askParent("com.netflix.ninja", "Netflix", "TV"); tap(42, "u:60:com.netflix.ninja", 5)
+        val cmds = bot.config(HttpServer.Request().also { it.method = "GET"; it.query["history"] = "1" }).let { JSONObject(String(it.body)).getJSONArray("items") }
+        val names = (0 until cmds.length()).map { cmds.getJSONObject(it).optString("cmd") }
+        assertTrue(names.any { it == "/unlock 20" }); assertTrue(names.any { it.startsWith("ask ") }); assertTrue(names.any { it == "tap u 60:com.netflix.ninja" })
+    }
+
+    @Test fun threeWrongCodesTellFullChatsOnceInFiveMinutesAndUnlocksAreInTheHistory() {
+        pairChat(42, "full"); pairChat(43, "remote")
+        bot.wrongCodes("Netflix", "Living room")
+        assertTrue(api.sent(42).last().contains("3 times") && api.sent(42).last().contains("Netflix") && api.sent(42).last().contains("Living room")); assertTrue(api.sent(43).isEmpty())
+        val n = api.sent(42).size
+        now += 60_000; bot.wrongCodes("Netflix", "Living room"); assertEquals(n, api.sent(42).size)
+        now += 5 * 60_000; bot.wrongCodes("Netflix", "Living room"); assertEquals(n + 1, api.sent(42).size)
+        bot.unlocked("totp", "com.netflix.ninja"); bot.unlocked("recovery", "com.hulu")
+        val items = hist().getJSONArray("items"); val cmds = (0 until items.length()).map { items.getJSONObject(it).optString("cmd") }
+        assertTrue(cmds.any { it == "unlock totp com.netflix.ninja" } && cmds.any { it == "unlock recovery com.hulu" })
+    }
+
+    @Test fun messageTimesFeedTheClockAndASlowTvStillHearsFreshCommands() {
+        val dates = ArrayList<Long>()
+        var skew = 0L
+        val b = Telegram(store, api, hook, { _, _ -> HttpServer.Response.ok() }, { state }, { apps }, { }, { now }, java.util.Random(7), background = false, onDate = { dates.add(it) }, skew = { skew })
+        val c = b.newCode(); assertTrue(b.pair(42, "An", c)); now += 5000
+        now += 200_000; skew = 200_000                                                                    // the TV is 200 s fast: a message sent just now looks 200 s old
+        b.onUpdate(msg(42, "/status", 1, date = (now - skew) / 1000))
+        assertEquals(1, dates.size); assertTrue(api.sent(42).any { it.contains("TV") })
+        val before = api.sent(42).size; skew = 0
+        b.onUpdate(msg(42, "/status", 2, date = (now - 200_000) / 1000 - 1)); assertEquals(before, api.sent(42).size)   // really old: ignored
     }
 }

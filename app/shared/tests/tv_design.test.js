@@ -13,7 +13,7 @@ const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
 // (DESIGN-TV.md "Known drift"). A count may only go down: lower it here when a file is cleaned.
 const RAW = {
   tv: { 'DrawLayer.kt': 2, 'LauncherConfirmActivity.kt': 6, 'MainActivity.kt': 3, 'ManageActivity.kt': 3, 'NotifyLayer.kt': 3, 'PairActivity.kt': 6,
-    'PinActivity.kt': 8, 'WarnActivity.kt': 6 },
+    'PinActivity.kt': 5, 'WarnActivity.kt': 6 },
   home: { 'Customize.kt': 35, 'Drop.kt': 7, 'Frost.kt': 3, 'HomeActivity.kt': 55, 'HomeDream.kt': 4, 'TopBar.kt': 2, 'WallArt.kt': 3,
     'Widgets.kt': 4, 'CalendarWidget.kt': 7, 'ClockWidget.kt': 12, 'LunarWidget.kt': 2, 'SystemWidget.kt': 2, 'UsageWidget.kt': 2,
     'WeatherWidget.kt': 6, 'WidgetViews.kt': 2, 'Zoom.kt': 3 },

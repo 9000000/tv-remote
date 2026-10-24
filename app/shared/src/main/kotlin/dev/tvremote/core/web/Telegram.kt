@@ -39,6 +39,10 @@ class Telegram(
     private val random: java.util.Random = SecureRandom(),
     /** false in tests: they call [step] themselves. */
     private val background: Boolean = true,
+    /** A message's own time (ms, Telegram's clock), read the moment it arrived: TV Setup compares it with the TV's clock (TOTP needs the right time). */
+    private val onDate: (Long) -> Unit = { },
+    /** How far ahead of the real time the TV's clock is (ms; negative: behind), so a TV whose clock is minutes out still hears fresh commands. */
+    private val skew: () -> Long = { 0L },
 ) {
     /** Where the switch, the token and the paired chats live (TV Setup's prefs). The token is never written anywhere else. */
     interface Store {
@@ -210,7 +214,9 @@ class Telegram(
         val m = u.optJSONObject("message") ?: return
         val text = m.optString("text")
         if (text.isEmpty()) return
-        if (clock() / 1000 - m.optLong("date") > STALE_S) return      // a command that waited in Telegram's queue for minutes is not for now
+        val sent = m.optLong("date")
+        if (sent > 0 && clock() / 1000 - sent < 600) try { onDate(sent * 1000) } catch (e: Exception) { }   // a reading of the real time, if not a message that waited in the queue
+        if ((clock() - skew()) / 1000 - sent > STALE_S) return       // a command that waited in Telegram's queue for minutes is not for now
         val chat = m.optJSONObject("chat") ?: return
         val id = chat.optLong("id")
         val cmd = parse(text, store.bot) ?: return onText(id, chat)
@@ -242,7 +248,7 @@ class Telegram(
         val rest = data.substringAfter(':', "")
         WireLog.all.add("←", "telegram ${known.name}: tap ${data.take(40)}")
         outcome.set("ok")
-        try { tap(known, data, rest, qid, msg, id) } finally { history.add(clock(), known, "tap " + data.substringBefore(':') + (if (data.startsWith("k:")) " $rest" else ""), outcome.get()) }
+        try { tap(known, data, rest, qid, msg, id) } finally { history.add(clock(), known, "tap " + data.substringBefore(':') + (if (data.startsWith("k:") || data.startsWith("u:")) " $rest" else ""), outcome.get()) }
     }
 
     private fun tap(known: Chat, data: String, rest: String, qid: String, msg: JSONObject?, id: Long) {
@@ -271,6 +277,7 @@ class Telegram(
             }
             "r" -> { answer(qid, ""); change(known, rest) }
             "z" -> { answer(qid, ""); undo(known, rest) }
+            "u" -> grant(known, rest, qid, msg, id)                       // a parent's answer to "ask a parent" (kids mode)
             else -> answer(qid, "")
         }
     }
@@ -360,6 +367,10 @@ class Telegram(
             "bedtime" -> bedtime(c, a)
             "limits" -> limits(c)
             "schedule" -> schedule(c)
+            "unlock" -> unlock(c, a)
+            "lock" -> if (c.scope != FULL) send(c.id, w("telegram.rules_readonly")) else send(c.id, done(post(c, "/api/rules", JSONObject().put("do", "unlock").put("minutes", 0)), c, w("tg.lock_done")))
+            "time" -> time(c)
+            "more" -> more(c, a)
             "pair" -> send(c.id, w("telegram.already"))
             else -> send(c.id, w("telegram.unknown", "c" to cmd.name))
         }
@@ -398,7 +409,7 @@ class Telegram(
         return w("telegram.st_tv", "on" to on) + vol + app
     }
 
-    private fun help(scope: String) = w("telegram.help", "scope" to scope)
+    private fun help(scope: String) = w("telegram.help", "scope" to scope) + (if (scope == FULL) "\n" + w("tg.help_kids") else "")
 
     /** The answer for a finished command: [ok] words when it went through, else why not. */
     private fun done(out: HttpServer.Response, c: Chat, ok: String) = if (out.status in 200..299) ok else say(out, c)
@@ -551,6 +562,94 @@ class Telegram(
         send(c.id, w("telegram.undone"))
     }
 
+    // ---------------------------------------------------------------- kids mode: the lock, the day's total, asking a parent (changing them is FULL's)
+    /** `/unlock 30`: everything on the TV needs no code for that many minutes (30 by default); `/lock` ends it. */
+    private fun unlock(c: Chat, a: String) {
+        if (c.scope != FULL) return send(c.id, w("telegram.rules_readonly"))
+        val n = if (a.isEmpty()) 30 else a.toIntOrNull()?.takeIf { it in 1..1440 } ?: return send(c.id, w("tg.usage_unlock"))
+        send(c.id, done(post(c, "/api/rules", JSONObject().put("do", "unlock").put("minutes", n)), c, w("tg.unlock_done", "n" to n)))
+    }
+
+    /** `/time`: the minutes used and left of today's total. Reading it is every chat's. */
+    private fun time(c: Chat) {
+        val st = rules(c) ?: return send(c.id, w("telegram.tv_not_ready"))
+        val t = st.optJSONObject("total")
+        val min = t?.optInt("min") ?: 0
+        if (t == null || min <= 0) return send(c.id, w("tg.time_off"))
+        val all = min + t.optInt("extra")
+        val unlocked = st.optLong("unlock_until") - st.optLong("now", clock())
+        send(c.id, w("tg.time_line", "used" to t.optInt("used"), "all" to all, "left" to maxOf(0, all - t.optInt("used")), "extra" to (if (t.optInt("extra") > 0) " (+" + t.optInt("extra") + ")" else ""))
+            + (if (unlocked > 0) "\n" + w("tg.time_unlocked", "n" to (unlocked + 59_999) / 60_000) else ""))
+    }
+
+    /** `/more 30`: 30 minutes more today on top of the total. */
+    private fun more(c: Chat, a: String) {
+        if (c.scope != FULL) return send(c.id, w("telegram.rules_readonly"))
+        val n = a.toIntOrNull()?.takeIf { it in 1..240 } ?: return send(c.id, w("tg.usage_more"))
+        val before = rules(c)?.optJSONObject("total")?.optInt("extra") ?: 0
+        val out = post(c, "/api/rules", JSONObject().put("do", "total_extra").put("minutes", n))
+        if (out.status !in 200..299) return send(c.id, say(out, c))
+        send(c.id, w("tg.more_done", "n" to n), remember(c, listOf(JSONObject().put("do", "total_extra").put("minutes", before).put("set", true))))
+    }
+
+    @Volatile private var askedAt = 0L
+
+    /** A code screen opened by [how] ("pin", "totp", "recovery"; a parent's tap and the clients' unlock are in the history by their own). */
+    fun unlocked(how: String, pkg: String) { history.add(clock(), null, "unlock $how " + pkg.take(40), "ok") }
+
+    @Volatile private var wrongAt = 0L
+
+    /** Three wrong codes in a row over [app] on [tv]: every Full chat hears it, whatever its alerts (it is about the child, not the TV), at most once in 5 minutes. */
+    fun wrongCodes(app: String, tv: String) {
+        if (!hasParent()) return
+        val now = clock()
+        synchronized(this) { if (wrongAt != 0L && now >= wrongAt && now - wrongAt < WRONG_GAP) return; wrongAt = now }
+        val to = chats().filter { it.scope == FULL }
+        val text = w("tg.wrong3", "tv" to tv, "time" to java.text.SimpleDateFormat("HH:mm").format(java.util.Date(now)), "app" to app)
+        history.add(now, null, "alert wrong3", "ok", to.map { it.name })
+        val job = Runnable { for (c in to) send(c.id, text) }
+        if (background) speaker.execute { try { job.run() } catch (e: Exception) { } } else job.run()
+    }
+
+    /** Whether a chat could answer "ask a parent": the bot is on and a chat with the Full scope is paired. */
+    fun hasParent(): Boolean = store.enabled && store.token.isNotEmpty() && chats().any { it.scope == FULL }
+
+    /**
+     * A child asks, on the TV's code screen, to open [pkg] ([app] by name; empty pkg: more time on the TV's total). Every Full chat gets the
+     * question with buttons for 30 min / 1 h / today / no. "sent", "wait" (asked less than two minutes ago: a child pressing the button
+     * ten times must not flood the parents) or "nochat". Blocks on the network: not for the main thread.
+     */
+    fun askParent(pkg: String, app: String, tv: String): String {
+        if (!hasParent()) return "nochat"
+        val now = clock()
+        synchronized(this) { if (askedAt != 0L && now >= askedAt && now - askedAt < ASK_GAP) return "wait"; askedAt = now }
+        val to = chats().filter { it.scope == FULL }
+        val p = pkg.takeIf { it.length <= 50 && PKG.matches(it) } ?: ""
+        val markup = keyboard(listOf(listOf(button(w("tg.btn_30"), "u:30:$p"), button(w("tg.btn_60"), "u:60:$p"), button(w("tg.btn_today"), "u:d:$p"), button(w("tg.btn_no"), "u:n"))))
+        val text = if (p.isEmpty()) w("tg.ask_time", "tv" to tv) else w("tg.ask_app", "app" to app.ifEmpty { pkg }, "tv" to tv)
+        history.add(now, null, "ask " + pkg.take(40), "ok", to.map { it.name })
+        WireLog.all.add("→", "telegram ask a parent → ${to.size} chat(s)")
+        for (c in to) send(c.id, text, markup)
+        return "sent"
+    }
+
+    /** A tap on the question: "30:<pkg>", "60:<pkg>", "d:<pkg>" (until midnight) or "n". An empty pkg opens the whole TV for that long. */
+    private fun grant(c: Chat, rest: String, qid: String, msg: JSONObject?, chat: Long) {
+        if (c.scope != FULL) { answer(qid, ""); return send(c.id, w("telegram.rules_readonly")) }
+        val what = rest.substringBefore(':'); val pkg = rest.substringAfter(':', "")
+        val body = when (what) {
+            "30", "60" -> JSONObject().put("do", "unlock").put("minutes", what.toInt())
+            "d" -> JSONObject().put("do", "unlock").put("today", true)
+            else -> null
+        }
+        msg?.optLong("message_id")?.let { edit(chat, it, JSONObject().put("inline_keyboard", JSONArray())) }   // answered once: the buttons go
+        if (body == null) return answer(qid, w("tg.ask_declined"))
+        if (pkg.isNotEmpty() && PKG.matches(pkg)) body.put("pkg", pkg)
+        val out = post(c, "/api/rules", body)
+        answer(qid, if (out.status in 200..299) w(if (what == "d") "tg.granted_today" else "tg.granted", "n" to what) else say(out, c))
+        WireLog.all.add("·", "telegram ${c.name}: unlock $what ${pkg.ifEmpty { "(all)" }}")
+    }
+
     private fun rangesText(r: JSONArray?) = (0 until (r?.length() ?: 0)).joinToString(", ") { r!!.getJSONObject(it).let { x -> x.optString("from") + "–" + x.optString("to") } }
 
     private fun bedtime(c: Chat, a: String) {
@@ -699,6 +798,7 @@ class Telegram(
         "now" to w("telegram.cmd_now"), "apps" to w("telegram.cmd_apps"), "usage" to w("telegram.cmd_usage"), "channel" to w("telegram.cmd_channel"),
         "type" to w("telegram.cmd_type"), "scenes" to w("telegram.cmd_scenes"), "bedtime" to w("telegram.cmd_bedtime"), "limits" to w("telegram.cmd_limits"),
         "schedule" to w("telegram.cmd_schedule"), "alerts" to w("telegram.cmd_alerts"),
+        "unlock" to w("tg.cmd_unlock"), "lock" to w("tg.cmd_lock"), "time" to w("tg.cmd_time"), "more" to w("tg.cmd_more"),
     ).map { JSONObject().put("command", it.first).put("description", it.second) })
 
     // ---------------------------------------------------------------- words, chats
@@ -799,6 +899,8 @@ class Telegram(
         val ALERTS = listOf("on", "off", "limit", "bed", "sleep", "pair")
         private const val ALERT_GAP = 60_000L                  // one alert of a kind a minute: a flapping screen or a restarting app must not flood a chat
         private const val UNDO_MS = 60 * 60_000L
+        private const val WRONG_GAP = 5 * 60_000L
+        private const val ASK_GAP = 2 * 60_000L                  // "ask a parent": one question in two minutes
         private fun alertsOf(a: JSONArray?): Set<String> = if (a == null) emptySet() else (0 until a.length()).map { a.optString(it) }.filter { it in ALERTS }.toSet()
         const val POLL_S = 50
         private const val STALE_S = 120L

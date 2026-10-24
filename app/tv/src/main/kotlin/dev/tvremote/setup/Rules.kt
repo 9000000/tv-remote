@@ -20,11 +20,15 @@ import java.util.Locale
  *   one heavy app a video app left for another is closed after 15 s, for TVs with little RAM ([Heavy]); off until turned on
  *   app locks     a PIN asked over an app before it can be used, again each time another app was opened ([PinActivity])
  *   schedules     an app that may be opened only in some windows (days + hours: Mon–Fri 16:00–18:00, Sat 08:00–22:00; max 8), with optional minutes inside it; or never
+ *   kids mode     the lock turned round: EVERY app asks for the PIN (or an Authenticator code, or a parent over Telegram) except the ones allowed and the
+ *                 always-free ones ([Kids.free]: the home screen, the keyboard, TV Setup...); a total of minutes a day on the TV, apps and all
  *
  * Stored as one JSON object: { sleep_at, bedtime: {on, ranges: [{from, to}], from, to (the first range, for
  * remotes older than ranges)}, snooze_until, limits: {pkg: minutes}, extra: {day: {pkg: minutes}},
  * volume: [{from, to, max (percent)}], ram: {on, pct (used, percent)}, heavy: {on, keep: [pkg], log: [{pkg, label, at}]}, lock: {apps: [pkg], salt, hash (of the PIN), len (its digits)},
- * sched: {pkg: {days: [1..7, Monday = 1], from, to, max (minutes inside the window, 0 = no cap), block (never: days and window ignored)}} }.
+ * sched: {pkg: {days: [1..7, Monday = 1], from, to, max (minutes inside the window, 0 = no cap), block (never: days and window ignored)}},
+ * lock also: mode ("list" | "kids"), allow: [pkg], methods: {pin, ask}, totp (the Authenticator secret, base32: never in the state), and
+ * unlock_until (ms: everything open until then), unlock_apps: {pkg: ms}, total: {min, days, warn}, total_extra: {day: minutes} }.
  * The remotes reach it through [RulesReceiver] (phone, computer: over ADB) or RemoteService (the TV's own page).
  */
 internal object Rules {
@@ -45,7 +49,7 @@ internal object Rules {
         val o = load(c)
         return o.optLong("sleep_at") > System.currentTimeMillis() || o.optJSONObject("bedtime")?.optBoolean("on") == true || (o.optJSONObject("limits")?.length() ?: 0) > 0
             || (o.optJSONArray("volume")?.length() ?: 0) > 0 || ram(o).optBoolean("on")
-            || locked(o).isNotEmpty()
+            || locked(o).isNotEmpty() || kidsMode(o) || totalMin(o, System.currentTimeMillis()) != null
             || Heavy.on(o)                                             // HeavyMode is fed by Guard
             || o.optBoolean("awake")                                   // KeepAwake lives in the service
             || o.optBoolean("holdkeys")                                // HoldKeys: KeyFixWatch keeps the key filter on
@@ -61,21 +65,35 @@ internal object Rules {
      * extra {pkg, minutes} (more for today only), volume {ranges: [{from, to, max}]} (the whole list),
      * sched {pkg, windows: [{days: [1..7], from, to}] (or the older days, from, to for one), max, or block: true; on: false removes} (an app opened only on those days inside the window, at most max minutes in it),
      * ram {on, pct} (the memory notice, at pct% used), heavy {on}, heavy_keep {pkg, on}, heavy_clear (the list of closes), pin {pin} (4 to 8 digits), lock {pkg, on} (a PIN must be set first).
+     * Kids mode: kids {mode: "list"|"kids", allow: [pkg], methods: {pin, totp (false only: it is turned on by totp), ask}} (each part optional; kids needs a PIN or a code set),
+     * unlock {minutes, pkg?, today?} (everything, or one app, open for that long; today: until midnight; minutes 0 locks again, every app's unlock too),
+     * total {min, days: [1..7], warn} (minutes a day on the TV; min 0 removes), total_extra {minutes, set?} (more for today only),
+     * totp {secret (base32), code, client_now (ms)} (turns the Authenticator on once the code is right; throws [CodeWrong] with the clock's facts) or {off: true}.
      * An empty "do" only reads.
      */
     @Synchronized
     fun change(c: Context, d: JSONObject): JSONObject {
         val o = load(c)
-        if (!apply(o, d, System.currentTimeMillis())) return state(c)
+        val now = System.currentTimeMillis()
+        try {
+            if (!apply(o, d, now, Clock.driftMs(c))) return state(c)
+        } catch (e: CodeWrong) {
+            e.clock = Clock.info(c).also { i -> e.clientDriftS?.let { i.put("client_drift_s", it) } }   // the page tells which clock is out
+            throw e
+        }
         save(c, o)
+        if (d.optString("do") == "totp" && !d.optBoolean("off")) {
+            if (d.optLong("client_now") > 0) Clock.note(c, d.optLong("client_now"), Clock.CLIENT, force = true)   // the phone is the Authenticator: its time is the one the codes follow
+            Thread({ Clock.check(c) }, "clock-check").apply { isDaemon = true }.start()                          // then the network's, which is the real one
+        }
         Guard.poke()
         KeepAwake.live?.check()
         if (d.optString("do") == "holdkeys") Thread({ KeyFix.sync(c); KeysBridge.poke() }, "holdkeys").apply { isDaemon = true }.start()   // the key filter on or off
-        return state(c)
+        return state(c).also { st -> d.optJSONArray("recovery_out")?.let { st.put("recovery", it) } }   // the codes: this once
     }
 
     /** [change] without the phone's storage: [o] becomes the new rules. False for a read ("" / "get"), which changes nothing. */
-    internal fun apply(o: JSONObject, d: JSONObject, now: Long): Boolean {
+    internal fun apply(o: JSONObject, d: JSONObject, now: Long, driftMs: Long = 0L): Boolean {
         val minutes = d.optInt("minutes").coerceIn(0, 24 * 60)
         when (d.optString("do")) {
             "", "get" -> return false
@@ -123,6 +141,77 @@ internal object Rules {
                 } else all.remove(pkg)
                 o.put("sched", all)
             }
+            "kids" -> {
+                val lock = o.optJSONObject("lock") ?: JSONObject().put("apps", JSONArray()).also { o.put("lock", it) }
+                d.optString("mode").takeIf { it.isNotEmpty() }?.let { m ->
+                    if (m != "list" && m != "kids") throw IllegalArgumentException("bad mode")
+                    if (m == "kids" && !lock.has("hash") && !lock.has("totp")) throw IllegalArgumentException("set a PIN first")
+                    lock.put("mode", m)
+                }
+                d.optJSONArray("allow")?.let { a ->
+                    val list = (0 until minOf(a.length(), ALLOW_MAX)).map { a.optString(it) }.onEach { if (!PKG.matches(it)) throw IllegalArgumentException("bad package name") }.distinct()
+                    lock.put("allow", JSONArray(list))
+                }
+                d.optJSONObject("methods")?.let { m ->
+                    val have = lock.optJSONObject("methods") ?: JSONObject()
+                    if (m.has("ask")) have.put("ask", m.optBoolean("ask"))
+                    if (m.has("totp") && !m.optBoolean("totp")) { lock.remove("totp"); lock.remove("recovery") }   // off here, on only by a right code
+                    if (m.has("pin")) have.put("pin", m.optBoolean("pin"))
+                    // The PIN may be off (the parent's choice: a child who learns it must not beat the Authenticator), but only with a way
+                    // back that does not need the phone: the Authenticator on and recovery codes made (else "need_recovery"). Turning the
+                    // Authenticator off while the PIN is off puts the PIN back: there is never no way in.
+                    if (!have.optBoolean("pin", true) && !(m.has("totp") && !m.optBoolean("totp"))) {
+                        if (!totpOn(o) || recoveryLeft(o) == 0) throw IllegalArgumentException("need_recovery")
+                    } else if (m.has("totp") && !m.optBoolean("totp")) have.put("pin", true)
+                    lock.put("methods", have)
+                }
+            }
+            "unlock" -> {
+                val pkg = d.optString("pkg")
+                val until = if (d.optBoolean("today")) endOfDay(now) else if (minutes > 0) now + minutes * 60_000L else 0L
+                if (pkg.isNotEmpty()) {
+                    if (!PKG.matches(pkg)) throw IllegalArgumentException("bad package name")
+                    val apps = JSONObject()
+                    o.optJSONObject("unlock_apps")?.let { old -> for (k in old.keys()) if (old.optLong(k) > now && k != pkg) apps.put(k, old.optLong(k)) }
+                    if (until > 0) apps.put(pkg, until)
+                    o.put("unlock_apps", apps)
+                } else {
+                    o.put("unlock_until", until)
+                    if (until == 0L) o.put("unlock_apps", JSONObject())                       // "Lock now" takes every grant back
+                }
+            }
+            "total" -> {
+                val min = d.optInt("min").coerceIn(0, 24 * 60)
+                if (min == 0) o.remove("total") else {
+                    val t = JSONObject().put("min", min).put("warn", d.optInt("warn", 5).coerceIn(0, 60))
+                    d.optJSONArray("days")?.takeIf { it.length() in 1..6 }?.let { a ->
+                        val days = java.util.TreeSet<Int>()
+                        for (j in 0 until a.length()) days.add(a.optInt(j).also { if (it !in 1..7) throw IllegalArgumentException("bad day") })
+                        t.put("days", JSONArray(days.toList()))
+                    }
+                    o.put("total", t)
+                }
+            }
+            "total_extra" -> {
+                val today = o.optJSONObject("total_extra")?.optInt(day(now)) ?: 0
+                o.put("total_extra", JSONObject().put(day(now), maxOf(0, if (d.optBoolean("set")) minutes else today + minutes)))   // only today's grant is worth keeping
+            }
+            "totp" -> {
+                val lock = o.optJSONObject("lock") ?: JSONObject().put("apps", JSONArray()).also { o.put("lock", it) }
+                if (d.optBoolean("off")) { lock.remove("totp"); lock.remove("recovery") } else {
+                    val secret = d.optString("secret").uppercase().filter { it != ' ' && it != '-' }
+                    if (!Totp.validSecret(secret)) throw IllegalArgumentException("bad secret")
+                    val client = d.optLong("client_now")
+                    val drift = if (client > 0) now - client else driftMs                     // the phone makes the codes, so its clock is the one to match
+                    if (!Totp.verify(secret, d.optString("code").trim(), now - drift)) throw CodeWrong(if (client > 0) (now - client) / 1000 else null)
+                    lock.put("totp", secret)
+                    d.put("recovery_out", newRecovery(lock))                                 // shown once, in the answer
+                }
+            }
+            "recovery_new" -> {
+                val lock = o.optJSONObject("lock") ?: throw IllegalArgumentException("set a PIN first")
+                d.put("recovery_out", newRecovery(lock))
+            }
             "snooze" -> o.put("snooze_until", if (minutes > 0) now + minutes * 60_000L else 0L)
             "limit", "extra" -> {
                 val pkg = d.optString("pkg")
@@ -144,6 +233,46 @@ internal object Rules {
     }
 
     const val SCHED_MAX = 50
+    const val ALLOW_MAX = 100
+    const val RECOVERY_N = 8
+
+    /** A fresh set of [RECOVERY_N] one-time codes of 8 digits for when the phone is lost: only salted hashes are kept, the codes are returned (once). The old ones are void. */
+    internal fun newRecovery(lock: JSONObject, random: java.util.Random = java.security.SecureRandom()): JSONArray {
+        val codes = JSONArray(); val kept = JSONArray()
+        repeat(RECOVERY_N) {
+            val code = "%08d".format(random.nextInt(100_000_000))
+            val salt = java.util.UUID.randomUUID().toString().take(8)
+            codes.put(code); kept.put(salt + ":" + hash(salt, code))
+        }
+        lock.put("recovery", kept)
+        return codes
+    }
+
+    fun recoveryLeft(o: JSONObject): Int = o.optJSONObject("lock")?.optJSONArray("recovery")?.length() ?: 0
+
+    /** [code] is an unspent recovery code: it is spent (removed) in [o]; the caller saves. */
+    internal fun spendRecovery(o: JSONObject, code: String): Boolean {
+        val lock = o.optJSONObject("lock") ?: return false
+        val a = lock.optJSONArray("recovery") ?: return false
+        if (code.length != 8 || !code.all { it in '0'..'9' }) return false
+        val rest = JSONArray(); var hit = false
+        for (i in 0 until a.length()) {
+            val e = a.optString(i); val salt = e.substringBefore(':')
+            if (!hit && java.security.MessageDigest.isEqual(e.substringAfter(':').toByteArray(), hash(salt, code).toByteArray())) hit = true else rest.put(e)
+        }
+        if (hit) lock.put("recovery", rest)
+        return hit
+    }
+
+    /** [spendRecovery] on the stored rules. */
+    @Synchronized fun useRecovery(c: Context, code: String): Boolean {
+        val o = load(c)
+        if (!spendRecovery(o, code)) return false
+        save(c, o); return true
+    }
+
+    /** The first moment of tomorrow, local time: "until tomorrow". */
+    fun endOfDay(now: Long): Long = Calendar.getInstance().apply { timeInMillis = now; add(Calendar.DAY_OF_YEAR, 1); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
 
     const val WINDOWS_MAX = 8
 
@@ -229,11 +358,61 @@ internal object Rules {
     /** The apps a PIN is asked for. */
     fun locked(o: JSONObject): List<String> = o.optJSONObject("lock")?.optJSONArray("apps")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
 
-    /** Whether [pin] is the one set. */
+    /** Whether [pin] is the one set (and the PIN is still a way in: the parent may keep only the Authenticator). */
     fun pinOk(o: JSONObject, pin: String): Boolean {
         val lock = o.optJSONObject("lock") ?: return false
-        return lock.has("hash") && hash(lock.optString("salt"), pin) == lock.optString("hash")
+        return lock.has("hash") && lock.optJSONObject("methods")?.optBoolean("pin", true) != false && hash(lock.optString("salt"), pin) == lock.optString("hash")
     }
+
+    /** The Authenticator is on: a code was proved right when it was set up. */
+    fun totpOn(o: JSONObject): Boolean = o.optJSONObject("lock")?.optString("totp")?.isNotEmpty() == true
+
+    /** [code] is the Authenticator's now; [driftMs] the TV clock's offset ([Clock.driftMs]). */
+    fun totpOk(o: JSONObject, code: String, now: Long, driftMs: Long): Boolean =
+        totpOn(o) && Totp.verify(o.getJSONObject("lock").optString("totp"), code, now - driftMs)
+
+    /** Why the way in, by method: {pin, totp, ask}. The PIN is on unless turned off; the Authenticator once set; asking a parent when asked for. */
+    fun methods(o: JSONObject): JSONObject {
+        val m = o.optJSONObject("lock")?.optJSONObject("methods")
+        return JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true && m?.optBoolean("pin", true) != false).put("totp", totpOn(o)).put("ask", m?.optBoolean("ask") == true)
+    }
+
+    fun kidsMode(o: JSONObject): Boolean = o.optJSONObject("lock")?.optString("mode") == "kids"
+
+    /** In kids mode, the apps a child may open without a code. */
+    fun allow(o: JSONObject): List<String> = o.optJSONObject("lock")?.optJSONArray("allow")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+
+    /** Everything is open until then (0 when not). */
+    fun unlockUntil(o: JSONObject, now: Long): Long = o.optLong("unlock_until").let { if (it > now) it else 0L }
+
+    /**
+     * Whether [pkg] on screen must be covered by [PinActivity] now. [free]: the apps never asked ([Kids.free]). Open: the whole TV
+     * unlocked for a while, or this app granted by a parent. Else the locked apps always ask, and in kids mode every app but the allowed and the free ones.
+     */
+    fun needsPin(o: JSONObject, pkg: String, now: Long, free: Set<String>): Boolean {
+        if (pkg.isEmpty() || pkg == SELF) return false
+        if (unlockUntil(o, now) > 0 || (o.optJSONObject("unlock_apps")?.optLong(pkg) ?: 0L) > now) return false
+        return pkg in locked(o) || (kidsMode(o) && pkg !in free && pkg !in allow(o))
+    }
+
+    // ---- total minutes a day on the TV
+    /** The day's minutes of the total limit (without extra), null when it is off or today is not one of its days. */
+    fun totalMin(o: JSONObject, now: Long): Int? {
+        val t = o.optJSONObject("total")?.takeIf { it.optInt("min") > 0 } ?: return null
+        val days = t.optJSONArray("days")
+        if (days != null && days.length() > 0 && (0 until days.length()).none { days.optInt(it) == isoDay(now) }) return null
+        return t.optInt("min")
+    }
+
+    /** Minutes granted today on top of the total. */
+    fun totalExtra(o: JSONObject, now: Long): Int = o.optJSONObject("total_extra")?.optInt(day(now)) ?: 0
+
+    /** Seconds on the TV today: every app's but the [skip]ped ones (the home screen, TV Setup, the keyboard: passing through is not watching). */
+    fun totalUsedSec(used: JSONObject, skip: Set<String>): Long = used.keys().asSequence().filter { it !in skip }.sumOf { used.optLong(it) }
+
+    /** Seconds left of today's total with its extra; null when there is none. Zero or less: used up. */
+    fun totalLeftSec(o: JSONObject, used: JSONObject, skip: Set<String>, now: Long): Long? =
+        totalMin(o, now)?.let { (it + totalExtra(o, now)) * 60L - totalUsedSec(used, skip) }
 
     private fun hash(salt: String, pin: String): String =
         java.security.MessageDigest.getInstance("SHA-256").digest((salt + pin).toByteArray()).joinToString("") { "%02x".format(it) }
@@ -323,6 +502,19 @@ internal object Rules {
 
     fun inBedtime(o: JSONObject, now: Long): Boolean = bedNow(o, now) != null
 
+    /** Minutes from [now] to the end of the bedtime range it is in (1 when the range is unreadable, so a grant is never zero). */
+    fun bedLeftMin(o: JSONObject, now: Long): Int {
+        val to = bedNow(o, now)?.optString("to") ?: return 1
+        if (!HHMM.matches(to)) return 1
+        val cal = Calendar.getInstance().apply { timeInMillis = now }
+        val m = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val end = to.split(":").let { it[0].toInt() * 60 + it[1].toInt() }
+        return maxOf(1, (end - m + 1440) % 1440)
+    }
+
+    /** Something protects the rules: a PIN or the Authenticator. Without one, "unlock" on a notice needs no code (nothing to prove). */
+    fun hasLock(o: JSONObject): Boolean = o.optJSONObject("lock")?.has("hash") == true || totpOn(o)
+
     /** The volume range [now] is in ({from, to, max}), the lowest when two overlap; null outside them all. */
     fun volumeCap(o: JSONObject, now: Long): JSONObject? {
         val list = o.optJSONArray("volume") ?: return null
@@ -369,10 +561,21 @@ internal object Rules {
             .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake")).put("holdkeys", o.optBoolean("holdkeys")).put("heavy", heavy(c, o))
             .put("sched", sched)
             .put("lock", JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true)
-                .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) })))
+                .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) }))
+                .put("mode", if (kidsMode(o)) "kids" else "list").put("allow", JSONArray(allow(o))).put("methods", methods(o))
+                .put("wait_until", Lockout.until(c, now)).put("recovery_left", recoveryLeft(o)))
+            .put("unlock_until", unlockUntil(o, now))
+            .put("total", JSONObject().put("min", o.optJSONObject("total")?.optInt("min") ?: 0).put("used", Kids.usedToday(c, used) / 60).put("extra", totalExtra(o, now))
+                .put("warn", o.optJSONObject("total")?.optInt("warn", 5) ?: 5).put("days", o.optJSONObject("total")?.optJSONArray("days") ?: JSONArray()))
+            .put("clock", Clock.info(c))
     }
 
     private fun label(c: Context, pkg: String): String = try {
         c.packageManager.getApplicationLabel(c.packageManager.getApplicationInfo(pkg, 0)).toString()
     } catch (e: PackageManager.NameNotFoundException) { pkg.substringAfterLast('.') }
+}
+
+/** A wrong Authenticator code while turning it on: [clientDriftS] is the TV's clock minus the sending client's, [clock] what [Clock.info] says (set by [Rules.change]). */
+internal class CodeWrong(val clientDriftS: Long?) : IllegalArgumentException("code_wrong") {
+    var clock: JSONObject = JSONObject()
 }

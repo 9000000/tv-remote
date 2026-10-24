@@ -57,6 +57,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     @Volatile private var stopped = false
     private var warnedSleep = 0L                                      // the sleep_at already warned about
     private var bedWarnedAt = 0L                                      // bedtime: when this turn-on was warned about, 0 when not yet
+    private var totalWarnedAt = 0L                                    // the day's total used up: when the minute's grace began, 0 when not
     private val nearlyWarned = HashSet<String>()                      // "pkg day": the five-minute notice was shown
     private val lastStop = java.util.concurrent.ConcurrentHashMap<String, Long>()   // also read by the guard-lock thread (schedules)
     private val audio = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -82,7 +83,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     fun start() {
         running = this
         ui.postDelayed(tick, 5_000)
-        Thread({ while (!stopped) Thread.sleep(try { lockCheck() } catch (e: Exception) { 5_000L }) }, "guard-lock").apply { isDaemon = true }.start()
+        Thread({ while (!stopped) Thread.sleep(try { lockCheck() } catch (e: Exception) { android.util.Log.w("tvr-guard", "lockCheck", e); 5_000L }) }, "guard-lock").apply { isDaemon = true }.start()
         val f = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
         if (android.os.Build.VERSION.SDK_INT >= 33) c.registerReceiver(volume, f, Context.RECEIVER_NOT_EXPORTED) else c.registerReceiver(volume, f)
     }
@@ -139,7 +140,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         }
 
         // ---- bedtime: a minute after the TV is turned on in the window, standby again
-        if (on && Rules.inBedtime(o, now) && now >= o.optLong("snooze_until")) {
+        if (on && Rules.inBedtime(o, now) && now >= o.optLong("snooze_until") && Rules.unlockUntil(o, now) == 0L) {   // a parent's code ("unlock") opens bedtime, limits and the total alike
             if (bedWarnedAt == 0L) { bedWarnedAt = now; warn("bed", now + 60_000, ""); RemoteService.alert("bed", "range" to (Rules.bedNow(o, now)?.let { it.optString("from") + "–" + it.optString("to") } ?: "")) }
             else if (now - bedWarnedAt >= 60_000) { bedWarnedAt = 0; standby() }
             next = minOf(next, 5_000)
@@ -161,10 +162,26 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             next = minOf(next, 30_000)
         }
 
+        // ---- the day's total on the TV (kids mode): a notice near the end, then like bedtime: a minute's grace with a place for a code, then standby
+        if (on && Rules.totalMin(o, now) != null && Rules.unlockUntil(o, now) == 0L) {
+            val left = Rules.totalLeftSec(o, stats.today(now, true).first, Kids.free(c, now), now) ?: 1L
+            val warnMin = o.optJSONObject("total")?.optInt("warn", 5) ?: 5
+            if (left <= 0) {
+                if (totalWarnedAt == 0L) { totalWarnedAt = now; warn("total", now + 60_000, ""); RemoteService.alert("limit", "app" to T("kids.total_name"), "why" to "limit") }
+                else if (now - totalWarnedAt >= 60_000) { totalWarnedAt = 0; standby() }
+                next = minOf(next, 5_000)
+            } else {
+                totalWarnedAt = 0
+                if (warnMin > 0 && left <= warnMin * 60L && nearlyWarned.add("total " + Rules.day(now))) say(T("kids.total_left", "n" to (left + 59) / 60))
+                next = minOf(next, 20_000)                            // another app may come to the front at any time
+            }
+        } else totalWarnedAt = 0
+        if (Rules.totpOn(o)) Clock.maybeCheck(c)                      // the Authenticator's codes follow the real time: a reading from the network, once a day
+
         // ---- daily app limits, for the app on screen
         val limits = o.optJSONObject("limits")
         val capped = Rules.schedApps(o).any { o.optJSONObject("sched")?.optJSONObject(it)?.optInt("max") ?: 0 > 0 }   // a schedule's minutes count like a limit's
-        if (on && (limits != null && limits.length() > 0 || capped)) {
+        if (on && Rules.unlockUntil(o, now) == 0L && (limits != null && limits.length() > 0 || capped)) {
             val (used, front) = stats.today(now, true)
             val limit = Rules.budget(o, front, now) ?: 0
             if (front.isNotEmpty() && limit > 0) {
@@ -200,7 +217,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val apps = Rules.locked(o)
         val heavyOn = Heavy.on(o)
         val sched = Rules.schedApps(o)
-        if (apps.isEmpty() && sched.isEmpty() && !heavyOn) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
+        val kids = Rules.kidsMode(o)
+        if (apps.isEmpty() && !kids && sched.isEmpty() && !heavyOn) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
         if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
             unlocked = ""
@@ -209,13 +227,13 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         }
         val app = frontApp(now)
         if (heavyOn) heavy.look(app, now, true, o)                    // the same events as the locks: no second poller
-        if (app in sched && !Rules.allowedNow(o, app, now) && now - (lastStop[app] ?: 0L) > 15_000) {
+        if (app in sched && !Rules.allowedNow(o, app, now) && Rules.unlockUntil(o, now) == 0L && now - (lastStop[app] ?: 0L) > 15_000) {
             lastStop[app] = now                                       // outside its window: closed here, before any PIN could be asked
             close(app, "sched")
         }
-        if (apps.isEmpty()) return if (sched.isEmpty()) 3_000 else 1_500   // a schedule's edge is noticed within a second and a half                              // a heavy app is left for 15 s: a look every 3 s is plenty
+        if (apps.isEmpty() && !kids) return if (sched.isEmpty()) 3_000 else 1_500   // a schedule's edge is noticed within a second and a half
         if (app.isNotEmpty() && app != unlocked && app != c.packageName) unlocked = ""
-        if (app in apps && app != unlocked && PinActivity.showing == null && now - pinAt > 2_000) {
+        if (app != unlocked && Rules.needsPin(o, app, now, if (kids) Kids.free(c, now) else emptySet()) && PinActivity.showing == null && now - pinAt > 2_000) {
             askPin(app, now - pinAt < 5_000)                          // asked a moment ago and not shown: Android kept it back
             pinAt = now
         }
@@ -278,6 +296,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             "bed" -> T("guard.bedtime_the_tv_turns")
             "ram" -> T("guard.the_tv_s_memory")
             "sched" -> T("guard.sched_closed", "name" to label(pkg))
+            "total" -> T("kids.total_up")
             else -> T("guard.time_up", "name" to label(pkg))
         })
     }

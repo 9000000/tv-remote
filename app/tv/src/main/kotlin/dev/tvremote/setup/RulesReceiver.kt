@@ -74,7 +74,10 @@ class RulesReceiver : BroadcastReceiver() {
             if (Rules.active(c) && !RemoteService.isRunning()) {
                 try { RemoteService.start(c, true) } catch (e: Exception) { }   // may be refused from the background: RulesClient starts it through the shell then
             }
+            if (change?.optString("do") == "unlock" && change.optInt("minutes") > 0) RemoteService.unlocked("remote", change.optString("pkg"))
             state.put("running", RemoteService.isRunning())
+        } catch (e: CodeWrong) {                                   // the Authenticator's code was wrong: with the clock's facts, so the page can say why
+            JSONObject().put("error", "code_wrong").put("clock", e.clock)
         } catch (e: Exception) {
             JSONObject().put("error", e.message ?: e.javaClass.simpleName)
         }

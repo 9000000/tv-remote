@@ -11,23 +11,30 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.KeyEvent
+import android.view.View
 import android.widget.Button
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import org.json.JSONObject
 import kotlin.math.roundToInt
 
 /**
- * Over a locked app ([Rules.locked]) the moment it comes to the front ([Guard]): its PIN on the remote's number keys or the keypad
- * here, checked as soon as it has its length. Back, or ✕, goes to the home screen. Opaque, so the app under it is stopped (a
- * video pauses) and nothing of it shows. Five wrong PINs in a row: a minute's wait before the next.
+ * Over a locked app ([Rules.needsPin]: a locked app, or any app in kids mode) the moment it comes to the front ([Guard]): its PIN on the
+ * remote's number keys or the keypad here, checked as soon as it has its length. With Google Authenticator on, the same field also takes
+ * the 6-digit code, or one of the 8-digit recovery codes (spent once; a lost phone must not lock the parents out) (a PIN of 4 digits is tried at 4, the code at 6: only a wrong ending counts as a wrong try). Back, or ✕, goes to the
+ * home screen. Opaque, so the app under it is stopped (a video pauses) and nothing of it shows. Five wrong tries in a row: a wait of a
+ * minute, then 5, 15, 60 minutes ([Lockout], kept, so a restart gives no new tries). "Ask a parent" sends the question to Telegram
+ * and the screen closes by itself once a parent has answered. Also the way in when the day's total is used up (extra `total`).
  */
 class PinActivity : Activity() {
     companion object {
         /** The app this screen is over now, null when it is not shown: the Guard does not ask twice. */
         @Volatile var showing: String? = null
-        private var wrong = 0
-        private var waitUntil = 0L
+        /** A right code over the "time is up" screen opens the TV for this long (unlock_until). */
+        const val TOTAL_UNLOCK_MIN = 30
+        private val MUTED = Color.rgb(170, 178, 189)                         // the line under the dots
+        private val BAD = Color.rgb(255, 120, 110)                           // wrong code, waiting
     }
 
     private val ui = Handler(Looper.getMainLooper())
@@ -36,6 +43,10 @@ class PinActivity : Activity() {
     private var pkg = ""
     private var typed = ""
     private var len = 4
+    private var total = false                                       // opened over the "time is up" screen, not over an app
+    private var grant = 0                                           // opened from a notice (bedtime, a limit): minutes the TV opens for on a right code
+    private var ask: Button? = null
+    private val stats by lazy { Stats(this) }
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
@@ -49,32 +60,74 @@ class PinActivity : Activity() {
         card.background = GradientDrawable().apply { setColor(Color.rgb(25, 29, 35)); cornerRadius = dp(20).toFloat() }
         card.setPadding(dp(36), dp(20), dp(36), dp(20))
         card.addView(text("🔒", 36, false))
-        card.addView(text(T("pin.locked", "name" to name()), 24, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
-        said = text(T("pin.enter"), 16, false).apply { setTextColor(Color.rgb(170, 178, 189)) }
+        card.addView(text(if (total) T("kids.total_title") else if (grant > 0) T("pin.unlock_title") else T("pin.locked", "name" to name()), 24, true), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
+        said = text(enterText(), 16, false).apply { setTextColor(MUTED); maxWidth = dp(420) }
         card.addView(said, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
         dots = text("", 30, true).apply { letterSpacing = 0.3f }
         card.addView(dots, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         val pad = GridLayout(this).apply { columnCount = 3 }
-        val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "✕")
+        // Digits in a new order each time the screen opens: whoever watches which button is lit learns nothing of the code (the remote's number keys still work)
+        val d = ('0'..'9').map { it.toString() }.shuffled(java.util.Random(java.security.SecureRandom().nextLong()))
+        val keys = d.subList(0, 9) + "⌫" + d[9] + "✕"
         val buttons = keys.map { k -> button(k) { press(k) } }
         buttons.forEach { pad.addView(it, GridLayout.LayoutParams().apply { width = dp(72); height = dp(48); setMargins(dp(4), dp(4), dp(4), dp(4)) }) }
         card.addView(pad, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
+        ask = button(T("pin.ask")) { askParent() }.apply { textSize = 16f; visibility = View.GONE }
+        card.addView(ask, LinearLayout.LayoutParams(dp(224), dp(44)).apply { topMargin = dp(6) })
         page.addView(card, LinearLayout.LayoutParams(-2, -2))
         setContentView(page)
         buttons[0].isFocusableInTouchMode = true                    // opened from the background, the TV may be in touch mode: OK must land somewhere
         buttons[0].requestFocus()
         draw()
+        tick.run()
     }
 
-    override fun onNewIntent(i: Intent) { super.onNewIntent(i); read(i); typed = ""; draw() }
+    override fun onNewIntent(i: Intent) { super.onNewIntent(i); settle(); read(i); typed = ""; draw() }
 
     private fun read(i: Intent) {
         pkg = i.getStringExtra("pkg") ?: ""
+        total = i.getBooleanExtra("total", false)
+        grant = i.getIntExtra("grant", 0)
         showing = pkg
         len = Rules.load(this).optJSONObject("lock")?.optInt("len", 4) ?: 4
     }
 
-    override fun onDestroy() { if (showing == pkg) showing = null; ui.removeCallbacksAndMessages(null); super.onDestroy() }
+    override fun onDestroy() { settle(); if (showing == pkg) showing = null; ui.removeCallbacksAndMessages(null); super.onDestroy() }
+
+    /** Once a second: closed by a grant from elsewhere (a parent over Telegram, the phone's "Open 30 min"), the wait counted down, "ask a parent" shown when it can be answered. */
+    private val tick = object : Runnable {
+        override fun run() {
+            val o = Rules.load(this@PinActivity)
+            val now = System.currentTimeMillis()
+            val open = if (total) Rules.unlockUntil(o, now) > 0 || (Rules.totalLeftSec(o, try { stats.today(now, true).first } catch (e: Exception) { JSONObject() }, Kids.free(this@PinActivity, now), now) ?: 1L) > 0
+                else if (grant > 0) Rules.unlockUntil(o, now) > 0
+                else !Rules.needsPin(o, pkg, now, Kids.free(this@PinActivity, now))
+            if (open) { if (!total) Guard.unlock(pkg); showing = null; finish(); return }
+            val left = Lockout.until(this@PinActivity, now) - now
+            if (left > 0) { said.text = T("pin.wait_long", "t" to clock(left)); said.setTextColor(BAD); waiting = true }
+            else if (waiting) { waiting = false; said.text = enterText(); said.setTextColor(MUTED) }
+            ask?.visibility = if (Rules.methods(o).optBoolean("ask") && RemoteService.canAsk()) View.VISIBLE else View.GONE
+            ui.postDelayed(this, 1000)
+        }
+    }
+    private var waiting = false
+
+    private fun clock(ms: Long): String { val s = (ms + 999) / 1000; return "%d:%02d".format(s / 60, s % 60) }
+
+    /** The line over the dots: what may be typed. */
+    private fun enterText(): String = Rules.methods(Rules.load(this)).let { m ->
+        if (total) T("pin.total_enter") else if (!m.optBoolean("pin") && m.optBoolean("totp")) T("pin.enter_totp") else if (m.optBoolean("totp")) T("pin.enter_any") else T("pin.enter")
+    }
+
+    private fun askParent() {
+        val b = ask ?: return
+        b.isEnabled = false
+        said.setTextColor(MUTED)
+        Thread {
+            val r = try { RemoteService.askParent(pkg, name()) } catch (e: Exception) { "failed" }
+            ui.post { b.isEnabled = true; said.text = T(when (r) { "sent" -> "pin.ask_sent"; "wait" -> "pin.ask_wait"; "nochat" -> "pin.ask_nochat"; else -> "pin.ask_failed" }) }
+        }.start()
+    }
 
     override fun onKeyDown(code: Int, e: KeyEvent): Boolean {
         if (code in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9) { press((code - KeyEvent.KEYCODE_0).toString()); return true }
@@ -86,32 +139,54 @@ class PinActivity : Activity() {
 
     private fun press(k: String) {
         when (k) {
-            "✕" -> { home(); return }
-            "⌫" -> typed = typed.dropLast(1)
+            "✕" -> { settle(); home(); return }
+            "⌫" -> { if (pending) { fail(); draw(); return }; typed = typed.dropLast(1) }       // a try already checked and given up on is a wrong one
             else -> {
-                val left = waitUntil - System.currentTimeMillis()
-                if (left > 0) { said.text = T("pin.wait", "s" to (left + 999) / 1000); return }
-                if (typed.isEmpty()) { said.text = T("pin.enter"); said.setTextColor(Color.rgb(170, 178, 189)) }
-                if (typed.length < len) typed += k
+                if (Lockout.until(this, System.currentTimeMillis()) > System.currentTimeMillis()) return   // the wait is on screen already (tick)
+                if (typed.isEmpty() && !waiting) { said.text = enterText(); said.setTextColor(MUTED) }
+                if (typed.length < maxLen()) typed += k
             }
         }
         draw()
-        if (typed.length < len) return
-        if (Rules.pinOk(Rules.load(this), typed)) {
-            wrong = 0
-            Guard.unlock(pkg)
+        if (k == "⌫" || typed.length !in tryAt()) return
+        val o = Rules.load(this)
+        val how = if (Rules.pinOk(o, typed)) "pin" else if (Rules.totpOk(o, typed, System.currentTimeMillis(), Clock.driftMs(this))) "totp"
+            else if (typed.length == 8 && Rules.useRecovery(this, typed)) "recovery" else null
+        if (how != null) {
+            pending = false
+            Lockout.right(this)
+            RemoteService.unlocked(how, pkg)
+            if (total || grant > 0) Rules.change(this, JSONObject().put("do", "unlock").put("minutes", if (grant > 0) grant else TOTAL_UNLOCK_MIN)) else Guard.unlock(pkg)
             showing = null
             finish()
             return
         }
-        typed = ""
-        if (++wrong >= 5) { wrong = 0; waitUntil = System.currentTimeMillis() + 60_000 }
-        said.text = T("pin.wrong")
-        said.setTextColor(Color.rgb(255, 120, 110))
+        if (typed.length < maxLen()) { pending = true; return }     // a PIN of 4 and a code of 6: not wrong yet, the code may be coming (but if it is given up on, it counts: see settle)
+        fail()
+    }
+
+    /** The digits typed passed a check that failed and were then taken back, or the screen was left: a guess made, so counted like any wrong code (else typing 6 and backspacing is a free guess). */
+    private var pending = false
+
+    private fun settle() { if (pending) { pending = false; Lockout.wrong(this, System.currentTimeMillis()) } }
+
+    private fun fail() {
+        typed = ""; pending = false
+        val wait = Lockout.wrong(this, System.currentTimeMillis())
+        if (Lockout.streak(this) == 3) RemoteService.wrongCodes(name())                   // the parents hear it at the third, not after the lockout
+        said.text = if (wait > 0) T("pin.wait_long", "t" to clock(wait)) else T("pin.wrong")
+        said.setTextColor(BAD)
+        waiting = wait > 0
         ui.postDelayed({ draw() }, 150)
     }
 
-    private fun draw() { dots.text = "●".repeat(typed.length) + "○".repeat(maxOf(0, len - typed.length)) }
+    /** The lengths a try is made at: the PIN's own, and 6 for an Authenticator code. */
+    private fun tryAt(): Set<Int> = Rules.load(this).let { o -> Rules.methods(o).let { m -> setOfNotNull(len.takeIf { m.optBoolean("pin") }, 6.takeIf { m.optBoolean("totp") }, 8.takeIf { Rules.recoveryLeft(o) > 0 }) } }
+
+    /** The most digits it takes: past that a try is wrong. */
+    private fun maxLen(): Int = tryAt().maxOrNull() ?: len
+
+    private fun draw() { dots.text = "●".repeat(typed.length) + "○".repeat(maxOf(0, maxLen() - typed.length)) }
 
     private fun home() {
         showing = null

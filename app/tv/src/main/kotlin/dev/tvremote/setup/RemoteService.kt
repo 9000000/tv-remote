@@ -102,6 +102,18 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         /** Tells the Telegram bot something happened (Telegram.alert); nothing when the service or the bot is not running. */
         fun alert(kind: String, vararg args: Pair<String, Any?>) { try { running?.telegram?.alert(kind, *args) } catch (e: Exception) { } }
 
+        /** The code screen opened for [pkg] by [how] (pin, totp, recovery): in Telegram's history, nothing else. */
+        fun unlocked(how: String, pkg: String) { try { running?.telegram?.unlocked(how, pkg) } catch (e: Exception) { } }
+
+        /** Three wrong codes in a row on the code screen over [app]: the Full chats are told (Telegram.wrongCodes). */
+        fun wrongCodes(app: String) { try { running?.telegram?.wrongCodes(app, Build.MODEL) } catch (e: Exception) { } }
+
+        /** Kids mode's "ask a parent" can be answered: the bot is on and a chat with the Full scope is paired. */
+        fun canAsk(): Boolean = try { running?.telegram?.hasParent() == true } catch (e: Exception) { false }
+
+        /** The code screen's question to the parents over Telegram (blocks on the network: not the main thread): "sent", "wait", "nochat". [pkg] empty: more time on the TV. */
+        fun askParent(pkg: String, app: String): String = running?.telegram?.askParent(pkg, app, Build.MODEL) ?: "nochat"
+
         /**
          * The Telegram card of the phone and computer apps (RulesReceiver "telegram", sent by Manage over ADB, so the owner's): [req] is {body, query}
          * as the TV's own page would send /api/telegram. Slow (it asks Telegram), so the receiver calls it from a thread. {failed: why} when the service is not up or refuses (its own state has an "error" field, so that name is taken).
@@ -231,7 +243,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             { r, scope -> used(r.path); route(r, "127.0.0.1", Paired.Entry("tv", "", "Telegram", "127.0.0.1", 0L, 0L, "tv", false, scope)) },
             { state("127.0.0.1") },
             { val a = apps(); (0 until a.length()).map { a.getJSONObject(it) }.filter { !it.optBoolean("off") }.map { it.optString("pkg") to it.optJSONObject("meta")!!.optString("label") } },
-            { code -> ui.post { NotifyLayer.show(this, Notify.clean(JSONObject().put("title", T("telegram.card_title")).put("text", T("telegram.card_text", "code" to code)).put("seconds", 60))) } }).also { telegramStarted = true }
+            { code -> ui.post { NotifyLayer.show(this, Notify.clean(JSONObject().put("title", T("telegram.card_title")).put("text", T("telegram.card_text", "code" to code)).put("seconds", 60))) } },
+            onDate = { ms -> Clock.note(this, ms, Clock.TELEGRAM) }, skew = { Clock.driftMs(this) }).also { telegramStarted = true }
     }
     @Volatile private var telegramStarted = false
 
@@ -587,6 +600,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             "/api/rules" -> return try {
                 val st = Rules.change(this, if (r.method == "POST") r.json() else JSONObject())
                 HttpServer.Response.json(st)
+            } catch (e: CodeWrong) { HttpServer.Response.json(400, JSONObject().put("error", "code_wrong").put("clock", e.clock))
             } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message.toString()) }
             "/api/scenes" -> {
                 if (r.method == "POST") prefs.edit().putString("scenes", Scenes.clean(r.json().optJSONArray("scenes") ?: JSONArray()).toString()).apply()
