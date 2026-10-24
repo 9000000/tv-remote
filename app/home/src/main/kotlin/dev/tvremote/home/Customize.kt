@@ -310,17 +310,17 @@ object Customize {
             fun mark() { val now = Store.get(a).optString("theme"); for ((k, v) in themeTiles) { v.isSelected = k == now; v.findViewWithTag<View>("check")?.visibility = if (k == now) View.VISIBLE else View.GONE } }
             fun apply(op: JSONObject) { Store.change(a, JSONObject().put("theme", op)) }
             lateinit var draw: () -> Unit
-            fun themeTile(id: String, name: String, wall: String, mine: Boolean): View {
+            // the preview is the theme's home screen in miniature (ThemePreview): drawn once off the main thread, kept by theme + list rev + size + picture
+            fun themeTile(id: String, name: String, conf: JSONObject, tiles: List<String>, look: String, shot: java.io.File?, mine: Boolean): View {
                 val t = FrameLayout(a).apply {
                     isFocusable = true; isClickable = true
-                    val cc = if (HomeConfig.isPhoto(wall) || HomeConfig.isVideo(wall) || wall == HomeConfig.BING || wall == HomeConfig.WEB) intArrayOf(NO_PIC) else wallColors(wall)
-                    background = (if (cc.all { it == cc[0] }) GradientDrawable().apply { setColor(cc[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, cc)).apply { cornerRadius = dp(12).toFloat() }
-                    if (WallArt.has(wall) || Walls.isPicture(wall)) {
-                        val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }
-                        addView(pv, FrameLayout.LayoutParams(-1, -1))
-                        val drawn = thumbs[thumbKey(a, wall, shotsW)]
-                        if (drawn != null) pv.setImageBitmap(drawn) else shots.execute { val b = thumb(a, wall, shotsW); a.runOnUiThread { if (b != null) put(pv, b) } }
-                    }
+                    background = GradientDrawable().apply { setColor(NO_PIC); cornerRadius = dp(12).toFloat() }
+                    val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }
+                    addView(pv, FrameLayout.LayoutParams(-1, -1))
+                    val key = ThemePreview.key(id, conf, tiles, shotsW, shot)
+                    val drawn = ThemePreview.cached(key)
+                    if (drawn != null) pv.setImageBitmap(drawn)
+                    else shots.execute { val b = ThemePreview.get(a, key, conf, tiles, shot, look, shotsW, shotsW * 9 / 16, dp(12).toFloat()); a.runOnUiThread { if (!a.isDestroyed) put(pv, b) } }
                     foreground = StateListDrawable().apply {
                         addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
@@ -369,8 +369,8 @@ object Customize {
                 val mine = c.optJSONArray("themes")
                 page.addView(label(a.getString(R.string.th_hold), 12f, DIM), LinearLayout.LayoutParams(-2, -2))   // the hint first, before every list
                 val own = ArrayList<View>()
-                c.optJSONObject(HomeConfig.BEFORE)?.let { own += themeTile(HomeConfig.BEFORE, a.getString(R.string.th_before), it.optString("wall"), true) }   // the look before the last switch
-                if (mine != null) for (i in 0 until mine.length()) mine.getJSONObject(i).let { own += themeTile(it.getString("id"), it.getString("name"), it.getJSONObject("conf").optString("wall"), true) }
+                c.optJSONObject(HomeConfig.BEFORE)?.let { own += themeTile(HomeConfig.BEFORE, a.getString(R.string.th_before), it, emptyList(), "", null, true) }   // the look before the last switch
+                if (mine != null) for (i in 0 until mine.length()) mine.getJSONObject(i).let { own += themeTile(it.getString("id"), it.getString("name"), it.getJSONObject("conf"), emptyList(), "", ThemeShots.mine(a, it.getString("id")), true) }
                 if (own.isNotEmpty()) {
                     section(a.getString(R.string.th_mine))
                     grid(own)
@@ -405,10 +405,12 @@ object Customize {
                 }
                 page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (own.isEmpty()) 10 else 14) })
                 section(a.getString(R.string.th_ready))
-                grid(HomeConfig.BUILTIN.map { (id, cf) -> themeTile(id, themeName(a, c, id), HomeConfig.ready.firstOrNull { it.id == id }?.look?.ifEmpty { null } ?: cf.optString("wall"), false) })
+                grid(HomeConfig.ready.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.tiles, r.look, ThemeShots.ready(a, r), false) })
                 mark()
             }
             draw()
+            Themes.onThumbs = { a.runOnUiThread { if (!a.isDestroyed && page.isAttachedToWindow) draw() } }   // the ready-made pictures came while the page is open
+            Themes.fetchThumbs(a)
         }
         groups[1].fill = {
             // first, seen without scrolling past every background. A photo from a phone on the same Wi-Fi: a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background
@@ -1110,7 +1112,7 @@ object Customize {
 
     /** The backgrounds' small pictures, kept between openings of the panel (about 400 KB each); let go when memory is short ([forget]). */
     private val thumbs: MutableMap<String, Bitmap> = java.util.Collections.synchronizedMap(HashMap())
-    fun forget() = thumbs.clear()
+    fun forget() { thumbs.clear(); ThemePreview.forget() }
 
     /** A background tile's width in px, the same as [show] lays them out: five to a row in the panel. */
     // 460 dp, not 600: the rows' words take under half of 600, and a wider panel hid most of the Home its changes show on

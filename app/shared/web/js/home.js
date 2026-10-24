@@ -5,7 +5,7 @@ let homeNow = null;
 // Where the settings are read and written (js/home_link.js): through the app that serves this page, over ADB, or straight to TV Home's own
 // page (home.html sets HOME_DIRECT). Everything below asks homeLink, so both ways are the same page.
 const homeLink = homeLinkFor(!!window.HOME_DIRECT, (path, data, quiet) => api(path, data, quiet), homeSend);
-onTvChange(() => { homeNow = null; homeCard(); });
+onTvChange(() => { homeNow = null; homeShots = { mine: {}, ready: {} }; homeFaces.clear(); homeCard(); });
 
 // the gradients TV Home draws (HomeActivity.wallColors), small enough to tell them apart
 const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '#1a0f2e,#7a3b3b', forest: '#06140f,#133b2d', aurora: '#071a1f,#2b2a6b', black: '#000,#000',
@@ -24,6 +24,8 @@ const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : S
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
+let homeShots = { mine: {}, ready: {} };                             // the theme previews' backgrounds (TV Home's themeshots), by theme id
+const homeFaces = new Map();                                         // a theme's drawn preview, by what it is made of: drawn once, put back on every redraw
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'clock'];          // HomeConfig.WIDGETS, in the order drawn
 // A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
@@ -108,7 +110,8 @@ async function homeUpdate() {
 async function homeOpen() {
   if (!homeLink.direct && await needAdbSoon()) return;                // TV Home's own page has no ADB to wait for
   let r = await homeLink.read(true); if (!r) return;
-  const keepThumbs = (n) => { for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id) || ((n.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
+  const keepThumbs = (n) => { if (n.shots) homeShots = { mine: n.shots.mine || {}, ready: n.shots.ready || {} };
+    for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id) || ((n.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
   keepThumbs(r);
   if (!r.installed) { homeCard(); toast(T('home.missing')); goTo('tv', 'launchcard'); return; }   // from the remote's More: where to get it
   const apps = () => r.apps.map((a) => a.pkg);
@@ -511,6 +514,20 @@ async function homeOpen() {
     const p = (r.photos || []).find((x) => x.id === k) || ((r.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === k), t = p && homeThumbs[k + ':' + p.v];
     return el('i', t ? {} : { className: 'add' }, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : k === 'bing' ? '🌐' : k === 'web' ? '🖥️' : /^vid:/.test(k) ? '🎬' : '🖼️');
   };
+  // a theme's preview (homeThemePaint): a small canvas of its own home screen, the background picture TV Home kept for it under it; made once per look
+  const themeFace = (id, conf, mine, look, tiles) => {
+    const shot = homeShots[mine ? 'mine' : 'ready'][id], p = !shot && (r.photos || []).find((x) => x.id === conf.wall), thumb = shot || (p && homeThumbs[p.id + ':' + p.v]) || '';
+    const key = [id, mine, JSON.stringify(conf), tiles.join(), look || '', thumb.length].join('|');
+    let cv = homeFaces.get(key);
+    if (!cv) {
+      cv = el('canvas', { width: 320, height: 180 });
+      homeFaces.set(key, cv);
+      if (homeFaces.size > 80) homeFaces.delete(homeFaces.keys().next().value);
+      homeThemePaint(cv, conf, tiles, null, look);
+      if (thumb) { const img = new Image(); img.onload = () => homeThemePaint(cv, conf, tiles, img, look); img.src = 'data:image/jpeg;base64,' + thumb; }
+    }
+    return el('i', {}, cv);
+  };
   const themeUses = (c, id) => [...(c.themes || []), ...(c.before ? [{ conf: c.before }] : [])].some((t) => t.conf.wall === id || (t.conf.walls || []).includes(id));   // HomeConfig.themeUses
   // what a theme sets, read only: name: value rows under the tiles (the TV shows the same on a long press)
   const themeInfo = el('div', { className: 'group', hidden: true });
@@ -539,16 +556,16 @@ async function homeOpen() {
       themeInfo.replaceChildren(el('h3', { textContent: name }), el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
       themeInfo.hidden = false;
     };
-    const tile = (id, name, conf, mine, look) => {
+    const tile = (id, name, conf, mine, look, tiles = []) => {
       const on = c.theme === id;
-      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, wallFace(look || conf.wall), el('span', { textContent: name }));
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }));
       const info = el('button', { type: 'button', className: 'small iconbtn wallx info', textContent: 'ⓘ', title: T('home.theme_info'), 'aria-label': T('home.theme_info'), onclick: () => showInfo(id, name, conf) });
       if (!mine) return el('span', { className: 'wallcell' }, b, info);
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),
         onclick: async () => { if (await ask(T('home.theme_del_q'), { ok: T('home.theme_del'), danger: true })) send({ theme: { del: id } }); } });
       return el('span', { className: 'wallcell' }, b, info, del);
     };
-    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, homeThemeName(t), t.conf, false, t.look)));
+    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, homeThemeName(t), t.conf, false, t.look, t.tiles)));
     // the look that was on before the last switch (TV Home keeps it when it matched no saved theme), then the person's own
     const own = [...(c.before ? [{ id: 'before', name: T('home.theme_before'), conf: c.before }] : []), ...(c.themes || [])];
     themeMine.replaceChildren(...own.map((t) => tile(t.id, t.name, t.conf, true)));

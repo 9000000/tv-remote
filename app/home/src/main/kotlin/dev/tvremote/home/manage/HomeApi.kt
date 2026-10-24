@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import dev.tvremote.home.ThemeShots
 import java.io.ByteArrayOutputStream
 import java.io.File
 import dev.tvremote.home.apps.Apps
@@ -46,10 +47,17 @@ object HomeApi {
             if (thumbs) thumb(c, v.wall)?.let { pictures.put(v.wall, it) }
         }
         val (dw, dh) = Videos.display(c)
+        // the theme previews' backgrounds (ThemeShots): the person's own by theme id, the ready-made ones by id; the page draws the rest
+        val shots = JSONObject()
+        if (thumbs) {
+            fun add(kind: String, id: String, f: File?) { if (f != null && f.isFile) shots.optJSONObject(kind).let { o -> (o ?: JSONObject().also { shots.put(kind, it) }).put(id, Base64.encodeToString(f.readBytes(), Base64.NO_WRAP)) } }
+            for (t in config.optJSONArray("themes").let { a -> (0 until (a?.length() ?: 0)).map { a!!.getJSONObject(it) } }) add("mine", t.optString("id"), ThemeShots.mine(c, t.optString("id")))
+            for (r in HomeConfig.ready) add("ready", r.id, ThemeShots.ready(c, r))
+        }
         return JSONObject().put("version", c.packageManager.getPackageInfo(c.packageName, 0).versionName)
             .put("config", config).put("apps", apps)
             .put("photo", File(c.getExternalFilesDir(null), "wall.jpg").isFile)
-            .put("photos", photos).put("thumbs", pictures)
+            .put("photos", photos).put("thumbs", pictures).put("shots", shots)
             // the media library (Videos.kt): its items, the work under way, the room left and the cap; the screen's real size for previews
             .put("video", JSONObject().put("items", library).put("job", Videos.job?.json() ?: JSONObject.NULL).put("free", Videos.free(c)).put("max", HomeConfig.VIDEO_MAX_BYTES).put("libmax", HomeConfig.VIDEO_LIB_MAX).put("perf", Videos.perf(c) ?: JSONObject.NULL))
             .put("display", JSONObject().put("w", dw).put("h", dh))

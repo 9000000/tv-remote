@@ -230,7 +230,8 @@
     "greet": true
    },
    "look": "meadow",
-   "src": "Wikimedia Commons, CC0 (Eerin25): File:Rice terraces in Sapa, Vietnam.jpg"
+   "src": "Wikimedia Commons, CC0 (Eerin25): File:Rice terraces in Sapa, Vietnam.jpg",
+   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Rice_terraces_in_Sapa%2C_Vietnam.jpg/330px-Rice_terraces_in_Sapa%2C_Vietnam.jpg"
   },
   {
    "id": "beach",
@@ -263,7 +264,8 @@
     "greet": true
    },
    "look": "sunset",
-   "src": "Wikimedia Commons, CC0: File:Sunset timelapse on the beach in Libreville, Gabon.webm"
+   "src": "Wikimedia Commons, CC0: File:Sunset timelapse on the beach in Libreville, Gabon.webm",
+   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm/330px--Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm.jpg"
   },
   {
    "id": "city",
@@ -297,7 +299,8 @@
     "greet": false
    },
    "look": "navy",
-   "src": "Wikimedia Commons, CC0 (Yigang Yu): File:Shanghai Bund, Lujiazui Skyline Timelapse.webm"
+   "src": "Wikimedia Commons, CC0 (Yigang Yu): File:Shanghai Bund, Lujiazui Skyline Timelapse.webm",
+   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Shanghai_Bund%2C_Lujiazui_Skyline_Timelapse.webm/330px--Shanghai_Bund%2C_Lujiazui_Skyline_Timelapse.webm.jpg"
   },
   {
    "id": "tech",
@@ -571,5 +574,5 @@
    }
   }
  ],
- "rev": 1792864098
+ "rev": 1792866327
 }

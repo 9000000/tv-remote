@@ -12,6 +12,20 @@ object Themes {
     private val BASES = listOf("https://tvremote.pages.dev/home/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/home/")
     private const val DAY = 24 * 3600_000L
     private const val NAME = "themes.json"
+    /** The rev of the list in use: the previews' cache is keyed by it, so a new list draws them again. */
+    @Volatile var rev = 0L
+    @Volatile var onThumbs: (() -> Unit)? = null              // the Themes page: some pictures came, draw the previews again
+
+    /** The ready-made themes' small pictures (`thumb`), fetched once and kept (ThemeShots); off the main thread, never twice at once. */
+    @Volatile private var fetching = false
+    fun fetchThumbs(c: Context) {
+        val app = c.applicationContext
+        if (fetching || HomeConfig.ready.none { it.thumb.isNotEmpty() && ThemeShots.ready(app, it) == null }) return
+        fetching = true
+        Thread({
+            try { if (ThemeShots.fetch(app, HomeConfig.ready)) onThumbs?.invoke() } finally { fetching = false }
+        }, "themethumbs").apply { isDaemon = true }.start()
+    }
 
     fun start(c: Context) {
         val app = c.applicationContext
@@ -26,13 +40,14 @@ object Themes {
             try { SignedList.keep(f, packed, app.assets.open("$NAME.sig").use { String(it.readBytes(), Charsets.UTF_8) }); f.setLastModified(1) } catch (e: Exception) { }
         }
         val mine = bytes?.let { rev(it) } ?: -1
-        use(bytes, have)
+        use(bytes, have); rev = maxOf(mine, 0)
+        fetchThumbs(app)
         if (System.currentTimeMillis() - f.lastModified() < DAY) return
         Thread({
             try {
                 SignedList.fetch(BASES, NAME, 1 shl 20, connectMs = 6000, readMs = 8000) { list, sig, _ ->
                     val t = HomeConfig.parseReady(String(list, Charsets.UTF_8), have)
-                    if (t.isEmpty() || rev(list) < mine) null          // a site older than this app's list (not deployed yet) changes nothing else { SignedList.keep(f, list, sig); HomeConfig.ready = t; t }
+                    if (t.isEmpty() || rev(list) < mine) null          // a site older than this app's list (not deployed yet) changes nothing else { SignedList.keep(f, list, sig); HomeConfig.ready = t; rev = rev(list); fetchThumbs(app); t }
                 }
             } catch (e: Exception) { }
         }, "themes").apply { isDaemon = true }.start()

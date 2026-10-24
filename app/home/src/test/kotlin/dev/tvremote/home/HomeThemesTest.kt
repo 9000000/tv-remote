@@ -42,6 +42,15 @@ class HomeThemesTest {
         assertEquals("night", t[1].conf.getString("wall"))
     }
 
+    @Test fun aThumbIsKeptOnlyAsAShortHttpsAddress() {
+        fun thumb(v: String) = HomeConfig.parseReady("""{"v":1,"themes":[{"id":"a","names":{"en":"A"},"conf":{"wall":"night"},"thumb":${org.json.JSONObject.quote(v)}}]}""", "1")[0].thumb
+        assertEquals("https://upload.wikimedia.org/a%2C.jpg", thumb(" https://upload.wikimedia.org/a%2C.jpg "))
+        for (bad in listOf("http://x.dev/a.jpg", "javascript:alert(1)", "https://x.dev/a b.jpg", "https://x.dev/a\"b", "https://", "https://x.dev/" + "a".repeat(HomeConfig.THUMB_MAX), "file:///sdcard/a.jpg", ""))
+            assertEquals(bad, "", thumb(bad))
+        val r = HomeConfig.parseReady(String(list), "99.0.0")
+        for (id in listOf("sapa", "beach", "city")) assertTrue("$id: thumb", r.first { it.id == id }.thumb.startsWith("https://upload.wikimedia.org/"))
+    }
+
     @Test fun everyShippedThemeHasAudienceNamesAndNoFlatBlack() {
         val j = org.json.JSONObject(String(list)).getJSONArray("themes")
         for (i in 0 until j.length()) {

@@ -76,6 +76,7 @@ object Store {
         e.apply()
         if (listOf("keyon", "keyapps", "autoon", "autoapp").any { change.has(it) }) Keys.push(c)   // TV Setup does the keys everywhere and the power-on app
         val out = effective(c, JSONObject(n.toString()))
+        change.optJSONObject("theme")?.let { ThemeShots.after(c, it, n) }   // the previews' pictures: taken when a theme is saved, dropped when it goes
         onChange?.invoke()
         return out
     }

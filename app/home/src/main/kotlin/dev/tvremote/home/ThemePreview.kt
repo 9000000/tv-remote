@@ -1,0 +1,170 @@
+package dev.tvremote.home
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Shader
+import android.util.LruCache
+import dev.tvremote.home.wall.Backdrop
+import dev.tvremote.home.wall.WallArt
+import dev.tvremote.home.wall.Walls
+import org.json.JSONObject
+import java.io.File
+
+/**
+ * A theme's picture in the Themes page: a miniature of the home screen it makes, built from its config (the page's twin is
+ * js/home.js `homeThemePaint`): the real background under the real veil, the clock and greeting, the cards as [HomeConfig.pack] lays
+ * them (the same rule HomeActivity uses), the grid with its columns and rows, the live tiles first, the focus on the first one.
+ * Rounded shapes only. Each is drawn ONCE into a bitmap (off the main thread) and kept in [cache], so scrolling the page costs nothing.
+ */
+object ThemePreview {
+    private const val INK = 0xFFFFFFFF.toInt()                      // every shape is this at some alpha: it reads on any wall
+    private const val FILL_GLASS = 0x2E; private const val FILL_TONAL = 0x4A; private const val FILL_TILE = 0x26
+    private const val LIVE_A = 0xFF4FC3A1.toInt(); private const val LIVE_B = 0xFFFFC857.toInt(); private const val LIVE_C = 0xFF8AB4F8.toInt(); private const val LIVE_D = 0xFFF28B82.toInt()
+    private val LIVE = intArrayOf(LIVE_A, LIVE_B, LIVE_C, LIVE_D)
+    private const val NO_WALL = 0xFF2A2F3A.toInt()                  // a background nothing is known of yet: the Themes page's own plain tile
+
+    private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) { override fun sizeOf(k: String, b: Bitmap) = b.byteCount }
+    fun cached(key: String): Bitmap? = cache.get(key)
+    fun forget() = cache.evictAll()
+
+    /** Same picture, same key: the theme (its id and the list's rev), its look, the size, and whether the network / captured background is there. */
+    fun key(id: String, conf: JSONObject, tiles: List<String>, w: Int, shot: File?) =
+        "$id:${Themes.rev}:$w:${(conf.toString() + tiles).hashCode()}:${shot?.takeIf { it.isFile }?.lastModified() ?: 0}"
+
+    /** The preview of [conf] at [w] x [h] with corner radius [r]; made on the calling thread (call it off the main one), kept for next time. */
+    fun get(a: Context, key: String, conf: JSONObject, tiles: List<String>, shot: File?, look: String, w: Int, h: Int, r: Float): Bitmap {
+        cache.get(key)?.let { return it }
+        val b = make(a, conf, tiles, shot, look, w, h, r)
+        cache.put(key, b)
+        return b
+    }
+
+    private fun make(a: Context, conf: JSONObject, tiles: List<String>, shot: File?, look: String, w: Int, h: Int, r: Float): Bitmap {
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val cv = Canvas(out)
+        val wall = conf.optString("wall")
+        val shade = conf.optInt("shade", HomeConfig.SHADE_DEFAULT).toFloat() / HomeConfig.SHADE_DEFAULT
+        val frame = RectF(0f, 0f, w.toFloat(), h.toFloat())
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        // the background: a picture (drawn scene, photo, Bing, the captured / downloaded one) cropped to the frame, else the colours
+        var pic = picture(a, wall, shot, w, h)
+        var artK = if (WallArt.has(wall)) WallArt.shade(wall) else 1f
+        if (pic == null && look.isNotEmpty()) { pic = Walls.small(a, look, w, h, false); artK = if (WallArt.has(look)) WallArt.shade(look) else 1f }
+        if (pic != null) {
+            val k = maxOf(w.toFloat() / pic.width, h.toFloat() / pic.height)
+            p.shader = BitmapShader(pic, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { setLocalMatrix(Matrix().apply { setScale(k, k); postTranslate((w - pic.width * k) / 2, (h - pic.height * k) / 2) }) }
+        } else {
+            val cc = if (HomeConfig.isPhoto(wall) || HomeConfig.isVideo(wall) || wall == HomeConfig.BING || wall == HomeConfig.WEB) intArrayOf(NO_WALL, NO_WALL) else wallColors(wall)
+            p.shader = if (cc.all { it == cc[0] }) LinearGradient(0f, 0f, 0f, 1f, cc[0], cc[0], Shader.TileMode.CLAMP)
+                else LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), cc, null, Shader.TileMode.CLAMP)
+        }
+        cv.drawRoundRect(frame, r, r, p)
+        // the veil at its real strength (what Backdrop puts over the wall)
+        p.shader = LinearGradient(0f, 0f, 0f, h.toFloat(), Backdrop.shade(artK, shade), floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP)
+        cv.drawRoundRect(frame, r, r, p)
+        pic?.recycle()
+        p.shader = null
+        cv.save(); cv.clipRect(0f, 0f, w.toFloat(), h.toFloat())
+        layout(cv, p, conf, tiles, w.toFloat(), h.toFloat())
+        cv.restore()
+        return out
+    }
+
+    private fun picture(a: Context, wall: String, shot: File?, w: Int, h: Int): Bitmap? {
+        if (WallArt.has(wall)) return Walls.small(a, wall, w, h, false)
+        shot?.takeIf { it.isFile }?.let { f -> read(f, w, h)?.let { return it } }
+        if (Walls.isPicture(wall)) return Walls.small(a, wall, w, h, false)       // a photo, a video's first frame, the Bing picture kept
+        return null
+    }
+
+    private fun read(f: File, w: Int, h: Int): Bitmap? = try {
+        val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(f.path, o)
+        var s = 1
+        while (o.outWidth / (s * 2) >= w && o.outHeight / (s * 2) >= h) s *= 2
+        BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = s })
+    } catch (e: Throwable) { null }
+
+    private fun bar(cv: Canvas, p: Paint, x: Float, y: Float, w: Float, h: Float, alpha: Int) {
+        p.color = (alpha shl 24) or (INK and 0xFFFFFF)
+        cv.drawRoundRect(x, y, x + w, y + h, h / 2f, h / 2f, p)
+    }
+
+    private fun layout(cv: Canvas, p: Paint, conf: JSONObject, tiles: List<String>, w: Float, h: Float) {
+        val m = w * 0.06f
+        // the head: the time, the date, the greeting; the round buttons at the right
+        bar(cv, p, m, h * 0.07f, w * 0.17f, h * 0.075f, 0xE6)
+        bar(cv, p, m, h * 0.17f, w * 0.10f, h * 0.025f, 0x73)
+        if (conf.optBoolean("greet", true)) bar(cv, p, m + w * 0.12f, h * 0.17f, w * 0.14f, h * 0.025f, 0x4D)
+        for (i in 0 until 3) bar(cv, p, w - m - (i + 1) * w * 0.05f - i * w * 0.012f, h * 0.085f, w * 0.05f, h * 0.05f, 0x40)
+        var y = h * 0.26f
+        // the cards, in the columns HomeActivity makes of them
+        val keys = strs(conf, "widgets")
+        val packed = HomeConfig.pack(keys, HomeConfig.bigs(conf))
+        if (packed.cols.isNotEmpty()) {
+            val rowH = h * 0.30f
+            val gap = w * 0.02f
+            val room = w - 2 * m - gap * (packed.cols.size - 1)
+            val sum = maxOf(HomeConfig.FLOOR, packed.cols.sumOf { it.weight }).toFloat()
+            val styles = conf.optJSONObject("wstyle")
+            var x = m
+            for (col in packed.cols) {
+                val cw = room * col.weight / sum
+                val n = col.keys.size
+                val ch = (rowH - (n - 1) * gap * 0.6f) / n
+                col.keys.forEachIndexed { j, k ->
+                    val cy = y + j * (ch + gap * 0.6f)
+                    val tonal = styles?.optString(k) == "tonal"
+                    p.color = (((if (tonal) FILL_TONAL else FILL_GLASS) shl 24) or (INK and 0xFFFFFF))
+                    cv.drawRoundRect(x, cy, x + cw, cy + ch, h * 0.035f, h * 0.035f, p)
+                    val pad = h * 0.03f
+                    if (k == "clock" && (n == 1 || ch > h * 0.12f)) {                    // the analog face
+                        val d = minOf(cw, ch) * 0.56f
+                        p.style = Paint.Style.STROKE; p.strokeWidth = maxOf(1f, h * 0.008f); p.color = (0xB3 shl 24) or (INK and 0xFFFFFF)
+                        cv.drawCircle(x + cw / 2, cy + ch / 2, d / 2, p); p.style = Paint.Style.FILL
+                    } else {
+                        bar(cv, p, x + pad, cy + pad, cw * 0.42f, h * 0.018f, 0x66)
+                        if (ch > h * 0.12f) bar(cv, p, x + pad, cy + ch * 0.45f, cw * 0.62f, h * 0.045f, 0xB3)
+                        else bar(cv, p, x + pad, cy + ch * 0.55f, cw * 0.5f, h * 0.03f, 0xB3)
+                    }
+                }
+                x += cw + gap
+            }
+            y += rowH + h * 0.04f
+        }
+        // the grid: [cols] to a row, the live tiles first, the first one focused; "rows" as set (a part of a row shows part), else what fits
+        val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT).coerceIn(HomeConfig.COLS_MIN, HomeConfig.COLS_MAX)
+        val gap = w * 0.014f
+        val tw = (w - 2 * m - (cols - 1) * gap) / cols
+        val th = tw * 0.56f
+        val rows = conf.optDouble("rows", 0.0)
+        val room = (h - y).toDouble()
+        val fit = (room + gap) / (th + gap)
+        val shown = if (rows >= 1) minOf(rows, fit.coerceAtLeast(1.0)) else minOf(fit, 3.0)
+        val whole = Math.ceil(shown - 0.0001).toInt().coerceAtLeast(1)
+        val ring = conf.optString("focus", "glass") == "ring"
+        for (i in 0 until whole * cols) {
+            val rx = m + (i % cols) * (tw + gap); val ry = y + (i / cols) * (th + gap)
+            val vis = if (i / cols + 1 <= shown + 0.0001) 1f else (shown - (i / cols)).toFloat().coerceIn(0.05f, 1f)
+            val bottom = ry + th * vis
+            val live = i < tiles.size
+            p.color = if (live) (LIVE[i % LIVE.size] and 0xFFFFFF) or (0xCC shl 24) else (FILL_TILE shl 24) or (INK and 0xFFFFFF)
+            cv.drawRoundRect(rx, ry, rx + tw, bottom, h * 0.03f, h * 0.03f, p)
+            if (!live && vis == 1f) bar(cv, p, rx + tw * 0.12f, ry + th * 0.68f, tw * 0.5f, h * 0.014f, 0x4D)
+            if (i == 0) {                                                                // the focus: a ring, or the glass lifting the tile
+                if (ring) { p.style = Paint.Style.STROKE; p.strokeWidth = maxOf(1.5f, h * 0.012f); p.color = INK; cv.drawRoundRect(rx - 1, ry - 1, rx + tw + 1, bottom + 1, h * 0.03f, h * 0.03f, p); p.style = Paint.Style.FILL }
+                else { p.color = (0x40 shl 24) or (INK and 0xFFFFFF); cv.drawRoundRect(rx - tw * 0.04f, ry - th * 0.06f, rx + tw * 1.04f, bottom + th * 0.06f, h * 0.036f, h * 0.036f, p) }
+            }
+        }
+    }
+
+    private fun strs(o: JSONObject, k: String) = o.optJSONArray(k)?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty()
+}

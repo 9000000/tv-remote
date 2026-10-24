@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home → Chủ đề: ảnh xem trước là bản thu nhỏ của màn hình chính thật (nền, đồng hồ, thẻ, lưới app, ô sống); chủ đề có sẵn hiện đúng ảnh nền, chủ đề của bạn giữ ảnh nền nhỏ chụp lúc lưu.
 - Gửi APK trùng app hệ thống của TV: nút "Cài thành app riêng" viết lại file thành `<gói>.copy` (nhãn thêm " (2)"), ký lại bằng khóa riêng của máy này và cài cạnh app có sẵn; chạy thử 5 giây, tự đóng thì báo và có nút Gỡ. Không xong với file .apks / .xapk.
 - TV Home: đổi tên app (giữ OK trên app → Đổi tên, hoặc tab TV Home → Bố cục → Tên app riêng trên điện thoại/máy tính); tên mới luôn hiện trên ô banner, phân biệt hai app trùng tên như hai YouTube.
 - Cài APK trùng app có sẵn trong TV (app hệ thống) báo rõ: app có sẵn nên không thể thay hay gỡ, và có thể cài bản đổi tên gói bên cạnh; thay lời khuyên "gỡ bản đang có" không làm được. Lời báo sai chip ("thường là armeabi-v7a") nay nêu đúng chip của TV.
@@ -65,6 +66,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- TV Home Themes: each preview is a miniature of the real home screen (background, clock, cards, grid, live tiles); ready themes show their photo, your saved themes keep a small picture of their background taken when saved.
 - Sending an APK that clashes with a TV system app: an "Install as a separate app" button rewrites the file as `<package>.copy` (label gets " (2)"), signs it with this device's own key and installs it beside the built-in app; it is started and checked after 5 s, and if it closes the page says so with a Remove button. Not for .apks / .xapk files.
 - TV Home: rename an app (hold OK on it → Rename, or TV Home → Layout → App names on the phone/computer); the new name always shows on a banner tile, to tell two apps with the same name apart, like two YouTubes.
 - Installing an APK whose package is a built-in system app now says it is built into the TV and cannot be replaced or removed, and that a copy with another package name can go beside it (instead of the impossible "uninstall it first"). The wrong-chip message no longer says "usually armeabi-v7a", it names the TV's chip.

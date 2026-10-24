@@ -297,7 +297,7 @@ object HomeConfig {
      * kept or the copy packed in the APK, and again when the site's is newer (`Themes.kt` there). Each is a whole look (every key of
      * [THEME_KEYS], [clean] fills the rest), so applying one never leaves a bit of the one before.
      */
-    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val tiles: List<String> = emptyList(), val look: String = "") {
+    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val tiles: List<String> = emptyList(), val look: String = "", val thumb: String = "") {
         /** The name in [lang], else English, else the id. */
         fun name(lang: String): String = names[lang] ?: names["en"] ?: id
     }
@@ -331,13 +331,18 @@ object HomeConfig {
             if (t.optString("since").let { it.isNotEmpty() && newer(it, have) }) continue
             val n = t.optJSONObject("names")
             val names = if (n == null) emptyMap() else n.keys().asSequence().filter { LANGS.contains(it) }.associateWith { themeName(n.optString(it)) }.filterValues { it.isNotEmpty() }
-            // "tiles": live tiles the theme adds ([doTheme]); "look": a drawn wall or gradient for its picture in the list when its own wall has none (Bing, a page, a video)
+            // "tiles": live tiles the theme adds ([doTheme]); "look": a drawn wall or gradient for its picture in the list when its own wall has none (Bing, a page, a video); "thumb": a small https picture of that background, drawn under the preview of the layout
             out += Ready(id, names, pickTheme(clean(conf)), strs(t.optJSONArray("tiles")).filter { isTile(it) }.distinct().take(READY_TILES_MAX),
-                t.optString("look").takeIf { it in ART || it in PLAIN } ?: "")
+                t.optString("look").takeIf { it in ART || it in PLAIN } ?: "", thumb(t.optString("thumb")))
             if (out.size >= READY_MAX) break
         }
         out
     } catch (e: org.json.JSONException) { emptyList() }
+
+    const val THUMB_MAX = 300
+    private val THUMB_URL = Regex("https://[^\\s\"'<>]{4,${THUMB_MAX - 8}}")
+    /** A theme's "thumb" (a small picture of its photo / page / video background for its preview): an https address of sane length, else none. */
+    fun thumb(s: String): String = s.trim().takeIf { THUMB_URL.matches(it) } ?: ""
 
     private fun customThemes(o: JSONObject?): List<JSONObject> {
         val a = o?.optJSONArray("themes") ?: return emptyList()

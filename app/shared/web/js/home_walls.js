@@ -126,7 +126,8 @@ const homeHillY = (l, u) => {
   return l.y + l.amp * (l.ridge ? 2 * s / t - 1 : s / t);
 };
 // Draws wall `id` on a canvas context of w x h px (the page's small previews call it; resolution does not matter)
-function homeArtPaint(ctx, w, h, id) {
+// `user`: the person's veil strength (HomeConfig "shade" / 50, 1 the usual one), Backdrop.shade's rule: under 1 lighter, over 1 each stop goes towards the darkest
+function homeArtPaint(ctx, w, h, id, user = 1) {
   const a = HOME_ART[id];
   if (!a) return;
   const rad = a.ang * Math.PI / 180, dx = Math.sin(rad), dy = Math.cos(rad);
@@ -152,7 +153,65 @@ function homeArtPaint(ctx, w, h, id) {
     }
   }
   // the veil TV Home puts over it (Backdrop.SHADE: black at 69 % / 25 % / 56 % from top to bottom), `shade` of its strength
-  const s = ctx.createLinearGradient(0, 0, 0, h), k = a.shade;
-  s.addColorStop(0, `rgba(0,0,0,${0.69 * k})`); s.addColorStop(0.5, `rgba(0,0,0,${0.25 * k})`); s.addColorStop(1, `rgba(0,0,0,${0.56 * k})`);
+  homeVeil(ctx, w, h, a.shade, user);
+}
+// Backdrop.shade: the three stops of the veil (176 / 64 / 144 of 255) at `k` of their strength, then the person's `user` one
+const homeShade = (k, user) => [176, 64, 144].map((a) => { const v = a * k, u = user <= 1 ? v * user : v + Math.max(0, 224 - v) * Math.min(user - 1, 1); return Math.min(255, Math.max(0, u)) / 255; });
+function homeVeil(ctx, w, h, k, user) {
+  const s = ctx.createLinearGradient(0, 0, 0, h), a = homeShade(k, user);
+  s.addColorStop(0, `rgba(0,0,0,${a[0]})`); s.addColorStop(0.5, `rgba(0,0,0,${a[1]})`); s.addColorStop(1, `rgba(0,0,0,${a[2]})`);
   ctx.fillStyle = s; ctx.fillRect(0, 0, w, h);
+}
+
+// ---- a theme's picture in the Themes list: its home screen in miniature, from its config (ThemePreview.kt does the same on the TV).
+// The wall under the veil at its real strength, the clock and greeting, the cards as homePack lays them, the grid's columns and rows with
+// the live tiles first and the focus on the first one. Rounded shapes only; `img` (a loaded Image) is the background of a photo / page /
+// video, else the drawn look or the colours.
+const HOME_PREV = { ink: '255,255,255', live: ['#4fc3a1', '#ffc857', '#8ab4f8', '#f28b82'], none: '#2a2f3a' };
+function homeThemePaint(cv, conf, tiles, img, look) {
+  const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, wall = conf.wall, user = (conf.shade ?? 50) / 50;
+  const bar = (x, y, bw, bh, a) => { ctx.fillStyle = `rgba(${HOME_PREV.ink},${a})`; ctx.beginPath(); ctx.roundRect(x, y, bw, bh, bh / 2); ctx.fill(); };
+  const box = (x, y, bw, bh, r) => { ctx.beginPath(); ctx.roundRect(x, y, bw, bh, r); ctx.fill(); };
+  const art = HOME_ART[wall] ? wall : HOME_ART[look] ? look : '';
+  if (HOME_ART[wall] || (!img && art)) homeArtPaint(ctx, w, h, art, user);
+  else {
+    if (img) { const k = Math.max(w / img.width, h / img.height); ctx.drawImage(img, (w - img.width * k) / 2, (h - img.height * k) / 2, img.width * k, img.height * k); }
+    else { const c = (HOME_WALLS[wall] || HOME_PREV.none).split(','), g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, c[0]); g.addColorStop(1, c[c.length - 1]); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h); }
+    homeVeil(ctx, w, h, 1, user);
+  }
+  const m = w * 0.06;
+  bar(m, h * 0.07, w * 0.17, h * 0.075, 0.9); bar(m, h * 0.17, w * 0.10, h * 0.025, 0.45);
+  if (conf.greet !== false) bar(m + w * 0.12, h * 0.17, w * 0.14, h * 0.025, 0.3);
+  for (let i = 0; i < 3; i++) bar(w - m - (i + 1) * w * 0.05 - i * w * 0.012, h * 0.085, w * 0.05, h * 0.05, 0.25);
+  let y = h * 0.26;
+  const big = HOME_WIDGETS.concat(['qr1', 'qr2', 'qr3', 'qr4']).filter((k) => homeSize(conf, k) === 'big'), packed = homePack((conf.widgets || []).filter((k) => HOME_WIDGETS.includes(k)), big);
+  if (packed.cols.length) {
+    const rowH = h * 0.30, gap = w * 0.02, room = w - 2 * m - gap * (packed.cols.length - 1), sum = Math.max(HOME_W.floor, packed.cols.reduce((n, c) => n + c.weight, 0));
+    let x = m;
+    for (const col of packed.cols) {
+      const cw = room * col.weight / sum, n = col.keys.length, ch = (rowH - (n - 1) * gap * 0.6) / n;
+      col.keys.forEach((k, j) => {
+        const cy = y + j * (ch + gap * 0.6), tonal = (conf.wstyle || {})[k] === 'tonal', pad = h * 0.03;
+        ctx.fillStyle = `rgba(${HOME_PREV.ink},${tonal ? 0.29 : 0.18})`; box(x, cy, cw, ch, h * 0.035);
+        if (k === 'clock' && (n === 1 || ch > h * 0.12)) { ctx.strokeStyle = `rgba(${HOME_PREV.ink},0.7)`; ctx.lineWidth = Math.max(1, h * 0.008); ctx.beginPath(); ctx.arc(x + cw / 2, cy + ch / 2, Math.min(cw, ch) * 0.28, 0, 2 * Math.PI); ctx.stroke(); }
+        else { bar(x + pad, cy + pad, cw * 0.42, h * 0.018, 0.4); if (ch > h * 0.12) bar(x + pad, cy + ch * 0.45, cw * 0.62, h * 0.045, 0.7); else bar(x + pad, cy + ch * 0.55, cw * 0.5, h * 0.03, 0.7); }
+      });
+      x += cw + gap;
+    }
+    y += rowH + h * 0.04;
+  }
+  const cols = Math.min(8, Math.max(4, conf.cols || 5)), gap = w * 0.014, tw = (w - 2 * m - (cols - 1) * gap) / cols, th = tw * 0.56;
+  const fit = (h - y + gap) / (th + gap), shown = conf.rows >= 1 ? Math.min(conf.rows, Math.max(fit, 1)) : Math.min(fit, 3), ring = conf.focus === 'ring';
+  for (let i = 0; i < Math.ceil(shown - 0.0001) * cols; i++) {
+    const rx = m + (i % cols) * (tw + gap), ry = y + Math.floor(i / cols) * (th + gap), row = Math.floor(i / cols);
+    const vis = row + 1 <= shown + 0.0001 ? 1 : Math.min(1, Math.max(0.05, shown - row)), live = i < tiles.length;
+    ctx.fillStyle = live ? HOME_PREV.live[i % 4] : `rgba(${HOME_PREV.ink},0.15)`;
+    if (live) ctx.globalAlpha = 0.8;
+    box(rx, ry, tw, th * vis, h * 0.03); ctx.globalAlpha = 1;
+    if (!live && vis === 1) bar(rx + tw * 0.12, ry + th * 0.68, tw * 0.5, h * 0.014, 0.3);
+    if (i === 0) {
+      if (ring) { ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(1.5, h * 0.012); ctx.beginPath(); ctx.roundRect(rx - 1, ry - 1, tw + 2, th * vis + 2, h * 0.03); ctx.stroke(); }
+      else { ctx.fillStyle = `rgba(${HOME_PREV.ink},0.25)`; box(rx - tw * 0.04, ry - th * 0.06, tw * 1.08, th * vis + th * 0.12, h * 0.036); }
+    }
+  }
 }

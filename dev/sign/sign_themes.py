@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """dev/sign/sign_themes.py: checks docs/home/themes.json and signs it (themes.json.sig, Ed25519, base64).
 
-The list holds TV Home's ready-made themes (id, names per language, conf = the same keys HomeConfig cleans, optional "tiles" (live tiles added first to the grid, kept beside the person's own), "look" (a drawn wall for its picture), "for" (who it is for), "src" (licence of a web background), optional "since" = the
+The list holds TV Home's ready-made themes (id, names per language, conf = the same keys HomeConfig cleans, optional "tiles" (live tiles added first to the grid, kept beside the person's own), "look" (a drawn wall for its picture), "thumb" (a small https picture of a photo / web / video background, ~330 px, for its preview), "for" (who it is for), "src" (licence of a web background), optional "since" = the
 first TV Home version that shows it). TV Home reads it from the site, else GitHub, else the copy it kept, else the one packed in
 its APK; a list without a good signature is ignored. It is signed because a theme may set "wurl" (a web page as the background),
 which only a signed list can. It uses the launcher list's key (LAUNCHERS_KEY, default ~/.tv-remote-release/launchers.key).
@@ -49,7 +49,7 @@ def check():
         if "wurl" in t["conf"] and not t["conf"]["wurl"].startswith("https://"):
             fail("%s: wurl is not https" % i)
         for k in t:
-            if k not in ("id", "names", "for", "conf", "since", "tiles", "look", "src"):
+            if k not in ("id", "names", "for", "conf", "since", "tiles", "look", "src", "thumb"):
                 fail("%s: unknown field %s" % (i, k))
         f = t.get("for") or {}
         if not f.get("en") or not f.get("vi"):
@@ -65,6 +65,8 @@ def check():
             fail("%s: look %s is not a drawn wall" % (i, t["look"]))
         if t["conf"].get("wall") in ("web", "bing") and not t.get("look"):
             fail("%s: a web / Bing wall needs a 'look' for its picture in the list" % i)
+        if "thumb" in t and not (isinstance(t["thumb"], str) and re.fullmatch(r"https://[^\s\"'<>]{4,280}", t["thumb"])):
+            fail("%s: thumb must be a short https address (a small picture of the background, 330 px)" % i)
         if "wurl" in t["conf"] and not t.get("src"):
             fail("%s: a web background needs 'src' (where it is from, its licence)" % i)
         if t.get("since") and not re.fullmatch(r"\d+(\.\d+){1,2}", t["since"]):
