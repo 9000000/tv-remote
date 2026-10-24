@@ -192,6 +192,7 @@ object Customize {
     /** [at] a page's key: the panel opens on it, without a slide (it reopens on Language after a new language built Home again). */
     fun show(a: Activity, at: String? = null): Dialog {
         val (dialog, before) = ready?.takeIf { at == null && readyFor === a } ?: make(a, at)
+        panelDialog = dialog                                          // the one on screen (a spare is made ahead), for [hidePanel]
         ready = null; readyFor = null
         before()
         dialog.show()
@@ -931,7 +932,7 @@ object Customize {
         android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()
     }
 
-    private const val GLYPH_TONAL = 0xCCF6E9E0.toInt(); private const val GLYPH_PALE = 0xCCF4F4F6.toInt()   // the strip's cards in the tonal look / a light clock
+    private const val GLYPH_TONAL = 0xCCF6E9E0.toInt(); private const val GLYPH_PALE = 0xCCF4F4F6.toInt(); private const val GLYPH_INK = 0xFF2A2320.toInt()   // the strip's cards in the tonal look / a light clock
     private const val CHIP_FOCUS = 0x2EFFFFFF; private const val CHIP_REST = 0x12FFFFFF; private const val CHIP_EDGE = 0x1FFFFFFF   // a widget row's look button, as its size button
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
         arrayOf<Any>("system", R.drawable.ic_gauge, R.string.w_system, R.string.c_system_sub),
@@ -1067,10 +1068,31 @@ object Customize {
      * The result in miniature: the columns [HomeConfig.pack] makes of the cards on, a big card in the accent, small ones pale; what
      * waits is not drawn. Reads the settings when painted (the rows call invalidate after every change), never animated.
      */
+    private var panelDialog: Dialog? = null
+    /** The panel is hidden (not closed) while a card's settings are open over it, and back when they close. */
+    internal fun hidePanel(hide: Boolean) { panelDialog?.window?.decorView?.alpha = if (hide) 0f else 1f }
+
     internal class PackGlyph(c: Context) : View(c) {
+        /** Each block shows its card's icon and name (the settings dialog's strip); the Widget page's own preview stays plain. */
+        var named = false
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         /** A card drawn with an accent edge (the one whose settings are open), and each card's own look: tonal warm, a light clock pale. */
         var mark: String? = null
+        private fun drawName(cv: Canvas, k: String, x: Float, y: Float, w: Float, h: Float, lightBlock: Boolean) {
+            val r = WIDGET_ROWS.firstOrNull { it[0] == k } ?: QR_ROW
+            val d = resources.displayMetrics.density
+            val ink = if (lightBlock) GLYPH_INK else Color.WHITE
+            val ic = context.getDrawable(r[1] as Int)?.mutate()
+            val s = minOf(h * 0.45f, 22 * d)
+            ic?.setTint(ink); ic?.setBounds((x + 8 * d).toInt(), (y + (h - s) / 2).toInt(), (x + 8 * d + s).toInt(), (y + (h + s) / 2).toInt()); ic?.draw(cv)
+            paint.style = Paint.Style.FILL; paint.color = ink; paint.textSize = 12 * resources.displayMetrics.scaledDensity; paint.textAlign = Paint.Align.LEFT
+            val room = w - s - 20 * d
+            if (room < 24 * d) return
+            val name = context.getString(r[2] as Int)
+            val n = paint.breakText(name, true, room, null)
+            cv.drawText(if (n < name.length) name.take(maxOf(1, n - 1)) + "…" else name, x + 14 * d + s, y + h / 2 - (paint.descent() + paint.ascent()) / 2, paint)
+        }
+
         override fun onDraw(cv: Canvas) {
             val conf = Store.get(context)
             val big = HomeConfig.bigs(conf)
@@ -1097,6 +1119,7 @@ object Customize {
                     paint.style = Paint.Style.FILL
                     paint.color = if (tonal) GLYPH_TONAL else if (pale) GLYPH_PALE else if (k in big) 0x668AB4F8 else 0x30FFFFFF
                     cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g * 2, g * 2, paint)
+                    if (named) drawName(cv, k, x, j * (h + g), w, h, pale || tonal)
                     if (k == mark) {
                         paint.style = Paint.Style.STROKE; paint.strokeWidth = g * 0.6f; paint.color = ACCENT
                         cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g * 2, g * 2, paint)

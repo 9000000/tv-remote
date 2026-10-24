@@ -27,8 +27,7 @@ import org.json.JSONObject
 object WidgetSettings {
     private const val ACCENT = 0xFF8AB4F8.toInt()
     private const val DIM = 0xA6FFFFFF.toInt()
-    private const val PANEL = 0xF0161A24.toInt()                       // nearly opaque, as the rows stepper: the card is read over any background
-    private const val PEEK = 0.22f
+    private const val PANEL = 0xFF161A24.toInt()                       // solid: the Customize panel behind is hidden while it is open, nothing shows through
     private const val ROW_FOCUS = 0x2EFFFFFF; private const val ROW_REST = 0x12FFFFFF; private const val ROW_EDGE = 0x1FFFFFFF
     private const val CHIP_ON = 0x408AB4F8; private const val CHIP_OFF = 0x14FFFFFF
 
@@ -52,7 +51,6 @@ object WidgetSettings {
         val now = Store.get(a)
         val cur = HashMap<String, String>().also { m -> for (o in opts) m[o.id] = HomeConfig.optValue(now, k, o.id) }
         val dialog = Dialog(a, R.style.Menu)
-        var rootView: View? = null
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         // the card itself, beside the options: the same Widgets code at the chosen values (read once off the main thread, drawn again on each press)
@@ -81,10 +79,7 @@ object WidgetSettings {
         }.start()
 
         // the Widget page's layout strip, every card on in its place, this one framed; Store has each press already, so it only repaints
-        val strip = Customize.PackGlyph(a).apply { mark = k }
-        val back = Runnable { rootView?.animate()?.alpha(1f)?.setDuration(250)?.start() }
-        // the panel sits over the home's card row: after each press it goes see-through for a moment, so the real card can be seen change
-        fun peek() { rootView?.let { it.removeCallbacks(back); it.animate().alpha(PEEK).setDuration(120).start(); it.postDelayed(back, 1600) } }
+        val strip = Customize.PackGlyph(a).apply { mark = k; named = true }
         val rows = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
         val changed = HashMap<String, View>()
         fun save(o: HomeConfig.Opt, v: String) {
@@ -93,7 +88,7 @@ object WidgetSettings {
                 val sizes = JSONObject((Store.get(a).optJSONObject("wsize") ?: JSONObject()).toString())
                 Store.change(a, JSONObject().put("wsize", sizes.put(k, v)))
             } else Store.change(a, JSONObject().put("wopt", JSONObject().put(k, JSONObject().put(o.id, v))))
-            strip.invalidate(); redraw(); peek()
+            strip.invalidate(); redraw()
         }
         fun chips(o: HomeConfig.Opt): Pair<LinearLayout, () -> Unit> {
             val box = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
@@ -115,14 +110,17 @@ object WidgetSettings {
                 val v = values[Math.floorMod(at + step, values.size)]
                 save(o, v); mark(); changed[o.id]?.requestFocus()
             }
+            val under = values.size >= 3                            // three or more chips go under the label so neither is cut
+            if (under) box.gravity = Gravity.CENTER_VERTICAL or Gravity.START
             val row = LinearLayout(a).apply {
-                gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                orientation = if (under) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+                gravity = if (under) Gravity.START else Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                 setPadding(dp(14), dp(9), dp(14), dp(9))
                 background = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), glass(16, ROW_FOCUS, Color.WHITE))
                     addState(intArrayOf(), glass(16, ROW_REST, ROW_EDGE))
                 }
-                addView(text(word(a, "home.o_${o.id}"), 15f, Color.WHITE), LinearLayout.LayoutParams(0, -2, 1f))
+                addView(text(word(a, "home.o_${o.id}"), 15f, Color.WHITE), if (under) LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6) } else LinearLayout.LayoutParams(0, -2, 1f))
                 addView(box, LinearLayout.LayoutParams(-2, -2))
                 setOnClickListener { go(1) }
                 setOnKeyListener { _, code, e ->
@@ -160,10 +158,9 @@ object WidgetSettings {
             background = GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(PANEL); setStroke(dp(1), ACCENT) }
             clipChildren = false
             addView(text(title, 18f, Color.WHITE).apply { typeface = Font.medium })
-            addView(strip, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10); bottomMargin = dp(12) })
+            addView(strip, LinearLayout.LayoutParams(-1, dp(72)).apply { topMargin = dp(10); bottomMargin = dp(12) })
             addView(body, LinearLayout.LayoutParams(-1, -2))
         }
-        rootView = root
         val w = minOf(a.resources.displayMetrics.widthPixels - dp(48), dp(780))
         dialog.setContentView(root, ViewGroup.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT))
         dialog.window?.apply {
@@ -171,10 +168,11 @@ object WidgetSettings {
             setLayout(w, ViewGroup.LayoutParams.WRAP_CONTENT)
             setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
             attributes = attributes.apply { y = dp(16) }
-            setDimAmount(0f)                                          // the home's card row stays as it is, for the eye to compare
+            setDimAmount(0f)
         }
+        Customize.hidePanel(true)                       // the panel behind would show through the corners and the gaps
         dialog.setOnShowListener { first?.requestFocus() }
-        dialog.setOnDismissListener { done() }
+        dialog.setOnDismissListener { Customize.hidePanel(false); done() }
         dialog.show()
     }
 }

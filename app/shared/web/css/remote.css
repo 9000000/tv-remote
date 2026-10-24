@@ -212,6 +212,10 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .packview s.mark { outline:2px solid var(--text); outline-offset:1px; }
 dialog.wset .card { width:min(520px, 94vw); }
 .wset .wstrip { padding:4px 3px; }
+.wset .packview { height:72px; }
+.wset .packview s { display:flex; align-items:center; padding:0 8px; min-width:0; }
+.wset .packview s em { font-style:normal; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* the card's name in its block */
+.wset .packview s.tonal, .wset .packview s.pale { color:var(--wink); }
 .wset .wstage { display:flex; justify-content:center; align-items:center; height:160px; border-radius:var(--r, 12px); background:var(--btn); padding:14px; }   /* the card at the chosen options */
 .wset .wopts { display:flex; flex-direction:column; gap:10px; }
 .wset .wopt { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }

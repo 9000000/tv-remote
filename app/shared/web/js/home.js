@@ -70,7 +70,7 @@ function packGlyph(p, big, x = {}) {
   const sum = Math.max(HOME_W.floor, p.cols.reduce((n, c) => n + c.weight, 0));
   for (const c of p.cols) {
     const col = el('b'); col.style.setProperty('--w', c.weight / sum * 100);
-    for (const k of c.keys) col.append(el('s', { className: [big.includes(k) ? 'big' : '', k === x.mark ? 'mark' : '', x.conf && homeOpt(x.conf, k, 'look') === 'tonal' ? 'tonal' : '', x.conf && k === 'clock' && homeOpt(x.conf, k, 'theme') === 'light' ? 'pale' : ''].filter(Boolean).join(' ') }));
+    for (const k of c.keys) col.append(el('s', { className: [big.includes(k) ? 'big' : '', k === x.mark ? 'mark' : '', x.conf && homeOpt(x.conf, k, 'look') === 'tonal' ? 'tonal' : '', x.conf && k === 'clock' && homeOpt(x.conf, k, 'theme') === 'light' ? 'pale' : ''].filter(Boolean).join(' ') }, ...(x.mark ? [el('em', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]).split(':')[0] : k })] : [])));
     g.append(col);
   }
   return g;
