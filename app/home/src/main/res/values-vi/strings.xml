@@ -16,6 +16,13 @@
     <string name="hide">Ẩn</string>
     <string name="info">Thông tin app</string>
     <string name="hidden">App đã ẩn (%d)</string>
+    <string name="add">Thêm</string>
+    <string name="add_title">Thêm vào Home</string>
+    <string name="add_hidden">App đã ẩn</string>
+    <string name="add_live">Ô trực tiếp</string>
+    <string name="add_pin">Lối tắt</string>
+    <string name="add_channel">Ghim một kênh</string>
+    <string name="add_channel_hint">Mở TV Channels</string>
     <string name="show">Hiện lại</string>
     <string name="rename">Đổi tên</string>
     <string name="rename_q">Đổi tên app này</string>

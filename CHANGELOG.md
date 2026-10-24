@@ -7,6 +7,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home, sửa lỗi sập khi di chuyển ô (hộp FPT: "The specified child already has a parent"): lối tắt đã ghim nằm trong cả hai danh sách nên bị thêm vào lưới hai lần.
+- TV Home: lối tắt ghim (VTV1...) có mục Di chuyển như app, chung một thứ tự với app; khi di chuyển màn hình tự cuộn theo ô đang cầm (cả hai chiều, cả ô trực tiếp).
+- TV Channels: logo kênh ghim ra Home nét hơn (ảnh đúng cỡ máy cho, vừa giữa thẻ; logo trắng dùng thẻ tối).
+- TV Home, ô trực tiếp "Xem tiếp kênh" thiết kế lại cho xem từ xa: logo và tên kênh to, một dòng chương trình đang chiếu kèm thanh tiến độ mảnh; nhấn giữ ô trực tiếp có thêm dòng app cung cấp (tên + biểu tượng, nhấn để mở).
+- TV Home: ô "App đã ẩn" thành ô ＋ Thêm: một bảng gồm app đã ẩn (OK hiện lại), ô trực tiếp, lối tắt và nút ghim kênh từ TV Channels; mục thêm nằm cuối lưới, đang chọn sẵn để di chuyển ngay.
 - Trang web, tab Thiết lập: thẻ mới "Nút remote" chứa 2 công tắc "Giữ 2 giây để đổi nguồn / mở Cài đặt" và "Nút mic mở giọng nói TV Remote" (trước nằm lẫn trong tab Sức khoẻ, hai thẻ dính sát nhau); mô tả ngắn lại (Bật / Tắt mỗi cái một dòng). Mọi chỗ chứa nhiều thẻ giờ tự có khoảng cách; kiểm tra tự động bắt thẻ dính nhau.
 - TV Home, bảng tuỳ chỉnh: Giao diện và Bố cục gộp thành một trang "Giao diện" (hai phần: Hiển thị, Lưới ứng dụng), cả trên TV lẫn trang cài đặt; không mất tuỳ chọn nào.
 - TV Home, nền Trang web nhẹ hơn: trang chỉ là một video (link thẳng tới file .mp4 / .webm / .m3u8, trang nền vòng lặp của TV Remote, hoặc trang có đúng một thẻ video) giờ được TV phát bằng trình phát của máy (phần cứng, không mở trình duyệt); trang thật vẫn dùng WebView và tạm dừng khi màn hình chờ chạy đè lên. Bảng chọn nền ghi chú trang web tốn RAM nhất, video nhẹ hơn.
@@ -85,6 +90,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Cập nhật: hết lượt hỏi GitHub (lỗi "GitHub HTTP 403" khi nhà có nhiều máy cùng kiểm tra) thì app đọc bản mới thẳng từ trang release, vẫn kiểm chữ ký như cũ.
 
 **English**
+- TV Home, fixed a crash when moving a tile (FPT box: "The specified child already has a parent"): a pinned shortcut sat in two lists and was added to the grid twice.
+- TV Home: pinned shortcuts (VTV1...) have Move like apps, in one shared order with them; while moving, the screen scrolls to follow the carried tile (both ways, live tiles too).
+- TV Channels: a channel pinned to Home has a crisper logo (a bitmap of the size the system allows, fit-centred; white logos get a dark card).
+- TV Home, the "Keep watching" live tile redesigned for 3 m: big logo and channel name, one now-playing line with a thin progress bar; long-press on a live tile adds a row for the app behind it (name + icon, press to open).
+- TV Home: the "Hidden apps" tile is now a ＋ Add tile: one panel with hidden apps (OK shows them again), live tiles, shortcuts and a way to pin a channel from TV Channels; the new item goes to the end of the grid, focused so it can be moved at once.
 - Web page, Setup tab: a new "Remote buttons" card holds the two switches "Hold 2 s to change input / open Settings" and "Mic button opens TV Remote's voice" (they sat in Health, two cards glued together); shorter descriptions (one On line, one Off line). Any slot holding several cards now spaces them by itself; the tests catch glued cards.
 - TV Home, Customize panel: Look and Layout merged into one "Look" page (two sections: Display, App grid), on the TV and on the settings page; no setting lost.
 - TV Home, lighter Web page background: a page that is only one video (a direct .mp4 / .webm / .m3u8 link, TV Remote's own loop page, or a page with exactly one video tag) is now played by the TV's own player (hardware, no browser); a real page still uses the WebView and also sleeps under a screensaver. The background picker notes that a web page costs the most memory and a video is lighter.

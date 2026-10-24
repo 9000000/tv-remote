@@ -23,10 +23,15 @@ class ChannelTileTest {
     }
 
     @Test fun lastChannelWithGuideShowsNowAndNext() {
-        val s = ChannelTile.state(w, vtv, Show("News", 10, 20), Show("Film", 20, 30), hm)
-        assertEquals("VTV1", s.getString("big")); assertEquals("t10  News", s.getString("small")); assertEquals("Next t20  Film", s.getString("line2"))
+        val s = ChannelTile.state(w, vtv, Show("News", 10, 20), Show("Film", 20, 30), hm, clock = 15)
+        assertEquals("VTV1", s.getString("big")); assertEquals("News", s.getString("small")); assertEquals(0.5, s.getDouble("progress"), 1e-6); assertEquals("Next t20  Film", s.getString("line2"))
         assertEquals("https://x/vtv1.png", s.getString("logo")); assertEquals("tvchannels://play/VTV1.vn%40SD", s.getString("open"))
         assertFalse(s.has("empty"))
+    }
+
+    @Test fun aShowWithNoLengthKeepsItsTimeAndHasNoBar() {
+        val s = ChannelTile.state(w, vtv, Show("News", 10, 10), null, hm)
+        assertEquals("t10  News", s.getString("small")); assertFalse(s.has("progress"))
     }
 
     @Test fun unknownGuideInvitesToPlay() {

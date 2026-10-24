@@ -51,7 +51,10 @@ object TvGlass {
     }
 
     /** [hint]: what it is set to now, on the right; [more]: a "›" after it, the row opens a page of its own; [stay]: a press keeps the panel open (the action swaps its page). */
-    class Item(val icon: Int, val label: String, val hint: String = "", val more: Boolean = false, val stay: Boolean = false, val go: () -> Unit)
+    class Item(val icon: Int, val label: String, val hint: String = "", val more: Boolean = false, val stay: Boolean = false, val go: () -> Unit) {
+        /** A coloured picture in the place of [icon] (an app's own launcher icon): drawn as it is, not tinted. */
+        var picture: android.graphics.drawable.Drawable? = null
+    }
 
     /**
      * ONE dialog whose content is swapped page by page (the way Customize's pages are), so the dim behind it never fades out and in
@@ -116,7 +119,8 @@ object TvGlass {
             for ((i, item) in items.withIndex()) list.addView(LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                 setPadding(dp(14), dp(12), dp(16), dp(12)); background = rowBg(a, 16)
-                if (item.icon != 0) addView(ImageView(a).apply { setImageResource(item.icon); imageTintList = ink }, LinearLayout.LayoutParams(dp(22), dp(22)).apply { rightMargin = dp(14) })
+                if (item.picture != null) addView(ImageView(a).apply { setImageDrawable(item.picture) }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { rightMargin = dp(12) })
+                else if (item.icon != 0) addView(ImageView(a).apply { setImageResource(item.icon); imageTintList = ink }, LinearLayout.LayoutParams(dp(22), dp(22)).apply { rightMargin = dp(14) })
                 addView(TvUi.text(a, item.label, 16f, Color.WHITE).apply { font(this); maxLines = 1; ellipsize = TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(0, -2, 1f))
                 if (item.hint.isNotEmpty()) addView(TvUi.text(a, item.hint, 14f, HINT).apply { font(this); maxLines = 1; gravity = Gravity.END }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
                 if (item.more) addView(TvUi.text(a, "›", 20f, HINT).apply { font(this) }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })

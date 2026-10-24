@@ -491,7 +491,7 @@ class BrowseActivity : Activity() {
         if (Pins.can(this)) box.addView(TvUi.row(this, R.drawable.ic_home, getString(R.string.pin)) {
             dlg.dismiss()
             io.execute {
-                val logo = c.logo.takeIf { it.isNotEmpty() }?.let { try { Logos.load(it, 280) } catch (e: Throwable) { null } }
+                val logo = c.logo.takeIf { it.isNotEmpty() }?.let { try { Logos.load(it, 640) } catch (e: Throwable) { null } }
                 val ok = Pins.pin(this, c, logo)
                 main.post { if (!ok) Toast.makeText(this, R.string.pin_refused, Toast.LENGTH_LONG).show() }
             }
@@ -677,7 +677,7 @@ class BrowseActivity : Activity() {
             dlg.dismiss()
             val logos = Store.channels(this, gid).byChannel().map { it.first().logo }.filter { it.isNotEmpty() }.take(4)
             io.execute {
-                val bits = logos.mapNotNull { try { Logos.load(it, 150) } catch (e: Throwable) { null } }
+                val bits = logos.mapNotNull { try { Logos.load(it, 320) } catch (e: Throwable) { null } }
                 val ok = Pins.pinGroup(this, gid, name, bits)
                 main.post { if (!ok) Toast.makeText(this, R.string.pin_refused, Toast.LENGTH_LONG).show() }
             }

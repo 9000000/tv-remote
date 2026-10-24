@@ -129,6 +129,7 @@ class HomeActivity : Activity() {
     private var picture: Bitmap? = null                             // the photo wallpaper and its blurred copy; let go in [trim], the small one stays as a stand-in
     private var soft: Bitmap? = null
     private var badges = Badges.NONE
+    private var focusNext: String? = null                          // a tile just added: the next [show] focuses it, so it can be moved at once
     private var wantCol = -1                                        // the grid column Up and Down try to keep ([Nav])
     private var lastOpened: String?                                 // kept in prefs: the home may be made again while the app is open
         get() = getSharedPreferences("nav", MODE_PRIVATE).getString("last", null)
@@ -612,7 +613,8 @@ class HomeActivity : Activity() {
 
     private fun show() {
         moving?.let { it.carry(false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
-        val keep = (currentFocus as? Tile)?.app?.pkg
+        val keep = focusNext ?: (currentFocus as? Tile)?.app?.pkg
+        focusNext = null
         val keepAt = tiles().indexOf(currentFocus)                    // its place: an app hidden or a live tile taken off leaves no tile to go back to
         Motion.read(this, conf)
         if (!Motion.glass) glass.hide()
@@ -622,26 +624,26 @@ class HomeActivity : Activity() {
         widgetsRead()
         syncTiles()
         val byPkg = apps.associateBy { it.pkg }
-        val dockPkgs = Store.list(this, "dock").filter { it in byPkg }
+        val byKey = byPkg + pins.filter { it.pkg !in byPkg }.associateBy { it.pkg }   // a pinned shortcut is one of the grid's tiles, with a place of its own like an app
+        val dockPkgs = Store.list(this, "dock").filter { it in byKey }
         val hidden = Store.list(this, "hidden").toSet()
-        val shownPins = pins.filter { it.pkg !in byPkg }                // a shortcut put on the grid by the picker shows as that tile, not twice
+        val shownPins = pins.filter { it.pkg !in byPkg && it.pkg !in dockPkgs }   // a shortcut put on the grid by the picker shows as that tile, not twice
         val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names")
         if (key == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
         val width = resources.displayMetrics.widthPixels - dp(96)
-        val favs = dockPkgs.map { byPkg.getValue(it) } + shownPins     // the pins after the apps, under the same limit
+        val favs = dockPkgs.map { byKey.getValue(it) }
 
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
         grid.removeAllViews()
         val place = Store.list(this, "order").withIndex().associate { it.value to it.index }   // the grid's own order; an app it does not know goes last, A-Z
-        val rest = apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.sortedBy { place[it.pkg] ?: Int.MAX_VALUE }
+        val rest = (shownPins + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }).sortedBy { place[it.pkg] ?: if (it.pin != null && !it.grid) -1 else Int.MAX_VALUE }   // a pin nobody placed stays where it always was: right after the favourites
         val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
         val gap = dp(GRID_GAP)
         val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
-        val hiddenHere = apps.count { it.pkg in hidden }
-        if (hiddenHere > 0) cells.add(moves(Tile(this, null, w, getString(R.string.hidden, hiddenHere), ::dp).apply { setOnClickListener { unhide() } }, null))
+        cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { addPanel() } }, null))   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
         fill(cells, cols, gap)
         tileCache = made
         badgeTiles()
@@ -677,7 +679,7 @@ class HomeActivity : Activity() {
     }
 
     private fun startMove(pkg: String) {
-        val t = tiles().firstOrNull { it.app?.pkg == pkg && (it.app.pin == null || it.app.grid) } ?: return
+        val t = tiles().firstOrNull { it.app?.pkg == pkg } ?: return
         moving = t; movingFavs = dockCount()
         t.requestFocus(); t.carry(true); glass.hide()                 // the glass's edge inside the ring read as two borders
         for (o in tiles()) if (o !== t) o.animate().cancel().also { o.animate().alpha(DIM).setDuration(if (Motion.on) 150L else 0L).start() }   // the rest steps back
@@ -691,11 +693,11 @@ class HomeActivity : Activity() {
     }
 
     /** The tiles an app can be carried through: every app's, across the rows (the favourites are only the first [movingFavs]); a pinned shortcut keeps its place after them. */
-    private fun movable(): List<Tile> = tiles().filter { it.app != null && (it.app.pin == null || it.app.grid) }
+    private fun movable(): List<Tile> = tiles().filter { it.app != null }
     private var movingFavs = 0
 
     /** The favourites are the first tiles, as many as the saved dock holds (pins and the rest follow). */
-    private fun dockCount(): Int { val by = apps.map { it.pkg }.toSet(); return Store.list(this, "dock").count { it in by } }
+    private fun dockCount(): Int { val by = (apps.map { it.pkg } + pins.map { it.pkg }).toSet(); return Store.list(this, "dock").count { it in by } }
 
     private fun moveKey(t: Tile, code: Int): Boolean {
         when (code) {
@@ -714,8 +716,7 @@ class HomeActivity : Activity() {
         if (to !in m.indices) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
         val before = shown.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
         m.add(to, m.removeAt(at))
-        val k = movingFavs.coerceAtMost(m.size)
-        val all: List<View> = m.take(k) + shown.filter { it.app?.pin != null } + m.drop(k) + shown.filter { it.app == null }
+        val all: List<View> = m + shown.filter { it.app == null }      // each tile once: the old code listed every pin again after the apps, and a pin put on the grid (already in [movable]) was added to a second row: the crash
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()
         grid.removeAllViews()
         fill(all, cols, dp(GRID_GAP))
@@ -734,6 +735,7 @@ class HomeActivity : Activity() {
                     v.translationX = dx; v.translationY = dy
                     v.animate().translationX(0f).translationY(0f).setDuration(150).setInterpolator(Motion.glide).start()
                 }
+                if (moving === t) reveal(t)                           // the rows are laid out now: a carried tile is followed down and up the page like focus (it used the old layout's numbers before)
                 return true
             }
         })
@@ -748,7 +750,7 @@ class HomeActivity : Activity() {
         for (o in tiles()) o.animate().cancel().also { o.animate().alpha(1f).setDuration(if (Motion.on) 150L else 0L).start() }
         if (save) {                                                   // the first places are the favourites, as many as before: an app carried in pushes the last one down
             val m = movable().mapNotNull { it.app?.pkg }; val k = movingFavs.coerceAtMost(m.size)
-            val here = apps.map { it.pkg }.toSet()
+            val here = (apps.map { it.pkg } + pins.map { it.pkg }).toSet()
             Store.change(this, JSONObject()                           // one write: one rebuild
                 .put("dock", org.json.JSONArray(m.take(k) + Store.list(this, "dock").filter { it !in here }))   // an app no longer installed keeps its place at the end
                 .put("order", org.json.JSONArray(m.drop(k))))           // the grid's order; apps that leave drop out of it by not being listed
@@ -886,16 +888,19 @@ class HomeActivity : Activity() {
             if (f) v.glassOn(true) else v.post { if (currentFocus !is Tile) glass.hide() }   // to the buttons or a panel: the pane goes
             if (f) {
                 if (!stepping) wantCol = -1                           // focus came another way: the column to keep starts over here
-                if (grid.indexOfChild(v.parent as? View) <= 0) scrollToY(0)   // the first row: the page up, the clock and the widgets with it
-                else {                                                // a row that is cut off comes to the upper third; one in full view stays put
-                    var y = 0; var p: View? = v
-                    while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
-                    val margin = dp(40)
-                    if (y - margin < scroll.scrollY || y + v.height + margin > scroll.scrollY + scroll.height)
-                        scrollToY(maxOf(0, y - scroll.height / 3))
-                }
+                reveal(v)
             }
         }
+    }
+
+    /** [v] in view: the first row takes the page up with it; a row that is cut off comes to the upper third; one in full view stays put. */
+    private fun reveal(v: View) {
+        if (grid.indexOfChild(v.parent as? View) <= 0) { scrollToY(0); return }
+        var y = 0; var p: View? = v
+        while (p != null && p !== scroll) { y += p.top; p = p.parent as? View }
+        val margin = dp(40)
+        if (y - margin < scroll.scrollY || y + v.height + margin > scroll.scrollY + scroll.height)
+            scrollToY(maxOf(0, y - scroll.height / 3))
     }
 
     private fun shadeK() = conf.optInt("shade", HomeConfig.SHADE_DEFAULT).toFloat() / HomeConfig.SHADE_DEFAULT   // Backdrop.shade's: 1 the usual veil
@@ -983,15 +988,6 @@ class HomeActivity : Activity() {
         video?.detach(); video = null
     }
 
-    private val webRetry = Runnable { if (!isDestroyed && !trimmed && web == null && conf.optString("wall") == HomeConfig.WEB && conf.optString("wmode") != "snap") attachWeb() }
-
-    /** The page of the "web" wall behind the grid; a page that cannot load is taken away (the gradient shows, no dialog) and tried again in 2 minutes. */
-    private fun attachWeb() {
-        val url = conf.optString("wurl")
-        if (web != null && webOf == url) return
-        detachWeb()
-        val root = scroll.parent as? ViewGroup ?: return
-        val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) }) ?: return
     /**
      * The live "web" wall: a page that is only one video is played by the platform's player on a SurfaceView ([WebVideo] decides, once
      * per address); a real page gets its WebView. Until the answer is in, neither is made (the gradient shows): the WebView is the cost.
@@ -1026,6 +1022,15 @@ class HomeActivity : Activity() {
         if (netVideo.isNotEmpty()) netFailed() else { detachVideo(); ui.postDelayed(videoRetry, 120_000) }
     }.also { video = it }
 
+    private val webRetry = Runnable { if (!isDestroyed && !trimmed && web == null && conf.optString("wall") == HomeConfig.WEB && conf.optString("wmode") != "snap") attachWeb() }
+
+    /** The page of the "web" wall behind the grid; a page that cannot load is taken away (the gradient shows, no dialog) and tried again in 2 minutes. */
+    private fun attachWeb() {
+        val url = conf.optString("wurl")
+        if (web != null && webOf == url) return
+        detachWeb()
+        val root = scroll.parent as? ViewGroup ?: return
+        val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) }) ?: return
         val dim = WebWall.dim(this, shadeK())
         root.addView(v, 0, FrameLayout.LayoutParams(-1, -1))
         root.addView(dim, 1, FrameLayout.LayoutParams(-1, -1))
@@ -1168,6 +1173,14 @@ class HomeActivity : Activity() {
         capture(false); p.dialog.setOnKeyListener(null); amGroup = ""
         val rows = ArrayList<TvGlass.Item>()
         rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.am_open)) { launch(a) })
+        if (a.live) {                                                 // a live tile belongs to an app: its name and own icon, a press opens it
+            val prov = HomeConfig.tileProvider(a.pkg)
+            val pm = packageManager
+            val info = try { pm.getApplicationInfo(prov, 0) } catch (e: Exception) { null }
+            if (info != null) rows.add(TvGlass.Item(0, info.loadLabel(pm).toString(), "", false, false) {
+                if (!Apps.launch(this, prov, null)) toast(R.string.no_open)
+            }.also { it.picture = try { pm.getApplicationIcon(prov) } catch (e: Exception) { null } })
+        }
         subs(a, st).forEachIndexed { i, s -> rows.add(TvGlass.Item(s.icon, getString(s.title), s.hint, true, true) { sub(a, st, i) }) }
         rows.add(TvGlass.Item(R.drawable.ic_sliders, getString(R.string.customize)) { customize() })
         p.page(a.label, rows, at)
@@ -1206,8 +1219,8 @@ class HomeActivity : Activity() {
         val dockedPin = a.pin != null && !a.grid
         // 1. where it sits on the home screen
         val home = ArrayList<TvGlass.Item>()
+        home.add(item(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
         if (dockedPin) home.add(item(R.drawable.ic_close, R.string.unpin) { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() })
-        else home.add(item(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
         if (!a.live) home.add(item(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
         if (!dockedPin) {
             home.add(item(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
@@ -1595,10 +1608,34 @@ class HomeActivity : Activity() {
         return super.onKeyUp(code, e)
     }
 
-    private fun unhide() {
-        val hidden = Store.list(this, "hidden")
-        val here = apps.filter { it.pkg in hidden }
-        open = TvGlass.menu(this, R.style.Menu, getString(R.string.show), here.map { h -> TvGlass.Item(0, h.label) { Store.putList(this, "hidden", hidden - h.pkg) } }) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+    /** Puts [key] at the end of the grid (out of the dock, the hidden list), focused for a move; [tile] also adds it to the grid's own items. */
+    private fun addToGrid(key: String, tile: Boolean) {
+        fun l(k: String) = org.json.JSONArray(Store.list(this, k) - key)
+        val c = JSONObject().put("hidden", l("hidden")).put("dock", l("dock")).put("order", org.json.JSONArray(Store.list(this, "order") - key + key))
+        if (tile) c.put("tiles", org.json.JSONArray(Store.list(this, "tiles") - key + key))
+        focusNext = key
+        Store.change(this, c)
+    }
+
+    /** "+ Add": what is not on the grid, in one list: hidden apps (OK shows them again), live tiles, shortcuts, and a way to pin a channel. */
+    private fun addPanel() {
+        val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles")
+        val rows = ArrayList<TvGlass.Item>()
+        fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
+        for (h in apps.filter { it.pkg in hidden }) rows.add(TvGlass.Item(0, h.label, getString(R.string.add_hidden), false, false) { addToGrid(h.pkg, false) }.also { it.picture = icon(h.pkg) })
+        if (Tiles.status(this) == Tiles.OK) for (t in Tiles.available(this).filter { it.key !in onGrid })
+            rows.add(TvGlass.Item(R.drawable.ic_gauge, t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
+                .also { it.picture = icon(HomeConfig.tileProvider(t.key)) })
+        if (Pins.can(this)) {
+            val l = Pins.report(this, JSONObject()).optJSONArray("pinsAvail")
+            var n = 0
+            for (i in 0 until (l?.length() ?: 0)) { val o = l!!.getJSONObject(i); val k = o.getString("key")
+                if (k in onGrid || n >= 40) continue; n++
+                rows.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = icon(o.optString("app")) }) }
+        }
+        if (Apps.one(this, "dev.tvremote.channels") != null)
+            rows.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
+        open = TvGlass.menu(this, R.style.Menu, getString(R.string.add_title), rows) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
     }
 
     /**
@@ -1674,7 +1711,7 @@ class HomeActivity : Activity() {
  * One app: its banner (or icon on a colour, with the name; or, for a live tile, its own render: [LiveFace]), the name under it shown while focused. Focus grows it and rings it
  * ([TvTile]: the look is tvui's, TV Home's own moved there). [app] null: the "hidden apps" tile.
  */
-class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }) : TvTile(c, w, dp) {
+class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }, mark: Int = R.drawable.ic_eye_off) : TvTile(c, w, dp) {
     private val content: View
     private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
     private val badge = BadgeView(c, dp)
@@ -1696,7 +1733,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             inner.addView(ImageView(c).apply {
-                if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(R.drawable.ic_eye_off); imageTintList = ColorStateList.valueOf(Color.WHITE) }
+                if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(mark); imageTintList = ColorStateList.valueOf(Color.WHITE) }
             }, LayoutParams(h * 45 / 100, h * 45 / 100))
             inner.addView(Font.on(TextView(c)).apply {
                 text = label; textSize = 12f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER

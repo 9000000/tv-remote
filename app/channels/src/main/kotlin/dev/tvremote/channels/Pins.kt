@@ -41,7 +41,7 @@ object Pins {
     fun pin(c: Context, ch: Channel, logo: Bitmap?): Boolean {
         if (!can(c)) return false
         val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
-        val icon = if (logo != null) Icon.createWithBitmap(tile(logo)) else Icon.createWithResource(c, R.drawable.icon)
+        val icon = if (logo != null) Icon.createWithBitmap(tile(logo, size(sm))) else Icon.createWithResource(c, R.drawable.icon)
         val s = ShortcutInfo.Builder(c, "ch:" + ch.id)
             .setShortLabel(ch.name.take(24)).setLongLabel(ch.name).setIcon(icon)
             .setIntent(Intent(Intent.ACTION_VIEW, link(ch.id)).setClass(c, PlayActivity::class.java))
@@ -53,7 +53,7 @@ object Pins {
     fun pinGroup(c: Context, id: String, name: String, logos: List<Bitmap>): Boolean {
         if (!can(c)) return false
         val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
-        val icon = if (logos.isNotEmpty()) Icon.createWithBitmap(mosaic(logos)) else Icon.createWithResource(c, R.drawable.banner)
+        val icon = if (logos.isNotEmpty()) Icon.createWithBitmap(mosaic(logos, size(sm))) else Icon.createWithResource(c, R.drawable.banner)
         val s = ShortcutInfo.Builder(c, "grp:$id")
             .setShortLabel(name.take(24)).setLongLabel(name).setIcon(icon)
             .setIntent(Intent(Intent.ACTION_VIEW, groupLink(id)).setClass(c, BrowseActivity::class.java))
@@ -74,31 +74,56 @@ object Pins {
     }
 
     /** Up to four logos, two by two, on the light card. */
-    private fun mosaic(logos: List<Bitmap>): Bitmap {
-        if (logos.size == 1) return tile(logos[0])
-        val w = 320; val h = 180
+    private fun mosaic(logos: List<Bitmap>, size: Pair<Int, Int>): Bitmap {
+        if (logos.size == 1) return tile(logos[0], size)
+        val (w, h) = size
         val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val cv = Canvas(b)
-        cv.drawColor(Color.rgb(242, 244, 247))                         // square: the launcher rounds it to its own corners, ours showed its backing
+        cv.drawColor(cardColour(logos))                                // square: the launcher rounds it to its own corners, ours showed its backing
         val cw = w / 2f; val chh = h / 2f
         logos.take(4).forEachIndexed { i, logo ->
             val x = (i % 2) * cw; val y = (i / 2) * chh + if (logos.size == 2) chh / 2 else 0f
-            val k = minOf((cw - 28f) / logo.width, (chh - 22f) / logo.height)
+            val k = minOf((cw * 0.88f) / logo.width, (chh * 0.8f) / logo.height)
             val lw = logo.width * k; val lh = logo.height * k
-            cv.drawBitmap(logo, null, RectF(x + (cw - lw) / 2, y + (chh - lh) / 2, x + (cw + lw) / 2, y + (chh + lh) / 2), Paint(Paint.FILTER_BITMAP_FLAG))
+            cv.drawBitmap(logo, null, RectF(x + (cw - lw) / 2, y + (chh - lh) / 2, x + (cw + lw) / 2, y + (chh + lh) / 2), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG))
         }
         return b
     }
 
+    /**
+     * The card's pixels: the biggest 16:9 the system keeps. ShortcutManager shrinks any icon to getIconMaxWidth / Height (about
+     * 96 dp), so a bigger card was scaled down there and then stretched to the tile by the launcher: the blur of the first version (a fixed 320x180).
+     */
+    private fun size(sm: ShortcutManager): Pair<Int, Int> {
+        val mw = try { sm.iconMaxWidth } catch (e: Exception) { 0 }; val mh = try { sm.iconMaxHeight } catch (e: Exception) { 0 }
+        val w = (if (mw > 0) mw else 320).coerceIn(128, 640)
+        val h = w * 9 / 16
+        return w to (if (mh in 1 until h) mh else h)
+    }
+
+    /** Light card for the usual logo; a dark one when the logos are white (pluto's), which vanish on light. */
+    internal fun cardColour(logos: List<Bitmap>): Int {
+        var sum = 0.0; var n = 0
+        for (b in logos) {
+            val t = Bitmap.createScaledBitmap(b, 24, 24, true)
+            for (x in 0 until 24) for (y in 0 until 24) {
+                val p = t.getPixel(x, y); val a = Color.alpha(p)
+                if (a < 128) continue
+                sum += (0.299 * Color.red(p) + 0.587 * Color.green(p) + 0.114 * Color.blue(p)) / 255.0; n++
+            }
+        }
+        return if (n > 0 && sum / n > 0.85) Color.rgb(30, 36, 48) else Color.rgb(242, 244, 247)
+    }
+
     /** The logo on a light 16:9 card, as the list shows it: logos are made for light backgrounds. */
-    private fun tile(logo: Bitmap): Bitmap {
-        val w = 320; val h = 180
+    private fun tile(logo: Bitmap, size: Pair<Int, Int>): Bitmap {
+        val (w, h) = size
         val b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val cv = Canvas(b)
-        cv.drawColor(Color.rgb(242, 244, 247))                         // square: the launcher rounds it to its own corners, ours showed its backing
-        val k = minOf((w - 48f) / logo.width, (h - 40f) / logo.height)
+        cv.drawColor(cardColour(listOf(logo)))                         // square: the launcher rounds it to its own corners, ours showed its backing
+        val k = minOf((w * 0.85f) / logo.width, (h * 0.78f) / logo.height)            // fit-centre with a margin; scales with the card, not a fixed 48 px
         val lw = logo.width * k; val lh = logo.height * k
-        cv.drawBitmap(logo, null, RectF((w - lw) / 2, (h - lh) / 2, (w + lw) / 2, (h + lh) / 2), Paint(Paint.FILTER_BITMAP_FLAG))
+        cv.drawBitmap(logo, null, RectF((w - lw) / 2, (h - lh) / 2, (w + lw) / 2, (h + lh) / 2), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG))
         return b
     }
 }

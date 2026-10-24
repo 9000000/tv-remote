@@ -199,8 +199,8 @@ object Tiles {
  * shorter line shown instead of small, e.g. "-37 MB" after a press). A press shows the outcome as the ring running down to the
  * new value (about a second, once per outcome) and, while the provider works, a spinner turning on the ring; with motion off or
  * calm (a weak box) the numbers just change.
- * Two more layouts ("layout" in the state): "next", a channel to keep watching (a logo, its name, what is on and next: state big,
- * small, line2, logo; "empty" dims it) and "toggle", a value that a press steps through (a pill with big, a line under it; "on"
+ * Two more layouts ("layout" in the state): "next", a channel to keep watching (a logo, its name, what is on with a bar of how far it is: state big,
+ * small, progress, logo (line2, the next one, is sent but not drawn); "empty" dims it) and "toggle", a value that a press steps through (a pill with big, a line under it; "on"
  * fills the pill; the pill gives one small pop when the value changes, none with motion off).
  */
 class LiveFace(c: Context, private val w: Int, private val h: Int, private val title: String, private val say: (String) -> String) : View(c) {
@@ -221,6 +221,7 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
     private val box = RectF()
     private var big = ""; private var small = ""; private var mode = "live"; private var accent = "ok"; private var tone = ""
     private var hasRing = true
+    private var bar = -1f                                              // a "next" tile's programme so far, 0..1; -1 = the provider gave none
     private var layout = "gauge"; private var line2 = ""; private var logoUrl = ""; private var empty = false; private var on = false
     private var pop = 1f                                                // the toggle pill's scale during its pop
     private var popAnim: ValueAnimator? = null
@@ -264,6 +265,7 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
     private fun setOther(s: JSONObject) {
         anim?.cancel(); spinning(false)
         small = s.optString("small"); line2 = s.optString("line2"); empty = s.optBoolean("empty"); on = s.optBoolean("on"); hasRing = false; progress = 0f
+        bar = if (layout == "next" && s.has("progress")) s.optDouble("progress").toFloat().coerceIn(0f, 1f) else -1f
         icon(s.optString("icon"))
         val v = s.optString("big")
         if (layout == "toggle" && big.isNotEmpty() && v != big && motion) popPill()
@@ -414,21 +416,28 @@ class LiveFace(c: Context, private val w: Int, private val h: Int, private val t
             cv.drawText(fit(small, room), pad, 77f * u, paint)
             return
         }
-        val logoSize = 32f * u; val top = 31f * u
+        // for a TV at 3 m: the logo and the channel's name big, ONE line for what is on, and a thin bar for how far it is (no time text, no "next")
+        val logoH = 30f * u; val logoW = 42f * u; val top = 30f * u
         val bmp = logos.get(logoUrl)
-        box.set(pad, top, pad + logoSize, top + logoSize)
-        paint.color = INK; cv.drawRoundRect(box, 6f * u, 6f * u, paint)
+        box.set(pad, top, pad + logoW, top + logoH)
+        paint.color = INK; cv.drawRoundRect(box, 7f * u, 7f * u, paint)
         if (bmp != null) {
-            val f = Math.min((logoSize - 6f * u) / bmp.width, (logoSize - 6f * u) / bmp.height)
+            val f = Math.min((logoW - 8f * u) / bmp.width, (logoH - 8f * u) / bmp.height)   // fit-centre on the plain plate, never stretched
             val bw = bmp.width * f; val bh = bmp.height * f
-            cv.drawBitmap(bmp, null, RectF(pad + (logoSize - bw) / 2f, top + (logoSize - bh) / 2f, pad + (logoSize + bw) / 2f, top + (logoSize + bh) / 2f), paint)
+            cv.drawBitmap(bmp, null, RectF(pad + (logoW - bw) / 2f, top + (logoH - bh) / 2f, pad + (logoW + bw) / 2f, top + (logoH + bh) / 2f), paint)
         }
-        val nx = pad + logoSize + 8f * u
+        val nx = pad + logoW + 8f * u
         paint.typeface = Font.bold; paint.textSize = 20f * u; paint.color = INK
-        cv.drawText(fit(big, w - nx - pad), nx, top + logoSize / 2f + 7f * u, paint)
-        paint.typeface = Font.medium; paint.textSize = 12.5f * u; paint.color = INK
-        cv.drawText(fit(small, room), pad, 77f * u, paint)
-        if (line2.isNotEmpty()) { paint.textSize = 11.5f * u; paint.color = LINE_INK; cv.drawText(fit(line2, room), pad, 91f * u, paint) }
+        while (paint.measureText(big) > w - nx - pad && paint.textSize > 14f * u) paint.textSize -= u   // shrinks before it cuts: a name is read whole
+        cv.drawText(fit(big, w - nx - pad), nx, top + logoH / 2f + paint.textSize * 0.36f, paint)
+        val hasBar = bar >= 0f
+        paint.typeface = Font.medium; paint.textSize = 13.5f * u; paint.color = INK
+        cv.drawText(fit(small, room), pad, if (hasBar) 82f * u else 88f * u, paint)
+        if (hasBar) {
+            val bh = 3.5f * u; val by = 90f * u
+            paint.color = TRACK; box.set(pad, by, pad + room, by + bh); cv.drawRoundRect(box, bh / 2f, bh / 2f, paint)
+            paint.color = INK; box.set(pad, by, pad + Math.max(bh, room * bar), by + bh); cv.drawRoundRect(box, bh / 2f, bh / 2f, paint)
+        }
     }
 
     private fun drawToggle(cv: Canvas, pad: Float) {

@@ -18,6 +18,13 @@
     <string name="hide">Hide</string>
     <string name="info">App info</string>
     <string name="hidden">Hidden apps (%d)</string>
+    <string name="add">Add</string>
+    <string name="add_title">Add to Home</string>
+    <string name="add_hidden">Hidden app</string>
+    <string name="add_live">Live tile</string>
+    <string name="add_pin">Shortcut</string>
+    <string name="add_channel">Pin a channel</string>
+    <string name="add_channel_hint">Opens TV Channels</string>
     <string name="show">Show again</string>
     <string name="rename">Rename</string>
     <string name="rename_q">Rename this app</string>
