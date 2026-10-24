@@ -58,15 +58,15 @@ object Customize {
     private const val TINT_THEMES = 0xFFFFC857.toInt()
     private const val TINT_BG = 0xFF6F8DFF.toInt()                      // each group's chip hue on the first level: its icon in full, the chip a fifth of it
     private const val TINT_LOOK = 0xFFB48CFF.toInt()
-    private const val TINT_LAYOUT = 0xFF5EEAD4.toInt()
     private const val TINT_WIDGETS = 0xFFFFB86B.toInt()
     private const val TINT_SYSTEM = 0xFFFF7A8A.toInt()
     private const val TINT_LANG = 0xFF7BE0A0.toInt()
     private const val TINT_KEYS = 0xFFFFD27A.toInt()
+    private const val ADD = "+add"                                 // the add cell among the wall tiles (not a wall)
     private const val CHIP_ALPHA = 0x33000000                           // OR-ed into a tint
 
     /** One group of settings: a row on the first level and a page of controls behind it. [last] is where the focus was when it was left. */
-    private val PREVIEW = setOf("themes", "bg", "look", "widgets")              // pages seen on Home as they change: no dim over it (layout opens its own stepper, the panel hidden)
+    private val PREVIEW = setOf("themes", "bg", "look", "widgets")              // pages seen on Home as they change: no dim over it (cols / rows open their own stepper, the panel hidden)
 
     private class Group(c: Context, val key: String, val name: Int, val icon: Int, val tint: Int) {
         val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
@@ -91,9 +91,8 @@ object Customize {
                 val what = if (set) a.getString(R.string.g_bg_set, c.getJSONArray("walls").length(), a.getString(EVERY_WORDS.getValue(c.optString("wevery"))).lowercase()) else wallName(a, c.optString("wall"))
                 what + " · " + a.getString(R.string.g_shade_n, c.optInt("shade", HomeConfig.SHADE_DEFAULT))
             }
-            "look" -> a.getString(R.string.g_look_sum, a.getString(if (c.optString("focus", "glass") == "ring") R.string.c_focus_ring else R.string.c_focus_glass),
-                if (!c.optBoolean("anim", true)) a.getString(R.string.w_off) else a.getString(when (c.optString("motion")) { "calm" -> R.string.c_motion_calm; "full" -> R.string.c_motion_full; else -> R.string.c_motion_auto }).lowercase())
-            "layout" -> a.getString(R.string.g_cols_n, c.optInt("cols", HomeConfig.COLS_DEFAULT)) + " · " +
+            "look" -> a.getString(if (c.optString("focus", "glass") == "ring") R.string.c_focus_ring else R.string.c_focus_glass) + " · " +
+                a.getString(R.string.g_cols_n, c.optInt("cols", HomeConfig.COLS_DEFAULT)) + " · " +
                 (c.optDouble("rows", 0.0).let { if (it < 1) a.getString(R.string.g_rows_auto) else a.getString(R.string.g_rows_n, rowsWord(a, it)) })
             "widgets" -> a.getString(R.string.g_widgets_n, c.optJSONArray("widgets")?.length() ?: 0)
             "system" -> a.getString(R.string.g_power) + ": " + on("power") + " · " + a.getString(R.string.g_dream) + ": " + on("dream")
@@ -214,7 +213,7 @@ object Customize {
         val groups = listOf(
             Group(a, "themes", R.string.g_themes, R.drawable.ic_star, TINT_THEMES),
             Group(a, "bg", R.string.bg, R.drawable.ic_image, TINT_BG), Group(a, "look", R.string.g_look, R.drawable.ic_sparkle, TINT_LOOK),
-            Group(a, "layout", R.string.g_layout, R.drawable.ic_apps, TINT_LAYOUT), Group(a, "widgets", R.string.w_widgets, R.drawable.ic_gauge, TINT_WIDGETS),
+            Group(a, "widgets", R.string.w_widgets, R.drawable.ic_gauge, TINT_WIDGETS),
             Group(a, "system", R.string.g_system, R.drawable.ic_power, TINT_SYSTEM), Group(a, "keys", R.string.g_keys, R.drawable.ic_keyboard, TINT_KEYS),
             Group(a, "lang", R.string.c_lang, R.drawable.ic_globe, TINT_LANG))
         for (g in groups) g.col.setPadding(dp(28), dp(8), dp(28), dp(28))
@@ -242,14 +241,24 @@ object Customize {
         var slid = !Motion.on
         fun put(v: ImageView, b: Bitmap) { if (slid) v.setImageBitmap(b) else waiting.add(v to b) }
         val rotNote = label("", 12f, DIM)
+        val nowNote = label("", 14f, ACCENT)                           // at the top of the page while it rotates: how many, how often, which is on screen
         fun wallOn(c: JSONObject, k: String) =
             if (c.optString("wevery") == "off") c.optString("wall") == k
             else c.getJSONArray("walls").let { s -> (0 until s.length()).any { s.getString(it) == k } }
         fun markAll() {
             val c = Store.get(a)                                         // once: reading it per tile cost 18 ms on the FPT box
-            for ((k, v) in tiles) { val on = wallOn(c, k); v.isSelected = on; v.findViewWithTag<View>("check")?.visibility = if (on) View.VISIBLE else View.GONE }
-            rotNote.visibility = if (c.optString("wevery") != "off") View.VISIBLE else View.GONE
+            val rotating = c.optString("wevery") != "off"
+            val shown = c.optString("wall")
+            // two marks when it rotates: a ✓ on each wall in the set, and "showing now" on the one on screen; one wall only: just the ✓
+            for ((k, v) in tiles) {
+                val on = wallOn(c, k); v.isSelected = on; v.findViewWithTag<View>("check")?.visibility = if (on) View.VISIBLE else View.GONE
+                v.findViewWithTag<View>("now")?.visibility = if (rotating && k == shown) View.VISIBLE else View.GONE
+            }
+            rotNote.visibility = if (rotating) View.VISIBLE else View.GONE
             rotNote.text = a.getString(if (c.getJSONArray("walls").length() < 2) R.string.rot_pick else R.string.rot_set)
+            nowNote.visibility = if (rotating) View.VISIBLE else View.GONE
+            nowNote.text = a.getString(R.string.wall_rot_state, c.getJSONArray("walls").length(), a.getString(EVERY_WORDS.getValue(c.optString("wevery"))).lowercase(),
+                if (shown.isEmpty()) "" else wallName(a, shown))
         }
         // how often it moves on: two rows of three chips, the one in use tinted like the switches below
         val everyWords = EVERY_WORDS
@@ -413,20 +422,8 @@ object Customize {
             Themes.fetchThumbs(a)
         }
         groups[1].fill = {
-            // first, seen without scrolling past every background. A photo from a phone on the same Wi-Fi: a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background
-            col.addView(LinearLayout(a).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-                background = TvGlass.rowBg(a, 16)
-                addView(ImageView(a).apply { setImageResource(R.drawable.ic_cast); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
-                addView(LinearLayout(a).apply {
-                    orientation = LinearLayout.VERTICAL
-                    addView(label(a.getString(R.string.wall_phone), 15f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-                    addView(label(a.getString(R.string.wall_phone_sub), 12f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
-                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
-                setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
-            }, LinearLayout.LayoutParams(-1, -2))
+            // a photo from a phone on the same Wi-Fi is the first cell of "your photos" (a QR screen, no ADB and no TV Setup; when it was used the panel closes to show the new background)
+            col.addView(nowNote, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
             // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
             tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
             col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
@@ -449,12 +446,24 @@ object Customize {
             }
             col.addView(rotNote, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
             // the wall tiles by where they come from, each with the settings that belong to it (a video's sound only when there is a video)
+            // the "add" cell: same size and rings as a background, a big + on it; OK opens the QR screen
+            fun addTile() = FrameLayout(a).apply {
+                isFocusable = true; isClickable = true
+                background = GradientDrawable().apply { setColor(DOOR_REST); cornerRadius = dp(12).toFloat() }
+                foreground = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
+                    addState(intArrayOf(), ring(d, 1, RING_REST))
+                }
+                val (iv, sz) = icon(R.drawable.ic_plus, ACCENT, dp(40)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER))
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
+                setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
+            }
             fun wallRows(list: List<String>) {
             var row: LinearLayout? = null
             list.forEachIndexed { i, k ->
                 if (i % cols == 0) { row = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }; col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap }) }
                 val cell = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
-                val t = FrameLayout(a).apply {
+                val t = if (k == ADD) addTile() else FrameLayout(a).apply {
                     isFocusable = true; isClickable = true
                     val c = if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k) || k == HomeConfig.BING || k == HomeConfig.WEB) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
                     background = (if (c.all { it == c[0] }) GradientDrawable().apply { setColor(c[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, c))
@@ -472,15 +481,19 @@ object Customize {
                     foreground = StateListDrawable().apply {
                         addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
-                        addState(intArrayOf(), ring(d, 1, 0x33FFFFFF))
+                        addState(intArrayOf(), ring(d, 1, RING_REST))
                     }
                     if (k == HomeConfig.WEB) { val (iv, s) = icon(R.drawable.ic_globe, ACCENT, dp(26)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
                     if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
                     addView(FrameLayout(a).apply {                            // the ✓, shown on the chosen one (mark)
                         tag = "check"
                         background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
-                        val (iv, s) = icon(R.drawable.ic_check, 0xFF0B1020.toInt(), dp(14)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
+                        val (iv, s) = icon(R.drawable.ic_check, CHECK_INK, dp(14)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
                     }, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
+                    addView(Font.on(TextView(a)).apply {                      // "showing now": filled, unlike the ✓ (in the set); only while it rotates
+                        tag = "now"; text = a.getString(R.string.wall_now); textSize = 10f; setTextColor(CHECK_INK); maxLines = 1; visibility = View.GONE
+                        setPadding(dp(7), dp(2), dp(7), dp(2)); background = GradientDrawable().apply { setColor(ACCENT); cornerRadius = dp(8).toFloat() }
+                    }, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(6), 0, 0, dp(6)) })
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         val c = Store.get(a)
@@ -525,9 +538,9 @@ object Customize {
                         true
                     }
                 }
-                tiles.add(k to t)
+                if (k != ADD) tiles.add(k to t)
                 cell.addView(t, LinearLayout.LayoutParams(w, w * 9 / 16))
-                cell.addView(label(wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
+                cell.addView(label(if (k == ADD) a.getString(R.string.wall_add) else wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
                     LinearLayout.LayoutParams(w, -2).apply { topMargin = dp(5) })
                 row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
             }
@@ -542,7 +555,7 @@ object Customize {
                 section(a.getString(title)); wallRows(list); more()
             }
             part(R.string.wall_h_online, online)
-            part(R.string.wall_h_photos, photos)
+            section(a.getString(R.string.wall_h_photos)); wallRows(listOf(ADD) + photos)         // always there: with no photo yet, the grid is the + cell alone
             part(R.string.wall_h_videos, videos) {
                 // a video or GIF background (HomeConfig vsound / vvol / vfps / vres): sound and volume now; frame rate and size for the NEXT upload, which is made on a phone through the QR above
                 col.addView(View(a), LinearLayout.LayoutParams(1, dp(10)))
@@ -554,9 +567,11 @@ object Customize {
             part(R.string.wall_h_scenes, scenes)
             part(R.string.wall_h_colours, colours)
             markAll(); markEvery()
+            conf.takeIf { it.optString("wevery") != "off" }?.optString("wall")?.let { now -> tiles.firstOrNull { it.first == now }?.let { t -> groups[1].start = { t.second } } }   // rotating: the page opens on the one on screen
             if (keys.any { HomeConfig.isPhoto(it) || HomeConfig.isVideo(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
         }
         groups[2].fill = {
+            col.addView(label(a.getString(R.string.g_sec_show).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(2) })
             tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
             tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
             tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
@@ -564,12 +579,11 @@ object Customize {
                 listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))
             tile(R.drawable.ic_eye, a.getString(R.string.c_focus), null, "focus",
                 listOf("ring" to a.getString(R.string.c_focus_ring), "glass" to a.getString(R.string.c_focus_glass)))
-        }
-        groups[3].fill = {
+            section(a.getString(R.string.g_sec_grid))
             tile(R.drawable.ic_apps, a.getString(R.string.c_cols), null, "cols", (HomeConfig.COLS_MIN..HomeConfig.COLS_MAX).map { "$it" to "$it" })
             tile(R.drawable.ic_updown, a.getString(R.string.c_rows), null, "rows")
         }
-        groups[4].fill = {
+        groups[3].fill = {
             val preview = PackGlyph(a)
             // the result first, where it is seen as the cards below change (at the end it took scrolling past every card)
             col.addView(label(a.getString(R.string.w_layout).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(10) })
@@ -596,7 +610,7 @@ object Customize {
                 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
             }
         }
-        groups[5].fill = {
+        groups[4].fill = {
             tile(R.drawable.ic_power, a.getString(R.string.c_power), null, "power")   // the bar's power button (HomeConfig "power")
             tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
             // another launcher as the home screen: TV Home has no ADB to turn the TV's own one off (without that Home goes on landing on it,
@@ -622,10 +636,10 @@ object Customize {
                 }
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
-        groups[6].fill = {
+        groups[5].fill = {
             launchPage(a, col, ::glass, ::label, gap)
         }
-        groups[7].fill = {
+        groups[6].fill = {
             // every language at once, each in its own words, the one in use ticked: one tile stepping through them hid which
             // there were, and each press built Home again before the next could be seen
             val sys = android.content.res.Resources.getSystem().configuration.locales[0]
@@ -644,7 +658,7 @@ object Customize {
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener { if (k != Store.get(a).optString("lang")) Store.change(a, JSONObject().put("lang", k)) }   // Home is built again in it
                 }
-                if (k == now) groups[7].start = { row }
+                if (k == now) groups[6].start = { row }
                 col.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (col.childCount > 0) topMargin = dp(8) })
             }
         }

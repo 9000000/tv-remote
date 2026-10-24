@@ -217,8 +217,9 @@
     <string name="upd_loading">Downloading… %1$d%%</string>
     <string name="upd_cancel">Cancel</string>
     <string name="upd_failed">Could not update (%1$s). The TV Remote app on a phone can update it too.</string>
-    <string name="wall_phone">Your photo or video from a phone</string>
-    <string name="wall_phone_sub">Scan a code with the phone, pick a photo, video or GIF</string>
+    <string name="wall_add">Add a photo or video</string>
+    <string name="wall_rot_state">Rotating %1$d backgrounds · %2$s · showing now: %3$s</string>
+    <string name="wall_now">Showing now</string>
     <string name="pq_addr">Or type this address in the phone\'s browser (same Wi-Fi):</string>
     <string name="pq_time">The code stops working after 10 minutes or when you close this screen.</string>
     <string name="pq_none">The TV has no Wi-Fi or cable connection, so a phone cannot reach it.</string>
@@ -269,12 +270,12 @@
     <string name="c_tiles_none">Live widgets come from TV Setup and TV Channels: install or update them to get them</string>
     <string name="c_power">Power button in the bar</string>
     <string name="g_look">Look</string>
-    <string name="g_layout">Layout</string>
     <string name="g_system">System</string>
     <string name="g_back">Back</string>
     <string name="g_bg_set">%1$d pictures · %2$s</string>
     <string name="g_shade_n">shade %1$d%%</string>
-    <string name="g_look_sum">%1$s · motion %2$s</string>
+    <string name="g_sec_show">Screen</string>
+    <string name="g_sec_grid">App grid</string>
     <string name="g_cols_n">%1$d columns</string>
     <string name="g_rows_n">%1$s rows</string>
     <string name="g_rows_auto">auto rows</string>

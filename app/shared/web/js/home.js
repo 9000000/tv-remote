@@ -460,7 +460,7 @@ async function homeOpen() {
       if (n.length) send({ walls: n });
     };
     const tile = (k, face, name, extra) => {
-      const b = el('button', { type: 'button', className: isOn(k) ? 'on' : '', 'aria-pressed': String(isOn(k)), onclick: () => pick(k) }, face, el('span', { textContent: name }));
+      const b = el('button', { type: 'button', className: isOn(k) ? 'on' : '', 'aria-pressed': String(isOn(k)), onclick: () => pick(k) }, face, el('span', { textContent: name }), ...(multi && c.wall === k ? [el('span', { className: 'nowtag', textContent: T('home.wall_now') })] : []));   // "showing now": filled, unlike the lit tile (in the set)
       return extra ? el('span', { className: 'wallcell' }, b, extra) : b;
     };
     const art = HOME_ART_IDS.map((k) => {
@@ -493,7 +493,8 @@ async function homeOpen() {
     wPhotos.hidden = !photos.length; wVideos.hidden = !videos.length;
     wScenes.replaceChildren(...art); walls.replaceChildren(...plain);
     every.replaceChildren(...Object.keys(HOME_EVERY).map((e) => el('button', { type: 'button', className: c.wevery === e ? 'on' : '', 'aria-pressed': String(c.wevery === e), textContent: T(HOME_EVERY[e]), onclick: () => send({ wevery: e }) })));
-    put(everyNote, 'textContent', multi ? T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
+    const shownName = (() => { const t = [...wOnline.querySelectorAll('.nowtag'), ...wPhotos.querySelectorAll('.nowtag'), ...wVideos.querySelectorAll('.nowtag'), ...wScenes.querySelectorAll('.nowtag'), ...walls.querySelectorAll('.nowtag')][0]; return t ? t.previousSibling.textContent : ''; })();
+    put(everyNote, 'textContent', multi ? T('home.rot_state', { n: set.length, every: T(HOME_EVERY[c.wevery]).toLowerCase(), name: shownName }) + ' ' + T(set.length < 2 && set[0] !== 'bing' ? 'home.rotate_pick' : 'home.rotate_set') : '');   // Bing alone turns through its last 8 days
     everyNote.hidden = !multi;
   }
 
@@ -584,8 +585,8 @@ async function homeOpen() {
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
       hScenes, wScenes, hColours, walls]],
-    ['look', 'sparkle', 180, 'home.g_look', [focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet')]],
-    ['layout', 'apps', 265, 'home.g_layout', [colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
+    ['look', 'sparkle', 180, 'home.g_look', [el('h3', { className: 'secthead', textContent: T('home.sec_show') }), focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet'),
+      el('h3', { className: 'secthead', textContent: T('home.sec_grid') }), colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
     ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, noteHead, noteLine, qrHead, qrList, qrNote]],
     ['system', 'power', 260, 'home.g_system', [check(power, 'home.power'), powerOld, check(dream, 'home.dream')]],
@@ -626,9 +627,7 @@ async function homeOpen() {
     const set = c.wrotate && c.wevery && c.wevery !== 'off' && c.wall !== 'web';
     put(subs.bg, 'textContent', [set ? T('home.sum_bg_set', { n: (c.walls || []).length }) : wallWord(c), c.shadeOk ? T('home.sum_shade', { n: c.shade ?? 50 }) : ''].filter(Boolean).join(' · '));
     put(subs.look, 'textContent', [c.focus !== undefined ? T(c.focus === 'ring' ? 'home.focus_ring' : 'home.focus_glass') : '',
-      c.anim === false ? T('home.sum_still') : c.motion !== undefined ? T(c.motion === 'calm' ? 'home.motion_calm' : c.motion === 'full' ? 'home.motion_full' : 'home.motion_auto') : '',
-      c.clock24 ? '24h' : '12h'].filter(Boolean).join(' · '));
-    put(subs.layout, 'textContent', [c.colsOk ? T('home.sum_cols', { n: c.cols || 5 }) : '', c.rowsOk ? (c.rows >= 1 ? T('home.sum_rows', { n: c.rows }) : T('home.sum_rows_auto')) : '',
+      c.colsOk ? T('home.sum_cols', { n: c.cols || 5 }) : '', c.rowsOk ? (c.rows >= 1 ? T('home.sum_rows', { n: c.rows }) : T('home.sum_rows_auto')) : '',
       c.hidden.length ? T('home.sum_hidden', { n: c.hidden.length }) : ''].filter(Boolean).join(' · '));
     put(subs.widgets, 'textContent', c.widgets ? T('home.sum_widgets', { n: c.widgets.length }) : '');
     put(subs.system, 'textContent', T('home.sum_system', { power: onOff(c.power !== false), dream: onOff(!!c.dream) }));

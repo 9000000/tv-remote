@@ -215,8 +215,9 @@
     <string name="upd_loading">Đang tải… %1$d%%</string>
     <string name="upd_cancel">Hủy</string>
     <string name="upd_failed">Không cập nhật được (%1$s). App TV Remote trên điện thoại cũng cập nhật được.</string>
-    <string name="wall_phone">Ảnh hoặc video từ điện thoại</string>
-    <string name="wall_phone_sub">Quét mã bằng điện thoại, chọn ảnh, video hoặc GIF</string>
+    <string name="wall_add">Thêm ảnh / video</string>
+    <string name="wall_rot_state">Đổi lần lượt %1$d nền · %2$s · đang hiện: %3$s</string>
+    <string name="wall_now">Đang hiện</string>
     <string name="pq_addr">Hoặc gõ địa chỉ này vào trình duyệt điện thoại (cùng Wi-Fi):</string>
     <string name="pq_time">Mã hết hạn sau 10 phút hoặc khi đóng màn hình này.</string>
     <string name="pq_none">TV chưa có Wi-Fi hoặc dây mạng nên điện thoại không kết nối được.</string>
@@ -267,12 +268,12 @@
     <string name="c_tiles_none">Live widget do TV Setup và TV Channels cung cấp: cài hoặc cập nhật để có</string>
     <string name="c_power">Nút nguồn trên thanh</string>
     <string name="g_look">Giao diện</string>
-    <string name="g_layout">Bố cục</string>
     <string name="g_system">Hệ thống</string>
     <string name="g_back">Quay lại</string>
     <string name="g_bg_set">%1$d hình · %2$s</string>
     <string name="g_shade_n">phủ tối %1$d%%</string>
-    <string name="g_look_sum">%1$s · chuyển động %2$s</string>
+    <string name="g_sec_show">Hiển thị</string>
+    <string name="g_sec_grid">Lưới ứng dụng</string>
     <string name="g_cols_n">%1$d cột</string>
     <string name="g_rows_n">%1$s hàng</string>
     <string name="g_rows_auto">hàng tự động</string>
