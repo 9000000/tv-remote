@@ -12,6 +12,7 @@ import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -60,6 +61,10 @@ object WebWall {
                 override fun shouldOverrideUrlLoading(v: WebView, r: WebResourceRequest) = false   // a redirect stays inside, never to another app
                 // the renderer is killed when memory is short: without this answer the whole launcher goes down with it
                 override fun onRenderProcessGone(v: WebView, d: RenderProcessGoneDetail): Boolean { later(failed); return true }
+            }
+            webChromeClient = object : WebChromeClient() {
+                // without one the WebView draws a grey play button on every video still loading
+                override fun getDefaultVideoPoster(): Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
             }
             resumeTimers()                                              // a page made after Home was stopped would sit frozen by its pauseTimers
             alive.add(this)

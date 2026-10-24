@@ -245,7 +245,7 @@
    },
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2F330px--Sunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.jpg",
     "shade": 30,
     "widgets": [
      "clock",
@@ -279,7 +279,7 @@
    },
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2F9%2F91%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm.480p.vp9.webm",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2F9%2F91%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2F9%2F91%2FShanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm%2F330px--Shanghai_Bund%252C_Lujiazui_Skyline_Timelapse.webm.jpg",
     "shade": 45,
     "widgets": [
      "clock",
@@ -574,5 +574,5 @@
    }
   }
  ],
- "rev": 1792866327
+ "rev": 1792867510
 }

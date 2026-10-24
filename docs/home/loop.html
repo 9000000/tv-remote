@@ -8,16 +8,25 @@
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: linear-gradient(135deg, #050a1a, #0b1b45 60%, #14307a); }
   video, img { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  video { opacity: 0; transition: opacity .6s; }
+  video.on { opacity: 1; }
+  img.p { filter: blur(24px); transform: scale(1.1); }
 </style>
 <script>
   const HOSTS = ['upload.wikimedia.org', 'videos.pexels.com', 'images.pexels.com', 'images.unsplash.com'];
   const q = new URLSearchParams(location.search);
   const ok = (s) => { try { const u = new URL(s); return u.protocol === 'https:' && HOSTS.includes(u.hostname); } catch { return false; } };
-  const v = q.get('v'), i = q.get('i');
+  const v = q.get('v'), i = q.get('i'), p = q.get('p');
   if (v && ok(v)) {
+    // hidden until its first frame plays: an Android WebView draws a grey play button on a video that has none yet;
+    // meanwhile the small picture ?p= (the theme's thumb), blurred, or the gradient
     const e = document.createElement('video');
     Object.assign(e, { src: v, autoplay: true, loop: true, muted: true, playsInline: true });
-    e.setAttribute('muted', ''); document.addEventListener('DOMContentLoaded', () => { document.body.append(e); e.play().catch(() => {}); });
+    e.setAttribute('muted', ''); e.addEventListener('playing', () => e.classList.add('on'), { once: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      if (p && ok(p)) { const b = document.createElement('img'); b.src = p; b.alt = ''; b.className = 'p'; document.body.append(b); }
+      document.body.append(e); e.play().catch(() => {});
+    });
   } else if (i && ok(i)) {
     const e = document.createElement('img'); e.src = i; e.alt = '';
     document.addEventListener('DOMContentLoaded', () => document.body.append(e));
