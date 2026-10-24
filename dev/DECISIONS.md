@@ -128,8 +128,10 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
   at the point of use only: no banners. Hiding it reads as a bug. The map of who needs whom: `docs/` apps page.
 - **"Open on TV" sends a media link (.m3u8, .mp4 … by the path's extension, `Channels.isStream` = `js/remote.js isStream`)
   to TV Channels' player**: most TVs have nothing that opens a bare stream. Without TV Channels it goes as any link, with a hint.
-- **Heavy-app auto stop is opt-in** and never touches music / background audio apps or the keep list: people listen with the
-  screen off. `sharedUserId` to share one process between our apps was rejected: adding it to shipped apps breaks updates.
+- **Heavy-app auto stop ("One heavy app mode") was dropped, measured 2026-10-25** on an FPT Play 650 (1.8 GB RAM, 520 MB available on Home):
+  a YouTube left behind held only ~38-45 MB of MemAvailable and a force-stop gave back 45 MB, but the next launch became a cold start of
+  1216 ms instead of a warm 159 ms (7-8x slower); Android's low-memory killer frees that memory by itself when it is needed. A stored
+  `heavy` key in a TV's rules is simply ignored. `sharedUserId` to share one process between our apps was rejected: adding it to shipped apps breaks updates.
 - **Key shortcuts and "open an app at power-on" (TV Home settings, default off) are done by TV Setup, pushed by TV Home.** TV Home has no
   ADB, no key filter, and does not run in standby, so it sends the whole setting (`keyon/keyapps/autoon/autoapp`) through the
   signature-checked HomeInfo provider (method "keys") on every change and start; TV Setup keeps it (`HomeKeys`, prefs) and works after a
@@ -173,7 +175,7 @@ Hard-won facts behind code that looks odd. Each: what was seen, what was decided
 ## Hold to use Input / Settings (HoldKeys)
 
 - **The rule is `holdkeys` in `Rules` (not a KeyFix pref)** so every client switches it the same way: `/api/rules {do:"holdkeys",on}` (TV web page,
-  computer, phone Manage screen: the card under "one heavy app" in Health), and the TV's own Optimize TV menu. A change calls `KeyFix.sync` +
+  computer, phone Manage screen: the card under "Hold to use Input / Settings" in Health), and the TV's own Optimize TV menu. A change calls `KeyFix.sync` +
   `KeyFixService.poke`; `sync` keeps the accessibility service on while a dead key needs it OR this is on (`need = wanted && plan || hold`), off
   when neither. `Rules.active` is true while it is on, so `KeyFixWatch` (in RemoteService) keeps re-adding the service if the system drops it.
 - **Time, not repeats:** the key filter sits before the dispatcher's auto-repeat, so it sees a down and an up and no repeats. A press is armed on

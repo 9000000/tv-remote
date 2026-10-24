@@ -213,26 +213,20 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
     private var pinAt = 0L
     private val usage by lazy { c.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager }
 
-    private var heavyMode: HeavyMode? = null
-    private val heavy: HeavyMode get() = heavyMode ?: HeavyMode(c, adb).also { heavyMode = it }
-
-    /** One look at the app on screen, for the locked apps and for [HeavyMode]; returns how long until the next. */
+    /** One look at the app on screen, for the locked apps; returns how long until the next. */
     private fun lockCheck(): Long {
         val o = Rules.load(c)
         val apps = Rules.locked(o)
-        val heavyOn = Heavy.on(o)
         val sched = Rules.schedApps(o)
         val kids = Rules.kidsMode(o)
         val code = Rules.hasCode(o)
-        if (apps.isEmpty() && !kids && sched.isEmpty() && !heavyOn && !code) { eventsTo = 0; heavyMode?.look("", 0, true, o); return 3_000 }   // off: forgets the apps it followed
+        if (apps.isEmpty() && !kids && sched.isEmpty() && !code) { eventsTo = 0; return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
         if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
             unlocked = ""
-            if (heavyOn) heavy.look("", now, false, o)                // standby: the waits start over when the screen is on
             return 2_000
         }
         val app = frontApp(now)
-        if (heavyOn) heavy.look(app, now, true, o)                    // the same events as the locks: no second poller
         if (app in sched && !Rules.allowedNow(o, app, now) && Rules.unlockUntil(o, now) == 0L && now - (lastStop[app] ?: 0L) > 15_000) {
             lastStop[app] = now                                       // outside its window: closed here, before any PIN could be asked
             close(app, "sched")

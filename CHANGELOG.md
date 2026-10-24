@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Đã bỏ "Chế độ 1 app nặng" (Health): đo trên TV 1,8 GB RAM, app bị bỏ lại chỉ giữ ~40 MB, đóng đi thì lần mở sau chậm gấp 7-8 lần (khởi động nguội 1216 ms thay vì 159 ms); Android tự dọn khi cần. TV còn giữ cài đặt cũ thì bỏ qua.
 - Tab Ứng dụng: "Cần giữ" chỉ đánh dấu TV Setup (và TV Setup Keys), Tailscale, và TV Home khi nó là màn hình chính; TV Channels, TV Games, app điện thoại là app thường (dừng, tắt, gỡ được). Bộ dọn RAM vẫn không đóng TV Home.
 - TV Home: đồng hồ lớn đứng cạnh hai thẻ lớn khác hiện ngày ngắn ("CN, 25/10") thay vì cắt ngày dài; chủ đề Hiện đại dùng đồng hồ nhỏ, mặt kim đầy thẻ.
 - TV Home: chủ đề mới "Hiện đại" (đầu danh sách: nền xanh đêm, đồng hồ kim, thời tiết và lịch âm cỡ lớn, lời chào). Các chủ đề có sẵn giờ nằm trong danh sách ký của trang web (`docs/home/themes.json`), thêm hay sửa không cần app mới; app giữ bản cũ và bản đóng gói khi không có mạng. Hộp thoại chi tiết chủ đề (và các thông báo một nút) mở với tiêu điểm ở nút OK: bấm OK một lần là đóng.
@@ -56,6 +57,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hộp thoại TV chỉ có một nút (thông báo, chi tiết): mở ra là con trỏ D-pad đã nằm trên nút, bấm OK một lần là đóng.
 
 **English**
+- Removed "One heavy app mode" (Health): measured on a 1.8 GB TV, a leftover app held only ~40 MB and closing it made the next launch 7-8x slower (cold start 1216 ms vs 159 ms); Android frees memory by itself when needed. A TV that still stores the old setting ignores it.
 - Apps tab: "Must keep" now marks only TV Setup (and TV Setup Keys), Tailscale, and TV Home while it is the home screen; TV Channels, TV Games and the Phone app are ordinary apps (stop, turn off, remove). The RAM cleaner still never closes TV Home.
 - TV Home: a big clock beside two other big cards shows the short date ("Sun 25 Oct") instead of cutting the long one; Modern's clock is the small one, its face filling the card.
 - TV Home: new theme "Modern" (first in the list: dark navy background, analog clock, big weather and lunar cards, greeting). The ready-made themes now come from the site's signed list (`docs/home/themes.json`), so adding or changing one needs no new app; the app keeps the last copy and a packed one for offline. The theme detail dialog (and one-button notices) opens with focus on OK: one press closes it.

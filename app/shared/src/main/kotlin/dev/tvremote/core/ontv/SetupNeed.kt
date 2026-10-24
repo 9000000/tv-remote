@@ -30,7 +30,6 @@ object SetupNeed {
         "dim" to "0.12.1",                                             // 🔅 a tint over the whole screen (DimLayer)
         "unextra" to "0.12.1",                                         // ↺ taking back the minutes granted to an app today
         "holdkeys" to "0.19.1",                                        // 🔘 Input / Settings need a 2 s hold (HoldKeys)
-        "heavy" to "0.19.1",                                           // 🧠 one heavy app at a time: a video app left behind is closed (Heavy)
         "checkout" to "0.19.1",                                        // 🧳 check-out: forget the guests' browsers (RulesReceiver "forget_web")
         "schedule" to "0.20.1",                                        // 📅 an app opened only on some days in a window of the day (Rules "sched"; the release after 0.20.0)
         "schedule_windows" to "0.21.1",                                // 📅 several windows in a schedule (Rules "sched" windows; the release after 0.21.0); one window still works on older ones
@@ -66,7 +65,6 @@ object SetupNeed {
             "dim" -> t("core.need_dim")
             "unextra" -> t("core.need_unextra")
             "home_usage" -> t("core.need_home_usage")
-            "heavy" -> t("core.need_heavy")
             "holdkeys" -> t("core.need_holdkeys")
             "checkout" -> t("core.need_checkout")
             "telegram" -> t("core.need_telegram")
