@@ -585,7 +585,7 @@ class HomeActivity : Activity() {
     }
 
     /** The shortcuts other apps pinned here ([Pins]): the grid is built again only when they changed. */
-    private fun pinsRead() {
+    internal fun pinsRead() {
         bg.execute {
             val now = Pins.list(this)
             if (now.map { it.pkg } == pins.map { it.pkg }) return@execute
@@ -1615,7 +1615,7 @@ class HomeActivity : Activity() {
 
     /** "+ Add": what is not on the grid, in one list: hidden apps (OK shows them again), live tiles, shortcuts, and a way to pin a channel. */
     private fun addPanel() {
-        val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles")
+        val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles") + Pins.list(this).map { it.pkg }   // a pinned shortcut is on the grid already
         val rows = ArrayList<TvGlass.Item>()
         fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
         for (h in apps.filter { it.pkg in hidden }) rows.add(TvGlass.Item(0, h.label, getString(R.string.add_hidden), false, false) { addToGrid(h.pkg, false) }.also { it.picture = icon(h.pkg) })

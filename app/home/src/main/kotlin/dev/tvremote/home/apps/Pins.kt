@@ -64,6 +64,14 @@ object Pins {
         order(c, order(c) - key(s))
     }
 
+    /** Pins [key] again (the system keeps a list per app: its other pins are named with it); false when the shortcut is gone. */
+    @TargetApi(26)
+    fun add(c: Context, key: String): Boolean {
+        val s = find(c, key) ?: return false
+        val keep = list(c).mapNotNull { it.pin as? ShortcutInfo }.filter { it.`package` == s.`package` }.map { it.id }
+        return try { la(c)!!.pinShortcuts(s.`package`, (keep + s.id).distinct(), Process.myUserHandle()); true } catch (e: Exception) { false }
+    }
+
     // ---- every shortcut an app offers (static, dynamic, pinned), for the picker and for a key / the grid that points at one ----
 
     private const val ALL = LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED

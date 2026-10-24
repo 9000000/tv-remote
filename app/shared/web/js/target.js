@@ -3,7 +3,7 @@
 // tile). A plain package is how every older config saved it, so it stays valid with no migration. tests/target_cases.json holds the
 // table both languages must agree on. The picker that chooses one is in js/quickkeys.js.
 const TARGET_PKG = /^[A-Za-z][\w]*(\.[\w]+)+$/;
-const TARGET_PIN = /^pin:([A-Za-z]\w*(?:\.\w+)+)\/([A-Za-z0-9][\w.-]{0,63})$/;
+const TARGET_PIN = /^pin:([A-Za-z]\w*(?:\.\w+)+)\/([A-Za-z0-9][\w.:@-]{0,63})$/;
 const TARGET_TILE = /^tile:([A-Za-z]\w*(?:\.\w+)+)\/([a-z][a-z0-9_]{0,15})$/;
 const Target = {
   kind(t) {

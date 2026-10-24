@@ -19,7 +19,7 @@
     <string name="add">Thêm</string>
     <string name="add_title">Thêm vào Home</string>
     <string name="add_hidden">App đã ẩn</string>
-    <string name="add_live">Ô trực tiếp</string>
+    <string name="add_live">Widget</string>
     <string name="add_pin">Lối tắt</string>
     <string name="add_channel">Ghim một kênh</string>
     <string name="add_channel_hint">Mở TV Channels</string>
@@ -317,9 +317,9 @@
     <string name="pk_search">Tìm</string>
     <string name="pk_apps">Ứng dụng</string>
     <string name="pk_pins">Lối tắt</string>
-    <string name="pk_tiles">Live widget</string>
+    <string name="pk_tiles">Widget</string>
     <string name="pk_hidden">Đã ẩn</string>
-    <string name="pk_live">Trực tiếp</string>
+    <string name="pk_live">Widget</string>
     <string name="pk_none">Không</string>
     <string name="pk_none_found">Không thấy gì</string>
     <string name="pk_grid_hint">Thêm hoặc gỡ ô trên màn hình chính.</string>

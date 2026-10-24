@@ -88,7 +88,7 @@ function quickKeysDraw(host, c, apps, send) {
   const choose = async (code, words) => {
     const p = await pickTarget(words, target(code), c, apps, { none: true });
     if (p === null) return;
-    if (code === QK_POWER) { send({ autoapp: p, ...(p ? { autoon: true } : {}) }); return; }
+    if (code === QK_POWER) { send({ autoapp: p, autoon: !!p }); return; }   // the slot alone decides: a target switches it on, none switches it off
     const n = { ...ka }; if (p) n[code] = p; else delete n[code];
     send({ keyapps: n, ...(p ? { keyon: true } : {}) });            // the first one chosen switches the keys on: nobody asks twice
   };

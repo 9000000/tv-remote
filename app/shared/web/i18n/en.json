@@ -2878,7 +2878,6 @@
  "home.keys_old": "Update TV Home to use it",
  "home.keys_need_setup": "Works only while on TV Home. Install TV Setup to use it everywhere.",
  "home.keys_everywhere": "Colour keys and dead remote buttons work in every app; 0-9 only on TV Home.",
- "home.auto_on": "Open an app when the TV turns on",
  "home.auto_need_setup": "Needs TV Setup on this TV. Install it to use this.",
  "home.auto_note": "Once per power-on (boot or waking from standby); not if the TV woke into another app.",
  "home.key_red": "Red key",

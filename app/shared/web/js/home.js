@@ -288,7 +288,6 @@ async function homeOpen() {
   // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
   // Both default off. TV Home answers a key on its own screen; TV Setup does it everywhere and the power-on app: said under each
   const keyOn = el('input', { type: 'checkbox', onchange: () => send({ keyon: keyOn.checked }) });
-  const autoOn = el('input', { type: 'checkbox', onchange: () => send({ autoon: autoOn.checked }) });
   const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' });
   const keysOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.keys_old') });   // a TV Home from before them
   const autoNote = el('p', { className: 'note' });
@@ -446,8 +445,8 @@ async function homeOpen() {
     if (noPower) power.checked = false;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
-    keyOn.checked = !!c.keyon; autoOn.checked = !!c.autoon;
-    keyOn.disabled = autoOn.disabled = !kOk; keysOld.hidden = kOk;
+    keyOn.checked = !!c.keyon;
+    keyOn.disabled = !kOk; keysOld.hidden = kOk;
     keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : 'home.keys_everywhere') : '';
     autoNote.textContent = kOk ? T(!c.keysSetup ? 'home.auto_need_setup' : 'home.auto_note') : '';
     keysList.hidden = !kOk;
@@ -661,7 +660,7 @@ async function homeOpen() {
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
     ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, noteHead, noteLine, qrHead, qrList, qrNote]],
     ['system', 'power', 260, 'home.g_system', [check(power, 'home.power'), powerOld, check(dream, 'home.dream')]],
-    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, check(autoOn, 'home.auto_on'), autoNote]],
+    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote]],
     ['lang', 'globe', 200, 'home.lang', [langs]],
   ];
   keysHead.hidden = langHead.hidden = true;                           // the page's own title says it

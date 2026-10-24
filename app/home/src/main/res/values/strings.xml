@@ -21,7 +21,7 @@
     <string name="add">Add</string>
     <string name="add_title">Add to Home</string>
     <string name="add_hidden">Hidden app</string>
-    <string name="add_live">Live tile</string>
+    <string name="add_live">Widget</string>
     <string name="add_pin">Shortcut</string>
     <string name="add_channel">Pin a channel</string>
     <string name="add_channel_hint">Opens TV Channels</string>
@@ -319,9 +319,9 @@
     <string name="pk_search">Search</string>
     <string name="pk_apps">Apps</string>
     <string name="pk_pins">Shortcuts</string>
-    <string name="pk_tiles">Live widgets</string>
+    <string name="pk_tiles">Widgets</string>
     <string name="pk_hidden">Hidden</string>
-    <string name="pk_live">Live</string>
+    <string name="pk_live">Widget</string>
     <string name="pk_none">None</string>
     <string name="pk_none_found">Nothing found</string>
     <string name="pk_grid_hint">Add or remove tiles on the home screen.</string>

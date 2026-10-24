@@ -13,7 +13,7 @@ object Target {
     enum class Kind { APP, PIN, TILE }
 
     private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
-    private val PIN = Regex("pin:([A-Za-z][\\w]*(?:\\.[\\w]+)+)/([A-Za-z0-9][\\w.\\-]{0,63})")
+    private val PIN = Regex("pin:([A-Za-z][\\w]*(?:\\.[\\w]+)+)/([A-Za-z0-9][\\w.\\-:@]{0,63})")   // a channel shortcut's id is "ch:00sReplay.us@SD": without : and @ it was no target (not offered, not kept)
     private val TILE = Regex("tile:([A-Za-z][\\w]*(?:\\.[\\w]+)+)/([a-z][a-z0-9_]{0,15})")
     const val MAX = 200
 

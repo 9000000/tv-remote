@@ -50,12 +50,11 @@ object QuickKeys {
         val hint = line("", 13f, PK_DIM).apply { setPadding(dp(34), 0, dp(34), dp(4)) }
         // the switch and its state in its words: "Bật phím" alone did not say whether the keys were on, nor what pressing would do
         val keysOn = a.pill(a.getString(R.string.qk_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
-        val autoOn = a.pill(a.getString(R.string.qk_auto_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoon", !Store.get(a).optBoolean("autoon"))) }
         val head = LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(12))   // 32 dp above the panel before, now inside it
             clipChildren = false; clipToPadding = false                // a focused pill grows past the row: clipped, its top and bottom were cut
             addView(line(a.getString(R.string.qk_title), 26f, Color.WHITE).apply { typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
-            addView(keysOn); addView(autoOn)
+            addView(keysOn)
         }
         val panel = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL; clipChildren = false
@@ -75,7 +74,7 @@ object QuickKeys {
         fun words(code: Int) = if (code == POWER) a.getString(R.string.qk_power) else Keys.name(a, code)
         fun choose(code: Int) {
             Picker.show(a, Picker.Mode.TARGET, words(code), targetOf(code)) { t ->
-                if (code == POWER) Store.change(a, JSONObject().put("autoapp", t).also { if (t.isNotEmpty()) it.put("autoon", true) })
+                if (code == POWER) Store.change(a, JSONObject().put("autoapp", t).put("autoon", t.isNotEmpty()))   // the slot alone decides
                 else {
                     val m = JSONObject(); for ((k, v) in HomeConfig.keyApps(Store.get(a).optJSONObject("keyapps"))) if (k != code) m.put(k.toString(), v)
                     if (t.isNotEmpty()) m.put(code.toString(), t)
@@ -85,9 +84,9 @@ object QuickKeys {
         }
         fun paintHead() {
             val c = Store.get(a)
-            keysOn.isSelected = c.optBoolean("keyon"); autoOn.isSelected = c.optBoolean("autoon")
+            keysOn.isSelected = c.optBoolean("keyon")
             fun said(on: Boolean) = a.getString(if (on) R.string.qk_yes else R.string.qk_no)
-            keysOn.pillText(a.getString(R.string.qk_on, said(keysOn.isSelected))); autoOn.pillText(a.getString(R.string.qk_auto_on, said(autoOn.isSelected)))
+            keysOn.pillText(a.getString(R.string.qk_on, said(keysOn.isSelected)))
             hint.text = a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere)
         }
 
@@ -114,7 +113,7 @@ object QuickKeys {
                             dead = code != POWER && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS && off && target.isEmpty())
                     }
                     grid.addView(Keypad.build(a, ::dp, extra, ::slot, ::choose, tiles), LinearLayout.LayoutParams(-1, -2))
-                    if (keysOn.hasFocus() || autoOn.hasFocus()) return@runOnUiThread   // a pill just switched: the focus stays on it, not on key 1
+                    if (keysOn.hasFocus()) return@runOnUiThread   // a pill just switched: the focus stays on it, not on key 1
                     (keepFocus?.let { tiles[it] }?.takeIf { it.isFocusable } ?: keyOrder.firstNotNullOfOrNull { k -> tiles[k]?.takeIf { it.isFocusable } })?.requestFocus()   // key 1 first: a HashMap's order put it on any slot (the power-on one)
                 }
             }, "home-quickkeys").apply { isDaemon = true }.start()

@@ -16,6 +16,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import dev.tvremote.home.Font
+import dev.tvremote.home.HomeActivity
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.R
 import dev.tvremote.home.Store
@@ -159,11 +160,12 @@ object Picker {
 
         // read once, kept as presses change them: read per tile (~15 ms each on the FPT box) it was ~250 ms before the list showed
         var hiddenNow = Store.list(a, "hidden"); var tilesNow = Store.list(a, "tiles")
+        var pinnedNow = if (mode == Mode.GRID) Pins.list(a).map { it.pkg }.toSet() else emptySet()   // pinned by their apps: on the grid without being in "tiles"
         fun on(k: String): Boolean {
             return when {
                 mode == Mode.TARGET -> k == now
                 Target.kind(k) == Target.Kind.APP -> k !in hiddenNow
-                else -> k in tilesNow
+                else -> k in tilesNow || k in pinnedNow
             }
         }
         fun press(it: Item) {
@@ -172,6 +174,10 @@ object Picker {
                 val hidden = Store.list(a, "hidden")
                 if (it.key in hidden) Store.change(a, JSONObject().put("hidden", JSONArray(hidden - it.key)))
                 else Store.change(a, JSONObject().put("hidden", JSONArray(hidden + it.key)).put("dock", JSONArray(Store.list(a, "dock") - it.key)))
+            } else if (Target.kind(it.key) == Target.Kind.PIN) {   // a shortcut: pinned = on the grid; press unpins it (like the long-press menu), or pins it again
+                if (it.key in pinnedNow) { it.app?.let { x -> Pins.remove(a, x) }; pinnedNow = pinnedNow - it.key }
+                else if (Pins.add(a, it.key)) pinnedNow = pinnedNow + it.key
+                (a as? HomeActivity)?.pinsRead()
             } else {
                 val t = Store.list(a, "tiles")
                 if (it.key in t) Store.change(a, JSONObject().put("tiles", JSONArray(t - it.key)).put("dock", JSONArray(Store.list(a, "dock") - it.key)).put("order", JSONArray(Store.list(a, "order") - it.key)))
