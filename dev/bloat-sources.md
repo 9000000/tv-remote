@@ -141,6 +141,19 @@ Fourth read (2026-10-23):
   sets (xiaomi-mitv-afmu1, "quality-stats uploader and quick panel"; ayfr0 keeps `tvqs.overseas` for the panel). `com.xiaomi.tvqs`
   (older / China, reporting only) stays.
 
+Fifth read (2026-10-24, vgscity/vgs-cleantv 2.8.0: 260 cleanyourtv lists up to 9dc78f8d, 1731 packages; read only):
+- SUGGEST (manuals, help, demo, promo pop-ups, telemetry; >=5 lists off, none keep): TCL `ocean.instructions`, `repairguide`;
+  Sony `customersupport`, `imanual`; Skyworth `Smartdevice.emanual`, `smartdevice.aftersale`, `dailymanage`, `epopplayer`; Homwee
+  `help`, `aipont`; Xiaomi `mitv.handbook`, `floatingframe`; Hisense `service.message`; Amazon `livedeviceservice`, `ceviche`,
+  `uxnotification`, `systemnotices`.
+- PROTECTED: `ext.services`, `ext.shared`, `modulemetadata`, `overlay.modules*` (a Mi TV Stick never booted with them off,
+  cleanyourtv #884; no list turns them off, only a pick in "Turn off other apps" could).
+- Left out again: mainline and AOSP backup / Health Connect / `dynsystem`; choices (Mi Music, galleries, Amazon Photos / Music /
+  Luna / miniTV, screen recorder, hotspot, BRAVIA CAM, Philips Fitness / store); anything with its own TV input (TCL
+  `channelplus`, Amazon `hedwig`); consent / legal screens (`apps.function.gdpr`, `xiaomo.tv.milegal`); updaters and stores
+  (`homwee.store`); hotel mode; the mixed ones already listed below (`exhibit`, `overseasappshow`, Sony Discover, Skyworth
+  `leanbacklauncher.customizer`).
+
 ## Not taken (yet), and why
 
 - Google's mainline modules (`adservices`, `ondevicepersonalization`, `federatedcompute`, 4–6 lists): Android's own APEX parts,

@@ -52,7 +52,24 @@
     "com.zeasn.tokenapp": "Zeasn token / key tracker",
     "com.zeasn.deviceportal.asdprovider.toptech": "Zeasn ad / device portal",
     "com.zeasn.deviceportal.asdprovider.certified": "Zeasn device portal client",
-    "com.haier.apps": "Haier promo content app"
+    "com.haier.apps": "Haier promo content app",
+    "com.tcl.ocean.instructions": "TCL on-screen manual",
+    "com.tcl.repairguide": "TCL repair guide",
+    "com.sony.dtv.customersupport": "Sony help tile",
+    "com.sony.dtv.imanual": "Sony i-Manual",
+    "com.Smartdevice.emanual": "Skyworth manual",
+    "com.homwee.help": "Homwee manual",
+    "com.xiaomi.mitv.handbook": "Xiaomi handbook",
+    "com.smartdevice.aftersale": "Skyworth after-sale service (starts at boot, can install apps)",
+    "com.smartdevice.dailymanage": "Skyworth \"TV Guard\" cleaner",
+    "com.smartdevice.epopplayer": "Skyworth shop demo player",
+    "com.homwee.aipont": "AI PONT brand portal",
+    "com.xiaomi.floatingframe": "Xiaomi floating promo overlay",
+    "com.hisense.service.message": "Hisense push messages",
+    "com.amazon.livedeviceservice": "Amazon device metrics",
+    "com.amazon.ceviche": "Amazon data collection",
+    "com.amazon.uxnotification": "Amazon promo pop-ups",
+    "com.amazon.systemnotices": "Amazon system notices pop-ups"
   },
   "drop": [
     "com.xm.webcontent"

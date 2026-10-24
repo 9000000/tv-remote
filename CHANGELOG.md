@@ -19,6 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Lịch mở app: một lịch giờ có nhiều khung giờ, mỗi khung có ngày và giờ riêng (ví dụ T2–T6 16:00–18:00, T7 và CN 08:00–22:00), tối đa 8 khung; nút ＋ Thêm khung giờ và ✕ để bỏ. App mở được khi đang nằm trong một khung bất kỳ, khung qua nửa đêm vẫn tính cho ngày bắt đầu. Lịch cũ tự đọc thành một khung. Lưu nhiều khung cần TV Setup mới; một khung thì TV Setup cũ vẫn nhận.
 - Tab Ứng dụng: không cho dừng, tắt hay gỡ app đang mở Cài đặt hoặc nguồn vào của TV, kể cả app Cài đặt riêng của hãng không có trong danh sách tên. Tắt nhầm app Cài đặt có thể làm TV treo ở logo khi khởi động.
 - Hướng dẫn bật ADB: box nhà mạng (FPT, Viettel…) không nên bấm Bản dựng 7 lần vì có thể bị đòi mật khẩu hoặc khóa máy; cài TV Setup trước để app mở thẳng Tùy chọn nhà phát triển.
+- Tối ưu TV: thêm 17 app hướng dẫn, quảng cáo bật lên và thu thập dữ liệu của TCL, Sony, Skyworth, Xiaomi, Hisense, Amazon (từ danh sách mới của cleanyourtv); không bao giờ tắt các phần lõi Android mà thiếu chúng TV có thể không khởi động được.
 
 **English**
 - Control the TV from Telegram: your own bot (made with @BotFather, token pasted in Settings on the TV's web page). Pair with a 6-digit code shown on the TV; commands /status /off /on /vol /key /open /scene /timer /say /shot /remote (a tappable keypad). Also /apps /usage /now /channel /type /scenes /bedtime /limits /schedule /alerts: the TV messages you when it turns on or off, an app is closed, bedtime starts, the sleep timer fires or a new device pairs (one per kind per minute); a Full chat can change bedtime or block an app, with an Undo button. The Telegram card in the phone and computer apps: status, pairing QR (t.me/<bot>?start=code), each chat, a 7-day history. Unknown chats are ignored, a newly paired chat gets Remote rights only. Needs TV Setup 0.21.1; step-by-step in the User guide.
@@ -33,6 +34,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App schedule: a schedule can hold several time windows, each with its own days and hours (for example Mon–Fri 16:00–18:00, Sat and Sun 08:00–22:00), up to 8, with ＋ Add a time window and ✕ to remove. The app may open while the time is inside any window; a window past midnight still belongs to the day it starts on. Old schedules read as one window. Saving several windows needs a newer TV Setup; one window still works on older ones.
 - Apps tab: an app that opens the TV's Settings or its inputs can no longer be stopped, turned off or removed, even a brand's own Settings app missing from the name lists. Losing Settings can leave a TV stuck at its boot logo.
 - Turning ADB on: the steps now warn that internet-provider boxes (FPT, Viettel…) may ask for a password or lock up after the 7 presses on Build; install TV Setup first, it opens Developer options directly.
+- Optimize TV: 17 more manual, promo pop-up and data-collection apps from TCL, Sony, Skyworth, Xiaomi, Hisense and Amazon (from the newer cleanyourtv lists); Android core parts a TV may not boot without are never turned off.
 
 ## 0.21.0 - 2026-10-24
 

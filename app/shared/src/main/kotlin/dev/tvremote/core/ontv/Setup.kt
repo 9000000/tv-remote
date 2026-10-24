@@ -57,9 +57,11 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         /**
          * Never offered or turned off: the TV would stop working, or this project would. A launcher (FLauncher, TV Home) is not here:
          * the one Home opens now is kept wherever an app is removed ([homeNow], Manage's home check), the others may go.
+         * `ext.services` / `ext.shared` / `modulemetadata` / `overlay.modules`: a Mi TV Stick with them off never booted again
+         * (cleanyourtv #884); no brand list turns them off, only a pick in "Turn off other apps" could.
          */
-        val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending)" +
-            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith)" +
+        val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata)" +
+            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
             "|dev\\.tvremote\\..*|com\\.tailscale\\.ipn")
         /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
         fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.keep(p)
