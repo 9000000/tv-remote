@@ -1,0 +1,44 @@
+{
+ "kind": "youtube#searchListResponse",
+ "items": [
+  {
+   "id": {
+    "kind": "youtube#video",
+    "videoId": "ekFIGh0cbRU"
+   },
+   "snippet": {
+    "title": "Karaoke &quot;Đế Vương&quot; &amp; beat &#39;chuẩn&#39;",
+    "channelTitle": "Karaoke Minh Nha",
+    "thumbnails": {
+     "medium": {
+      "url": "https://i.ytimg.com/vi/ekFIGh0cbRU/mqdefault.jpg"
+     }
+    }
+   }
+  },
+  {
+   "id": {
+    "kind": "youtube#video",
+    "videoId": "naG3fboU4b0"
+   },
+   "snippet": {
+    "title": "(Karaoke) Đế Vương - Ôn Vĩnh Quang",
+    "channelTitle": "NGUYÊN KHANG",
+    "thumbnails": {
+     "default": {
+      "url": "https://i.ytimg.com/vi/naG3fboU4b0/default.jpg"
+     }
+    }
+   }
+  },
+  {
+   "id": {
+    "kind": "youtube#channel",
+    "channelId": "UCxxxxxxxxxxxxxxxxxxxxxx"
+   },
+   "snippet": {
+    "title": "a channel"
+   }
+  }
+ ]
+}

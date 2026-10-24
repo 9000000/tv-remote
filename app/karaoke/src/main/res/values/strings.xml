@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TV Karaoke</string>
+    <string name="scan">Scan to pick songs</string>
+    <string name="now_singing">Now singing</string>
+    <string name="up_next">Up next</string>
+    <string name="more">+%1$d more</string>
+    <string name="empty">No songs yet. Scan the code with your phone and pick one.</string>
+    <string name="added_by">Added by %1$s</string>
+    <string name="idle_now">Nothing is playing</string>
+    <string name="btn_resume">Back to the song</string>
+    <string name="btn_next">Next song</string>
+    <string name="btn_key">YouTube API key</string>
+    <string name="paused">Paused</string>
+    <string name="phones">%1$d phones</string>
+    <string name="mic_note">Microphone: plug a Bluetooth or USB karaoke mic into the TV or the speaker. A phone mic over Wi-Fi lags.</string>
+    <string name="skipped_embed">Skipped: the owner does not allow this video here\n%1$s</string>
+    <string name="skipped_gone">Skipped: this video is not available\n%1$s</string>
+    <string name="skipped_err">Skipped: this video would not play\n%1$s</string>
+    <string name="player_missing">This TV has no web view to play videos with.</string>
+    <string name="key_title">YouTube API key</string>
+    <string name="key_note">Optional. With a key, search uses YouTube\'s official API (about 100 searches a day free). Without it, public results are used. The key stays on this TV.</string>
+    <string name="key_hint">Paste the key</string>
+    <string name="key_save">Save</string>
+    <string name="key_clear">Remove key</string>
+    <string name="key_cancel">Cancel</string>
+    <string name="key_saved">Key saved</string>
+    <string name="key_cleared">Key removed</string>
+    <string name="key_state_on">A key is set. Searches: %1$s</string>
+    <string name="key_state_off">No key set. Searches use YouTube\'s public results.</string>
+    <string name="src_api">official API</string>
+    <string name="src_web">public results</string>
+    <string name="src_none">none yet</string>
+    <string name="err_title">Something went wrong</string>
+    <string name="err_last_time">The app crashed last time</string>
+    <string name="err_copy">Copy</string>
+    <string name="err_copied">Copied</string>
+    <string name="err_close">Close</string>
+    <string name="err_share">Share</string>
+    <string name="err_repeat">repeated %d times</string>
+</resources>
