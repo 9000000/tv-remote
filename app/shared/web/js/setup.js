@@ -260,7 +260,7 @@ function scanRow(f) {
     el('div', { className: 'name' }, el('span', { textContent: f.name || f.ip }),
       el('div', { className: 'badges' },                              // a line of their own: wrapped beside a long name they looked lopsided
       el('span', { className: 'badge' + (f.remote ? ' ok' : ''), textContent: native ? 'TV ' + KIND_NAME[f.kind] : f.remote ? 'Android TV' : T('setup.adb_only') }),
-      native ? el('span', { className: 'badge', textContent: T('setup.experimental') }) : null,
+      native ? el('span', { className: 'badge', textContent: T(f.kind === 'vidaa' ? 'setup.experimental_vidaa' : 'setup.experimental') }) : null,
       native ? null : f.adb ? el('span', { className: 'badge ok', textContent: T('setup.adb_on') }) : el('span', { className: 'badge', textContent: T('setup.adb_off') })),
       el('small', { textContent: f.ip + (f.via === 'tailscale' ? ' · ' + T('setup.via_tailscale') : ' · ' + T('setup.same_network')) + (f.tailscale ? ' · Tailscale ' + f.tailscale : '') })),
     el('div', { className: 'acts' }, setLabel(el('button', { className: 'small primary', onclick: () => selectTv(f.ip, f.name, f.kind) }), '▶', OPEN_TV)));

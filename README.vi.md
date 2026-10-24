@@ -8,7 +8,7 @@
 
 Điều khiển Android TV / Google TV (và TV LG, Samsung, Roku, Hisense / Toshiba VIDAA) từ điện thoại hoặc máy tính, đi thẳng tới TV, không qua máy chủ nào. **Tính năng, ảnh chụp và nút tải: [tvremote.pages.dev](https://tvremote.pages.dev).** README này là hướng dẫn cài đặt, xử lý lỗi và chi tiết kỹ thuật.
 
-Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. TV LG, Samsung, Roku, VIDAA: **thử nghiệm** ([xem bảng](#ba-app-và-một-trang-web)).
+Đã chạy thật với Sony BRAVIA (Android 9). TV hãng khác chưa thử. TV LG, Samsung, Roku, VIDAA: **thử nghiệm**, VIDAA chưa thử trên TV thật ([xem bảng](#ba-app-và-một-trang-web)).
 
 <table>
 <tr>
@@ -81,7 +81,7 @@ Trong README, code và trang giới thiệu, các phần luôn được gọi b�
 
 **TV LG, Samsung, Roku, VIDAA** (thử nghiệm, chưa thử trên TV thật). App điện thoại và App máy tính điều khiển không cần ADB, tìm thấy khi quét mạng. Lần đầu chọn Cho phép trên TV (VIDAA: gõ mã 4 số).
 
-| | LG | Samsung | Roku | VIDAA |
+| | LG | Samsung | Roku | VIDAA (thử nghiệm) |
 |---|:-:|:-:|:-:|:-:|
 | Phím, gõ chữ, mở app, bật TV, cảnh | ✓ | ✓ | ✓ | ✓ |
 | Đổi nguồn vào | ✓ | | ✓ | ✓ |

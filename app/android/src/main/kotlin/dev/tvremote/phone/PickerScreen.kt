@@ -205,7 +205,7 @@ private fun MainActivity.foundRow(ip: String, name: String, adb: Boolean) = row(
     (if (adb) T("setup.adb_on") else T("picker.adb_off_keys_only"))) { prefs.edit().remove("kind:$ip").apply(); connect(ip) }
 
 /** An LG or Samsung TV the SSDP search found: its own remote link, no ADB. */
-private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind) + T("picker.beta")) {
+private fun MainActivity.foundRow(f: Ssdp.Found) = row((if (f.name.isNotEmpty()) f.name + "\n" else "") + f.ip + " · TV " + Remote.Kind.name(f.kind) + T(if (f.kind == Remote.Kind.VIDAA) "picker.beta_vidaa" else "picker.beta")) {
     prefs.edit().putString("kind:${f.ip}", f.kind).apply(); connect(f.ip)
 }
 

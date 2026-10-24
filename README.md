@@ -14,7 +14,7 @@ Control an **Android TV / Google TV** (plus **LG**, **Samsung**, **Roku** and **
 </tr>
 </table>
 
-Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Samsung, Roku and VIDAA are **beta**.
+Tested for real on a Sony BRAVIA (Android 9). Other brands are untested; LG, Samsung, Roku and VIDAA are **beta** (VIDAA: not tested on a real TV).
 
 ---
 
@@ -83,9 +83,9 @@ The **TV app** is shown on the TV as *TV Setup*. It also runs the timers and lim
 | Nothing to install on the controlling device | | ✓ | |
 | LG, Samsung, Roku, VIDAA TVs | ✓ | | ✓ |
 
-**LG, Samsung, Roku, VIDAA** (beta): found by the network scan and controlled without ADB. The first time, choose Allow on the TV (VIDAA: type the 4-digit code).
+**LG, Samsung, Roku, VIDAA** (beta, not tested on a real TV): found by the network scan and controlled without ADB. The first time, choose Allow on the TV (VIDAA: type the 4-digit code).
 
-| | LG | Samsung | Roku | VIDAA |
+| | LG | Samsung | Roku | VIDAA (beta) |
 |---|:-:|:-:|:-:|:-:|
 | Keys, typing, apps, power on, scenes | ✓ | ✓ | ✓ | ✓ |
 | Inputs | ✓ | | ✓ | ✓ |
