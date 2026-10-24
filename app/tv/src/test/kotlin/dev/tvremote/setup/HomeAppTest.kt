@@ -13,7 +13,7 @@ class HomeAppTest {
 
     @Test fun shellLinesAreFixedAndOnlyForRealPackages() {
         assertEquals("am force-stop com.netflix.ninja", HomeApp.command("stop", "com.netflix.ninja"))
-        assertEquals("pm clear --cache-only com.google.android.youtube.tv", HomeApp.command("cache", "com.google.android.youtube.tv"))
+        assertNull(HomeApp.command("cache", "com.google.android.youtube.tv"))     // the cache has its own lines (cacheLine): a thread, a cap
         assertNull(HomeApp.command("stop", "com.x; reboot"))
         assertNull(HomeApp.command("stop", "com.x && rm -rf /sdcard"))
         assertNull(HomeApp.command("stop", "x"))                                // not a package name
@@ -49,5 +49,28 @@ class HomeAppTest {
         Rules.apply(o, HomeApp.rulesAction(d("""{"op":"limit","pkg":"com.netflix.ninja","minutes":0}"""))!!, now)
         assertEquals(0, HomeApp.state(o, "com.netflix.ninja", 0, false).getInt("limit"))
         assertFalse(HomeApp.state(o, "com.other.app", 0, false).getBoolean("locked"))
+    }
+
+    @Test fun cacheLinesAreCappedAndOnlyForRealPackages() {
+        val inner = HomeApp.cacheLine("com.netflix.ninja", true)!!
+        assertTrue(inner.contains("timeout -s KILL 6 cmd package clear --cache-only com.netflix.ninja"))   // never waits for ever on a silently ignored call
+        assertTrue(inner.contains("/sdcard/Android/data/com.netflix.ninja/cache"))
+        assertFalse(HomeApp.cacheLine("com.netflix.ninja", false)!!.contains("cmd package"))
+        assertNull(HomeApp.cacheLine("com.x; reboot", true))
+        assertNull(HomeApp.cacheLine("x", false))
+    }
+
+    @Test fun cacheResultTellsWhatWentAndWhatCould() {
+        assertEquals("ok" to 2048L, HomeApp.cacheResult("kb=2048\nSuccess\nrc=0\n"))
+        assertEquals("partial" to 512L, HomeApp.cacheResult("kb=512\nrc=137\n"))        // cut by the cap: Android 13+ ignores the shell's call
+        assertEquals("partial" to 0L, HomeApp.cacheResult("kb=\nrc=137\n"))
+        assertEquals("failed" to 0L, HomeApp.cacheResult(""))
+    }
+
+    @Test fun weekIsSevenDaysTodayFirst() {
+        val now = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US).parse("2026-10-25 20:00")!!.time
+        val all = JSONObject("""{"2026-10-24":{"a.b":600},"2026-10-23":{"c.d":5},"2026-10-19":{"a.b":60},"2026-10-18":{"a.b":99}}""")
+        val w = HomeApp.week(JSONObject("""{"a.b":120}"""), all, "a.b", now)
+        assertEquals(listOf(120L, 600L, 0L, 0L, 0L, 0L, 60L), (0 until 7).map { w.getLong(it) })   // the 18th is 7 days back: out
     }
 }

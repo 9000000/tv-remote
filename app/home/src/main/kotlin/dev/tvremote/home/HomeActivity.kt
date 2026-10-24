@@ -52,6 +52,7 @@ import dev.tvremote.tvui.TvUi
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
 import dev.tvremote.home.apps.App
+import dev.tvremote.home.apps.AppPages
 import dev.tvremote.home.apps.AppRules
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.wall.Backdrop
@@ -1097,7 +1098,7 @@ class HomeActivity : Activity() {
     // ---- what the buttons and the menu do ----
 
     /** One group of the menu: a row on the first level (its [hint] says how it is set) and a page of rows behind it. */
-    private class Sub(val icon: Int, val title: Int, val hint: String, val items: List<TvGlass.Item>)
+    private class Sub(val id: String, val icon: Int, val title: Int, val hint: String, val items: List<TvGlass.Item>)
 
     /**
      * The long-press / Menu menu of an app: the glass panel of Customize ([TvGlass.menu]). "Open" first, then groups that open a page
@@ -1109,12 +1110,15 @@ class HomeActivity : Activity() {
         AppRules.read(this, a.pkg) { st -> menu(a, st) }
     }
 
+    private var amGroup = ""                                          // the page shown now ("lock", "maint", "week"...): an answer that comes late draws only on its own page
+    private var rowNote: Pair<String, String>? = null                 // the last maintenance act's result, as the hint on its row
+    private var cacheStop: (() -> Unit)? = null                       // cancels the cache clearing that is running
     private var amPanel: TvGlass.Panel? = null                         // the one dialog of the app menu: its pages swap inside it, so the dim behind never fades in and out
 
     private fun menu(a: App, st: JSONObject?) {
         val p = TvGlass.Panel(this, R.style.Menu, R.drawable.ic_left) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
-        amPanel = p; open = p.dialog
-        p.dialog.setOnDismissListener { capture(false); if (amPanel === p) amPanel = null }
+        amPanel = p; open = p.dialog; amGroup = ""; rowNote = null; cacheStop?.invoke(); cacheStop = null
+        p.dialog.setOnDismissListener { capture(false); AppRules.forget(); cacheStop?.invoke(); cacheStop = null; if (amPanel === p) amPanel = null }   // the parent's code is kept for this panel only
         top(a, st, 0)
         p.show()
     }
@@ -1122,7 +1126,7 @@ class HomeActivity : Activity() {
     /** The first page: "Open", a row per group (the one at [at] focused: where Back from a group lands), Customize. */
     private fun top(a: App, st: JSONObject?, at: Int) {
         val p = amPanel ?: return
-        capture(false); p.dialog.setOnKeyListener(null)
+        capture(false); p.dialog.setOnKeyListener(null); amGroup = ""
         val rows = ArrayList<TvGlass.Item>()
         rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.am_open)) { launch(a) })
         subs(a, st).forEachIndexed { i, s -> rows.add(TvGlass.Item(s.icon, getString(s.title), s.hint, true, true) { sub(a, st, i) }) }
@@ -1135,7 +1139,9 @@ class HomeActivity : Activity() {
         val p = amPanel ?: return
         capture(false); p.dialog.setOnKeyListener(null)
         val s = subs(a, st).getOrNull(i) ?: return top(a, st, 0)
-        p.page("${a.label} · ${getString(s.title)}", s.items, focus, back = { top(a, st, i + 1) })
+        if (s.id == "lock" && !AppRules.unlocked) return pinPage(a, st, i, "", false)   // the parent's code once, on the way in
+        amGroup = s.id
+        p.page(ttl(a, getString(s.title)), s.items, focus, back = { top(a, st, i + 1) })
     }
 
     /** TV Setup lets the remote's mapped keys through to the screen while the assign-a-key page is open (an older one: they open their apps as ever). */
@@ -1172,19 +1178,22 @@ class HomeActivity : Activity() {
                 Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
             })
         }
-        out.add(Sub(R.drawable.ic_home, R.string.am_g_home, "", home))
+        out.add(Sub("home", R.drawable.ic_home, R.string.am_g_home, "", home))
         // 2. what starts it: the power-on app, a remote key
         if (!dockedPin) {
             val start = ArrayList<TvGlass.Item>()
             val powerApp = conf.optBoolean("autoon") && conf.optString("autoapp") == a.pkg
-            start.add(item(R.drawable.ic_power, if (powerApp) R.string.auto_off else R.string.auto_on) {   // the app that opens when the TV turns on: TV Setup does it (Keys.push)
+            val me = out.size
+            start.add(stays(R.drawable.ic_power, R.string.auto_on, getString(if (powerApp) R.string.am_on else R.string.am_off)) {   // the app that opens when the TV turns on: TV Setup does it (Keys.push); a toggle, so the panel stays and the row shows the new state
                 Store.change(this, if (powerApp) JSONObject().put("autoon", false) else JSONObject().put("autoapp", a.pkg).put("autoon", true))
                 if (!Keys.setup(this)) toast(R.string.auto_needs_setup)   // saved anyway: it works the day TV Setup is there
+                conf = Store.get(this)
+                sub(a, st, me, 0)
             })
             val mine = HomeConfig.keyApps(conf.optJSONObject("keyapps")).filterValues { it == a.pkg }.keys.sorted()
             val keys = mine.take(2).joinToString(" ") { Keys.name(this, it) } + if (mine.size > 2) " +${mine.size - 2}" else ""   // a short line: the page has them all
             start.add(stays(R.drawable.ic_keyboard, R.string.am_key, keys, true) { keyPicker(a, st, null, "") })
-            out.add(Sub(R.drawable.ic_zap, R.string.am_g_start, keys, start))
+            out.add(Sub("start", R.drawable.ic_zap, R.string.am_g_start, keys, start))
         }
         // 3. lock and limits (TV Setup's rules; a code first)
         if (st != null && !st.optBoolean("prot")) {
@@ -1193,19 +1202,25 @@ class HomeActivity : Activity() {
             val locked = st.optBoolean("locked"); val limit = st.optInt("limit")
             fun mins(m: Int) = if (m > 0) getString(R.string.am_limit_min, m) else getString(R.string.am_limit_off)
             lock.add(stays(R.drawable.ic_lock, if (locked) R.string.am_unlock else R.string.am_lock, if (locked) getString(R.string.am_locked) else "") {
-                AppRules.change(this, a.pkg, "lock", st, { put("on", !locked) }) { n -> badgesSoon(); again(n, me) }
+                AppRules.change(this, a.pkg, "lock", { put("on", !locked) }) { r -> changed(a, st, me, r) { n -> again(n, me) } }
             })
             lock.add(stays(R.drawable.ic_hourglass, R.string.am_limit, mins(limit), true) { limitMenu(a, st) })
-            lock.add(stays(R.drawable.ic_chart, R.string.am_used, getString(R.string.am_limit_min, (st.optLong("used") + 30) / 60)) { again(null, me) })
-            out.add(Sub(R.drawable.ic_shield, R.string.am_g_lock, if (locked) getString(R.string.am_locked) else if (limit > 0) mins(limit) else "", lock))
+            lock.add(stays(R.drawable.ic_chart, R.string.am_used, getString(R.string.am_limit_min, (st.optLong("used") + 30) / 60), true) { weekPage(a, st, "") })
+            out.add(Sub("lock", R.drawable.ic_shield, R.string.am_g_lock, if (locked) getString(R.string.am_locked) else if (limit > 0) mins(limit) else "", lock))
         }
         // 4. maintenance: an app's own screens and, with TV Setup's ADB, stop and cache
         if (!a.grid && a.pin == null) {
             val fix = ArrayList<TvGlass.Item>()
             if (st != null && st.optBoolean("adb") && !st.optBoolean("prot")) {
-                fun run(op: String, done: Int) = AppRules.act(this, a.pkg, op) { r -> toast(when (r) { "ok" -> done; "noadb" -> R.string.am_noadb; else -> R.string.am_failed }) }
-                fix.add(item(R.drawable.ic_stop, R.string.am_stop) { run("stop", R.string.am_stopped) })
-                fix.add(item(R.drawable.ic_eraser, R.string.am_cache) { run("cache", R.string.am_cached) })
+                val me = out.size
+                val noteOf = { op: String -> rowNote?.takeIf { it.first == op }?.second ?: "" }
+                fix.add(stays(R.drawable.ic_stop, R.string.am_stop, noteOf("stop")) {
+                    AppRules.ask(this, a.pkg, "stop") { r ->
+                        rowNote = "stop" to getString(when (r?.optString("result")) { "ok" -> R.string.am_stopped; "noadb" -> R.string.am_noadb; else -> R.string.am_failed })
+                        if (amPanel != null && amGroup == "maint") sub(a, st, me, 0)
+                    }
+                })
+                fix.add(stays(R.drawable.ic_eraser, if (cacheStop != null) R.string.am_cache_cancel else R.string.am_cache, noteOf("cache")) { cacheTap(a, st, me) })
             }
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg))
                 .takeIf { packageManager.resolveActivity(it, 0) != null }   // a CVTE TV has no App info page: no entry rather than one that fails (cleanyourtv #1202)
@@ -1214,23 +1229,136 @@ class HomeActivity : Activity() {
             if (a.pkg != packageName && removable) Intent(Intent.ACTION_DELETE, Uri.parse("package:" + a.pkg))
                 .takeIf { packageManager.resolveActivity(it, 0) != null }   // the same CVTE gap: no installer page, no entry
                 ?.let { i -> fix.add(item(R.drawable.ic_trash, R.string.uninstall) { try { startActivity(i) } catch (e: Exception) { toast(R.string.no_open) } }) }
-            out.add(Sub(R.drawable.ic_wrench, R.string.am_g_maint, "", fix))
+            out.add(Sub("maint", R.drawable.ic_wrench, R.string.am_g_maint, "", fix))
         }
         return out.filter { it.items.isNotEmpty() }
     }
 
-    /** The daily limit's choices, a page of the same panel; a code first (in [AppRules.change]). Back returns to the Lock & limits page. */
+    /** A page's title: "App · page" while it fits the panel's head, else the page's own words (the app is named on the first page). */
+    private fun ttl(a: App, page: String) = "${a.label} · $page".let { if (it.length <= 28) it else page }
+
+    /** Where group [id] sits among the menu's groups. */
+    private fun at(a: App, st: JSONObject?, id: String) = subs(a, st).indexOfFirst { it.id == id }.coerceAtLeast(0)
+
+    /** The daily limit's choices, a page of the same panel; the parent's code was asked on the way into the group (kept, [AppRules.change]). Back returns to the Lock & limits page. */
     private fun limitMenu(a: App, st: JSONObject) {
         val p = amPanel ?: return
         val cur = st.optInt("limit")
+        val me = at(a, st, "lock")
         val choices = listOf(15, 30, 60, 90, 120, 0)
         val rows = choices.map { m ->
             TvGlass.Item(if (m == cur) R.drawable.ic_check else 0, if (m > 0) getString(R.string.am_limit_min, m) else getString(R.string.am_limit_off), "", false, true) {
-                if (m == cur) sub(a, st, 2, 1)
-                else AppRules.change(this, a.pkg, "limit", st, { put("minutes", m) }) { n -> badgesSoon(); sub(a, n, 2, 1) }
+                if (m == cur) sub(a, st, me, 1)
+                else AppRules.change(this, a.pkg, "limit", { put("minutes", m) }) { r -> changed(a, st, me, r) { n -> sub(a, n, me, 1) } }
             }
         }
-        p.page("${a.label} · ${getString(R.string.am_limit)}", rows, choices.indexOf(cur).coerceAtLeast(0), back = { sub(a, st, 2, 1) })
+        amGroup = "limit"
+        p.page(ttl(a, getString(R.string.am_limit)), rows, choices.indexOf(cur).coerceAtLeast(0), back = { sub(a, st, me, 1) })
+    }
+
+    /**
+     * What TV Setup answered to a lock / limit change: "ok" runs [ok]; anything else says so ON the keypad page (never a toast alone):
+     * the code no longer opens it (wrong, a wait, or none set since) and is asked again.
+     */
+    private fun changed(a: App, st: JSONObject?, at: Int, r: JSONObject?, ok: (JSONObject) -> Unit) {
+        if (amPanel == null) return
+        when (r?.optString("result")) {
+            "ok" -> { badgesSoon(); ok(r) }
+            else -> pinPage(a, st, at, null, true, r)
+        }
+    }
+
+    /** The words of a refused code: tries left, the wait, no PIN yet, no answer. */
+    private fun pinSaid(r: JSONObject?): String = when (r?.optString("result")) {
+        "wrong", "code" -> getString(R.string.am_pin_wrong, r.optInt("left", 0))
+        "wait" -> r.optLong("wait").let { getString(R.string.am_pin_wait, "%d:%02d".format(it / 60, it % 60)) }
+        null -> getString(R.string.am_pin_noanswer)
+        else -> getString(R.string.am_failed)
+    }
+
+    /**
+     * Lock & limits' door: the parent's PIN on a keypad like TV Setup's own PIN screen ([AppPages.pin]); the wrong code, the wait and
+     * "no answer" are said over the dots. With no PIN set at all it says to make one on the phone or computer: TV Home never makes it
+     * (whoever holds the remote could lock apps and forget the code). A right code opens the group; the same panel keeps it.
+     */
+    private fun pinPage(a: App, st: JSONObject?, at: Int, said: String?, bad: Boolean, answer: JSONObject? = null) {
+        val p = amPanel ?: return
+        capture(false)
+        amGroup = "pin"
+        val back = { top(a, st, at + 1) }
+        val title = ttl(a, getString(R.string.am_g_lock))
+        val none = answer?.optString("result") == "nopin" || st == null || !st.optBoolean("pin")
+        if (none) {
+            p.dialog.setOnKeyListener(null)
+            val (v, b) = AppPages.message(this, getString(R.string.am_pin_none), false, getString(R.string.ok), back)
+            p.view(title, v, 420, b, back)
+            return
+        }
+        val line = said ?: pinSaid(answer)
+        val pad = AppPages.pin(this, if (bad) line else getString(R.string.am_pin_enter), bad, st.optInt("len", 4), st.optBoolean("totp")) { code ->
+            AppRules.verify(this, a.pkg, code) { r ->
+                if (amPanel !== p || !p.dialog.isShowing || amGroup != "pin") return@verify
+                if (r?.optString("result") == "ok") sub(a, st, at) else pinPage(a, st, at, null, true, r)
+            }
+        }
+        p.dialog.setOnKeyListener { _, k, e -> pad.onKey(k, e) }
+        p.view(title, pad.view, 420, pad.focus, back)
+    }
+
+    /** "Used today" opens this page: a bar per day for the last 7 (TV Setup's "week"), and a button that says where to see more. */
+    private fun weekPage(a: App, st: JSONObject?, note: String) {
+        val p = amPanel ?: return
+        capture(false); p.dialog.setOnKeyListener(null)
+        val me = at(a, st, "lock")
+        val back = { sub(a, st, me, 2) }
+        val title = ttl(a, getString(R.string.am_week_title))
+        amGroup = "week"
+        AppRules.ask(this, a.pkg, "week") { r ->
+            if (amPanel !== p || amGroup != "week") return@ask
+            if (r == null) {
+                val (v, b) = AppPages.message(this, getString(R.string.am_pin_noanswer), true, getString(R.string.ok), back)
+                p.view(title, v, 420, b, back); return@ask
+            }
+            val fmt = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault())
+            val now = System.currentTimeMillis()
+            val names = (0..6).map { d -> if (d == 0) getString(R.string.am_week_today) else fmt.format(java.util.Date(now - d * 86_400_000L)) }
+            val (v, b) = AppPages.week(this, r.optJSONArray("days") ?: org.json.JSONArray(), names, getString(R.string.am_week_more), note.ifEmpty { getString(R.string.am_week_more_hint) }) {
+                AppRules.ask(this, a.pkg, "manage") { m ->
+                    if (m?.optString("result") == "ok") p.dialog.dismiss() else weekPage(a, st, getString(R.string.am_week_more_fail))
+                }
+            }
+            p.view(title, v, 460, b, back)
+        }
+    }
+
+    /** The Clear cache row: starts it (TV Setup runs it on a thread: seconds), shows "Clearing…" on the row, pressing it again cancels. */
+    private fun cacheTap(a: App, st: JSONObject?, me: Int) {
+        cacheStop?.let {
+            it(); cacheStop = null; rowNote = "cache" to getString(R.string.am_cache_cancelled)
+            if (amPanel != null && amGroup == "maint") sub(a, st, me, 1)
+            return
+        }
+        val p = amPanel ?: return
+        cacheStop = AppRules.cache(this, a.pkg) { r ->
+            if (amPanel !== p) return@cache
+            val res = r?.optString("result")
+            if (res == "running") { rowNote = "cache" to getString(R.string.am_cache_running); if (amGroup == "maint") sub(a, st, me, 1); return@cache }
+            cacheStop = null
+            val kb = r?.optLong("kb") ?: 0L
+            val size = if (kb >= 1024) "%.1f MB".format(kb / 1024.0) else "$kb KB"
+            if (res == "partial") {                                  // too long for a hint: a page of words, with the way that does work
+                rowNote = null
+                amGroup = "cachemsg"
+                val info = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + a.pkg)).takeIf { packageManager.resolveActivity(it, 0) != null }
+                val back = { sub(a, st, me, 1) }
+                val (v, b) = AppPages.message(this, getString(if (kb > 0) R.string.am_cache_partial else R.string.am_cache_partial0, size), false,
+                    getString(if (info != null) R.string.info else R.string.ok)) { if (info != null) { try { startActivity(info) } catch (e: Exception) { toast(R.string.no_open) } } else back() }
+                p.view(ttl(a, getString(R.string.am_cache)), v, 460, b, back)
+                return@cache
+            }
+            rowNote = "cache" to getString(when (res) { "ok" -> R.string.am_cached; "noadb" -> R.string.am_noadb; else -> R.string.am_failed })
+            if (amGroup == "maint") sub(a, st, me, 1)
+        }
     }
 
     /** Tiles' marks (lock, hourglass) re-read once TV Setup has the change. */
