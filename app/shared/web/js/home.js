@@ -21,7 +21,7 @@ const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'ho
 const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.key_yellow', 186: 'home.key_blue', 170: 'home.key_tv', 178: 'home.key_input',
   190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
-const HOME_THEME_WORDS = { calm: 'home.theme_calm', cinema: 'home.theme_cinema', day: 'home.theme_day', nature: 'home.theme_nature', tech: 'home.theme_tech', minimal: 'home.theme_minimal' };   // HomeConfig.BUILTIN
+const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
@@ -533,7 +533,7 @@ async function homeOpen() {
         onclick: async () => { if (await ask(T('home.theme_del_q'), { ok: T('home.theme_del'), danger: true })) send({ theme: { del: id } }); } });
       return el('span', { className: 'wallcell' }, b, info, del);
     };
-    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, T(HOME_THEME_WORDS[t.id]), t.conf, false)));
+    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, homeThemeName(t), t.conf, false)));
     // the look that was on before the last switch (TV Home keeps it when it matched no saved theme), then the person's own
     const own = [...(c.before ? [{ id: 'before', name: T('home.theme_before'), conf: c.before }] : []), ...(c.themes || [])];
     themeMine.replaceChildren(...own.map((t) => tile(t.id, t.name, t.conf, true)));
@@ -590,7 +590,7 @@ async function homeOpen() {
   // the line under each group's name, as the TV's Customize writes it (summary())
   function sums(c) {
     rows.themes.hidden = !c.themesOk;                                // a TV Home older than the themes
-    put(subs.themes, 'textContent', !c.themesOk ? '' : !c.theme ? T('home.theme_custom') : ((c.themes || []).find((t) => t.id === c.theme) || {}).name || T(HOME_THEME_WORDS[c.theme]));
+    put(subs.themes, 'textContent', !c.themesOk ? '' : !c.theme ? T('home.theme_custom') : ((c.themes || []).find((t) => t.id === c.theme) || {}).name || homeThemeName((c.themesBuiltin || []).find((t) => t.id === c.theme) || { id: c.theme }));
     const set = c.wrotate && c.wevery && c.wevery !== 'off' && c.wall !== 'web';
     put(subs.bg, 'textContent', [set ? T('home.sum_bg_set', { n: (c.walls || []).length }) : wallWord(c), c.shadeOk ? T('home.sum_shade', { n: c.shade ?? 50 }) : ''].filter(Boolean).join(' · '));
     put(subs.look, 'textContent', [c.focus !== undefined ? T(c.focus === 'ring' ? 'home.focus_ring' : 'home.focus_glass') : '',

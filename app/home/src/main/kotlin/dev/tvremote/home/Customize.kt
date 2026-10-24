@@ -348,7 +348,7 @@ object Customize {
                             android.app.AlertDialog.Builder(a, R.style.Menu).setTitle(R.string.th_del_q).setMessage(R.string.th_del_note)
                                 .setPositiveButton(R.string.photo_del) { _, _ -> apply(JSONObject().put("del", id)); draw() }.setNegativeButton(android.R.string.cancel, null).show()
                         }
-                        b.show()
+                        b.showOnOk()
                         true
                     }
                 }
@@ -911,7 +911,7 @@ object Customize {
             catch (e: Exception) { try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } catch (e2: Exception) { } }
         }
         // a Toast was hidden by the settings screen opened at once; a question the person reads, then goes on
-        android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.show()
+        android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()
     }
 
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
@@ -1183,11 +1183,17 @@ object Customize {
         )
     }
 
+    /** Shows a dialog whose main action is one button with the focus on it: one press of OK answers it (never for a delete: those keep the safe choice). */
+    private fun android.app.AlertDialog.Builder.showOnOk() = create().also { d ->
+        d.setOnShowListener { d.getButton(android.app.AlertDialog.BUTTON_POSITIVE)?.requestFocus() }
+        d.show()
+    }
+
     /** A theme's name: the person's own as saved, a ready-made one from the strings. */
     private fun themeName(a: Context, c: JSONObject, id: String): String {
         if (id == HomeConfig.BEFORE) return a.getString(R.string.th_before)
         c.optJSONArray("themes")?.let { m -> for (i in 0 until m.length()) m.getJSONObject(i).let { if (it.optString("id") == id) return it.optString("name") } }
-        return a.getString(a.resources.getIdentifier("th_$id", "string", a.packageName))
+        return HomeConfig.ready.firstOrNull { it.id == id }?.name(a.resources.configuration.locales[0].language) ?: id
     }
 
     /** The name under a background's tile: from the strings, "Photo 3" for the person's third photo. */

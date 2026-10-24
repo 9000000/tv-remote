@@ -45,7 +45,7 @@ object Store {
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now
-            .put("themesBuiltin", org.json.JSONArray(HomeConfig.BUILTIN.map { (id, c) -> JSONObject().put("id", id).put("conf", c) }))
+            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf) }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
             .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
             .let { Pins.report(c, it) }                           // shortcuts: "pinsOk", what the apps offer ([Target] "pin:...")

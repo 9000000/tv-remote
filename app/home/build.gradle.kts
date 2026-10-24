@@ -78,4 +78,9 @@ val packHomeWeb = tasks.register("packHomeWeb") {
         File(dir, "home.html").writeText(File(webDir, "home.html").readText().replace("__ICONS__", icons))
     }
 }
-tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(copyQr, packHomeWeb) }
+// The ready-made themes: the signed list is the copy used until the site's is read (only these two files of docs/home: the rest are pictures)
+val packThemes = tasks.register<Copy>("packThemes") {
+    from("../../docs/home") { include("themes.json", "themes.json.sig") }
+    into(layout.buildDirectory.dir("generated/assets"))
+}
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(copyQr, packHomeWeb, packThemes) }

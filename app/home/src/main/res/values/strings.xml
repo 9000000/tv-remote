@@ -379,12 +379,6 @@
     <string name="th_hold">Hold OK on a theme to see what it sets</string>
     <string name="th_full">12 themes at most. Delete one first.</string>
     <string name="photo_inuse">A saved theme uses it. Delete that theme first.</string>
-    <string name="th_calm">Calm</string>
-    <string name="th_cinema">Cinema</string>
-    <string name="th_day">Daylight</string>
-    <string name="th_nature">Nature</string>
-    <string name="th_tech">Tech</string>
-    <string name="th_minimal">Minimal</string>
     <!-- Tonal cards, the air card, the holidays -->
     <string name="w_air">Air quality</string>
     <string name="c_air_sub">index and PM2.5 where you are</string>

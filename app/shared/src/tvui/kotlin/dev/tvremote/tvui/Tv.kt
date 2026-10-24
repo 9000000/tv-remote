@@ -174,6 +174,13 @@ object TvUi {
             addView(box, ViewGroup.LayoutParams(-1, -2))
         }
         dlg.setContentView(scroll, ViewGroup.LayoutParams(dp(c, w).toInt(), -2))
+        // a sheet whose caller sets no focus (a notice with one button) still starts on its first button: one OK press closes it.
+        dlg.setOnShowListener {
+            if (scroll.findFocus() == null) {
+                val first = (0 until box.childCount).map { box.getChildAt(it) }.firstOrNull { it.isFocusable }
+                first?.requestFocus()
+            }
+        }
         return dlg to box
     }
 

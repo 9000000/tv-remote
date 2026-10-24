@@ -15,6 +15,7 @@ class HomeApp : Application() {
                 c.getString(R.string.err_share), c.getString(R.string.err_close)) { n -> c.getString(R.string.err_repeat, n) }
         })
         CrashLoop.watch(this)
+        Themes.start(this)                                                  // the ready-made themes: kept or packed list now, the site's when it is newer
         // a saved theme keeps its photo / video: the library and the photos' delete refuse to remove one a theme shows (409 "inuse")
         Videos.refs.add { wall -> HomeConfig.themeUses(Store.get(this), wall) }
     }

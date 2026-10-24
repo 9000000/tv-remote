@@ -9,6 +9,9 @@ import org.junit.Test
 
 /** What the phone or computer sends TV Home is cleaned the same way on both sides: nothing out of range is ever kept. */
 class HomeConfigTest {
+    init {   // the ready-made themes are the site's list (TV Home sets them at start): the shipped file, as the apply tests below need them
+        HomeConfig.ready = HomeConfig.parseReady(generateSequence(java.io.File("").absoluteFile) { it.parentFile }.map { java.io.File(it, "docs/home/themes.json") }.first { it.isFile }.readText(), "99.0.0")
+    }
     private fun dock(c: JSONObject) = c.getJSONArray("dock").let { a -> List(a.length()) { a.getString(it) } }
     private fun hidden(c: JSONObject) = c.getJSONArray("hidden").let { a -> List(a.length()) { a.getString(it) } }
 

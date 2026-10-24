@@ -377,12 +377,6 @@
     <string name="th_hold">Giữ OK trên chủ đề để xem nó chỉnh gì</string>
     <string name="th_full">Tối đa 12 chủ đề. Hãy xoá bớt một cái.</string>
     <string name="photo_inuse">Một chủ đề đã lưu đang dùng ảnh này. Hãy xoá chủ đề đó trước.</string>
-    <string name="th_calm">Dịu mắt</string>
-    <string name="th_cinema">Rạp phim</string>
-    <string name="th_day">Ban ngày</string>
-    <string name="th_nature">Thiên nhiên</string>
-    <string name="th_tech">Công nghệ</string>
-    <string name="th_minimal">Tối giản</string>
     <!-- Thẻ tông màu, thẻ không khí, ngày lễ -->
     <string name="w_air">Không khí</string>
     <string name="c_air_sub">chỉ số và PM2.5 nơi bạn ở</string>

@@ -1,0 +1,180 @@
+{
+ "v": 1,
+ "themes": [
+  {
+   "id": "modern",
+   "names": {
+    "vi": "Hiện đại",
+    "en": "Modern"
+   },
+   "conf": {
+    "wall": "midnight",
+    "shade": 50,
+    "widgets": [
+     "clock",
+     "weather",
+     "lunar"
+    ],
+    "wsize": {
+     "clock": "big",
+     "weather": "big",
+     "lunar": "big"
+    },
+    "wstyle": {
+     "clock": "minimal",
+     "weather": "glass",
+     "lunar": "glass"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "clock24": true,
+    "greet": true
+   }
+  },
+  {
+   "id": "calm",
+   "names": {
+    "vi": "Dịu mắt",
+    "en": "Calm"
+   },
+   "conf": {
+    "wall": "dusk",
+    "shade": 55,
+    "widgets": [
+     "lunar",
+     "clock"
+    ],
+    "wsize": {
+     "clock": "small",
+     "lunar": "small"
+    },
+    "wstyle": {
+     "clock": "light"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "greet": true
+   }
+  },
+  {
+   "id": "cinema",
+   "names": {
+    "vi": "Rạp phim",
+    "en": "Cinema"
+   },
+   "conf": {
+    "wall": "black",
+    "shade": 80,
+    "widgets": [],
+    "cols": 6,
+    "rows": 1.2,
+    "focus": "ring",
+    "motion": "calm",
+    "greet": false
+   }
+  },
+  {
+   "id": "day",
+   "names": {
+    "vi": "Ban ngày",
+    "en": "Daylight"
+   },
+   "conf": {
+    "wall": "dawn",
+    "shade": 40,
+    "widgets": [
+     "weather",
+     "calendar",
+     "clock"
+    ],
+    "wsize": {
+     "weather": "big",
+     "calendar": "big",
+     "clock": "small"
+    },
+    "wstyle": {
+     "clock": "classic"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "full"
+   }
+  },
+  {
+   "id": "nature",
+   "names": {
+    "vi": "Thiên nhiên",
+    "en": "Nature"
+   },
+   "conf": {
+    "wall": "peaks",
+    "walls": [
+     "peaks",
+     "meadow",
+     "waves",
+     "dunes"
+    ],
+    "wevery": "day",
+    "shade": 45,
+    "widgets": [
+     "weather",
+     "lunar"
+    ],
+    "wsize": {
+     "weather": "big",
+     "lunar": "small"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "full"
+   }
+  },
+  {
+   "id": "tech",
+   "names": {
+    "vi": "Công nghệ",
+    "en": "Tech"
+   },
+   "conf": {
+    "wall": "midnight",
+    "shade": 60,
+    "widgets": [
+     "system",
+     "usage",
+     "clock"
+    ],
+    "wsize": {
+     "system": "big",
+     "usage": "big",
+     "clock": "small"
+    },
+    "wstyle": {
+     "clock": "minimal"
+    },
+    "cols": 7,
+    "focus": "ring",
+    "motion": "calm",
+    "clock24": true
+   }
+  },
+  {
+   "id": "minimal",
+   "names": {
+    "vi": "Tối giản",
+    "en": "Minimal"
+   },
+   "conf": {
+    "wall": "graphite",
+    "shade": 50,
+    "widgets": [],
+    "cols": 6,
+    "focus": "ring",
+    "motion": "calm",
+    "anim": false,
+    "greet": false
+   }
+  }
+ ]
+}

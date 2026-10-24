@@ -81,9 +81,9 @@ import org.json.JSONObject
  *   themes  the person's own themes, [THEMES_MAX]: [{id, name, conf}], conf = the look at the moment of saving ([THEME_KEYS]: background and its
  *           set, shade, video sound, cards with sizes and looks, grid, focus, motion, clock; NOT the apps, the QR cards (a Wi-Fi password),
  *           keys, language, screensaver, power button). Kept on the TV with the rest. Changed by ONE field every client sends,
- *           "theme": {"apply": id} | {"save": name} | {"del": id} ([merge] reads it, it is never stored); [BUILTIN] are the ready-made
- *           ones (ids, words by `theme.<id>` / `theme_<id>`). A TV Home that has this reports "themesOk": true, "themesBuiltin":
- *           [{id, conf}] and "theme": the id of the one whose look is on now ("" none). A theme's pictures and videos stay while it
+ *           "theme": {"apply": id} | {"save": name} | {"del": id} ([merge] reads it, it is never stored); [ready] are the ready-made
+ *           ones (the site's signed docs/home/themes.json: ids, names per language). A TV Home that has this reports "themesOk": true,
+ *           "themesBuiltin": [{id, names, conf}] and "theme": the id of the one whose look is on now ("" none). A theme's pictures and videos stay while it
  *           keeps them ([themeUses], Videos.refs)
  *   autoon  open [autoapp] (a [Target] too) once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
  *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
@@ -288,27 +288,49 @@ object HomeConfig {
         return out
     }
 
-    private fun lit(vararg kv: Pair<String, Any>) = JSONObject().also { o -> kv.forEach { (k, v) -> o.put(k, v) } }
-    private fun arr(vararg s: String) = JSONArray(s.toList())
     /**
-     * The ready-made themes: only existing settings, nothing new to draw. Each is a whole look (every key of [THEME_KEYS]), so applying
-     * one never leaves a bit of the one before. Their names are words by id.
+     * The ready-made themes come from the site's signed list (docs/home/themes.json, [parseReady]); TV Home sets [ready] from the list it
+     * kept or the copy packed in the APK, and again when the site's is newer (`Themes.kt` there). Each is a whole look (every key of
+     * [THEME_KEYS], [clean] fills the rest), so applying one never leaves a bit of the one before.
      */
-    val BUILTIN: List<Pair<String, JSONObject>> by lazy {
-        fun t(id: String, o: JSONObject) = id to pickTheme(clean(o))
-        listOf(
-            t("calm", lit("wall" to "dusk", "shade" to 55, "widgets" to arr("lunar", "clock"), "wsize" to lit("clock" to "small", "lunar" to "small"), "wstyle" to lit("clock" to "light"),
-                "cols" to 5, "focus" to "glass", "motion" to "calm", "greet" to true)),
-            t("cinema", lit("wall" to "black", "shade" to 80, "widgets" to arr(), "cols" to 6, "rows" to 1.2, "focus" to "ring", "motion" to "calm", "greet" to false)),
-            t("day", lit("wall" to "dawn", "shade" to 40, "widgets" to arr("weather", "calendar", "clock"), "wsize" to lit("weather" to "big", "calendar" to "big", "clock" to "small"),
-                "wstyle" to lit("clock" to "classic"), "cols" to 5, "focus" to "glass", "motion" to "full")),
-            t("nature", lit("wall" to "peaks", "walls" to arr("peaks", "meadow", "waves", "dunes"), "wevery" to "day", "shade" to 45, "widgets" to arr("weather", "lunar"),
-                "wsize" to lit("weather" to "big", "lunar" to "small"), "cols" to 5, "focus" to "glass", "motion" to "full")),
-            t("tech", lit("wall" to "midnight", "shade" to 60, "widgets" to arr("system", "usage", "clock"), "wsize" to lit("system" to "big", "usage" to "big", "clock" to "small"),
-                "wstyle" to lit("clock" to "minimal"), "cols" to 7, "focus" to "ring", "motion" to "calm", "clock24" to true)),
-            t("minimal", lit("wall" to "graphite", "shade" to 50, "widgets" to arr(), "cols" to 6, "focus" to "ring", "motion" to "calm", "anim" to false, "greet" to false)),
-        )
+    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject) {
+        /** The name in [lang], else English, else the id. */
+        fun name(lang: String): String = names[lang] ?: names["en"] ?: id
     }
+    @Volatile var ready: List<Ready> = emptyList()
+    val BUILTIN: List<Pair<String, JSONObject>> get() = ready.map { it.id to it.conf }
+    const val READY_MAX = 40
+    private val READY_ID = Regex("[a-z][a-z0-9_]{0,15}")
+
+    /** [a] newer than [b] ("0.8.1" vs "0.8.0"); a missing part is 0. */
+    fun newer(a: String, b: String): Boolean {
+        val x = a.split('.').map { it.toIntOrNull() ?: 0 }; val y = b.split('.').map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(x.size, y.size)) { val d = x.getOrElse(i) { 0 } - y.getOrElse(i) { 0 }; if (d != 0) return d > 0 }
+        return false
+    }
+
+    /**
+     * The themes of a signed list ([text] is checked by the caller): {"v":1,"themes":[{id, names:{vi,en}, conf, since?}]}. Each conf goes
+     * through [clean] and [pickTheme], so a list sets nothing a theme could not (a "wurl" page is allowed here: that is why it is
+     * signed). A theme with a `since` newer than [have] (this TV Home's version) waits for the update; an empty list is no list.
+     */
+    fun parseReady(text: String, have: String): List<Ready> = try {
+        val o = JSONObject(text)
+        val a = o.optJSONArray("themes")
+        val seen = HashSet<String>()
+        val out = ArrayList<Ready>()
+        if (o.optInt("v") == 1 && a != null) for (i in 0 until a.length()) {
+            val t = a.optJSONObject(i) ?: continue
+            val id = t.optString("id"); val conf = t.optJSONObject("conf")
+            if (!READY_ID.matches(id) || conf == null || !seen.add(id)) continue
+            if (t.optString("since").let { it.isNotEmpty() && newer(it, have) }) continue
+            val n = t.optJSONObject("names")
+            val names = if (n == null) emptyMap() else n.keys().asSequence().filter { LANGS.contains(it) }.associateWith { themeName(n.optString(it)) }.filterValues { it.isNotEmpty() }
+            out += Ready(id, names, pickTheme(clean(conf)))
+            if (out.size >= READY_MAX) break
+        }
+        out
+    } catch (e: org.json.JSONException) { emptyList() }
 
     private fun customThemes(o: JSONObject?): List<JSONObject> {
         val a = o?.optJSONArray("themes") ?: return emptyList()
