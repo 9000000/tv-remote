@@ -83,7 +83,10 @@ class LibraryActivity : ComponentActivity() {
     private var searchBox: EditText? = null
     private var updFilters: (() -> Unit)? = null
     private val tileKeys = HashMap<String, View>()                    // "<section>|<id>" -> its tile
+    private val tileCache = HashMap<String, Pair<Item, View>>()        // the same, kept across rebuilds of the rows: typing in the search field rebuilt every tile per key (views, drawables, a trim + edge scan of its picture, ~2.4 ms a tile here, several times that on a TV box)
+    private val typed = Runnable { renderSections() }                  // a search edit waits for the typing to pause: one rebuild per word, not per key
     private var focusedKey: String? = null
+    private var rowKeys: List<String> = emptyList()                   // the focused tile's row, in order: when it goes (hidden, deleted, removed) the focus goes to its neighbour, not nowhere
     private var lastFocus: View? = null
     private var wantFolder: String? = null                            // a tvgames://folder/<id> link: its row takes the focus once drawn
     private var scroller: ScrollView? = null
@@ -310,7 +313,7 @@ class LibraryActivity : ComponentActivity() {
         overlay = null
         val keepY = scroller?.scrollY ?: 0                            // built again: it opens where it was, not at the top scrolling down
         jump = true
-        root.removeAllViews(); tileKeys.clear()
+        root.removeAllViews(); tileKeys.clear(); tileCache.clear()
         buildItems()
         if (lib.isEmpty() && sugs.isEmpty()) {
             root.addView(LinearLayout(this).apply {
@@ -370,13 +373,13 @@ class LibraryActivity : ComponentActivity() {
                 addState(intArrayOf(), GradientDrawable().apply { setColor(0x24FFFFFF); cornerRadius = dp(30).toFloat() })
             }
             addTextChangedListener(object : TextWatcher {
-                override fun afterTextChanged(e: Editable?) { val q = e?.toString() ?: ""; if (q != query) { query = q; renderSections() } }
+                override fun afterTextChanged(e: Editable?) { val q = e?.toString() ?: ""; if (q != query) { query = q; searchBox?.removeCallbacks(typed); searchBox?.postDelayed(typed, 200) } }
                 override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
                 override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             })
             setOnEditorActionListener { v, _, _ ->
                 (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0)
-                firstTile()?.requestFocus(); true
+                renderSections(); firstTile()?.requestFocus(); true
             }
         }
         searchBox = f
@@ -388,6 +391,7 @@ class LibraryActivity : ComponentActivity() {
             cols = if (cols >= 6) 4 else cols + 1
             getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
             cb?.let { it.pillText(cols.toString()); it.contentDescription = getString(R.string.cols_pill, cols) }
+            tileCache.clear()                                          // kept tiles outside the rows would keep the old size
             resizeTiles()                                              // the same views, a new size: no rebuild, no picture work (it took ~0.7 s on the test box)
         }.apply { contentDescription = getString(R.string.cols_pill, cols) }
         addView(cb, LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) })
@@ -505,6 +509,7 @@ class LibraryActivity : ComponentActivity() {
 
     /** The rows under the pills: favourites, each folder, all games, suggestions; while searching or filtering one row of what matches. */
     private fun renderSections() {
+        searchBox?.removeCallbacks(typed)                              // any other render supersedes a waiting one
         val box = sections ?: return
         val keepKey = focusedKey; val keepId = keepKey?.substringAfter('|')
         val hadFocus = box.hasFocus()
@@ -529,11 +534,18 @@ class LibraryActivity : ComponentActivity() {
         val f = wantFolder; wantFolder = null
         val target = pend?.let { p -> tileKeys.entries.firstOrNull { it.key.endsWith("|$p") }?.value }
             ?: f?.let { id -> tileKeys.entries.firstOrNull { it.key.startsWith("g$id|") }?.value ?: groupHeads["g$id"] }
-            ?: if ((hadFocus || keepKey != null) && !elsewhere) (keepKey?.let { tileKeys[it] } ?: keepId?.let { id -> tileKeys.entries.firstOrNull { it.key.endsWith("|$id") }?.value }) else null
+            ?: if ((hadFocus || keepKey != null) && !elsewhere) (keepKey?.let { tileKeys[it] } ?: keepId?.let { id -> tileKeys.entries.firstOrNull { it.key.endsWith("|$id") }?.value }
+            ?: keepKey?.let { k -> neighbour(k) ?: firstTile() }) else null
         if (!typing && !(elsewhere && target == null)) (target ?: if (!hadFocus && lastFocus == null) firstTile() else null)?.requestFocus()
     }
 
     private val groupHeads = HashMap<String, View>()
+
+    /** The tile that stood after [key] in its row, else the one before it, that still exists. */
+    private fun neighbour(key: String): View? {
+        val at = rowKeys.indexOf(key); if (at < 0) return null
+        return (rowKeys.drop(at + 1) + rowKeys.take(at).reversed()).firstNotNullOfOrNull { tileKeys[it] }
+    }
 
     /** A row: its title (a folder's with Rename / Delete / Pin beside it) and its tiles. */
     private fun section(key: String, title: String, items: List<Item>, group: Shelf.Group? = null, add: Boolean = false): View = LinearLayout(this).apply {
@@ -863,6 +875,18 @@ class LibraryActivity : ComponentActivity() {
     }
 
     private fun gameTile(i: Item, section: String): View {
+        tileCache["$section|${i.id}"]?.let { (was, v) ->
+            if (was === i) {                                          // the same game in the same row as before: its view comes back as it was, picture and all
+                (v.parent as? ViewGroup)?.removeView(v)
+                (v.layoutParams as? GridLayout.LayoutParams)?.let { it.rowSpec = GridLayout.spec(GridLayout.UNDEFINED); it.columnSpec = GridLayout.spec(GridLayout.UNDEFINED) }   // the old grid's cell
+                tileKeys.putIfAbsent("$section|${i.id}", v)
+                return v
+            }
+        }
+        return newTile(i, section).also { tileCache["$section|${i.id}"] = i to it }
+    }
+
+    private fun newTile(i: Item, section: String): View {
         val dl = i.rom != null
         var iniTexts: () -> Unit = {}
         val outer = shell(0xFF1E2230.toInt()) { face ->
@@ -989,7 +1013,10 @@ class LibraryActivity : ComponentActivity() {
         if (on) tintFor(v)
         val lift = dp(14).toFloat()
         r.card.animate().cancel(); r.ring.animate().cancel(); r.below.animate().cancel(); r.content.animate().cancel(); r.shine.animate().cancel()
-        if (on) { lastFocus = v; focusedKey = v.getTag(R.id.tile_key) as? String; centreFocused(v) }
+        if (on) {
+            lastFocus = v; focusedKey = v.getTag(R.id.tile_key) as? String; centreFocused(v)
+            rowKeys = (v.parent as? ViewGroup)?.let { g -> (0 until g.childCount).mapNotNull { g.getChildAt(it).getTag(R.id.tile_key) as? String } } ?: emptyList()
+        }
         if (!animOn) {                                                // the end state at once, grown too (TV Home's Tile.focus): at 1x only the ring told which was chosen
             val g = if (on) GROW else 1f
             r.card.translationX = 0f; r.card.translationY = 0f

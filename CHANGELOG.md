@@ -67,6 +67,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - Caro, Mèo nổ: người rời ván không còn làm game đứng.
   - Quiz trộn câu hỏi đều hơn.
   - Tỷ phú: tên ô không tràn chữ, và ván kết thúc khi không còn người thật.
+- TV Games, gõ vào ô tìm game: không còn giật theo từng phím. Trước đây mỗi phím dựng lại toàn bộ ô game (~2,6 ms/ô trên máy ảo, 19 ô = 50 ms, TV yếu gấp nhiều lần); nay chờ 200 ms sau phím cuối (gõ 5 phím nhanh = 1 lần dựng thay vì 5) và dùng lại ô đã dựng (19 ô: 13 ms). Menu giữ OK: ẩn gợi ý / xoá game / gỡ game không còn làm mất focus (nhảy lên đầu trang, phải bấm phím mới có focus), focus chuyển sang ô kế bên.
 
 **English**
 - TV Setup, Manage on the TV: opens about 1 s sooner (on an FPT box "connected" shows after 3.7 s, was 4.7–5.3 s).
@@ -129,6 +130,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
   - Caro and Exploding Cats: a player leaving no longer stalls the game.
   - Quiz shuffles questions evenly.
   - Tycoon: square names no longer overflow, and the game ends when no real players are left.
+- TV Games, typing in the search field: no longer janky per key. Each key used to rebuild every tile (~2.6 ms a tile on the emulator, 19 tiles = 50 ms, several times that on a weak TV); now it waits 200 ms after the last key (5 fast keys = 1 rebuild instead of 5) and reuses the tiles already built (19 tiles: 13 ms). Hold-OK menu: hiding a suggestion / deleting / removing a game no longer drops the focus (the page jumped to the top with nothing focused); the focus moves to the neighbouring tile.
 
 ## 0.20.0 - 2026-10-23
 
