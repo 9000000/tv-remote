@@ -119,6 +119,22 @@
     document.getElementById("dl-main-os").innerHTML = ' <span class="vi">cho</span><span class="en">for</span> ' + a.textContent.trim();
   })();
 
+  // Android on a computer: a QR to scan with the phone (+ the APK anyway); on an Android phone the link just downloads
+  (function(){
+    var a = document.querySelector('#dl-all a[data-os="android"]'), dlg = document.getElementById("apkqr");
+    if (!a || !dlg || typeof qrSvg !== "function") return;
+    function open(e){
+      if (/Android/.test(navigator.userAgent)) return;
+      var q = qrSvg(a.href, 260); if (!q) return;
+      e.preventDefault();
+      var box = dlg.querySelector(".big"); box.innerHTML = ""; box.appendChild(q);
+      dlg.showModal();
+    }
+    a.addEventListener("click", open);
+    dlg.querySelector(".x").addEventListener("click", function(){ dlg.close(); });
+    dlg.addEventListener("click", function(e){ if (e.target === dlg) dlg.close(); });      // the backdrop
+  })();
+
   // latest release tag in the pill; the page reads fine if GitHub is unreachable
   fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases/latest")
     .then(function(r){ return r.ok ? r.json() : null; })
