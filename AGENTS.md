@@ -232,6 +232,10 @@ What it takes care of, for doing it by hand:
 - Tap by text (find the node in `uiautomator dump`), never by fixed coordinates.
 - If `adb exec-out screencap` comes back blank on the phone emulator, use `adb emu screenrecord screenshot <file>`.
 - Web UI: headless Chrome through the DevTools protocol against the test server above.
+- **Keep the computer usable** (a run of parallel agents froze it once, dev/DECISIONS.md "Tests that froze the computer"): at most
+  two emulators (`emu.sh` refuses a third: reuse the running one); heavy steps (ffmpeg, Gradle builds, `audit.js`) one at a time
+  through `dev/test/light.sh <cmd>` (waits for room, `nice`, one lock), never several with `&`; test videos / GIFs from
+  `dev/test/media.sh` (made once in `.cache/media`), and any ffmpeg on `lavfi` sets the length in the source (`:duration=`), never only `-t`.
 - Unit tests (no device needed): `node --test app/shared/tests/ app/games/tests/` (also run by `dev/hooks/pre-push` before every push, since a push deploys `docs/`, and by `release.sh`; set up once per clone: `git config core.hooksPath dev/hooks`) (the web games' rules and bots: `app/games/tests`, beside the app that packs them, not in `docs/`, which the site publishes),
   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
   (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.

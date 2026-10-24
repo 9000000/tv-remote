@@ -20,6 +20,8 @@ Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.m
 | Script | Does |
 |---|---|
 | `emu.sh` | the two test emulators (Google TV and phone, Android 14): `create` once, then no argument to start them and install the apps, `install`, `reset`, `stop` (AGENTS.md "Testing") |
+| `light.sh <cmd>` | runs a heavy step (ffmpeg, Gradle, audit) at low priority, one at a time, once load and memory leave room (waits up to `LIGHT_WAIT` s) |
+| `media.sh` | test clips for the video / GIF backgrounds (1080p60 12 Mbps, 1080p30, 720p30, long GOP, two GIFs), made once in `.cache/media` |
 | `smoke.py [tv\|URL]` | every `/api` route over a real network path (the TV emulator through `emu redir`, not adb forward): each must answer in full, without 500; exit 1 if not |
 | `layout.js [URL]` | the page in Chrome **and** WebKit × 1100 / 400 px × every tab + Settings, English and Vietnamese: sideways scroll, cut words, wrapped labels, things out of their card, overlapping cards, wrapped chips; screenshots in `/tmp/tvr-layout` |
 | `audit.js` | the whole page pressed through by a script (every tab, dialog, menu and chip, down to `--depth`), no TV: `/api` is the live demo's made-up TV. Each screen checked for layout, contrast, the UI rules, words, touch size, script errors; report with boxed screenshots in `/tmp/tvr-audit/index.html` (~20 min; `--only=apps`, `--budget=` s per tab) |

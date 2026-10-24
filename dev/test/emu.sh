@@ -72,6 +72,9 @@ boot() {   # avd port extra-args...
   local s="emulator-$port"
   if [ -n "$(running "$port")" ]; then echo "✓ $s already running"; return; fi
   avd_exists "$avd" || { echo "No AVD $avd: run dev/test/emu.sh create first"; exit 1; }
+  # each emulator takes ~3 GB and 4 cores of the computer: a third one (another agent's) froze a 24 GB Mac with builds beside it
+  local n; n=$("$ADB" devices | grep -c '^emulator-')
+  if [ "$n" -ge "${EMU_MAX:-2}" ]; then echo "$n emulators already running (EMU_MAX=${EMU_MAX:-2}): use one of them, or dev/test/emu.sh stop"; exit 1; fi
   mkdir -p "$ROOT/.cache"
   local win=(); [ "${HEADLESS:-0}" = 1 ] && win=(-no-window)
   echo "… starting $avd as $s"
