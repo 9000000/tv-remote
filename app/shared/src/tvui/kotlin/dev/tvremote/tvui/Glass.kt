@@ -86,8 +86,8 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
      * Onto [face] (a tile's picture) grown by [grow] round its centre, as the tile is when focused; [r] its corner radius; [edge]
      * the tile's [TvTile.edge]: a first or last tile grows inward from that side. [glide] false: there at once (the first showing, motion off, a layout that moved the tiles).
      */
-    fun to(content: ViewGroup, face: View, grow: Float, r: Float, glide: Boolean, edge: Int = 0) {
-        if (face.width == 0) { face.post { if (face.isAttachedToWindow) to(content, face, grow, r, false) }; return }
+    fun to(content: ViewGroup, face: View, grow: Float, r: Float, glide: Boolean, edge: () -> Int = { 0 }) {
+        if (face.width == 0) { face.post { if (face.isAttachedToWindow) to(content, face, grow, r, false, edge) }; return }   // edge asked once laid out: before, every tile looked first
         at.set(0, 0, face.width, face.height)
         content.offsetDescendantRectToMyCoords(face, at)
         val tw = face.width * grow
@@ -97,7 +97,7 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
             invalidate()
         }
         val k = tw / baseW
-        val x = at.exactCenterX() - edge * (tw - face.width) / 2f - (baseW + 2 * pad) * k / 2f
+        val x = at.exactCenterX() - edge() * (tw - face.width) / 2f - (baseW + 2 * pad) * k / 2f
         val y = at.exactCenterY() - (baseW * 9 / 16 + 2 * pad) * k / 2f
         atX = x; atY = y
         animate().cancel()
