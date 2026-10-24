@@ -28,6 +28,7 @@ grep -q "$(java dev/release/Sign.java pub "$KEY")" app/shared/src/sign/kotlin/de
 [ -z "$(git status --porcelain)" ] || { echo "commit your changes first"; exit 1; }
 # the user guide: a topic whose app files changed since the release it was checked against may now be wrong
 node --test app/shared/tests/ app/games/tests/ >/dev/null 2>&1 || { echo "node tests fail: node --test app/shared/tests/ app/games/tests/"; exit 1; }   # what ships must parse and pass
+(cd app/gradle && ./gradlew -q :shared:testDebugUnitTest >/dev/null 2>&1) || { echo "Kotlin tests fail (speed budgets included): cd app/gradle && ./gradlew :shared:testDebugUnitTest"; exit 1; }   # not in pre-push: Gradle is ~1 min; a release is where a slowdown must not ship
 if [ -z "$GUIDE_OK" ] && [ -n "$(dev/release/guide_stale.py -q)" ]; then
   dev/release/guide_stale.py
   echo "update those topics in docs/guide.html (or check they are still right) and set their data-v=\"next\"; GUIDE_OK=1 releases anyway"; exit 1
