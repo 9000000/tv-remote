@@ -105,4 +105,9 @@ class Saved(private val file: File) {
     var hook: JSONObject
         @Synchronized get() = JSONObject((cfg.optJSONObject("hook") ?: JSONObject()).toString())
         @Synchronized set(v) { cfg.put("hook", v) }
+
+    /** The anonymous census's switch, id and what it sent (core/Census.kt). */
+    var census: JSONObject
+        @Synchronized get() = JSONObject((cfg.optJSONObject("census") ?: JSONObject()).toString())
+        @Synchronized set(v) { cfg.put("census", v) }
 }

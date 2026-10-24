@@ -40,7 +40,13 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
     private val jar: () -> ByteArray = { jarFile.readBytes() }
     private val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
-    init { WireLog.app = "TV Remote $version (computer)" }
+    init {
+        WireLog.app = "TV Remote $version (computer)"
+        dev.tvremote.core.Census.init("pc", version, object : dev.tvremote.core.Census.Store {
+            override fun get(key: String): String? = saved.census.optString(key).takeIf { it.isNotEmpty() }
+            override fun put(key: String, value: String) { saved.census = saved.census.put(key, value); saved.save() }
+        })
+    }
 
     private val kinds = java.util.concurrent.ConcurrentHashMap<String, String>()   // before cur, which needs it: what an unsaved TV is (scan, ports)
 
@@ -138,6 +144,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         }
         if (!r.path.startsWith("/api/")) page().serve(r.path, r.headers["accept-encoding"].orEmpty())?.let { return it }
         if (r.path == "/api/hook/config") return hookConfig(r)
+        if (r.path == "/api/census") return dev.tvremote.core.web.Manage.census(r)           // Settings, with or without a TV
         return dispatch(r)
     }
 

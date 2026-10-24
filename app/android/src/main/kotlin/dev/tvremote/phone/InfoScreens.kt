@@ -113,6 +113,17 @@ internal fun MainActivity.buildSettings(): View {
     updateNote = note("")
     box.addView(updateNote)
 
+    box.addView(head(T("info_screens.privacy")), gap(18))        // the anonymous census (core/Census.kt): the same switch as the page's Settings
+    lateinit var censusRow: Button
+    val censusLabel = { censusRow.setToggle(dev.tvremote.core.Census.enabled, T("about.census")) }
+    censusRow = row("") {
+        dev.tvremote.core.Census.enabled = !dev.tvremote.core.Census.enabled
+        censusLabel()
+    }
+    censusLabel()
+    box.addView(censusRow)
+    box.addView(note(T("about.census_note")))
+
     box.addView(head(T("info_screens.about")), gap(18))
     box.addView(row("@info|" + T("about.about")) { about.visibility = View.VISIBLE })
 

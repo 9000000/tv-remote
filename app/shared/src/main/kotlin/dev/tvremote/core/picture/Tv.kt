@@ -459,12 +459,12 @@ class Tv(
             if (Trace.on) Trace.log("v.in", "pts=${(flags and ((1L shl 61) - 1)) / 1000} cfg=${if (config) 1 else 0} key=${if ((flags and (1L shl 61)) != 0L) 1 else 0} n=$size")
             if (sink != null) {
                 sink.video(config, (flags and (1L shl 61)) != 0L, data)
-                if (first && !config) { first = false; framed = true; if (Trace.on) Trace.log("v.first"); status("live", "") }
+                if (first && !config) { first = false; framed = true; dev.tvremote.core.Census.video(host); if (Trace.on) Trace.log("v.first"); status("live", "") }
                 continue
             }
             val sc = screen ?: continue
             if (!sc.feed(config, if (config) 0L else flags and ((1L shl 61) - 1), data)) break
-            if (first && !config) { first = false; framed = true; if (Trace.on) Trace.log("v.first"); status("live", "") }
+            if (first && !config) { first = false; framed = true; dev.tvremote.core.Census.video(host); if (Trace.on) Trace.log("v.first"); status("live", "") }
         }
     }
 

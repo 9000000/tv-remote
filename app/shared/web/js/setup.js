@@ -194,6 +194,14 @@ $('#hooknew').addEventListener('click', async () => {
   const h = await api('/api/hook/config', { do: 'new' });
   if (h) { hookShow(h); toast(T('setup.newtoken_done')); }
 });
+// ---------- Send anonymous stats (Census.kt): one switch, on by default ----------
+const censusShow = (c) => $('#censuspick').querySelectorAll('button').forEach((b) => b.classList.toggle('on', (b.dataset.v === '1') === !(c && c.on === false)));
+$('#aboutbtn').addEventListener('click', async () => { put('#censusgroup', 'hidden', SCOPE !== 'full'); if (SCOPE === 'full') censusShow(await api('/api/census', null, true)); });
+$('#censuspick').addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const c = await api('/api/census', { on: b.dataset.v === '1' });
+  if (c) censusShow(c);
+});
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#sendlog').addEventListener('click', sendWireLog);
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box

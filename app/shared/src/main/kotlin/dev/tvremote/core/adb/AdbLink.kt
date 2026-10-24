@@ -44,6 +44,7 @@ class AdbLink(val keyDir: File, val host: String) {
                 waiting = false
                 failed = false
                 adb = a
+                dev.tvremote.core.Census.connected(host) { a.shell(it) }   // the TV's model, once, for the anonymous census (off: nothing happens)
                 return a
             } catch (e: IOException) {
                 WireLog.all.add("·", "adb $host $e")

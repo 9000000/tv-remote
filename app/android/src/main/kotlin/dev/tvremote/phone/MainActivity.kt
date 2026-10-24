@@ -209,6 +209,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the words of the spoken commands: signed list from the site, else kept, else packed
         dev.tvremote.core.Downloader.dir = filesDir                   // the signed Downloader codes are kept here (core/Downloader.kt)
         prefs = getSharedPreferences("tvs", MODE_PRIVATE)
+        dev.tvremote.core.Census.init("phone", version(), object : dev.tvremote.core.Census.Store {   // the anonymous census (core/Census.kt)
+            override fun get(key: String): String? = prefs.getString(key, null)
+            override fun put(key: String, value: String) { prefs.edit().putString(key, value).apply() }
+        })
+        dev.tvremote.core.Census.useTestFile(getExternalFilesDir(null))
         soundPace()                                               // Listen.kt
         reachAroundVpn()                                          // a TV at home stays reachable with a VPN on
         dev.tvremote.core.WireLog.app = "TV Remote " + version() + " (phone, Android " + android.os.Build.VERSION.RELEASE + ")"

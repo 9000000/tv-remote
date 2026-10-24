@@ -101,6 +101,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val post = r.method == "POST"
         try {
             when (what) {
+                "census" -> return census(r)
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
                 "privacy" -> if (!post) return HttpServer.Response.json(privacy.snapshot(r.q("since").toIntOrNull() ?: 0, r.q("id").toIntOrNull() ?: -1))   // the scan under way or the last one (Privacy.kt); a route nobody but the owner may use (Scope allows none of it)
@@ -1036,7 +1037,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         job(if (undo) "undo" else "optimize") { j ->
             val lines = StringBuilder()
             val s = Setup(link.get(), dir, lang) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
-            if (undo) s.undo() else s.apply(c)
+            if (undo) s.undo() else { s.apply(c); dev.tvremote.core.Census.optimize(link.host) }
             "ok"
         }
 
@@ -1337,6 +1338,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     companion object {
+        /** `/api/census`: the Settings switch of the anonymous stats (Census.kt), the same on every core; POST {on: bool} turns it on or off. */
+        fun census(r: HttpServer.Request): HttpServer.Response {
+            if (r.method == "POST") dev.tvremote.core.Census.enabled = r.json().optBoolean("on", true)
+            return HttpServer.Response.json(JSONObject().put("on", dev.tvremote.core.Census.enabled))
+        }
+
         /**
          * A copy of a job while its thread is still putting into it. A key added meanwhile breaks the walk through it: Android's
          * org.json throws, the JVM's returns null from toString(), and `JSONObject(null)` was a 500 to a job that ran fine.

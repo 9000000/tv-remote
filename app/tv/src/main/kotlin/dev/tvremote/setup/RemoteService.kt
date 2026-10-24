@@ -294,6 +294,29 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     override fun onBind(i: Intent?): IBinder? = null
 
+    /** The anonymous census (core/Census.kt): this TV's own build properties; ADB shows up as it connects, or as "failed" if it has not by then. */
+    private fun startCensus(l: AdbLink) {
+        val c = dev.tvremote.core.Census
+        c.init("setup", try { packageManager.getPackageInfo(packageName, 0).versionName ?: "" } catch (e: Exception) { "" }, object : dev.tvremote.core.Census.Store {
+            override fun get(key: String): String? = prefs.getString(key, null)
+            override fun put(key: String, value: String) { prefs.edit().putString(key, value).apply() }
+        })
+        c.useTestFile(getExternalFilesDir(null))
+        c.self = {
+            val m = HashMap<String, String>()
+            m["ro.product.brand"] = Build.BRAND; m["ro.product.model"] = Build.MODEL; m["ro.product.device"] = Build.DEVICE
+            m["ro.product.board"] = Build.BOARD; m["ro.hardware"] = Build.HARDWARE
+            m["ro.soc.model"] = if (Build.VERSION.SDK_INT >= 31) Build.SOC_MODEL else ""
+            m["ro.board.platform"] = try { Runtime.getRuntime().exec(arrayOf("getprop", "ro.board.platform")).inputStream.bufferedReader().readText().trim() } catch (e: Exception) { "" }
+            m["ro.build.version.release"] = Build.VERSION.RELEASE; m["ro.build.version.sdk"] = Build.VERSION.SDK_INT.toString()
+            dev.tvremote.core.Census.Props(m, packageManager.hasSystemFeature("android.software.leanback"))
+        }
+        if (!c.enabled) return
+        Thread({
+            try { Thread.sleep(40000); if (l.state() != "ready") c.failed("127.0.0.1") } catch (e: Exception) { }
+        }, "census-adb").apply { isDaemon = true }.start()
+    }
+
     override fun onCreate() {
         super.onCreate()
         dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the page asks for the same words (voice/phrases.json)
@@ -316,6 +339,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dev.tvremote.core.Downloader.dir = filesDir                   // the signed Downloader codes are kept here
         val l = AdbLink(filesDir, "127.0.0.1")
         link = l
+        startCensus(l)
         manage = Manage(l, object : Manage.Labels {
             override fun label(pkg: String): String? =
                 try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null }
