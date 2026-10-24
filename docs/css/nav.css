@@ -17,6 +17,9 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .navlinks a{padding:8px 12px;border-radius:10px;color:var(--muted);font-size:15px;font-weight:500;white-space:nowrap}
 .navlinks a,.navsheet a,.navcta{display:inline-flex;align-items:center;gap:7px}
 .ni{width:17px;height:17px;flex:none;opacity:.85}
+.nx{width:12px;height:12px;flex:none;margin-left:-3px;opacity:.55}     /* ↗: opens in a new tab */
+.navsep{width:1px;height:20px;align-self:center;background:var(--line2);margin:0 6px}
+.navsheet .navsep{display:none}
 .navlinks a:hover{color:var(--text);background:rgba(255,255,255,.05)}
 .navlinks a.on{color:var(--text);background:rgba(91,140,255,.14);box-shadow:inset 0 -2px 0 var(--blue)}
 .navtools{display:flex;gap:8px;align-items:center}
@@ -51,7 +54,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
   .navlinks a{padding:8px 9px;font-size:14.5px}
   nav .gh-label{display:none}
 }
-@media (max-width:980px){
+@media (max-width:1080px){
   .navlinks{display:none}
   .menubtn{display:inline-flex}
   .navsheet{position:absolute;top:100%;left:0;right:0;background:var(--sheet-bg);border-bottom:1px solid var(--line);box-shadow:0 18px 30px rgba(0,0,0,.35);animation:sheetin .16s ease-out}
