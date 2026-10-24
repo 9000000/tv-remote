@@ -55,6 +55,8 @@ const table = Table({
   view(t, s) {
     if (t.done) return { buttons: ['START'], dpad: false };
     if (s === t.turn) return { pointer: true, buttons: ['A'] };
+    // not your turn: say whose (an empty layout left the phone blank); the cards layout carries a note, an older TV Games falls back to a bare pad + a line
+    if (t.pad && t.pad.has && t.pad.has('cards')) return { cards: { hand: [], acts: [], note: W.turnOf(t.name(t.turn)) } };
     return { buttons: [], dpad: false };
   },
   draw(t) { prompt(t); wake(); },
@@ -67,6 +69,7 @@ function prompt(t) {
   const key = S.shotId + ':' + t.turn + ':' + S.phase;
   if (key === S.hinted || (S.phase !== 'aim' && S.phase !== 'place')) return;
   S.hinted = key; t.say(t.turn, S.phase === 'place' ? W.hintPlace : W.hintAim);
+  if (!(t.pad.has && t.pad.has('cards'))) t.seats.forEach((o) => { if (o !== t.turn) t.say(o, W.turnOf(t.name(t.turn))); });   // an older TV Games: a line instead of the note
 }
 function nearestBall() {
   const g = S.g; let bd = 1e9, bi = 1;
