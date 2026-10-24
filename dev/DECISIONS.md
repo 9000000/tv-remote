@@ -466,3 +466,11 @@ once (not kept); screenshot: the bar at 3 % of the 326 KB United States list.
   compile took 1 s. Android 14 reports `speed-profile` after `-m speed`. A debuggable APK stays at `verify` whatever is
   asked (the emulator check only proves the command ran: `reason=cmdline`).
 - A dev `adb install -r` of TV Home is not compiled (no client ran it): measure speed only after a compile.
+
+## Kids mode (`Kids.kt`, `Totp.kt`, `Clock.kt`, `PinActivity.kt`, `Guard.kt`, `web/js/kids.js`, 2026-10-24)
+- Asked by a parent: a kids lock with several unlock ways. Dropped from the request: "Mute ×5" (a child finds it) and a ddMMHH PIN (guessable from the clock).
+- A child who learns the PIN beats every other method, so the PIN is optional: with the Authenticator on it can be turned off, but only while recovery codes are left (8 × 8 digits, one-time, only salted hashes kept). The PIN screen shows no switch to another method, the pad is shuffled each time, a try given up counts as wrong, 5 wrong = 1/5/15/60 min wait (kept across restarts), 3 wrong = Telegram alert to Full chats.
+- TOTP needs the TV clock right: TV Setup measures drift from the HTTP Date header, Telegram `date` and the client's `client_now`, checks codes at now − drift (±1 step), and the page warns when |drift| > 30 s or automatic time is off.
+- Settings is locked in kids mode even though Google TV lists it as a HOME handler: through Settings a child could clear or uninstall TV Setup or change the clock.
+- TV Setup hosts the PIN screen, so it is always free; its own rule screens (MainActivity, ManageActivity) still ask the code when a PIN or Authenticator is set (MainActivity at once in onResume; Guard catches Manage brought back from Recents via the UsageEvents class name). Opened once, it stays open until another app comes to the front.
+- Verified on emulator-5554 (Android 14): computer app → `totp` + `kids` → opening TV Channels shows the PIN screen → the current Authenticator code opens it; TV Setup with a PIN asks, right PIN opens, leaving and coming back asks again.
