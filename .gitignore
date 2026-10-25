@@ -34,3 +34,4 @@ dev/perf/.local/
 # wrangler dev / d1 local state and cache (dev/census)
 .wrangler/
 .dev.vars
+.codegraph/

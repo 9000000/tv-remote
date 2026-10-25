@@ -258,6 +258,21 @@ What it takes care of, for doing it by hand:
 ## Handy facts
 
 - Agents checking crashes or reviewing community themes: [dev/census/CRASHES.md](dev/census/CRASHES.md) and [dev/themes/REVIEW.md](dev/themes/REVIEW.md) (`crashes.py --json`, `review_themes.py --list --json`).
+- **TV Home backgrounds, which path draws what** (read before adding a theme or a wall kind):
+
+  | `wall` | Drawn by | Rotates (`walls` + `wevery`) |
+  |---|---|---|
+  | gradients, drawn scenes, `bing`, `photo*`, `vid:<id>` | native (`wall/Wall.kt`, `WallArt`, `VideoWall`) | yes (`HomeConfig.next`) |
+  | `web` + `loop.html?i=<jpg>` (the site's photo themes, the gallery) | native picture, cached (`wall/NetPicture.kt` `direct()`) | no: `web` is never in `walls` |
+  | `web` + `loop.html?v=<video>` (the site's video themes) | native player (`wall/WebVideo.kt` `direct()`) | no |
+  | `web` + `loop.html?s=<list>` (a slideshow, `docs/home/<list>.json`) | native in new TV Homes; older ones run loop.html's own slideshow | inside the slideshow |
+  | `web` + any other page (Immich Kiosk, a dashboard) | a WebView (`wall/WebWall.kt`) | no |
+
+  A WebView wall was measured slow on the FPT Play box (cold start + uncached download), so every site theme goes native; loop.html
+  stays only as the fallback for older TV Homes and the page's preview. Its allowed hosts are listed twice: loop.html `HOSTS` and the
+  `HOSTS` of NetPicture / WebVideo. Themes live in `docs/home/themes.json` (signed, `dev/sign/sign_themes.py`, bump `rev`), photos come
+  from `dev/gen/wallpapers.py` (Wikimedia Commons, licence + author kept), and a TV Home asks for the list again on Home (a day old) and
+  on opening Themes (an hour), `Themes.refresh`.
 
 - Downloader (AFTVnews) short codes, always pointing at the latest release: **2397346** → `tv-setup.apk`, **2973135** → `tv-remote.apk`, **4356026** → `tv-home.apk`, **8135635** → `tv-channels.apk`, **2294968** → `tv-games.apk`. They are listed once in `docs/data/downloader.json`, signed by `dev/sign/sign_downloader.py` (the launcher list's key; run it after every edit and commit the `.sig` with it); the apps read it through `core/Downloader.kt` (site, else GitHub, else the copy kept, else `PACKED`, which `DownloaderTest` keeps equal to the file; an unsigned list is ignored: a code makes the TV install what it points at), and the page asks `/api/downloader`. The words take `{code}`, never the digits. The static pages of `docs/` and the READMEs keep the codes as text. Downloader registers the `downloader:` scheme: opening `downloader://<code>` (an intent, or the remote protocol's launch command) makes it fetch the APK and bring up the installer with nothing typed. Only send it once Downloader is known to be installed; a link the TV has no app for can make it drop the remote connection.
 - TV Setup also runs on phones and tablets (needs ADB on port 5555 there). Tell a TV from a phone with the `android.software.leanback` feature, never the screen size alone: a 1080p TV is only `sw540dp`. Optimize TV refuses non-TVs (`Setup.tvOnly`).
