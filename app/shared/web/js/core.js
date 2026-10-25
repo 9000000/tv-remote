@@ -580,8 +580,8 @@ function setLocked(on, s) {
   else showTab(currentTab);
 }
 $('#pairstart').addEventListener('click', async () => {
-  if (!await api('/api/pair/start', {})) return;
-  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', T('core.code_2min')); $('#paircode').value = ''; $('#paircode').focus();
+  const r = await api('/api/pair/start', {}); if (!r) return;
+  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', T(r.shown === false ? 'core.code_open_setup' : 'core.code_2min'));   // false: the TV could not put it up $('#paircode').value = ''; $('#paircode').focus();
 });
 $('#pairf').addEventListener('submit', async (e) => {
   e.preventDefault();

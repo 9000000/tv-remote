@@ -4,6 +4,16 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Web của TV: TV chưa có ADB thì không tự hiện được mã ghép đôi; trang giờ bảo mở app TV Setup, mã nằm ở màn hình chính.
+- Tự kiểm tra: box của nhà mạng (FPT, Viettel) được báo thẳng là nhà mạng khóa Tùy chọn nhà phát triển, không còn gợi ý cách của TCL.
+
+**English**
+- TV web page: a TV with no ADB cannot put up the pairing code by itself; the page now says to open TV Setup, whose main screen shows it.
+- Self-check: ISP boxes (FPT, Viettel) are told plainly that the provider locked Developer options, no more TCL hint.
+
 ## 0.24.1 - 2026-10-25
 
 Web 0.24.1 · app điện thoại 0.24.1 · app TV 0.24.1 · TV Home 0.11.0 · TV Channels 0.7.0 · TV Games 0.7.0

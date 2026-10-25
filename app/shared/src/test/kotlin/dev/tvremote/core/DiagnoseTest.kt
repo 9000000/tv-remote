@@ -157,4 +157,11 @@ class DiagnoseTest {
         val vi = Diagnose.json(r, "vi")
         assertTrue(vi.getString("fix").contains("Gỡ lỗi ADB"))
     }
+    @Test fun ispBoxSaysTheProviderLockedIt() {                     // an FPT Play: its Developer options are behind a password
+        val fpt = Diagnose.json(Diagnose.run(Fake(open = setOf(6466)), "192.168.1.20", A, "FPT Play 650", "", "en"), "en").getString("fix")
+        assertTrue(fpt.contains("FPT"))
+        assertTrue(!fpt.contains("TCL"))
+        val plain = Diagnose.json(Diagnose.run(Fake(open = setOf(6466)), "192.168.1.20", A, "TV", "", "en"), "en").getString("fix")
+        assertTrue(!plain.contains("FPT"))
+    }
 }

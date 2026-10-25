@@ -785,7 +785,11 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             try { startActivity(Intent(this, PairActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (ignored: Exception) { }
         }
         backoff.shown(peer, now)
-        return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120))
+        // with no ADB and no overlay right Android drops a service's screen without a word (an FPT Play, 2026-10-25): the page
+        // then says to open TV Setup, whose own screen shows the code too (MainActivity.pairPoll)
+        var up = false
+        for (i in 0 until 15) { if (PairActivity.showing || MainActivity.shown) { up = true; break }; Thread.sleep(100) }
+        return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120).put("shown", up))
     }
 
     // the body is read before taking the lock: a browser that sends it slowly must not hold up everyone else's pairing

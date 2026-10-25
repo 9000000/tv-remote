@@ -175,9 +175,12 @@ object Diagnose {
 
     private val OTHER_BRANDS = Regex("sony|bravia|xiaomi|\\bmi\\b|hisense|philips|nvidia|shield|chromecast|fire ?tv|xgimi|epson|oneplus|benq|chiq|\\brca\\b|sanyo|toshiba|insignia|thomson|skyworth", RegexOption.IGNORE_CASE)
 
+    private val ISP = Regex("fpt|viettel", RegexOption.IGNORE_CASE)  // ISP boxes (MainActivity.ispBox): Developer options behind their password
+
     /** TCL (China) hides its ADB switch behind a key sequence; shown for a TCL and for a TV whose maker is not known, not for a known other one. */
     private fun tclHint(f: Facts, lang: String): String {
         val b = f.brand
+        if (ISP.containsMatchIn(b)) return "\n" + Words.get(lang, "diagnose_kt.isp_locked")   // FPT Play asks a password at the 7 presses
         val other = b.isNotBlank() && !b.contains("tcl", true) && OTHER_BRANDS.containsMatchIn(b)
         return if (other) "" else "\n" + Words.get(lang, "setup.tcl_hidden_adb")
     }
