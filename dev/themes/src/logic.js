@@ -65,6 +65,13 @@ export function validate(text) {
   return { ok: { name, by, lang: o.lang, conf, confJson: cj, preview, wall } };
 }
 
+/** every address in it, nested ones too (loop.html?i=<picture>), is https on the project's own site: not worth a red line */
+function ownSite(v) {
+  let s = v; try { s = decodeURIComponent(v); } catch {}
+  const all = [...s.matchAll(/(https?):\/\/([^\/?#\s"']+)/gi)];
+  return all.length > 0 && all.every((m) => m[1].toLowerCase() === "https" && m[2].toLowerCase() === ALLOWED_HOST);
+}
+
 /** what the reviewer should look at twice */
 export function flags(row) {
   const out = [], c = row.conf || {};
@@ -75,7 +82,7 @@ export function flags(row) {
   }
   const urls = [];
   (function walk(v) {
-    if (typeof v === "string") { if (/https?:\/\//i.test(v)) urls.push(v); }
+    if (typeof v === "string") { if (/https?:\/\//i.test(v) && !ownSite(v)) urls.push(v); }
     else if (Array.isArray(v)) v.forEach(walk);
     else if (v && typeof v === "object") for (const k of Object.keys(v)) { walk(k); walk(v[k]); }
   })(c);

@@ -36,7 +36,8 @@ test("size limits of the pictures", () => {
   assert.match(validate(sub({ wall: big(1_000_000) })).error, /1 MB/);
 });
 test("flags: foreign web wall, any URL, long names", () => {
-  assert.deepEqual(flags({ name: "a", by: "b", conf: { wall: "web", wurl: "https://tvremote.pages.dev/home/loop.html?i=x" } }).length, 1);   // the URL itself is flagged, the host is fine
+  assert.deepEqual(flags({ name: "a", by: "b", conf: { wall: "web", wurl: "https://tvremote.pages.dev/home/loop.html?i=" + encodeURIComponent("https://tvremote.pages.dev/home/a.jpg") } }), []);   // the project's own site, nested too: no red line
+  assert.equal(flags({ name: "a", by: "b", conf: { wall: "web", wurl: "https://tvremote.pages.dev/home/loop.html?i=" + encodeURIComponent("https://evil.example/a.jpg") } }).length, 1);   // a foreign picture inside our page is
   const f = flags({ name: "a", by: "b", conf: { wall: "web", wurl: "https://evil.example/x" } });
   assert.ok(f.some((x) => /not on tvremote.pages.dev/.test(x)) && f.some((x) => /URL in conf/.test(x)));
   assert.ok(flags({ name: "a", by: "b", conf: { wall: "web", wurl: "http://tvremote.pages.dev/" } }).some((x) => /not on/.test(x)));
