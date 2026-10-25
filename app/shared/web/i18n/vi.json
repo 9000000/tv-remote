@@ -2028,6 +2028,8 @@
  "tv_main.automatic_updates": "Tự động cập nhật",
  "tv_main.turn_back_on": "Tự bật lại ADB khi bị tắt",
  "tv_main.update_now": "Cập nhật ngay",
+ "tv_main.installer_asks": "Android sẽ hỏi: chọn Cập nhật.",
+ "tv_main.allow_installs": "Bật “Cho phép cài ứng dụng” cho TV Setup rồi quay lại: nó tự cài tiếp.",
  "tv_main.remove_tv_setup": "Gỡ TV Setup",
  "tv_main.needs_adb_turn_on": "✗ Cần ADB: bật Gỡ lỗi ADB trước.",
  "tv_main.checking_for_a_new": "Đang kiểm tra bản mới...",

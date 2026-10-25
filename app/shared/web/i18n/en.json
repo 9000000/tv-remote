@@ -2094,6 +2094,8 @@
  "tv_main.automatic_updates": "Automatic updates",
  "tv_main.turn_back_on": "Turn ADB back on when switched off",
  "tv_main.update_now": "Update now",
+ "tv_main.installer_asks": "Android asks next: choose Update.",
+ "tv_main.allow_installs": "Turn on “Allow app installs” for TV Setup, then come back: it goes on by itself.",
  "tv_main.remove_tv_setup": "Remove TV Setup",
  "tv_main.needs_adb_turn_on": "✗ Needs ADB: turn on Debugging first.",
  "tv_main.checking_for_a_new": "Checking for a new version...",

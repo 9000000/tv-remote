@@ -314,7 +314,7 @@ class MainActivity : Activity() {
     private fun updateMenu() {
         if (busy) return
         menu("TV Setup " + version(), listOf(
-            TvUi.Item(R.drawable.ic_download, T("tv_main.update_now")) { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else update() },
+            TvUi.Item(R.drawable.ic_download, T("tv_main.update_now")) { if (adb == null) selfUpdate() else update() },
             TvUi.Item(R.drawable.ic_refresh, T("tv_main.automatic_updates"), on = { AutoUpdate.on(this) }) { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) },
             TvUi.Item(R.drawable.ic_trash, T("tv_main.remove_tv_setup")) { askRemove() }))
     }
@@ -336,6 +336,32 @@ class MainActivity : Activity() {
             log(T("tv_main.installing_tv_setup_opens"))
             SetupUpdate.start(a, apk.absolutePath, r.version, true)
         }
+    }
+
+    private val self by lazy { dev.tvremote.update.SelfUpdate(this, "tv", "tv-setup.apk") }
+
+    /**
+     * No ADB of its own (off, its key refused, a box that blocks it): Android's installer instead, which asks once, as TV Home
+     * updates. Asking for ADB here was a loop for the very TVs whose ADB is the trouble (the user, 2026-10-25).
+     */
+    private fun selfUpdate() {
+        if (busy) return
+        busy = true
+        log(T("tv_main.checking_for_a_new"))
+        Thread {
+            try {
+                val r = Release.newer(version(), "tv", "tv-setup.apk")
+                if (r == null) log(T("tv_main.newest_version", "v" to version())) else ui { install(r) }
+            } catch (e: Exception) { log("✗ " + reason(e)) }
+            busy = false
+        }.start()
+    }
+
+    private fun install(r: Release) {
+        var last = -25
+        val going = self.install(r, { pct -> if (pct >= last + 25) { last = pct; log("  $pct%"); if (pct >= 100) log(T("tv_main.installer_asks")) } },
+            { m -> log("✗ " + m.ifEmpty { "Android" }) })
+        log(if (going) T("tv_main.downloading_version", "v" to r.version) else T("tv_main.allow_installs"))   // not going: Android's switch is open, onResume goes on
     }
 
     /** How the last update went, said once on this screen when it is recent: a version that was undone is worth knowing about. */
@@ -396,6 +422,7 @@ class MainActivity : Activity() {
             startActivity(android.content.Intent(this, PinActivity::class.java).putExtra("pkg", packageName))
         }
         shown = true
+        self.check({ }, { r -> install(r) })                          // back from "install unknown apps" for an update: on with it
         askOnPhone()
         pairLine.removeCallbacks(pairPoll); pairPoll.run()
         showWeb()

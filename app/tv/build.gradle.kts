@@ -21,7 +21,7 @@ android {
         // 100000 +: above every code of the numbers before the restart at 0.1.0 (2.24.x was 22400), so Android installs over them
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
-    sourceSets["main"].java.srcDirs("../shared/src/tvui/kotlin", "../shared/src/marks/kotlin")           // the TV apps' one look (app/DESIGN-TV.md): tokens + components, TvField
+    sourceSets["main"].java.srcDirs("../shared/src/tvui/kotlin", "../shared/src/marks/kotlin", "../shared/src/selfupdate/kotlin")           // the TV apps' one look (app/DESIGN-TV.md): tokens + components, TvField
     sourceSets["main"].res.srcDirs("../shared/src/tvui/res")                // tv_style.xml: ONE copy for the TV apps
     sourceSets["main"].java.srcDirs("../tvkeys/src/protocol/kotlin")        // KeysProtocol: what this app and its add-on agree on, ONE copy
     // the add-on's APK (same variant, same key) rides inside this one as assets/tvkeys.apk: see packKeys below

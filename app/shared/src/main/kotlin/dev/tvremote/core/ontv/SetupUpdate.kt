@@ -121,12 +121,15 @@ object SetupUpdate {
         [ ${'$'}good = 1 ] && sleep 20                                  # and still running a little later
         show() { [ "${'$'}O" = open ] && am start -n ${'$'}P/.MainActivity >/dev/null 2>&1; }
         if [ ${'$'}good = 1 ] && [ "${'$'}(crashes)" = "${'$'}c0" ]; then rm -f ${'$'}D/ok; say ok; show; exit 0; fi
+        # running, never crashed, only not through to the TV's ADB itself (its key not allowed, ADB slow to come up on that box): that is
+        # not this version's fault, and every update of such a TV was undone the same way
+        if [ "${'$'}(crashes)" = "${'$'}c0" ] && pidof ${'$'}P >/dev/null 2>&1; then echo "${'$'}V runs, no ADB of its own: kept"; say ok noadb; show; exit 0; fi
         echo "${'$'}V did not start well (ok=${'$'}good, crashes ${'$'}c0 -> ${'$'}(crashes))"; echo ${'$'}V >> ${'$'}D/bad
         if [ ${'$'}rb = 1 ] && [ "${'$'}old" != "" ]; then
           for t in 1 2 3 4 5; do pm rollback-app ${'$'}P 2>&1; [ "${'$'}(ver)" = "${'$'}old" ] && break; sleep 3; done
         fi
         if [ "${'$'}old" != "" ] && [ "${'$'}(ver)" = "${'$'}old" ]; then
-          svc; say rolledback; show
+          svc; say rolledback "ok=${'$'}good crashes=${'$'}((${'$'}(crashes) - c0))"; show   # why, in the state line's detail
         else say broken; fi
         rm -f ${'$'}D/ok
     """.trimIndent() + "\n"
