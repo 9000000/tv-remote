@@ -7,6 +7,7 @@ import { hashId, text, str, sameSecret } from "./logic.js";
 export const MAX_REPORT = 64 * 1024;
 export const MAX_ANSWER = 256 * 1024;
 export const SENDS_PER_DAY = 20;
+export const ALL_PER_DAY = 2000;
 export const LIVE_MAX_MIN = 60;
 export const KEEP_DAYS = 14;
 const ASK_TTL_MS = 60_000;                                            // a question the TV did not take within a minute is dropped
@@ -44,6 +45,9 @@ export async function support(req, env, url, json) {
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM support WHERE h = ?1 AND made > ?2").bind(h, now - 86_400_000).first();
     const used = n ? n.n : 0;
     if (used >= SENDS_PER_DAY) return json({ error: "enough for today", left: 0 }, 429);
+    // ids are the sender's own: a cap for everyone too, so random ids cannot fill the table
+    const all = await env.DB.prepare("SELECT COUNT(*) AS n FROM support WHERE made > ?1").bind(now - 86_400_000).first();
+    if (all && all.n >= ALL_PER_DAY) return json({ error: "busy today" }, 429);
     const key = hex(16);
     for (let i = 0; i < 5; i++) {
       const code = digits();
@@ -61,18 +65,18 @@ export async function support(req, env, url, json) {
     const live = min ? now + min * 60_000 : 0;
     await env.DB.prepare("UPDATE support SET live = ?2, seen = ?3 WHERE code = ?1").bind(row.code, live, now).run();
     if (!live) await env.DB.prepare("DELETE FROM support_q WHERE code = ?1 AND body IS NULL").bind(row.code).run();
-    return json({ live });
+    return json({ live, now });                                       // now: the TV counts the minutes by its own clock
   }
 
   if (p === "/v1/support/poll" && req.method === "POST") {           // the TV, every 2 s while open: what to GET
     const b = await body(req, 1024), row = b && (await own(env, b));
     if (!row) return json({ error: "forbidden" }, 403);
     await env.DB.prepare("UPDATE support SET seen = ?2 WHERE code = ?1").bind(row.code, now).run();
-    if (row.live <= now) return json({ live: 0, asks: [] });
+    if (row.live <= now) return json({ live: 0, now, asks: [] });
     const { results } = await env.DB.prepare("SELECT id, path FROM support_q WHERE code = ?1 AND body IS NULL AND taken = 0 AND asked > ?2 ORDER BY id LIMIT 5")
       .bind(row.code, now - ASK_TTL_MS).all();
     if (results.length) await env.DB.prepare(`UPDATE support_q SET taken = 1 WHERE code = ?1 AND id IN (${results.map((r) => r.id).join(",")})`).bind(row.code).run();
-    return json({ live: row.live, asks: results });
+    return json({ live: row.live, now, asks: results });
   }
 
   if (p === "/v1/support/answer" && req.method === "POST") {         // the TV's answer to one question

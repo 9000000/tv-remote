@@ -29,6 +29,8 @@ object Support {
     @Volatile var until = 0L; private set
     @Volatile var code = ""; private set
     @Volatile var asked = 0; private set
+    @Volatile private var lastKey = ""
+    @Volatile private var liveKey = ""                             // the open code's key: a later send must not make Stop close another
     /** Sends today has left after the last one, as the worker counts them (20 a day); -1 not known, 0 with no code: none left. */
     @Volatile var left = -1; private set
 
@@ -45,13 +47,14 @@ object Support {
 
     /** Sends the report; the code to read out, or null when the worker cannot be reached. Runs off the main thread. */
     fun send(c: Context, version: String): String? {
-        val body = JSONObject().put("id", Census.id().ifEmpty { java.util.UUID.randomUUID().toString() }).put("app", "setup").put("v", version).put("model", Build.MODEL).put("report", report(c, version))
+        val body = JSONObject().put("id", Census.id().ifEmpty { java.util.UUID.randomUUID().toString() }).put("app", "setup").put("v", version).put("model", Build.MODEL).put("report", fit(report(c, version), 56_000, tail = true))
         left = -1
         val r = post(base(), body) ?: return null
         left = r.optInt("left", -1)
         val got = r.optString("code").takeIf { it.length == 8 } ?: return null
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("code", got).putString("key", r.optString("key")).apply()
-        code = got
+        lastKey = r.optString("key")
+        if (!open()) code = got                                       // while support looks, Stop is about that code, not this one
         return got
     }
 
@@ -61,13 +64,15 @@ object Support {
         Thread({
             val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val code = send(app, version) ?: return@Thread said(null)   // always fresh: the facts of now with the code
-            val key = p.getString("key", "") ?: ""
+            val key = lastKey
             val r = post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", MINUTES))?.takeIf { it.has("live") } ?: return@Thread said(null)
-            until = r.optLong("live")
             stopThread()
-            asked = 0
+            until = ends(r, System.currentTimeMillis() + MINUTES * 60_000L)
+            asked = 0; this.code = code; liveKey = key
+            forgetPass(app)                                           // a second press before the first returned: one pass, not two
             val token = Paired.add(app, KIND, "Hỗ trợ / Support $code", "relay", false)
-            thread = Thread({ loop(app, code, key, token) }, "support").apply { isDaemon = true; start() }
+            val t = Thread({ loop(app, code, key, token) }, "support").apply { isDaemon = true }
+            thread = t; t.start()                                     // assigned first: the loop runs only while it is [thread]
             WireLog.all.add("·", "support open $code for $MINUTES min")
             said(code)
         }, "support-start").apply { isDaemon = true }.start()
@@ -77,7 +82,7 @@ object Support {
     fun stop(c: Context) {
         val app = c.applicationContext
         val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val code = p.getString("code", "") ?: ""; val key = p.getString("key", "") ?: ""
+        val code = this.code.ifEmpty { p.getString("code", "") ?: "" }; val key = liveKey.ifEmpty { p.getString("key", "") ?: "" }
         until = 0
         stopThread()
         forgetPass(app)
@@ -98,14 +103,16 @@ object Support {
                 val r = post("${base()}/poll", JSONObject().put("code", code).put("key", key))
                 if (r != null && r.has("error")) break                // the code is gone (deleted, expired): nobody can ask any more
                 if (r != null) {
-                    until = r.optLong("live", until)
+                    if (r.has("live")) until = ends(r, until)
                     val asks = r.optJSONArray("asks")
                     for (i in 0 until (asks?.length() ?: 0)) {
                         val a = asks!!.getJSONObject(i)
                         val (status, text) = answer(a.optString("path"), token)
                         asked++
                         WireLog.all.add("·", "support GET ${a.optString("path").take(80)} -> $status")
-                        post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", status).put("body", text))
+                        val sent = post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", status).put("body", text))
+                        if (sent == null || sent.has("error"))           // refused or lost: say so, or the owner waits for nothing
+                            post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", 0).put("body", "answer not delivered ($status, ${text.length} chars)"))
                     }
                 }
                 Thread.sleep(2000)
@@ -125,9 +132,22 @@ object Support {
                 c.setRequestProperty("Cookie", RemoteService.SELF_COOKIE + "=" + token)
                 val code = c.responseCode
                 val text = (if (code < 400) c.inputStream else c.errorStream)?.use { it.readBytes().toString(Charsets.UTF_8) } ?: ""
-                code to Scrub.blank(text).take(200_000)
+                code to fit(Scrub.blank(text), 200_000, tail = false)
             } finally { c.disconnect() }
         } catch (e: Exception) { 0 to (e.message ?: e.javaClass.simpleName) }
+    }
+
+    /** The end of support by this TV's clock: the worker's `live` is its own time, and a TV's clock may be half an hour off. */
+    private fun ends(r: JSONObject, or: Long): Long {
+        val live = r.optLong("live"); val now = r.optLong("now")
+        return if (live <= 0) 0 else if (now > 0) System.currentTimeMillis() + (live - now) else or
+    }
+
+    /** [s] cut to at most [bytes] as it travels (JSON-escaped UTF-8: Vietnamese and quotes grow), keeping its end or its start. */
+    fun fit(s: String, bytes: Int, tail: Boolean): String {
+        var t = s
+        while (JSONObject.quote(t).toByteArray().size > bytes) t = if (tail) t.takeLast(t.length * 4 / 5) else t.take(t.length * 4 / 5)
+        return t
     }
 
     private fun post(to: String, body: JSONObject): JSONObject? = try {

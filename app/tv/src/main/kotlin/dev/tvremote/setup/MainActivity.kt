@@ -216,9 +216,9 @@ class MainActivity : Activity() {
         names.orientation = LinearLayout.VERTICAL
         names.setPadding(resources.getDimension(R.dimen.tv_head_gap).toInt(), 0, 0, 0)
         names.addView(text("TV Setup", if (phone) 20 else 24, TvUi.TEXT, true))
-        names.addView(text(T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" } +
-            "   ·   Hoang Tran   ·   tvremote.pages.dev", 12, MUTED, false))
-        head.addView(names)
+        names.addView(text((if (phone) T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" }
+            else released().ifEmpty { "TV" }) + "   ·   Hoang Tran   ·   tvremote.pages.dev", 12, MUTED, false))   // TV: the version is on Update, top right
+        head.addView(names, LinearLayout.LayoutParams(0, -2, 1f))
         left.addView(head)
 
         val status = LinearLayout(this)
@@ -247,7 +247,7 @@ class MainActivity : Activity() {
         }
         left.addView(pairLine, margins(top = 8))
 
-        left.addView(section(T("tv_main.actions")), margins(top = 14))
+        if (phone) left.addView(section(T("tv_main.actions")), margins(top = 14))   // TV: no section names, the log keeps the room (the user, 2026-10-25)
         tsStatus = T("tv_main.away_from_home")
         updateTile = Tile(R.drawable.ic_download, T("setup.update_ok"), T("tv_main.ver_short", "v" to version())) { updateMenu() }
         connTile = Tile(R.drawable.ic_refresh, T("tv_main.connection"), T("tv_main.connection_sub")) { connectionMenu() }
@@ -261,37 +261,33 @@ class MainActivity : Activity() {
             RemoteService.start(this)                                 // serves 127.0.0.1 even with the web remote off
             startActivity(android.content.Intent(this, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass))
         }
-        val grid = listOf(manage) + tiles                              // Manage first, in the grid: no ragged last row
-        val cols = if (phone) 2 else 4                                 // TV: one row of four; phone: 2 x 2
+        if (!phone) head.addView(updateTile.view, LinearLayout.LayoutParams(dp(210), dp(48)).apply { leftMargin = dp(16) })   // beside the name: three tiles below, each wide enough for one line
+        val grid = listOf(manage) + if (phone) tiles else tiles.filter { it !== updateTile }   // Manage first, in the grid: no ragged last row
+        val cols = if (phone) 2 else 3                                 // TV: one row of three; phone: 2 x 2
         for (row in grid.chunked(cols)) {
             val r = LinearLayout(this)
             r.clipChildren = false
-            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(76), 1f).apply { if (i > 0) leftMargin = dp(10) }) }
-            left.addView(r, margins(top = 8))
+            row.forEachIndexed { i, tile -> r.addView(tile.view, LinearLayout.LayoutParams(0, dp(if (phone) 76 else 60), 1f).apply { if (i > 0) leftMargin = dp(10) }) }
+            left.addView(r, margins(top = if (phone) 8 else 12))
         }
 
         if (!phone) {                                                 // the project's TV apps: what a phone running TV Setup has no use for
-            left.addView(section(T("eco.title")), margins(top = 12))
             val row = LinearLayout(this)
             row.clipChildren = false
             row.gravity = Gravity.CENTER_VERTICAL
             val pics = mapOf("home" to R.drawable.eco_home, "channels" to R.drawable.eco_channels, "games" to R.drawable.eco_games)
-            eco = dev.tvremote.core.ontv.Bundle.apps.map { Eco(it, pics.getValue(it.pkg.substringAfterLast('.'))) }
+            eco = dev.tvremote.core.ontv.Bundle.apps.mapNotNull { a -> pics[a.pkg.substringAfterLast('.')]?.let { Eco(a, it) } }   // an app with no banner here yet is left out
             eco.forEachIndexed { i, e -> row.addView(e, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(14) }) }
             ecoNote = text("", 12, MUTED, false).also { it.maxLines = 4; it.ellipsize = TextUtils.TruncateAt.END }
             row.addView(ecoNote, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(18) })
-            left.addView(row, margins(top = 8))
+            left.addView(row, margins(top = 14))
             ecoPaint()
         }
 
-        val actHead = LinearLayout(this)
-        actHead.gravity = Gravity.CENTER_VERTICAL
-        actHead.addView(section(T("tv_main.activity")))
-        spinner = ProgressBar(this)
+        if (phone) left.addView(section(T("tv_main.activity")), margins(top = 18))
+        spinner = ProgressBar(this)                                   // in the log's corner: work going on shows where its lines come
         spinner.isIndeterminate = true
         spinner.visibility = View.INVISIBLE
-        actHead.addView(spinner, LinearLayout.LayoutParams(dp(16), dp(16)).apply { leftMargin = dp(10) })
-        left.addView(actHead, margins(top = 18))
         logView = text(T("tv_main.activity_empty"), 14, MUTED, false)   // until the first line
         logView.setLineSpacing(dp(3).toFloat(), 1f)
         scroll = ScrollView(this)
@@ -300,6 +296,9 @@ class MainActivity : Activity() {
         scroll.isFocusable = true                                     // D-pad can scroll back to an error that went by
         scroll.onFocusChangeListener = View.OnFocusChangeListener { v, on -> v.background = if (on) TvUi.ring(this@MainActivity, TvUi.CARD, dp(14).toFloat()) else box(TvUi.CARD, 14, 0) }
         scroll.addView(logView)
+        val logBox = android.widget.FrameLayout(this)
+        logBox.addView(scroll, android.widget.FrameLayout.LayoutParams(-1, -1))
+        logBox.addView(spinner, android.widget.FrameLayout.LayoutParams(dp(16), dp(16), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(10), dp(12), 0) })
         // ---- right: taking over from a phone or a computer
         webCol = LinearLayout(this)
         webCol.orientation = LinearLayout.VERTICAL
@@ -309,7 +308,7 @@ class MainActivity : Activity() {
         if (phone) {                                                  // header, status, then the card (what a phone is mostly here for), the tiles, the log
             left.addView(webCol, 3, margins(top = 16))
             scroll.isNestedScrollingEnabled = true
-            left.addView(scroll, LinearLayout.LayoutParams(-1, dp(240)).apply { topMargin = dp(8) })
+            left.addView(logBox, LinearLayout.LayoutParams(-1, dp(240)).apply { topMargin = dp(8) })
             page.addView(left, LinearLayout.LayoutParams(-1, -2))
             val outer = ScrollView(this)
             outer.setBackgroundColor(TvUi.BG)
@@ -317,7 +316,7 @@ class MainActivity : Activity() {
             outer.addView(page)
             setContentView(outer)
         } else {
-            left.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) })
+            left.addView(logBox, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(if (eco.isEmpty()) 12 else 22) })   // under a focused banner's rise
             page.addView(left, LinearLayout.LayoutParams(0, -1, 1f))
             page.addView(webCol, LinearLayout.LayoutParams(dp(260), -1).apply { leftMargin = dp(20) })
             setContentView(page)
@@ -815,7 +814,8 @@ class MainActivity : Activity() {
         busy = true
         spinner.visibility = View.VISIBLE
         log(T("tv_main.bundle_installing", "name" to e.app.name))
-        dev.tvremote.update.SelfUpdate.Installed.failed = { m -> ui { log("✗ " + e.app.name + ": " + m.ifEmpty { "Android" }) } }
+        val before = dev.tvremote.update.SelfUpdate.Installed.failed   // one slot, TV Setup's own update's too: put back after this install
+        dev.tvremote.update.SelfUpdate.Installed.failed = { m -> ui { log("✗ " + e.app.name + ": " + m.ifEmpty { "Android" }) }; dev.tvremote.update.SelfUpdate.Installed.failed = before }
         Thread {
             try {
                 val r = Release.newer("0", e.app.key, e.app.apk) ?: throw java.io.IOException(T("eco.none", "name" to e.app.name))

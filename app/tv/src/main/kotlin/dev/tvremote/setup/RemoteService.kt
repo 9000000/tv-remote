@@ -761,8 +761,20 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     }
 
     // ---------------------------------------------------------------- pairing
-    @Synchronized @Throws(Exception::class)
+    @Throws(Exception::class)
     private fun pairStart(peer: String, lang: String): HttpServer.Response {
+        pairOpen(peer, lang)?.let { return it }
+        // with no ADB and no overlay right Android drops a service's screen without a word (an FPT Play, 2026-10-25): the page
+        // then says to open TV Setup, whose own screen shows the code too (MainActivity.pairPoll). Out of the lock: a wait here
+        // must not hold up connect() and pairCheck()
+        var up = false
+        for (i in 0 until 15) { if (PairActivity.showing || MainActivity.shown) { up = true; break }; Thread.sleep(100) }
+        return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120).put("shown", up))
+    }
+
+    /** The code and its screen; an answer when there is nothing to wait for (too soon, locked, already up), else null. */
+    @Synchronized @Throws(Exception::class)
+    private fun pairOpen(peer: String, lang: String): HttpServer.Response? {
         val now = System.currentTimeMillis()
         if (now - lastPairStart < 3000) return HttpServer.Response.error(429, "wait a moment")
         // asking for code after code would give five guesses each: wrong guesses count across codes, and too many lock it
@@ -788,11 +800,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             try { startActivity(Intent(this, PairActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (ignored: Exception) { }
         }
         backoff.shown(peer, now)
-        // with no ADB and no overlay right Android drops a service's screen without a word (an FPT Play, 2026-10-25): the page
-        // then says to open TV Setup, whose own screen shows the code too (MainActivity.pairPoll)
-        var up = false
-        for (i in 0 until 15) { if (PairActivity.showing || MainActivity.shown) { up = true; break }; Thread.sleep(100) }
-        return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", 120).put("shown", up))
+        return null
     }
 
     // the body is read before taking the lock: a browser that sends it slowly must not hold up everyone else's pairing
