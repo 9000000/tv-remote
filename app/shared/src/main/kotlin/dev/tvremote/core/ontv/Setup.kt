@@ -60,8 +60,10 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          * `ext.services` / `ext.shared` / `modulemetadata` / `overlay.modules`: a Mi TV Stick with them off never booted again
          * (cleanyourtv #884); no brand list turns them off, only a pick in "Turn off other apps" could.
          */
-        val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata)" +
-            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
+        val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata" +
+            "|provision|tv\\.provision|managedprovisioning|inputdevices|location\\.fused|externalstorage|keychain|se)" +   // setup, keyboards' layouts, storage: tv-detox's never list
+            "|com\\.dolby\\.android\\.audio\\.service" +                       // no sound without it on some TVs (tv-detox)
+            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|leanback\\.ime|onetimeinitializer|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
             "|dev\\.tvremote\\.setup(\\.keys)?|com\\.tailscale\\.ipn")   // TV Home only while it is the home screen (callers check); TV Channels, TV Games and the Phone app are ordinary apps
         /**
          * The apps whose permissions stay as they are: the system's own core and this project's. Another app the TV needs (Google's
