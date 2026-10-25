@@ -257,6 +257,12 @@ What it takes care of, for doing it by hand:
 
 ## Handy facts
 
+- **Finding code: codegraph** (a symbol index, much faster than grep across the six apps). `.mcp.json` gives Claude Code its
+  tools (`codegraph_explore`, `codegraph_node`, callers / callees / impact); without them the CLI says the same:
+  `codegraph explore "<what you look for>"`, `codegraph node <Symbol>`, `codegraph callers <fn>`, `codegraph impact <Symbol>`.
+  Once per clone: `npm i -g @colbymchenry/codegraph && codegraph init .` (the index `.codegraph/` is gitignored, ~60 MB);
+  the git hooks in `dev/hooks` (post-commit / merge / checkout / rewrite) run `codegraph sync` after that, so it stays current.
+  Use grep for words and strings (i18n ids, JSON keys), codegraph for "who calls / what breaks if I change this".
 - Agents checking crashes or reviewing community themes: [dev/census/CRASHES.md](dev/census/CRASHES.md) and [dev/themes/REVIEW.md](dev/themes/REVIEW.md) (`crashes.py --json`, `review_themes.py --list --json`).
 - **TV Home backgrounds, which path draws what** (read before adding a theme or a wall kind):
 
