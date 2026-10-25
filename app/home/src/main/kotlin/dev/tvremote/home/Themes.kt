@@ -42,16 +42,33 @@ object Themes {
         val mine = bytes?.let { rev(it) } ?: -1
         use(bytes, have); rev = maxOf(mine, 0)
         fetchThumbs(app)
-        if (System.currentTimeMillis() - f.lastModified() < DAY) return
+        refresh(app)
+    }
+
+    /**
+     * The site's list when the kept one is older than [maxAge]. Not only at start: TV Home is the launcher, its process lives for weeks,
+     * so a check at start alone left a TV on a list days old. On Home (a day) and on opening the Themes page (an hour).
+     */
+    fun refresh(c: Context, maxAge: Long = DAY) {
+        val app = c.applicationContext
+        val f = File(app.filesDir, NAME)
+        val now = System.currentTimeMillis()
+        if (asking || now - maxOf(f.lastModified(), askedAt) < maxAge) return
+        asking = true; askedAt = now                                  // a list the same as the kept one is not written: the time is kept here
+        val have = try { app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
+        val mine = rev
         Thread({
             try {
                 SignedList.fetch(BASES, NAME, 1 shl 20, connectMs = 6000, readMs = 8000) { list, sig, _ ->
                     val t = HomeConfig.parseReady(String(list, Charsets.UTF_8), have)
-                    if (t.isEmpty() || rev(list) < mine) null          // a site older than this app's list (not deployed yet) changes nothing else { SignedList.keep(f, list, sig); HomeConfig.ready = t; rev = rev(list); fetchThumbs(app); t }
+                    if (t.isEmpty() || rev(list) < mine) null          // a site older than this app's list (not deployed yet) changes nothing
+                    else { SignedList.keep(f, list, sig); HomeConfig.ready = t; rev = rev(list); fetchThumbs(app); onThumbs?.invoke(); t }
                 }
-            } catch (e: Exception) { }
+            } catch (e: Exception) { } finally { asking = false }
         }, "themes").apply { isDaemon = true }.start()
     }
+    @Volatile private var asking = false
+    @Volatile private var askedAt = 0L
 
     private fun rev(b: ByteArray): Long = try { org.json.JSONObject(String(b, Charsets.UTF_8)).optLong("rev", 0) } catch (e: Exception) { 0 }
 

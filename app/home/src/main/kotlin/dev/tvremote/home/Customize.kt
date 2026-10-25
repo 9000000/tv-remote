@@ -449,6 +449,7 @@ object Customize {
             draw()
             Themes.onThumbs = { a.runOnUiThread { if (!a.isDestroyed && page.isAttachedToWindow) draw() } }   // the ready-made pictures came while the page is open
             Themes.fetchThumbs(a)
+            Themes.refresh(a, 3600_000L)                         // a list an hour old is asked again; a new one redraws through onThumbs
             val pics = HomeConfig.ready.mapNotNull { r -> r.conf.optString("wurl").takeIf { it.isNotEmpty() }?.let { NetPicture.direct(it) } }   // their pictures are cached before one is picked
             if (pics.isNotEmpty()) Thread({ NetPicture.prefetch(a.applicationContext, pics) }, "themepics").apply { isDaemon = true }.start()
         }
