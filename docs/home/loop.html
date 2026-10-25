@@ -50,9 +50,8 @@
         nx.onload = () => {
           nx.classList.add('on'); imgs[cur].classList.remove('on'); cur = 1 - cur; cap.classList.remove('on');
           setTimeout(() => {
-            const [a, b] = vi ? [x.vi, x.en] : [x.en, x.vi];
-            cap.textContent = a + ' · ' + b;
-            const c = document.createElement('small'); c.textContent = '© ' + x.credit; cap.append(c);
+            cap.textContent = vi ? x.vi : x.en;                       // one language: both read as clutter
+            if (x.credit && !/\/ Unsplash$/.test(x.credit)) { const c = document.createElement('small'); c.textContent = '© ' + x.credit; cap.append(c); }   // Unsplash asks no credit
             cap.classList.add('on'); busy = false;
           }, 800);
           n = (n + 1) % list.length; imgs[cur].onload = null;

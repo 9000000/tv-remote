@@ -33,7 +33,7 @@ class SlideshowTest {
             {"file":"b.jpg"}, {"file":"c.jpg","en":"Only English"}, "junk"]}""")
         assertEquals(listOf("https://tvremote.pages.dev/home/a.jpg", "https://tvremote.pages.dev/home/c.jpg"), s.map { it.pic })
         assertEquals("Only English", s[1].vi)
-        assertEquals("Một · One", s[0].line(true)); assertEquals("One · Một", s[0].line(false))
+        assertEquals("Một", s[0].line(true)); assertEquals("One", s[0].line(false))
         for (t in listOf("", "not json", "[]", """{"slides":5}""")) assertTrue(Slideshow.parse(t).isEmpty())
     }
 

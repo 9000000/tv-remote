@@ -20,8 +20,8 @@ object Slideshow {
 
     class Ref(val name: String, val every: Long)
     class Slide(val pic: String, val vi: String, val en: String, val credit: String) {
-        /** The caption line: the person's language first (Vietnamese or not), then the other. */
-        fun line(vi0: Boolean) = if (vi0) "$vi · $en" else "$en · $vi"
+        /** The caption line: the person's language only (both, joined, read as clutter: the user, 2026-10-26). */
+        fun line(vi0: Boolean) = if (vi0) vi else en
     }
 
     private val NAME = Regex("[a-z0-9-]{1,24}")
