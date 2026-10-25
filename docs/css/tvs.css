@@ -22,6 +22,8 @@
 .tv-b.k-box{color:var(--orange);border-color:rgba(255,163,26,.45)}
 .tv-b.k-projector{color:#e06ad6;border-color:rgba(224,106,214,.45)}
 .tv-b.k-tv{color:var(--blue);border-color:rgba(91,140,255,.45)}
+.tv-fold{display:block;width:100%;height:40px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--blue);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.tv-fold:hover{background:var(--card2)}
 .tv-note{color:var(--muted);padding:28px 8px;text-align:center;column-span:all}
 .tv-more{display:flex;width:fit-content;margin:6px auto 0;column-span:all}
 @media(max-width:560px){

@@ -10,8 +10,9 @@
     units: ["{n} máy", "{n} TVs"], none: ["Không có mẫu nào khớp.", "No model matches."],
     empty: ["Chưa có dữ liệu. Danh sách sẽ hiện khi các app gửi báo cáo ẩn danh đầu tiên.", "No data yet. The list fills as the apps send their first anonymous reports."],
     off: ["Không tải được danh sách lúc này. Thử lại sau.", "Could not load the list right now. Try again later."],
-    load: ["Đang tải…", "Loading…"], all: ["Xem tất cả {b} hãng →", "See all {b} brands →"]
+    load: ["Đang tải…", "Loading…"], more: ["Xem thêm ({n})", "Show more ({n})"], less: ["Thu gọn", "Show less"], all: ["Xem tất cả {b} hãng →", "See all {b} brands →"]
   };
+  var SHOW = 3;                                                     // rows per brand before "Show more"
   var lang = function(){ return document.documentElement.dataset.lang === "en" ? 1 : 0; };
   var t = function(k, v){ var s = W[k][lang()]; for (var x in v) s = s.replace("{" + x + "}", v[x]); return s; };
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -19,11 +20,12 @@
   function android(a){ var v = (a || []).slice().sort(function(x, y){ return parseFloat(x) - parseFloat(y); }); return !v.length ? "" : v.length === 1 ? "Android " + v[0] : "Android " + v[0] + "–" + v[v.length - 1]; }
 
   function mount(el){
-    var limit = +el.dataset.limit || 0, data = null, kind = "all", q = "", failed = false;
+    var limit = +el.dataset.limit || 0, data = null, kind = "all", q = "", failed = false, open = {};
     var kindFor = function(m){ return m.kind === "box" || m.kind === "projector" ? m.kind : "tv"; };
     el.innerHTML = '<div class="tv-tools"><input type="search" class="tv-q" autocomplete="off" spellcheck="false" aria-label="Search"><div class="tv-chips" role="group"></div></div><p class="tv-sum"></p><div class="tv-list"></div>';
     var inp = el.querySelector(".tv-q"), chips = el.querySelector(".tv-chips"), sum = el.querySelector(".tv-sum"), list = el.querySelector(".tv-list");
     inp.oninput = function(){ q = norm(inp.value.trim()); draw(); };
+    list.onclick = function(e){ var b = e.target.closest(".tv-fold"); if (b) { open[b.dataset.b] = !open[b.dataset.b]; draw(); } };
     chips.onclick = function(e){ var b = e.target.closest("button"); if (b) { kind = b.dataset.k; draw(); } };
 
     function draw(){
@@ -43,11 +45,13 @@
       order.sort(function(a, b){ return b.n - a.n || a.brand.localeCompare(b.brand); });
       sum.textContent = t("sum", { n: shown.length, b: order.length });
       var cut = limit && !q && kind === "all" && order.length > limit;
+      var fold = !q && kind === "all";                                  // a search or a chip shows every match
       var html = (cut ? order.slice(0, limit) : order).map(function(g){
-        return '<section class="tv-brand"><h3><span>' + esc(g.brand) + '</span><b>' + g.n + "</b></h3>" + g.rows.map(function(m){
+        return '<section class="tv-brand"><h3><span>' + esc(g.brand) + '</span><b>' + g.n + "</b></h3>" + g.rows.map(function(m, i){
+          if (fold && g.rows.length > SHOW + 1 && !open[g.brand] && i >= SHOW) return "";
           var k = kindFor(m);
           return '<div class="tv-row"><span class="tv-m">' + esc(m.model) + '</span><span class="tv-a">' + esc(android(m.android)) + '</span><span class="tv-c" title="' + esc(t("units", { n: m.count })) + '">×' + m.count + '</span><i class="tv-b k-' + k + '">' + esc(W.badge[k][lang()]) + "</i></div>";
-        }).join("") + "</section>";
+        }).join("") + (fold && g.rows.length > SHOW + 1 ? '<button type="button" class="tv-fold" data-b="' + esc(g.brand) + '" aria-expanded="' + !!open[g.brand] + '">' + esc(open[g.brand] ? t("less") : t("more", { n: g.rows.length - SHOW })) + "</button>" : "") + "</section>";
       }).join("");
       if (!order.length) html = '<p class="tv-note">' + esc(t("none")) + "</p>";
       if (cut) html += '<a class="btn btn-ghost tv-more" href="tvs">' + esc(t("all", { b: order.length })) + "</a>";

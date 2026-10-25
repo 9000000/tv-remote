@@ -123,3 +123,5 @@
 #apkqr .btn{width:100%;justify-content:center}
 #apkqr .x{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);background:var(--card2);color:var(--text);font:inherit;font-size:15px;cursor:pointer}
 #apkqr .x:hover{border-color:var(--blue)}
+
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}   /* the anchor jump to #install */
