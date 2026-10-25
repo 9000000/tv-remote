@@ -224,7 +224,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "diagnose/setup" -> {                                 // Fire TV, first setup unfinished: Home / Alexa keys dead (Diagnose.SETUP_OFF)
                     if (post) { sh(dev.tvremote.core.Diagnose.SETUP_FIX); return HttpServer.Response.json(JSONObject().put("ok", true)) }   // only after the person pressed Fix
                     val lang = r.q("lang").takeIf { it.isNotEmpty() }?.let(Words::pick) ?: r.lang
-                    val res = dev.tvremote.core.Diagnose.setup(sh(dev.tvremote.core.Diagnose.SETUP_READ), link.get().host, lang)
+                    val res = dev.tvremote.core.Diagnose.setup(sh(dev.tvremote.core.Diagnose.SETUP_READ), link.host, lang)
                     return HttpServer.Response.json(if (res == null) JSONObject().put("code", "ok") else dev.tvremote.core.Diagnose.json(res, lang))
                 }
                 "diagnose" -> return diagnose(r, link)                // why the TV does not answer: one conclusion (Diagnose.kt)
