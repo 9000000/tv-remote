@@ -86,6 +86,17 @@ class CensusTest {
         assertEquals(4, sent.size)
     }
 
+    @Test fun aYesSentBeforeARestartIsSentAgainTheNextDay() {
+        Census.connected("10.0.0.5") { getprop }
+        Census.optimize("10.0.0.5")
+        Census.reset()                                                 // the app restarted: nothing in memory, the store kept
+        now += 86_400_000L
+        Census.connected("10.0.0.5") { getprop }
+        val ok = org.json.JSONObject(sent.last().second).getJSONObject("ok")
+        assertTrue(ok.getBoolean("optimize"))
+        assertTrue(ok.isNull("video"))                                 // never seen: still unknown, not a no
+    }
+
     @Test fun anotherModelOrAppIsAnotherEntry() {
         Census.connected("a") { getprop }
         Census.connected("b") { getprop.replace("Chromecast", "Mi Box") }

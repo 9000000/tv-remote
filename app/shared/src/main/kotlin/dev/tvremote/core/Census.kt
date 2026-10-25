@@ -144,8 +144,12 @@ object Census {
         val model = clean(p.map["ro.product.model"])
         if (model.isEmpty()) return
         val st = store ?: return
-        val ok = Ok(s.adb, s.video, s.optimize)
         val key = "census.sent." + app + "." + model.lowercase().replace(Regex("[^a-z0-9]+"), "_")
+        // a yes already sent stays a yes after a restart: until 2026-10-25 the worker dropped a second ping the same day, so the
+        // picture and Optimize TV kept only here (the mask of the last send) reach it with the next day's ping
+        val was = st.get(key)?.split('|')?.getOrNull(2)?.toIntOrNull() ?: 0
+        fun yes(bit: Int) = if (was and bit != 0) true else null
+        val ok = Ok(s.adb ?: yes(1), s.video ?: yes(2), s.optimize ?: yes(4))
         val day = clock() / 86_400_000L
         synchronized(sendLock) {                                    // one at a time: a result that arrives meanwhile is sent after
             if (!due(st.get(key), day, version, ok.mask)) return
