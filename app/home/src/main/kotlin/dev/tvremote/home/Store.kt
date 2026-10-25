@@ -46,7 +46,7 @@ object Store {
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .put("infoOk", true)                                  // the market and news cards, own RSS links ("feeds"), the weather map
             .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now
-            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.tiles)) }))
+            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.tiles)).also { o -> if (r.community) o.put("community", true).put("by", r.by) } }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
             .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
             .let { Pins.report(c, it) }                           // shortcuts: "pinsOk", what the apps offer ([Target] "pin:...")

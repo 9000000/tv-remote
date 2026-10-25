@@ -5,9 +5,9 @@
 // have is null here and the page hides what needs it (an update through ADB; the wallpaper gallery, which the hosts download).
 const HOME_PATHS = {
   host: { read: '/api/home', drop: '/api/home/photo/drop', qr: '/api/home/photo/qr', update: '/api/home/update', walls: '/api/home/walls', wall: '/api/home/wall',
-    photo: '/api/home/photo', video: '/api/home/video?name=', check: '/api/home/web/check?u=', app: { meta: '/api/app/meta?pkg=', icon: '/api/app/icon?pkg=' }, need: '/api/setup/need?f=' },
+    photo: '/api/home/photo', video: '/api/home/video?name=', check: '/api/home/web/check?u=', share: '/api/home/theme/share', app: { meta: '/api/app/meta?pkg=', icon: '/api/app/icon?pkg=' }, need: '/api/setup/need?f=' },
   direct: { read: '/h/config', drop: '/h/photo/drop', qr: null, update: null, walls: null, wall: null,
-    photo: '/h/photo', video: '/h/video?name=', check: '/h/web/check?u=', app: { meta: '/h/app/meta?pkg=', icon: '/h/app/icon?pkg=' }, need: null },
+    photo: '/h/photo', video: '/h/video?name=', check: '/h/web/check?u=', share: null, app: { meta: '/h/app/meta?pkg=', icon: '/h/app/icon?pkg=' }, need: null },
 };
 
 /**
@@ -20,7 +20,7 @@ function homeLinkFor(direct, call, send) {
   return {
     direct,
     app: p.app,
-    canUpdate: !!p.update, canGallery: !!p.walls, canQr: !!p.qr,
+    canUpdate: !!p.update, canGallery: !!p.walls, canQr: !!p.qr, canShare: !!p.share,
     read: (thumbs, quiet) => call(p.read + (thumbs ? '?thumbs=1' : ''), null, quiet),
     write: (change) => call(p.read, change),
     drop: (id) => call(p.drop, { id }),
@@ -30,6 +30,7 @@ function homeLinkFor(direct, call, send) {
     wall: (id) => via(p.wall, { id }),
     photo: (blob) => send(p.photo, blob),
     video: (file, onPct) => send(p.video + encodeURIComponent(file.name), file, onPct),   // a video or GIF to the media library (the TV turns a heavy one light; the answer's video.job tells how far)
+    share: (data) => via(p.share, data, true),                          // a theme to the community store (a job on the host: ThemeShare.kt); asked with no data = how far it is
     check: (url) => call(p.check + encodeURIComponent(url), null, true),   // can this page be the background: {ok, why, code, title} (WebCheck.kt)
     // TV Setup needs: only a host can ask; TV Home's own page has no TV Setup to ask, and its cards say what they lack
     setup: async (feature) => direct ? true : !!await call(p.need + feature),

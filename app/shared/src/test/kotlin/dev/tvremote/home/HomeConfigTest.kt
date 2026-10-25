@@ -533,4 +533,13 @@ class HomeConfigTest {
         assertEquals("https://a.x/r.xml", f.getString(0)); assertEquals("https://b.x/1", f.getString(1))
         assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("feeds").length())
     }
+
+    @Test fun communityThemesKeepTheirSenderAndNoCapCutsThemOff() {
+        fun one(id: String, extra: String) = "{\"id\":\"$id\",\"names\":{\"en\":\"N $id\"},\"conf\":{\"wall\":\"night\"}$extra}"
+        val list = (1..60).map { one("p$it", "") } + one("c1", ",\"community\":true,\"by\":\"  Lan  Anh \"") + one("c2", ",\"community\":true")   // c2: no sender, so not a community one
+        val r = HomeConfig.parseReady("{\"v\":1,\"themes\":[" + list.joinToString(",") + "]}", "99.0.0")
+        assertEquals(62, r.size)                                                // more than the old cap of 40
+        assertTrue(r.first { it.id == "c1" }.community); assertEquals("Lan Anh", r.first { it.id == "c1" }.by)
+        assertFalse(r.first { it.id == "c2" }.community); assertFalse(r.first { it.id == "p1" }.community)
+    }
 }

@@ -49,6 +49,7 @@ import dev.tvremote.core.WireLog
  * (app/shared/web). Whoever owns the HttpServer checks first that the caller may use it.
  */
 class Manage(private val link: AdbLink, private val labels: Labels?, private val dir: java.io.File?, private val helper: (() -> ByteArray)? = null) {
+    @Volatile private var shareJob: dev.tvremote.core.ontv.ThemeShare.Job? = null   // the theme being sent to the store (home/theme/share)
     /** Names and icons for packages, where the app can ask the system for them (the TV app); otherwise package names are shown. */
     interface Labels {
         fun label(pkg: String): String?
@@ -123,6 +124,14 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val out = HttpServer.Response.of("application/json; charset=utf-8", doc.toString(2).toByteArray())
                     out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + URLEncoder.encode(name.replace(Regex("[^\\p{L}\\p{N}_.\\- ()]"), "_") + ".tvtheme.json", "UTF-8").replace("+", "%20")
                     return out
+                }
+                "home/theme/share" -> {                               // one of my themes to the community store: a job (apply, screenshot, photo, send); the page asks until it ends, or cancels
+                    val j = shareJob
+                    if (!post) return HttpServer.Response.json((j ?: dev.tvremote.core.ontv.ThemeShare.Job().also { it.state = "none" }).json())
+                    val o = r.json()
+                    if (o.optBoolean("cancel")) { j?.cancel(); return HttpServer.Response.json((j ?: dev.tvremote.core.ontv.ThemeShare.Job()).json()) }
+                    if (j != null && j.state == "run") throw IOException("themeshare:busy")
+                    return HttpServer.Response.json(dev.tvremote.core.ontv.ThemeShare.start(link.get(), o.optString("id"), o.optString("by"), r.lang).also { shareJob = it }.json())
                 }
                 "home/web/check" -> if (!post) return HttpServer.Response.json(dev.tvremote.home.WebCheck.check(r.q("u")))   // the background page, tried from this device: the TV's own answer is on TV Home's page
                 "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }

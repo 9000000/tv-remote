@@ -182,6 +182,7 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homewalls i { display:grid; place-items:center; aspect-ratio:16/9; border-radius:6px; background:var(--c); border:1px solid var(--line); font-style:normal; font-size:18px; }
 .homewalls i.add { background:transparent; border-style:dashed; }
 .homewalls span { overflow:hidden; text-overflow:ellipsis; }
+.homewalls small.by { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:-2px; }   /* a community theme: the sender under the name */
 .homewalls i canvas, .homewalls i img { width:100%; height:100%; display:block; border-radius:inherit; object-fit:cover; }
 .wallcell { position:relative; display:flex; min-width:0; }                       /* a photo's tile with its remove button over the corner */
 .wallcell > button:first-child { flex:1; min-width:0; }

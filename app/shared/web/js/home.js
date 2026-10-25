@@ -593,7 +593,7 @@ async function homeOpen() {
   // at once was a page of forty controls nobody found anything in. On TV Home's own page the phone's Back goes back to the list.
   // Themes (HomeConfig "theme"; ready-made ones and the person's, kept on the TV): one tap switches the background and its set, the veil, the cards,
   // the grid, the focus, the motion and the clock at once. A saved one keeps its photo / video (the TV refuses to delete one a theme shows).
-  const themeReady = el('div', { className: 'fchips homewalls themes' }), themeReadyHead = el('h3', { textContent: T('home.theme_ready') }), themeMineHead = el('h3', { textContent: T('home.theme_mine') }), themeMine = el('div', { className: 'fchips homewalls themes' });
+  const themeReady = el('div', { className: 'fchips homewalls themes' }), themeReadyHead = el('h3', { textContent: T('home.theme_ready') }), themeMineHead = el('h3', { textContent: T('home.theme_mine') }), themeCommHead = el('h3', { textContent: T('home.theme_community') }), themeComm = el('div', { className: 'fchips homewalls themes' }), themeMine = el('div', { className: 'fchips homewalls themes' });
   const themeName = el('input', { type: 'text', maxLength: 24, placeholder: T('home.theme_name_ph'), 'aria-label': T('home.theme_name') });
   const themeSave = el('button', { type: 'button', className: 'primary', textContent: T('home.theme_save_look'), onclick: () => { const n = themeName.value.trim(); if (n) { send({ theme: { save: n } }); themeName.value = ''; } } });
   themeName.addEventListener('keydown', (e) => { if (e.key === 'Enter') themeSave.click(); });
@@ -669,7 +669,9 @@ async function homeOpen() {
     const showInfo = (id, name, conf) => {
       put('#infotitle', 'textContent', 'ⓘ ' + name);
       $('#infobody').replaceChildren(el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
-      if (id !== 'before') $('#infobody').append(el('div', { className: 'actions' }, el('button', { type: 'button', className: 'small', textContent: T('home.theme_export'), onclick: () => exportTheme(id, name, conf) })));
+      const mineTheme = (c.themes || []).some((t) => t.id === id);
+      if (id !== 'before') $('#infobody').append(el('div', { className: 'actions' }, el('button', { type: 'button', className: 'small', textContent: T('home.theme_export'), onclick: () => exportTheme(id, name, conf) }),
+        mineTheme && homeLink.canShare ? el('button', { type: 'button', className: 'small', textContent: T('home.share'), onclick: () => shareForm(id, name) }) : null));   // the TV itself cannot take its own screenshot: only from a client
       if (!$('#infodlg').open) $('#infodlg').showModal();
     };
     // a download from the server (it names the file, as the scenes backup; works in the phone app's web view); on TV Home's own page
@@ -680,16 +682,56 @@ async function homeOpen() {
         : el('a', { href: 'api/home/theme?download=1&id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name), download: '' });
       document.body.append(a); a.click(); a.remove();
     };
-    const tile = (id, name, conf, mine, look, tiles = []) => {
+    // share to the community store: a form (the display name is kept on this page), then the job on the server side (api/home/theme/share) is asked
+    // every second: its step in words, Cancel while it runs, the end in words a person can act on
+    const shareBy = () => { try { return localStorage.getItem('shareBy') || ''; } catch (e) { return ''; } };
+    const shareErr = (code) => ({ by: T('home.share_err_by'), home_missing: T('home.share_err_home_missing'), home_old: T('home.share_err_home_old'), theme_missing: T('home.share_err_theme_missing'),
+      video: T('home.share_err_video'), not_home: T('home.share_err_not_home'), shot: T('home.share_err_shot'), photo_missing: T('home.share_err_photo_missing'), photo_big: T('home.share_err_photo_big'),
+      too_big: T('home.share_err_too_big'), network: T('home.share_err_network'), limit: T('home.share_err_limit'), queue: T('home.share_err_queue'), rejected: T('home.share_err_rejected'),
+      server: T('home.share_err_server') }[code] || T('home.share_err_tv'));
+    const shareStep = (s) => ({ apply: T('home.share_step_apply'), shot: T('home.share_step_shot'), photo: T('home.share_step_photo'), send: T('home.share_step_send') }[s] || '');
+    const shareForm = (id, name) => {
+      const by = el('input', { type: 'text', maxLength: 24, value: shareBy(), placeholder: T('home.share_by_ph'), 'aria-label': T('home.share_by') });
+      const status = el('p', { className: 'state' }), fail = el('p', { className: 'warnline', hidden: true });
+      const send = el('button', { type: 'button', className: 'primary', textContent: T('home.share_send') });
+      const cancel = el('button', { type: 'button', textContent: T('common.cancel') });
+      const box = el('div', { className: 'group' }, el('h3', { textContent: T('home.share') }), el('p', { className: 'note', textContent: T('home.share_note') }), el('div', { className: 'line' }, by, send), status, fail, el('div', { className: 'actions' }, cancel));
+      $('#infobody').replaceChildren(box);
+      let running = false, stop = false;
+      const end = (msg, bad) => { running = false; send.disabled = by.disabled = false; cancel.textContent = T('common.close'); status.textContent = bad ? '' : msg; fail.hidden = !bad; fail.textContent = bad ? msg : ''; };
+      cancel.onclick = async () => { if (running) { stop = true; cancel.disabled = true; await homeLink.share({ cancel: true }); } else $('#infodlg').close(); };
+      send.onclick = async () => {
+        const who = by.value.replace(/\s+/g, ' ').trim();
+        if (!who) { fail.hidden = false; fail.textContent = shareErr('by'); by.focus(); return; }
+        try { localStorage.setItem('shareBy', who); } catch (e) { }
+        running = true; stop = false; send.disabled = by.disabled = true; cancel.disabled = false; cancel.textContent = T('common.cancel'); fail.hidden = true; status.textContent = shareStep('apply');
+        const r0 = await homeLink.share({ id, by: who });
+        if (!r0) return end(shareErr('tv'), true);
+        for (;;) {
+          await new Promise((ok) => setTimeout(ok, 900));
+          const j = await homeLink.share(null);
+          if (!j) return end(shareErr('tv'), true);
+          if (j.state === 'run') { status.textContent = shareStep(j.step); continue; }
+          if (j.state === 'done') return end(T('home.share_done'), false);
+          if (j.state === 'cancelled' || stop) return end(T('home.share_cancelled'), false);
+          return end(shareErr(j.error), true);
+        }
+      };
+      by.addEventListener('keydown', (e) => { if (e.key === 'Enter') send.click(); });
+    };
+    const tile = (id, name, conf, mine, look, tiles = [], by = '') => {
       const on = c.theme === id;
-      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }));
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
       const info = el('button', { type: 'button', className: 'small iconbtn wallx info', textContent: 'ⓘ', title: T('home.theme_info'), 'aria-label': T('home.theme_info'), onclick: () => showInfo(id, name, conf) });
       if (!mine) return el('span', { className: 'wallcell' }, b, info);
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),
         onclick: async () => { if (await ask(T('home.theme_del_q'), { ok: T('home.theme_del'), danger: true })) send({ theme: { del: id } }); } });
       return el('span', { className: 'wallcell' }, b, info, del);
     };
-    themeReady.replaceChildren(...(c.themesBuiltin || []).map((t) => tile(t.id, homeThemeName(t), t.conf, false, t.look, t.tiles)));
+    const built = c.themesBuiltin || [];
+    themeReady.replaceChildren(...built.filter((t) => !t.community).map((t) => tile(t.id, homeThemeName(t), t.conf, false, t.look, t.tiles)));
+    themeComm.replaceChildren(...built.filter((t) => t.community).map((t) => tile(t.id, homeThemeName(t), t.conf, false, t.look, t.tiles, t.by || '')));   // the store's approved themes, with the sender's name
+    themeCommHead.hidden = themeComm.hidden = !themeComm.children.length;
     // the look that was on before the last switch (TV Home keeps it when it matched no saved theme), then the person's own
     const own = [...(c.before ? [{ id: 'before', name: T('home.theme_before'), conf: c.before }] : []), ...(c.themes || [])];
     themeMine.replaceChildren(...own.map((t) => tile(t.id, t.name, t.conf, true)));
@@ -702,7 +744,7 @@ async function homeOpen() {
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const vFold = UI.card(T('home.v_head'), { fold: true }, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
   const GROUPS = [
-    ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady]],
+    ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady, themeCommHead, themeComm]],
     ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote,
       hOnline, wOnline, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote,
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,

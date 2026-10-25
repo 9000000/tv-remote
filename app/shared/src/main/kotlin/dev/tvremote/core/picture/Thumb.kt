@@ -75,6 +75,43 @@ object Thumb {
         return encode(ow, oh, out.toByteArray())
     }
 
+    /** The whole PNG as 8-bit RGB (w, h, w*h*3 bytes), the alpha dropped; null on the same terms as [small]. */
+    fun rgb(png: ByteArray): Triple<Int, Int, ByteArray>? {
+        val b = ByteBuffer.wrap(png)
+        if (png.size < 33 || b.getLong(0) != 0x89504E470D0A1A0AUL.toLong()) return null
+        var w = 0; var h = 0; var ct = 0
+        val idat = ByteArrayOutputStream()
+        var at = 8
+        while (at + 12 <= png.size) {
+            val len = b.getInt(at); val type = String(png, at + 4, 4, Charsets.ISO_8859_1)
+            if (len < 0 || at + 12 + len > png.size) return null
+            when (type) {
+                "IHDR" -> { w = b.getInt(at + 8); h = b.getInt(at + 12); ct = png[at + 17].toInt()
+                    if (png[at + 16].toInt() != 8 || png[at + 20].toInt() != 0 || ct != 2 && ct != 6) return null }
+                "IDAT" -> idat.write(png, at + 8, len)
+                "IEND" -> break
+            }
+            at += 12 + len
+        }
+        if (w <= 0 || h <= 0 || w.toLong() * h > 40_000_000L) return null
+        val bpp = if (ct == 6) 4 else 3
+        val inf = Inflater().apply { setInput(idat.toByteArray()) }
+        val stride = w * bpp
+        var prev = ByteArray(stride); var cur = ByteArray(stride)
+        val out = ByteArray(w * h * 3)
+        try {
+            for (y in 0 until h) {
+                val ft = inflate(inf); if (ft < 0) return null
+                if (!fill(inf, cur, stride)) return null
+                unfilter(ft, cur, prev, bpp)
+                var o = y * w * 3
+                for (x in 0 until w) { val s = x * bpp; out[o++] = cur[s]; out[o++] = cur[s + 1]; out[o++] = cur[s + 2] }
+                val t = prev; prev = cur; cur = t
+            }
+        } catch (e: Exception) { return null } finally { inf.end() }
+        return Triple(w, h, out)
+    }
+
     private fun inflate(inf: Inflater): Int { val one = ByteArray(1); return if (fill(inf, one, 1)) one[0].toInt() and 255 else -1 }
 
     private fun fill(inf: Inflater, dst: ByteArray, n: Int): Boolean {

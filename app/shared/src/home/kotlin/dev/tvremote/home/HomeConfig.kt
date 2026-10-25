@@ -378,13 +378,13 @@ object HomeConfig {
      * kept or the copy packed in the APK, and again when the site's is newer (`Themes.kt` there). Each is a whole look (every key of
      * [THEME_KEYS], [clean] fills the rest), so applying one never leaves a bit of the one before.
      */
-    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val tiles: List<String> = emptyList(), val look: String = "", val thumb: String = "") {
+    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val tiles: List<String> = emptyList(), val look: String = "", val thumb: String = "", val by: String = "", val community: Boolean = false) {
         /** The name in [lang], else English, else the id. */
         fun name(lang: String): String = names[lang] ?: names["en"] ?: id
     }
     @Volatile var ready: List<Ready> = emptyList()
     val BUILTIN: List<Pair<String, JSONObject>> get() = ready.map { it.id to it.conf }
-    const val READY_MAX = 40
+    const val READY_MAX = 120                                 // the project's own (~20) and the community's, which the store adds as they are approved
     const val READY_TILES_MAX = 4
     private val READY_ID = Regex("[a-z][a-z0-9_]{0,15}")
 
@@ -396,7 +396,7 @@ object HomeConfig {
     }
 
     /**
-     * The themes of a signed list ([text] is checked by the caller): {"v":1,"themes":[{id, names:{vi,en}, conf, since?}]}. Each conf goes
+     * The themes of a signed list ([text] is checked by the caller): {"v":1,"themes":[{id, names:{vi,en}, conf, since?, community?, by?}]}. Each conf goes
      * through [clean] and [pickTheme], so a list sets nothing a theme could not (a "wurl" page is allowed here: that is why it is
      * signed). A theme with a `since` newer than [have] (this TV Home's version) waits for the update; an empty list is no list.
      */
@@ -414,7 +414,8 @@ object HomeConfig {
             val names = if (n == null) emptyMap() else n.keys().asSequence().filter { LANGS.contains(it) }.associateWith { themeName(n.optString(it)) }.filterValues { it.isNotEmpty() }
             // "tiles": live tiles the theme adds ([doTheme]); "look": a drawn wall or gradient for its picture in the list when its own wall has none (Bing, a page, a video); "thumb": a small https picture of that background, drawn under the preview of the layout
             out += Ready(id, names, pickTheme(clean(conf)), strs(t.optJSONArray("tiles")).filter { isTile(it) }.distinct().take(READY_TILES_MAX),
-                t.optString("look").takeIf { it in ART || it in PLAIN } ?: "", thumb(t.optString("thumb")))
+                t.optString("look").takeIf { it in ART || it in PLAIN } ?: "", thumb(t.optString("thumb")),
+                by = themeName(t.optString("by")), community = t.optBoolean("community") && t.optString("by").isNotBlank())      // "by": the sender's name, community themes only (the store's signed entries)
             if (out.size >= READY_MAX) break
         }
         out

@@ -322,7 +322,7 @@ object Customize {
             fun apply(op: JSONObject) { Store.change(a, JSONObject().put("theme", op)) }
             lateinit var draw: () -> Unit
             // the preview is the theme's home screen in miniature (ThemePreview): drawn once off the main thread, kept by theme + list rev + size + picture
-            fun themeTile(id: String, name: String, conf: JSONObject, tiles: List<String>, look: String, shot: java.io.File?, mine: Boolean): View {
+            fun themeTile(id: String, name: String, conf: JSONObject, tiles: List<String>, look: String, shot: java.io.File?, mine: Boolean, by: String = ""): View {
                 val t = FrameLayout(a).apply {
                     isFocusable = true; isClickable = true
                     background = GradientDrawable().apply { setColor(NO_PIC); cornerRadius = dp(12).toFloat() }
@@ -337,8 +337,12 @@ object Customize {
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
                         addState(intArrayOf(), ring(d, 1, RING_REST))
                     }
-                    addView(label(name, 13f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(10), dp(4), dp(10), dp(5)); background = GradientDrawable().apply { setColor(NAME_SCRIM); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat()) } },
-                        FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+                    addView(LinearLayout(a).apply {                      // the name, and under it "by <sender>" on a community theme
+                        orientation = LinearLayout.VERTICAL; setPadding(dp(10), dp(4), dp(10), dp(5))
+                        background = GradientDrawable().apply { setColor(NAME_SCRIM); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat()) }
+                        addView(label(name, 13f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                        if (by.isNotEmpty()) addView(label(a.getString(R.string.th_by, by), 11f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
                     addView(FrameLayout(a).apply {
                         tag = "check"
                         background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
@@ -416,7 +420,12 @@ object Customize {
                 }
                 page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (own.isEmpty()) 10 else 14) })
                 section(a.getString(R.string.th_ready))
-                grid(HomeConfig.ready.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.tiles, r.look, ThemeShots.ready(a, r), false) })
+                grid(HomeConfig.ready.filter { !it.community }.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.tiles, r.look, ThemeShots.ready(a, r), false) })
+                val shared = HomeConfig.ready.filter { it.community }
+                if (shared.isNotEmpty()) {                       // the store's approved themes (the signed list's "community"), each with its sender
+                    section(a.getString(R.string.th_community))
+                    grid(shared.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.tiles, r.look, ThemeShots.ready(a, r), false, r.by) })
+                }
                 mark()
             }
             draw()
