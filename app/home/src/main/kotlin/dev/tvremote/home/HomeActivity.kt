@@ -2121,7 +2121,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
             if (corner != null) inner.addView(Font.on(TextView(c)).apply {   // whose it is, under the name: as a corner pill it sat on the icon of a small tile (the user, 2026-10-26)
-                text = corner; textSize = ts - 2; setTextColor(0xB3FFFFFF.toInt()); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER; includeFontPadding = false
+                text = corner; textSize = ts - 2; setTextColor(SUB_INK); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER; includeFontPadding = false
             }, LayoutParams(-1, -2))
             fill(inner)
             content = inner
@@ -2165,6 +2165,7 @@ private const val EDIT_EDGE = 0x80FFFFFF.toInt()                       // an ele
 private const val HEAD_DIM = 0xB3FFFFFF.toInt()                       // the greeting over the day
 private const val PILL_BG = 0xE6101420.toInt()                          // the dark pill: the move hint, the menu tip, the name tags
 private const val PILL_EDGE = 0x33FFFFFF                                // its 1 dp edge
+private const val SUB_INK = 0xB3FFFFFF.toInt()                          // a second, softer line on a tile: whose it is
 private const val PILL_INK = 0xFF111318.toInt()                         // a dark glyph on a white (focused) circle
 private const val HEAD_RULE = 0x40FFFFFF                             // the line between the clock and the day
 private const val POWER_INK = 0xFF7EE0A1.toInt()                    // the power mark: the green of "on", apart from the lock's red and the limit's amber
