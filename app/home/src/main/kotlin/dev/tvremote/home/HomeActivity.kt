@@ -142,6 +142,8 @@ class HomeActivity : Activity() {
     internal companion object {
         var reopen = false                                            // across recreate(): the panel was open when the language changed
         const val SETUP_CODE = "2397346"                              // TV Setup's Downloader code (README, the site)
+        const val BT_CONNECT = "android.permission.BLUETOOTH_CONNECT"
+        const val REQ_BT = 7
     }
     private var open: android.app.Dialog? = null                    // the panel or menu on top, closed by a Home press
     private lateinit var widgets: Widgets
@@ -1841,7 +1843,26 @@ class HomeActivity : Activity() {
 
     private fun open(action: String) {
         try { startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        catch (e: Exception) { try { startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e2: Exception) { toast(R.string.no_open) } }
+        catch (e: SecurityException) {
+            // Android TV's pairing screen wants BLUETOOTH_CONNECT: given over ADB (HomeConfig.GRANT_WIFI); installed without it, asked once here
+            // (it fell to Settings' main page on an FPT Play box: "Permission Denial ... requires android.permission.BLUETOOTH_CONNECT")
+            if (Build.VERSION.SDK_INT >= 31 && afterGrant == null && checkSelfPermission(BT_CONNECT) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                afterGrant = action; requestPermissions(arrayOf(BT_CONNECT), REQ_BT)
+            } else settings()
+        }
+        catch (e: Exception) { settings() }
+    }
+
+    private fun settings() { try { startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e2: Exception) { toast(R.string.no_open) } }
+
+    private var afterGrant: String? = null                            // the screen [open] goes on to once the person answered
+
+    override fun onRequestPermissionsResult(code: Int, perms: Array<out String>, res: IntArray) {
+        super.onRequestPermissionsResult(code, perms, res)
+        if (code != REQ_BT) return
+        val then = afterGrant ?: return
+        if (res.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) open(then) else settings()   // still set: no second question
+        afterGrant = null
     }
 
     private fun toast(id: Int) = Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
