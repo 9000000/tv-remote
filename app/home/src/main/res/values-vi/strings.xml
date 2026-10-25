@@ -575,7 +575,7 @@
     <string name="suggest_install">Cài đặt</string>
     <string name="suggest_hide">Không gợi ý nữa</string>
     <string name="suggest_failed">Không tải được TV Setup (%1$s). Thử lại sau.</string>
-    <string name="watch_hide">Không hiện hàng của app này</string>
+    <string name="watch_hide">Không hiện mục của %1$s</string>
     <string name="watch_note">Xem tiếp và kênh app này chia sẻ với Android TV. Hiện lại từ ô + (Thêm).</string>
     <string name="add_row">Hàng Xem tiếp của app</string>
     <string name="el_more">Thêm…</string>
@@ -591,6 +591,14 @@
     <string name="el_note_gear">Vẫn mở được: Menu trên một app, rồi Tùy chỉnh TV Home.</string>
     <string name="el_note_add">App và lối tắt đã ẩn vẫn nằm trong Tùy chỉnh và trên điện thoại.</string>
     <string name="watch_hide_all">Ẩn cả hàng</string>
+    <string name="watch_at">Vị trí hàng</string>
+    <string name="watch_at_top">Trên các app</string>
+    <string name="watch_at_under1">Dưới hàng đầu</string>
+    <string name="watch_at_bottom">Sau hàng cuối</string>
+    <string name="watch_at_tiles">Nối vào lưới</string>
+    <string name="watch_pin">Ghim vào lưới</string>
+    <string name="watch_pin_same">Đã có trên lưới</string>
+    <string name="watch_pin_fail">Không ghim được mục này</string>
     <string name="el_edit">Sửa màn hình chính</string>
     <string name="el_edit_sub">Mọi thứ đều chọn được: OK để chỉnh, Back là xong.</string>
     <string name="el_edit_hint">OK: chỉnh  ·  Back: xong</string>

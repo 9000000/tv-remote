@@ -87,6 +87,31 @@ object Pins {
         Store.change(c, JSONObject().put("tiles", without("tiles")).put("dock", without("dock")).put("order", without("order")))
     }
 
+    /**
+     * Turns an item of another app's Play Next row into a pin of ours: a shortcut TV Home itself owns ("pin:dev.tvremote.home/pn…"),
+     * so it is the grid's ordinary pinned tile (moved, renamed, hidden, unpinned like any). [intent] is already the safe one of
+     * Watch.intent (no selector, no URI grants). Android asks the default home to confirm ([PinActivity] takes it). [SAME]: pinned
+     * already; [FULL]: no room; [FAIL]: the system refused (or no shortcut host rights).
+     */
+    enum class Made { OK, SAME, FULL, FAIL }
+
+    @TargetApi(26)
+    fun pinIntent(c: Context, source: String, label: String, intent: android.content.Intent, art: android.graphics.Bitmap?): Made {
+        if (!can(c)) return Made.FAIL
+        val id = "pn" + java.security.MessageDigest.getInstance("SHA-1").digest(intent.toUri(0).toByteArray()).joinToString("") { "%02x".format(it) }.take(14)
+        if (list(c).any { it.pkg == Target.pin(c.packageName, id) }) return Made.SAME
+        if (!room(c)) return Made.FULL
+        val sm = c.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return Made.FAIL
+        val icon = art ?: try {                                      // no poster: the source app's own icon, not this home's
+            val d = c.packageManager.getApplicationIcon(source)
+            android.graphics.Bitmap.createBitmap(192, 192, android.graphics.Bitmap.Config.ARGB_8888).also { b -> d.setBounds(0, 0, 192, 192); d.draw(android.graphics.Canvas(b)) }
+        } catch (e: Exception) { null }
+        val go = android.content.Intent(intent).apply { if (action == null) action = android.content.Intent.ACTION_VIEW }
+        val info = android.content.pm.ShortcutInfo.Builder(c, id).setShortLabel(label.take(40)).setIntent(go)
+            .also { b -> icon?.let { b.setIcon(android.graphics.drawable.Icon.createWithBitmap(it)) } }.build()
+        return try { if (sm.requestPinShortcut(info, null)) Made.OK else Made.FAIL } catch (e: Exception) { Made.FAIL }
+    }
+
     // ---- every shortcut an app offers (static, dynamic, pinned), for the picker and for a key / the grid that points at one ----
 
     private const val ALL = LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED

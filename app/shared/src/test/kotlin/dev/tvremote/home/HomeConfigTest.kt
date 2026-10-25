@@ -196,6 +196,14 @@ class HomeConfigTest {
         assertEquals(0L, c.getLong("photo"))
     }
 
+    @Test fun playNextPlacementIsOneOfTheFourAndDefaultsToTheBottom() {
+        assertEquals("bottom", HomeConfig.clean(JSONObject()).getString("watchAt"))
+        for (k in listOf("top", "under1", "bottom", "tiles")) assertEquals(k, HomeConfig.clean(JSONObject().put("watchAt", k)).getString("watchAt"))
+        assertEquals("bottom", HomeConfig.clean(JSONObject().put("watchAt", "middle")).getString("watchAt"))   // unknown: the default
+        assertEquals("tiles", HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("watchAt", "tiles")).getString("watchAt"))
+        assertFalse(HomeConfig.pickTheme(HomeConfig.clean(JSONObject().put("watchAt", "top"))).has("watchAt"))   // where things sit is not a look
+    }
+
     @Test fun mergeChangesOnlyWhatIsSent() {
         val old = HomeConfig.clean(JSONObject().put("dock", JSONArray(listOf("a.b"))).put("wall", "ocean"))
         val n = HomeConfig.merge(old, JSONObject().put("clock24", false))

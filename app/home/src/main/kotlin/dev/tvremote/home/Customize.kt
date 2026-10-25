@@ -272,7 +272,7 @@ object Customize {
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
             if (key == "vvol") pick = (conf.optInt(key, HomeConfig.VOL_DEFAULT) + 12) / 25    // set in steps of 5 from a phone: the nearest of 0..100 by 25, not 0%
             var viaSetup = false                                       // "stats": TV Setup is on the TV and holds the switch (OwnReport)
-            var on = if (key == "stats") dev.tvremote.report.OwnReport.own(a) else if (choices != null || key == "rows" || key == "shade") pick > 0 || key == "cols" || key == "rows" || key == "shade" else conf.optBoolean(key, true)
+            var on = if (key == "stats") dev.tvremote.report.OwnReport.own(a) else if (choices != null || key == "rows" || key == "shade") pick > 0 || key == "cols" || key == "watchAt" || key == "rows" || key == "shade" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
             val state = label("", 12f, DIM)
             val t = LinearLayout(a).apply {
@@ -627,6 +627,7 @@ object Customize {
             tile(R.drawable.ic_plus, a.getString(R.string.show_add), null, "showAdd")
             tile(R.drawable.ic_download, a.getString(R.string.show_suggest), null, "showSuggest")
             tile(R.drawable.ic_play, a.getString(R.string.show_watch), null, "showWatch")
+            tile(R.drawable.ic_updown, a.getString(R.string.watch_at), null, "watchAt", HomeConfig.WATCH_AT.map { it to a.getString(when (it) { "top" -> R.string.watch_at_top; "under1" -> R.string.watch_at_under1; "tiles" -> R.string.watch_at_tiles; else -> R.string.watch_at_bottom }) })
             tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
             tile(R.drawable.ic_sparkle, a.getString(R.string.c_motion), null, "motion",
                 listOf("" to a.getString(R.string.c_motion_auto), "calm" to a.getString(R.string.c_motion_calm), "full" to a.getString(R.string.c_motion_full)))

@@ -28,6 +28,7 @@ object TvGlass {
     const val PANEL_BOTTOM = 0xFF0C1020.toInt()
     const val PANEL_EDGE = 0x33FFFFFF
     const val DIM = 0x8C000000.toInt()                                 // the screen behind a panel (55% black), drawn by the panel itself
+    const val DIM_LIGHT = 0x1A000000                                   // the screen behind a menu beside the element it changes: 10% black
     const val ROW_FOCUS = 0x2EFFFFFF                                   // a row of the panel: focused, at rest, its edge
     const val ROW_FILL = 0x12FFFFFF
     const val ROW_EDGE = 0x1FFFFFFF
@@ -54,6 +55,10 @@ object TvGlass {
     class Item(val icon: Int, val label: String, val hint: String = "", val more: Boolean = false, val stay: Boolean = false, val go: () -> Unit) {
         /** A coloured picture in the place of [icon] (an app's own launcher icon): drawn as it is, not tinted. */
         var picture: android.graphics.drawable.Drawable? = null
+        /** A switch: its state, read again after a press. It ends in a ring with a check while on, and a press keeps the panel open. */
+        var on: (() -> Boolean)? = null
+        /** What the row is set to, read again after a press (a row that cycles): shown in the place of [hint], and a press keeps the panel open. */
+        var live: (() -> String)? = null
     }
 
     /**
@@ -62,7 +67,9 @@ object TvGlass {
      * as Customize's head) and the remote's Back runs it too; on the first page Back closes the panel. [font] puts the app's typeface
      * on every text; [backIcon] is the app's left arrow.
      */
-    class Panel(private val a: Activity, theme: Int, private val backIcon: Int, private val font: (TextView) -> Unit = {}) {
+    class Panel(private val a: Activity, theme: Int, private val backIcon: Int, private val checkIcon: Int = 0, private val font: (TextView) -> Unit = {}) {
+        private var gravity = Gravity.CENTER
+        private var tight = false                                             // beside an element: rows closer, so a long menu fits the screen
         private var back: (() -> Unit)? = null
         val dialog: Dialog = object : Dialog(a, theme) {
             @Suppress("OVERRIDE_DEPRECATION") override fun onBackPressed() { val b = back; if (b != null) b() else cancel() }
@@ -81,7 +88,13 @@ object TvGlass {
             dialog.window?.apply { setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); setLayout(-1, -1); clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND) }
         }
 
-        private fun width(w: Int) { box.layoutParams = FrameLayout.LayoutParams(minOf(dp(w), dm.widthPixels - dp(96)), -2, Gravity.CENTER) }
+        private fun width(w: Int) { box.layoutParams = FrameLayout.LayoutParams(minOf(dp(w), dm.widthPixels - dp(96)), -2, gravity).apply { if (gravity != Gravity.CENTER) { marginStart = dp(24); marginEnd = dp(24) } } }
+
+        /** The panel on one side of the screen ([right] or left) and the screen only lightly dimmed: the element it changes stays in view, changing behind it. */
+        fun side(right: Boolean, dim: Int = DIM_LIGHT) {
+            gravity = (if (right) Gravity.END else Gravity.START) or Gravity.CENTER_VERTICAL; tight = true
+            (box.parent as? View)?.setBackgroundColor(dim)
+        }
 
         /** The page's first line: the plain [title], or with a [back] the "‹ title" row that goes up a level. */
         private fun head(title: String, back: (() -> Unit)?): View {
@@ -129,23 +142,37 @@ object TvGlass {
         }
 
         /** A page of rows; [focus] is the row that starts focused. */
-        fun page(title: String, items: List<Item>, focus: Int = 0, back: (() -> Unit)? = null) {
+        fun page(title: String, items: List<Item>, focus: Int = 0, back: (() -> Unit)? = null, note: String = "") {
             val ink = ColorStateList.valueOf(Color.WHITE)
             val list = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+            if (note.isNotEmpty()) list.addView(TvUi.text(a, note, 13f, HINT).apply { font(this); setLineSpacing(0f, 1.15f) }, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(4), 0, dp(4), dp(10)) })
+            val skip = list.childCount
             for ((i, item) in items.withIndex()) list.addView(LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(14), dp(12), dp(16), dp(12)); background = rowBg(a, 16)
+                setPadding(dp(14), dp(if (tight) 8 else 12), dp(16), dp(if (tight) 8 else 12)); background = rowBg(a, 16)
                 if (item.picture != null) addView(ImageView(a).apply { setImageDrawable(item.picture) }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { rightMargin = dp(12) })
                 else if (item.icon != 0) addView(ImageView(a).apply { setImageResource(item.icon); imageTintList = ink }, LinearLayout.LayoutParams(dp(22), dp(22)).apply { rightMargin = dp(14) })
                 addView(TvUi.text(a, item.label, 16f, Color.WHITE).apply { font(this); maxLines = 1; ellipsize = TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(0, -2, 1f))
-                if (item.hint.isNotEmpty()) addView(TvUi.text(a, item.hint, 14f, HINT).apply { font(this); maxLines = 1; gravity = Gravity.END }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
+                val hintView = TvUi.text(a, item.live?.invoke() ?: item.hint, 14f, HINT).apply { font(this); maxLines = 1; gravity = Gravity.END; visibility = if (text.isEmpty()) View.GONE else View.VISIBLE }
+                addView(hintView, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
                 if (item.more) addView(TvUi.text(a, "›", 20f, HINT).apply { font(this) }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) })
+                val ring = FrameLayout(a).apply { setPadding(dp(4), dp(4), dp(4), dp(4)) }.also { r ->
+                    if (checkIcon != 0) r.addView(ImageView(a).apply { setImageResource(checkIcon); imageTintList = ink }, FrameLayout.LayoutParams(-1, -1))
+                }
+                fun paint() {                                                       // the state behind the row, after a press
+                    item.live?.invoke()?.let { hintView.text = it; hintView.visibility = if (it.isEmpty()) View.GONE else View.VISIBLE }
+                    val on = item.on?.invoke() ?: return
+                    ring.background = GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(if (on) ROW_FOCUS else Color.TRANSPARENT); setStroke(dp(2), if (on) Color.WHITE else HINT) }
+                    ring.getChildAt(0)?.visibility = if (on) View.VISIBLE else View.INVISIBLE
+                }
+                if (item.on != null) { addView(ring, LinearLayout.LayoutParams(dp(24), dp(24)).apply { leftMargin = dp(12) }); paint() }
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
-                setOnClickListener { if (!item.stay) dialog.dismiss(); item.go() }
-            }, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
+                val stays = item.stay || item.on != null || item.live != null
+                setOnClickListener { if (!stays) dialog.dismiss(); item.go(); if (stays) paint() }
+            }, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(if (tight) 6 else 8) })
             width(420)
             frame(title, back, list)
-            list.getChildAt(focus.coerceIn(0, maxOf(0, items.size - 1)))?.let { r -> first(r) }
+            list.getChildAt(skip + focus.coerceIn(0, maxOf(0, items.size - 1)))?.let { r -> first(r) }
         }
 
         /** A page of your own [content] (a keypad), [wide] dp across; [focus] is the view that starts focused. */
@@ -169,9 +196,11 @@ object TvGlass {
      * icon [Item.icon], 0 for none, and the words), the first focused, Back closes it. Rows come up a touch larger under focus
      * ([Motion.pop]). Taller than the screen: the rows scroll. For a menu with sub-menus use a [Panel].
      */
-    fun menu(a: Activity, theme: Int, title: String, items: List<Item>, focus: Int = 0, onBack: (() -> Unit)? = null, font: (TextView) -> Unit = {}): Dialog {
-        val p = Panel(a, theme, 0, font)
-        p.page(title, items, focus)
+    fun menu(a: Activity, theme: Int, title: String, items: List<Item>, focus: Int = 0, onBack: (() -> Unit)? = null, note: String = "", checkIcon: Int = 0,
+             sideRight: Boolean? = null, font: (TextView) -> Unit = {}): Dialog {
+        val p = Panel(a, theme, 0, checkIcon, font)
+        if (sideRight != null) p.side(sideRight)                               // before the page: it sets the panel's place
+        p.page(title, items, focus, note = note)
         if (onBack != null) p.dialog.setOnCancelListener { onBack() }          // Back (not an action's own dismiss): up a level
         p.show()
         return p.dialog

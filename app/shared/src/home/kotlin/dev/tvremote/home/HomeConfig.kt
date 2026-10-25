@@ -37,6 +37,9 @@ import org.json.JSONObject
  *           Menu key and the clients still reach Customize), showAdd (the "+ Add" tile), showSuggest (the "Get TV Setup" tile),
  *           showWatch (the Play Next / channels row, on top of hiding one app's from its menu). A TV Home older than these
  *           does not report them, so a page offers them only to one that does
+ *   watchAt where the Play Next items go ([WATCH_AT], default "bottom"): "top" a row of their own above the apps, "under1" under
+ *           the first row of apps, "bottom" after the last row of apps, "tiles" no row: they follow the grid's last tile in its columns.
+ *           A TV Home older than this does not report it, so a page offers the choice only to one that does
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
@@ -366,6 +369,9 @@ object HomeConfig {
         "widgets", "wsize", "wopt", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
     private val THEME_ID = Regex("t[0-9]{1,4}")
     /** What the first screen draws that the person can take off (not in a theme: a look does not hide the way to the settings). */
+    /** Where the Play Next items sit on the grid, first the default (the user, 2026-10-26: a row wedged inside their own apps annoys). */
+    val WATCH_AT = listOf("bottom", "top", "under1", "tiles")
+
     val SHOWS = listOf("showClock", "showDate", "showNet", "showGear", "showAdd", "showSuggest", "showWatch")
 
     /** [c] (a cleaned config) cut down to a theme's settings, the QR cards left out: their codes (and a Wi-Fi password) are not a look. */
@@ -558,6 +564,7 @@ object HomeConfig {
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
             .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
+            .put("watchAt", o.optString("watchAt").takeIf { it in WATCH_AT } ?: WATCH_AT[0])
             .put("anim", o.optBoolean("anim", true))
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")
