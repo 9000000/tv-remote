@@ -357,12 +357,45 @@ class MainActivity : Activity() {
 
     override fun onPause() { shown = false; super.onPause() }
 
+    private var onPhoneShown = false
+    /** A phone: once, "this is for TVs; the phone app is tv-remote.apk". "Use it here" is remembered and never asked again. */
+    private fun askOnPhone() {
+        val prefs = getSharedPreferences("remote", MODE_PRIVATE)
+        val isTv = packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_LEANBACK)
+        if (onPhoneShown || !OnPhone.shouldAsk(isTv, prefs.getBoolean("onphone_stay", false))) return
+        onPhoneShown = true
+        val installed = packageManager.getLaunchIntentForPackage(OnPhone.PHONE_PKG)
+        val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
+        val root = android.widget.FrameLayout(this)
+        root.setBackgroundColor(SCRIM)
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.background = box(TvUi.CARD, 22, 0)
+        card.setPadding(dp(24), dp(22), dp(24), dp(18))
+        card.addView(text(T("onphone.title"), 22, TvUi.TEXT, true))
+        card.addView(text(T("onphone.body"), 15, MUTED, false), margins(top = 10))
+        val go = smallButton(if (installed != null) T("onphone.open") else T("onphone.get")) {
+            d.dismiss()
+            try {
+                startActivity(installed ?: android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(OnPhone.APK)))
+            } catch (ignored: Exception) { }
+        }
+        val stay = smallButton(T("onphone.stay")) { prefs.edit().putBoolean("onphone_stay", true).apply(); d.dismiss() }
+        card.addView(go, margins(top = 18))
+        card.addView(stay, margins(top = 8))
+        root.addView(card, android.widget.FrameLayout.LayoutParams(dp(340), -2, Gravity.CENTER))
+        d.setContentView(root)
+        d.show()
+        go.requestFocus()
+    }
+
     override fun onResume() {
         super.onResume()
         if (Rules.hasCode(Rules.load(this)) && !Guard.isOpen(packageName) && PinActivity.showing == null) {   // a child must not turn the lock off here
             startActivity(android.content.Intent(this, PinActivity::class.java).putExtra("pkg", packageName))
         }
         shown = true
+        askOnPhone()
         pairLine.removeCallbacks(pairPoll); pairPoll.run()
         showWeb()
         val s = setup
