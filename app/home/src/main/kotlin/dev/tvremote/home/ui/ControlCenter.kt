@@ -149,6 +149,7 @@ object ControlCenter {
         private fun toast(id: Int) = Toast.makeText(a, id, Toast.LENGTH_SHORT).show()
         private fun hasSetup() = try { a.packageManager.getPackageInfo("dev.tvremote.setup", 0); true } catch (e: Exception) { false }
         private fun resolves(action: String) = Intent(action).resolveActivity(a.packageManager) != null
+        private val PAIR = "com.google.android.intent.action.CONNECT_INPUT"   // Android TV Settings' "Pair remote or accessory"
         private fun go(actions: List<String>) { actions.firstOrNull { resolves(it) }?.let { dialog.dismiss(); open(it) } }
         private fun say(text: String, ms: Long = 0) { footer.text = text; hold = if (ms > 0) System.currentTimeMillis() + ms else 0L }
 
@@ -297,7 +298,7 @@ object ControlCenter {
             // Inputs only where the TV lists some (or may keep them outside the TV Input Framework); a box with none has Bluetooth in that slot
             val ins = Inputs.rows(a) { }
             if (Inputs.showTile(ins.size, Inputs.liveApp(a) != null, Inputs.isBox())) { inputTile = tile(R.drawable.ic_input, R.string.inputs) { dialog.dismiss(); inputs() }; paintInputs(ins) }
-            else if (a.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) { btTile = tile(R.drawable.ic_bluetooth, R.string.cc_bluetooth) { go(listOf(Settings.ACTION_BLUETOOTH_SETTINGS)) }; paintBt() }
+            else if (a.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) { btTile = tile(R.drawable.ic_bluetooth, R.string.cc_bluetooth) { go(listOf(Settings.ACTION_BLUETOOTH_SETTINGS, PAIR, Settings.ACTION_SETTINGS)) }; paintBt() }   // FPT Play (Android 14) has no BLUETOOTH_SETTINGS: its Settings answers only the pairing screen
             sleep = tile(R.drawable.ic_timer, R.string.cc_sleep) {
                 val left = ((ctl?.optLong("sleep_at") ?: 0L) - System.currentTimeMillis()).coerceAtLeast(0).let { (it + 59_999) / 60_000L }   // rounded up, as the tile says it: 29.9 is "30 left", the next step is 60
                 control("sleep:" + (if (left <= 0) SLEEP_STEPS.first() else SLEEP_STEPS.firstOrNull { it > left } ?: 0))   // off -> 30 -> 60 -> 90 -> 120 -> off
