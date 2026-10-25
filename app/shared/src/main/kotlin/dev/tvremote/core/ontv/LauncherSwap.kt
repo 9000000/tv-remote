@@ -40,8 +40,9 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         /**
          * Makers whose firmware turns the setup wizard's Home back on early in every boot: with launcherx off, the next boot loops at
          * the Google TV logo (a Kalley 43G200 by MOKA, Android 14: no ADB, a USB reflash; cleanyourtv). Home is never taken there.
+         * PRISM+ (Singapore) is the same MOKA board (R10G, cleanyourtv examples/prismplus-q65-ultra-r10g); listed by brand in case it reports its own.
          */
-        val NO_SWAP = setOf("moka", "kalley")
+        val NO_SWAP = setOf("moka", "kalley", "prismplus", "prism+")
 
         /** The words (their id) for why a swap was put back ([Rec.why]): one table for TV Setup, the page and the computer's settings. */
         fun whyId(why: String): String =
