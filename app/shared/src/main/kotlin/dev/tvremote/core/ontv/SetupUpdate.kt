@@ -83,6 +83,12 @@ object SetupUpdate {
         if (!out.contains("started")) throw IOException("could not write the update script on the TV (is its storage full?)")
     }
 
+    /**
+     * What the script saw on the TV when an update went wrong (rolled back, broken, or kept without ADB of its own): handed out once,
+     * to the first device that asks, for its crash report (Manage.setupVersion). "" when there is none.
+     */
+    fun report(adb: Adb): String = adb.shell("mv $DIR/report $DIR/report.sent 2>/dev/null && cat $DIR/report.sent")
+
     /** TV Setup, once it runs well after an update: the script waiting for this keeps the new version. */
     fun alive(adb: Adb, version: String) {                            // "installing" too: Android may start it before the script says "checking"
         if (version.matches(VERSION)) adb.shell("grep -qE '^(installing|checking) [0-9]+ $version ' $DIR/state 2>/dev/null && echo $version > $DIR/ok")
@@ -119,11 +125,20 @@ object SetupUpdate {
           [ ${'$'}((i % 20)) = 0 ] && svc
         done
         [ ${'$'}good = 1 ] && sleep 20                                  # and still running a little later
+        # what a person needs to see why, on a TV nobody here can reach: the model, its ADB, TV Setup's crashes and ADB lines (report())
+        facts() { { echo "${'$'}1 ${'$'}V from ${'$'}{old:--}"; for k in ro.product.manufacturer ro.product.brand ro.product.model ro.product.device ro.build.version.release ro.build.version.sdk ro.build.fingerprint ro.adb.secure service.adb.tcp.port persist.adb.tcp.port sys.usb.config; do echo "${'$'}k=${'$'}(getprop ${'$'}k)"; done
+          echo "adb_enabled=${'$'}(settings get global adb_enabled) adb_wifi=${'$'}(settings get global adb_wifi_enabled) pid=${'$'}(pidof ${'$'}P) crashes=${'$'}c0->${'$'}(crashes)"
+          echo "key: ${'$'}(am broadcast -n ${'$'}P/.TrustReceiver --es want adbkey 2>&1 | grep -o 'data=.*')"
+          echo "listen: ${'$'}( (netstat -ltn 2>/dev/null || ss -ltn 2>/dev/null) | grep -oE ':(5555|5037) ' | sort -u | tr -d '\n')"
+          echo "== crash"; logcat -b crash -d 2>/dev/null | grep -A30 "Process: ${'$'}P," | tail -70
+          echo "== log"; logcat -d -t 3000 2>/dev/null | grep -iE "adbd|${'$'}P|tvremote" | grep -iE "adb|auth|key|exception|error|refused|denied" | grep -vE "spawning|Adapter|transport|offline|read failed: Success|terminated" | tail -40
+          } 2>&1 | cut -c1-300 | head -170 > ${'$'}D/report; }
         show() { [ "${'$'}O" = open ] && am start -n ${'$'}P/.MainActivity >/dev/null 2>&1; }
         if [ ${'$'}good = 1 ] && [ "${'$'}(crashes)" = "${'$'}c0" ]; then rm -f ${'$'}D/ok; say ok; show; exit 0; fi
         # running, never crashed, only not through to the TV's ADB itself (its key not allowed, ADB slow to come up on that box): that is
         # not this version's fault, and every update of such a TV was undone the same way
-        if [ "${'$'}(crashes)" = "${'$'}c0" ] && pidof ${'$'}P >/dev/null 2>&1; then echo "${'$'}V runs, no ADB of its own: kept"; say ok noadb; show; exit 0; fi
+        if [ "${'$'}(crashes)" = "${'$'}c0" ] && pidof ${'$'}P >/dev/null 2>&1; then echo "${'$'}V runs, no ADB of its own: kept"; facts noadb; say ok noadb; show; exit 0; fi
+        facts "ok=${'$'}good"
         echo "${'$'}V did not start well (ok=${'$'}good, crashes ${'$'}c0 -> ${'$'}(crashes))"; echo ${'$'}V >> ${'$'}D/bad
         if [ ${'$'}rb = 1 ] && [ "${'$'}old" != "" ]; then
           for t in 1 2 3 4 5; do pm rollback-app ${'$'}P 2>&1; [ "${'$'}(ver)" = "${'$'}old" ] && break; sleep 3; done

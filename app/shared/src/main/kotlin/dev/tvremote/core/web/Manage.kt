@@ -1176,6 +1176,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val adb = link.get()
         val installed = SetupUpdate.installed(adb)
         val o = SetupUpdate.state(adb).put("installed", installed).put("latest", "")
+        if (dev.tvremote.core.Census.enabled && (o.optString("detail") == "noadb" || o.optString("state") in setOf("rolledback", "broken"))) try {
+            val rep = SetupUpdate.report(adb)                         // a TV nobody here can reach: its model and logs are the only way to see why
+            if (rep.isNotBlank()) dev.tvremote.core.Census.crash("kotlin", "TV Setup update " + o.optString("state") + " " + Regex("ro.product.model=(.*)").find(rep)?.groupValues?.get(1)?.trim().orEmpty(),
+                "TV Setup " + o.optString("from") + " -> " + o.optString("version") + ": " + o.optString("state") + " " + o.optString("detail"), rep)
+        } catch (e: Exception) { }
         if (installed.isEmpty()) return o
         val r = try { latestSetup(installed) } catch (e: Exception) { o.put("error", e.message ?: e.javaClass.simpleName); null }
         if (r != null && !SetupUpdate.bad(o, r.version)) o.put("latest", r.version).put("notes", r.notes)

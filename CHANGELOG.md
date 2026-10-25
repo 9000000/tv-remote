@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Setup: “Cập nhật ngay” không còn đòi ADB. TV không có ADB thì TV Setup cập nhật bằng trình cài của Android, giống TV Home.
 - Cập nhật TV Setup từ điện thoại hoặc máy tính: bản mới chạy được nhưng chưa nối được ADB riêng thì được giữ lại, không bị tự quay về bản cũ nữa.
+- Thống kê ẩn danh (nếu bật): TV Setup không nối được ADB quá 3 phút, hoặc một bản cập nhật bị gỡ, thì gửi kèm thông số máy và trạng thái ADB để tìm lỗi trên TV không ai với tới được.
 
 **English**
 - TV Setup: “Update now” no longer needs ADB. Without it, TV Setup updates through Android's installer, like TV Home.
 - Updating TV Setup from a phone or computer: a new version that runs but has no ADB of its own yet is kept, not rolled back.
+- Anonymous stats (when on): TV Setup that cannot reach ADB for 3 minutes, or an update that was rolled back, sends the TV's model and ADB state, to find faults on TVs nobody here can reach.
 
 ## 0.24.0 - 2026-10-25
 

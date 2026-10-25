@@ -493,6 +493,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private var usageAllowed = false
 
     private var retryMs = 5000L
+    private var failSince = 0L                                        // the failed tries since ADB last worked (AdbReport)
+    private var fails = 0
     private val retry = Runnable { connect() }
 
     private val rest = object : Runnable {
@@ -512,11 +514,16 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     override fun onStatus(key: String, detail: String) {
         if (stopping) return
         when (key) {
-            "allow" -> adbState = "allow"                             // the TV is asking "Allow USB debugging?"
+            "allow" -> {                                              // the TV is asking "Allow USB debugging?"
+                adbState = "allow"
+                if (failSince == 0L) failSince = System.currentTimeMillis()
+                AdbReport.failing(this, "allow", "", failSince, ++fails, version)   // asked for minutes and never allowed
+            }
             "live" -> {
                 adbState = "ready"
                 adbDetail = ""
                 retryMs = 5000
+                failSince = 0L; fails = 0
                 if (!saidAlive && serving) { saidAlive = true; afterUpdate() }
                 if (!KeepAdb.can(this) || !KeyFix.prepared) Thread({ try { link?.get()?.let { KeepAdb.grant(this, it); KeyFix.prepare(this, it); if (MicVoice.on(this)) MicVoice.grant(this, it); KeyFix.sync(this) } } catch (e: Exception) { } }, "grant").apply { isDaemon = true }.start()
             }
@@ -529,6 +536,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 tv = null
                 ui.removeCallbacks(retry); ui.postDelayed(retry, retryMs)
                 retryMs = minOf(retryMs * 2, 5 * 60_000L)              // ADB off for good: every 5 min at most, not a session every 5 s forever; a use tries at once
+                if (failSince == 0L) failSince = System.currentTimeMillis()
+                fails++
+                AdbReport.failing(this, adbState, detail, failSince, fails, version)   // never through for minutes: the census hears it once
             }
         }
     }
