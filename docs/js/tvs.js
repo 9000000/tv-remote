@@ -3,7 +3,7 @@
 (function(){
   var URL_ = "https://tvr-census.99-hoangtran.workers.dev/v1/tvs";
   var W = {                                                         // the words, both languages
-    kinds: [["all", "Tất cả", "All"], ["tv", "Tivi", "TVs"], ["box", "Box, que", "Boxes, sticks"], ["projector", "Máy chiếu", "Projectors"]],
+    kinds: [["all", "Tất cả", "All"], ["tv", "Tivi", "TVs"], ["box", "TV Box", "Boxes, sticks"], ["projector", "Máy chiếu", "Projectors"]],
     badge: { tv: ["Tivi", "TV"], box: ["Box", "Box"], projector: ["Máy chiếu", "Projector"] },
     search: ["Tìm hãng, mẫu, mã máy…", "Search brand, model, device…"],
     sum: ["{d} thiết bị · {n} mẫu · {b} hãng", "{d} devices · {n} models · {b} brands"],
