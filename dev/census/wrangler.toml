@@ -7,3 +7,6 @@ workers_dev = true
 binding = "DB"
 database_name = "tvr-census"
 database_id = "d66784e7-a940-4372-a939-c1d747d30339"
+
+[triggers]
+crons = ["7 * * * *"]          # refresh /v1/tvs's totals hourly (src/index.js)

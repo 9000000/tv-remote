@@ -23,3 +23,9 @@ CREATE TABLE IF NOT EXISTS days (
   new     INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, app)
 ) WITHOUT ROWID;
+
+-- What GET /v1/tvs answers, worked out once an hour by the cron (src/index.js refresh): a page view reads this one row, not every install.
+CREATE TABLE IF NOT EXISTS summary (
+  k     TEXT PRIMARY KEY,      -- 'tvs'
+  body  TEXT NOT NULL          -- the JSON reply
+) WITHOUT ROWID;

@@ -23,7 +23,19 @@ ON CONFLICT (day, app) DO UPDATE SET active = COALESCE(active, 0) + 1, new = new
 
 const AGG = `SELECT brand, model, device, android, COUNT(*) AS n FROM tvs GROUP BY brand, model, device, android LIMIT 5000`;
 
+// The totals are worked out once an hour (wrangler.toml crons) and kept as one row: the GROUP BY reads every install, so doing it
+// on each cache miss (10 min x every Cloudflare place a visitor comes from) would grow with the installs toward the free 5M rows
+// read a day; this way it is 24 x installs a day, and a page view reads one row
+async function refresh(env) {
+  const { results } = await env.DB.prepare(AGG).all();
+  const body = JSON.stringify(aggregate(results));
+  await env.DB.prepare("INSERT INTO summary (k, body) VALUES ('tvs', ?1) ON CONFLICT (k) DO UPDATE SET body = excluded.body").bind(body).run();
+  return body;
+}
+
 export default {
+  async scheduled(_event, env, ctx) { ctx.waitUntil(refresh(env)); },
+
   async fetch(req, env) {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "access-control-allow-methods": "GET", "access-control-max-age": "86400" } });
@@ -47,8 +59,9 @@ export default {
       const cache = caches.default, key = new Request(url.origin + "/v1/tvs");
       const hit = await cache.match(key);
       if (hit) return hit;
-      const { results } = await env.DB.prepare(AGG).all();
-      const res = json(aggregate(results), 200, { "cache-control": "public, max-age=600" });
+      const row = await env.DB.prepare("SELECT body FROM summary WHERE k = 'tvs'").first();
+      const body = row ? row.body : await refresh(env);                       // first call after the table was made
+      const res = new Response(body, { headers: { "content-type": "application/json; charset=utf-8", ...CORS, "cache-control": "public, max-age=600" } });
       await cache.put(key, res.clone());
       return res;
     }
