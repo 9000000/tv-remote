@@ -1,0 +1,110 @@
+{
+ "v": 1,
+ "slides": [
+  {
+   "file": "vn-halong.jpg",
+   "vi": "Vịnh Hạ Long",
+   "en": "Ha Long Bay",
+   "credit": "Mustang Joe, CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:H%E1%BA%A1_Long_Bay_Sunrise%2C_Vietnam_%2854161688105%29.jpg"
+  },
+  {
+   "file": "vn-hoian.jpg",
+   "vi": "Phố cổ Hội An",
+   "en": "Hoi An Ancient Town",
+   "credit": "Mig Gilbert from Brighton, CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Lanterns_in_Hoi_An_%2840542858941%29.jpg"
+  },
+  {
+   "file": "vn-trangan.jpg",
+   "vi": "Tràng An, Ninh Bình",
+   "en": "Trang An, Ninh Binh",
+   "credit": "Jakub Hałun, CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Trang_An_Landscape_Complex%2C_Ninh_Binh_Province%2C_Vietnam%2C_20240202_1429_5277.jpg"
+  },
+  {
+   "file": "vn-hanoi.jpg",
+   "vi": "Văn Miếu, Hà Nội",
+   "en": "Temple of Literature, Hanoi",
+   "credit": "Jakub Hałun, CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Dai_Trung_gate%2C_Temple_of_Literature%2C_Hanoi%2C_Vietnam%2C_20240123_0928_3065.jpg"
+  },
+  {
+   "file": "vn-hue.jpg",
+   "vi": "Đại Nội Huế",
+   "en": "Hue Imperial City",
+   "credit": "Suicasmo, CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Meridian_Gate_%28Citadel_of_Hue%29_20190916-1.jpg"
+  },
+  {
+   "file": "vn-danang.jpg",
+   "vi": "Cầu Vàng, Đà Nẵng",
+   "en": "Golden Bridge, Da Nang",
+   "credit": "Vivu Vietnam, CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Golden_Bridge_above_the_clouds_Ba_Na_Hills_Da_Nang_Vietnam.jpg"
+  },
+  {
+   "file": "vn-phongnha.jpg",
+   "vi": "Phong Nha",
+   "en": "Phong Nha caves",
+   "credit": "Andre Hospers, CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Dong_Hoi_Phong_Nha_grotten.jpg"
+  },
+  {
+   "file": "vn-hagiang.jpg",
+   "vi": "Đèo Mã Pí Lèng, Hà Giang",
+   "en": "Ma Pi Leng Pass, Ha Giang",
+   "credit": "Khánh Hmoong, CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Ma_Pi_Leng_Pass_winding_road_Ha_Giang_Vietnam.jpg"
+  },
+  {
+   "file": "vn-mucangchai.jpg",
+   "vi": "Mù Cang Chải",
+   "en": "Mu Cang Chai terraces",
+   "credit": "Doan Tuan danny_pham93, CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:Terraces_in_Che_Cu_Nha_commune%2C_Mu_Cang_Chai_%28Unsplash%29.jpg"
+  },
+  {
+   "file": "vn-dalat.jpg",
+   "vi": "Hồ Xuân Hương, Đà Lạt",
+   "en": "Xuan Huong Lake, Da Lat",
+   "credit": "Le Anh Tuan, Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:Xuan_Huong_Lake_in_Da_Lat_%2828219543381%29.jpg"
+  },
+  {
+   "file": "vn-muine.jpg",
+   "vi": "Đồi cát Mũi Né",
+   "en": "Mui Ne sand dunes",
+   "credit": "Vyacheslav Argenberg, CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Vietnam%2C_Mui_Ne_sand_dunes.jpg"
+  },
+  {
+   "file": "vn-phuquoc.jpg",
+   "vi": "Phú Quốc",
+   "en": "Phu Quoc",
+   "credit": "Elmschrat, CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:1_Phu_Quoc_sunset.jpg"
+  },
+  {
+   "file": "vn-mekong.jpg",
+   "vi": "Chợ nổi Cái Răng",
+   "en": "Cai Rang floating market",
+   "credit": "Jean-Marc Astesana from Voisins le Bretonneux, France, CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Cai_Rang_floating_market_%2815724707578%29.jpg"
+  },
+  {
+   "file": "vn-saigon.jpg",
+   "vi": "Sài Gòn",
+   "en": "Saigon",
+   "credit": "Radek Kucharski, CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Saigon_at_Blue_Hour.jpg"
+  },
+  {
+   "file": "terraces-sapa.jpg",
+   "vi": "Ruộng bậc thang Sa Pa",
+   "en": "Sa Pa rice terraces",
+   "credit": "David McKelvey, CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Sapa_view_3.jpg"
+  }
+ ]
+}

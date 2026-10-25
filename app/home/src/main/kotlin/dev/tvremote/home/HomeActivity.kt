@@ -83,6 +83,7 @@ import dev.tvremote.home.wall.WebSnap
 import dev.tvremote.home.wall.WebSnapper
 import dev.tvremote.home.wall.WebVideo
 import dev.tvremote.home.wall.NetPicture
+import dev.tvremote.home.wall.Slideshow
 import dev.tvremote.home.widgets.Widgets
 import dev.tvremote.home.ui.Zoom
 
@@ -111,6 +112,8 @@ class HomeActivity : Activity() {
     @Volatile private var pins: List<App> = emptyList()                // shortcuts other apps pinned here ([Pins])
     private var conf = JSONObject()
     private var wallShown = ""
+    private val CAP_X = 48; private val CAP_Y = 6                     // the slideshow caption's place (dp): top right, above the buttons' pill, where no card or tile reaches
+    private val CAP_INK = 0xE6FFFFFF.toInt(); private val CAP_DIM = 0x99FFFFFF.toInt()
     private var lastWall = ""
     private var web: android.webkit.WebView? = null                 // the "web" wall's page, behind the grid and over the window's gradient; null for every other wall
     private var webDim: View? = null
@@ -272,7 +275,7 @@ class HomeActivity : Activity() {
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
         Store.onChange = null; ThemeShots.live = null
         open?.dismiss()
-        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(webRetry); ui.removeCallbacks(tileTick)
+        ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(slideTick); ui.removeCallbacks(webRetry); ui.removeCallbacks(tileTick)
         detachWeb(); detachVideo()
         try { unregisterReceiver(changed); unregisterReceiver(tick) } catch (e: Exception) { }
         bg.shutdownNow()
@@ -299,6 +302,7 @@ class HomeActivity : Activity() {
         ui.removeCallbacks(tileTick); ui.post(tileTick)
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
         ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS)
+        slideGo()                                                     // a slideshow wall: the slide of this slot, the timer again
         if (!Store.advance(this, false)) wallTimer()                  // on a change the new look sets the timer itself ([Store.onChange])
         bingCheck()
         ui.postDelayed({ if (!isDestroyed) bg.execute { Customize.warm(this) } }, 3000)   // the panel's pictures made while nothing else goes on
@@ -388,7 +392,7 @@ class HomeActivity : Activity() {
         }
     }
 
-    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(tileTick); super.onPause() }
+    override fun onPause() { if (moving != null) endMove(false); zoom.paused(); ui.removeCallbacks(widgetTick); ui.removeCallbacks(netTick); ui.removeCallbacks(wallTick); ui.removeCallbacks(slideTick); ui.removeCallbacks(tileTick); super.onPause() }
 
     private var cpuAgain = false
 
@@ -1014,7 +1018,9 @@ class HomeActivity : Activity() {
         lastWall = id
         backdrop.strength = shadeK()
         val netPic = if (id == HomeConfig.WEB && !snap) NetPicture.direct(url) else null   // the site's picture theme: a native picture wall, no WebView
-        val livePage = id == HomeConfig.WEB && !snap && netPic == null
+        val show = if (id == HomeConfig.WEB && !snap && netPic == null) Slideshow.ref(url) else null   // the site's slideshow theme (Việt Nam): native too
+        if (show == null) endSlides()
+        val livePage = id == HomeConfig.WEB && !snap && netPic == null && show == null
         val wasLive = web != null || video != null                   // a page or a video was the background: its colours stand in, not a stale picture
         if (HomeConfig.isVideo(id)) { netVideo = ""; attachVideo(id) } else if (!livePage) { netVideo = ""; detachVideo() }
         if (livePage) {                                               // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
@@ -1025,6 +1031,7 @@ class HomeActivity : Activity() {
             return
         }
         if (netPic != null) { loadNetPicture(netPic, colors, wasLive, key); return }
+        if (show != null) { loadSlideshow(show, colors, wasLive, key); return }
         hideLoading()
         if (snap) attachSnap() else {
             detachWeb()
@@ -1101,6 +1108,84 @@ class HomeActivity : Activity() {
                 android.util.Log.i("TvHomeWall", "picture wall shown in ${android.os.SystemClock.elapsedRealtime() - t0} ms (${if (cached) "cache" else "net"})")
             }
         }, "netpic").apply { isDaemon = true }.start()
+    }
+
+    // ---- the site's slideshow theme (loop.html?s=<name>): pictures from NetPicture's cache, a caption, the next one when the clock's slot turns ----
+
+    private var slides: List<Slideshow.Slide> = emptyList()
+    private var slideRef: Slideshow.Ref? = null
+    private var slideAt = -1
+    private var slideCap: View? = null
+    private val slideTick = Runnable { slideGo() }
+
+    /** The list is read (a kept copy, a day old at most), then [slideGo] shows the slide of this slot. The old background stays until the picture is read. */
+    private fun loadSlideshow(ref: Slideshow.Ref, colors: IntArray, wasLive: Boolean, key: String) {
+        detachWeb(); detachVideo(); netVideo = ""
+        bg.execute { WebSnap.clear(this) }
+        if (wasLive) backdrop.show(Backdrop.Look(colors))
+        Thread({
+            val list = Slideshow.load(this, ref.name)
+            runOnUiThread {
+                if (isDestroyed || key != wallShown) return@runOnUiThread
+                slideRef = ref; slides = list; slideAt = -1
+                slideGo()
+            }
+        }, "slides").apply { isDaemon = true }.start()
+    }
+
+    /** The slide of the clock's slot on screen, the timer set for the next slot; nothing runs while Home is away ([onPause] stops it, [onResume] comes here). */
+    private fun slideGo() {
+        ui.removeCallbacks(slideTick)
+        val ref = slideRef ?: return
+        val list = slides
+        if (list.isEmpty() || isDestroyed || away) return
+        val now = System.currentTimeMillis()
+        ui.postDelayed(slideTick, ref.every - now % ref.every + 50)
+        val k = Slideshow.index(now, ref.every, list.size)
+        if (k == slideAt || trimmed) return
+        slideAt = k
+        val s = list[k]; val next = list[(k + 1) % list.size]
+        val key = wallShown
+        val dm = resources.displayMetrics
+        if (!NetPicture.file(this, s.pic).isFile) showLoading()
+        Thread({
+            val file = NetPicture.get(this, s.pic)
+            val big = file?.let { Wall.load(it, dm.widthPixels, dm.heightPixels) }
+            val small = big?.let { Wall.soft(it) }
+            if (big == null) file?.delete()
+            runOnUiThread {
+                if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread
+                hideLoading()
+                if (big == null) { slideAt = -1; return@runOnUiThread }   // not read: the old picture stays, the next slot tries again
+                picture = big; soft = small
+                backdrop.show(Backdrop.Look(wallColors(conf.optString("wall")), big))
+                Frost.show(small, dm.widthPixels, dm.heightPixels)
+                caption(s)
+            }
+            NetPicture.get(this, next.pic)                              // the next one into the cache now, so its turn is a read from the file
+        }, "slide").apply { isDaemon = true }.start()
+    }
+
+    /** The place's name (the person's language first) and the photo's credit, small and soft in the top right corner; fades in. */
+    private fun caption(s: Slideshow.Slide) {
+        val root = scroll.parent as? ViewGroup ?: return
+        slideCap?.let { root.removeView(it) }
+        val vi = (Lang.shown.ifEmpty { Locale.getDefault().language }) == "vi"
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL; isFocusable = false; isClickable = false; alpha = 0f
+            addView(text(14f, CAP_INK).apply { typeface = Font.medium; text = s.line(vi); gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+            if (s.credit.isNotEmpty()) addView(text(12f, CAP_DIM).apply { text = "© " + s.credit; gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+        }
+        root.addView(box, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(dp(CAP_X * 2), dp(CAP_Y), dp(CAP_X), 0) })
+        box.animate().alpha(1f).setDuration(800).start()
+        slideCap = box
+    }
+
+    /** The wall is not a slideshow (any more): no timer, no caption, the list let go. */
+    private fun endSlides() {
+        ui.removeCallbacks(slideTick)
+        slideCap?.let { (it.parent as? ViewGroup)?.removeView(it) }
+        slideCap = null; slideRef = null; slides = emptyList(); slideAt = -1
     }
 
     private val videoRetry = Runnable { if (!isDestroyed && !trimmed && !away && HomeConfig.isVideo(conf.optString("wall"))) { detachVideo(); attachVideo(conf.optString("wall")) } }

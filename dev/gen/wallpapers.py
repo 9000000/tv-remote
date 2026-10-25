@@ -37,6 +37,24 @@ PHOTOS = [
     ("tulips-sunset", "Tulip field in Holland2.jpg", {"vi": "Cánh đồng tulip", "en": "Tulip field"}, (.5, .6)),
     ("milky-way", "Milky Way Lake Mountains (Unsplash).jpg", {"vi": "Dải Ngân Hà", "en": "Milky Way"}, (.5, .4)),
 ]
+# The "Việt Nam" theme's slideshow (docs/home/vn.json, shown by TV Home natively and by loop.html?s=vn): id, Commons file, vi, en, (x, y) as PHOTOS.
+# Not in the gallery list (wallpapers.json): they are only reached through the theme. Licence + author are read from Commons into vn.json.
+VN = [
+    ("halong", "Hạ Long Bay Sunrise, Vietnam (54161688105).jpg", "Vịnh Hạ Long", "Ha Long Bay", (.5, .5)),
+    ("hoian", "Lanterns in Hoi An (40542858941).jpg", "Phố cổ Hội An", "Hoi An Ancient Town", (.5, .5)),
+    ("trangan", "Trang An Landscape Complex, Ninh Binh Province, Vietnam, 20240202 1429 5277.jpg", "Tràng An, Ninh Bình", "Trang An, Ninh Binh", (.5, .5)),
+    ("hanoi", "Dai Trung gate, Temple of Literature, Hanoi, Vietnam, 20240123 0928 3065.jpg", "Văn Miếu, Hà Nội", "Temple of Literature, Hanoi", (.5, .5)),
+    ("hue", "Meridian Gate (Citadel of Hue) 20190916-1.jpg", "Đại Nội Huế", "Hue Imperial City", (.5, .5)),
+    ("danang", "Golden Bridge above the clouds Ba Na Hills Da Nang Vietnam.jpg", "Cầu Vàng, Đà Nẵng", "Golden Bridge, Da Nang", (.5, .5)),
+    ("phongnha", "Dong Hoi Phong Nha grotten.jpg", "Phong Nha", "Phong Nha caves", (.5, .5)),
+    ("hagiang", "Ma Pi Leng Pass winding road Ha Giang Vietnam.jpg", "Đèo Mã Pí Lèng, Hà Giang", "Ma Pi Leng Pass, Ha Giang", (.5, .5)),
+    ("mucangchai", "Terraces in Che Cu Nha commune, Mu Cang Chai (Unsplash).jpg", "Mù Cang Chải", "Mu Cang Chai terraces", (.5, .5)),
+    ("dalat", "Xuan Huong Lake in Da Lat (28219543381).jpg", "Hồ Xuân Hương, Đà Lạt", "Xuan Huong Lake, Da Lat", (.5, .85)),
+    ("muine", "Vietnam, Mui Ne sand dunes.jpg", "Đồi cát Mũi Né", "Mui Ne sand dunes", (.5, .5)),
+    ("phuquoc", "1 Phu Quoc sunset.jpg", "Phú Quốc", "Phu Quoc", (.5, .5)),
+    ("mekong", "Cai Rang floating market (15724707578).jpg", "Chợ nổi Cái Răng", "Cai Rang floating market", (.5, .5)),
+    ("saigon", "Saigon at Blue Hour.jpg", "Sài Gòn", "Saigon", (.5, .5)),
+]
 UA = {"User-Agent": "tv-remote-wallpapers/1.0 (https://github.com/HoangTran0410/tv-remote)"}
 
 
@@ -108,8 +126,28 @@ def save(im, path, **k):
     return hashlib.sha256(b.getvalue()).hexdigest(), len(b.getvalue())
 
 
+def vn():
+    """docs/home/vn-*.jpg (1920x1080), vn-t.jpg (the theme's collage thumb) and vn.json (the list TV Home and loop.html read)."""
+    items = []
+    for i, name, vi, en, (ax, ay) in VN:
+        im, author, page, lic = commons(name)
+        im = fit(im, ay, ax)
+        _, n = save(im, os.path.join(OUT, "vn-" + i + ".jpg"), quality=82)
+        items.append({"file": "vn-" + i + ".jpg", "vi": vi, "en": en, "credit": author + ", " + lic, "source": page})
+        print("vn", i, n // 1024, "KB", author, lic)
+    items.append({"file": "terraces-sapa.jpg", "vi": "Ruộng bậc thang Sa Pa", "en": "Sa Pa rice terraces", "credit": "David McKelvey, CC BY 2.0",
+                  "source": "https://commons.wikimedia.org/wiki/File:Sapa_view_3.jpg"})
+    col = Image.new("RGB", (320, 180))
+    for k, f in enumerate(["vn-halong", "vn-hoian", "vn-trangan", "vn-hagiang"]):
+        col.paste(Image.open(os.path.join(OUT, f + ".jpg")).resize((160, 90), Image.LANCZOS), ((k % 2) * 160, (k // 2) * 90))
+    save(col, os.path.join(OUT, "vn-t.jpg"), quality=72)
+    json.dump({"v": 1, "slides": items}, open(os.path.join(OUT, "vn.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    open(os.path.join(OUT, "vn.json"), "a").write("\n")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
+    if os.environ.get("VN_ONLY"): return vn()          # only the Vietnam slideshow; the gallery list stays as signed
     items = []
     for i, nid, name, credit, a in WALLS:
         im = render(a) if nid is None else fit(fetch(nid), a)
@@ -133,6 +171,7 @@ def main():
     open(lst, "a").write("\n")
     subprocess.run(["java", os.path.join(ROOT, "dev", "release", "Sign.java"), "sign", KEY, lst], check=True)
     print("signed", lst)
+    vn()
 
 
 main()

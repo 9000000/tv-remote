@@ -11,12 +11,19 @@
   video { opacity: 0; transition: opacity .6s; }
   video.on { opacity: 1; }
   img.p { filter: blur(24px); transform: scale(1.1); }
+  /* ?s=<name>: a slideshow (<name>.json beside this page). Two pictures cross-fade; the caption sits bottom-right, small and soft */
+  img.s { opacity: 0; transition: opacity 1.6s ease-in-out; }
+  img.s.on { opacity: 1; }
+  #cap { position: fixed; right: 3vw; bottom: 3.2vh; max-width: 60vw; text-align: right; color: #fff; font: 600 clamp(12px, 1.5vw, 22px)/1.35 system-ui, sans-serif;
+         text-shadow: 0 1px 6px rgba(0,0,0,.75); opacity: 0; transition: opacity 1.6s ease-in-out; }
+  #cap.on { opacity: .85; }
+  #cap small { display: block; font-weight: 400; font-size: .72em; opacity: .7; }
 </style>
 <script>
   const HOSTS = ['tvremote.pages.dev', 'upload.wikimedia.org', 'videos.pexels.com', 'images.pexels.com', 'images.unsplash.com'];
   const q = new URLSearchParams(location.search);
   const ok = (s) => { try { const u = new URL(s); return u.protocol === 'https:' && HOSTS.includes(u.hostname); } catch { return false; } };
-  const v = q.get('v'), i = q.get('i'), p = q.get('p');
+  const v = q.get('v'), i = q.get('i'), p = q.get('p'), s = q.get('s');
   if (v && ok(v)) {
     // hidden until its first frame plays: an Android WebView draws a grey play button on a video that has none yet;
     // meanwhile the small picture ?p= (the theme's thumb), blurred, or the gradient
@@ -27,6 +34,38 @@
       if (p && ok(p)) { const b = document.createElement('img'); b.src = p; b.alt = ''; b.className = 'p'; document.body.append(b); }
       document.body.append(e); e.play().catch(() => {});
     });
+  } else if (s && /^[a-z0-9-]{1,24}$/.test(s)) {
+    // the list: [{file, vi, en, credit}] (docs/home/<s>.json); start by the clock, so a day / restart shows another; one timer, none while hidden
+    const sec = Math.max(5, Math.min(3600, parseInt(q.get('t'), 10) || 300)), vi = /^vi/i.test(navigator.language || '');
+    document.addEventListener('DOMContentLoaded', () => fetch(s + '.json').then((r) => r.json()).then((d) => {
+      const list = (d.slides || []).filter((x) => /^[a-z0-9._-]+\.jpg$/.test(x.file)).slice(0, 40);
+      if (!list.length) return;
+      const imgs = [0, 1].map(() => Object.assign(document.createElement('img'), { alt: '', className: 's' }));
+      const cap = document.createElement('div'); cap.id = 'cap';
+      document.body.append(...imgs, cap);
+      let n = Math.floor(Date.now() / (sec * 1000)) % list.length, cur = 0, timer = 0, busy = false;
+      const show = () => {
+        const x = list[n], nx = imgs[1 - cur];
+        busy = true;
+        nx.onload = () => {
+          nx.classList.add('on'); imgs[cur].classList.remove('on'); cur = 1 - cur; cap.classList.remove('on');
+          setTimeout(() => {
+            const [a, b] = vi ? [x.vi, x.en] : [x.en, x.vi];
+            cap.textContent = a + ' · ' + b;
+            const c = document.createElement('small'); c.textContent = '© ' + x.credit; cap.append(c);
+            cap.classList.add('on'); busy = false;
+          }, 800);
+          n = (n + 1) % list.length; imgs[cur].onload = null;
+          const old = imgs[1 - cur]; setTimeout(() => { if (!old.classList.contains('on')) old.removeAttribute('src'); }, 2000);   // the old one is let go once faded
+          wait();
+        };
+        nx.onerror = () => { busy = false; n = (n + 1) % list.length; wait(); };
+        nx.src = x.file;
+      };
+      const wait = () => { clearTimeout(timer); if (!document.hidden) timer = setTimeout(show, sec * 1000); };
+      document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(timer); else if (!busy) wait(); });
+      show();
+    }).catch(() => {}));
   } else if (i && ok(i)) {
     const e = document.createElement('img'); e.src = i; e.alt = '';
     document.addEventListener('DOMContentLoaded', () => document.body.append(e));

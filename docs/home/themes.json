@@ -2,6 +2,37 @@
  "v": 1,
  "themes": [
   {
+   "id": "vietnam",
+   "names": {
+    "vi": "Việt Nam",
+    "en": "Vietnam"
+   },
+   "for": {
+    "vi": "Ảnh đẹp khắp Việt Nam, đổi mỗi 5 phút, có chú thích",
+    "en": "Vietnam's loveliest places, a new one every 5 minutes, captioned"
+   },
+   "conf": {
+    "wall": "web",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?s=vn",
+    "shade": 45,
+    "widgets": [
+     "weather",
+     "lunar"
+    ],
+    "wsize": {
+     "weather": "big",
+     "lunar": "small"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "greet": true
+   },
+   "look": "ocean",
+   "src": "Wikimedia Commons, 15 photos (CC0, CC BY, CC BY-SA): authors and licences in docs/home/vn.json, shown under each picture",
+   "thumb": "https://tvremote.pages.dev/home/vn-t.jpg"
+  },
+  {
    "id": "modern",
    "names": {
     "vi": "Hiện đại",
@@ -266,6 +297,74 @@
    "look": "sunset",
    "src": "Wikimedia Commons, CC BY-SA 4.0 (PattayaPatrol): DZ6 2673 Golden hour at the beach - palm-thatched huts gentle waves and a sunset that slows time.jpg",
    "thumb": "https://tvremote.pages.dev/home/beach-sunset-t.jpg"
+  },
+  {
+   "id": "beachlive",
+   "names": {
+    "vi": "Hoàng hôn biển (video)",
+    "en": "Sunset beach (video)"
+   },
+   "for": {
+    "vi": "Thư giãn cuối ngày: video hoàng hôn trên biển chạy nền",
+    "en": "Unwinding: a sunset beach video in the background"
+   },
+   "conf": {
+    "wall": "web",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2F330px--Sunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.jpg",
+    "shade": 30,
+    "widgets": [
+     "clock",
+     "weather"
+    ],
+    "wsize": {
+     "clock": "small",
+     "weather": "big"
+    },
+    "wstyle": {
+     "clock": "light"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "greet": true
+   },
+   "look": "sunset",
+   "src": "Wikimedia Commons, CC0: File:Sunset timelapse on the beach in Libreville, Gabon.webm",
+   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm/330px--Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm.jpg"
+  },
+  {
+   "id": "halonglive",
+   "names": {
+    "vi": "Vịnh Hạ Long (video)",
+    "en": "Ha Long Bay (video)"
+   },
+   "for": {
+    "vi": "Video du thuyền trên vịnh Hạ Long chạy nền",
+    "en": "A video cruise across Ha Long Bay in the background"
+   },
+   "conf": {
+    "wall": "web",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fb%2Fbe%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fb%2Fbe%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm%2F330px--Ha_Long_Bay%252C_Vietnam_-_Dec_2024.webm.jpg",
+    "shade": 30,
+    "widgets": [
+     "clock",
+     "weather"
+    ],
+    "wsize": {
+     "clock": "small",
+     "weather": "big"
+    },
+    "wstyle": {
+     "clock": "light"
+    },
+    "cols": 5,
+    "focus": "glass",
+    "motion": "calm",
+    "greet": true
+   },
+   "look": "ocean",
+   "src": "Wikimedia Commons, CC BY-SA 4.0 (പയ്യൻ): File:Ha Long Bay, Vietnam - Dec 2024.webm",
+   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Ha_Long_Bay%2C_Vietnam_-_Dec_2024.webm/330px--Ha_Long_Bay%2C_Vietnam_-_Dec_2024.webm.jpg"
   },
   {
    "id": "city",
@@ -595,5 +694,5 @@
    }
   }
  ],
- "rev": 1792885085
+ "rev": 1792923431
 }

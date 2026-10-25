@@ -13,7 +13,7 @@ import java.net.URL
  * a restart or no network shows it at once. Same hosts as loop.html's HOSTS for images.
  */
 object NetPicture {
-    private const val KEEP = 8
+    private const val KEEP = 26                                    // a slideshow list ([Slideshow.MAX]) and the picture themes
     private const val MAX = 4 * 1024 * 1024
     private val HOSTS = setOf("tvremote.pages.dev", "upload.wikimedia.org", "images.pexels.com", "images.unsplash.com")   // docs/home/loop.html's HOSTS
 

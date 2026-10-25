@@ -16,8 +16,10 @@ class HomeThemesTest {
     @Test fun theShippedListIsSignedAndAllThemesAreWholeLooks() {
         assertTrue("docs/home/themes.json must verify (dev/sign/sign_themes.py)", SignedList.verify(list, sig))
         val t = HomeConfig.parseReady(String(list), "99.0.0")
-        assertEquals("modern", t.first().id)
-        assertEquals("Hiện đại", t.first().name("vi")); assertEquals("Modern", t.first().name("en")); assertEquals("Modern", t.first().name("fr"))
+        assertEquals("vietnam", t.first().id)                         // the site's showcase theme, first
+        assertEquals("Việt Nam", t.first().name("vi")); assertEquals("Vietnam", t.first().name("en"))
+        val m = t.first { it.id == "modern" }
+        assertEquals("Hiện đại", m.name("vi")); assertEquals("Modern", m.name("en")); assertEquals("Modern", m.name("fr"))
         for (r in t) assertEquals(r.id, HomeConfig.THEME_KEYS.sorted(), r.conf.keys().asSequence().toList().sorted())
     }
 
