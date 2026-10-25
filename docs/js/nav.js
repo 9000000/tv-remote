@@ -22,7 +22,7 @@
   // screens' sheet lists them all
   var LINKS = [
     { id: "features", href: "#remote", vi: "Tính năng", en: "Features" },
-    { id: "tvs", href: "#tvs", vi: "TV đã dùng", en: "TVs in use" },
+    { id: "tvs", href: "#tvs", vi: "TV đã thử", en: "Tested TVs" },
     { id: "guide", href: "guide", vi: "Hướng dẫn", en: "Guide", page: true },
     { id: "themes", href: "themes", vi: "Chủ đề", en: "Themes", page: true, more: true },
     { id: "demo", href: "demo/", vi: "Dùng thử", en: "Live demo", page: true, more: true },
