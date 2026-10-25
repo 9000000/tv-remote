@@ -780,7 +780,7 @@ async function homeOpen() {
     };
     const tile = (id, name, conf, mine, look, tiles = [], by = '') => {
       const on = c.theme === id;
-      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), ...homeMediaBadges(conf || {}).map((x) => el('small', { className: 'badge', textContent: T(x.id, x.args) })), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), ((t) => t.length ? el('small', { className: 'badge', textContent: t.join(' · ') }) : null)(homeMediaBadges(conf || {}).map((x) => T(x.id, x.args))), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
       const info = el('button', { type: 'button', className: 'small iconbtn wallx info', textContent: 'ⓘ', title: T('home.theme_info'), 'aria-label': T('home.theme_info'), onclick: () => showInfo(id, name, conf) });
       if (!mine) return el('span', { className: 'wallcell' }, b, info);
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),
