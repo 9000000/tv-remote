@@ -560,4 +560,6 @@
     <string name="cc_working">Clearing…</string>
     <string name="cc_footer">CPU %1$s · RAM %2$s</string>
     <string name="cc_footer_ram">RAM %1$s</string>
+    <string name="tip_menu">Hold OK or press ☰ on an app for more options</string>
+    <string name="tip_close">Close tip</string>
 </resources>

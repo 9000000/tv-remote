@@ -82,6 +82,10 @@ object Store {
         return out
     }
 
+    /** The "hold OK for more" tip: its own flag, outside the settings, so a theme or an import never brings it back. */
+    fun tipIsDone(c: Context) = prefs(c).getBoolean("tip_menu_done", false)
+    fun tipDone(c: Context) { if (!tipIsDone(c)) prefs(c).edit().putBoolean("tip_menu_done", true).apply() }
+
     /** When the background last changed (ms), from a choice or from the rotation. */
     fun last(c: Context) = prefs(c).getLong("wlast", 0L)
 

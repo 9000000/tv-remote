@@ -558,4 +558,6 @@
     <string name="cc_working">Đang dọn…</string>
     <string name="cc_footer">CPU %1$s · RAM %2$s</string>
     <string name="cc_footer_ram">RAM %1$s</string>
+    <string name="tip_menu">Giữ OK hoặc bấm ☰ trên một app để xem thêm</string>
+    <string name="tip_close">Đóng gợi ý</string>
 </resources>

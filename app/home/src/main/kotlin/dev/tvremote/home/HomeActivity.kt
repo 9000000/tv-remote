@@ -253,8 +253,8 @@ class HomeActivity : Activity() {
         grid = Flat(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         col.addView(grid, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(40) })
         // no widgets: the grid starts low, so the first row is whole and the second is cut by the screen's edge; the wallpaper above
-        grid.viewTreeObserver.addOnGlobalLayoutListener { peek() }  // after every layout: rows came or went, a card opened
-        scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, _ -> veil() }
+        grid.viewTreeObserver.addOnGlobalLayoutListener { peek(); if (tipOn) (grid.getChildAt(0) as? ViewGroup)?.let { tipPlace(it) } }  // after every layout: rows came or went, a card opened
+        scroll.viewTreeObserver.addOnGlobalFocusChangeListener { _, _ -> veil(); tip() }
         scroll.addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (b - t != ob - ot) peek() }
 
         setContentView(root)
@@ -542,6 +542,72 @@ class HomeActivity : Activity() {
         for (t in tileCache.values) t.app?.let { a -> t.mark(badges.of(a.pkg) ?: Badges.POWER.takeIf { a.pkg == power }) { Badges.label(it, m, h) } }
     }
 
+    // ---- the one-time tip: "Hold OK on an app for more options", under the first row while focus is in it; gone once ✕ or a menu was used ----
+
+    private val tipClose: ImageView by lazy {
+        ImageView(this).apply {
+            setImageResource(R.drawable.ic_close); setPadding(dp(6), dp(6), dp(6), dp(6)); isFocusable = true; contentDescription = getString(R.string.tip_close)
+            imageTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(PILL_INK, Color.WHITE))
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.WHITE) })
+                addState(intArrayOf(), GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0x00000000) })
+            }
+            setOnClickListener { Store.tipDone(this@HomeActivity); (grid.getChildAt(0) as? ViewGroup)?.let { r -> r.getChildAt(Nav.nearest(centres(r), centre(this)).coerceAtLeast(0)) }?.let { go(it) }; tip() }   // focus goes back to the row, not to what is nearest by luck
+            setOnKeyListener { _, code, e ->
+                if (e.action != KeyEvent.ACTION_DOWN) false
+                else when (code) {
+                    KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        val toRow = (code == KeyEvent.KEYCODE_DPAD_UP) == tipBelow          // toward the first row; the other way leaves the tip: row 2 (below it) or what is above the grid (above it)
+                        val r = grid.getChildAt(if (toRow || !tipBelow) 0 else 1) as? ViewGroup
+                        val t = r?.getChildAt(Nav.nearest(centres(r), centre(this)).coerceAtLeast(0))
+                        if (t == null) nudge() else if (toRow || tipBelow) go(t) else { tipPast = true; try { step(t as Tile, KeyEvent.KEYCODE_DPAD_UP) } finally { tipPast = false } }
+                        true
+                    }
+                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> { nudge(); true }
+                    else -> false
+                }
+            }
+        }
+    }
+    private fun View.nudge() { animate().cancel(); animate().translationY(dp(3).toFloat()).setDuration(70).withEndAction { animate().translationY(0f).setDuration(120).start() }.start() }
+    private val tipView: LinearLayout by lazy {
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; visibility = View.GONE; alpha = 0f
+            setPadding(dp(20), dp(6), dp(8), dp(6)); elevation = dp(6).toFloat()
+            background = GradientDrawable().apply { cornerRadius = dp(30).toFloat(); setColor(PILL_BG); setStroke(dp(1), PILL_EDGE) }
+            addView(Font.on(TextView(this@HomeActivity)).apply { text = getString(R.string.tip_menu); textSize = 16f; setTextColor(Color.WHITE) })
+            addView(tipClose, LinearLayout.LayoutParams(dp(36), dp(36)).apply { leftMargin = dp(14) })
+            content.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { leftMargin = dp(48) })
+        }
+    }
+    private var tipOn = false
+    private var tipPast = false                                       // ✕ hands Up on to what is above the grid: the tip must not catch it again
+    private var tipBelow = true                                       // under the row's names when the screen has room (first row seen from the top of the page), else just above the row
+
+    private fun tipPlace(row: ViewGroup) {
+        var y = 0; var p: View? = row
+        while (p != null && p !== content) { y += p.top; p = p.parent as? View }
+        val h = dp(48)
+        tipBelow = y + row.height + dp(40) + h <= scroll.height - dp(8)
+        val at = if (tipBelow) y + row.height + dp(40) else y - h - dp(10)
+        val lp = tipView.layoutParams as FrameLayout.LayoutParams
+        if (lp.topMargin != at) { lp.topMargin = at; tipView.requestLayout() }
+    }
+
+    /** Shown while focus is on the first row's tiles (or on its ✕); an overlay in the scrolled page, so the grid does not move. */
+    private fun tip() {
+        val row = grid.getChildAt(0) as? ViewGroup
+        val f = currentFocus
+        val want = !locked && !away && moving == null && !Store.tipIsDone(this) && row != null && row.childCount > 0 && f != null && (f === tipClose || (f.parent === row && f is Tile))
+        if (want) tipPlace(row!!)
+        if (want == tipOn) return
+        tipOn = want
+        tipView.animate().cancel()
+        val d = if (Motion.on) 150L else 0L
+        if (want) { tipView.visibility = View.VISIBLE; tipView.animate().alpha(1f).setDuration(d).start() }
+        else tipView.animate().alpha(0f).setDuration(d).withEndAction { if (!tipOn) tipView.visibility = View.GONE }.start()
+    }
+
     private fun firstGridTile(): View? = (grid.getChildAt(0) as? ViewGroup)?.getChildAt(0)
 
     /** Where Down from [v] (a bar button or a card) lands in the grid: the tile it came up from (a card only), else the first row's tile nearest in x. */
@@ -702,7 +768,7 @@ class HomeActivity : Activity() {
         Font.on(TextView(this)).apply {                                // a pill at the top centre, over no tile (the clock is left, the buttons right)
             text = getString(R.string.move_hint); textSize = 17f; setTextColor(Color.WHITE); gravity = Gravity.CENTER
             setPadding(dp(22), dp(10), dp(22), dp(10)); visibility = View.GONE; alpha = 0f
-            background = GradientDrawable().apply { cornerRadius = dp(30).toFloat(); setColor(0xE6101420.toInt()); setStroke(dp(1), 0x33FFFFFF) }
+            background = GradientDrawable().apply { cornerRadius = dp(30).toFloat(); setColor(PILL_BG); setStroke(dp(1), PILL_EDGE) }
             (window.decorView as ViewGroup).let { (it.findViewById<ViewGroup>(android.R.id.content)).addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin = dp(40) }) }
         }
     }
@@ -832,6 +898,7 @@ class HomeActivity : Activity() {
         val rows = IntArray(grid.childCount) { (grid.getChildAt(it) as ViewGroup).childCount }
         val row = (0 until grid.childCount).firstOrNull { (grid.getChildAt(it) as ViewGroup).indexOfChild(v) >= 0 } ?: return false
         val col = (grid.getChildAt(row) as ViewGroup).indexOfChild(v)
+        if (row == 0 && tipOn && !tipPast && dir == (if (tipBelow) Nav.Dir.DOWN else Nav.Dir.UP)) { go(tipClose); return true }   // the tip's ✕ is the next stop away from row 1 (below or above it); the key again goes on
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
             if (dir == Nav.Dir.UP) { val hot = widgets.nearestHot(centre(v)); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
@@ -1235,6 +1302,7 @@ class HomeActivity : Activity() {
      * limited ([AppRules]); no answer = no Lock & limits group and no force stop / cache, everything else is here without it.
      */
     private fun menu(a: App) {
+        Store.tipDone(this); tip()                                    // they found the menu: the tip has done its job
         if (a.grid || a.pin != null || a.pkg == packageName) { menu(a, null); return }
         AppRules.read(this, a.pkg) { st -> menu(a, st) }
     }
@@ -1849,6 +1917,9 @@ const val DIM = 0.6f                                                  // the til
 
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
 private const val HEAD_DIM = 0xB3FFFFFF.toInt()                       // the greeting over the day
+private const val PILL_BG = 0xE6101420.toInt()                          // the dark pill: the move hint, the menu tip, the name tags
+private const val PILL_EDGE = 0x33FFFFFF                                // its 1 dp edge
+private const val PILL_INK = 0xFF111318.toInt()                         // a dark glyph on a white (focused) circle
 private const val HEAD_RULE = 0x40FFFFFF                             // the line between the clock and the day
 private const val POWER_INK = 0xFF7EE0A1.toInt()                    // the power mark: the green of "on", apart from the lock's red and the limit's amber
 
@@ -1857,7 +1928,7 @@ private const val POWER_INK = 0xFF7EE0A1.toInt()                    // the power
  * measured only when the mark changes: nothing is allocated while it is drawn (or while the tile grows).
  */
 class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
-    private val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6101420.toInt() }
+    private val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = PILL_BG }
     private val text = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE; textSize = dp(13).toFloat(); typeface = Font.medium
     }
