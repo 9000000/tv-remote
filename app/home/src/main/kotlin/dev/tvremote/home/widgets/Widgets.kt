@@ -141,6 +141,10 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         return hot.filter { it.isShown }.minByOrNull { h -> h.getLocationOnScreen(at); Math.abs(at[0] + h.width / 2 - x) }
     }
 
+    /** The card straight above or below [x] that takes focus, else null: a card with nothing to press (the lunar calendar) is
+     *  passed by, and Down from the gear at the right no longer crossed the screen to the weather at the left. */
+    fun hotAt(x: Int): View? = nearestHot(x)?.takeIf { h -> val at = IntArray(2); h.getLocationOnScreen(at); x in at[0]..at[0] + h.width }
+
     private fun hotify(v: View, k: String) {
         v.isFocusable = true; v.tag = k; hot.add(v)
         if (Build.VERSION.SDK_INT >= 23) v.foreground = android.graphics.drawable.StateListDrawable().apply {

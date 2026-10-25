@@ -225,7 +225,7 @@ class HomeActivity : Activity() {
         }
         for (b in listOf(netPill, settingsPill)) bar.add(b)
         for (b in bar.buttons) b.setOnKeyListener { v, code, e ->           // Down from the bar: the widget below it first, the grid only when there is none
-            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.nearestHot(centre(v))?: below(v))?.let { go(it); true } == true
+            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.hotAt(centre(v))?: below(v))?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from the left pill down-left onto a tile, and OK then opened its app
         netPill.nextFocusLeftId = View.generateViewId().also { netPill.id = it }
@@ -893,7 +893,7 @@ class HomeActivity : Activity() {
         if (row == 0 && tipOn && !tipPast && dir == (if (tipBelow) Nav.Dir.DOWN else Nav.Dir.UP)) { go(tipClose); return true }   // the tip's ✕ is the next stop away from row 1 (below or above it); the key again goes on
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
-            if (dir == Nav.Dir.UP) { val hot = widgets.nearestHot(centre(v)); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
+            if (dir == Nav.Dir.UP) { val hot = widgets.hotAt(centre(v)); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }
