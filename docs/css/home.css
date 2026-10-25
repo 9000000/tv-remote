@@ -98,7 +98,7 @@
 .car-track::-webkit-scrollbar{display:none}
 @media (pointer:fine){.car-track{cursor:grab}}
 .car-track.drag{cursor:grabbing;scroll-snap-type:none;scroll-behavior:auto;user-select:none}
-.car-track.drag .fc{pointer-events:none}
+.car-track.drag>*{pointer-events:none}
 .car-track.glide{scroll-snap-type:none;scroll-behavior:auto}   /* home.js slides it: the snap would pull against the glide */
 @media (prefers-reduced-motion:no-preference){.car-track{scroll-behavior:smooth}}
 .fc{flex:0 0 360px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 10px 18px;color:var(--text);transition:border-color .15s,transform .15s}
@@ -125,16 +125,21 @@
 #apkqr .x:hover{border-color:var(--blue)}
 
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}   /* the anchor jump to #install */
-/* TV Home's ready-made themes: a strip that scrolls on a phone, a grid on a wide screen */
-.h-themes{padding:40px 0 24px;overflow-x:clip}
-.h-themes .wrap>h2{font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.025em}
-.h-themes .lead{margin:6px 0 22px}
-.thc-strip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 14px;-webkit-overflow-scrolling:touch}
-.thc{flex:0 0 260px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 8px 14px;color:var(--text);transition:border-color .15s,transform .15s}
-.thc:hover{border-color:var(--line2);transform:translateY(-2px)}
-.thc:focus-visible,.thc-strip:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
-.thc img{width:100%;height:auto;aspect-ratio:16/9;border-radius:9px;display:block;background:var(--bg2)}
-.thc h3{font-size:16px;margin:8px 6px 0;line-height:1.25}
-.thc p{color:var(--muted);font-size:13.5px;line-height:1.45;margin:0 6px}
-@media (min-width:1000px){.thc-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible;padding-bottom:2px}.thc{flex:none}}
-@media (max-width:560px){.thc{flex-basis:72%}.h-themes .lead{font-size:15px}}
+/* the themes row is the "And more" row (.car-*, .fc); only what differs is here */
+.h-themes{padding-top:40px}
+button.fc{font:inherit;text-align:left;cursor:pointer;width:auto}
+.thc img{aspect-ratio:16/9}
+.thc-own{text-decoration:none}
+.thc-ph{display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;border:2px dashed var(--line2);color:var(--muted)}
+.thc-ph svg{width:44px;height:44px}
+.thc-own:hover .thc-ph{border-color:var(--blue);color:var(--blue)}
+.car-head .lead a{color:var(--blue);white-space:nowrap}
+.th-zoom{border:0;padding:0;background:transparent;color:var(--text);max-width:none;max-height:none;margin:auto;overflow:visible}
+.th-zoom::backdrop{background:rgba(0,0,0,.92)}
+.th-zoom[open]{display:flex;flex-direction:column;gap:12px;align-items:center;width:min(94vw,calc((100vh - 130px)*16/9))}
+.th-zoom img{width:100%;height:auto;aspect-ratio:16/9;border-radius:var(--r);display:block;background:var(--bg2)}
+.th-x{align-self:flex-end}
+.th-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%}
+.th-name{margin:0;font-size:20px;color:#fff;text-align:center}
+.th-zoom .car-b{background:var(--card2)}
+@media (max-width:560px){.h-themes .car-head h2{font-size:26px}.h-themes .car-head .lead{display:block;font-size:15px}.th-name{font-size:18px}}

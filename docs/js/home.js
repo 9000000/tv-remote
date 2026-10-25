@@ -44,10 +44,11 @@
     rv.forEach(function(el){ io.observe(el); });
   } else rv.forEach(function(el){ el.classList.add("in"); });
 
+  // (one function for every row of the page: "And more", the themes)
   // the row: buttons, arrow keys and the "3 / 8" read the same scroll position; nothing moves by itself
-  (function(){
-    var t = document.getElementById("car"); if (!t) return;
-    var cards = t.querySelectorAll(".fc"), n = document.getElementById("car-n"), pv = document.getElementById("car-prev"), nx = document.getElementById("car-next");
+  function carousel(id){
+    var t = document.getElementById(id); if (!t) return;
+    var cards = t.children, n = document.getElementById(id + "-n"), pv = document.getElementById(id + "-prev"), nx = document.getElementById(id + "-next");
     var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     function step(){ return cards.length > 1 ? cards[1].offsetLeft - cards[0].offsetLeft : t.clientWidth; }
     function upd(){
@@ -106,6 +107,27 @@
     t.addEventListener("dragstart", function(e){ e.preventDefault(); });   // the pictures and links would start a native drag instead
     t.addEventListener("scroll", function(){ requestAnimationFrame(upd); }, {passive:true});
     window.addEventListener("resize", upd); upd();
+  }
+  carousel("car"); carousel("th");
+
+  // a theme's picture, large: a dialog (Esc, the X and a tap outside close it, arrows go through the themes); focus goes back to the card
+  (function(){
+    var d = document.getElementById("th-zoom"); if (!d || !d.showModal) return;
+    var cards = Array.prototype.slice.call(document.querySelectorAll("#th [data-th]")), at = 0, from = null;
+    var img = d.querySelector("img"), nm = d.querySelector(".th-name");
+    function show(i){
+      at = (i + cards.length) % cards.length;
+      img.src = cards[at].querySelector("img").src; nm.innerHTML = cards[at].querySelector("h3").innerHTML;
+    }
+    cards.forEach(function(c, i){ c.addEventListener("click", function(){ from = c; show(i); d.showModal(); }); });
+    d.querySelector(".th-x").onclick = function(){ d.close(); };
+    d.querySelector(".th-p").onclick = function(){ show(at - 1); };
+    d.querySelector(".th-n").onclick = function(){ show(at + 1); };
+    d.addEventListener("click", function(e){ if (e.target === d) d.close(); });   // the backdrop counts as the dialog itself
+    d.addEventListener("keydown", function(e){
+      if (e.key === "ArrowRight"){ e.preventDefault(); show(at + 1); } else if (e.key === "ArrowLeft"){ e.preventDefault(); show(at - 1); }
+    });
+    d.addEventListener("close", function(){ if (from) from.focus(); });
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();
