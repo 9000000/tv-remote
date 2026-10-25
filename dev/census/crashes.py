@@ -5,9 +5,12 @@
   crashes.py --v 0.3.1 --app pc only one version / app
   crashes.py SIG                one crash with its stack and device (SIG = the first letters of the sig column)
   crashes.py --delete SIG       remove one (all its versions)
+  crashes.py --json             machine output for agents: [{sig, app, v, kind, msg, count, installs, first, last, device, stack}]
+  crashes.py --since 2026-10-01 only crashes first seen on/after that day;  --new = since the latest release tag's date
+  crashes.py SIG --frames       adds repo path:line for each stack frame that maps to a file here (also with --json: "frames")
   crashes.py --url http://127.0.0.1:8787   a local `wrangler dev`
 """
-import argparse, json, os, sys, urllib.parse, urllib.request
+import argparse, json, os, re, subprocess, sys, urllib.parse, urllib.request
 
 URL = "https://tvr-census.99-hoangtran.workers.dev"
 
@@ -32,6 +35,65 @@ def call(base, path, params, method="GET"):
         sys.exit(f"{e.code} {e.read().decode()[:200]}")
 
 
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def release_day():
+    """Date (YYYY-MM-DD) of the latest release tag: --new means first seen since then."""
+    try:
+        tag = subprocess.run(["git", "-C", ROOT, "describe", "--tags", "--abbrev=0"], capture_output=True, text=True, check=True).stdout.strip()
+        return subprocess.run(["git", "-C", ROOT, "log", "-1", "--format=%cs", tag], capture_output=True, text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        sys.exit("--new: no git tag found")
+
+
+def device(r):
+    return " ".join(str(r[k]) for k in ("brand", "model", "android", "os", "arch", "java") if r.get(k))
+
+
+def normal(r):
+    """The stable shape of --json (the worker's own field names may change)."""
+    return {"sig": r["sig"], "app": r["app"], "v": r["v"], "kind": r["kind"], "msg": r["msg"], "count": r["n"], "installs": r["installs"],
+            "first": r["first"], "last": r["last"], "device": device(r), "stack": r.get("stack") or ""}
+
+
+_files = {}
+
+
+def files():
+    """Source files of the repo by base name (build folders skipped)."""
+    if not _files:
+        for d, ds, fs in os.walk(os.path.join(ROOT, "app")):
+            ds[:] = [x for x in ds if x not in ("build", ".gradle", "node_modules", ".cache")]
+            for f in fs:
+                if f.endswith((".kt", ".java", ".js")):
+                    _files.setdefault(f, []).append(os.path.join(d, f))
+    return _files
+
+
+def frames(stack):
+    """[{frame, path, line}] for the stack's frames that map to a file here. Kotlin / Java: `pkg.Class.fn(File.kt:12)`, the package must
+    match the folders; JS: `file.js:12[:col]`, a file under app/shared/web/js (any other copy of the name is skipped)."""
+    out = []
+    for ln in (stack or "").splitlines():
+        ln = ln.strip()
+        m = re.search(r"([\w.$]+)\.[\w$<>]+\((\w+\.(?:kt|java)):(\d+)\)", ln)
+        path = None
+        if m:
+            pkg = m.group(1).rsplit(".", 1)[0].replace(".", "/") if "." in m.group(1) else ""
+            c = files().get(m.group(2), [])
+            hit = [p for p in c if pkg and pkg in p.replace(os.sep, "/")] or (c if len(c) == 1 else [])
+            path, line = (hit[0], m.group(3)) if hit else (None, 0)
+        else:
+            m = re.search(r"([\w.-]+\.js):(\d+)", ln)
+            if m:
+                hit = [p for p in files().get(m.group(1), []) if "/web/js/" in p.replace(os.sep, "/")]
+                path, line = (hit[0], m.group(2)) if hit else (None, 0)
+        if path:
+            out.append({"frame": ln[:160], "path": os.path.relpath(path, ROOT), "line": int(line)})
+    return out
+
+
 def table(rows):
     if not rows:
         print("(no crashes)")
@@ -41,11 +103,14 @@ def table(rows):
         print(f"{r['sig'][:8]:<10} {r['n']:>4} {r['installs']:>4} {r['app']:<5} {r['v']:<8} {r['last']:<10} {r['loc']:<6} {r['kind']}: {(r['msg'] or '')[:70]}")
 
 
-def one(rows):
+def one(rows, with_frames=False):
     for r in rows:
-        dev = " ".join(str(r[k]) for k in ("brand", "model", "android", "os", "arch", "java") if r.get(k))
+        dev = device(r)
         print(f"== {r['sig']}  {r['app']} {r['v']}  x{r['n']} ({r['installs']} installs)  {r['first']} .. {r['last']}  [{r['loc']}]\n   device: {dev}\n   {r['kind']}: {r['msg']}\n")
         print(r["stack"] or "(no stack)", "\n")
+        if with_frames:
+            for f in frames(r["stack"]):
+                print(f"   -> {f['path']}:{f['line']}   {f['frame']}")
 
 
 def main():
@@ -55,12 +120,31 @@ def main():
     a.add_argument("--app", default="")
     a.add_argument("--url", default=URL)
     a.add_argument("--delete", metavar="SIG")
+    a.add_argument("--json", action="store_true")
+    a.add_argument("--since", default="", metavar="YYYY-MM-DD")
+    a.add_argument("--new", action="store_true")
+    a.add_argument("--frames", action="store_true")
     o = a.parse_args()
+    since = release_day() if o.new else o.since
+    if o.json or o.since or o.new:
+        rows = call(o.url, "/v1/crashes", {"sig": full(o, o.sig) if o.sig else "", "v": o.v, "app": o.app})["crashes"]
+        rows = [r for r in rows if r["first"] >= since]
+        if o.json:
+            out = [normal(r) for r in rows]
+            if o.frames:
+                for x in out:
+                    x["frames"] = frames(x["stack"])
+            print(json.dumps(out, ensure_ascii=False, indent=1))
+        elif o.sig:
+            one(rows, o.frames)
+        else:
+            table(rows)
+        return
     if o.delete:
         sig = full(o, o.delete)
         print(call(o.url, "/v1/crashes", {"sig": sig}, "DELETE"))
     elif o.sig:
-        one(call(o.url, "/v1/crashes", {"sig": full(o, o.sig)})["crashes"])
+        one(call(o.url, "/v1/crashes", {"sig": full(o, o.sig)})["crashes"], o.frames)
     else:
         table(call(o.url, "/v1/crashes", {"v": o.v, "app": o.app})["crashes"])
 

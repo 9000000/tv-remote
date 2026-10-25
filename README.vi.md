@@ -415,6 +415,8 @@ TCL Trung Quốc không có Tùy chọn nhà phát triển: Cài đặt → Gi�
 
 ## Cho người sửa code
 
+Gửi chủ đề cho TV Home: xem [THEMES.md](THEMES.md) (tiếng Anh).
+
 Tên gọi, bố cục, test và phát hành: [AGENTS.md](AGENTS.md). Công cụ: [dev/README.md](dev/README.md). Vì sao có đoạn code lạ: [dev/DECISIONS.md](dev/DECISIONS.md). Trang giới thiệu: [docs/README.md](docs/README.md).
 
 <details>

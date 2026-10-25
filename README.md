@@ -411,7 +411,7 @@ TCL China has no Developer options: Settings → About, press Up, Down, Left, Ri
 
 ## For developers
 
-Code names, layout, tests and releases: [AGENTS.md](AGENTS.md). Dev tools: [dev/README.md](dev/README.md). Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). The site: [docs/README.md](docs/README.md).
+Code names, layout, tests and releases: [AGENTS.md](AGENTS.md). Dev tools: [dev/README.md](dev/README.md). Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). The site: [docs/README.md](docs/README.md). Send a TV Home theme: [THEMES.md](THEMES.md).
 
 <details>
 <summary><b>How it works</b></summary>

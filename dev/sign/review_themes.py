@@ -9,9 +9,13 @@ docs/img/themes/<id>.webp (480x270) + <id>-big.webp (1280x720), a 330 px docs/ho
 appended to docs/home/themes.json (community: true, by), dev/sign/sign_themes.py signs it, the worker is told (done), and the git add
 line is printed. Nothing is committed or pushed.
 
+Agents: `--list --json` (pending + flags; pictures saved to a temp dir, paths printed), `--approve ID`, `--reject ID`, and
+`--local DIR` (a pull-request submission folder, see THEMES.md: same validation as the worker, same approve path, then the folder is
+removed; with `--dry` nothing is removed or told). Rules for agents: dev/themes/REVIEW.md.
+
 THEMES_URL overrides the worker's address (a local `wrangler dev`). Needs sips (macOS) and cwebp.
 """
-import base64, html, json, os, re, shutil, subprocess, sys, tempfile, unicodedata, urllib.parse, urllib.request, webbrowser
+import argparse, base64, html, json, os, re, shutil, subprocess, sys, tempfile, unicodedata, urllib.parse, urllib.request, webbrowser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 URL = os.environ.get("THEMES_URL", "https://tvr-themes.99-hoangtran.workers.dev").rstrip("/")
@@ -22,6 +26,120 @@ WALL_DIR = os.path.join(ROOT, "docs", "home", "community")
 IMG_DIR = os.path.join(ROOT, "docs", "img", "themes")
 READY_MAX = 120   # HomeConfig.READY_MAX: TV Home reads at most this many ready themes
 LOOK = "mist"   # the list's drawn stand-in for a photo wall (sign_themes.py wants one); the real picture is the thumb
+
+
+# The worker's rules (dev/themes/src/logic.js), ported for --local: keep the same.
+THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle", "wopt",
+              "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]
+MAX_PREVIEW, MAX_WALL, MAX_CONF, ALLOWED_HOST = 150_000, 1_000_000, 8192, "tvremote.pages.dev"
+
+
+def clean(s, n=24):
+    if not isinstance(s, str):
+        return ""
+    s = "".join(" " if unicodedata.category(c) in ("Cc", "Cf", "Zl", "Zp") else c for c in s)
+    return re.sub(r"\s+", " ", s).strip()[:n].strip()
+
+
+def is_jpeg(b):
+    return len(b) > 4 and b[:3] == b"\xff\xd8\xff"
+
+
+def is_webp(b):
+    return len(b) > 12 and b[:4] == b"RIFF" and b[8:12] == b"WEBP"
+
+
+def plain(v, depth=0):
+    if depth > 5:
+        return False
+    if v is None or isinstance(v, (bool, int, float)):
+        return True
+    if isinstance(v, str):
+        return len(v) <= 600
+    if isinstance(v, list):
+        return len(v) <= 60 and all(plain(x, depth + 1) for x in v)
+    if isinstance(v, dict):
+        return len(v) <= 60 and all(len(k) <= 60 and plain(x, depth + 1) for k, x in v.items())
+    return False
+
+
+def own_site(v):
+    s = urllib.parse.unquote(v)
+    al = re.findall(r"(https?)://([^/?#\s\"']+)", s, re.I)
+    return bool(al) and all(a.lower() == "https" and h.lower() == ALLOWED_HOST for a, h in al)
+
+
+def flags_of(name, by, conf):
+    out = []
+    if conf.get("wall") == "web":
+        u = urllib.parse.urlparse(str(conf.get("wurl")))
+        if not (u.scheme == "https" and u.hostname == ALLOWED_HOST):
+            out.append("web wall: wurl is not on %s (%s)" % (ALLOWED_HOST, str(conf.get("wurl"))[:80]))
+    urls = []
+
+    def walk(v):
+        if isinstance(v, str):
+            if re.search(r"https?://", v, re.I) and not own_site(v):
+                urls.append(v)
+        elif isinstance(v, list):
+            for x in v:
+                walk(x)
+        elif isinstance(v, dict):
+            for k, x in v.items():
+                walk(k)
+                walk(x)
+    walk(conf)
+    if urls:
+        out.append("URL in conf: " + " | ".join(u[:80] for u in urls[:3]))
+    if len(name) >= 20 or len(by) >= 20:
+        out.append("very long name or sender")
+    return out
+
+
+def validate_folder(d):
+    """A submission folder -> (item, None) or (None, error). item looks like a pending one from the worker (+ "dir")."""
+    try:
+        o = json.load(open(os.path.join(d, "theme.tvtheme.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, "theme.tvtheme.json missing or not JSON"
+    if not isinstance(o, dict) or o.get("tvtheme") != 1:
+        return None, "tvtheme must be 1"
+    name, by = clean(o.get("name")), clean(o.get("by"))
+    if not name:
+        return None, "name: 1-24 characters"
+    if not by:
+        return None, 'by: 1-24 characters (add "by" to the json)'
+    lang = o.get("lang", "en")
+    if lang not in ("vi", "en"):
+        return None, "lang must be vi or en"
+    conf = o.get("conf")
+    if not isinstance(conf, dict):
+        return None, "conf must be an object"
+    extra = [k for k in conf if k not in THEME_KEYS]
+    if extra:
+        return None, "not theme settings: " + ", ".join(extra[:5])
+    if not plain(conf):
+        return None, "conf: plain JSON only"
+    if len(json.dumps(conf, separators=(",", ":"), ensure_ascii=False)) > MAX_CONF:
+        return None, "conf too big (8 KB)"
+    try:
+        prev = open(os.path.join(d, "preview.jpg"), "rb").read()
+    except OSError:
+        return None, "preview.jpg missing"
+    if len(prev) > MAX_PREVIEW:
+        return None, "preview over 150 KB"
+    if not (is_jpeg(prev) or is_webp(prev)):
+        return None, "preview is not a jpeg/webp"
+    wall = os.path.join(d, "wall.jpg")
+    if os.path.exists(wall):
+        w = open(wall, "rb").read()
+        if len(w) > MAX_WALL:
+            return None, "wall over 1 MB"
+        if not is_jpeg(w):
+            return None, "wall is not a jpeg"
+    sid = re.sub(r"[^a-z0-9]+", "", os.path.basename(os.path.abspath(d)).lower())[:16] or "local"
+    return {"id": sid, "name": name, "by": by, "lang": lang, "conf": conf, "flags": flags_of(name, by, conf), "has_wall": os.path.exists(wall),
+            "dir": os.path.abspath(d)}, None
 
 
 def say(*a):   # where approve() reports; dev/admin.py swaps it to collect the lines for its page
@@ -176,8 +294,82 @@ def read_token():
     return open(TOKEN_FILE).read().strip()
 
 
+def pending_items(token):
+    items = json.loads(call("/v1/admin/pending", token=token))
+    tmp = tempfile.mkdtemp(prefix="tvr-themes-")
+    fetch_assets(items, token, tmp)
+    return items, tmp
+
+
+def list_json(token):
+    """Agent view: pending themes + flags; the pictures are files an agent can open."""
+    items, tmp = pending_items(token)
+    out = []
+    for t in items:
+        t["preview_path"] = os.path.join(tmp, t["id"] + ".preview")
+        t["wall_path"] = os.path.join(tmp, t["id"] + ".wall.jpg") if t.get("has_wall") else None
+        t["free_slots"] = READY_MAX - len(json.load(open(LIST, encoding="utf-8"))["themes"])
+        out.append(t)
+    print(json.dumps(out, ensure_ascii=False, indent=1))
+
+
+def decide(token, tid, ok):
+    """--approve / --reject for one pending id, no prompts."""
+    items, tmp = pending_items(token)
+    t = next((x for x in items if x["id"] == tid), None)
+    if not t:
+        sys.exit("no pending theme %r" % tid)
+    if not ok:
+        call("/v1/admin/%s/reject" % tid, "POST", token)
+        print("rejected", tid)
+        return
+    i = approve(t, token, tmp)
+    if not i:
+        sys.exit("not approved")
+    call("/v1/admin/%s/approve" % tid, "POST", token)
+    call("/v1/admin/%s/done" % tid, "POST", token)
+    print("approved %s as %s\nNext (nothing committed): git add %s" % (tid, i, " ".join(git_paths([i]))))
+
+
+def local(d, dry=False):
+    t, err = validate_folder(d)
+    if err:
+        sys.exit("refused: " + err)
+    for f in t["flags"]:
+        print("! " + f)
+    if t["flags"]:
+        sys.exit("refused: flags need a person (a foreign URL in conf is never approved)")
+    tmp = tempfile.mkdtemp(prefix="tvr-themes-")
+    shutil.copy(os.path.join(d, "preview.jpg"), os.path.join(tmp, t["id"] + ".preview"))
+    if t["has_wall"]:
+        shutil.copy(os.path.join(d, "wall.jpg"), os.path.join(tmp, t["id"] + ".wall.jpg"))
+    i = approve(t, "", tmp)
+    shutil.rmtree(tmp, ignore_errors=True)
+    if not i:
+        sys.exit("not approved")
+    if not dry:
+        shutil.rmtree(d)
+    print("approved %s as %s%s\nNext (nothing committed): git add %s%s" % (t["id"], i, " (dry: folder kept)" if dry else "", " ".join(git_paths([i])),
+                                                                         "" if dry else " && git rm -r " + os.path.relpath(d, ROOT)))
+    return i
+
+
 def main():
+    a = argparse.ArgumentParser(description="Review community themes (see the module doc).")
+    a.add_argument("--list", action="store_true")
+    a.add_argument("--json", action="store_true")
+    a.add_argument("--approve", metavar="ID")
+    a.add_argument("--reject", metavar="ID")
+    a.add_argument("--local", metavar="DIR")
+    a.add_argument("--dry", action="store_true")
+    o = a.parse_args()
+    if o.local:
+        return local(o.local, o.dry)
     token = read_token()
+    if o.list:
+        return list_json(token) if o.json else sys.exit("--list needs --json")
+    if o.approve or o.reject:
+        return decide(token, o.approve or o.reject, bool(o.approve))
     items = json.loads(call("/v1/admin/pending", token=token))
     if not items:
         print("nothing pending")
