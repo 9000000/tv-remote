@@ -2110,11 +2110,13 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             fill(content)
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
+            val ts = if (h < dp(80)) 10f else 12f                     // many columns make small tiles: the name was cut under the icon (the user, 2026-10-26)
+            val icon = minOf(h * 45 / 100, h - dp(12) - (ts * 1.35f * c.resources.displayMetrics.scaledDensity).toInt() - dp(2))   // what is left once the name and paddings fit
             inner.addView(ImageView(c).apply {
                 if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(mark); imageTintList = ColorStateList.valueOf(Color.WHITE) }
-            }, LayoutParams(h * 45 / 100, h * 45 / 100))
+            }, LayoutParams(icon, icon))
             inner.addView(Font.on(TextView(c)).apply {
-                text = label; textSize = 12f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
+                text = label; textSize = ts; includeFontPadding = false; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
             fill(inner)
