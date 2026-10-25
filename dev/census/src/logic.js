@@ -59,15 +59,16 @@ const verKey = (a) => parseFloat(a) || 0;
 // An Android emulator (Google's images: ranchu / goldfish hardware, sdk_* or "Android SDK built for" models, emu* / generic* devices)
 export function emulator(t) {
   const s = (k) => (typeof t[k] === "string" ? t[k].toLowerCase() : "");
-  return /^(ranchu|goldfish)/.test(s("hw")) || /^goldfish/.test(s("board")) || /^(sdk_|android sdk built for)/.test(s("model"))
+  return /^(ranchu|goldfish)/.test(s("hw")) || /^vsoc/.test(s("soc")) || s("board") === "cutf"   // cutf / vsoc: Cuttlefish, a cloud emulator (sent as a OnePlus 8 Pro)
+    || /^goldfish/.test(s("board")) || /^(sdk_|android sdk built for)/.test(s("model"))
     || /^(emu64|emulator|generic)/.test(s("device"));
 }
 
 // rows: SELECT brand, model, device, android, COUNT(*) n GROUP BY brand, model, device, android. Only what the site shows: the ok
 // flags and last day stay in D1 for a later dashboard (they were 52% of the reply, unread)
-// TV Setup / TV Home also run on phones and tablets (not leanback): such a report stays in D1 but is not a TV on the site's list.
-// The phone / computer apps keep theirs: they report LG / Samsung / Roku TVs, which are not leanback either.
-export const listed = (r) => !((r.app === "setup" || r.app === "home") && Number(r.leanback) === 0 && r.leanback !== null && r.leanback !== undefined);
+// TV Setup / TV Home also run on phones and tablets: such a report stays in D1 but is not a TV on the site's list. Every report is an Android device read over ADB (getprop, Census.kt), so no leanback feature = a phone or tablet, whichever app sent it
+// (the phone app connected to a phone sent a Samsung SM-S908E)
+export const listed = (r) => !(Number(r.leanback) === 0 && r.leanback !== null && r.leanback !== undefined);
 
 export function aggregate(rows, now = new Date()) {
   const by = new Map();

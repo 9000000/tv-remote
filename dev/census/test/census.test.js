@@ -66,6 +66,7 @@ test("series: apps side by side, running total from new, active missing before t
 
 test("validate: Android emulators are not counted", () => {
   assert.equal(validate(ping({ tv: { brand: "google", model: "sdk_google_atv64_amati_arm64", device: "emu64a", hw: "ranchu", board: "goldfish_arm64" } })), null);
+  assert.equal(validate(ping({ tv: { brand: "OnePlus", model: "OnePlus8Pro", device: "OnePlus8Pro", hw: "sunfish", board: "cutf", soc: "vsoc_x86_64" } })), null);   // Cuttlefish
   assert.equal(validate(ping({ tv: { brand: "Android", model: "Android SDK built for arm64" } })), null);
   assert.equal(validate(ping({ tv: { brand: "google", model: "Chromecast", device: "boreal", hw: "boreal" } })).model, "Chromecast");
 });
@@ -75,14 +76,14 @@ test("validate: TV Home, TV Channels and TV Games are known apps; an unknown one
   assert.equal(validate(ping({ app: "karaoke" })), null);
 })
 
-test("aggregate: setup / home reports from a non-leanback device (a phone) are not listed; phone / pc apps' are", () => {
+test("aggregate: a non-leanback device (a phone) is not listed, whichever app sent it", () => {
   const r = (app, leanback) => ({ brand: "samsung", model: "SM-A156E", device: "a15", android: "14", app, leanback, n: 1 });
   assert.equal(listed(r("setup", 0)), false);
   assert.equal(listed(r("home", 0)), false);
   assert.equal(listed(r("setup", 1)), true);
   assert.equal(listed(r("setup", null)), true);
-  assert.equal(listed(r("phone", 0)), true);
-  assert.equal(listed(r("pc", 0)), true);
+  assert.equal(listed(r("phone", 0)), false);
+  assert.equal(listed(r("pc", 0)), false);
   const a = aggregate([r("setup", 0), r("home", 0), r("phone", 0), r("setup", 1)], new Date("2026-10-25T00:00:00Z"));
-  assert.equal(a.installs, 2);
+  assert.equal(a.installs, 1);
 });
