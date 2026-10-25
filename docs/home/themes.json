@@ -35,7 +35,7 @@
     "greet": true
    },
    "look": "ocean",
-   "src": "Wikimedia Commons, 15 photos (CC0, CC BY, CC BY-SA): authors and licences in docs/home/vn.json, shown under each picture",
+   "src": "Unsplash License, 12 photos: photographers and pages in docs/home/vn.json, shown under each picture",
    "thumb": "https://tvremote.pages.dev/home/vn-t.jpg"
   },
   {
@@ -267,8 +267,8 @@
     "en": "Rice terraces"
    },
    "for": {
-    "vi": "Người nhớ quê: ảnh Sa Pa phủ cả màn hình, qua đường dẫn web",
-    "en": "Homesick: a Sa Pa photo across the screen, from a web link"
+    "vi": "Người nhớ quê: ruộng bậc thang trong sương phủ cả màn hình, qua đường dẫn web",
+    "en": "Homesick: misty rice terraces across the screen, from a web link"
    },
    "tags": [
     "photo",
@@ -277,7 +277,7 @@
    ],
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fterraces-sapa.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fterraces.jpg",
     "shade": 35,
     "widgets": [
      "weather",
@@ -293,8 +293,8 @@
     "greet": true
    },
    "look": "meadow",
-   "src": "Wikimedia Commons, CC BY 2.0 (David McKelvey): Sapa view 3.jpg",
-   "thumb": "https://tvremote.pages.dev/home/terraces-sapa-t.jpg"
+   "src": "Unsplash License: Vu Thang / Unsplash, unsplash.com/photos/0CaHnK7PVCo",
+   "thumb": "https://tvremote.pages.dev/home/terraces-t.jpg"
   },
   {
    "id": "beach",
@@ -331,7 +331,7 @@
     "greet": true
    },
    "look": "sunset",
-   "src": "Wikimedia Commons, CC BY-SA 4.0 (PattayaPatrol): DZ6 2673 Golden hour at the beach - palm-thatched huts gentle waves and a sunset that slows time.jpg",
+   "src": "Unsplash License: Rolando Yera / Unsplash, unsplash.com/photos/ATwi-EmGbSE",
    "thumb": "https://tvremote.pages.dev/home/beach-sunset-t.jpg"
   },
   {
@@ -350,7 +350,7 @@
    ],
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2F330px--Sunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fvideos.pexels.com%2Fvideo-files%2F18914444%2F18914444-hd_1920_1080_30fps.mp4&p=https%3A%2F%2Fimages.pexels.com%2Fvideos%2F26310139%2Fbeach-background-beach-waves-beautiful-sunset-crashing-waves-26310139.jpeg%3Fauto%3Dcompress%26cs%3Dtinysrgb%26w%3D330",
     "shade": 30,
     "widgets": [
      "clock",
@@ -369,8 +369,8 @@
     "greet": true
    },
    "look": "sunset",
-   "src": "Wikimedia Commons, CC0: File:Sunset timelapse on the beach in Libreville, Gabon.webm",
-   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm/330px--Sunset_timelapse_on_the_beach_in_Libreville%2C_Gabon.webm.jpg"
+   "src": "Pexels License: Manoo Media / Pexels, pexels.com/video/the-sun-sets-over-the-ocean-with-waves-26310139",
+   "thumb": "https://images.pexels.com/videos/26310139/beach-background-beach-waves-beautiful-sunset-crashing-waves-26310139.jpeg?auto=compress&cs=tinysrgb&w=330"
   },
   {
    "id": "halonglive",
@@ -379,8 +379,8 @@
     "en": "Ha Long Bay (video)"
    },
    "for": {
-    "vi": "Video du thuyền trên vịnh Hạ Long chạy nền",
-    "en": "A video cruise across Ha Long Bay in the background"
+    "vi": "Video bay trên các đảo vịnh Hạ Long chạy nền",
+    "en": "A drone flight over Ha Long Bay islands in the background"
    },
    "tags": [
     "video",
@@ -389,7 +389,7 @@
    ],
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fb%2Fbe%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fb%2Fbe%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm%2F330px--Ha_Long_Bay%252C_Vietnam_-_Dec_2024.webm.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fvideos.pexels.com%2Fvideo-files%2F3783927%2F3783927-hd_1920_1080_24fps.mp4&p=https%3A%2F%2Fimages.pexels.com%2Fvideos%2F3783927%2Fpexels-photo-3783927.jpeg%3Fauto%3Dcompress%26cs%3Dtinysrgb%26w%3D330",
     "shade": 30,
     "widgets": [
      "clock",
@@ -408,8 +408,8 @@
     "greet": true
    },
    "look": "ocean",
-   "src": "Wikimedia Commons, CC BY-SA 4.0 (പയ്യൻ): File:Ha Long Bay, Vietnam - Dec 2024.webm",
-   "thumb": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Ha_Long_Bay%2C_Vietnam_-_Dec_2024.webm/330px--Ha_Long_Bay%2C_Vietnam_-_Dec_2024.webm.jpg"
+   "src": "Pexels License: Taryn Elliott / Pexels, pexels.com/video/aerial-footage-of-the-islands-3783927",
+   "thumb": "https://images.pexels.com/videos/3783927/pexels-photo-3783927.jpeg?auto=compress&cs=tinysrgb&w=330"
   },
   {
    "id": "city",
@@ -428,7 +428,7 @@
    ],
    "conf": {
     "wall": "web",
-    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fhk-night.jpg",
+    "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fcity-night.jpg",
     "shade": 45,
     "widgets": [
      "clock",
@@ -448,8 +448,8 @@
     "greet": false
    },
    "look": "navy",
-   "src": "Wikimedia Commons, CC BY-SA 4.0 (Suicasmo): Hong Kong night skylines (Hong Kong Island) 20170807-1.jpg",
-   "thumb": "https://tvremote.pages.dev/home/hk-night-t.jpg"
+   "src": "Unsplash License: Pang Yuhao / Unsplash, unsplash.com/photos/wCi28eq8TF4",
+   "thumb": "https://tvremote.pages.dev/home/city-night-t.jpg"
   },
   {
    "id": "tech",
@@ -721,7 +721,7 @@
     "tile:dev.tvremote.setup/sleep"
    ],
    "look": "night",
-   "src": "Wikimedia Commons, CC0 (Andrew Coelho andrewcoelho): Milky Way Lake Mountains (Unsplash).jpg",
+   "src": "Unsplash License: Jason Bonnicksen / Unsplash, unsplash.com/photos/R2uhkW7ik_Y",
    "thumb": "https://tvremote.pages.dev/home/milky-way-t.jpg"
   },
   {
@@ -779,5 +779,5 @@
    }
   }
  ],
- "rev": 1792925472
+ "rev": 1792948971
 }

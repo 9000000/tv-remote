@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """dev/gen/wallpapers.py: makes TV Home's wallpaper gallery (docs/home/): 1920x1080 JPEGs (about 150-400 KB), 320x180 thumbnails,
 and wallpapers.json (SHA-256 of both, credit, source, licence), then signs it like the launcher list (launchers.key, Ed25519).
-Pictures: NASA images (public domain; ESA / CSA credits kept) fetched from images-api.nasa.gov, photos from Wikimedia Commons (PHOTOS below:
-the author and licence are read from Commons itself; the ready-made themes of docs/home/themes.json show them through loop.html), and two renders made here (CC0).
+Pictures: NASA images (public domain; ESA / CSA credits kept) fetched from images-api.nasa.gov, photos from Unsplash and Wikimedia Commons (PHOTOS and VN below; a Commons file's author and licence are read from Commons itself;
+the ready-made themes of docs/home/themes.json show them through loop.html), and two renders made here (CC0).
 Run again after changing WALLS; commit docs/home/ whole. Needs Pillow and a JDK."""
 import hashlib, io, json, os, subprocess, urllib.request
 from PIL import Image, ImageDraw, ImageFilter
@@ -26,34 +26,36 @@ WALLS = [
     ("soft-violet", None, {"vi": "Tím dịu", "en": "Soft violet"}, "TV Remote", [(0x1a0f3a, 0, 0), (0x6a3fa0, .75, .3), (0x2b6cb0, .2, .85), (0xd9577a, .95, .95)]),
     ("soft-teal", None, {"vi": "Xanh biển đêm", "en": "Deep teal"}, "TV Remote", [(0x04141f, 0, 0), (0x0f6e7a, .3, .35), (0x1d3f7a, .85, .8), (0x2fb39a, .05, .95)]),
 ]
-# Photos of the ready-made themes: id, Commons file, words, (x, y) = where the 16:9 window sits in what is cut off (0 left/top .. 1 right/bottom)
+# Photos of the ready-made themes and the Vietnam slideshow come from Unsplash (Unsplash License: free to use, credit kept anyway). U(photo, photographer, page):
+# `photo` is the images.unsplash.com name, `page` the id on unsplash.com/photos/. A plain string is a Commons file name.
+# Picked by eye for a home screen: calm, few details, one colour field behind the tiles (the user, 2026-10-26: busy Unsplash shots of
+# lanterns and a stadium crowd lost to the older Commons ones).
+def U(photo, author, page): return {"photo": photo, "author": author, "page": "https://unsplash.com/photos/" + page}
+# id, picture, words, (x, y) = where the 16:9 window sits in what is cut off (0 left/top .. 1 right/bottom)
 PHOTOS = [
-    ("terraces-sapa", "Sapa view 3.jpg", {"vi": "Ruộng bậc thang Sa Pa", "en": "Sa Pa rice terraces"}, (.5, .5)),
-    ("beach-sunset", "DZ6 2673 Golden hour at the beach - palm-thatched huts gentle waves and a sunset that slows time.jpg", {"vi": "Hoàng hôn biển", "en": "Sunset beach"}, (.5, .45)),
-    ("hk-night", "Hong Kong night skylines (Hong Kong Island) 20170807-1.jpg", {"vi": "Đêm Hồng Kông", "en": "Hong Kong night"}, (.5, .5)),
+    ("terraces", U("photo-1733372607228-6aeaa92c5e62", "Vu Thang", "0CaHnK7PVCo"), {"vi": "Ruộng bậc thang", "en": "Rice terraces"}, (.5, .5)),
+    ("beach-sunset", U("photo-1670811456186-e73d0ace9454", "Rolando Yera", "ATwi-EmGbSE"), {"vi": "Hoàng hôn biển", "en": "Sunset beach"}, (.5, .5)),
+    ("city-night", U("photo-1556379092-dca659792591", "Pang Yuhao", "wCi28eq8TF4"), {"vi": "Đêm thành phố", "en": "City night"}, (.5, .5)),
     ("pitch-night", "The Peninsula Stadium at night - Salford City - Aug 24.jpg", {"vi": "Sân cỏ đêm", "en": "Pitch at night"}, (.5, .5)),
     ("lanterns-red", "Chinese Lanterns at Night in Chinatown (2).jpg", {"vi": "Đèn lồng đỏ", "en": "Red lanterns"}, (.5, .5)),
     ("theatre-red", "Theatre Lionel Groulx.jpg", {"vi": "Rạp hát", "en": "Theatre"}, (.5, .5)),
     ("tulips-sunset", "Tulip field in Holland2.jpg", {"vi": "Cánh đồng tulip", "en": "Tulip field"}, (.5, .6)),
-    ("milky-way", "Milky Way Lake Mountains (Unsplash).jpg", {"vi": "Dải Ngân Hà", "en": "Milky Way"}, (.5, .4)),
+    ("milky-way", U("photo-1649212056819-983d39d12e5d", "Jason Bonnicksen", "R2uhkW7ik_Y"), {"vi": "Dải Ngân Hà", "en": "Milky Way"}, (.5, .5)),
 ]
-# The "Việt Nam" theme's slideshow (docs/home/vn.json, shown by TV Home natively and by loop.html?s=vn): id, Commons file, vi, en, (x, y) as PHOTOS.
-# Not in the gallery list (wallpapers.json): they are only reached through the theme. Licence + author are read from Commons into vn.json.
+# The "Việt Nam" theme's slideshow (docs/home/vn.json, shown by TV Home natively and by loop.html?s=vn): id, picture, vi, en, (x, y) as PHOTOS.
+# Not in the gallery list (wallpapers.json): they are only reached through the theme.
 VN = [
-    ("halong", "Hạ Long Bay Sunrise, Vietnam (54161688105).jpg", "Vịnh Hạ Long", "Ha Long Bay", (.5, .5)),
-    ("hoian", "Lanterns in Hoi An (40542858941).jpg", "Phố cổ Hội An", "Hoi An Ancient Town", (.5, .5)),
-    ("trangan", "Trang An Landscape Complex, Ninh Binh Province, Vietnam, 20240202 1429 5277.jpg", "Tràng An, Ninh Bình", "Trang An, Ninh Binh", (.5, .5)),
-    ("hanoi", "Dai Trung gate, Temple of Literature, Hanoi, Vietnam, 20240123 0928 3065.jpg", "Văn Miếu, Hà Nội", "Temple of Literature, Hanoi", (.5, .5)),
-    ("hue", "Meridian Gate (Citadel of Hue) 20190916-1.jpg", "Đại Nội Huế", "Hue Imperial City", (.5, .5)),
-    ("danang", "Golden Bridge above the clouds Ba Na Hills Da Nang Vietnam.jpg", "Cầu Vàng, Đà Nẵng", "Golden Bridge, Da Nang", (.5, .5)),
-    ("phongnha", "Dong Hoi Phong Nha grotten.jpg", "Phong Nha", "Phong Nha caves", (.5, .5)),
-    ("hagiang", "Ma Pi Leng Pass winding road Ha Giang Vietnam.jpg", "Đèo Mã Pí Lèng, Hà Giang", "Ma Pi Leng Pass, Ha Giang", (.5, .5)),
-    ("mucangchai", "Terraces in Che Cu Nha commune, Mu Cang Chai (Unsplash).jpg", "Mù Cang Chải", "Mu Cang Chai terraces", (.5, .5)),
-    ("dalat", "Xuan Huong Lake in Da Lat (28219543381).jpg", "Hồ Xuân Hương, Đà Lạt", "Xuan Huong Lake, Da Lat", (.5, .85)),
-    ("muine", "Vietnam, Mui Ne sand dunes.jpg", "Đồi cát Mũi Né", "Mui Ne sand dunes", (.5, .5)),
-    ("phuquoc", "1 Phu Quoc sunset.jpg", "Phú Quốc", "Phu Quoc", (.5, .5)),
-    ("mekong", "Cai Rang floating market (15724707578).jpg", "Chợ nổi Cái Răng", "Cai Rang floating market", (.5, .5)),
-    ("saigon", "Saigon at Blue Hour.jpg", "Sài Gòn", "Saigon", (.5, .5)),
+    ("halong", U("photo-1764645859246-8c6db98330a7", "Vivu Vietnam", "wTJQjCQm90k"), "Vịnh Hạ Long lúc hoàng hôn", "Ha Long Bay at sunset", (.5, .5)),
+    ("mucangchai", U("photo-1695289566332-08eb1e223b6e", "Huy Nguyen", "F4qZ8hdbp2k"), "Mù Cang Chải", "Mu Cang Chai terraces", (.5, .5)),
+    ("hoian", U("photo-1582379488743-cc42257bd033", "Benjamin Wong", "J4qoCOug9EY"), "Đèn lồng Hội An", "Hoi An lanterns", (.5, .5)),
+    ("danang", U("photo-1790134773057-af82e32e68fd", "Vivu Vietnam", "QsQMtWfqGOM"), "Cầu Vàng, Đà Nẵng", "Golden Bridge, Da Nang", (.5, .5)),
+    ("ninhbinh", U("photo-1725209276479-59220882e9b0", "Jacob Pretorius", "6Rm7o1eEIgc"), "Ninh Bình", "Ninh Binh", (.5, .5)),
+    ("saigon", U("photo-1583417319070-4a69db38a482", "Tron Le", "wUk2U5Wirxg"), "Sài Gòn hoàng hôn", "Saigon at dusk", (.5, .5)),
+    ("halongair", U("photo-1748102289451-da1109f5c3bd", "Ryan Le", "ONObTZNkkz0"), "Vịnh Hạ Long từ trên cao", "Ha Long Bay from above", (.5, .5)),
+    ("lua", U("photo-1609412058473-c199497c3c5d", "Hoach Le Dinh", "PeRt3uMmjYM"), "Lúa chín bậc thang", "Ripe terraces", (.5, .5)),
+    ("dalat", U("photo-1678099006439-dba9e4d3f9f5", "Pete Walls", "Fl3bY0hWXv4"), "Đà Lạt trong sương", "Da Lat pines in mist", (.5, .5)),
+    ("ninhbinh2", U("photo-1656692197297-cb1340b4d538", "Hoang Vu Tuyen", "E2jYY1GxAzE"), "Ninh Bình từ trên cao", "Ninh Binh from above", (.5, .5)),
+    ("phuquoc", U("photo-1787283868886-f07766e50c85", "Vivu Vietnam", "S_ZcExscv0E"), "Phú Quốc bình minh", "Phu Quoc sunrise", (.5, .5)),
 ]
 UA = {"User-Agent": "tv-remote-wallpapers/1.0 (https://github.com/HoangTran0410/tv-remote)"}
 
@@ -66,6 +68,15 @@ def get(u):
             if e.code != 429: raise
             time.sleep(8 * (k + 1))
     raise SystemExit("429 from " + u)
+
+
+def unsplash(u):
+    """(picture, credit, page, licence) of an Unsplash photo: 2560 px wide copy from the image CDN (no key needed)."""
+    f = os.path.join(CACHE, "unsplash-" + u["photo"] + ".jpg")
+    os.makedirs(CACHE, exist_ok=True)
+    if not os.path.exists(f):
+        open(f, "wb").write(get("https://images.unsplash.com/" + u["photo"] + "?w=2560&q=85&fm=jpg"))
+    return Image.open(f).convert("RGB"), u["author"] + " / Unsplash", u["page"], "Unsplash License"
 
 
 def commons(name):
@@ -83,6 +94,11 @@ def commons(name):
     if not os.path.exists(f):
         open(f, "wb").write(get("https://commons.wikimedia.org/wiki/Special:FilePath/" + urllib.parse.quote(name) + "?width=2560"))
     return Image.open(f).convert("RGB"), author, "https://commons.wikimedia.org/wiki/File:" + urllib.parse.quote(name.replace(" ", "_")), lic
+
+
+def photo(src):
+    """An Unsplash U(...) or a Commons file name."""
+    return unsplash(src) if isinstance(src, dict) else commons(src)
 
 
 def fetch(nid):
@@ -130,16 +146,16 @@ def vn():
     """docs/home/vn-*.jpg (1920x1080), vn-t.jpg (the theme's collage thumb) and vn.json (the list TV Home and loop.html read)."""
     items = []
     for i, name, vi, en, (ax, ay) in VN:
-        im, author, page, lic = commons(name)
+        im, author, page, lic = photo(name)
         im = fit(im, ay, ax)
         _, n = save(im, os.path.join(OUT, "vn-" + i + ".jpg"), quality=82)
         save(im.resize((320, 180), Image.LANCZOS), os.path.join(OUT, "vn-" + i + "-t.jpg"), quality=72)   # the themes page's slideshow card cycles these
-        items.append({"file": "vn-" + i + ".jpg", "vi": vi, "en": en, "credit": author + ", " + lic, "source": page})
+        items.append({"file": "vn-" + i + ".jpg", "vi": vi, "en": en, "credit": author, "source": page})
         print("vn", i, n // 1024, "KB", author, lic)
-    items.append({"file": "terraces-sapa.jpg", "vi": "Ruộng bậc thang Sa Pa", "en": "Sa Pa rice terraces", "credit": "David McKelvey, CC BY 2.0",
-                  "source": "https://commons.wikimedia.org/wiki/File:Sapa_view_3.jpg"})
+    _, author, page, _ = photo(PHOTOS[0][1])   # the Rice terraces theme's photo rides along
+    items.append({"file": "terraces.jpg", "vi": PHOTOS[0][2]["vi"], "en": PHOTOS[0][2]["en"], "credit": author, "source": page})
     col = Image.new("RGB", (320, 180))
-    for k, f in enumerate(["vn-halong", "vn-hoian", "vn-trangan", "vn-hagiang"]):
+    for k, f in enumerate(["vn-halong", "vn-hoian", "vn-danang", "vn-mucangchai"]):
         col.paste(Image.open(os.path.join(OUT, f + ".jpg")).resize((160, 90), Image.LANCZOS), ((k % 2) * 160, (k // 2) * 90))
     save(col, os.path.join(OUT, "vn-t.jpg"), quality=72)
     json.dump({"v": 1, "slides": items}, open(os.path.join(OUT, "vn.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
@@ -160,12 +176,12 @@ def main():
         items.append(e)
         print(i, n // 1024, "KB")
     for i, name, words, (ax, ay) in PHOTOS:
-        im, author, page, lic = commons(name)
+        im, author, page, lic = photo(name)
         im = fit(im, ay, ax)
         sha, n = save(im, os.path.join(OUT, i + ".jpg"), quality=84)
         tsha, _ = save(im.resize((320, 180), Image.LANCZOS), os.path.join(OUT, i + "-t.jpg"), quality=72)
         items.append({"id": i, "name": words, "file": i + ".jpg", "sha256": sha, "bytes": n, "thumb": i + "-t.jpg", "thumb_sha256": tsha,
-                      "credit": author + " (Wikimedia Commons)", "source": page, "license": lic})
+                      "credit": author, "source": page, "license": lic})
         print(i, n // 1024, "KB", author, lic)
     lst = os.path.join(OUT, "wallpapers.json")
     json.dump({"v": 1, "walls": items}, open(lst, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
