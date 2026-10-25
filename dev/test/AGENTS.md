@@ -1,0 +1,48 @@
+# dev/test: emulators and test tools
+
+Read with the root [AGENTS.md](../../AGENTS.md).
+
+## Testing
+
+Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV, Android 14) and `tvremote_test` (phone, Android 14).
+`dev/test/emu.sh` does the setup below; use it rather than doing it by hand:
+
+```
+dev/test/emu.sh create    # both AVDs, once (system images downloaded; arm64 or x86_64 to match the computer)
+dev/test/emu.sh           # start (the TV first) + build both APKs + install each on the right emulator; again after every change
+dev/test/emu.sh install   # build + install only, the emulators already running
+dev/test/emu.sh reset     # the phone app's saved TVs reduced to 10.0.2.2
+dev/test/emu.sh stop
+dev/test/emu.sh status    # every emulator on the computer, hidden ones too: CPU, uptime, what is in front
+```
+
+Then in the phone app the TV is `10.0.2.2`; accept "Allow USB debugging?" on the TV emulator the first time (its window).
+Env: `SECURE=0` (no prompt), `HEADLESS=1` (no windows; such an emulator stops itself after `EMU_TTL` minutes, 120), `TV_AVD`/`PHONE_AVD`/`TV_PORT`/`PHONE_PORT` (a second pair beside the first).
+What it takes care of, for doing it by hand:
+
+- Boot the TV emulator **first** so it is `emulator-5554`; its ADB port 5555 is then reachable from the phone emulator as `10.0.2.2:5555`. Check which serial is the TV (`android.software.leanback` in `pm list features`) before installing anything: the serials swap when the boot order differs.
+- Boot the TV emulator with `-prop ro.adb.secure=1` to get the real "Allow USB debugging?" prompt. The TV shows one prompt at a time and queues prompts of dead connections first.
+- Emulator snapshots can bring back an old saved-TV list holding real TV addresses: before tapping anything, check `shared_prefs/tvs.xml` (`ips`) of `dev.tvremote.phone` (needs `adb root`) and reduce it to `10.0.2.2` (`dev/test/emu.sh reset`).
+- The Google TV image is arm64-only (runs 64-bit apps only); an x86_64 image (Intel computers) behaves differently there.
+- Tap by text (find the node in `uiautomator dump`), never by fixed coordinates.
+- If `adb exec-out screencap` comes back blank on the phone emulator, use `adb emu screenrecord screenshot <file>`.
+- Web UI: headless Chrome through the DevTools protocol against the test server above.
+- **Keep the computer usable** (a run of parallel agents froze it once, dev/DECISIONS.md "Tests that froze the computer"): at most
+  two emulators (`emu.sh` refuses a third: reuse the running one); heavy steps (ffmpeg, Gradle builds, `audit.js`) one at a time
+  through `dev/test/light.sh <cmd>` (waits for room, `nice`, one lock), never several with `&`; test videos / GIFs from
+  `dev/test/media.sh` (made once in `.cache/media`), and any ffmpeg on `lavfi` sets the length in the source (`:duration=`), never only `-t`.
+  A video background left looping on TV Home makes the TV emulator take ~9.5 cores (software codec + CPU-drawn GPU; 0.4% with TV
+  Home in the background, measured 2026-10-24): play it only while measuring, then a picture background or another app in front.
+- Unit tests (no device needed): `node --test app/shared/tests/ app/games/tests/` (also run by `dev/hooks/pre-push` before every push, since a push deploys `docs/`, and by `release.sh`; set up once per clone: `git config core.hooksPath dev/hooks`) (the web games' rules and bots: `app/games/tests`, beside the app that packs them, not in `docs/`, which the site publishes),
+  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
+  (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
+- **Speed budgets** (`PerfBudgetTest.kt` in `:shared`, ~17 hot paths: Ed25519 / `SignedList.kept`, `Launchers.parse/facts`, `WebPage` gzip, `Words` loading, `Qr`, `Diagnose`, parsers; `tests/perf_budget.test.js` for the page's: i18n, QR, voice; ~2 s each; the node one runs in the pre-push hook, the Kotlin one with `:shared:testDebugUnitTest` and in `release.sh`, not pre-push: Gradle is ~1 min). Baselines are per machine, in the gitignored `dev/perf/.local/` (keyed by OS / CPU count / JVM or node version): a first run on a machine or a new case records and passes, a clearly faster run lowers it. Red = over 2x the baseline AND over baseline + the case's floor: **find the regression (`git log` on the function) and fix it**. Raise the baseline only when slower is intended (`TVR_PERF_UPDATE=1`, say why in the commit); never commit baselines. A new hot path = one more `case(...)`, not a test per function (dev/DECISIONS.md "Speed budgets").
+- Real network and real browsers: `dev/test/smoke.py tv` asks every `/api` route of TV Setup on the TV emulator through the emulator's
+  own port redirect (adb forward hid a reply lost to a reset); `TVR_PASS=… dev/test/smoke.py URL` does the same for the computer app.
+  `TVR_PASS=… node dev/test/layout.js` checks the layout in Chrome and WebKit (the Mac app's window and iPhones are WebKit). Run both
+  after a change to HttpServer / the routes, or to the page's CSS.
+- Before a release with UI changes: `node dev/test/audit.js` presses every button of the page (no TV, the demo's made-up one) and checks each
+  screen it opens; read `/tmp/tvr-audit/index.html` and fix what it boxes ("same" is advice). `--only=auto` for one tab.
+- Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the `css/base.css` tokens in both themes); `dev/test/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
+- The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
+- The intro site's screenshots: `dev/shots/shots.py` (`docs/README.md`).

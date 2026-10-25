@@ -1,6 +1,14 @@
 # app/android: the Phone app
 
-Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too). What is where:
+Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too).
+
+## What it is
+
+| Name | Code | `data-core` | What it is |
+|---|---|---|---|
+| **Phone app** (App điện thoại) | `app/android` | `phone` | Android app "TV Remote"; its remote screen is native Kotlin, its Manage screen is the web UI (in-app HTTP core) |
+
+## Files
 
 ```
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
@@ -11,3 +19,8 @@ app/android/.../phone/   phone app, one file per part, as extension functions on
                          (the now playing strip, the TV's clipboard), IrRemote + Ir + IrCodes (the infrared remote on the phone's IR LED: screen,
                          encoders NEC / Samsung32 / SIRC / RC5 / RC6 / RCA / raw, `assets/ir/codes.json` made by `dev/gen/ir_codes.py` from Flipper-IRDB, CC0)
 ```
+
+## Remote screen
+
+Its keys and menus come from `app/shared/web/remote.json` (`PhoneRemote.kt`, `phoneActions`): the rule is in
+[app/shared/web/AGENTS.md](../shared/web/AGENTS.md) "The remote screen is drawn from one file".

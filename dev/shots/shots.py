@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The screenshots of the intro site (docs/img), taken again from today's UI in one go. See AGENTS.md "Testing".
+"""The screenshots of the intro site (docs/img), taken again from today's UI in one go. See dev/test/AGENTS.md.
 
     dev/shots/shots.py                  every picture
     dev/shots/shots.py web ts           only some: web (computer app's remote), ts (Tailscale box), feat [names] (the web cards of the

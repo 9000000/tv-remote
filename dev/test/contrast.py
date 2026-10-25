@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contrast scanner for the web UI, on real rendering. See AGENTS.md "Testing".
+"""Contrast scanner for the web UI, on real rendering. See dev/test/AGENTS.md.
 
     dev/test/contrast.py [URL]        default http://127.0.0.1:8772/ (any core: the computer app's test server, a TV, ...)
     TVR_PASS=...                 the key the computer app was started with (Pass.kt); a TV's page needs its pairing instead

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every /api route over a real network path, for the faults a unit test and adb forward hide. See AGENTS.md "Testing".
+"""Every /api route over a real network path, for the faults a unit test and adb forward hide. See dev/test/AGENTS.md.
 
     dev/test/smoke.py tv                   TV Setup on the TV emulator (emulator-5554), reached through the emulator's own port
                                       redirect (`emu redir`), not adb forward: adb forward hid a reply cut short by a reset

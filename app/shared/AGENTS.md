@@ -1,6 +1,8 @@
 # app/shared: the shared code: the web UI (`web/`), the Kotlin core (`src/`) and the page tests
 
-Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too). What is where:
+Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too).
+
+## Files
 
 ```
 app/shared/web/          THE web UI (index.html, css/*.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
@@ -26,3 +28,20 @@ app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work
                          `/api/wirelog`), Fleet (several saved TVs at once), SameTv (one TV saved under two addresses), B64, SelfSigned
 app/shared/tests/        node tests of the page's scripts, and the case tables the Kotlin tests read too (its README.md)
 ```
+
+## Other brands (LG, Samsung, Roku)
+
+LG (webOS, `Lg.kt`, SSAP on 3000/3001) and Samsung (Tizen, `Samsung.kt`, 8001/8002) TVs are adapters behind the same
+`Remote` interface as `Atv` (`Remote.kt`: `Remote.Kind` with its `caps`, `RemoteSteps` for scenes), found by `Ssdp.kt`.
+Only the Phone app and the Computer app have them (the TV web page needs TV Setup, Android only). The page reads `kind` /
+`caps` from `/api/state` (`applyKind()` in `js/core.js`): `data-needs="cap"` hides a part or greys a control, and a
+`remote.json` entry's `needs` does the same for keys and menu entries on both sides. A new feature that needs ADB: give it
+`needs: ["adb"]` / `data-needs="adb"`.
+
+## Downloader codes
+
+- Downloader (AFTVnews) short codes, always pointing at the latest release: **2397346** → `tv-setup.apk`, **2973135** → `tv-remote.apk`, **4356026** → `tv-home.apk`, **8135635** → `tv-channels.apk`, **2294968** → `tv-games.apk`. They are listed once in `docs/data/downloader.json`, signed by `dev/sign/sign_downloader.py` (the launcher list's key; run it after every edit and commit the `.sig` with it); the apps read it through `core/Downloader.kt` (site, else GitHub, else the copy kept, else `PACKED`, which `DownloaderTest` keeps equal to the file; an unsigned list is ignored: a code makes the TV install what it points at), and the page asks `/api/downloader`. The words take `{code}`, never the digits. The static pages of `docs/` and the READMEs keep the codes as text. Downloader registers the `downloader:` scheme: opening `downloader://<code>` (an intent, or the remote protocol's launch command) makes it fetch the APK and bring up the installer with nothing typed. Only send it once Downloader is known to be installed; a link the TV has no app for can make it drop the remote connection.
+
+## ADB and keys
+
+The Phone app and the TV app speak ADB themselves (`app/shared/.../Adb.kt`) and push `scrcpy-server` (`app/shared/assets`) for video, touch and keys. So does the Computer app, on the same core. The Phone app and the Computer app also send keys without ADB through the Android TV Remote protocol (`Atv.kt`, ports 6466/6467).

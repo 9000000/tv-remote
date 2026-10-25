@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The page's layout on real rendering, in Chrome AND WebKit (Safari, the Mac app's window, an iPhone): the faults a look at one
-// browser misses. See AGENTS.md "Testing".
+// browser misses. See dev/test/AGENTS.md.
 //
 //   npm install --prefix dev playwright && npx --prefix dev playwright install webkit     (once)
 //   TVR_PASS=... node dev/test/layout.js [URL]        default http://127.0.0.1:8779/: the computer app's test server, whose first saved

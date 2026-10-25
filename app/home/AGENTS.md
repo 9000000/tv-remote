@@ -1,6 +1,14 @@
 # app/home: TV Home
 
-Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too). What is where:
+Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too).
+
+## What it is
+
+| Name | Code | `data-core` | What it is |
+|---|---|---|---|
+| **TV Home** | `app/home` | | the project's own launcher (`dev.tvremote.home`), first in the launcher gallery; set up from every client over ADB |
+
+## Files
 
 ```
 app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI; its "Manage from phone" page is packed from app/shared/web by packHomeWeb and served by ManageServer); HomeActivity (clock, dock,

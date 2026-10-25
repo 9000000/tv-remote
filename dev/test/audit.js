@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The whole web UI looked over by a script: every tab, and every dialog, menu and chip reached by pressing the page's own
-// buttons, each checked for what a person would notice. See AGENTS.md "Testing".
+// buttons, each checked for what a person would notice. See dev/test/AGENTS.md.
 //
 //   node dev/test/audit.js [--all] [--core=pc|tv|phone] [--only=apps,tv] [--depth=3] [--budget=120 s per tab] [--out=/tmp/tvr-audit]
 //
@@ -144,7 +144,7 @@ function check({ root: sel, ids, phone, lang }) {
     if (ratio < need) add('contrast', e, `${Math.round(ratio * 100) / 100}:1 (${hex(fg)} on ${hex(bg)}, needs ${need}:1)`);
   }
 
-  // rules (AGENTS.md "The tabs are made of a few shapes")
+  // rules (app/shared/web/AGENTS.md "The tabs are made of a few shapes")
   const root_ = css(document.documentElement), px = (v) => parseFloat(root_.getPropertyValue(v));
   const sizes = [px('--ctl'), px('--ctl-sm'), px('--chip')].filter((v) => v > 0);
   for (const e of all) {

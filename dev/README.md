@@ -80,7 +80,7 @@ Tests: `THEMES_URL`, `THEMES_TOKEN_FILE`, `CENSUS_URL`, `CRASH_TOKEN` point it a
 
 | Script | Does |
 |---|---|
-| `release.sh` | the whole release: version numbers, CHANGELOG, tag, APKs, GitHub release, the computer apps through GitHub Actions, then `sums.sh` (AGENTS.md "Versions and releases") |
+| `release.sh` | the whole release: version numbers, CHANGELOG, tag, APKs, GitHub release, the computer apps through GitHub Actions, then `sums.sh` ([release/AGENTS.md](release/AGENTS.md)) |
 | `sums.sh <tag>` | `SHA256SUMS` of a release, signed, attached. Run again after replacing any file of a release by hand: the apps refuse a file the list does not match |
 | `code_changed.py <tag> <paths>` | did an app's code change since a tag, beyond comments, `.md`, `build.sh`, tests: `release.sh` bumps an app's number only then |
 | `guide_stale.py` | the guide's topics whose app files changed since their `data-v`; `release.sh` stops on them |

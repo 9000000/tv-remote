@@ -1,219 +1,109 @@
 # AGENTS.md
 
-A guide for agents (and people) changing this repo. User-facing docs: [README.md](README.md) (English) and [README.vi.md](README.vi.md) (Vietnamese).
-Why some code looks odd (measured bugs, VPNs, the TV's ADB questions): [dev/DECISIONS.md](dev/DECISIONS.md).
+A guide for agents (and people) changing this repo. User docs: [README.md](README.md) / [README.vi.md](README.vi.md).
+Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). This file holds the rules for every app; each folder's
+`AGENTS.md` (loaded as its `CLAUDE.md` when you work there) holds its files and its own rules: read it before changing that part.
+
+| Folder | Its AGENTS.md has |
+|---|---|
+| `app/shared/web/` | the page's rules: `remote.json`, the tab shapes, icons, the page's state, i18n |
+| `app/shared/` | the Kotlin core's packages, other brands (LG, Samsung), the Downloader codes list |
+| `app/android/` `app/tv/` `app/tvkeys/` `app/home/` `app/channels/` `app/games/` `app/desktop/` `app/karaoke/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
+| `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast |
+| `dev/release/` | the six version numbers, the user guide's `data-v`, release.sh, SHA256SUMS |
 
 ## What this is
 
-Remote control for Android TV / Google TV with no server in between. Three apps and a web page, always called by these
-names (README, code comments, the site; Vietnamese in brackets):
+Remote control for Android TV / Google TV with no server in between. Always called by these names (README, comments, the site):
 
 | Name | Code | `data-core` | What it is |
 |---|---|---|---|
-| **Phone app** (App điện thoại) | `app/android` | `phone` | Android app "TV Remote"; its remote screen is native Kotlin, its Manage screen is the web UI (in-app HTTP core) |
-| **Computer app** (App máy tính) | `app/desktop` (Kotlin, JVM) | `pc` | "TV Remote" for Mac, Windows, Linux: `Server.kt` on `127.0.0.1:8765`, shown in its own window (the system's web view, `Window.kt`) |
-| **TV app** (App TV) | `app/tv` | | the app on the TV, shown as "TV Setup" (keep that label: it is on installed TVs, Downloader codes and file names) |
-| **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI the TV app serves on port 8765, for any browser (iPhone included), after a 6-digit pairing code |
-| **TV Home** | `app/home` | | the project's own launcher (`dev.tvremote.home`), first in the launcher gallery; set up from every client over ADB |
-| **TV Channels** | `app/channels` | | iptv-org's free channels on the TV (`dev.tvremote.channels`); knows nothing of the other apps: they reach it only by its links (`tvchannels://play/<id>`, `group/<id>`, `find/<name>`); installed and opened from every client over ADB (`core/ontv/Channels.kt`, `js/channels.js`) |
-| **TV Games** | `app/games` | | retro games (libretro cores, GPL-3: `app/games/LICENSE`) and web games on the TV, played with phones as pads (`dev.tvremote.games`): its own server on 8780 + a QR, no ADB and no TV Setup needed to play; installed, opened and updated from every client over ADB like TV Channels (`core/ontv/Games.kt`, `OwnApp.kt`, `js/games.js`) |
-| **TV Karaoke** | `app/karaoke` | | songs on the TV, queue filled from phones (`dev.tvremote.karaoke`): its own server on 8790 + a QR, YouTube's embedded player in a WebView (ads stay, no download); not yet in release.sh, the site or the clients |
+| **Phone app** (App điện thoại) | `app/android` | `phone` | "TV Remote" for Android: native remote screen, Manage screen = the web UI |
+| **Computer app** (App máy tính) | `app/desktop` (JVM) | `pc` | "TV Remote" for Mac, Windows, Linux: `Server.kt` on `127.0.0.1:8765` in its own window |
+| **TV app** (App TV) | `app/tv` | | on the TV, shown as "TV Setup" (keep that label: installed TVs, Downloader codes, file names) |
+| **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI TV Setup serves on 8765 for any browser, after a 6-digit code |
+| **TV Home** | `app/home` | | the project's launcher (`dev.tvremote.home`), set up from every client over ADB |
+| **TV Channels** | `app/channels` | | iptv-org's free channels; others reach it only by its links (`tvchannels://…`) |
+| **TV Games** | `app/games` | | retro (libretro, GPL-3) and web games, phones as pads, own server on 8780 |
+| **TV Karaoke** | `app/karaoke` | | shelved prototype: not in release.sh, the site or the clients |
 
-What each can do, and diagrams of how they connect: README "Three apps and a web page" / README.vi "Ba app và một trang web".
-Keep that table true when a feature lands on only some of them.
+What each can do: README "Three apps and a web page" / README.vi "Ba app và một trang web"; keep that table true when a
+feature lands on only some of them. The Phone, TV and Computer apps speak ADB themselves (`Adb.kt`) and push `scrcpy-server`
+for video, touch and keys; Phone and Computer also send keys without ADB (Android TV Remote protocol, `Atv.kt`), and LG /
+Samsung through the same `Remote` interface. A feature that needs ADB: `needs: ["adb"]` / `data-needs="adb"`.
 
-The Phone app and the TV app speak ADB themselves (`app/shared/.../Adb.kt`) and push `scrcpy-server` (`app/shared/assets`) for video, touch and keys. So does the Computer app, on the same core. The Phone app and the Computer app also send keys without ADB through the Android TV Remote protocol (`Atv.kt`, ports 6466/6467).
-
-LG (webOS, `Lg.kt`, SSAP on 3000/3001) and Samsung (Tizen, `Samsung.kt`, 8001/8002) TVs are adapters behind the same
-`Remote` interface as `Atv` (`Remote.kt`: `Remote.Kind` with its `caps`, `RemoteSteps` for scenes), found by `Ssdp.kt`.
-Only the Phone app and the Computer app have them (the TV web page needs TV Setup, Android only). The page reads `kind` /
-`caps` from `/api/state` (`applyKind()` in `js/core.js`): `data-needs="cap"` hides a part or greys a control, and a
-`remote.json` entry's `needs` does the same for keys and menu entries on both sides. A new feature that needs ADB: give it
-`needs: ["adb"]` / `data-needs="adb"`.
-
-## Layout
-
-```
-app/shared/    the web UI (web/), the Kotlin core all apps share (src/.../core/: remote adb picture web ontv scenes, guard), page tests
-app/android/   Phone app            app/tv/        TV Setup             app/tvkeys/    TV Setup Keys (the accessibility add-on)
-app/home/      TV Home              app/channels/  TV Channels          app/games/     TV Games
-app/desktop/   Computer app         app/karaoke/   TV Karaoke (shelved) app/gradle/    the Gradle build of everything Kotlin
-dev/           test/ (emu.sh, smoke.py, layout.js, audit.js), gen/ (icons, wallpapers), shots/, sign/ (the site's signed lists), release/,
-               optimize_images.py (never touches docs/home/ and docs/launchers/: their SHA-256 is signed); dev/README.md
-```
-
-Each `app/<x>/AGENTS.md` (loaded as its `CLAUDE.md` when you work in that folder) lists its files and what each does;
-read it before changing that app. A file map for one app belongs there, a rule for every app here.
+`app/gradle/` is the Gradle build of everything Kotlin. `dev/`: test/, gen/ (icons, wallpapers), shots/, sign/ (the site's signed
+lists), release/; `optimize_images.py` never touches `docs/home/` and `docs/launchers/` (their SHA-256 is signed); dev/README.md.
 
 ## Rules that matter
 
 - **UI follows the design system, read before touching any screen:** [app/shared/web/DESIGN.md](app/shared/web/DESIGN.md)
-  (the web UI), [app/DESIGN-TV.md](app/DESIGN-TV.md) (TV Setup, TV Home, TV Channels, TV Games, and the Phone app's native
-  screens), [docs/games/web/DESIGN.md](docs/games/web/DESIGN.md) (web games and the phone pad). Reuse their helpers and
-  values; a look they lack is added there first, never invented in one screen.
-
-- **Every change reaches the Phone app, the TV web page and the Computer app.** UI changes go in `app/shared/web` once. A new `/api` endpoint used by the page goes in `Manage.kt` (all three cores), or where only some cores have it: `app/desktop` `Server.kt`, `RemoteService`, the Phone app's Manage screen. The Phone app's native remote screen is separate code: mirror the change there by hand, or say clearly why it cannot be.
-  **Reuse over copies (the user, 2026-10-24):** the apps are an ecosystem, so a feature is built once where everyone shares it
-  (the web UI, `remote.json`, `:shared` Kotlin, TV Setup's rules) and reached from there. Do not write a second native version
-  (e.g. a kids-lock unlock button on the Phone app's remote screen when the Manage screen, which is the web UI, already has it)
-  unless people cannot reach the shared one; a shortcut that saves a tap is not reason enough.
-- **The remote screen is drawn from one file.** The keys and menu entries (More keys, the arrows row, the media rows, the Open on the TV / sleep timer / Scenes menus) live ONCE in `app/shared/web/remote.json`: id, icon, `t` (the id of its words in `i18n/<lang>.json`, `rkey.*`; `sub` the id of the line under it), a `key` (name in `Scenes.KEYS`) or a `do` action, optional `sub`, `cores` (`phone` / `web` only) and per-side `web` / `phone` overrides, each with a `why`. It is served at `/remote.json` on every core and packed into the Phone app. The web reads it in `js/remote_spec.js` + `js/remote.js` (handlers: `REMOTE_DO`); the Phone app in `RemoteSpec.kt` (shared) + `PhoneRemote.kt` (handlers: `phoneActions`). Add, move or reword an entry in the JSON only (icons: `dev/gen/gen_icons.py`; its words go in `i18n/vi.json` and `en.json`); a new `do` action needs a handler in both maps. Hand-laid on each side, outside the file: the top row, the D-pad, the number keys, the volume / channel pills and the 🎧 menu (`listen.js`). Checks: `node --test app/shared/tests/` (`remote.test.js`: schema, icons, key names, handlers on the page and in `PhoneRemote.kt`) and `RemoteSpecTest` in `:shared` and `:android` (`./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest`).
-- **The apps map** (which app needs which, the arrows, the install paths) lives ONCE in `docs/data/apps-map.json`: `docs/apps.html` draws it (`docs/js/apps.js`), and the mermaid block between `<!-- apps-map:start -->` / `<!-- apps-map:end -->` in README.md and README.vi.md is generated from it: edit the JSON, then run `node dev/gen/apps_map.js` (`tests/apps_map.test.js` fails when a README differs, an edge names a missing node or a logo file is missing).
-- **The tabs are made of a few shapes** (`js/ui.js` lists them, `css/kit.css`): a card opens with its title (`h2`, or a
-  `.card-head` with tools on the right; folded: `details.card` > `summary`) and spaces its own children, so nothing in it needs a
-  margin; `h3` a group's title, `p.note` a line of explanation, `p.state` what is on now, `p.empty` an empty list, `.warnline`
-  something to fix, `.list` > `.item`, `.line` a field and its button, `.actions` a card's buttons. Cards built in JS use
-  `UI.card` / `UI.say`. **Two blues:** the full accent fill (`.primary`) is a button that does something (OK, Send, Install,
-  Add); on or chosen (a tab, a choice in use, a switch that is on) is `.on` / `aria-selected`, a tint with a blue edge
-  (`--sel`, one rule in `css/kit.css`; the phone's `setOn()` in Ui.kt), never the fill (`css.test.js`). **One size per kind of control**: a field and the button beside it `--ctl`, `.small` (`--ctl-sm`) for
-  tools in a head and acts in a list, a choice among several a chip (`.places` / `.fchips`, `--chip`). No `style="…"` / `style:`
-  in markup and no new `min-height` in px: a look needed twice is a class. Checked by `tests/ui.test.js`.
-  **Icons:** write a title or button with its emoji as before (i18n keys keep it); `ICON` in `js/ui.js` draws it as a line
-  icon from the sprite (a title's in its own hue, a tab's in a coloured tile, a button's in the button's colour). A new emoji
-  in a title: add it to `ICON` (its path to `dev/gen/gen_icons.py`). Content (scene icons, app tiles, sentences, the remote) keeps emoji.
-- The server stamps `<html data-core="pc|tv|phone">`; core-only markup uses `data-for="pc tv phone"`, JS checks `CORE`.
-- **The page's state:** a `js/` file sets only the globals it declares; another file calls a function the owner offers
-  (`pickGo`, `adbNow`, `appsStale`), and what a file keeps about one TV it forgets in its own `onTvChange()`. Fields of the
-  page are written through `put()`. Both checked by `tests/page.test.js`.
-- **Vietnamese is the source language; words go by id.** `app/shared/web/i18n/<lang>.json` holds every word of the page under an
-  id (`area.words`): `vi.json` first, then the same ids in each language (`en.json` complete: it is every other one's fallback).
-  A language is a file plus its line in `LANGS` (`js/i18n.js`). In `index.html` an element keeps its Vietnamese and names the id
-  (`data-i18n`, `data-i18n-html`, `data-i18n-title|aria-label|placeholder|alt`); scripts write `T('id', { n })` (`{n}` in the
-  words, `{ one, other }` for plurals); a script writes no words of its own (`tests/i18n.test.js` fails on one).
-  Kotlin reads the same files (`core/Words.kt`): `T("id", "n" to 3)` in the app's language (`Words.lang`: the phone's choice,
-  the TV's locale), `Words.get(r.lang, "id")` for words a page asked for (`r.lang`: the page's `tvr-lang` cookie). No new
-  `t("vi", "en")` pairs. What the server sends comes in the page's language already; an English error from a TV or a library
-  gets its words in `friendly()` (`js/core.js`).
-  README.md (English) and README.vi.md (Vietnamese) are kept in step; CHANGELOG entries and release notes are written in both languages.
-- **Users first:** make things automatic; show an error only after every fallback has failed, in words a person can act on (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show what is going on and can be cancelled.
-- **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet; away from home everything goes over Tailscale.
-- **"Allow USB debugging?"** is only ever answered for the key whose fingerprint matches the asking device (`AdbPrompt.kt`); never press Allow on an unknown key.
-- **Nothing in `docs/` is generated:** the intro page's demo and stories are GSAP timelines (`demo.js`, `stories.js`) with
-  hand-edited CSS (`demo.css`, `stories.css`). (`app/*/res/drawable/ic_*.xml` are generated by `dev/gen/gen_icons.py`: edit that. The logo's rounded corners and
-  `app/desktop/icon.icns|ico` come from `dev/gen/round_icons.py`.)
+  (the web UI), [app/DESIGN-TV.md](app/DESIGN-TV.md) (TV Setup, TV Home, TV Channels, TV Games, the Phone app's native
+  screens), [docs/games/web/DESIGN.md](docs/games/web/DESIGN.md) (web games, the phone pad). A look they lack is added there first.
+- **Every change reaches the Phone app, the TV web page and the Computer app.** UI goes in `app/shared/web` once; a new `/api`
+  route in `Manage.kt` (all three cores), or `Server.kt` / `RemoteService` / the Phone app's Manage screen where only some have it.
+  The Phone app's native remote screen is separate: mirror the change by hand, or say why it cannot be.
+  **Reuse over copies (the user, 2026-10-24):** a feature is built once where everyone shares it (the web UI, `remote.json`,
+  `:shared` Kotlin, TV Setup's rules) and reached from there; no second native version only to save a tap.
+- **The remote's keys and menus live once in `app/shared/web/remote.json`** (web: `js/remote.js`, phone: `PhoneRemote.kt`);
+  rules in app/shared/web/AGENTS.md.
+- **The apps map** lives once in `docs/data/apps-map.json`: `docs/apps.html` draws it; edit it, then `node dev/gen/apps_map.js` (the README mermaid blocks;
+  `tests/apps_map.test.js` fails when they differ).
+- **Vietnamese is the source language; words go by id** in `app/shared/web/i18n/<lang>.json` (`vi.json` first, `en.json` complete),
+  for the page (`T('id')`) and Kotlin (`core/Words.kt`, `T("id")`); no new `t("vi", "en")` pairs. README.md / README.vi.md in
+  step; CHANGELOG and release notes in both languages.
+- **Users first:** automatic where possible; an error only after every fallback failed, in words a person can act on
+  (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show progress and can be cancelled.
+- **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet (away from home: Tailscale).
+- **"Allow USB debugging?"** is only answered for the key whose fingerprint matches (`AdbPrompt.kt`); never Allow an unknown key.
+- **Nothing in `docs/` is generated** (GSAP timelines and CSS by hand). `app/*/res/drawable/ic_*.xml` come from
+  `dev/gen/gen_icons.py`, the logo's corners and `app/desktop/icon.*` from `dev/gen/round_icons.py`: edit those.
 - Comments say why, not what; match the surrounding style (end-of-line comments aligned to column ~70).
 
 ## Build and run
 
-- Apps: `app/android/build.sh`, `app/tv/build.sh` (JDK 17, Android SDK) → `app/*/build/*.apk`. The web UI is packed into both APKs as assets.
-- Computer app: `cd app/gradle && ./gradlew :desktop:installDist`, then `app/desktop/build/install/desktop/bin/desktop [--window]` (inside the repo: its tvs.json, keys in .cache/keys; the page is read from `app/shared/web` on each load, so a web change needs only a reload). For tests, another port and its own TV list so real TVs are untouched: `TVS_FILE=/tmp/x.json TVR_KEYS=/tmp/keys TVR_PASS=testtest app/desktop/build/install/desktop/bin/desktop --port 8769`, opened at `http://127.0.0.1:8769/?k=testtest` (it prints the link; curl: header `x-tvr-pass`).
-- Computer app for people: `./gradlew :desktop:packageApp` → `app/desktop/build/package/` (the app for this system + `TV-Remote-<os>-<arch>.zip|tar.gz`); a release gets them from `.github/workflows/desktop.yml`: Windows, Linux x64 / arm64, and one Mac app for both chips (`TV-Remote-mac.zip`, the arm64 and x64 builds joined by `app/desktop/universal.sh`).
+- Apps: `app/<x>/build.sh` (JDK 17, Android SDK) → `app/<x>/build/*.apk`; the web UI is packed into the APKs.
+- Computer app: `cd app/gradle && ./gradlew :desktop:installDist`; for tests its own port and TV list (real TVs untouched):
+  `TVS_FILE=/tmp/x.json TVR_KEYS=/tmp/keys TVR_PASS=testtest app/desktop/build/install/desktop/bin/desktop --port 8769`,
+  then `http://127.0.0.1:8769/?k=testtest` (curl: header `x-tvr-pass`). The page is read from disk: a web change needs a reload.
+- **A feature that needs a newer TV Setup:** add it to `SetupNeed.MIN` (+ `SetupNeed.name`, `SETUP_NEEDS` in `js/core.js`),
+  check before starting (`/api/setup/need?f=`, `setupFor()` on the page, `withSetup()` on the phone) or throw `SetupNeed.Missing`; every client turns
+  that into one Update / Install TV Setup question (`needSetup()` in `js/core.js`, `offerSetup()` on the phone).
 
-## Automation (sleep timer, bedtime, app limits, scenes)
+## Releases and pushing
 
-- The timer, bedtime and limits live **on the TV**, in TV Setup (`Rules.kt`, prefs), enforced by `Guard` (standby with keyevent 223,
-  closing apps, the notice `WarnActivity`), so they work with every other device off. All three clients reach them the same way:
-  `am broadcast -n dev.tvremote.setup/.RulesReceiver --es set <base64 json>` over ADB (`RulesClient.kt`);
-  the receiver needs the shell's DUMP permission, so apps cannot call it. No receiver = TV Setup missing or older than the timer.
-- Scenes are kept per client (computer: `tvs.json` "scenes"; TV Setup: prefs; phone: `SceneStore`), cleaned by `Scenes.clean`; `GET /api/scenes?download=1` is the backup file the page imports back.
-
-## A feature that needs a newer TV Setup
-
-The phone or computer can be newer than TV Setup on the TV. Add the feature and its first TV Setup version to `SetupNeed.MIN`
-(and its name to `SetupNeed.name` and `SETUP_NEEDS` in `js/core.js`). Then check before starting it (`/api/setup/need?f=`,
-`setupFor()` on the page, `withSetup()` on the phone) or throw `SetupNeed.Missing` where it finds out. Every client turns
-that into one question with an Update / Install TV Setup button (`needSetup()` in `js/core.js`, `offerSetup()` on the phone).
-
-## Versions and releases
-
-Six numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
-`app/home/VERSION` (TV Home: `app/home` or `app/shared/src/home` changed; its key `app/home/signing.jks`, backed up by `dev/release/keys.sh`),
-`app/channels/VERSION` (TV Channels: `app/channels` changed; `app/channels/signing.jks`, also in `dev/release/keys.sh`),
-`app/games/VERSION` (TV Games: `app/games` or its packed `docs/games/games.json` changed; `app/games/signing.jks`, also in `dev/release/keys.sh`).
-
-The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
-`BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026
-(they had reached 2.24.2): `Release.legacy()` counts 1.3.0 … 2.x as older than every new number, `versionCode` is 100000 + the number
-so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until `legacy()` is removed.
-
-- A change in `app/shared` (Kotlin **or** web) changes both APKs, so both app numbers go up (release.sh sees it).
-- **TV Setup Keys rides with TV Setup's number** (`app/tvkeys` changed = `app/tv/VERSION` goes up; release.sh sees it and refuses a `tv-setup.apk` without `assets/tvkeys.apk`; `KeyFixTest` checks the asset is packed, signed, and that the manifest of `app/tv` declares no accessibility service). Never give the add-on a number or a release file of its own.
-- **The user guide** (`docs/guide.html`, one `<article class="topic">` per topic) says which release each topic was checked
-  against (`data-v`) and which app files can make it wrong (`data-src`, short paths: `web/`, `core/`, `phone/`, `tv/`, `pc/`).
-  A change to what a topic describes: update the topic and set its `data-v="next"` (release.sh stamps the version).
-  `dev/release/guide_stale.py` lists the topics whose files changed since; `release.sh` stops on them (`GUIDE_OK=1` goes on).
-  A new topic needs both attributes and an entry in `docs/data/since.json` (`"since": "next"`, plus `setup` / `phone` / `pc` minimum versions where the feature needs a newer app; `release.sh` stamps "next" with the version and its date; `guide_stale.py` warns when missing). Point to another topic with a link (`<a href="#id" data-t="id">`), never “see … below”.
-- Keep the next release's notes under `## Unreleased` at the top of `CHANGELOG.md` (**Tiếng Việt** and **English** lists), added to as features land.
-- `dev/release/release.sh` does the rest: bumps `VERSION` and the number of each app whose code (or `app/shared`) changed since the last tag (beyond comments: `dev/release/code_changed.py`) (patch; `BUMP=minor`), turns `## Unreleased` into `## <VERSION> - <date>` with the line `Web x · app điện thoại y · app TV z`, commits, pushes, builds and creates the GitHub release with both APKs and `versions.json` (APKs are never committed). It needs `gh` logged in and both `signing.jks` files. Run again after a failure: nothing is bumped twice.
-- The computer apps are not built by `release.sh`: when `app/desktop` or `app/shared` changed since the last tag it starts
-  `.github/workflows/desktop.yml` with the new tag, which builds them on each system and attaches them (names without a version,
-  so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last
-  release's archives again, and `versions.json` "web" (the number the computer app's Updater.kt reads) keeps theirs.
-- Release only when the user says so, and keep GitHub Actions runs few: the workflow never runs on push; try things locally.
-  Batch releases: one release once enough features / fixes have gathered, never one per small fix.
-- Push without asking once the work is tested and committed (a push deploys `docs/` at once, so the tests must pass first).
-  Sub-agents still never push; the main session does.
-- Pull requests, issues and comments on other people's repos (cleanyourtv …): no "Generated with" line or session link.
-- Both apps update themselves from GitHub releases (`update/Release.kt`). Every app installs only a file listed in the
-  release's `SHA256SUMS` with its SHA-256, signed (`SHA256SUMS.sig`, Ed25519) by a key in `Release.KEYS`; a release without
-  them is not offered. `release.sh` runs `dev/release/sums.sh <tag>` last (after the computer apps are attached); run it again after
-  replacing any file of a release by hand. The keys (`~/.tv-remote-release/`, never on GitHub) and their
-  backup: `dev/README.md`.
+- Release only when the user says so; batch them; keep GitHub Actions runs few (nothing runs on push). Details: dev/release/AGENTS.md.
+- Notes go under `## Unreleased` in `CHANGELOG.md` (**Tiếng Việt** and **English**) as features land. A change to what a
+  `docs/guide.html` topic describes: update it and set `data-v="next"`.
+- Push without asking once tested and committed (a push deploys `docs/` at once). Sub-agents never push.
+- PRs, issues and comments on other people's repos (cleanyourtv …): no "Generated with" line or session link.
 
 ## Testing
 
-**A feature is done only once it has been run on every platform it touches, logic and UI**: the Phone app's native
-screens (phone emulator), the Computer app's page (Chrome, 1100 and 400 px), the TV web page / Manage on the TV, TV Setup
-(TV emulator). Logic: the action really happens on the TV, plus its errors, Stop, and an old TV Setup. UI: a screenshot
-of each new or changed screen, looked at: no label cut or overflowing, no row wrapping, chips on one line, nothing
-clipped. Unit tests alone do not count. Report what was tested where, and what could not be (e.g. HDMI needs a real TV).
-A UI fault seen while testing (a cut label, wrapping chips, misalignment) is fixed in the same change, not asked about.
+**Done = run on every platform it touches, logic and UI**: the Phone app (phone emulator), the Computer app's page (Chrome,
+1100 and 400 px), the TV web page / Manage on the TV, TV Setup and the TV apps (TV emulator). Logic: it really happens on the TV,
+plus errors, Stop, an old TV Setup. UI: a screenshot of each new or changed screen, looked at (nothing cut, wrapped or clipped).
+Unit tests alone do not count; report what was tested where and what could not be. A UI fault seen is fixed in the same change, not asked about.
 
-Test on emulators, not on real TVs. Two AVDs are used: `tvremote_gtv` (Google TV, Android 14) and `tvremote_test` (phone, Android 14).
-`dev/test/emu.sh` does the setup below; use it rather than doing it by hand:
-
-```
-dev/test/emu.sh create    # both AVDs, once (system images downloaded; arm64 or x86_64 to match the computer)
-dev/test/emu.sh           # start (the TV first) + build both APKs + install each on the right emulator; again after every change
-dev/test/emu.sh install   # build + install only, the emulators already running
-dev/test/emu.sh reset     # the phone app's saved TVs reduced to 10.0.2.2
-dev/test/emu.sh stop
-dev/test/emu.sh status    # every emulator on the computer, hidden ones too: CPU, uptime, what is in front
-```
-
-Then in the phone app the TV is `10.0.2.2`; accept "Allow USB debugging?" on the TV emulator the first time (its window).
-Env: `SECURE=0` (no prompt), `HEADLESS=1` (no windows; such an emulator stops itself after `EMU_TTL` minutes, 120), `TV_AVD`/`PHONE_AVD`/`TV_PORT`/`PHONE_PORT` (a second pair beside the first).
-What it takes care of, for doing it by hand:
-
-- Boot the TV emulator **first** so it is `emulator-5554`; its ADB port 5555 is then reachable from the phone emulator as `10.0.2.2:5555`. Check which serial is the TV (`android.software.leanback` in `pm list features`) before installing anything: the serials swap when the boot order differs.
-- Boot the TV emulator with `-prop ro.adb.secure=1` to get the real "Allow USB debugging?" prompt. The TV shows one prompt at a time and queues prompts of dead connections first.
-- Emulator snapshots can bring back an old saved-TV list holding real TV addresses: before tapping anything, check `shared_prefs/tvs.xml` (`ips`) of `dev.tvremote.phone` (needs `adb root`) and reduce it to `10.0.2.2` (`dev/test/emu.sh reset`).
-- The Google TV image is arm64-only (runs 64-bit apps only); an x86_64 image (Intel computers) behaves differently there.
-- Tap by text (find the node in `uiautomator dump`), never by fixed coordinates.
-- If `adb exec-out screencap` comes back blank on the phone emulator, use `adb emu screenrecord screenshot <file>`.
-- Web UI: headless Chrome through the DevTools protocol against the test server above.
-- **Keep the computer usable** (a run of parallel agents froze it once, dev/DECISIONS.md "Tests that froze the computer"): at most
-  two emulators (`emu.sh` refuses a third: reuse the running one); heavy steps (ffmpeg, Gradle builds, `audit.js`) one at a time
-  through `dev/test/light.sh <cmd>` (waits for room, `nice`, one lock), never several with `&`; test videos / GIFs from
-  `dev/test/media.sh` (made once in `.cache/media`), and any ffmpeg on `lavfi` sets the length in the source (`:duration=`), never only `-t`.
-  A video background left looping on TV Home makes the TV emulator take ~9.5 cores (software codec + CPU-drawn GPU; 0.4% with TV
-  Home in the background, measured 2026-10-24): play it only while measuring, then a picture background or another app in front.
-- Unit tests (no device needed): `node --test app/shared/tests/ app/games/tests/` (also run by `dev/hooks/pre-push` before every push, since a push deploys `docs/`, and by `release.sh`; set up once per clone: `git config core.hooksPath dev/hooks`) (the web games' rules and bots: `app/games/tests`, beside the app that packs them, not in `docs/`, which the site publishes),
-  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest`. The voice tests exist on both sides
-  (`voice.test.js`, `VoiceTest.kt`): keep `js/voice.js` and `Voice.kt` understanding the same sentences.
-- **Speed budgets** (`PerfBudgetTest.kt` in `:shared`, ~17 hot paths: Ed25519 / `SignedList.kept`, `Launchers.parse/facts`, `WebPage` gzip, `Words` loading, `Qr`, `Diagnose`, parsers; `tests/perf_budget.test.js` for the page's: i18n, QR, voice; ~2 s each; the node one runs in the pre-push hook, the Kotlin one with `:shared:testDebugUnitTest` and in `release.sh`, not pre-push: Gradle is ~1 min). Baselines are per machine, in the gitignored `dev/perf/.local/` (keyed by OS / CPU count / JVM or node version): a first run on a machine or a new case records and passes, a clearly faster run lowers it. Red = over 2x the baseline AND over baseline + the case's floor: **find the regression (`git log` on the function) and fix it**. Raise the baseline only when slower is intended (`TVR_PERF_UPDATE=1`, say why in the commit); never commit baselines. A new hot path = one more `case(...)`, not a test per function (dev/DECISIONS.md "Speed budgets").
-- Real network and real browsers: `dev/test/smoke.py tv` asks every `/api` route of TV Setup on the TV emulator through the emulator's
-  own port redirect (adb forward hid a reply lost to a reset); `TVR_PASS=… dev/test/smoke.py URL` does the same for the computer app.
-  `TVR_PASS=… node dev/test/layout.js` checks the layout in Chrome and WebKit (the Mac app's window and iPhones are WebKit). Run both
-  after a change to HttpServer / the routes, or to the page's CSS.
-- Before a release with UI changes: `node dev/test/audit.js` presses every button of the page (no TV, the demo's made-up one) and checks each
-  screen it opens; read `/tmp/tvr-audit/index.html` and fix what it boxes ("same" is advice). `--only=auto` for one tab.
-- Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the `css/base.css` tokens in both themes); `dev/test/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
-- The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
-- The intro site's screenshots: `dev/shots/shots.py` (`docs/README.md`).
+- Emulators, not real TVs: `dev/test/emu.sh` (`create` once; no argument = start + build + install; `install`, `reset`, `stop`,
+  `status`). In the phone app the TV is `10.0.2.2`. By hand and the pitfalls: dev/test/AGENTS.md.
+- **Keep the computer usable:** at most two emulators; heavy steps (Gradle, ffmpeg, `audit.js`) one at a time through
+  `dev/test/light.sh <cmd>`, never several with `&`; no video background left looping on the TV emulator (~9.5 cores).
+- Unit tests: `node --test app/shared/tests/ app/games/tests/` (also the pre-push hook: `git config core.hooksPath dev/hooks`),
+  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest` (+ the app you changed). A red speed budget
+  (`PerfBudgetTest`, `perf_budget.test.js`) is a regression to find and fix, not a baseline to raise.
 
 ## Handy facts
 
-- **Finding code: codegraph** (a symbol index, much faster than grep across the six apps). `.mcp.json` gives Claude Code its
-  tools (`codegraph_explore`, `codegraph_node`, callers / callees / impact); without them the CLI says the same:
-  `codegraph explore "<what you look for>"`, `codegraph node <Symbol>`, `codegraph callers <fn>`, `codegraph impact <Symbol>`.
-  Once per clone: `npm i -g @colbymchenry/codegraph && codegraph init .` (the index `.codegraph/` is gitignored, ~60 MB);
-  the MCP server keeps it current itself (a file watcher, and a catch-up on connect for a pull or checkout made meanwhile).
-  Use grep for words and strings (i18n ids, JSON keys), codegraph for "who calls / what breaks if I change this".
-- Agents checking crashes or reviewing community themes: [dev/census/CRASHES.md](dev/census/CRASHES.md) and [dev/themes/REVIEW.md](dev/themes/REVIEW.md) (`crashes.py --json`, `review_themes.py --list --json`).
-- Downloader (AFTVnews) short codes, always pointing at the latest release: **2397346** → `tv-setup.apk`, **2973135** → `tv-remote.apk`, **4356026** → `tv-home.apk`, **8135635** → `tv-channels.apk`, **2294968** → `tv-games.apk`. They are listed once in `docs/data/downloader.json`, signed by `dev/sign/sign_downloader.py` (the launcher list's key; run it after every edit and commit the `.sig` with it); the apps read it through `core/Downloader.kt` (site, else GitHub, else the copy kept, else `PACKED`, which `DownloaderTest` keeps equal to the file; an unsigned list is ignored: a code makes the TV install what it points at), and the page asks `/api/downloader`. The words take `{code}`, never the digits. The static pages of `docs/` and the READMEs keep the codes as text. Downloader registers the `downloader:` scheme: opening `downloader://<code>` (an intent, or the remote protocol's launch command) makes it fetch the APK and bring up the installer with nothing typed. Only send it once Downloader is known to be installed; a link the TV has no app for can make it drop the remote connection.
-- TV Setup also runs on phones and tablets (needs ADB on port 5555 there). Tell a TV from a phone with the `android.software.leanback` feature, never the screen size alone: a 1080p TV is only `sw540dp`. Optimize TV refuses non-TVs (`Setup.tvOnly`).
-- TV Setup keeps its state on the TV: `/data/local/tmp/tvr-disabled.txt` (apps Optimize TV turned off, for Undo), stats in `/sdcard/Android/data/dev.tvremote.setup/files/stats/`.
-- The intro site https://tvremote.pages.dev is `docs/`, deployed by Cloudflare Pages on every push to main that touches it:
-  its files, animations and screenshots in `docs/README.md`. `docs/llms.txt` tells AI agents about the app: keep it true.
-- Release download links: `https://github.com/HoangTran0410/tv-remote/releases/latest/download/<tv-setup|tv-remote>.apk`.
+- **Finding code: codegraph** (a symbol index). `.mcp.json` gives its tools (`codegraph_explore`, `codegraph_node`, callers,
+  impact); the CLI says the same: `codegraph explore "<what>"`, `codegraph node <Symbol>`, `codegraph callers <fn>`. Once per
+  clone: `npm i -g @colbymchenry/codegraph && codegraph init .` (`.codegraph/` gitignored); its MCP server keeps the index current.
+  grep for words and strings (i18n ids, JSON keys), codegraph for "who calls / what breaks".
+- Crashes and community themes: [dev/census/CRASHES.md](dev/census/CRASHES.md), [dev/themes/REVIEW.md](dev/themes/REVIEW.md).
+- Downloader codes (latest release): **2397346** tv-setup, **2973135** tv-remote, **4356026** tv-home, **8135635** tv-channels,
+  **2294968** tv-games; the signed list and how the apps use it: app/shared/AGENTS.md.
+- Tell a TV from a phone by `android.software.leanback`, never the screen size (a 1080p TV is only `sw540dp`); TV Setup also runs
+  on phones (ADB on 5555 there; Optimize TV refuses them, `Setup.tvOnly`). TV Setup's state on the TV: `/data/local/tmp/tvr-disabled.txt` (Undo),
+  `/sdcard/Android/data/dev.tvremote.setup/files/stats/`.
+- The site https://tvremote.pages.dev is `docs/` (Cloudflare Pages, on every push to main): `docs/README.md`; keep `docs/llms.txt` true.
+- Downloads: `https://github.com/HoangTran0410/tv-remote/releases/latest/download/<tv-setup|tv-remote>.apk`.

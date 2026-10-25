@@ -3,7 +3,7 @@
 The rules for every change to `app/shared/web`: the page the Computer app shows, the TV web page (TV Setup on 8765), the
 Phone app's Manage screen, and TV Setup's own Manage screen on the TV (`?ontv=1`, `html[data-ontv]`, D-pad focus in
 `js/ontv.js`). Everything here is taken from the code as it is; where code and this file disagree, the tests win, then fix
-this file. AGENTS.md has the short version ("The tabs are made of a few shapes"); this is the reference.
+this file. [AGENTS.md](AGENTS.md) has the short version ("The tabs are made of a few shapes"); this is the reference.
 
 The remote tab (`.rc`, the D-pad, keys from `remote.json`) is laid out by hand to be hit without looking: most rules below
 are for the other tabs, dialogs and menus.
@@ -206,7 +206,7 @@ hue; in `button`, `label.filebtn`, `a.linkbtn` the button's colour. An icon-only
 - Capabilities: `data-needs="adb"` (needs ADB), `"control"` / `"full"` (a guest's scope), or any `caps` name from
   `/api/state`. `applyKind()` (`js/core.js:419`) hides cards (`.kind-off`), greys buttons (`data-kind-off`, a press toasts why),
   disables inputs, dims tabs. A new ADB feature: `data-needs="adb"`.
-- The remote's keys and menus come from `remote.json` only (AGENTS.md "The remote screen is drawn from one file"); a new
+- The remote's keys and menus come from `remote.json` only ([AGENTS.md](AGENTS.md) "The remote screen is drawn from one file"); a new
   `do` needs a handler in `REMOTE_DO` (`js/remote.js`) and `phoneActions` (`PhoneRemote.kt`).
 - The page's state: a file sets only its own globals, forgets per-TV state in its `onTvChange()`, writes fields with
   `put(el, 'textContent', v)` (`js/core.js:297`), never `$('#x').textContent = v` (`tests/page.test.js`).

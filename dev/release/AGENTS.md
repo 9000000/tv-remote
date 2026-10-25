@@ -1,0 +1,34 @@
+# dev/release: versions and releases
+
+Read with the root [AGENTS.md](../../AGENTS.md).
+
+## Versions and releases
+
+Six numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
+`app/home/VERSION` (TV Home: `app/home` or `app/shared/src/home` changed; its key `app/home/signing.jks`, backed up by `dev/release/keys.sh`),
+`app/channels/VERSION` (TV Channels: `app/channels` changed; `app/channels/signing.jks`, also in `dev/release/keys.sh`),
+`app/games/VERSION` (TV Games: `app/games` or its packed `docs/games/games.json` changed; `app/games/signing.jks`, also in `dev/release/keys.sh`).
+
+The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
+`BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026
+(they had reached 2.24.2): `Release.legacy()` counts 1.3.0 … 2.x as older than every new number, `versionCode` is 100000 + the number
+so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until `legacy()` is removed.
+
+- A change in `app/shared` (Kotlin **or** web) changes both APKs, so both app numbers go up (release.sh sees it).
+- **TV Setup Keys rides with TV Setup's number** (`app/tvkeys` changed = `app/tv/VERSION` goes up; release.sh sees it and refuses a `tv-setup.apk` without `assets/tvkeys.apk`; `KeyFixTest` checks the asset is packed, signed, and that the manifest of `app/tv` declares no accessibility service). Never give the add-on a number or a release file of its own.
+- **The user guide** (`docs/guide.html`, one `<article class="topic">` per topic) says which release each topic was checked
+  against (`data-v`) and which app files can make it wrong (`data-src`, short paths: `web/`, `core/`, `phone/`, `tv/`, `pc/`).
+  A change to what a topic describes: update the topic and set its `data-v="next"` (release.sh stamps the version).
+  `dev/release/guide_stale.py` lists the topics whose files changed since; `release.sh` stops on them (`GUIDE_OK=1` goes on).
+  A new topic needs both attributes and an entry in `docs/data/since.json` (`"since": "next"`, plus `setup` / `phone` / `pc` minimum versions where the feature needs a newer app; `release.sh` stamps "next" with the version and its date; `guide_stale.py` warns when missing). Point to another topic with a link (`<a href="#id" data-t="id">`), never “see … below”.
+- Keep the next release's notes under `## Unreleased` at the top of `CHANGELOG.md` (**Tiếng Việt** and **English** lists), added to as features land.
+- `dev/release/release.sh` does the rest: bumps `VERSION` and the number of each app whose code (or `app/shared`) changed since the last tag (beyond comments: `dev/release/code_changed.py`) (patch; `BUMP=minor`), turns `## Unreleased` into `## <VERSION> - <date>` with the line `Web x · app điện thoại y · app TV z`, commits, pushes, builds and creates the GitHub release with both APKs and `versions.json` (APKs are never committed). It needs `gh` logged in and both `signing.jks` files. Run again after a failure: nothing is bumped twice.
+- The computer apps are not built by `release.sh`: when `app/desktop` or `app/shared` changed since the last tag it starts
+  `.github/workflows/desktop.yml` with the new tag, which builds them on each system and attaches them (names without a version,
+  so `releases/latest/download/TV-Remote-<os>-<arch>.zip` always works), and waits for it; otherwise it attaches the last
+  release's archives again, and `versions.json` "web" (the number the computer app's Updater.kt reads) keeps theirs.
+- Both apps update themselves from GitHub releases (`update/Release.kt`). Every app installs only a file listed in the
+  release's `SHA256SUMS` with its SHA-256, signed (`SHA256SUMS.sig`, Ed25519) by a key in `Release.KEYS`; a release without
+  them is not offered. `release.sh` runs `dev/release/sums.sh <tag>` last (after the computer apps are attached); run it again after
+  replacing any file of a release by hand. The keys (`~/.tv-remote-release/`, never on GitHub) and their
+  backup: `dev/README.md`.

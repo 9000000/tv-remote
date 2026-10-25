@@ -1,6 +1,14 @@
 # app/games: TV Games
 
-Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too). What is where:
+Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too).
+
+## What it is
+
+| Name | Code | `data-core` | What it is |
+|---|---|---|---|
+| **TV Games** | `app/games` | | retro games (libretro cores, GPL-3: `app/games/LICENSE`) and web games on the TV, played with phones as pads (`dev.tvremote.games`): its own server on 8780 + a QR, no ADB and no TV Setup needed to play; installed, opened and updated from every client over ADB like TV Channels (`core/ontv/Games.kt`, `OwnApp.kt`, `js/games.js`) |
+
+## Files
 
 ```
 app/games/               TV Games: LibraryActivity (the games, Suggestions from the catalog), GameActivity (LibretroDroid, save / load),

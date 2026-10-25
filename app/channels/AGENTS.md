@@ -1,6 +1,14 @@
 # app/channels: TV Channels
 
-Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too). What is where:
+Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too).
+
+## What it is
+
+| Name | Code | `data-core` | What it is |
+|---|---|---|---|
+| **TV Channels** | `app/channels` | | iptv-org's free channels on the TV (`dev.tvremote.channels`); knows nothing of the other apps: they reach it only by its links (`tvchannels://play/<id>`, `group/<id>`, `find/<name>`); installed and opened from every client over ADB (`core/ontv/Channels.kt`, `js/channels.js`) |
+
+## Files
 
 ```
 app/channels/            TV Channels: BrowseActivity (countries, categories, favourites, groups, search), PlayActivity (ExoPlayer, the
