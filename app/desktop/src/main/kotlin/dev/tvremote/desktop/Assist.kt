@@ -40,10 +40,11 @@ class Assist(private val cur: () -> Session) {
     private fun pressOk() = cur().need().key(23, Atv.SHORT)
 
     /** Brings an app to the front without ADB: asks for it, else opens its Play Store page and presses its main button. */
-    private fun openOnTv(pkg: String, stoppable: Boolean = true): Boolean {
+    private fun openOnTv(pkg: String, stoppable: Boolean = true, play: Boolean = true): Boolean {
         if (front() == pkg) return true
         sendLink("market://launch?id=$pkg")
         if (untilFront(4.0, stoppable) { it == pkg }) return true
+        if (!play) return false                                       // not on the Play Store (TV Home): its page has nothing to install
         sendLink("https://play.google.com/store/apps/details?id=$pkg")
         if (!untilFront(10.0, stoppable) { it == "com.android.vending" }) return false
         Thread.sleep(3000)                                            // the page draws, with its main button in focus
@@ -64,14 +65,15 @@ class Assist(private val cur: () -> Session) {
         }
     }
 
-    private fun installSetup() {
+    /** [app]: a key of the Downloader codes (core/Downloader.kt): "setup" (TV Setup) or "home" (TV Home). The steps are the same. */
+    private fun installApp(app: String) {
         try {
             if (front().isEmpty()) {
                 status = "blind"; say("pc.assist_blind")
                 return
             }
             // Downloader first, always: a TV's own browser takes the APK link too and downloads it, then stays on a white page,
-            // unable to hand the file to the installer. Downloader's own link (SETUP_CODE) opens nothing else.
+            // unable to hand the file to the installer. Downloader's own link (the app's code) opens nothing else.
             step = 1; say("adb_help.opening_downloader_on_the")
             var there = openOnTv(DOWNLOADER)
             while (!there && !stop) {                                 // its Play Store page was told to install it
@@ -86,7 +88,7 @@ class Assist(private val cur: () -> Session) {
             if (stop) { status = "idle"; say(null); return }
             step = 2; say("adb_help.handing_the_download_link")
             Thread.sleep(3000)
-            sendLink(SETUP_CODE)
+            sendLink("downloader://" + dev.tvremote.core.Downloader.code(app).orEmpty())   // the AFTVnews code of the app's APK (docs/data/downloader.json): opens Downloader alone, no "Open with"
             answerChooser(); Thread.sleep(2500)
             val was = front()
             step = 3; say("pc.assist_downloading")
@@ -119,11 +121,12 @@ class Assist(private val cur: () -> Session) {
                     return HttpServer.Response.error(409, Words.get(lang, "pc.assist_busy"))
                 when (what) {
                     "setup" -> {
+                        val app = d.optString("app", "setup").takeIf { it in APPS } ?: return HttpServer.Response.error(400, "unknown app")
                         val old = task
                         if (status == "running" && stop && old != null && old.isAlive) { old.interrupt(); old.join(5000) }   // stopped a moment ago, still winding down
                         if (status != "running") {
                             status = "running"; say(null); stop = false; installed = false; checking = false
-                            task = Thread({ installSetup() }, "assist").apply { isDaemon = true; start() }
+                            task = Thread({ installApp(app) }, "assist").apply { isDaemon = true; start() }
                         }
                         return ok()
                     }
@@ -133,7 +136,7 @@ class Assist(private val cur: () -> Session) {
                         if (':' in target) { sendLink(target); return HttpServer.Response.json(JSONObject().put("ok", true).put("front", front())) }
                         if (!PKG.matches(target)) return HttpServer.Response.error(400, "not a package name")
                         opening = true
-                        try { return HttpServer.Response.json(JSONObject().put("ok", openOnTv(target, false)).put("front", front())) } finally { opening = false }
+                        try { return HttpServer.Response.json(JSONObject().put("ok", openOnTv(target, false, d.optBoolean("play", true))).put("front", front())) } finally { opening = false }
                     }
                     "direct" -> {                                     // the fallback: the APK link to whatever app takes it; some TVs never install it
                         opening = true
@@ -163,10 +166,10 @@ class Assist(private val cur: () -> Session) {
 
     companion object {
         const val STEPS = 3
+        val APPS = setOf("setup", "home")
         val HOME = Regex("launcher|\\.home\\b|tvhome", RegexOption.IGNORE_CASE)   // the TV's home screens (Google TV, Android TV, makers')
         const val DOWNLOADER = "com.esaba.downloader"
         const val SETUP_APK = "https://github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
-        val SETUP_CODE: String get() = "downloader://" + dev.tvremote.core.Downloader.code("setup").orEmpty()   // Downloader's own link for the AFTVnews code of SETUP_APK (docs/data/downloader.json): opens Downloader alone, no "Open with"
         val PKG = dev.tvremote.core.adb.Pkg.RE
     }
 }

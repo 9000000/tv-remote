@@ -22,6 +22,12 @@ import kotlin.math.roundToInt
 // The palette: dark or light, set by [loadLang] before any view is built (Settings -> Appearance, or the phone's own mode).
 internal var LIGHT = false
 internal var BG = Palette.dark.bg
+/** One of our apps the Downloader can put on a TV: [key] is its code in core/Downloader.kt; the rest are word ids. */
+internal class DlApp(val key: String, val pkg: String, val title: String, val look: String, val open: String) {
+    val code: String get() = dev.tvremote.core.Downloader.code(key).orEmpty()
+}
+internal val SETUP_APP = DlApp("setup", "dev.tvremote.setup", "setup.install_setup_title", "adb_help.the_app_has_entered", "adb_help.open_tv_setup")
+internal val HOME_APP = DlApp("home", "dev.tvremote.home", "setup.install_home_title", "setup.look_body_home", "adb_help.open_tv_home")
 internal val DL_CODE: String get() = dev.tvremote.core.Downloader.code("setup").orEmpty()   // AFTVnews short code of tv-setup.apk (docs/data/downloader.json, signed): Downloader takes it as downloader://<code> or in its address field
 internal var CARD = Palette.dark.card
 internal var BTN = Palette.dark.btn

@@ -362,7 +362,7 @@ async function adbHelp() {
     return;
   }
   assistShow(T('setup.turn_on_adb'),
-    choice(T('setup.auto_install'), T('setup.auto_install_note'), installSetup, 'primary'),
+    choice(T('setup.auto_install'), T('setup.auto_install_note'), () => installSetup(), 'primary'),
     choice(T('setup.by_hand'), T('setup.by_hand_note'), findSettings),
     choice(T('setup.other_home'), T('setup.other_home_note'), otherHome),
     CORE !== 'tv' ? choice(T('setup.wireless_choice'), T('setup.wireless_note'), wirelessPair) : null,
@@ -413,8 +413,22 @@ async function findSettings() {
   if (r.blind) return assistShow(T('setup.open_settings'), say(T('setup.settings_opened_q')), row(act(T('setup.yes'), async () => adbSteps(), 'primary'), act(T('setup.no'), async () => lookOnHome())));
   lookOnHome();
 }
+// TV Home is not on the Play Store, so "installed?" has one honest test: the TV does not bring it to the front. Then it is
+// put on through Downloader like TV Setup. A TV that does not say what is on its screen cannot tell: the person sees it.
+const HOME_PKG = 'dev.tvremote.home';
+const homeSeen = () => assistShow('TV Home', say(T('setup.home_look_own')),
+  row(act(T('setup.adb_steps_btn'), async () => adbSteps(), 'primary'), act(T('setup.reopen'), async () => { await openHome(); }), act(T('setup.choose_another'), async () => otherHome())));
+async function openHome() {
+  if (STATE.app !== HOME_PKG) {
+    assistShow('TV Home', say(T('setup.opening_on_tv'))); const gen = assistGen;
+    const r = await assist('open', { what: HOME_PKG, play: false }); if (gen !== assistGen) return;
+    if (!r) return adbHelp();
+    if (!r.ok && r.front) return installSetup('home');
+  }
+  homeSeen();
+}
 function otherHome() {
-  assistShow(T('setup.via_other_home'), ...HOMES.map(([name, pkg]) => choice(name, STATE.app === pkg ? T('setup.opening_on_tv') : T('setup.installed_open_else_play'), () => {
+  assistShow(T('setup.via_other_home'), choice('TV Home', STATE.app === HOME_PKG ? T('setup.opening_on_tv') : T('setup.home_own_sub'), () => openHome()), ...HOMES.map(([name, pkg]) => choice(name, STATE.app === pkg ? T('setup.opening_on_tv') : T('setup.installed_open_else_play'), () => {
     assist('open', { what: pkg });
     assistShow(name, say(T('setup.home_look_body')),
       row(act(T('setup.adb_steps_btn'), async () => adbSteps(), 'primary'), act(T('setup.reopen'), async () => { await assist('open', { what: pkg }); }), act(T('setup.choose_another'), async () => otherHome())));
@@ -438,25 +452,31 @@ async function installDirect() {
       row(act(T('setup.via_downloader'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())), say(tip));
   }
 }
-async function installSetup() {
-  if (!await assist('setup')) return;
+// The app Downloader puts on the TV: its code key (core/Downloader.kt), package, and the words around the install.
+const DL_APPS = {
+  setup: { title: 'setup.install_setup_title', look: 'setup.look_body_tv', open: 'setup.open_setup', pkg: 'dev.tvremote.setup' },
+  home: { title: 'setup.install_home_title', look: 'setup.look_body_home', open: 'setup.open_home', pkg: HOME_PKG },
+};
+async function installSetup(key = 'setup') {
+  const app = DL_APPS[key], again = async () => installSetup(key);
+  if (!await assist('setup', { app: key })) return;
   const msg = say(T('setup.starting')); msg.classList.add('setupmsg');   // the words change as it goes; the buttons below must not jump
   const done = el('button', { className: 'small', textContent: T('setup.installed_done'), onclick: async () => { setDone(true); await assist('installed'); } });
   const setDone = (busy) => { done.disabled = busy; done.textContent = (busy ? T('setup.checking_busy') : T('setup.installed_done')); };
   const hands = el('p', { className: 'note', textContent: T('setup.dont_press') });   // a key pressed in the middle sends the job elsewhere
-  assistShow(T('setup.install_setup_title'), msg, hands, row(done, act(T('page.stop'), async () => { await assist('stop'); await sleep(400); adbHelp(); })));
+  assistShow(T(app.title), msg, hands, row(done, act(T('page.stop'), async () => { await assist('stop'); await sleep(400); adbHelp(); })));
   const gen = assistGen; let misses = 0;
   for (;;) {
     await sleep(1000); if (gen !== assistGen) return;
     const r = await api('/api/assist', null, true); if (gen !== assistGen) return;
     misses = r ? 0 : misses + 1;                                      // ten in a row: say so, instead of waiting for ever
-    if (misses >= 10) return assistShow(T('setup.install_setup_title'), say(T('setup.server_unreachable')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
+    if (misses >= 10) return assistShow(T(app.title), say(T('setup.server_unreachable')), row(act(T('setup.retry'), again, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
     if (!r || r.status === 'running') { if (r) { if (r.msg) msg.textContent = (r.step ? T('setup.step_of', { step: r.step, steps: r.steps }) + ' · ' : '') + r.msg; setDone(!!r.checking); } continue; }
-    if (r.status === 'moved') return assistShow(T('setup.install_setup_title'), say(T('setup.moved')),
-      row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
-    if (r.status === 'look') return assistShow(T('allow.look_at_the_tv'), say(T('setup.look_body_tv')),
-      row(act(T('setup.open_setup'), async () => { await assist('open', { what: 'dev.tvremote.setup' }); }, 'primary'), act(T('setup.redo'), async () => installSetup()), act(T('setup.other_ways'), async () => adbHelp())));
-    return assistShow(T('setup.install_setup_title'), say(r.msg || T('setup.cant_do')), row(act(T('setup.retry'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
+    if (r.status === 'moved') return assistShow(T(app.title), say(T('setup.moved')),
+      row(act(T('setup.retry'), again, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
+    if (r.status === 'look') return assistShow(T('allow.look_at_the_tv'), say(T(app.look)),
+      row(act(T(app.open), async () => { if (key === 'home') await openHome(); else await assist('open', { what: app.pkg }); }, 'primary'), act(T('setup.redo'), again), act(T('setup.other_ways'), async () => adbHelp())));
+    return assistShow(T(app.title), say(r.msg || T('setup.cant_do')), row(act(T('setup.retry'), again, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
   }
 }
 

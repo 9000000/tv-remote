@@ -174,19 +174,22 @@ private fun MainActivity.pairedAt(target: String, port: Int) {
     connect(target, e)
 }
 
+/** The step-by-step ways are TV Setup's (Downloader's page by hand); for TV Home the list of home screens is the way back. */
+private fun MainActivity.byHand(app: DlApp) = if (app === SETUP_APP) installSetupByHand() else otherHome()
+
 /**
  * Getting our TV app onto a TV that has no ADB yet, in one tap: the Downloader app (installed from the Play Store when
  * missing) fetches it, and the phone opens Downloader, types the link and presses Go. What only the person can do is
  * confirm the install on the TV.
  */
-internal fun MainActivity.installSetup() {
+internal fun MainActivity.installSetup(app: DlApp = SETUP_APP) {
     val a = basic ?: return
     if (!tvFree()) return
     val link = "github.com/hoangtran0410/tv-remote/releases/latest/download/tv-setup.apk"
     val dl = "com.esaba.downloader"
     var stop = false
     var installed = false                                         // the person says the TV has finished installing Downloader
-    val box = Popup.Builder(this).setTitle(T("setup.install_setup_title")).setMessage(T("adb_help.opening_downloader_on_the"))
+    val box = Popup.Builder(this).setTitle(T(app.title)).setMessage(T("adb_help.opening_downloader_on_the"))
         .setNeutralButton(T("adb_help.installed"), null)
         .setNegativeButton(T("apps.stop")) { _, _ -> stop = true }.setOnCancelListener { stop = true }.show()
     val doneBtn = box.getButton(Popup.BUTTON_NEUTRAL)
@@ -209,7 +212,7 @@ internal fun MainActivity.installSetup() {
     Thread {
         try {
             if (a.app.isEmpty()) {                                    // this TV does not say what is on its screen: no way to follow along
-                ui.post { box.dismiss(); installSetupByHand() }
+                ui.post { box.dismiss(); byHand(app) }
                 return@Thread
             }
             // Downloader first, always: a TV's own browser takes the APK link too and downloads it, then stays on a white page,
@@ -229,13 +232,13 @@ internal fun MainActivity.installSetup() {
                 }
             }
             if (!there) {
-                ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) installSetupByHand() }
+                ui.post { if (box.isShowing) box.dismiss(); if (!stop && basic === a) byHand(app) }
                 return@Thread
             }
             step = 2
             say("adb_help.handing_the_download_link")
             Thread.sleep(3000)
-            a.launch("downloader://$DL_CODE")                         // its own link: opens Downloader alone
+            a.launch("downloader://${app.code}")                    // its own link: opens Downloader alone
             for (press in 0 until 3) {                                // "Open with", should another app claim it too
                 Thread.sleep(1500)
                 if (a.app != "android" || stop) break
@@ -254,19 +257,19 @@ internal fun MainActivity.installSetup() {
                 if (box.isShowing) box.dismiss()
                 if (stop || basic !== a || isFinishing) return@post
                 Popup.Builder(this).setTitle(T("allow.look_at_the_tv"))
-                    .setMessage(T("adb_help.the_app_has_entered"))
-                    .setPositiveButton(T("adb_help.open_tv_setup")) { _, _ -> tvJob { openOnTv(a, "dev.tvremote.setup") { false } } }
-                    .setNeutralButton(T("adb_help.step_by_step")) { _, _ -> installSetupByHand() }
+                    .setMessage(T(app.look))
+                    .setPositiveButton(T(app.open)) { _, _ -> if (app === HOME_APP) openHome(a) else tvJob { openOnTv(a, app.pkg) { false } } }
+                    .setNeutralButton(T("adb_help.step_by_step")) { _, _ -> byHand(app) }
                     .setNegativeButton(T("common.close"), null).show()
             }
         } catch (e: TvMoved) {
             ui.post {
                 if (box.isShowing) box.dismiss()
                 if (stop || isFinishing) return@post
-                Popup.Builder(this).setTitle(T("setup.install_setup_title"))
+                Popup.Builder(this).setTitle(T(app.title))
                     .setMessage(T("setup.moved"))
-                    .setPositiveButton(T("core.try_again")) { _, _ -> installSetup() }
-                    .setNeutralButton(T("adb_help.step_by_step")) { _, _ -> installSetupByHand() }
+                    .setPositiveButton(T("core.try_again")) { _, _ -> installSetup(app) }
+                    .setNeutralButton(T("adb_help.step_by_step")) { _, _ -> byHand(app) }
                     .setNegativeButton(T("common.close"), null).show()
             }
         } catch (ignored: Exception) {
@@ -282,7 +285,7 @@ internal fun MainActivity.installSetup() {
  * presses the main button. That is "Open" when the app is installed; when it is not, the same press starts installing it,
  * and this returns false.
  */
-internal fun MainActivity.openOnTv(a: dev.tvremote.core.remote.Remote, pkg: String, stop: () -> Boolean): Boolean {
+internal fun MainActivity.openOnTv(a: dev.tvremote.core.remote.Remote, pkg: String, play: Boolean = true, stop: () -> Boolean): Boolean {
     val front = { want: String, seconds: Int ->
         var ok = false
         for (i in 0 until seconds * 5) { if (stop() || basic !== a) break; if (a.app == want) { ok = true; break }; Thread.sleep(200) }
@@ -291,6 +294,7 @@ internal fun MainActivity.openOnTv(a: dev.tvremote.core.remote.Remote, pkg: Stri
     if (a.app == pkg) return true
     a.launch(pkg)
     if (front(pkg, 4)) return true
+    if (!play) return false                                       // not on the Play Store (TV Home): its page has nothing to install
     a.launch("https://play.google.com/store/apps/details?id=$pkg")
     if (!front("com.android.vending", 10)) return false
     Thread.sleep(3000)                                            // the page draws, with its main button in focus
@@ -381,9 +385,34 @@ internal fun MainActivity.lookOnHome() {
         .setNegativeButton(T("setup.none_other_home")) { _, _ -> otherHome() }.show()
 }
 
+/**
+ * Opens TV Home, which is not on the Play Store, so "installed?" has one honest test: the TV does not bring it to the front.
+ * Then it is put on through Downloader like TV Setup (the TV's remote protocol cannot list its apps).
+ */
+internal fun MainActivity.openHome(a: dev.tvremote.core.remote.Remote, then: () -> Unit = {}) {
+    if (!tvFree()) return
+    Toast.makeText(this, T("adb_help.working_on_the_tv"), Toast.LENGTH_SHORT).show()
+    Thread {
+        var there = false
+        try {
+            if (a.app.isEmpty()) { a.launch(HOME_APP.pkg); there = true }   // this TV does not say what is on its screen: the person sees whether it opened
+            else there = openOnTv(a, HOME_APP.pkg, play = false) { false }
+        } catch (ignored: Exception) { } finally { tvBusy.set(false) }
+        ui.post { if (isFinishing || basic !== a) return@post; if (there) then() else installSetup(HOME_APP) }
+    }.start()
+}
+
 internal fun MainActivity.otherHome() {
     val a = basic ?: return
-    menu(T("setup.via_other_home"), -1, HOMES.map { (name, pkg) ->
+    val own = Triple("TV Home", T("setup.home_own_sub")) {
+        openHome(a) {
+            Popup.Builder(this).setTitle("TV Home").setMessage(T("setup.home_look_own"))
+                .setPositiveButton(T("setup.adb_steps_btn")) { _, _ -> adbSteps() }
+                .setNeutralButton(T("adb_help.open_again")) { _, _ -> openHome(a); ui.postDelayed({ if (basic === a && !isFinishing) adbSteps() }, 800) }
+                .setNegativeButton(T("setup.choose_another")) { _, _ -> otherHome() }.show()
+        }
+    }
+    menu(T("setup.via_other_home"), -1, listOf(own) + HOMES.map { (name, pkg) ->
         Triple(name, if (a.app == pkg) T("adb_help.open_on_the_tv") else T("adb_help.opens_it_or_its")) {
             tvJob { openOnTv(a, pkg) { false } }
             Popup.Builder(this).setTitle(name).setMessage(T("adb_help.look_at_the_tv"))
