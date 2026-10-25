@@ -6,11 +6,13 @@
   crashes.py SIG                one crash with its stack and device (SIG = the first letters of the sig column)
   crashes.py --delete SIG       remove one (all its versions)
   crashes.py --json             machine output for agents: [{sig, app, v, kind, msg, count, installs, first, last, device, stack}]
-  crashes.py --since 2026-10-01 only crashes first seen on/after that day;  --new = since the latest release tag's date
+  crashes.py --since 2026-10-01 only crashes first seen on/after that day
+  crashes.py --new              what has not been looked at: a crash never marked, or one that happened again after its mark (every version)
+  crashes.py --mark SIG|all [--note "why"]   marks it looked at (its count now), in checked.json (committed: every session and machine sees it)
   crashes.py SIG --frames       adds repo path:line for each stack frame that maps to a file here (also with --json: "frames")
   crashes.py --url http://127.0.0.1:8787   a local `wrangler dev`
 """
-import argparse, json, os, re, subprocess, sys, urllib.parse, urllib.request
+import argparse, json, os, re, sys, urllib.parse, urllib.request
 
 URL = "https://tvr-census.99-hoangtran.workers.dev"
 
@@ -38,23 +40,33 @@ def call(base, path, params, method="GET"):
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def release_day():
-    """Date (YYYY-MM-DD) of the latest release tag: --new means first seen since then."""
+CHECKED = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checked.json")
+
+
+def checked():
+    """{"<sig>|<v>": {at, n, note}}: when a crash (one version of it) was last looked at, and how many times it had happened then.
+    By count, not by date: the worker keeps days, and a crash seen again on the day it was marked must still show as new."""
     try:
-        tag = subprocess.run(["git", "-C", ROOT, "describe", "--tags", "--abbrev=0"], capture_output=True, text=True, check=True).stdout.strip()
-        return subprocess.run(["git", "-C", ROOT, "log", "-1", "--format=%cs", tag], capture_output=True, text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        sys.exit("--new: no git tag found")
+        return json.load(open(CHECKED))
+    except (OSError, ValueError):
+        return {}
+
+
+def unseen(r, marks):
+    """How many times it happened since its mark (all of them when never marked); 0 = nothing new."""
+    m = marks.get(r["sig"] + "|" + r["v"])
+    return r["n"] - (m["n"] if m else 0)
 
 
 def device(r):
     return " ".join(str(r[k]) for k in ("brand", "model", "android", "os", "arch", "java") if r.get(k))
 
 
-def normal(r):
-    """The stable shape of --json (the worker's own field names may change)."""
+def normal(r, marks):
+    """The stable shape of --json (the worker's own field names may change). seen: the last mark or null; unseen: times since it."""
     return {"sig": r["sig"], "app": r["app"], "v": r["v"], "kind": r["kind"], "msg": r["msg"], "count": r["n"], "installs": r["installs"],
-            "first": r["first"], "last": r["last"], "device": device(r), "stack": r.get("stack") or ""}
+            "first": r["first"], "last": r["last"], "device": device(r), "stack": r.get("stack") or "",
+            "seen": marks.get(r["sig"] + "|" + r["v"]), "unseen": unseen(r, marks)}
 
 
 _files = {}
@@ -124,13 +136,26 @@ def main():
     a.add_argument("--since", default="", metavar="YYYY-MM-DD")
     a.add_argument("--new", action="store_true")
     a.add_argument("--frames", action="store_true")
+    a.add_argument("--mark", metavar="SIG|all")
+    a.add_argument("--note", default="")
     o = a.parse_args()
-    since = release_day() if o.new else o.since
+    marks = checked()
+    if o.mark:
+        rows = call(o.url, "/v1/crashes", {"sig": "" if o.mark == "all" else full(o, o.mark), "v": o.v, "app": o.app})["crashes"]
+        at = __import__("datetime").datetime.now().astimezone().isoformat(timespec="seconds")
+        for r in rows:
+            k = r["sig"] + "|" + r["v"]
+            marks[k] = {"at": at, "n": r["n"], "note": o.note or (marks.get(k) or {}).get("note", "")}
+        with open(CHECKED, "w") as f:
+            json.dump(dict(sorted(marks.items())), f, ensure_ascii=False, indent=1)
+            f.write("\n")
+        print(f"marked {len(rows)} (sig|version) as looked at -> {os.path.relpath(CHECKED, ROOT)}: commit it")
+        return
     if o.json or o.since or o.new:
         rows = call(o.url, "/v1/crashes", {"sig": full(o, o.sig) if o.sig else "", "v": o.v, "app": o.app})["crashes"]
-        rows = [r for r in rows if r["first"] >= since]
+        rows = [r for r in rows if r["first"] >= o.since and (not o.new or unseen(r, marks) > 0)]
         if o.json:
-            out = [normal(r) for r in rows]
+            out = [normal(r, marks) for r in rows]
             if o.frames:
                 for x in out:
                     x["frames"] = frames(x["stack"])
