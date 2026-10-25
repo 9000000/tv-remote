@@ -221,10 +221,11 @@ dev/test/emu.sh           # start (the TV first) + build both APKs + install eac
 dev/test/emu.sh install   # build + install only, the emulators already running
 dev/test/emu.sh reset     # the phone app's saved TVs reduced to 10.0.2.2
 dev/test/emu.sh stop
+dev/test/emu.sh status    # every emulator on the computer, hidden ones too: CPU, uptime, what is in front
 ```
 
 Then in the phone app the TV is `10.0.2.2`; accept "Allow USB debugging?" on the TV emulator the first time (its window).
-Env: `SECURE=0` (no prompt), `HEADLESS=1` (no windows), `TV_AVD`/`PHONE_AVD`/`TV_PORT`/`PHONE_PORT` (a second pair beside the first).
+Env: `SECURE=0` (no prompt), `HEADLESS=1` (no windows; such an emulator stops itself after `EMU_TTL` minutes, 120), `TV_AVD`/`PHONE_AVD`/`TV_PORT`/`PHONE_PORT` (a second pair beside the first).
 What it takes care of, for doing it by hand:
 
 - Boot the TV emulator **first** so it is `emulator-5554`; its ADB port 5555 is then reachable from the phone emulator as `10.0.2.2:5555`. Check which serial is the TV (`android.software.leanback` in `pm list features`) before installing anything: the serials swap when the boot order differs.

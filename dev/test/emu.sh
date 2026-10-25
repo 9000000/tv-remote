@@ -8,10 +8,11 @@
 #   dev/test/emu.sh install    builds both APKs, installs TV Setup on the TV and TV Remote on the phone (each found by what it is)
 #   dev/test/emu.sh reset      the phone app's saved TVs back to the TV emulator only (a snapshot can bring back real TVs)
 #   dev/test/emu.sh stop       both emulators off
+#   dev/test/emu.sh status     every emulator running on this computer (hidden ones too): CPU, uptime, what is in front
 #
 # Settings (environment): TV_AVD, PHONE_AVD (names), TV_IMG, PHONE_IMG (system images), TV_PORT, PHONE_PORT (5554, 5556),
 # API (34), SECURE=0 to start the TV without the real "Allow USB debugging?" prompt, HEADLESS=1 for no windows (CI, a
-# server), ANDROID_HOME (the SDK).
+# server), EMU_TTL (minutes before a HEADLESS one stops itself, 120; 0 never), ANDROID_HOME (the SDK).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -73,7 +74,7 @@ boot() {   # avd port extra-args...
   if [ -n "$(running "$port")" ]; then echo "✓ $s already running"; return; fi
   avd_exists "$avd" || { echo "No AVD $avd: run dev/test/emu.sh create first"; exit 1; }
   # each emulator takes ~3 GB and 4 cores of the computer: a third one (another agent's) froze a 24 GB Mac with builds beside it
-  local n; n=$("$ADB" devices | grep -c '^emulator-')
+  local n; n=$("$ADB" devices | grep -c '^emulator-' || true)
   if [ "$n" -ge "${EMU_MAX:-2}" ]; then echo "$n emulators already running (EMU_MAX=${EMU_MAX:-2}): use one of them, or dev/test/emu.sh stop"; exit 1; fi
   mkdir -p "$ROOT/.cache"
   local win=(); [ "${HEADLESS:-0}" = 1 ] && win=(-no-window)
@@ -85,6 +86,11 @@ boot() {   # avd port extra-args...
     [ $t -lt 360 ] || { echo "$avd did not boot within 6 minutes: see .cache/emu-$avd.log"; exit 1; }
   done
   echo "✓ $s booted"
+  # a hidden one is forgotten easily: a headless phone left streaming the TV ran at ~650% CPU for 12 h (2026-10-25)
+  if [ ${#win[@]} -gt 0 ] && [ "${EMU_TTL:-120}" -gt 0 ]; then
+    nohup bash -c "sleep $((${EMU_TTL:-120} * 60)); '$ADB' -s $s emu kill" >/dev/null 2>&1 &
+    echo "  no window: it stops itself in ${EMU_TTL:-120} min (EMU_TTL=0 never; dev/test/emu.sh status)"
+  fi
 }
 
 start() {
@@ -138,8 +144,29 @@ reset() {
   echo "✓ the phone app's TVs: 10.0.2.2 (the TV emulator) only"
 }
 
+# every emulator on this computer, this project's or not, with or without a window: what it is, how long, how hot, what is in front
+status() {
+  local rows; rows="$(ps -Ao pid=,etime=,args= | grep '[q]emu-system.*-avd ' || true)"
+  [ -n "$rows" ] || { echo "No emulator running"; return; }
+  local pids; pids="$(echo "$rows" | awk '{printf "-pid %s ", $1}')"
+  local cpu; cpu="$(top -l 2 -s 1 $pids -stats pid,cpu | awk 'NF==2 && $1 ~ /^[0-9]+$/ {c[$1]=$2} END {for (p in c) print p, c[p]}')"   # the second sample: now, not since start
+  echo "$rows" | while read -r pid etime args; do
+    local avd port win front
+    avd="$(echo "$args" | sed -n 's/.*-avd \([^ ]*\).*/\1/p')"; port="$(echo "$args" | sed -n 's/.*-port \([0-9]*\).*/\1/p')"
+    case "$args" in *-headless*|*-no-window*) win="NO WINDOW" ;; *) win="window" ;; esac
+    front=""; [ -n "$port" ] && front="$("$ADB" -s "emulator-$port" shell "dumpsys window displays | grep -m1 mCurrentFocus" </dev/null 2>/dev/null | sed 's/.* \([^ ]*\)}.*/\1/' | tr -d '\r')"
+    printf '%-7s %-16s %-10s %-11s up %-12s %6s%% CPU  %s\n' "$pid" "${avd:-?}" "emulator-${port:-?}" "$win" "$etime" "$(echo "$cpu" | awk -v p="$pid" '$1==p {print $2}')" "$front"
+  done
+}
+
 stop() {
-  for p in $PHONE_PORT $TV_PORT; do [ -n "$(running $p)" ] && "$ADB" -s "emulator-$p" emu kill >/dev/null && echo "✓ emulator-$p off"; done
+  local p t
+  for p in $PHONE_PORT $TV_PORT; do
+    [ -n "$(running $p)" ] || continue
+    "$ADB" -s "emulator-$p" emu kill >/dev/null
+    t=0; while [ -n "$(running $p)" ] && [ $t -lt 30 ]; do sleep 1; t=$((t + 1)); done   # gone, so a start right after gets the port
+    echo "✓ emulator-$p off"
+  done
   true
 }
 
@@ -149,6 +176,7 @@ case "${1:-}" in
   install) install ;;
   reset) reset ;;
   stop) stop ;;
+  status) status ;;
   "") start; install ;;
   *) awk 'NR > 1 && /^#/ { sub(/^# ?/, ""); print; next } NR > 1 { exit }' "$0"; exit 1 ;;
 esac
