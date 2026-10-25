@@ -360,6 +360,9 @@
     <string name="th_custom">Giao diện riêng</string>
     <string name="th_ready">Có sẵn</string>
     <string name="th_community">Cộng đồng</string>
+    <string name="th_badge_video">▶ Video</string>
+    <string name="th_badge_slides">🖼 Trình chiếu</string>
+    <string name="th_badge_photos">🖼 ×%d</string>
     <string name="th_by">bởi %s</string>
     <string name="th_mine">Chủ đề của bạn</string>
     <string name="wall_h_online">Trên mạng</string>

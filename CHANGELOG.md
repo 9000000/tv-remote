@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home, chủ đề: tệp `.tvtheme.json` giờ **kèm ảnh/video riêng** của chủ đề (hộp “Kèm ảnh/video”, hiện dung lượng; mỗi mục tối đa 60 MB); nhập lại thì tự gửi từng ảnh/video lên TV, có tiến độ và nút Hủy (hủy hoặc lỗi thì gỡ phần vừa thêm). Tệp cũ vẫn đọc được. Gửi chủ đề lên kho cộng đồng giờ mang **đủ các ảnh trong vòng xoay** (tối đa 10, tự nén ≤1920 px và ≤350 KB) thay vì chỉ một ảnh; video vẫn chưa gửi được. Thẻ chủ đề có nhãn “▶ Video”, “🖼 ×N”, “🖼 Trình chiếu” (trang web và trang Chủ đề của TV Home).
 - TV Home: giao diện mẫu **Việt Nam**: nền là 15 ảnh đẹp khắp đất nước (Hạ Long, Hội An, Tràng An, Huế, Cầu Vàng, Sa Pa…), đổi mỗi 5 phút, chú thích song ngữ ở góc trên bên phải (nguồn Wikimedia Commons, ghi tác giả và giấy phép); vẽ thẳng bằng ảnh có sẵn nên không nặng như WebView (TV Home cũ vẫn chạy qua trang web). Thêm hai giao diện video: **Vịnh Hạ Long (video)** và **Hoàng hôn biển (video)**.
 - Tối ưu TV: nút **Lưu script khôi phục** tải file `.sh` chạy bằng adb trên máy tính, làm lại các bước Hoàn tác (bật lại app, trả màn hình chính cũ) khi app hỏng hoặc đã xoá; chỉ hiện khi TV đã tối ưu.
 - Đổi màn hình chính: TV bo mạch MOKA (Kalley, PRISM+) hoặc không có màn hình chờ khi khởi động được báo đúng lý do, không còn nói “TV mở lại màn hình chính của nó”.
@@ -36,6 +37,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- TV Home themes: a `.tvtheme.json` file can now **carry the theme's own photos and videos** (an “Include photos/videos” box showing the size; 60 MB per item); importing uploads each one to the TV with progress and a Cancel button (a cancel or an error removes what was just added). Old files still import. Sharing a theme to the community store now sends **every photo of the rotation** (max 10, each re-encoded to ≤1920 px and ≤350 KB) instead of one; videos still cannot be shared. Theme tiles show “▶ Video”, “🖼 ×N”, “🖼 Slideshow” tags (web page and TV Home's Themes page).
 - TV Home: a **Vietnam** ready-made theme: the background turns through 15 of the country's loveliest places (Ha Long, Hoi An, Trang An, Hue, Golden Bridge, Sa Pa...) every 5 minutes with a bilingual caption in the top right corner (Wikimedia Commons, author and licence shown); drawn natively from cached pictures, not in a WebView (older TV Homes run it through the web page). Two video themes added: **Ha Long Bay (video)** and **Sunset beach (video)**.
 - Optimize TV: **Save restore script** downloads a `.sh` that does Undo's steps with only adb on a computer (apps back on, the old home screen chosen again), for when our apps are broken or gone; shown only once the TV is optimized.
 - Changing the home screen: MOKA-board TVs (Kalley, PRISM+) and TVs with no stand-in screen at startup now get the real reason, not "the TV opened its own home screen".

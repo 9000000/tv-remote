@@ -175,6 +175,10 @@ The other look of EVERY home screen card but the clock (weather, system, lunar, 
 | Bar (system rows) | 10 dp rounded, fill `Tonal.BAR` on track `Tonal.TRACK`, a small dot at the end of the track |
 | Small (half height) | same parts, figure 30 sp, badge 52 dp |
 
+### Theme tags (TV Home's Themes page)
+
+A theme tile carries tags top left (the check is top right): `▶ Video`, `🖼 ×N` (a rotation of N backgrounds), `🖼 Slideshow`. A pill like the name scrim (`NAME_SCRIM`, radius 10 dp), 11 sp white, from `ThemePreview.badges`; the web page's `.badge` on a tile is its twin.
+
 ### Dialogs
 
 One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.TvSheet` from `tvui/res`; `:tv` and `:home` both include that res dir). Don't build another.

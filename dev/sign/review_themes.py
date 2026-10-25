@@ -4,7 +4,8 @@
 Reads the admin token (~/.tv-remote-release/themes-admin-token, or $THEMES_TOKEN_FILE), fetches the pending themes, writes a local
 HTML page (preview, name, sender, settings, red flags) in a temp folder and opens it; then asks per theme: [a]pprove / [r]eject / [s]kip.
 Approve: id "c_<slug>" (a-z 0-9 _, at most 16: the ready-theme id rule; a "-" would be refused), a wall photo (if sent) re-encoded to
-docs/home/community/<id>.jpg (<= 1920 px, JPEG q80, no metadata) and shown through loop.html like the "sapa" theme, the preview as
+docs/home/community/<id>.jpg (<= 1920 px, JPEG q80, no metadata) and shown through loop.html like the "sapa" theme; a rotation of
+several photos becomes a slideshow like "vn" (docs/home/<slug>.json + <slug>-N.jpg, loop.html?s=<slug>), the preview as
 docs/img/themes/<id>.webp (480x270) + <id>-big.webp (1280x720), a 330 px docs/home/community/<id>-t.jpg as "thumb"; the theme is
 appended to docs/home/themes.json (community: true, by), dev/sign/sign_themes.py signs it, the worker is told (done), and the git add
 line is printed. Nothing is committed or pushed.
@@ -23,6 +24,8 @@ TOKEN_FILE = os.environ.get("THEMES_TOKEN_FILE", os.path.expanduser("~/.tv-remot
 SITE = "https://tvremote.pages.dev"
 LIST = os.path.join(ROOT, "docs", "home", "themes.json")
 WALL_DIR = os.path.join(ROOT, "docs", "home", "community")
+SLIDE_DIR = os.path.join(ROOT, "docs", "home")   # a rotation's slideshow: <slug>.json + <slug>-N.jpg beside loop.html
+WROTE = {}   # theme id -> the extra files its approval wrote (a slideshow)
 IMG_DIR = os.path.join(ROOT, "docs", "img", "themes")
 READY_MAX = 120   # HomeConfig.READY_MAX: TV Home reads at most this many ready themes
 LOOK = "mist"   # the list's drawn stand-in for a photo wall (sign_themes.py wants one); the real picture is the thumb
@@ -32,6 +35,7 @@ LOOK = "mist"   # the list's drawn stand-in for a photo wall (sign_themes.py wan
 THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle", "wopt",
               "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]
 MAX_PREVIEW, MAX_WALL, MAX_CONF, ALLOWED_HOST = 150_000, 1_000_000, 8192, "tvremote.pages.dev"
+MAX_PHOTO = 360_000   # logic.js MAX_PHOTO: each photo of a rotation
 
 
 def clean(s, n=24):
@@ -137,9 +141,30 @@ def validate_folder(d):
             return None, "wall over 1 MB"
         if not is_jpeg(w):
             return None, "wall is not a jpeg"
+    more = os.path.join(d, "walls")   # a rotation: walls/<photo key>.jpg
+    keys = []
+    if os.path.isdir(more):
+        for f in sorted(os.listdir(more)):
+            k = f[:-4] if f.endswith(".jpg") else ""
+            if not re.fullmatch(r"photo(?:[2-9]|10)?", k):
+                return None, "walls/%s: name it photo.jpg, photo2.jpg ... photo10.jpg" % f[:30]
+            w = open(os.path.join(more, f), "rb").read()
+            if len(w) > MAX_PHOTO:
+                return None, "walls/%s over 350 KB" % f
+            if not is_jpeg(w):
+                return None, "walls/%s is not a jpeg" % f
+            keys.append(k)
     sid = re.sub(r"[^a-z0-9]+", "", os.path.basename(os.path.abspath(d)).lower())[:16] or "local"
-    return {"id": sid, "name": name, "by": by, "lang": lang, "conf": conf, "flags": flags_of(name, by, conf), "has_wall": os.path.exists(wall),
-            "dir": os.path.abspath(d)}, None
+    return {"id": sid, "name": name, "by": by, "lang": lang, "conf": conf, "flags": flags_of(name, by, conf), "has_wall": os.path.exists(wall) or bool(keys),
+            "walls": keys, "dir": os.path.abspath(d)}, None
+
+
+def shrink_jpeg(src, out):
+    """A sent photo as the site's file: at most 1920 px wide (only shrunk), JPEG q80, no metadata."""
+    wpx = int(re.search(r"pixelWidth: (\d+)", subprocess.run(["sips", "-g", "pixelWidth", src], capture_output=True, text=True).stdout).group(1))
+    resize = ["--resampleWidth", "1920"] if wpx > 1920 else []
+    run("sips", "-s", "format", "jpeg", "-s", "formatOptions", "80", *resize, src, "--out", out)
+    strip_jpeg(out)
 
 
 def say(*a):   # where approve() reports; dev/admin.py swaps it to collect the lines for its page
@@ -209,13 +234,13 @@ def page(items, tmp):
     for t in items:
         conf = "".join("<tr><td>%s</td><td>%s</td></tr>" % (html.escape(k), html.escape(json.dumps(v, ensure_ascii=False))) for k, v in t["conf"].items())
         fl = "".join('<p class="flag">%s</p>' % html.escape(f) for f in t["flags"])
-        wall = '<p>+ own wall photo: <a href="%s.wall.jpg">%s.wall.jpg</a></p>' % (t["id"], t["id"]) if t.get("has_wall") else ""
+        wall = "".join('<p>+ own wall photo: <a href="%s"><img class="w" src="%s"></a></p>' % (os.path.basename(f), os.path.basename(f)) for f in t.get("wall_files") or [])
         rows.append('<section><img src="%s.preview"><div><h2>%s <small>by %s &middot; %s &middot; %s</small></h2>%s%s<table>%s</table></div></section>'
                     % (t["id"], html.escape(t["name"]), html.escape(t["by"]), t["lang"], t["id"], fl, wall, conf))
     doc = ("<meta charset=utf-8><title>Community themes</title><style>body{font:14px system-ui;margin:20px;background:#111;color:#eee}"
            "section{display:flex;gap:16px;margin:0 0 24px;border-bottom:1px solid #333;padding-bottom:16px}img{width:480px;height:270px;object-fit:contain;background:#000}"
            "small{color:#999;font-weight:400}.flag{color:#ff6b6b;font-weight:600;margin:4px 0}td{padding:2px 10px 2px 0;vertical-align:top;font-family:ui-monospace,monospace}"
-           "a{color:#6cf}</style><h1>%d pending</h1>%s" % (len(items), "".join(rows)))
+           "a{color:#6cf}img.w{width:160px;height:90px}</style><h1>%d pending</h1>%s" % (len(items), "".join(rows)))
     open(os.path.join(tmp, "index.html"), "w", encoding="utf-8").write(doc)
 
 
@@ -233,25 +258,38 @@ def approve(t, token, tmp):
     for suffix, size in (("", "480x270"), ("-big", "1280x720")):
         w, h = size.split("x")
         run("cwebp", "-q", "80", "-resize", w, h, "-metadata", "none", prev, "-o", os.path.join(IMG_DIR, i + suffix + ".webp"))
-    wall_src = os.path.join(tmp, t["id"] + ".wall.jpg")
-    if t.get("has_wall"):
-        os.makedirs(WALL_DIR, exist_ok=True)
-        out = os.path.join(WALL_DIR, i + ".jpg")
-        wpx = int(re.search(r"pixelWidth: (\d+)", subprocess.run(["sips", "-g", "pixelWidth", wall_src], capture_output=True, text=True).stdout).group(1))
-        resize = ["--resampleWidth", "1920"] if wpx > 1920 else []   # only shrink
-        run("sips", "-s", "format", "jpeg", "-s", "formatOptions", "80", *resize, wall_src, "--out", out)
-        thumb = os.path.join(WALL_DIR, i + "-t.jpg")
-        run("sips", "-s", "format", "jpeg", "-s", "formatOptions", "70", "--resampleWidth", "330", out, "--out", thumb)
-        for f in (out, thumb):
-            strip_jpeg(f)
-        photo = lambda a: isinstance(a, str) and re.fullmatch(r"photo\d*", a)
+    files = t.get("wall_files") or ([os.path.join(tmp, t["id"] + ".wall.jpg")] if t.get("has_wall") else [])
+    photo = lambda a: isinstance(a, str) and re.fullmatch(r"photo\d*", a)
+    if files:
         walls = [x for x in conf.get("walls", []) if not photo(x)] if isinstance(conf.get("walls"), list) else None
         if walls:
             conf["walls"] = walls
         else:
             conf.pop("walls", None)
         conf["wall"] = "web"
-        conf["wurl"] = SITE + "/home/loop.html?i=" + urllib.parse.quote(SITE + "/home/community/" + i + ".jpg", safe="")
+        os.makedirs(WALL_DIR, exist_ok=True)
+        thumb = os.path.join(WALL_DIR, i + "-t.jpg")
+        if len(files) == 1:
+            out = os.path.join(WALL_DIR, i + ".jpg")
+            shrink_jpeg(files[0], out)
+            conf["wurl"] = SITE + "/home/loop.html?i=" + urllib.parse.quote(SITE + "/home/community/" + i + ".jpg", safe="")
+            first = out
+        else:
+            # a rotation: the site's slideshow (loop.html?s=<name>, docs/home/<name>.json; TV Home's Slideshow.kt needs [a-z0-9-] names and plain
+            # file names beside the list), so it is one theme again on every TV Home
+            slug = i.replace("_", "-")
+            slides = []
+            for n, f in enumerate(files[:10], 1):
+                name = "%s-%d.jpg" % (slug, n)
+                shrink_jpeg(f, os.path.join(SLIDE_DIR, name))
+                slides.append({"file": name, "vi": t["name"], "en": t["name"], "credit": "Community: " + t["by"]})
+            with open(os.path.join(SLIDE_DIR, slug + ".json"), "w", encoding="utf-8") as fh:
+                json.dump({"v": 1, "slides": slides}, fh, ensure_ascii=False, indent=1); fh.write("\n")
+            conf["wurl"] = SITE + "/home/loop.html?s=" + slug
+            WROTE[i] = ["docs/home/" + slug + ".json"] + ["docs/home/" + x["file"] for x in slides]
+            first = os.path.join(SLIDE_DIR, slides[0]["file"])
+        run("sips", "-s", "format", "jpeg", "-s", "formatOptions", "70", "--resampleWidth", "330", first, "--out", thumb)
+        strip_jpeg(thumb)
         entry["look"] = LOOK
         entry["thumb"] = SITE + "/home/community/" + i + "-t.jpg"
         entry["src"] = "Community: " + t["by"]
@@ -271,22 +309,36 @@ def approve(t, token, tmp):
     return i
 
 
+def photo_order(conf, keys):
+    """The photo keys a theme uses, in order of use (the wall, then its rotation), kept to the ones that were sent."""
+    rot = conf.get("walls") if isinstance(conf.get("walls"), list) else []
+    seen = []
+    for k in [conf.get("wall")] + rot + sorted(keys):
+        if k in keys and k not in seen:
+            seen.append(k)
+    return seen
+
+
 def fetch_assets(items, token, tmp):
-    """Preview (and wall photo, when sent) of each pending theme into tmp; sets t["has_wall"]."""
+    """Preview and every wall photo of each pending theme into tmp; sets t["wall_files"] (in order of use) and t["has_wall"]."""
     for t in items:
         open(os.path.join(tmp, t["id"] + ".preview"), "wb").write(call("/v1/admin/%s/preview" % t["id"], token=token))
-        t["has_wall"] = False
-        try:
-            open(os.path.join(tmp, t["id"] + ".wall.jpg"), "wb").write(call("/v1/admin/%s/wall" % t["id"], token=token))
-            t["has_wall"] = True
-        except urllib.error.HTTPError as e:
-            if e.code != 404:
-                raise
+        t["wall_files"] = []
+        for k in photo_order(t["conf"], t.get("walls") or []):
+            f = os.path.join(tmp, "%s.wall.%s.jpg" % (t["id"], k))
+            open(f, "wb").write(call("/v1/admin/%s/wall/%s" % (t["id"], k), token=token))
+            t["wall_files"].append(f)
+        if t.get("has_wall"):   # the single wall of an app from before the rotation could be sent
+            f = os.path.join(tmp, t["id"] + ".wall.jpg")
+            open(f, "wb").write(call("/v1/admin/%s/wall" % t["id"], token=token))
+            t["wall_files"].insert(0, f)
+        t["has_wall"] = bool(t["wall_files"])
 
 
 def git_paths(added):
     """Files an approval wrote (relative to the repo), for git add."""
     paths = ["docs/home/themes.json", "docs/home/themes.json.sig"] + ["docs/img/themes/%s%s.webp" % (i, s) for i in added for s in ("", "-big")]
+    paths += [p for i in added for p in WROTE.get(i, [])]
     return paths + [p for i in added for p in ("docs/home/community/%s.jpg" % i, "docs/home/community/%s-t.jpg" % i) if os.path.exists(os.path.join(ROOT, p))]
 
 
@@ -307,7 +359,8 @@ def list_json(token):
     out = []
     for t in items:
         t["preview_path"] = os.path.join(tmp, t["id"] + ".preview")
-        t["wall_path"] = os.path.join(tmp, t["id"] + ".wall.jpg") if t.get("has_wall") else None
+        t["wall_path"] = t["wall_files"][0] if t.get("wall_files") else None
+        t["wall_paths"] = t.get("wall_files") or []
         t["free_slots"] = READY_MAX - len(json.load(open(LIST, encoding="utf-8"))["themes"])
         out.append(t)
     print(json.dumps(out, ensure_ascii=False, indent=1))
@@ -341,8 +394,11 @@ def local(d, dry=False):
         sys.exit("refused: flags need a person (a foreign URL in conf is never approved)")
     tmp = tempfile.mkdtemp(prefix="tvr-themes-")
     shutil.copy(os.path.join(d, "preview.jpg"), os.path.join(tmp, t["id"] + ".preview"))
-    if t["has_wall"]:
-        shutil.copy(os.path.join(d, "wall.jpg"), os.path.join(tmp, t["id"] + ".wall.jpg"))
+    t["wall_files"] = []
+    for k in photo_order(t["conf"], t["walls"]):
+        f = os.path.join(tmp, "%s.wall.%s.jpg" % (t["id"], k)); shutil.copy(os.path.join(d, "walls", k + ".jpg"), f); t["wall_files"].append(f)
+    if os.path.exists(os.path.join(d, "wall.jpg")):
+        f = os.path.join(tmp, t["id"] + ".wall.jpg"); shutil.copy(os.path.join(d, "wall.jpg"), f); t["wall_files"].insert(0, f)
     i = approve(t, "", tmp)
     shutil.rmtree(tmp, ignore_errors=True)
     if not i:
@@ -381,7 +437,7 @@ def main():
     print("review page: %s/index.html" % tmp)
     added = []
     for t in items:
-        print("\n%s  %r by %r (%s)%s" % (t["id"], t["name"], t["by"], t["lang"], "  + wall photo" if t.get("has_wall") else ""))
+        print("\n%s  %r by %r (%s)%s" % (t["id"], t["name"], t["by"], t["lang"], ("  + %d wall photo(s)" % max(1, len(t.get("wall_files") or []))) if t.get("has_wall") else ""))
         for f in t["flags"]:
             print("  \033[31m! %s\033[0m" % f)
         while True:

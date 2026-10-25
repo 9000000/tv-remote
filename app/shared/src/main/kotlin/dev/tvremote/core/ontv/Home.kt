@@ -120,6 +120,13 @@ object Home {
         return call(sh, null, "--es addvideo $file --es vname " + B64.encode(name.toByteArray(Charsets.UTF_8)))
     }
 
+    /** Where a photo ("photo", "photo2" ..) or a video ("vid:<8 hex>") of the person's lives on the TV (what a theme file carries along), or null for any other id. */
+    fun mediaPath(id: String): String? = when {
+        HomeConfig.isPhoto(id) -> HomeConfig.photoPath(id)
+        HomeConfig.isVideo(id) -> HomeConfig.VIDEO_STAGING.substringBeforeLast('/') + "/" + id.removePrefix(HomeConfig.VIDEO_PREFIX) + ".mp4"
+        else -> null
+    }
+
     /** TV Home's QR screen for a photo from a phone, over its home screen: the page on the TV itself has no photos to pick. */
     @Throws(IOException::class)
     fun photoQr(sh: (String) -> String) {

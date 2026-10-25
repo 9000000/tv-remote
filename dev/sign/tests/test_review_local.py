@@ -7,7 +7,7 @@ import review_themes as rt   # noqa: E402
 JPG = b"\xff\xd8\xff\xe0" + b"\0" * 100
 
 
-def folder(conf=None, preview=JPG, wall=None, **over):
+def folder(conf=None, preview=JPG, wall=None, walls=None, **over):
     d = tempfile.mkdtemp(prefix="sub-")
     o = {"tvtheme": 1, "name": "Night", "by": "ann", "conf": {"wall": "dawn", "shade": 40} if conf is None else conf}
     o.update(over)
@@ -16,6 +16,9 @@ def folder(conf=None, preview=JPG, wall=None, **over):
         open(os.path.join(d, "preview.jpg"), "wb").write(preview)
     if wall is not None:
         open(os.path.join(d, "wall.jpg"), "wb").write(wall)
+    for k, b in (walls or {}).items():
+        os.makedirs(os.path.join(d, "walls"), exist_ok=True)
+        open(os.path.join(d, "walls", k + ".jpg"), "wb").write(b)
     return d
 
 
@@ -36,6 +39,16 @@ class Local(unittest.TestCase):
                        (folder(wall=b"RIFF....WEBPxxxx"), "not a jpeg"), (folder(by=""), "by"), (folder(tvtheme=2), "tvtheme"),
                        (folder(preview=None), "missing"), (folder(lang="de"), "lang")]:
             t, e = rt.validate_folder(d)
+            self.assertIsNone(t)
+            self.assertIn(why, e)
+
+    def test_rotation_photos(self):
+        t, e = rt.validate_folder(folder(conf={"wall": "photo2", "walls": ["photo", "photo2", "photo3"]}, walls={"photo": JPG, "photo2": JPG, "photo3": JPG}))
+        self.assertIsNone(e)
+        self.assertTrue(t["has_wall"])
+        self.assertEqual(rt.photo_order({"wall": "photo2", "walls": ["photo", "photo2", "photo3"]}, t["walls"]), ["photo2", "photo", "photo3"])
+        for ws, why in [({"pic": JPG}, "name it"), ({"photo": JPG + b"0" * 360_000}, "350 KB"), ({"photo": b"RIFF....WEBPxxxx"}, "not a jpeg")]:
+            t, e = rt.validate_folder(folder(walls=ws))
             self.assertIsNone(t)
             self.assertIn(why, e)
 

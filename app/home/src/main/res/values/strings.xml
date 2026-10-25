@@ -362,6 +362,9 @@
     <string name="th_custom">Your own look</string>
     <string name="th_ready">Ready-made</string>
     <string name="th_community">Community</string>
+    <string name="th_badge_video">▶ Video</string>
+    <string name="th_badge_slides">🖼 Slideshow</string>
+    <string name="th_badge_photos">🖼 ×%d</string>
     <string name="th_by">by %s</string>
     <string name="th_mine">Your themes</string>
     <string name="wall_h_online">Online</string>

@@ -361,6 +361,11 @@ object Customize {
                         addView(label(name, 13f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                         if (by.isNotEmpty()) addView(label(a.getString(R.string.th_by, by), 11f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
+                    val tags = ThemePreview.badges(conf).map { b -> when { b == "video" -> a.getString(R.string.th_badge_video); b == "slides" -> a.getString(R.string.th_badge_slides); else -> a.getString(R.string.th_badge_photos, b.substringAfter(':').toInt()) } }
+                    if (tags.isNotEmpty()) addView(label(tags.joinToString("  "), 11f, Color.WHITE).apply {   // top left: the check is top right
+                        maxLines = 1; setPadding(dp(8), dp(2), dp(8), dp(2))
+                        background = GradientDrawable().apply { setColor(NAME_SCRIM); cornerRadius = dp(10).toFloat() }
+                    }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { setMargins(dp(6), dp(6), 0, 0) })
                     addView(FrameLayout(a).apply {
                         tag = "check"
                         background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }

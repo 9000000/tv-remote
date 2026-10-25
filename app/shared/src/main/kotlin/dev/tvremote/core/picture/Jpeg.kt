@@ -121,4 +121,27 @@ object Jpeg {
         for (q in intArrayOf(82, 72, 62, 50, 40, 30, 22, 15)) encode(w, h, rgb, q).let { if (it.size <= maxBytes) return it }
         return null
     }
+
+    /**
+     * A JPEG shrunk to at most [maxW] wide (and [maxH] tall) and [maxBytes] (the quality steps down from 85); the bytes themselves when they
+     * already fit. Null when it must be changed and cannot be read (progressive, not a JPEG) or will not fit even at the lowest quality.
+     */
+    fun shrink(jpeg: ByteArray, maxW: Int = 1920, maxH: Int = 1920, maxBytes: Int = 350_000): ByteArray? {
+        val (w0, h0, rgb0) = JpegDecode.rgb(jpeg) ?: return if (jpeg.size <= maxBytes && size(jpeg)?.let { it.first <= maxW && it.second <= maxH } != false) jpeg else null
+        if (jpeg.size <= maxBytes && w0 <= maxW && h0 <= maxH) return jpeg
+        val (w, h, rgb) = fit(w0, h0, rgb0, maxW, maxH)
+        for (q in intArrayOf(85, 78, 70, 62, 54, 46, 38, 30, 22, 15)) encode(w, h, rgb, q).let { if (it.size <= maxBytes) return it }
+        return null
+    }
+
+    /** (width, height) from the frame header, or null. */
+    fun size(b: ByteArray): Pair<Int, Int>? {
+        var i = 2
+        while (i + 9 < b.size && (b[i].toInt() and 255) == 0xFF) {
+            val m = b[i + 1].toInt() and 255
+            if (m in 0xC0..0xCF && m != 0xC4 && m != 0xC8 && m != 0xCC) return (((b[i + 7].toInt() and 255) shl 8) or (b[i + 8].toInt() and 255)) .let { w -> w to (((b[i + 5].toInt() and 255) shl 8) or (b[i + 6].toInt() and 255)) }
+            i += 2 + (((b[i + 2].toInt() and 255) shl 8) or (b[i + 3].toInt() and 255))
+        }
+        return null
+    }
 }

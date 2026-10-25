@@ -121,9 +121,28 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     fun find(a: org.json.JSONArray?) = (0 until (a?.length() ?: 0)).map { a!!.getJSONObject(it) }.firstOrNull { it.optString("id") == id }
                     val t = find(cfg.optJSONArray("themes")) ?: find(cfg.optJSONArray("themesBuiltin")) ?: throw IOException("home:theme_missing")
                     val name = dev.tvremote.home.HomeConfig.themeName(r.q("name").ifEmpty { t.optString("name") }).ifEmpty { id }
-                    val doc = JSONObject().put("tvtheme", 1).put("name", name).put("conf", dev.tvremote.home.HomeConfig.pickTheme(t.optJSONObject("conf") ?: JSONObject()))
+                    val conf = dev.tvremote.home.HomeConfig.pickTheme(t.optJSONObject("conf") ?: JSONObject())
+                    val disp = "attachment; filename*=UTF-8''" + URLEncoder.encode(name.replace(Regex("[^\\p{L}\\p{N}_.\\- ()]"), "_") + ".tvtheme.json", "UTF-8").replace("+", "%20")
+                    if (r.q("media") == "1" && dev.tvremote.core.ontv.ThemeFile.mediaKeys(conf).isNotEmpty()) {   // with its own photos and videos (ThemeFile): streamed through, a video is big
+                        val adb = link.get()
+                        val keys = dev.tvremote.core.ontv.ThemeFile.mediaKeys(conf)
+                        for (k in keys) {                                  // every item there and within the cap, before the first byte goes
+                            val sz = adb.shell("stat -c %s " + Adb.q(dev.tvremote.core.ontv.Home.mediaPath(k)!!) + " 2>/dev/null").trim()
+                            if (!sz.matches(DIGITS)) throw IOException("home:media_missing")
+                            if (sz.toLong() > dev.tvremote.core.ontv.ThemeFile.MEDIA_MAX) throw IOException("home:media_big")
+                        }
+                        val out = HttpServer.Response.stream("application/json; charset=utf-8", -1) { o ->
+                            dev.tvremote.core.ontv.ThemeFile.write(o, name, conf, keys) { k, sink ->
+                                val s = adb.exec("cat " + Adb.q(dev.tvremote.core.ontv.Home.mediaPath(k)!!) + " 2>/dev/null"); val b = ByteArray(65536)
+                                try { while (true) { val n = s.read(b, 0, b.size, 0); if (n < 0) break; sink(b, n) } } finally { s.close() }
+                            }
+                        }
+                        out.headers["Content-Disposition"] = disp
+                        return out
+                    }
+                    val doc = JSONObject().put("tvtheme", 1).put("name", name).put("conf", conf)
                     val out = HttpServer.Response.of("application/json; charset=utf-8", doc.toString(2).toByteArray())
-                    out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + URLEncoder.encode(name.replace(Regex("[^\\p{L}\\p{N}_.\\- ()]"), "_") + ".tvtheme.json", "UTF-8").replace("+", "%20")
+                    out.headers["Content-Disposition"] = disp
                     return out
                 }
                 "home/theme/share" -> {                               // one of my themes to the community store: a job (apply, screenshot, photo, send); the page asks until it ends, or cancels
@@ -135,6 +154,13 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     return HttpServer.Response.json(dev.tvremote.core.ontv.ThemeShare.start(link.get(), o.optString("id"), o.optString("by"), r.lang).also { shareJob = it }.json())
                 }
                 "home/web/check" -> if (!post) return HttpServer.Response.json(dev.tvremote.home.WebCheck.check(r.q("u")))   // the background page, tried from this device: the TV's own answer is on TV Home's page
+                "home/media" -> if (!post) {                          // one of the person's own photos / videos as it is on the TV, for a theme file to carry (js/home_media.js)
+                    val path = dev.tvremote.core.ontv.Home.mediaPath(r.q("id")) ?: throw IllegalArgumentException("photo id")
+                    val adb = link.get()
+                    val size = adb.shell("stat -c %s " + Adb.q(path) + " 2>/dev/null").trim()
+                    if (!size.matches(DIGITS)) throw IOException("home:media_missing")
+                    return HttpServer.Response.stream(if (path.endsWith(".mp4")) "video/mp4" else "image/jpeg", size.toLong()) { o -> pipe(adb.exec("cat " + Adb.q(path) + " 2>/dev/null"), o) }
+                }
                 "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
                 "home/update" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang) })

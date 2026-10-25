@@ -595,30 +595,64 @@ async function homeOpen() {
   // import: the file's settings go to TV Home as ordinary settings with {theme:{save}} in the same send (HomeConfig.merge reads the keys first), so the TV needs no update
   const themeFile = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
   const themeImport = el('button', { type: 'button', textContent: T('home.theme_import'), onclick: () => themeFile.click() });
+  // a long wait (fetching and sending the file's photos and videos) says where it is and can be stopped
+  const themeJob = el('p', { className: 'state', role: 'status', hidden: true }), themeStop = el('button', { type: 'button', className: 'small', textContent: T('common.cancel'), hidden: true });
+  let themeAbort = false;
+  themeStop.onclick = () => { themeAbort = true; themeStop.disabled = true; };
+  const mediaSay = (s) => put(themeJob, 'textContent', T(s.kind === 'video' ? 'home.theme_media_up_v' : 'home.theme_media_up_p', { i: s.i, n: s.n }));
+  const mediaBlob = async (it) => {                                  // a data: URL decoded, or the address fetched here (its host is on the backgrounds' list)
+    const x = await fetch(it.value);
+    if (!x.ok) throw new Error('home:media_fetch');
+    const len = +x.headers.get('content-length') || 0;
+    if (len > HOME_MEDIA_MAX) throw new Error('home:media_big');
+    return x.blob();
+  };
+  const mediaJpeg = async (blob) => {                                // a png / webp in a file: the TV's size, as a photo from the phone would be
+    const img = await photoOpen(blob), [W, H] = homeShape();
+    return photoBlob(img, W, H, { z: 1, cx: 0.5, cy: 0.5 }, 0.85);
+  };
   themeFile.addEventListener('change', async () => {
     const f = themeFile.files[0]; themeFile.value = '';
     if (!f) return;
-    if (f.size > HOME_THEME_FILE_MAX) { toast(T('home.theme_import_big')); return; }
+    if (f.size > HOME_MEDIA_FILE_MAX) { toast(T('home.theme_import_big')); return; }
     let d = null;
     try { d = JSON.parse(await f.text()); } catch (err) { d = null; }
     const name = d && typeof d.name === 'string' ? d.name.replace(/\s+/g, ' ').trim().slice(0, 24) : '';
     if (!d || d.tvtheme !== 1 || !name || !d.conf || typeof d.conf !== 'object' || Array.isArray(d.conf)) { toast(T('home.theme_import_bad')); return; }
+    if (f.size > HOME_THEME_FILE_MAX && !d.media) { toast(T('home.theme_import_big')); return; }
     const mine = r.config.themes || [];
     if (mine.length >= HOME_THEMES_MAX && !mine.some((t) => t.name.toLowerCase() === name.toLowerCase())) { toast(T('home.theme_full')); return; }
     const conf = {};
     for (const k of HOME_THEME_KEYS) if (k in d.conf) conf[k] = d.conf[k];
-    let own = false;
-    if (homeOwnWall(conf.wall)) { own = true; conf.wall = 'night'; }
-    if (Array.isArray(conf.walls)) {
-      const keep = conf.walls.filter((k) => !homeOwnWall(k));
-      own = own || keep.length !== conf.walls.length;
-      conf.walls = keep.length ? keep : [conf.wall || 'night'];
-      if (!conf.wall) conf.wall = conf.walls[0];
+    // its own photos and videos (media): checked against the room TV Home has, then uploaded one by one, and the keys in the settings follow
+    const vid = r.video;
+    const room = { photos: r.config.wrotate ? HOME_PHOTO_MAX - (r.photos || []).length : 1, videos: vid ? (vid.libmax || 12) - (vid.items || []).length : 0, videoMax: vid ? vid.max : 0 };
+    const plan = homeMediaPlan(conf, d.media, room);
+    if (plan.error) { toast(T(plan.error.id, plan.error.args)); return; }
+    let keys = {};
+    if (plan.items.length) {
+      themeAbort = false; themeStop.disabled = false; themeStop.hidden = themeJob.hidden = false; themeImport.disabled = true;
+      try {
+        keys = await homeMediaImport(plan.items, {
+          blobOf: mediaBlob, toJpeg: mediaJpeg, say: mediaSay, cancelled: () => themeAbort, read: () => homeLink.read(false, true), drop: (id) => homeLink.drop(id),
+          photo: (blob) => homeLink.photo(blob),
+          video: async (blob, nm) => {
+            const n = await homeLink.video(new File([blob], nm, { type: blob.type }), (pct) => put(themeJob, 'textContent', T('home.v_up', { pct })));
+            return homeVideoWait(n, (t) => put(themeJob, 'textContent', t));
+          },
+        });
+      } catch (e) {
+        if (e.message !== 'cancelled') toast(T('common.error_msg', { msg: homeMediaWhy(e.message) })); else toast(T('home.theme_media_cancelled'));
+        const t = await homeLink.read(true); if (t && t.installed) await after(t);
+        return;
+      } finally { themeStop.hidden = themeJob.hidden = true; themeImport.disabled = false; put(themeJob, 'textContent', ''); }
+      const t = await homeLink.read(true); if (t && t.installed) { keepThumbs(t); r = t; homeNow = t; }
     }
-    await send({ ...conf, theme: { save: name } });
-    toast(T(own ? 'home.theme_imported_wall' : 'home.theme_imported', { name }));
+    const re = homeMediaRemap(conf, keys);
+    await send({ ...re.conf, theme: { save: name } });
+    toast(T(re.lost ? 'home.theme_imported_wall' : 'home.theme_imported', { name }));
   });
-  const themeLine = el('div', { className: 'group' }, themeName, el('div', { className: 'actions' }, themeSave, themeImport, themeFile));
+  const themeLine = el('div', { className: 'group' }, themeName, el('div', { className: 'actions' }, themeSave, themeImport, themeFile), el('div', { className: 'line' }, themeJob, themeStop));
   const wallFace = (k) => {
     if (HOME_WALLS[k]) { const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')'); return dot; }
     if (HOME_ART_IDS.includes(k)) { const cv = el('canvas', { width: 128, height: 72 }); homeArtPaint(cv.getContext('2d'), 128, 72, k); return el('i', {}, cv); }
@@ -668,17 +702,44 @@ async function homeOpen() {
       put('#infotitle', 'textContent', 'ⓘ ' + name);
       $('#infobody').replaceChildren(el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
       const mineTheme = (c.themes || []).some((t) => t.id === id);
-      if (id !== 'before') $('#infobody').append(el('div', { className: 'actions' }, el('button', { type: 'button', className: 'small', textContent: T('home.theme_export'), onclick: () => exportTheme(id, name, conf) }),
-        mineTheme && homeLink.canShare ? el('button', { type: 'button', className: 'small', textContent: T('home.share'), onclick: () => shareForm(id, name) }) : null));   // the TV itself cannot take its own screenshot: only from a client
+      if (id !== 'before') {
+        // its own photos and videos can go in the file (home_media.js); on by default, the size shown, off = the settings only
+        const wt = homeMediaWeigh(conf, r), has = wt.photos + wt.videos > 0;
+        const withBox = el('input', { type: 'checkbox', checked: true });
+        const what = [wt.photos ? T('home.theme_media_n_photos', { n: wt.photos }) : '', wt.videos ? T('home.theme_media_n_videos', { n: wt.videos }) : ''].filter(Boolean).join(', ');
+        const sizeWords = wt.bytes ? (wt.exact ? '' : '≥ ') + homeMediaMb(wt.bytes) : '';
+        const state = el('p', { className: 'state', role: 'status', hidden: true }), stop = el('button', { type: 'button', className: 'small', textContent: T('common.cancel'), hidden: true });
+        let abort = false; stop.onclick = () => { abort = true; stop.disabled = true; };
+        const exp = el('button', { type: 'button', className: 'small', textContent: T('home.theme_export') });
+        exp.onclick = async () => {
+          if (has && withBox.checked && wt.over) { toast(T('home.theme_media_over', { max: HOME_MEDIA_MAX / 1048576 })); return; }
+          abort = false; stop.disabled = false; stop.hidden = state.hidden = !(has && withBox.checked && homeLink.direct); exp.disabled = true;
+          try { await exportTheme(id, name, conf, has && withBox.checked, (s) => put(state, 'textContent', T('home.theme_media_dl', s)), () => abort); }
+          catch (e) { toast(e.message === 'cancelled' ? T('home.theme_media_cancelled') : T('common.error_msg', { msg: homeMediaWhy(e.message) })); }
+          finally { stop.hidden = state.hidden = true; exp.disabled = false; }
+        };
+        $('#infobody').append(...[has ? el('label', { className: 'check' }, withBox, el('span', { textContent: T('home.theme_media_inc', { what, size: sizeWords ? ' · ' + sizeWords : '' }) })) : null,
+          el('div', { className: 'actions' }, exp, mineTheme && homeLink.canShare ? el('button', { type: 'button', className: 'small', textContent: T('home.share'), onclick: () => shareForm(id, name) }) : null, stop), state]);   // the TV itself cannot take its own screenshot: only from a client
+      }
       if (!$('#infodlg').open) $('#infodlg').showModal();
     };
     // a download from the server (it names the file, as the scenes backup; works in the phone app's web view); on TV Home's own page
     // there is no such route, so the page makes the file itself
-    const exportTheme = (id, name, conf) => {
-      const a = homeLink.direct
-        ? el('a', { href: URL.createObjectURL(new Blob([JSON.stringify({ tvtheme: 1, name, conf }, null, 2)], { type: 'application/json' })), download: name.replace(/[\\/:*?"<>|]/g, '_') + '.tvtheme.json' })
-        : el('a', { href: 'api/home/theme?download=1&id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name), download: '' });
-      document.body.append(a); a.click(); a.remove();
+    const saveAs = (href, nm = '') => { const a = el('a', { href, download: nm }); document.body.append(a); a.click(); a.remove(); };
+    const exportTheme = async (id, name, conf, withMedia, say, cancelled) => {
+      if (homeLink.themeFileUrl && !homeLink.direct) return saveAs(homeLink.themeFileUrl(id, name, withMedia));   // the host streams the file (core/ontv/ThemeFile.kt)
+      const file = name.replace(/[\\/:*?"<>|]/g, '_') + '.tvtheme.json';
+      let media = {};
+      if (withMedia) {
+        const sizes = {}; for (const p of r.photos || []) sizes[p.id] = p.size || 0; for (const v of (r.video || {}).items || []) sizes[v.id] = v.size || 0;
+        media = await homeMediaExport(conf, sizes, {
+          cancelled, say,
+          blobOf: async (k) => { const x = await fetch(homeLink.mediaUrl(k)); if (!x.ok) throw new Error('home:media_missing'); return x.blob(); },
+          dataUrl: (b) => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = () => no(new Error('read')); fr.readAsDataURL(b); }),
+        });
+      }
+      const url = URL.createObjectURL(new Blob(homeMediaFile(name, conf, media), { type: 'application/json' }));
+      saveAs(url, file); setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
     // share to the community store: a form (the display name is kept on this page), then the job on the server side (api/home/theme/share) is asked
     // every second: its step in words, Cancel while it runs, the end in words a person can act on
@@ -719,7 +780,7 @@ async function homeOpen() {
     };
     const tile = (id, name, conf, mine, look, tiles = [], by = '') => {
       const on = c.theme === id;
-      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), ...homeMediaBadges(conf || {}).map((x) => el('small', { className: 'badge', textContent: T(x.id, x.args) })), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
       const info = el('button', { type: 'button', className: 'small iconbtn wallx info', textContent: 'ⓘ', title: T('home.theme_info'), 'aria-label': T('home.theme_info'), onclick: () => showInfo(id, name, conf) });
       if (!mine) return el('span', { className: 'wallcell' }, b, info);
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),

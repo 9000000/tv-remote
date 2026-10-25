@@ -27,7 +27,7 @@ select,input{min-height:38px;padding:0 8px;border:1px solid var(--line);border-r
 .mut{color:var(--mut);font-size:13px}
 .flag{color:var(--bad);font-weight:600;margin:4px 0;overflow-wrap:anywhere}
 .wall{margin-top:8px}
-.wall img{max-width:200px}
+.wall img{max-width:200px;margin:0 6px 6px 0}
 table{border-collapse:collapse;width:100%}
 td,th{text-align:left;padding:4px 8px 4px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 th{color:var(--mut);font-weight:500;font-size:13px}
@@ -116,7 +116,8 @@ function themeCard(t, left) {
   if (left <= 0) { ok.disabled = true; ok.title = 'Danh sách đã đầy'; }
   const card = h('div', { class: 'card theme' },
     h('div', {}, h('img', { src: img(t.id, 'preview'), alt: 'Xem trước ' + t.name }),
-      t.has_wall && h('div', { class: 'wall' }, h('div', { class: 'mut' }, 'Ảnh nền riêng'), h('a', { href: img(t.id, 'wall'), target: '_blank' }, h('img', { src: img(t.id, 'wall'), alt: 'Ảnh nền' })))),
+      t.has_wall && h('div', { class: 'wall' }, h('div', { class: 'mut' }, 'Ảnh nền riêng' + ((t.walls || []).length > 1 ? ' (' + t.walls.length + ' ảnh, xoay vòng)' : '')),
+        ...((t.walls || []).length ? t.walls.map((k) => 'wall/' + k) : ['wall']).map((w) => h('a', { href: img(t.id, w), target: '_blank' }, h('img', { src: img(t.id, w), alt: 'Ảnh nền' }))))),
     h('div', {},
       h('h2', {}, t.name),
       h('div', { class: 'mut' }, 'bởi ' + t.by + ' · ' + t.lang + ' · ' + fmtDate(t.at) + ' · ' + t.id),

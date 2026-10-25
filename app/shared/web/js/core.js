@@ -254,6 +254,8 @@ const FRIENDLY = [
   [/games:missing/, T('core.fr_games_missing')],
   [/games:none/, T('core.fr_games_none')],
   [/home:video_size|video size/, T('core.fr_home_video_size')],
+  [/home:media_big/, T('core.fr_home_media_big')],
+  [/home:media_missing/, T('core.fr_home_media_missing')],
   [/home:video_full/, T('core.fr_home_video_full')],
   [/home:video_space/, T('core.fr_home_video_space')],
   [/home:video_busy/, T('core.fr_home_video_busy')],

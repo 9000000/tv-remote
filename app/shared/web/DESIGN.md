@@ -94,7 +94,7 @@ the same classes.
 | One of a few choices | `UI.chips([{ label, on, fn }])` → `.places`, one line, scrolls sideways with fades (`js/ui.js:119`) | radio buttons, a wrapping row |
 | A filter/sort row above a list | `div.fchips` of buttons, current `.on` + `aria-pressed` | |
 | Key/value facts | `.kv` (dt muted, `.v` bold right) | |
-| A small tag | `.badge` (`.badge.ok`) | coloured spans |
+| A small tag | `.badge` (`.badge.ok`) | coloured spans; on a theme's tile (`.homewalls small.badge`): ▶ Video, 🖼 ×N, 🖼 Slideshow (`homeMediaBadges`) |
 
 ```js
 const c = UI.card(T('x.title'), { tools: [UI.btn('↻', reload, 'small iconbtn')] },

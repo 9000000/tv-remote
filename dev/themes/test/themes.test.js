@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validate, flags, clean, senderHash, tokenOk, THEME_KEYS, MAX_BODY } from "../src/logic.js";
+import { validate, flags, clean, senderHash, tokenOk, sizeOf, THEME_KEYS, MAX_BODY, MAX_PHOTO } from "../src/logic.js";
 
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0]).toString("base64");
 const WEBP = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBPVP8 ")]).toString("base64");
@@ -57,4 +57,19 @@ test("tokenOk", () => {
   assert.ok(tokenOk("Bearer " + t, t));
   for (const h of [null, "", "Bearer x", "Bearer " + "b".repeat(48), t]) assert.ok(!tokenOk(h, t));
   assert.ok(!tokenOk("Bearer ", ""), "no token set = closed");
+});
+test("walls: up to ten photos by key, each a jpeg under 360 KB", () => {
+  const big = (n) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), Buffer.alloc(n)]).toString("base64");
+  const ten = Object.fromEntries(["photo", "photo2", "photo3", "photo4", "photo5", "photo6", "photo7", "photo8", "photo9", "photo10"].map((k) => [k, big(MAX_PHOTO - 3)]));
+  const r = validate(sub({ walls: ten }));
+  assert.equal(r.ok.photos.length, 10);
+  assert.ok(JSON.stringify({ tvtheme: 1, name: "Sapa", by: "Bro", lang: "vi", conf: {}, preview: JPG, walls: ten }).length < MAX_BODY, "ten full photos fit the body limit");
+  assert.equal(sizeOf(r.ok), r.ok.preview.length + 10 * (MAX_PHOTO - 3 + 3));
+  assert.match(validate(sub({ walls: { ...ten, photo11: JPG } })).error, /at most 10|bad key/);
+  assert.match(validate(sub({ walls: { photo: big(MAX_PHOTO) } })).error, /350 KB/);
+  assert.match(validate(sub({ walls: { photo: WEBP } })).error, /not a jpeg/);
+  assert.match(validate(sub({ walls: { "../x": JPG } })).error, /bad key/);
+  assert.match(validate(sub({ walls: [JPG] })).error, /object/);
+  assert.match(validate(sub({ walls: { photo: "x" } })).error, /base64/);
+  assert.equal(validate(sub({ walls: {} })).ok.photos.length, 0);
 });

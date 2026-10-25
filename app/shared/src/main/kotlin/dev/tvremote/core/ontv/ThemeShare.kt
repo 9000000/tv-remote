@@ -14,16 +14,20 @@ import java.net.URL
  * Sharing one of the person's own TV Home themes with the community store (a Cloudflare worker, review before anyone sees it). Done
  * here, on the device that holds the ADB link, so the page needs no CORS and the phone's web view needs nothing special:
  * the theme is put on (and the look that was on is put back after), a real screenshot of TV Home is taken, shrunk to a JPEG under
- * [PREVIEW_MAX], the theme's own photo wall (if it has one) is read from TV Home's files, and all of it is POSTed as the worker asks:
- * {tvtheme:1, name, by, lang, conf, preview (base64 jpeg), wall? (base64 jpeg)}. A job runs in the background; the page asks [Job.json]
+ * [PREVIEW_MAX], every own photo of the theme (the wall and its rotation, at most [PHOTOS]) is read from TV Home's files and re-encoded to [PHOTO_W] wide and
+ * [PHOTO_MAX] bytes ([Jpeg.shrink]), and all of it is POSTed as the worker asks:
+ * {tvtheme:1, name, by, lang, conf, preview (base64 jpeg), walls? {photo key: base64 jpeg}}. A job runs in the background; the page asks [Job.json]
  * until it is over and can [Job.cancel] it. Its end is `state` "done" (with `id`) or "error" with a short `error` code the page has words for.
  */
 object ThemeShare {
     /** The store's address; tests point it at a stub with TVR_THEME_STORE (or -Dtvr.themestore). */
     val STORE: String get() = System.getenv("TVR_THEME_STORE") ?: System.getProperty("tvr.themestore") ?: "https://tvr-themes.99-hoangtran.workers.dev/v1/themes"
     const val PREVIEW_MAX = 150 * 1024
-    const val WALL_MAX = 1024 * 1024
-    private const val BODY_MAX = 1_600_000
+    const val PHOTO_MAX = 350_000                                    // each photo of the theme, re-encoded to this (and PHOTO_W wide) before it goes
+    const val PHOTO_W = 1920
+    const val PHOTOS = 10                                            // HomeConfig.PHOTO_MAX: a rotation of ten
+    private const val READ_MAX = 12 * 1024 * 1024                    // a photo on the TV is read up to this
+    private const val BODY_MAX = 5_200_000                           // the worker's MAX_BODY: ten photos in base64 + preview + conf
     private const val SETTLE_MS = 3500L                              // TV Home draws the new look (a web page background gets more)
     private const val SETTLE_WEB_MS = 7000L
 
@@ -72,9 +76,9 @@ object ThemeShare {
         val wall = conf.optString("wall")
         val rotation = conf.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
         if (wall.startsWith("vid:") || rotation.any { it.startsWith("vid:") }) throw Fail("video")
-        val photo = HomeConfig.isPhoto(wall)
+        val photoKeys = photoKeys(conf)
         val was = cfg.optString("theme")                              // the look on now: a saved theme's id, or "" (then TV Home keeps it as "before")
-        var preview: ByteArray? = null; var wallJpeg: ByteArray? = null
+        var preview: ByteArray? = null; val photos = LinkedHashMap<String, ByteArray>()
         try {
             check(j)
             if (was != themeId) Home.call(sh, JSONObject().put("theme", JSONObject().put("apply", themeId)))
@@ -87,12 +91,15 @@ object ThemeShare {
             j.shotMs = System.currentTimeMillis() - t0; j.shotKb = png.size / 1024L
             preview = Jpeg.fromPng(png, 1280, 720, PREVIEW_MAX) ?: throw Fail("shot")
             j.previewKb = preview.size / 1024L
-            if (photo) {
+            if (photoKeys.isNotEmpty()) {
                 j.step = "photo"; check(j)
-                val b = readFile(adb, HomeConfig.photoPath(wall))
-                if (b.size < 4 || b[0] != 0xFF.toByte() || b[1] != 0xD8.toByte()) throw Fail("photo_missing")
-                if (b.size > WALL_MAX) throw Fail("photo_big")
-                wallJpeg = b; j.wallKb = b.size / 1024L
+                for (k in photoKeys) {
+                    check(j)
+                    val b = readFile(adb, HomeConfig.photoPath(k))
+                    if (b.size < 4 || b[0] != 0xFF.toByte() || b[1] != 0xD8.toByte()) throw Fail("photo_missing")
+                    photos[k] = Jpeg.shrink(b, PHOTO_W, PHOTO_W, PHOTO_MAX) ?: throw Fail("photo_big")
+                }
+                j.wallKb = photos.values.sumOf { it.size } / 1024L
             }
         } finally {
             if (was != themeId) try { Home.call(sh, JSONObject().put("theme", JSONObject().put("apply", was.ifEmpty { HomeConfig.BEFORE }))) } catch (e: Exception) { }   // the person's look is put back
@@ -100,16 +107,22 @@ object ThemeShare {
         j.step = "send"; check(j)
         val body = JSONObject().put("tvtheme", 1).put("name", name).put("by", by).put("lang", lang).put("conf", conf)
             .put("preview", B64.encode(preview!!))
-        if (wallJpeg != null) body.put("wall", B64.encode(wallJpeg))
+        if (photos.isNotEmpty()) body.put("walls", JSONObject().also { o -> for ((k, v) in photos) o.put(k, B64.encode(v)) })
         val bytes = body.toString().toByteArray(Charsets.UTF_8)
         if (bytes.size > BODY_MAX) throw Fail("too_big")
         j.id = post(j, bytes)
     }
 
+    /** The theme's own photos in order of use (the wall first, then its rotation), each once, at most [PHOTOS]; a video makes the share refuse earlier. */
+    fun photoKeys(conf: JSONObject): List<String> {
+        val rot = conf.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+        return (listOf(conf.optString("wall")) + rot).filter { HomeConfig.isPhoto(it) }.distinct().take(PHOTOS)
+    }
+
     @Throws(IOException::class)
     private fun readFile(adb: Adb, path: String): ByteArray {
         val out = ByteArrayOutputStream(); val buf = ByteArray(65536)
-        adb.open("exec:cat ${Adb.q(path)}").use { while (true) { val n = it.read(buf, 0, buf.size, 10000); if (n <= 0) break; out.write(buf, 0, n); if (out.size() > WALL_MAX * 4) break } }
+        adb.open("exec:cat ${Adb.q(path)}").use { while (true) { val n = it.read(buf, 0, buf.size, 10000); if (n <= 0) break; out.write(buf, 0, n); if (out.size() > READ_MAX) break } }
         return out.toByteArray()
     }
 

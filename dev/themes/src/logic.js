@@ -1,6 +1,8 @@
 // Validation and flags for a submitted theme. Pure functions, tested in ../test.
-export const MAX_BODY = 1_600_000;
-export const MAX_PREVIEW = 150_000, MAX_WALL = 1_000_000, MAX_CONF = 8192;
+export const MAX_BODY = 5_200_000;   // ten photos of 350 KB in base64 + the preview + conf
+export const MAX_PREVIEW = 150_000, MAX_WALL = 1_000_000, MAX_CONF = 8192;   // MAX_WALL: the old single "wall"
+export const MAX_PHOTO = 360_000, MAX_PHOTOS = 10;   // each of "walls" (HomeConfig.PHOTO_MAX), re-encoded by the app to 1920 wide / 350 KB; one D1 row each (a row or blob tops out near 2 MB)
+export const PHOTO_KEY = /^photo(?:[2-9]|10)?$/;      // HomeConfig.PHOTOS
 export const PER_DAY = 3;
 export const MAX_QUEUE_BYTES = 350_000_000, MAX_AGE_DAYS = 60;   // D1 free = 500 MB a database: refuse new ones past 350 MB of waiting pictures
 export const ALLOWED_HOST = "tvremote.pages.dev";
@@ -33,7 +35,7 @@ function plain(v, depth = 0) {
   return false;
 }
 
-/** text -> {ok:{name,by,lang,conf,preview,wall}} | {error, status}. */
+/** text -> {ok:{name,by,lang,conf,preview,wall,photos:[[key,bytes]]}} | {error, status}. */
 export function validate(text) {
   const bad = (error, status = 400) => ({ error, status });
   if (typeof text !== "string" || text.length > MAX_BODY) return bad("too big", 413);
@@ -62,7 +64,21 @@ export function validate(text) {
     if (wall.length > MAX_WALL) return bad("wall over 1 MB");
     if (!isJpeg(wall)) return bad("wall is not a jpeg");
   }
-  return { ok: { name, by, lang: o.lang, conf, confJson: cj, preview, wall } };
+  const photos = [];
+  if (o.walls !== undefined && o.walls !== null) {
+    if (typeof o.walls !== "object" || Array.isArray(o.walls)) return bad("walls: an object of photos");
+    const keys = Object.keys(o.walls);
+    if (keys.length > MAX_PHOTOS) return bad("walls: at most " + MAX_PHOTOS + " photos");
+    for (const k of keys) {
+      if (!PHOTO_KEY.test(k)) return bad("walls: bad key " + k.slice(0, 20));
+      const u = b64(o.walls[k]);
+      if (!u) return bad("walls." + k + ": base64 jpeg");
+      if (u.length > MAX_PHOTO) return bad("walls." + k + " over 350 KB");
+      if (!isJpeg(u)) return bad("walls." + k + " is not a jpeg");
+      photos.push([k, u]);
+    }
+  }
+  return { ok: { name, by, lang: o.lang, conf, confJson: cj, preview, wall, photos } };
 }
 
 /** every address in it, nested ones too (loop.html?i=<picture>), is https on the project's own site: not worth a red line */
@@ -96,6 +112,8 @@ export async function senderHash(ip, day, salt = "") {
   return [...new Uint8Array(d).slice(0, 12)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 export const today = () => new Date().toISOString().slice(0, 10);
+/** every byte a submission keeps (the storage cap sums it) */
+export const sizeOf = (t) => t.preview.length + (t.wall ? t.wall.length : 0) + t.photos.reduce((n, [, u]) => n + u.length, 0);
 export function newId() { const b = new Uint8Array(4); crypto.getRandomValues(b); return [...b].map((x) => x.toString(16).padStart(2, "0")).join(""); }
 export function tokenOk(header, token) {
   if (!token || token.length < 16) return false;

@@ -52,9 +52,7 @@ def theme_approve(tid):
     if not items:
         return 404, {"error": "Không còn trong hàng chờ."}
     t = items[0]
-    t["has_wall"] = os.path.exists(os.path.join(TMP, tid + ".wall.jpg"))
-    if not os.path.exists(os.path.join(TMP, tid + ".preview")):
-        rt.fetch_assets([t], token, TMP)
+    rt.fetch_assets([t], token, TMP)
     log = []
     rt.say = lambda *a: log.append(" ".join(str(x) for x in a).strip())
     rt.call("/v1/admin/%s/approve" % tid, "POST", token)
@@ -102,11 +100,16 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, open(PAGE, "rb").read(), "text/html; charset=utf-8")
             if method == "GET" and p == "/api/themes":
                 return self.send(200, themes_list())
-            m = __import__("re").fullmatch(r"/api/themes/([0-9a-f]{8})/(preview|wall|approve|reject)", p)
+            m = __import__("re").fullmatch(r"/api/themes/([0-9a-f]{8})/(preview|wall|wall/photo\d*|approve|reject)", p)
             if m:
                 tid, what = m.groups()
-                if what in ("preview", "wall") and method == "GET":
+                if what.startswith("wall/") and method == "GET":    # one photo of the rotation
+                    f = os.path.join(TMP, "%s.wall.%s.jpg" % (tid, what[5:]))
+                elif what in ("preview", "wall"):
                     f = os.path.join(TMP, tid + (".preview" if what == "preview" else ".wall.jpg"))
+                if what in ("preview", "wall") or what.startswith("wall/"):
+                    if method != "GET":
+                        return self.send(405, {"error": "GET"})
                     if not os.path.exists(f):
                         return self.send(404, {"error": "none"})
                     b = open(f, "rb").read()

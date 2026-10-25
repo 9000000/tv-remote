@@ -38,7 +38,7 @@ object HomeApi {
         val pictures = JSONObject()
         for (id in Walls.photos(c)) {
             val f = Walls.file(c, id)!!
-            photos.put(JSONObject().put("id", id).put("v", f.lastModified()))
+            photos.put(JSONObject().put("id", id).put("v", f.lastModified()).put("size", f.length()))   // size: a theme file shows what its photos add up to
             if (thumbs) thumb(c, id)?.let { pictures.put(id, it) }
         }
         val library = JSONArray()

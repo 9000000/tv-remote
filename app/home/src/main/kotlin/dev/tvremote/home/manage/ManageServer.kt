@@ -19,6 +19,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.io.File
 import dev.tvremote.home.wall.Videos
+import dev.tvremote.home.wall.Walls
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.HomeConfig
 
@@ -134,6 +135,15 @@ object ManageServer {
                     if (b == null) reply(out, 404, "text/plain", "not found") else reply(out, 200, type(req.path), b)
                 }
                 !post && req.path == "/h/config" -> json(out, onMain { HomeApi.snapshot(c, null, null, req.query["thumbs"] == "1") })
+                !post && req.path == "/h/media" -> {                      // one of the person's own photos / videos, for a theme file to carry (js/home_media.js); streamed, a video is big
+                    val id = req.query["id"] ?: ""
+                    val f = if (HomeConfig.isPhoto(id)) Walls.file(c, id) else if (HomeConfig.isVideo(id)) Videos.file(c, id) else null
+                    if (f == null || !f.isFile) return@use reply(out, 404, "application/json", err("not found"))
+                    out.write(("HTTP/1.1 200 OK\r\nContent-Type: ${if (f.name.endsWith(".mp4")) "video/mp4" else "image/jpeg"}\r\nContent-Length: ${f.length()}\r\nCache-Control: no-store\r\n" +
+                        "X-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n").toByteArray())
+                    f.inputStream().use { it.copyTo(out, 65536) }
+                    out.flush()
+                }
                 !post && req.path == "/h/web/check" -> json(out, dev.tvremote.home.WebCheck.check(req.query["u"] ?: ""))   // the background page, tried from the TV itself (this thread, not main)
                 post && req.path == "/h/config" -> {
                     val change = JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8))

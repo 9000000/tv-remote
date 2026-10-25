@@ -14,6 +14,15 @@ CREATE TABLE IF NOT EXISTS themes (
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS themes_status ON themes (status, at, bytes);
 
+-- The photos of a theme's rotation (its own wall photos, at most 10, each re-encoded by the app to <= 350 KB): one row each, deleted with the
+-- theme's pictures (reject / done) and when the theme row is purged. Counted in themes.bytes.
+CREATE TABLE IF NOT EXISTS wallpics (
+  theme TEXT NOT NULL,
+  key   TEXT NOT NULL,         -- photo, photo2 .. photo10: the wall key used in conf
+  pic   BLOB NOT NULL,
+  PRIMARY KEY (theme, key)
+) WITHOUT ROWID;
+
 -- Submissions per sender per UTC day. h = sha256(IP + day + salt); rows of earlier days are deleted on every POST, the IP is never stored.
 CREATE TABLE IF NOT EXISTS sends (
   day TEXT NOT NULL,

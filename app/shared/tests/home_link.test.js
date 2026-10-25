@@ -66,3 +66,8 @@ test('home.html loads only files that exist, and home.js asks no /api path itsel
   assert.ok(files.indexOf('js/home.js') > files.indexOf('js/homeweb.js'));
   assert.ok(!/['"`]\/api\//.test(fs.readFileSync(path.join(web, 'js/home.js'), 'utf8')), 'home.js goes through homeLink');
 });
+
+test('media and theme file addresses: host over /api/home, direct over /h', () => {
+  assert.match(rig(false).link.mediaUrl('photo2'), /^\/?api\/home\/media\?id=photo2/);
+  assert.match(rig(true).link.mediaUrl('photo2'), /^\/?h\/media\?id=photo2/);
+});

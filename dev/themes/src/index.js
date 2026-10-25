@@ -1,7 +1,7 @@
 // tvr-themes: a queue of community themes for TV Home. Anyone may send one (POST /v1/themes); only the owner (ADMIN_TOKEN) reads
 // the queue and decides, with dev/sign/review_themes.py. Nothing here publishes: an approved theme goes into the signed
 // docs/home/themes.json by hand. Stores no raw IP. See ../README.md.
-import { MAX_BODY, PER_DAY, MAX_QUEUE_BYTES, MAX_AGE_DAYS, validate, flags, senderHash, today, newId, tokenOk, kind } from "./logic.js";
+import { MAX_BODY, PER_DAY, MAX_QUEUE_BYTES, MAX_AGE_DAYS, validate, sizeOf, flags, senderHash, today, newId, tokenOk, kind } from "./logic.js";
 
 const CORS = { "access-control-allow-origin": "*" };
 const json = (o, status = 200, extra = {}) =>
@@ -17,16 +17,21 @@ async function submit(req, env) {
   await env.DB.prepare("DELETE FROM sends WHERE day < ?1").bind(day).run();
   const now = Math.floor(Date.now() / 1000);
   await env.DB.prepare("DELETE FROM themes WHERE (at < ?1 AND status = 'pending') OR (at < ?2 AND status != 'pending')").bind(now - MAX_AGE_DAYS * 86400, now - 30 * 86400).run();
+  await env.DB.prepare("DELETE FROM wallpics WHERE theme NOT IN (SELECT id FROM themes)").run();
   const used = await env.DB.prepare("SELECT COALESCE(SUM(bytes), 0) AS n FROM themes WHERE status IN ('pending', 'approved')").first();
-  if (used.n + t.preview.length + (t.wall ? t.wall.length : 0) > MAX_QUEUE_BYTES) return json({ error: "queue_full" }, 429);
+  if (used.n + sizeOf(t) > MAX_QUEUE_BYTES) return json({ error: "queue_full" }, 429);
   const ip = req.headers.get("cf-connecting-ip") || "local";
   const h = await senderHash(ip, day, env.SALT || "");
   const ok = await env.DB.prepare("INSERT INTO sends (day, h, n) VALUES (?1, ?2, 1) ON CONFLICT (day, h) DO UPDATE SET n = n + 1 WHERE n < ?3 RETURNING n")
     .bind(day, h, PER_DAY).first();
   if (!ok) return json({ error: "At most " + PER_DAY + " themes a day, try again tomorrow." }, 429);
   const id = newId();
-  await env.DB.prepare("INSERT INTO themes (id, at, status, name, by, lang, conf, preview, wall, bytes) VALUES (?1, ?2, 'pending', ?3, ?4, ?5, ?6, ?7, ?8, ?9)")
-    .bind(id, Math.floor(Date.now() / 1000), t.name, t.by, t.lang, t.confJson, t.preview.buffer, t.wall ? t.wall.buffer : null, t.preview.length + (t.wall ? t.wall.length : 0)).run();
+  // one statement per picture (a D1 row stays well under its ~2 MB), all or nothing
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO themes (id, at, status, name, by, lang, conf, preview, wall, bytes) VALUES (?1, ?2, 'pending', ?3, ?4, ?5, ?6, ?7, ?8, ?9)")
+      .bind(id, Math.floor(Date.now() / 1000), t.name, t.by, t.lang, t.confJson, t.preview.buffer, t.wall ? t.wall.buffer : null, sizeOf(t)),
+    ...t.photos.map(([k, u]) => env.DB.prepare("INSERT INTO wallpics (theme, key, pic) VALUES (?1, ?2, ?3)").bind(id, k, u.buffer)),
+  ]);
   return json({ id }, 202);
 }
 
@@ -35,7 +40,16 @@ async function admin(req, env, url) {
   const p = url.pathname;
   if (p === "/v1/admin/pending" && req.method === "GET") {
     const { results } = await env.DB.prepare("SELECT id, at, name, by, lang, conf FROM themes WHERE status = 'pending' ORDER BY at LIMIT 100").all();
-    return json(results.map((x) => { const conf = JSON.parse(x.conf); return { id: x.id, at: x.at, name: x.name, by: x.by, lang: x.lang, conf, flags: flags({ ...x, conf }) }; }));
+    const pics = await env.DB.prepare("SELECT theme, key FROM wallpics ORDER BY theme, key").all();
+    const keys = {}; for (const p of pics.results) (keys[p.theme] ||= []).push(p.key);
+    const old = new Set((await env.DB.prepare("SELECT id FROM themes WHERE status = 'pending' AND wall IS NOT NULL").all()).results.map((x) => x.id));   // the single "wall" of an older app
+    return json(results.map((x) => { const conf = JSON.parse(x.conf); return { id: x.id, at: x.at, name: x.name, by: x.by, lang: x.lang, conf, walls: keys[x.id] || [], has_wall: old.has(x.id), flags: flags({ ...x, conf }) }; }));
+  }
+  const w = /^\/v1\/admin\/([0-9a-f]{8})\/wall\/(photo(?:[2-9]|10)?)$/.exec(p);   // one of the rotation's photos
+  if (w && req.method === "GET") {
+    const row = await env.DB.prepare("SELECT pic AS b FROM wallpics WHERE theme = ?1 AND key = ?2").bind(w[1], w[2]).first();
+    if (!row || !row.b) return json({ error: "no such picture" }, 404);
+    return new Response(new Uint8Array(row.b), { headers: { "content-type": "image/jpeg", "cache-control": "no-store" } });
   }
   const m = /^\/v1\/admin\/([0-9a-f]{8})\/(preview|wall|approve|reject|done)$/.exec(p);
   if (!m) return json({ error: "not found" }, 404);
@@ -54,6 +68,7 @@ async function admin(req, env, url) {
   }[act];
   const r = await env.DB.prepare(sql).bind(id).run();
   if (!r.meta.changes) return json({ error: "no such theme in the right state" }, 409);
+  if (act !== "approve") await env.DB.prepare("DELETE FROM wallpics WHERE theme = ?1").bind(id).run();   // rejected or saved: the photos go
   return json({ ok: true });
 }
 

@@ -24,4 +24,30 @@ class JpegTest {
     }
 
     @Test fun lowerQualityIsSmaller() = assertTrue(Jpeg.encode(64, 64, image(64, 64), 30).size < Jpeg.encode(64, 64, image(64, 64), 90).size)
+
+    @Test fun decodesWhatItEncodes() {
+        val src = image(61, 37)
+        val (w, h, px) = dev.tvremote.core.picture.JpegDecode.rgb(Jpeg.encode(61, 37, src, 92))!!
+        assertEquals(61, w); assertEquals(37, h)
+        var err = 0L; for (i in px.indices) err += Math.abs((px[i].toInt() and 255) - (src[i].toInt() and 255))
+        assertTrue("mean error ${err / px.size}", err / px.size < 12)             // a gradient with a hard xor band: lossy but near
+    }
+
+    @Test fun progressiveOrJunkIsNull() {
+        assertEquals(null, dev.tvremote.core.picture.JpegDecode.rgb(ByteArray(50)))
+        val j = Jpeg.encode(16, 16, image(16, 16), 80).also { for (i in 0 until it.size - 1) if ((it[i].toInt() and 255) == 0xFF && (it[i + 1].toInt() and 255) == 0xC0) it[i + 1] = 0xC2.toByte() }
+        assertEquals(null, dev.tvremote.core.picture.JpegDecode.rgb(j))
+    }
+
+    @Test fun shrinkKeepsSmallAndShrinksBig() {
+        val small = Jpeg.encode(64, 64, image(64, 64), 80)
+        assertTrue(Jpeg.shrink(small) === small)
+        val noisy = ByteArray(1200 * 800 * 3).also { java.util.Random(1).nextBytes(it) }
+        val big = Jpeg.encode(1200, 800, noisy, 90)
+        assertTrue(big.size > 350_000)
+        val s = Jpeg.shrink(big, 600, 600, 150_000)!!
+        assertTrue(s.size <= 150_000)
+        assertEquals(600 to 400, Jpeg.size(s))
+        assertEquals(null, Jpeg.shrink(ByteArray(400_000) { 7 }))                   // too big and unreadable
+    }
 }

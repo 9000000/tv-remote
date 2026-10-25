@@ -177,6 +177,17 @@ object ThemePreview {
         return u.contains("/home/loop.html?v=") || Regex("\\.(mp4|webm|m3u8|mkv|mov)(\\?|#|$)").containsMatchIn(u)
     }
 
+    /** The tags on a theme's tile (the page's `homeMediaBadges` is the twin): "video", "slides" (loop.html?s=), "photos:N" for a rotation of N. */
+    fun badges(conf: JSONObject): List<String> {
+        val rot = conf.optJSONArray("walls")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
+        val walls = (listOf(conf.optString("wall")) + rot).filter { it.isNotEmpty() }.distinct()
+        val u = conf.optString("wurl").lowercase(); val web = conf.optString("wall") == HomeConfig.WEB
+        val out = ArrayList<String>()
+        if (walls.any { HomeConfig.isVideo(it) } || (web && u.contains("loop.html?v="))) out.add("video")
+        if (web && u.contains("loop.html?s=")) out.add("slides") else if (walls.size > 1) out.add("photos:" + walls.size)
+        return out
+    }
+
     /** A dark pill with a play triangle in the top right corner, over the head's buttons. */
     private fun play(cv: Canvas, p: Paint, w: Float, h: Float) {
         val bh = h * 0.17f; val bw = bh * 1.6f; val x = w - w * 0.04f - bw; val y = h * 0.05f
