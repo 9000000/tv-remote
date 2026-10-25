@@ -35,12 +35,13 @@ class ManageActivity : Activity() {
     private var url = "http://127.0.0.1:${RemoteService.PORT}/?ontv=1"
     private var pass = ""
 
-    companion object { const val PASS = "pass"; const val TAB = "tab" }
+    companion object { const val PASS = "pass"; const val TAB = "tab"; const val SECTION = "card" }
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         pass = intent.getStringExtra(PASS) ?: run { finish(); return }   // only TV Setup's own screens open it, with the pass
         intent.getStringExtra(TAB)?.takeIf { Regex("[a-z]+").matches(it) }?.let { url += "&tab=$it" }   // the RAM notice: straight to Health
+        intent.getStringExtra(SECTION)?.takeIf { Regex("[a-z]+").matches(it) }?.let { url += "&card=$it" }   // TV Home's kids lock: straight to the lock card (PIN)
         val box = android.widget.FrameLayout(this)
         box.setBackgroundColor(Color.rgb(13, 16, 20))
         val wait = android.widget.TextView(this)

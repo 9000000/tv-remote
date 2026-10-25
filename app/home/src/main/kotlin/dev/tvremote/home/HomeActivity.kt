@@ -61,6 +61,7 @@ import dev.tvremote.home.apps.Badges
 import dev.tvremote.home.ui.Drop
 import dev.tvremote.home.ui.Frost
 import dev.tvremote.home.apps.InputOpen
+import dev.tvremote.home.apps.Inputs
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.manage.ManageServer
 import dev.tvremote.home.apps.Nav
@@ -1743,51 +1744,12 @@ class HomeActivity : Activity() {
         open = TvGlass.menu(this, R.style.Menu, getString(R.string.add_title), rows) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
     }
 
-    /**
-     * The TV's inputs as the TV shows them (cleanyourtv's launcher reads them the same way): the names the owner gave them, the
-     * hidden ones left out, a device on HDMI-CEC folded into its port, "Connected" where the TV knows, HDMI first, then AV and
-     * the like, the tuner last. The TV's own settings when it lists none.
-     */
+    /** The inputs' menu under the top bar (the list is [Inputs.rows], the Control Center counts the same): the TV's own settings when it lists none. */
     private fun inputs() {
-        val tim = try { getSystemService(Context.TV_INPUT_SERVICE) as? TvInputManager } catch (e: Exception) { null }
-        val list: List<TvInputInfo> = try { tim?.tvInputList.orEmpty() } catch (e: Exception) { emptyList() }
-        fun hidden(i: TvInputInfo) = try { i.isHidden(this) } catch (e: Exception) { false }
-        fun custom(i: TvInputInfo) = try { i.loadCustomLabel(this)?.toString()?.trim().orEmpty() } catch (e: Exception) { "" }
-        fun state(id: String) = try { tim?.getInputState(id) ?: -1 } catch (e: Exception) { -1 }
-        val ids = list.map { it.id }.toSet()
-        val top = list.filter { (it.parentId == null || it.parentId !in ids) && !hidden(it) }
-        val devices = list.filter { it.isPassthroughInput && it.parentId in ids && !hidden(it) }.groupBy { it.parentId }
-        val ports = top.filter { it.isPassthroughInput && it.type == TvInputInfo.TYPE_HDMI }
-        // some TVs say every HDMI port is connected: then it means nothing
-        val bogus = ports.size > 1 && ports.all { state(it.id) == TvInputManager.INPUT_STATE_CONNECTED }
-        val rows = top.map { i ->
-            val hdmi = i.isPassthroughInput && i.type == TvInputInfo.TYPE_HDMI
-            val base = custom(i).ifEmpty { i.loadLabel(this).toString() }
-            val dev = devices[i.id]?.firstNotNullOfOrNull { d -> custom(d).ifEmpty { d.loadLabel(this).toString() }.takeIf { it.isNotBlank() && it != base } }
-            val connected = !(hdmi && bogus) && (state(i.id) == TvInputManager.INPUT_STATE_CONNECTED || devices[i.id].orEmpty().any { state(it.id) == TvInputManager.INPUT_STATE_CONNECTED })
-            val group = if (hdmi) 0 else if (i.isPassthroughInput) 1 else 2
-            Drop.Row(if (group == 2) R.drawable.ic_tv else if (hdmi) R.drawable.ic_input else R.drawable.ic_plug,
-                if (dev != null) "$base · $dev" else base, if (connected && group < 2) getString(R.string.connected) else null, group) {
-                val uri = if (i.isPassthroughInput) TvContract.buildChannelUriForPassthroughInput(i.id) else TvContract.buildChannelsUriForInput(i.id)
-                try { startActivity(InputOpen.intent(this, uri)) } catch (e: Exception) { toast(R.string.no_open) }
-            }
-        }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
-        if (rows.isEmpty()) { toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }
+        val rows = Inputs.rows(this) { toast(R.string.no_open) }
+        if (rows.isEmpty()) { if (Inputs.liveApp(this)?.let { Apps.launch(this, it) } == true || Inputs.panel(this)) return; toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }   // a Live TV app is the TV's own input picker
         open?.dismiss()
         open = Drop.show(this, bar.capsule, rows)
-    }
-
-    /** "HDMI 2" before "HDMI 10". */
-    private object Nat : Comparator<String> {
-        override fun compare(a: String, b: String): Int {
-            val n = Regex("\\d+|\\D+")
-            val x = n.findAll(a.lowercase()).map { it.value }.toList(); val y = n.findAll(b.lowercase()).map { it.value }.toList()
-            for (k in 0 until minOf(x.size, y.size)) {
-                val c = if (x[k][0].isDigit() && y[k][0].isDigit()) (x[k].toBigInteger()).compareTo(y[k].toBigInteger()) else x[k].compareTo(y[k])
-                if (c != 0) return c
-            }
-            return x.size - y.size
-        }
     }
 
     private fun open(action: String) {

@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home, Trung tâm điều khiển: các nút nguồn thành một hàng 2 nút tròn (Dọn RAM, Tắt TV: menu Màn chờ, Tắt màn hình, Khởi động lại, Tắt hẳn; Màn chờ chạy ngay, không cần TV Setup) + dòng CPU/RAM nhỏ (thấp hơn; bỏ Chế độ chờ); ô Mạng hiện tên Wi-Fi; ô Nguồn vào chỉ hiện khi TV có nguồn vào (thật, đọc như menu Nguồn vào; thêm Coocaa và app Live TV), hộp không có thì thành ô Bluetooth; ô Khoá trẻ em: bật thì chạm để tắt qua màn hình mã PIN của TV Setup, chưa có PIN thì chạm mở thẳng chỗ đặt PIN; chưa có TV Setup thì các ô vẫn mờ, chạm ra cách cài (Downloader).
 - TV Home: Trung tâm điều khiển vẽ lại giống Tùy chỉnh và menu giữ OK (bảng kính 460 dp, ô 16 dp, chữ 15/12 sp, thay vì 600 dp); thanh trên chỉ còn nút Mạng và Cài đặt: nút Nguồn vào và nút Nguồn chuyển vào Trung tâm điều khiển (thêm **Chế độ chờ**); bỏ công tắc “Nút nguồn” trong Tùy chỉnh và trang web.
 - TV Home: gợi ý một lần “Giữ OK hoặc bấm ☰ trên một app để xem thêm” dưới hàng app đầu; tắt bằng ✕ hoặc khi đã mở menu của app.
 - App máy tính (Mac): mở từ thư mục Tải xuống thì hỏi “Chuyển TV Remote vào Applications?” (mỗi bản một lần) để tự cập nhật được; thẻ cập nhật cũng có nút **Chuyển vào Applications**. Bản chép được kiểm tra, bản cũ vào Thùng rác, dữ liệu giữ nguyên.
@@ -27,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- TV Home Control Center: the power buttons are 2 round buttons (Clear RAM, Turn off the TV: a menu of Screensaver, Screen off, Restart, Power off; the Screensaver runs at once, no TV Setup) + a small CPU/RAM line; the Network tile shows the Wi-Fi name; the Inputs tile shows only where the TV has inputs (read as the Inputs menu does; plus Coocaa and Live TV apps), a box without them gets a Bluetooth tile; input names are cleaned (Philips "Xbox&GAME_CONSOLE", "null"), TCL and XGIMI panels are tried when the list is empty; Kids lock tile: when on, a tap turns it off through TV Setup's PIN screen, with no PIN a tap opens the place to set one; without TV Setup the tiles stay greyed and a tap shows how to install it (Downloader).
 - TV Home: the Control Center is redrawn like Customize and the hold-OK menu (glass panel 460 dp, 16 dp tiles, 15/12 sp text, was 600 dp); the top bar keeps only Network and Settings: the Inputs and Power buttons moved into the Control Center (new **Standby**); the "Power button" switch is gone from Customize and the web page.
 - TV Home: a one-time tip “Hold OK or press ☰ on an app for more options” under the first row of apps; gone after ✕ or once an app menu was opened.
 - Computer app (Mac): opened from Downloads it asks "Move TV Remote to Applications?" (once per version) so it can update itself; the update card has a **Move to Applications** button too. The copy is checked, the old one goes to the Trash, your data stays.

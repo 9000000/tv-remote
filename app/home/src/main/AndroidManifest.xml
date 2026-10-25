@@ -14,6 +14,13 @@
         <package android:name="com.esaba.downloader" />           <!-- the power button opens it to get TV Setup -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
+        <intent><action android:name="android.media.tv.TvInputService" /></intent>   <!-- Android 11+ hides other apps' input services without it: the inputs list came back empty -->
+        <package android:name="com.tcl.settings" /><package android:name="com.tcl.sourcemananger" />   <!-- TCL's source panel (Inputs.panel) -->
+        <intent><action android:name="com.xgimi.action.hdmiPlayer" /></intent>                       <!-- XGIMI's HDMI player (Inputs.xgimi) -->
+        <provider android:authorities="com.skyworth.tv.provider" />                  <!-- Coocaa OS lists its sources there (Inputs.coocaa) -->
+        <provider android:authorities="com.skyworth.tv.sdk.provider" />
+        <package android:name="com.tcl.tv" /><package android:name="com.sony.dtv.tvx" /><package android:name="com.mediatek.wwtv.tvcenter" /><package android:name="com.mitv.livetv" />
+        <package android:name="com.realtek.tv" /><package android:name="com.cltv.hybrid" /><package android:name="com.android.tv" />   <!-- Inputs.LIVE_APPS: a TV with inputs of its own -->
         <intent><action android:name="android.settings.DISPLAY_SETTINGS" /></intent>   <!-- the Picture and Sound rows show only where the TV has those screens -->
         <intent><action android:name="android.settings.SOUND_SETTINGS" /></intent>
         <intent><action android:name="android.settings.APPLICATION_DETAILS_SETTINGS" /><data android:scheme="package" /></intent>   <!-- App info shows only where the TV has it -->
@@ -50,6 +57,7 @@
             </intent-filter>
         </activity-alias>
         <!-- the screensaver: the clock, the date and the wallpaper; chosen in the TV's settings, or by the "screensaver" switch (Dream.kt) -->
+        <activity android:name=".ScreensaverActivity" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen" />
         <service android:name=".HomeDream" android:exported="true" android:label="@string/app_name" android:icon="@drawable/icon"
             android:permission="android.permission.BIND_DREAM_SERVICE">
             <intent-filter><action android:name="android.service.dreams.DreamService" /><category android:name="android.intent.category.DEFAULT" /></intent-filter>

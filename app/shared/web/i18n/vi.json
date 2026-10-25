@@ -3665,6 +3665,7 @@
  "pin.enter_totp": "Nhập mã Google Authenticator",
  "tg.wrong3": "Có người nhập sai mã 3 lần trên {tv} lúc {time}, app {app}.",
  "warn.unlock": "Mở khóa",
+ "pin.kids_off_title": "Tắt chế độ trẻ em",
  "pin.unlock_title": "Mở khóa TV",
  "talk.title": "Nói nhanh",
  "talk.hold": "Giữ để nói",

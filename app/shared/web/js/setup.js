@@ -607,6 +607,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (['remote', 'apps', 'files', 'health', 'auto', 'tv'].includes(startTab)) showTab(startTab); else if (startTab === 'install') showTab('files');
   else if (startTab === 'term') { showTab('files'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
   document.documentElement.classList.add('tabbed');                   // the right tab is open: show it (theme.js)
+  const want = new URLSearchParams(location.search).get('card');       // TV Home sends people to one card (the kids lock's PIN): scroll to it, focus its first control
+  if (/^[a-z]+$/.test(want || '')) setTimeout(() => { const c = document.getElementById(want); if (!c) return; if (c.tagName === 'DETAILS') c.open = true; c.scrollIntoView({ block: 'start' }); c.querySelector('button, input, select, a')?.focus(); }, 900);
 });
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
 let polling = false;

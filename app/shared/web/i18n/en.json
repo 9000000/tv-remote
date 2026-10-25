@@ -3767,6 +3767,7 @@
  "pin.enter_totp": "Enter the Google Authenticator code",
  "tg.wrong3": "Someone typed a wrong code 3 times on {tv} at {time}, app {app}.",
  "warn.unlock": "Unlock",
+ "pin.kids_off_title": "Turn off kids mode",
  "pin.unlock_title": "Unlock the TV",
  "talk.title": "Quick talk",
  "talk.hold": "Hold to talk",

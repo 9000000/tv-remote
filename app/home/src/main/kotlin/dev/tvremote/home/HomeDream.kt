@@ -7,6 +7,7 @@ import android.animation.TimeInterpolator
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.service.dreams.DreamService
+import android.app.Activity
 import android.text.format.DateFormat
 import android.view.Gravity
 import android.view.View
@@ -32,8 +33,37 @@ import dev.tvremote.home.wall.WebWall
  * clock text changes once a minute, and it is not animated at all when motion is off. Against burn-in the clock moves to
  * another place every minute, fading while it goes, and everything is a little dim.
  */
+/**
+ * TV Home's screensaver as a system dream (the body is DreamBody).
+ */
 class HomeDream : DreamService() {
     override fun attachBaseContext(base: Context) = super.attachBaseContext(Lang.wrap(base))
+    private var body: DreamBody? = null
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        isInteractive = false; isFullscreen = true; isScreenBright = false
+        body = DreamBody(this).also { setContentView(it.build()) }
+    }
+    override fun onDetachedFromWindow() { body?.stop(); body = null; super.onDetachedFromWindow() }
+}
+
+/** The "Screensaver" button: the same picture in a full-screen activity of TV Home (no permission, no TV Setup); any key or touch closes it. */
+class ScreensaverActivity : Activity() {
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(Lang.wrap(base))
+    private var body: DreamBody? = null
+    override fun onCreate(b: android.os.Bundle?) {
+        super.onCreate(b)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        body = DreamBody(this).also { setContentView(it.build()) }
+    }
+    override fun onKeyDown(k: Int, e: android.view.KeyEvent): Boolean { finish(); return true }
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean { finish(); return true }
+    override fun onDestroy() { body?.stop(); body = null; super.onDestroy() }
+}
+
+/** The drawing of the screensaver, shared by the system dream and the "Screensaver" button of the Control Center (an activity): built once, see HomeDream. */
+class DreamBody(private val c: Context) {
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     private val bg = Executors.newSingleThreadExecutor()
     private lateinit var block: LinearLayout
@@ -46,78 +76,75 @@ class HomeDream : DreamService() {
     private var web: android.webkit.WebView? = null
     private val minute = object : Runnable { override fun run() { refresh(); moveClock(); ui.postDelayed(this, untilNextMinute()) } }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        Font.load(this)
-        isInteractive = false; isFullscreen = true; isScreenBright = false
-        Store.advance(this, false)                                   // a timed rotation that fell due while Home was not on screen
-        val conf = Store.get(this)
-        Motion.read(this, conf)
+    fun build(): View {
+        Font.load(c)
+        Store.advance(c, false)                                   // a timed rotation that fell due while Home was not on screen
+        val conf = Store.get(c)
+        Motion.read(c, conf)
         motion = Motion.on
-        val dm = resources.displayMetrics
-        val root = FrameLayout(this)
+        val dm = c.resources.displayMetrics
+        val root = FrameLayout(c)
         root.background = wallDrawable(wallColors(conf.optString("wall")))
         val id = conf.optString("wall")
         if (Walls.isPicture(id) || WallArt.has(id)) {                 // a photo, Bing's picture or a drawn scene: all become one bitmap here
-            val v = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; alpha = 0f }
+            val v = ImageView(c).apply { scaleType = ImageView.ScaleType.CENTER_CROP; alpha = 0f }
             wall = v
             root.addView(v, FrameLayout.LayoutParams(-1, -1))
             bg.execute {
                 val (bw, bh) = Wall.want(dm.widthPixels, dm.heightPixels)
-                val b = if (WallArt.has(id)) Walls.small(this, id, bw, bh, false) else Walls.bitmap(this, id, dm.widthPixels, dm.heightPixels)   // the dim below is its veil
+                val b = if (WallArt.has(id)) Walls.small(c, id, bw, bh, false) else Walls.bitmap(c, id, dm.widthPixels, dm.heightPixels)   // the dim below is its veil
                 ui.post { if (b != null && shown == null && wall != null) { shown = b; v.setImageBitmap(b); v.animate().alpha(1f).setDuration(if (motion) 900 else 0).start(); startDrift(v) } }
             }
         }
         if (id == HomeConfig.WEB) {                                   // the page, full-screen: no drift (it moves by itself); gone if it cannot load
-            web = WebWall.make(this, conf.optString("wurl"), { WebWall.stop(web); web = null })
+            web = WebWall.make(c, conf.optString("wurl"), { WebWall.stop(web); web = null })
             web?.let { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         }
-        root.addView(View(this).apply { setBackgroundColor(0x70000000) }, FrameLayout.LayoutParams(-1, -1))   // dim: night, and words stay readable over a photo
+        root.addView(View(c).apply { setBackgroundColor(0x70000000) }, FrameLayout.LayoutParams(-1, -1))   // dim: night, and words stay readable over a photo
 
-        val clock = TextClock(this).apply {
+        val clock = TextClock(c).apply {
             textSize = 120f; setTextColor(0xE6FFFFFF.toInt()); typeface = Font.light
             includeFontPadding = false; gravity = Gravity.CENTER
             format24Hour = if (conf.optBoolean("clock24", true)) "HH:mm" else "h:mm"
             format12Hour = format24Hour
         }
         date = line(26f, 0xCCFFFFFF.toInt()); lunar = line(20f, 0x99FFFFFF.toInt())
-        block = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(40), dp(20), dp(40), dp(20)) }
+        block = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(40), dp(20), dp(40), dp(20)) }
         block.addView(clock); block.addView(date); block.addView(lunar)
         root.addView(block, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
-        setContentView(root)
         refresh()
         ui.postDelayed(minute, untilNextMinute())
+        return root
     }
 
-    override fun onDetachedFromWindow() {
+    fun stop() {
         ui.removeCallbacksAndMessages(null)
         drift?.cancel(); drift = null
         wall?.setImageDrawable(null); wall = null; shown = null
         WebWall.stop(web); web = null
         bg.shutdownNow()
-        super.onDetachedFromWindow()
     }
 
-    private fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
+    private fun dp(v: Number) = (v.toFloat() * c.resources.displayMetrics.density).toInt()
 
-    private fun line(size: Float, color: Int) = Font.on(TextView(this)).apply { textSize = size; setTextColor(color); gravity = Gravity.CENTER; setPadding(0, dp(6), 0, 0) }
+    private fun line(size: Float, color: Int) = Font.on(TextView(c)).apply { textSize = size; setTextColor(color); gravity = Gravity.CENTER; setPadding(0, dp(6), 0, 0) }
 
     /** The day and the lunar date: once a minute, which is when the day can change at all. */
     private fun refresh() {
         date.text = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), Date()).toString().replaceFirstChar { it.uppercase() }
-        val c = Calendar.getInstance()
-        val d = Lunar.of(c.get(Calendar.DAY_OF_MONTH), c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR))
-        val r = resources
-        val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) getString(R.string.lunar_leap) else ""
-        val dayWord = if (d.day <= 10) getString(R.string.lunar_day_early, d.day) else d.day.toString()
+        val cal = Calendar.getInstance()
+        val d = Lunar.of(cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR))
+        val r = c.resources
+        val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) c.getString(R.string.lunar_leap) else ""
+        val dayWord = if (d.day <= 10) c.getString(R.string.lunar_day_early, d.day) else d.day.toString()
         val (can, chi) = Lunar.canChi(d.year)
-        lunar.text = getString(R.string.lunar_title, dayWord, month) + " · " +
-            getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
+        lunar.text = c.getString(R.string.lunar_title, dayWord, month) + " · " +
+            c.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
     }
 
     /** The clock block to another place on the screen (never the same twice in a row, always fully inside), fading out and in on the way. */
     private fun moveClock() {
-        val dm = resources.displayMetrics
+        val dm = c.resources.displayMetrics
         val rx = maxOf(0, (dm.widthPixels - block.width) / 2); val ry = maxOf(0, (dm.heightPixels - block.height) / 2)
         val x = ((Math.random() * 2 - 1) * rx).toFloat(); val y = ((Math.random() * 2 - 1) * ry * 0.9).toFloat()
         if (!motion) { block.translationX = x; block.translationY = y; return }
