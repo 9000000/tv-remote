@@ -618,7 +618,7 @@ class MainActivity : Activity() {
                     log("✗ " + if (refused) T("tv_main.adb_refused") else reason(e))
                     if (android.os.Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)) howto(T("tv_main.xiaomi_adb"))
                     else if (android.os.Build.MANUFACTURER.equals("TCL", ignoreCase = true)) howto(T("setup.tcl_hidden_adb"))   // TCL China: a key sequence, no Developer options   // China's PatchWall has no Developer options: ADB is under Account & Security
-                    howto(T("tv_main.enable_adb_howto"))
+                    howto(T(if (ispBox()) "tv_main.isp_no_taps" else "tv_main.enable_adb_howto"))
                     howto(T("tv_main.then_come_back_here"))
                     tiles[1].enable(true)
                     tiles[1].view.requestFocus()
@@ -712,6 +712,10 @@ class MainActivity : Activity() {
             }))
     }
 
+    /** A box from an Internet provider (FPT Play, Viettel; names as the census sees them): Build's 7 presses ask the ISP's password. */
+    private fun ispBox() = listOf(android.os.Build.BRAND, android.os.Build.MANUFACTURER, android.os.Build.MODEL)
+        .joinToString(" ").lowercase().let { "fpt" in it || "viettel" in it }
+
     private fun devOptions() {
         retryOnResume = true
         // Android TV's own Developer options page only says "not available for this user" when they are still off, on a second
@@ -720,10 +724,14 @@ class MainActivity : Activity() {
         if (um != null && (um.hasUserRestriction(android.os.UserManager.DISALLOW_DEBUGGING_FEATURES) || !um.isSystemUser)) {
             log(T("tv_main.dev_locked")); return
         }
-        val off = android.os.Build.TYPE == "user" &&
+        val isp = ispBox()
+        val off = android.os.Build.TYPE == "user" && !isp &&                 // an ISP box: its 7 presses ask an ISP password, its page may open anyway
             android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) != 1
         val dev = T("tv_main.developer_options")
-        val tries = if (off) listOf(
+        val tries = if (isp) listOf(
+            dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
+            dev to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
+            dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings")) else if (off) listOf(
             T("tv_main.about_press_ok_7") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
             T("page.settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) else listOf(
             dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
@@ -732,7 +740,7 @@ class MainActivity : Activity() {
             T("tv_main.about_press_ok_7") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
             T("page.settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
         fun attempt(i: Int) {
-            if (i >= tries.size) { log(T("tv_main.this_tv_does_not")); return }
+            if (i >= tries.size) { log(T(if (isp) "tv_main.isp_locked" else "tv_main.this_tv_does_not")); return }
             val (name, intent) = tries[i]
             try {
                 startActivity(intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -743,7 +751,10 @@ class MainActivity : Activity() {
             // a screen that is not allowed to open closes itself at once and leaves us in front: then try the next one
             window.decorView.postDelayed({
                 if (hasWindowFocus()) attempt(i + 1)
-                else howto(if (off) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
+                else {
+                    howto(if (off) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
+                    if (isp) howto(T("tv_main.isp_locked"))                    // the page only says "not available": the ISP locked it
+                }
             }, 1200)
         }
         attempt(0)

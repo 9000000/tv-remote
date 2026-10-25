@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Setup: khi “Gỡ lỗi ADB” đã bật mà box vẫn không cho kết nối (vài box FPT Play chỉ mở ADB qua cáp), TV Setup nói đúng như vậy và chỉ cách làm, thay vì bảo bật lại một thứ đã bật.
+- TV Setup trên box nhà mạng (FPT Play, Viettel): mở thẳng Tùy chọn nhà phát triển như trước, không bảo bấm 7 lần vào “Bản dựng” (box đòi mật khẩu); trang bị khóa thì nói rõ.
 
 **English**
 - TV Setup: when “ADB debugging” is on but the box still refuses the connection (some FPT Play boxes open ADB over the cable only), TV Setup now says so and what to do, instead of asking to turn on what is already on.
+- TV Setup on Internet provider boxes (FPT Play, Viettel): opens Developer options directly again, never asks for the 7 presses on “Build” (the box asks for a password); says so when the page is locked.
 
 ## 0.23.0 - 2026-10-25
 
