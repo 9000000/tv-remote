@@ -117,7 +117,10 @@
     var img = d.querySelector("img"), nm = d.querySelector(".th-name");
     function show(i){
       at = (i + cards.length) % cards.length;
-      img.src = cards[at].querySelector("img").src; nm.innerHTML = cards[at].querySelector("h3").innerHTML;
+      var small = cards[at].querySelector("img").src, big = small.replace(/\.webp$/, "-big.webp"), want = at;
+      img.src = small; nm.innerHTML = cards[at].querySelector("h3").innerHTML;   // the card's picture at once (already loaded),
+      var b = new Image(); b.onload = function(){ if (at === want) img.src = big; }; b.src = big;   // then 1280x720 (~45 KB) only when zoomed
+      new Image().src = cards[(at + 1) % cards.length].querySelector("img").src.replace(/\.webp$/, "-big.webp");   // the next one ready
     }
     cards.forEach(function(c, i){ c.addEventListener("click", function(){ from = c; show(i); d.showModal(); }); });
     d.querySelector(".th-x").onclick = function(){ d.close(); };
