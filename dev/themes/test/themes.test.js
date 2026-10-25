@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validate, flags, clean, senderHash, tokenOk, sizeOf, THEME_KEYS, MAX_BODY, MAX_PHOTO } from "../src/logic.js";
+import { validate, flags, clean, senderHash, tokenOk, sizeOf, THEME_KEYS, MAX_BODY, MAX_PHOTO, MAX_PREVIEW } from "../src/logic.js";
 
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0]).toString("base64");
 const WEBP = Buffer.concat([Buffer.from("RIFF"), Buffer.alloc(4), Buffer.from("WEBPVP8 ")]).toString("base64");
@@ -72,4 +72,13 @@ test("walls: up to ten photos by key, each a jpeg under 360 KB", () => {
   assert.match(validate(sub({ walls: [JPG] })).error, /object/);
   assert.match(validate(sub({ walls: { photo: "x" } })).error, /base64/);
   assert.equal(validate(sub({ walls: {} })).ok.photos.length, 0);
+});
+
+test("the app's caps fit the worker's (ThemeShare.kt): a preview of 150 * 1024 bytes was refused at 150_000", async () => {
+  const fs = await import("node:fs");
+  const kt = fs.readFileSync(new URL("../../../app/shared/src/main/kotlin/dev/tvremote/core/ontv/ThemeShare.kt", import.meta.url), "utf8");
+  const num = (name) => Number(eval(kt.match(new RegExp("const val " + name + " = ([0-9_ *]+)"))[1].replace(/_/g, "")));
+  assert.ok(num("PREVIEW_MAX") <= MAX_PREVIEW, "PREVIEW_MAX " + num("PREVIEW_MAX") + " > " + MAX_PREVIEW);
+  assert.ok(num("PHOTO_MAX") <= MAX_PHOTO, "PHOTO_MAX " + num("PHOTO_MAX") + " > " + MAX_PHOTO);
+  assert.ok(num("BODY_MAX") <= MAX_BODY, "BODY_MAX " + num("BODY_MAX") + " > " + MAX_BODY);
 });

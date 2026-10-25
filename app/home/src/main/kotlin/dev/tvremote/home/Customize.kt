@@ -361,10 +361,18 @@ object Customize {
                         addView(label(name, 13f, Color.WHITE).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                         if (by.isNotEmpty()) addView(label(a.getString(R.string.th_by, by), 11f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     }, FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM))
-                    val tags = ThemePreview.badges(conf).map { b -> when { b == "video" -> a.getString(R.string.th_badge_video); b == "slides" -> a.getString(R.string.th_badge_slides); else -> a.getString(R.string.th_badge_photos, b.substringAfter(':').toInt()) } }
-                    if (tags.isNotEmpty()) addView(label(tags.joinToString("  "), 11f, Color.WHITE).apply {   // top left: the check is top right
-                        maxLines = 1; setPadding(dp(8), dp(2), dp(8), dp(2))
+                    // a line icon and a word each: an emoji draws differently on every TV's font, and some have none
+                    val tags = ThemePreview.badges(conf).map { b -> when { b == "video" -> R.drawable.ic_play to a.getString(R.string.th_badge_video)
+                        b == "slides" -> R.drawable.ic_image to a.getString(R.string.th_badge_slides)
+                        else -> R.drawable.ic_image to a.getString(R.string.th_badge_photos, b.substringAfter(':').toInt()) } }
+                    if (tags.isNotEmpty()) addView(LinearLayout(a).apply {     // top left: the check is top right
+                        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(2), dp(8), dp(2))
                         background = GradientDrawable().apply { setColor(NAME_SCRIM); cornerRadius = dp(10).toFloat() }
+                        tags.forEachIndexed { i, (res, words) ->
+                            val (iv, sz) = icon(res, Color.WHITE, dp(11))
+                            addView(iv, LinearLayout.LayoutParams(sz, sz).apply { if (i > 0) marginStart = dp(8); marginEnd = dp(4) })
+                            addView(label(words, 11f, Color.WHITE).apply { maxLines = 1 })
+                        }
                     }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.START).apply { setMargins(dp(6), dp(6), 0, 0) })
                     addView(FrameLayout(a).apply {
                         tag = "check"

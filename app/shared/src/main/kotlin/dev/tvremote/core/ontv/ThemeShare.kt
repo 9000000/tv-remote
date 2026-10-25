@@ -22,7 +22,7 @@ import java.net.URL
 object ThemeShare {
     /** The store's address; tests point it at a stub with TVR_THEME_STORE (or -Dtvr.themestore). */
     val STORE: String get() = System.getenv("TVR_THEME_STORE") ?: System.getProperty("tvr.themestore") ?: "https://tvr-themes.99-hoangtran.workers.dev/v1/themes"
-    const val PREVIEW_MAX = 150 * 1024
+    const val PREVIEW_MAX = 150_000                                  // the worker's MAX_PREVIEW, in bytes: 150 * 1024 went over it (a 149 KB preview was refused)
     const val PHOTO_MAX = 350_000                                    // each photo of the theme, re-encoded to this (and PHOTO_W wide) before it goes
     const val PHOTO_W = 1920
     const val PHOTOS = 10                                            // HomeConfig.PHOTO_MAX: a rotation of ten

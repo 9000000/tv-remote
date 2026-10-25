@@ -638,7 +638,7 @@ async function homeOpen() {
           photo: (blob) => homeLink.photo(blob),
           video: async (blob, nm) => {
             const n = await homeLink.video(new File([blob], nm, { type: blob.type }), (pct) => put(themeJob, 'textContent', T('home.v_up', { pct })));
-            return homeVideoWait(n, (t) => put(themeJob, 'textContent', t));
+            return homeVideoWait(n, (t) => put(themeJob, 'textContent', t), true);
           },
         });
       } catch (e) {
@@ -780,7 +780,7 @@ async function homeOpen() {
     };
     const tile = (id, name, conf, mine, look, tiles = [], by = '') => {
       const on = c.theme === id;
-      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), ((t) => t.length ? el('small', { className: 'badge', textContent: t.join(' · ') }) : null)(homeMediaBadges(conf || {}).map((x) => T(x.id, x.args))), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
+      const b = el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), title: name, onclick: () => send({ theme: { apply: id } }) }, themeFace(id, conf, mine, look, tiles), el('span', { textContent: name }), ((t) => t.length ? el('small', { className: 'badge' }, ...t.flatMap((x) => [UI.icon(x.icon), el('span', { textContent: T(x.id, x.args) })])) : null)(homeMediaBadges(conf || {})), by ? el('small', { className: 'by', textContent: T('home.theme_by', { name: by }) }) : null);
       const info = el('button', { type: 'button', className: 'small iconbtn wallx info', textContent: 'ⓘ', title: T('home.theme_info'), 'aria-label': T('home.theme_info'), onclick: () => showInfo(id, name, conf) });
       if (!mine) return el('span', { className: 'wallcell' }, b, info);
       const del = el('button', { type: 'button', className: 'small iconbtn wallx', textContent: '✕', title: T('home.theme_del'), 'aria-label': T('home.theme_del'),
@@ -970,7 +970,7 @@ async function homeVideo(f, say) {
 }
 
 // Until TV Home's job ends: the answer's video.job {pct, error}. A few failed reads in a row end the wait (the TV went away).
-async function homeVideoWait(n, say) {
+async function homeVideoWait(n, say, quiet = false) {   // quiet: one step of a theme's import, which says its own end
   let lost = 0;
   while (n && n.video && n.video.job && n.video.job.error == null && n.video.job.pct < 100 && lost < 5) {
     say(T('home.v_make', { pct: n.video.job.pct }));
@@ -980,7 +980,7 @@ async function homeVideoWait(n, say) {
   }
   const j = n && n.video && n.video.job;
   if (j && j.error) throw new Error('home:video_' + j.error);
-  toast(T('home.v_done'));
+  if (!quiet) toast(T('home.v_done'));
   return n;
 }
 

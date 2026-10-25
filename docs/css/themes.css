@@ -23,6 +23,7 @@
 .tp-pic img.none{visibility:hidden}
 .tp-bs{position:absolute;left:8px;top:8px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 16px)}
 .tp-b{padding:2px 9px;border-radius:99px;background:rgba(8,11,18,.78);backdrop-filter:blur(6px);color:#fff;font-size:12px;font-weight:700;line-height:1.6;white-space:nowrap}
+.tp-b{display:inline-flex;align-items:center;gap:4px}.tp-b svg{width:12px;height:12px;flex:none}
 .tp-b.b-cm{background:rgba(61,111,232,.9)}
 .tp-card h3{font-size:18px;margin:8px 6px 0;line-height:1.25}
 .tp-card p{color:var(--muted);font-size:14px;line-height:1.5;margin:0 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

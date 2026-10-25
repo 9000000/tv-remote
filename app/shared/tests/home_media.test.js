@@ -70,9 +70,16 @@ test('export refuses an item over the cap before reading', async () => {
   await assert.rejects(M.homeMediaExport({ wall: 'photo' }, { photo: 61 * 1048576 }, {}), /media_big/);
 });
 
+test('export: a video\'s type comes from its bytes (TV Home keeps a WebM as .mp4)', async () => {
+  const webm = new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1])]), mp4 = new Blob([new Uint8Array([0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70])]);
+  const d = { cancelled: () => false, say: () => {}, blobOf: async (k) => (k === 'vid:0000000a' ? webm : mp4), dataUrl: async (b) => b.type };
+  assert.deepEqual(await M.homeMediaExport({ walls: ['vid:0000000a', 'vid:0000000b', 'photo'] }, {}, d),
+    { 'vid:0000000a': 'video/webm', 'vid:0000000b': 'video/mp4', photo: 'image/jpeg' });
+});
+
 test('badges: video, rotation, slideshow', () => {
   assert.deepEqual(M.homeMediaBadges({ wall: 'vid:0123abcd' }).map((x) => x.id), ['home.badge_video']);
-  assert.deepEqual(M.homeMediaBadges({ wall: 'a', walls: ['a', 'b', 'c'] }), [{ id: 'home.badge_photos', args: { n: 3 } }]);
+  assert.deepEqual(M.homeMediaBadges({ wall: 'a', walls: ['a', 'b', 'c'] }), [{ id: 'home.badge_photos', icon: 'image', args: { n: 3 } }]);
   assert.deepEqual(M.homeMediaBadges({ wall: 'web', wurl: 'https://tvremote.pages.dev/home/loop.html?s=vietnam' }).map((x) => x.id), ['home.badge_slides']);
   assert.deepEqual(M.homeMediaBadges({ wall: 'web', wurl: 'https://tvremote.pages.dev/home/loop.html?v=x.mp4' }).map((x) => x.id), ['home.badge_video']);
   assert.deepEqual(M.homeMediaBadges({ wall: 'night' }), []);
@@ -81,4 +88,12 @@ test('badges: video, rotation, slideshow', () => {
 test('weigh: counts and bytes, inexact when a size is missing', () => {
   const w = M.homeMediaWeigh({ wall: 'photo', walls: ['photo', 'vid:0123abcd'] }, { photos: [{ id: 'photo', size: 1000 }], video: { items: [{ id: 'vid:0123abcd' }] } });
   assert.deepEqual([w.photos, w.videos, w.bytes, w.exact], [1, 1, 1000, false]);
+});
+
+test('a progressive jpeg is told from a baseline one (the import makes it plain: the share cannot shrink it)', () => {
+  // made by PIL: a 64x48 picture saved progressive and baseline
+  const prog = Buffer.from('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wgARCAAwAEADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAWAQEBAQAAAAAAAAAAAAAAAAAABAb/2gAMAwEAAhADEAAAAY4i0wAAAAAAAAAAH//EABQQAQAAAAAAAAAAAAAAAAAAAFD/2gAIAQEAAQUCQ//EABQRAQAAAAAAAAAAAAAAAAAAADD/2gAIAQMBAT8BT//EABQRAQAAAAAAAAAAAAAAAAAAADD/2gAIAQIBAT8BT//EABQQAQAAAAAAAAAAAAAAAAAAAFD/2gAIAQEABj8CQ//EABQQAQAAAAAAAAAAAAAAAAAAAFD/2gAIAQEAAT8hQ//aAAwDAQACAAMAAAAQ888888888888/8QAFBEBAAAAAAAAAAAAAAAAAAAAMP/aAAgBAwEBPxBP/8QAFBEBAAAAAAAAAAAAAAAAAAAAMP/aAAgBAgEBPxBP/8QAFBABAAAAAAAAAAAAAAAAAAAAUP/aAAgBAQABPxBD/9k=', 'base64'), base = Buffer.from('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAwAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDkKKKK8U/TAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/9k=', 'base64');
+  assert.equal(M.homeJpegProgressive(new Uint8Array(prog)), true);
+  assert.equal(M.homeJpegProgressive(new Uint8Array(base)), false);
+  assert.equal(M.homeJpegProgressive(new Uint8Array([0x89, 0x50, 0x4E, 0x47])), false);
 });

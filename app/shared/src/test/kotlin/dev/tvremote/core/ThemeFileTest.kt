@@ -26,6 +26,18 @@ class ThemeFileTest {
         assertEquals(bytes.toList(), java.util.Base64.getDecoder().decode(d.substringAfter(',')).toList())
     }
 
+    @Test fun videoTypeComesFromItsBytes() {
+        val webm = byteArrayOf(0x1A, 0x45, 0xDF.toByte(), 0xA3.toByte(), 1, 2, 3)
+        val mp4 = byteArrayOf(0, 0, 0, 0x20, 'f'.code.toByte(), 't'.code.toByte(), 'y'.code.toByte(), 'p'.code.toByte())
+        val out = ByteArrayOutputStream()
+        ThemeFile.write(out, "N", JSONObject("""{"walls":["vid:0000000a","vid:0000000b"]}"""), listOf("vid:0000000a", "vid:0000000b")) { k, sink ->
+            if (k.endsWith("a")) sink(webm, webm.size) else sink(mp4, mp4.size)
+        }
+        val m = JSONObject(out.toString()).getJSONObject("media")
+        assertEquals("data:video/webm;base64", m.getString("vid:0000000a").substringBefore(','))
+        assertEquals("data:video/mp4;base64", m.getString("vid:0000000b").substringBefore(','))
+    }
+
     @Test fun fileWithoutMediaIsPlainV1() {
         val out = ByteArrayOutputStream()
         ThemeFile.write(out, "N", JSONObject("""{"wall":"night"}"""), emptyList()) { _, _ -> }

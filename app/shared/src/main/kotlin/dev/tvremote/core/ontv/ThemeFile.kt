@@ -22,7 +22,12 @@ object ThemeFile {
         return (listOf(conf.optString("wall")) + rot).filter { HomeConfig.isPhoto(it) || HomeConfig.isVideo(it) }.distinct()
     }
 
-    fun mime(key: String) = if (HomeConfig.isVideo(key)) "video/mp4" else "image/jpeg"
+    // TV Home keeps every video as <id>.mp4 whatever it holds: a WebM (EBML 1A 45 DF A3) saved from a link is told by its first bytes
+    fun mime(key: String, head: ByteArray, len: Int) = when {
+        !HomeConfig.isVideo(key) -> "image/jpeg"
+        len >= 4 && head[0] == 0x1A.toByte() && head[1] == 0x45.toByte() && head[2] == 0xDF.toByte() && head[3] == 0xA3.toByte() -> "video/webm"
+        else -> "video/mp4"
+    }
 
     /**
      * Writes the file with the items of [keys] (the caller has checked their sizes against [MEDIA_MAX]: a refusal can still be an error
@@ -35,15 +40,19 @@ object ThemeFile {
         if (keys.isNotEmpty()) {
             out.write(",\"media\":{".toByteArray())
             keys.forEachIndexed { i, k ->
-                out.write((if (i > 0) "," else "").toByteArray()); out.write((JSONObject.quote(k) + ":\"data:" + mime(k) + ";base64,").toByteArray())
+                out.write((if (i > 0) "," else "").toByteArray()); out.write((JSONObject.quote(k) + ":\"data:").toByteArray())
                 val buf = ByteArray(48 * 1024); var n = 0                            // a multiple of 3 goes out at once, so no '=' lands mid-way
+                var typed = false                                                    // the type waits for the first bytes
+                fun type(b: ByteArray, len: Int) { if (!typed) { typed = true; out.write((mime(k, b, len) + ";base64,").toByteArray()) } }
                 feed(k) { b, len ->
+                    type(b, len)
                     var off = 0
                     while (off < len) {
                         val take = minOf(len - off, buf.size - n); System.arraycopy(b, off, buf, n, take); n += take; off += take
                         if (n == buf.size) { out.write(B64.encode(buf).toByteArray()); n = 0 }
                     }
                 }
+                type(buf, 0)
                 if (n > 0) out.write(B64.encode(buf.copyOf(n)).toByteArray())
                 out.write('"'.code)
             }

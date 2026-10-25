@@ -50,14 +50,18 @@
     es.forEach(function(e){ if (e.isIntersecting){ lazy.unobserve(e.target); var i = e.target.__it; setImg(e.target, fallbacks(i)); } });
   }, { rootMargin: "300px 0px" }) : null;
 
-  function badge(cls, vi, en){ return pair("span", vi, en, "tp-b " + cls); }
+  // a line icon, not an emoji: 🖼 / ▶ draw differently on every system's font, some as a box
+  var BI = { play: '<path d="M7 4l13 8-13 8z"/>', image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>' };
+  function badge(cls, vi, en, ic){ var e = pair("span", vi, en, "tp-b " + cls);
+    if (ic) e.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + BI[ic] + '</svg>');
+    return e; }
   function card(it){
     var b = el("button", "tp-card"); b.type = "button"; b.setAttribute("aria-haspopup", "dialog"); b.dataset.id = it.id;
     var pic = el("span", "tp-pic"), img = el("img"); img.width = 480; img.height = 270; img.alt = ""; img.decoding = "async"; img.__it = it;
     pic.appendChild(img);
     var bs = el("span", "tp-bs");
-    if (it.k === "video") bs.appendChild(badge("b-vid", "▶ Video", "▶ Video"));
-    if (it.k === "slideshow") bs.appendChild(badge("b-ss", "🖼 ×" + (slides[it.list] ? slides[it.list].length : "…"), "🖼 ×" + (slides[it.list] ? slides[it.list].length : "…")));
+    if (it.k === "video") bs.appendChild(badge("b-vid", "Video", "Video", "play"));
+    if (it.k === "slideshow") bs.appendChild(badge("b-ss", "×" + (slides[it.list] ? slides[it.list].length : "…"), "×" + (slides[it.list] ? slides[it.list].length : "…"), "image"));
     if (it.community) bs.appendChild(badge("b-cm", "Cộng đồng", "Community"));
     pic.appendChild(bs);
     b.appendChild(pic);
@@ -226,7 +230,7 @@
     // the slideshows' lists for the counts, then redraw the badges
     var names = {}; all.forEach(function(it){ if (it.list) names[it.list] = 1; });
     Promise.all(Object.keys(names).map(ensureSlides)).then(function(){
-      grid.querySelectorAll(".b-ss").forEach(function(b){ var c = b.closest(".tp-card"), it = all.filter(function(x){ return x.id === c.dataset.id; })[0], n = it && slides[it.list] ? slides[it.list].length : 0; if (n) b.textContent = ""; if (n) { b.appendChild(el("span", "vi", "🖼 ×" + n)); b.appendChild(el("span", "en", "🖼 ×" + n)); } });
+      grid.querySelectorAll(".b-ss").forEach(function(b){ var c = b.closest(".tp-card"), it = all.filter(function(x){ return x.id === c.dataset.id; })[0], n = it && slides[it.list] ? slides[it.list].length : 0; if (n) b.querySelectorAll("span").forEach(function(s){ s.textContent = "×" + n; }); });
     });
     if (location.hash) openId(decodeURIComponent(location.hash.slice(1)), false);
   }).catch(function(){ grid.textContent = ""; empty.hidden = false; });

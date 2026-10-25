@@ -20,13 +20,13 @@ function homeMediaKeys(conf) {
   return out;
 }
 
-// The small tags on a theme's tile: {id, args} each. Video (own vid:, or the site's loop.html?v=), a rotation of N backgrounds, a slideshow (loop.html?s=)
+// The small tags on a theme's tile: {id, icon (a sprite name: an emoji draws differently on every system), args} each. Video (own vid:, or the site's loop.html?v=), a rotation of N backgrounds, a slideshow (loop.html?s=)
 function homeMediaBadges(conf) {
   const out = [], walls = [...new Set([conf.wall, ...(Array.isArray(conf.walls) ? conf.walls : [])].filter(Boolean))];
   const u = String(conf.wurl || '').toLowerCase();
-  if (walls.some((k) => /^vid:/.test(k)) || (conf.wall === 'web' && /loop\.html\?v=/.test(u))) out.push({ id: 'home.badge_video', args: {} });
-  if (conf.wall === 'web' && /loop\.html\?s=/.test(u)) out.push({ id: 'home.badge_slides', args: {} });
-  else if (walls.length > 1) out.push({ id: 'home.badge_photos', args: { n: walls.length } });
+  if (walls.some((k) => /^vid:/.test(k)) || (conf.wall === 'web' && /loop\.html\?v=/.test(u))) out.push({ id: 'home.badge_video', icon: 'play', args: {} });
+  if (conf.wall === 'web' && /loop\.html\?s=/.test(u)) out.push({ id: 'home.badge_slides', icon: 'image', args: {} });
+  else if (walls.length > 1) out.push({ id: 'home.badge_photos', icon: 'image', args: { n: walls.length } });
   return out;
 }
 
@@ -104,13 +104,27 @@ const homeMediaMb = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Mat
 const homeMediaWhy = (m) => /home:media_big/.test(m) ? T('home.theme_media_big_any', { max: HOME_MEDIA_MAX / 1048576 }) : /home:media_missing/.test(m) ? T('home.theme_media_missing')
   : /home:media_fetch/.test(m) ? T('home.theme_media_fetch') : friendly(m);
 
+// a progressive JPEG (SOF2): TV Home shows it, but the share's encoder (Kotlin's JpegDecode, baseline only) cannot shrink it, so
+// an import makes it a plain one first, as a photo from the phone would be. The markers are walked to the frame header.
+function homeJpegProgressive(b) {
+  for (let i = 2; i + 3 < b.length;) {
+    if (b[i] !== 0xFF) return false;
+    const m = b[i + 1]; if (m === 0xFF) { i++; continue; }
+    if (m === 0xC2 || m === 0xC6 || m === 0xCA || m === 0xCE) return true;
+    if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) return false;
+    if (m === 0xD9 || m === 0xDA) return false;
+    i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+  }
+  return false;
+}
+
 const homeMediaIds = (snap, kind) => kind === 'video' ? (((snap || {}).video || {}).items || []).map((v) => v.id) : ((snap || {}).photos || []).map((p) => p.id);
 
 /**
  * Uploads the planned items one at a time and answers {map, lost-free}: old key -> new key. [d] brings the page's parts:
  *   blobOf(item) -> Blob     the bytes (a data: URL decoded, or the address fetched; refuses what is over the cap)
  *   photo(blob) -> snapshot  homeLink.photo (a jpeg the size of the screen)   video(blob, name) -> snapshot  upload + waiting for the TV to make it light
- *   toJpeg(blob) -> Blob     another picture type made a jpeg    drop(id)    take one back    say({i, n, key, kind})    cancelled() -> bool
+ *   toJpeg(blob) -> Blob     another picture type (or a progressive jpeg) made a plain jpeg    drop(id)    take one back    say({i, n, key, kind})    cancelled() -> bool
  * Any failure or Cancel takes back what this import had added and throws.
  */
 async function homeMediaImport(items, d) {
@@ -124,7 +138,7 @@ async function homeMediaImport(items, d) {
       if (blob.size > HOME_MEDIA_MAX) throw new Error('home:media_big');
       let snap;
       if (it.kind === 'photo') {
-        if (!/^image\/jpeg$/i.test(blob.type)) blob = await d.toJpeg(blob);
+        if (!/^image\/jpeg$/i.test(blob.type) || homeJpegProgressive(new Uint8Array(await blob.slice(0, 65536).arrayBuffer()))) blob = await d.toJpeg(blob);
         const before = homeMediaIds(await d.read(), 'photo');
         snap = await d.photo(blob);
         const now = homeMediaIds(snap, 'photo').find((id) => !before.includes(id));
@@ -149,6 +163,13 @@ async function homeMediaImport(items, d) {
  * The theme's own photos and videos read back from the TV as {key: dataURL}; [d]: blobOf(key) -> Blob (homeLink.mediaUrl fetched),
  * dataUrl(blob) -> string, say({i, n, key}), cancelled(). Over the cap: throws 'home:media_big' before anything else is read.
  */
+// TV Home keeps every video as <id>.mp4 whatever it holds: a WebM (EBML 1A 45 DF A3) saved from a link is told by its first bytes
+async function homeMediaMime(key, b) {
+  if (homeMediaKind(key) !== 'video') return 'image/jpeg';
+  const h = new Uint8Array(await b.slice(0, 4).arrayBuffer());
+  return h[0] === 0x1a && h[1] === 0x45 && h[2] === 0xdf && h[3] === 0xa3 ? 'video/webm' : 'video/mp4';
+}
+
 async function homeMediaExport(conf, sizes, d) {
   const keys = homeMediaKeys(conf), media = {};
   if (keys.some((k) => (sizes[k] || 0) > HOME_MEDIA_MAX)) throw new Error('home:media_big');
@@ -157,7 +178,7 @@ async function homeMediaExport(conf, sizes, d) {
     d.say({ i: i + 1, n: keys.length, key: keys[i] });
     const b = await d.blobOf(keys[i]);
     if (b.size > HOME_MEDIA_MAX) throw new Error('home:media_big');
-    media[keys[i]] = await d.dataUrl(new Blob([b], { type: homeMediaKind(keys[i]) === 'video' ? 'video/mp4' : 'image/jpeg' }));
+    media[keys[i]] = await d.dataUrl(new Blob([b], { type: await homeMediaMime(keys[i], b) }));
   }
   return media;
 }
@@ -173,4 +194,4 @@ function homeMediaFile(name, conf, media) {
   return parts;
 }
 
-if (typeof module !== 'undefined') module.exports = { HOME_MEDIA_MAX, HOME_MEDIA_FILE_MAX, HOME_MEDIA_HOSTS, homeMediaKind, homeMediaKeys, homeMediaBadges, homeMediaWeigh, homeMediaMb, homeMediaParse, homeMediaPlan, homeMediaRemap, homeMediaImport, homeMediaExport, homeMediaFile };
+if (typeof module !== 'undefined') module.exports = { HOME_MEDIA_MAX, HOME_MEDIA_FILE_MAX, HOME_MEDIA_HOSTS, homeMediaKind, homeMediaKeys, homeMediaBadges, homeMediaWeigh, homeMediaMb, homeMediaParse, homeMediaPlan, homeMediaRemap, homeMediaImport, homeMediaExport, homeJpegProgressive, homeMediaFile };
