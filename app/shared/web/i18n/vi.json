@@ -3785,6 +3785,8 @@
  "support.opened": "Hỗ trợ xem được TV này {min} phút, mã {code}. Dừng: Kết nối → Dừng cho hỗ trợ xem.",
  "support.stopped": "Đã dừng: hỗ trợ không xem được nữa.",
  "support.no_net": "Không gửi được: TV chưa vào được Internet. Kiểm tra mạng rồi thử lại.",
+ "support.left": "Hôm nay còn gửi được {n} lần.",
+ "support.none_left": "Hôm nay đã gửi đủ 20 lần. Mai thử lại, hoặc đọc mã đã có cho người hỗ trợ.",
  "eco.title": "HỆ SINH THÁI",
  "eco.on": "Đã cài",
  "eco.off": "Chưa cài",

@@ -29,6 +29,8 @@ object Support {
     @Volatile var until = 0L; private set
     @Volatile var code = ""; private set
     @Volatile var asked = 0; private set
+    /** Sends today has left after the last one, as the worker counts them (20 a day); -1 not known, 0 with no code: none left. */
+    @Volatile var left = -1; private set
 
     fun open() = until > System.currentTimeMillis() && thread != null
 
@@ -44,7 +46,9 @@ object Support {
     /** Sends the report; the code to read out, or null when the worker cannot be reached. Runs off the main thread. */
     fun send(c: Context, version: String): String? {
         val body = JSONObject().put("id", Census.id().ifEmpty { java.util.UUID.randomUUID().toString() }).put("app", "setup").put("v", version).put("model", Build.MODEL).put("report", report(c, version))
+        left = -1
         val r = post(base(), body) ?: return null
+        left = r.optInt("left", -1)
         val got = r.optString("code").takeIf { it.length == 8 } ?: return null
         c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("code", got).putString("key", r.optString("key")).apply()
         code = got
@@ -133,7 +137,7 @@ object Support {
             c.requestMethod = "POST"; c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
             c.outputStream.use { it.write(body.toString().toByteArray()) }
-            if (c.responseCode == 403 || c.responseCode == 404) JSONObject().put("error", c.responseCode)   // refused: not a network hiccup to wait out
+            if (c.responseCode == 403 || c.responseCode == 404 || c.responseCode == 429) JSONObject().put("error", c.responseCode).put("left", 0)   // refused: not a network hiccup to wait out
             else if (c.responseCode !in 200..299) null
             else c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }.let { if (it.isBlank()) JSONObject() else JSONObject(it) }
         } finally { c.disconnect() }

@@ -832,20 +832,23 @@ class MainActivity : Activity() {
 
     private fun spaced(c: String) = if (c.length == 8) c.substring(0, 4) + " " + c.substring(4) else c
     private fun supportLeft() = ((Support.until - System.currentTimeMillis()) / 60000 + 1).coerceAtLeast(0)
-    private fun showCode(code: String, sub: String) = menu(T("support.code_title"), listOf(TvUi.Item(R.drawable.ic_check, spaced(code), sub) { }))
+    private fun showCode(code: String, sub: String) = menu(T("support.code_title"), listOf(TvUi.Item(R.drawable.ic_check, spaced(code),
+        if (Support.left >= 0) sub + " " + T("support.left", "n" to Support.left) else sub) { }))
+    /** Nothing sent: no sends left today (the worker said so), or no Internet. */
+    private fun notSent() = log(T(if (Support.left == 0) "support.none_left" else "support.no_net"))
 
     private fun supportSend() {
         log(T("support.sending"))
         Thread({
             val code = Support.send(this, version())
-            ui { if (code == null) log(T("support.no_net")) else { log(T("support.sent", "code" to spaced(code))); showCode(code, T("support.read_out")) } }
+            ui { if (code == null) notSent() else { log(T("support.sent", "code" to spaced(code))); showCode(code, T("support.read_out")) } }
         }, "support-send").apply { isDaemon = true }.start()
     }
 
     private fun supportOpen() {
         log(T("support.sending"))
         Support.start(this, version()) { code -> ui {
-            if (code == null) log(T("support.no_net"))
+            if (code == null) notSent()
             else { log(T("support.opened", "code" to spaced(code), "min" to Support.MINUTES)); showCode(code, T("support.opened_sub", "min" to Support.MINUTES)) }
         } }
     }

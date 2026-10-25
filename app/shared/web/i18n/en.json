@@ -3887,6 +3887,8 @@
  "support.opened": "Support can look at this TV for {min} min, code {code}. Stop: Connection → Stop support looking.",
  "support.stopped": "Stopped: support can no longer look.",
  "support.no_net": "Could not send: the TV is not on the Internet. Check the network, then try again.",
+ "support.left": "{n} sends left today.",
+ "support.none_left": "Today's 20 sends are used up. Try tomorrow, or read out the code you already have.",
  "eco.title": "MORE TV APPS",
  "eco.on": "Installed",
  "eco.off": "Not installed",

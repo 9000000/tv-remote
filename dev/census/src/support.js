@@ -6,7 +6,7 @@ import { hashId, text, str, sameSecret } from "./logic.js";
 
 export const MAX_REPORT = 64 * 1024;
 export const MAX_ANSWER = 256 * 1024;
-export const SENDS_PER_DAY = 10;
+export const SENDS_PER_DAY = 20;
 export const LIVE_MAX_MIN = 60;
 export const KEEP_DAYS = 14;
 const ASK_TTL_MS = 60_000;                                            // a question the TV did not take within a minute is dropped
@@ -42,13 +42,14 @@ export async function support(req, env, url, json) {
     if (!b || typeof b.id !== "string" || !UUID4.test(b.id)) return json({ error: "bad body" }, 400);
     const h = await hashId(b.id.toLowerCase());
     const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM support WHERE h = ?1 AND made > ?2").bind(h, now - 86_400_000).first();
-    if (n && n.n >= SENDS_PER_DAY) return json({ error: "enough for today" }, 429);
+    const used = n ? n.n : 0;
+    if (used >= SENDS_PER_DAY) return json({ error: "enough for today", left: 0 }, 429);
     const key = hex(16);
     for (let i = 0; i < 5; i++) {
       const code = digits();
       const r = await env.DB.prepare("INSERT INTO support (code, key, h, app, v, model, report, made, live, seen) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,0,?8) ON CONFLICT DO NOTHING")
         .bind(code, await hashId(key), h, str(b.app, 16), str(b.v, 32), str(b.model, 64), text(b.report, MAX_REPORT), now).run();
-      if (r.meta && r.meta.changes > 0) return json({ code, key, keep_days: KEEP_DAYS });
+      if (r.meta && r.meta.changes > 0) return json({ code, key, keep_days: KEEP_DAYS, left: SENDS_PER_DAY - used - 1 });   // the TV says how many sends today has left
     }
     return json({ error: "busy" }, 503);
   }

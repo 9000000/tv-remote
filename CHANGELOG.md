@@ -9,14 +9,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - Web của TV: TV chưa có ADB thì không tự hiện được mã ghép đôi; trang giờ bảo mở app TV Setup, mã nằm ở màn hình chính.
 - Tự kiểm tra: box của nhà mạng (FPT, Viettel) được báo thẳng là nhà mạng khóa Tùy chọn nhà phát triển, không còn gợi ý cách của TCL.
-- TV Setup: Kết nối → **Gửi cho hỗ trợ** gửi thông số TV và nhật ký, hiện mã 8 số để đọc cho người giúp. **Cho hỗ trợ xem 30 phút**: người giúp chỉ đọc được trạng thái TV, không bấm hay đổi gì, dừng được bất cứ lúc nào. Không cần Tailscale hay TeamViewer.
+- TV Setup: Kết nối → **Gửi cho hỗ trợ** gửi thông số TV và nhật ký, hiện mã 8 số để đọc cho người giúp. **Cho hỗ trợ xem 30 phút**: người giúp chỉ đọc được trạng thái TV, không bấm hay đổi gì, dừng được bất cứ lúc nào. Không cần Tailscale hay TeamViewer. Gửi được 20 lần mỗi ngày, TV báo còn bao nhiêu lần.
 - TV Setup: mục **Hệ sinh thái** trên màn chính hiện TV Home, TV Channels, TV Games, đã cài hay chưa; bấm để mở hoặc cài. TV không có ADB vẫn cài được (Android hỏi một lần).
 - Trang web: “TV hỗ trợ” đổi thành **TV đã dùng**; TV Android / Google TV không có trong danh sách vẫn dùng được.
 
 **English**
 - TV web page: a TV with no ADB cannot put up the pairing code by itself; the page now says to open TV Setup, whose main screen shows it.
 - Self-check: ISP boxes (FPT, Viettel) are told plainly that the provider locked Developer options, no more TCL hint.
-- TV Setup: Connection → **Send to support** sends the TV's details and log and shows an 8-digit code to read to whoever helps. **Let support look for 30 min**: they can only read the TV's state, never press or change anything; stop it any time. No Tailscale or TeamViewer needed.
+- TV Setup: Connection → **Send to support** sends the TV's details and log and shows an 8-digit code to read to whoever helps. **Let support look for 30 min**: they can only read the TV's state, never press or change anything; stop it any time. No Tailscale or TeamViewer needed. 20 sends a day; the TV says how many are left.
 - TV Setup: a **More TV apps** row on the main screen shows TV Home, TV Channels and TV Games, installed or not; press to open or install. Works without ADB too (Android asks once).
 - Site: “Supported TVs” is now **TVs in use**; an Android / Google TV not on the list still works.
 

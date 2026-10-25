@@ -93,6 +93,6 @@ Tests: `THEMES_URL`, `THEMES_TOKEN_FILE`, `CENSUS_URL`, `CRASH_TOKEN` point it a
 - `java dev/release/Sign.java new|pub|sign`: makes a key, prints its public half, signs a file. No build needed.
 - The keys live in `~/.tv-remote-release/`: `ed25519.pem` in use, `ed25519-spare.pem` kept elsewhere. Never on GitHub.
   Losing both means no installed app takes an update again.
-- `dev/release/keys.sh backup` packs the keys and every `signing.jks` (the APKs' signatures) into one password-locked file
+- `dev/release/keys.sh backup` packs the keys, the admin tokens (`crash-token`, `themes-admin-token`) and every `signing.jks` (the APKs' signatures) into one password-locked file
   (`dev/release/Keys.java`, AES-GCM, `*.tvrkeys`, never committed) to keep off this computer. `dev/release/keys.sh list <file>` checks a
   copy opens; `restore <file>` puts the keys back.
