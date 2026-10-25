@@ -52,7 +52,7 @@ app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work
                          names, pictures and Caps, through Meta and Caps: Java in src/main/java, dexed into
                          assets/tvr-helper.jar by :shared:tvHelper, kept in git; app/shared/assets/README.md), ScreenOff, Sensors, Meminfo, Tailscale
   scenes/                Scenes (scenes + key names), Voice (spoken commands), RemoteSpec (remote.json)
-  (guard)                `app/shared/src/guard`: Guard.kt (every Android app: keeps the main looper alive, shows the error in a dialog; DECISIONS.md) + GuardLogic.kt (also the computer app); the page's is `js/errbox.js`
+  (guard)                `app/shared/src/guard`: Guard.kt (every Android app: keeps the main looper alive, shows the error in a dialog; DECISIONS.md) + GuardLogic.kt (also the computer app); the page's is `js/errbox.js`. An error shown there is also sent to the census worker (`POST /v1/crash`, `Census.crash`, `Scrub.kt` + `js/scrub.js`, one case table `tests/scrub_cases.json`) when the stats switch is on; the apps without :shared (TV Home, Channels, Games) have no switch and send nothing (`Guard.crash` stays null)
   (core itself)          Errors, Diagnose (the self-check when a TV cannot be reached: one conclusion + fix, `/api/diagnose`, `js/diagnose.js`, phone `Diagnosing.kt`), WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log,
                          `/api/wirelog`), Fleet (several saved TVs at once), SameTv (one TV saved under two addresses), B64, SelfSigned
 app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),

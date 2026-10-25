@@ -102,3 +102,77 @@ export function series(rows, now = new Date()) {
   });
   return { updated: today(now), installs: total, days };
 }
+
+// ---------------------------------------------------------------------------------------------------- crash reports
+export const MAX_CRASH = 24 * 1024;
+export const CRASH_PER_DAY = 20;
+export const CRASH_ROWS = 5000;
+export const CRASH_IDS = 200;                                         // distinct installs counted per (sig, v)
+const WHERE = ["kotlin", "page"];
+
+// Text with its line breaks kept (a stack), no other control characters, cut to max.
+export function text(x, max) {
+  if (typeof x !== "string") return "";
+  return x.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, " ").trim().slice(0, max);
+}
+
+// body text -> the crash to store, or null (malformed, or an emulator: like a ping).
+export function validateCrash(body) {
+  if (typeof body !== "string" || body.length > MAX_CRASH) return null;
+  let b;
+  try { b = JSON.parse(body); } catch { return null; }
+  if (!b || typeof b !== "object" || Array.isArray(b)) return null;
+  if (typeof b.id !== "string" || !UUID4.test(b.id)) return null;
+  if (!APPS.includes(b.app) || !WHERE.includes(b.where)) return null;
+  const d = b.dev && typeof b.dev === "object" && !Array.isArray(b.dev) ? b.dev : {};
+  if (emulator(d)) return null;
+  const kind = str(b.kind, 120);
+  if (!kind) return null;
+  const sdk = Number.isInteger(d.sdk) && d.sdk > 0 && d.sdk < 100 ? d.sdk : null;
+  return {
+    id: b.id.toLowerCase(), app: b.app, v: str(b.v, 32), loc: b.where, kind, msg: text(b.msg, 300), stack: text(b.stack, 8192),
+    brand: str(d.brand), model: str(d.model), android: str(typeof d.android === "number" ? String(d.android) : d.android, 16), sdk,
+    os: str(d.os), arch: str(d.arch, 32), java: str(d.java, 32),
+  };
+}
+
+// Frames of the standard libraries say nothing of where the app broke.
+const FRAMEWORK = /^(java|javax|jdk|sun|kotlin|kotlinx|android|androidx|com\.android|libcore|dalvik|org\.chromium)\./;
+const NOISE = /^(<anonymous>|\[native code\]|native|eval|async)?$/;
+
+// One stack line -> "where it is" without line numbers or the host, or "" when it is not a frame / not meaningful.
+export function frame(line) {
+  let s = String(line).trim();
+  if (!s || /^(Caused by|Suppressed|\.\.\.)/.test(s)) return "";
+  if (/^at\s/.test(s)) s = s.slice(3).trim();                          // Java and Chrome
+  else if (/^[^\s(]*@/.test(s)) s = s.replace("@", " (") + ")";        // Firefox / Safari: fn@url:1:2
+  else return "";
+  s = s.replace(/https?:\/\/[^/\s)]+/g, "").replace(/[?#][^\s):]*/g, "");   // host, query
+  s = s.replace(/(:\d+){1,2}(?=\)|$)/g, "");                         // :line  or  :line:col
+  s = s.trim();
+  if (NOISE.test(s) || FRAMEWORK.test(s)) return "";
+  return s;
+}
+
+// The text that makes two crashes "the same": app, kind and the first 5 meaningful frames (all frames if none is).
+export function sigText(app, kind, stack) {
+  const lines = String(stack || "").split("\n");
+  let f = lines.map(frame).filter(Boolean).slice(0, 5);
+  if (!f.length) f = lines.map((l) => l.trim()).filter((l) => /^at\s|@/.test(l)).slice(0, 5);
+  return [app, kind, ...f].join("\n");
+}
+
+export async function crashSig(app, kind, stack) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(sigText(app, kind, stack)));
+  return [...new Uint8Array(d)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+// Same length of work whatever the guess, so the secret is not given away by timing.
+export async function sameSecret(given, secret) {
+  if (!secret || !given) return false;
+  const h = async (s) => new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+  const [a, b] = [await h(given), await h(secret)];
+  let x = 0;
+  for (let i = 0; i < a.length; i++) x |= a[i] ^ b[i];
+  return x === 0;
+}

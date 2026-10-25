@@ -54,5 +54,6 @@ h3 { font-size:14px; font-weight:600; margin:0; }
 .errbox b { color:var(--bad); }
 .errbox span { color:var(--muted); font-size:13px; }
 .errbox pre { flex:1 0 100%; margin:0; max-height:30vh; overflow:auto; font:12px/1.4 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; word-break:break-word; user-select:text; -webkit-user-select:text; }
+.errbox-sent { flex:1 0 100%; color:var(--muted); font-size:13px; }
 .errbox-row { flex:1 0 100%; display:flex; gap:8px; justify-content:flex-end; }
 .errbox-row button { min-height:var(--ctl-sm); padding:0 14px; font-size:13px; }

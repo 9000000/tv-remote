@@ -500,7 +500,7 @@ Changes per release: [CHANGELOG.md](CHANGELOG.md).
 
 ## Privacy
 
-The apps send one anonymous note a day, so we know which TVs work: the TV's brand, model, chip and Android version, the app's version, whether ADB / picture / Optimize TV worked, and a random ID made on your install. **Never** sent: IP address, serial number, TV name, installed apps, account, Wi-Fi name. Turn it off in **Settings → Send anonymous stats** (Phone app: **Settings → Privacy**); off sends nothing.
+The apps send one anonymous note a day, so we know which TVs work: the TV's brand, model, chip and Android version, the app's version, whether ADB / picture / Optimize TV worked, and a random ID made on your install; an app error is sent too (the same error once), with IPs, folder names, keys and emails removed. **Never** sent: IP address, serial number, TV name, installed apps, account, Wi-Fi name. Turn it off in **Settings → Send anonymous stats** (Phone app: **Settings → Privacy**); off sends nothing.
 
 ## License
 

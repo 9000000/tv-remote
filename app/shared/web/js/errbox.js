@@ -5,7 +5,8 @@
 (() => {
   const word = (id) => (typeof T === 'function' ? T(id) : id);
   const LINES = 6;                                                    // of the stack on screen; Copy has all of it
-  let box = null, repeats = 0, shown = '', title, body, more, copyBtn, full = '';
+  let box = null, repeats = 0, shown = '', title, body, more, copyBtn, full = '', sentLine = null;
+  const reported = new Set();                                         // errors already handed to the core in this page's life
 
   /** What Copy puts on the clipboard: when, where and the whole stack. */
   const report = (msg, stack) => [new Date().toISOString(), (typeof location !== 'undefined' ? location.href : ''),
@@ -28,9 +29,30 @@
     }
   };
 
-  const close = () => { if (box) box.remove(); box = null; repeats = 0; shown = ''; };
+  const close = () => { if (box) box.remove(); box = null; repeats = 0; shown = ''; sentLine = null; };
 
-  function show(msg, stack) {
+  /** Hand the error to the core (POST /api/crash), which sends it with the anonymous-stats switch; the box says "sent" if it was.
+   *  Scrubbed here as well (scrub.js), so an address or a folder name never even crosses the network to the core. Fire and forget. */
+  function sendCrash(key, msg, stack, kind) {
+    if (reported.has(key) || typeof fetch !== 'function' || typeof Scrub === 'undefined') return;
+    reported.add(key);
+    const scrub = (t, n) => Scrub.text(t).slice(0, n);
+    try {
+      fetch('/api/crash', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ kind: scrub(kind || 'Error', 120), msg: scrub(msg, 300), stack: scrub(stack || '', 8192) }) })
+        .then((r) => (r.ok ? r.json() : null)).then((j) => { if (j && j.sent && box && shown === key) markSent(); }, () => {});
+    } catch {}
+  }
+
+  function markSent() {
+    if (sentLine) return;
+    sentLine = document.createElement('div');
+    sentLine.className = 'errbox-sent';
+    sentLine.textContent = word('err.sent');
+    box.insertBefore ? box.insertBefore(sentLine, box.children[box.children.length - 1]) : box.append(sentLine);
+  }
+
+  function show(msg, stack, kind) {
     msg = String(msg || '').slice(0, 500);
     full = report(msg, stack);
     const key = msg + '\n' + String(stack || '').split('\n')[0];
@@ -58,7 +80,8 @@
       document.body.append(box);
       try { if (/[?&]ontv=1/.test(location.search)) closeBtn.focus(); } catch {}   // the TV's D-pad needs a focus to start from
     }
-    repeats = 0; shown = key;
+    repeats = 0; shown = key; sentLine = null;
+    sendCrash(key, msg, stack, kind);
     title.textContent = word('err.title');
     more.textContent = '';
     copyBtn.textContent = word('err.copy');
@@ -67,11 +90,11 @@
 
   window.addEventListener('error', (e) => {
     if (ignored(e)) return;
-    show(e.message || (e.error && e.error.message) || 'Error', e.error && e.error.stack);
+    show(e.message || (e.error && e.error.message) || 'Error', e.error && e.error.stack, e.error && e.error.name);
   });
   window.addEventListener('unhandledrejection', (e) => {
     const r = e.reason;
-    show((r && r.message) || String(r), r && r.stack);
+    show((r && r.message) || String(r), r && r.stack, r && r.name);
   });
   window.ErrBox = { show, close, ignored };
 })();

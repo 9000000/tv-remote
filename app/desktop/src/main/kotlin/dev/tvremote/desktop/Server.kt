@@ -144,6 +144,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         }
         if (!r.path.startsWith("/api/")) page().serve(r.path, r.headers["accept-encoding"].orEmpty())?.let { return it }
         if (r.path == "/api/hook/config") return hookConfig(r)
+        if (r.path == "/api/crash") return dev.tvremote.core.web.Manage.crash(r)             // the page's error box, with or without a TV
         if (r.path == "/api/census") return dev.tvremote.core.web.Manage.census(r)           // Settings, with or without a TV
         return dispatch(r)
     }

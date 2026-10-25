@@ -1,6 +1,6 @@
 // tvr-census: an anonymous count of which TVs the apps ran on. Stores no IP, no headers, no user agent;
 // the install id is kept only as the first 8 bytes of its sha256. See ../README.md.
-import { MAX_BODY, validate, hashId, today, aggregate, series } from "./logic.js";
+import { MAX_BODY, validate, hashId, today, aggregate, series, MAX_CRASH, CRASH_PER_DAY, CRASH_ROWS, CRASH_IDS, validateCrash, crashSig, sameSecret } from "./logic.js";
 
 const CORS = { "access-control-allow-origin": "*" };
 const json = (o, status = 200, extra = {}) =>
@@ -33,8 +33,64 @@ async function refresh(env) {
   return body;
 }
 
+// Crash reports. The day's count per hashed id first (over the limit: nothing stored), then the (sig, v) row, then the distinct installs.
+const CRASH_DAY = `INSERT INTO crash_day (h, day, n) VALUES (?1, ?2, 1) ON CONFLICT (h, day) DO UPDATE SET n = n + 1 WHERE n < ${CRASH_PER_DAY} RETURNING n`;
+const CRASH_UP = `INSERT INTO crashes (sig, v, app, loc, kind, msg, stack, brand, model, android, sdk, os, arch, java, n, installs, first, last)
+VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,1,0,?15,?15)
+ON CONFLICT (sig, v) DO UPDATE SET n = n + 1, last = excluded.last RETURNING n`;
+const CRASH_ID = `INSERT INTO crash_ids (sig, v, h) SELECT ?1, ?2, ?3 WHERE (SELECT COUNT(*) FROM crash_ids WHERE sig = ?1 AND v = ?2) < ${CRASH_IDS} ON CONFLICT DO NOTHING`;
+const CRASH_CUT = `DELETE FROM crashes WHERE (sig, v) IN (SELECT sig, v FROM crashes ORDER BY last ASC, first ASC LIMIT MAX(0, (SELECT COUNT(*) FROM crashes) - ${CRASH_ROWS}))`;
+
+async function crash(req, env) {
+  if (Number(req.headers.get("content-length") || 0) > MAX_CRASH) return json({ error: "too big" }, 413);
+  const body = await req.text();
+  if (body.length > MAX_CRASH) return json({ error: "too big" }, 413);
+  const r = validateCrash(body);
+  if (!r) return json({ error: "bad body" }, 400);
+  const h = await hashId(r.id), day = today();
+  if (!(await env.DB.prepare(CRASH_DAY).bind(h, day).first())) return json({ error: "enough for today" }, 429);
+  const sig = await crashSig(r.app, r.kind, r.stack);
+  const row = await env.DB.prepare(CRASH_UP).bind(sig, r.v, r.app, r.loc, r.kind, r.msg, r.stack, r.brand, r.model, r.android, r.sdk, r.os, r.arch, r.java, day).first();
+  const seen = await env.DB.prepare(CRASH_ID).bind(sig, r.v, h).run();
+  if (seen.meta && seen.meta.changes > 0) await env.DB.prepare("UPDATE crashes SET installs = installs + 1 WHERE sig = ?1 AND v = ?2").bind(sig, r.v).run();
+  if (row && row.n === 1) {                                           // a new row: keep the table at its cap
+    const cut = await env.DB.prepare(CRASH_CUT).run();
+    if (cut.meta && cut.meta.changes > 0)
+      await env.DB.prepare("DELETE FROM crash_ids WHERE NOT EXISTS (SELECT 1 FROM crashes c WHERE c.sig = crash_ids.sig AND c.v = crash_ids.v)").run();
+  }
+  return new Response(null, { status: 204 });
+}
+
+// The owner's reading of the crashes: behind CRASH_TOKEN (a wrangler secret). No secret set = no admin.
+async function crashes(req, env, url) {
+  const auth = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!(await sameSecret(auth, env.CRASH_TOKEN))) return json({ error: "forbidden" }, 403);
+  const sig = url.searchParams.get("sig") || "", v = url.searchParams.get("v") || "", app = url.searchParams.get("app") || "";
+  if (req.method === "DELETE") {
+    if (!sig) return json({ error: "sig needed" }, 400);
+    const where = v ? "sig = ?1 AND v = ?2" : "sig = ?1";
+    const bind = v ? [sig, v] : [sig];
+    await env.DB.prepare(`DELETE FROM crashes WHERE ${where}`).bind(...bind).run();
+    await env.DB.prepare(`DELETE FROM crash_ids WHERE ${where}`).bind(...bind).run();
+    return json({ ok: true });
+  }
+  if (sig) {                                                          // one crash with its whole sample
+    const { results } = await env.DB.prepare("SELECT * FROM crashes WHERE sig = ?1 ORDER BY last DESC LIMIT 20").bind(sig).all();
+    return json({ crashes: results });
+  }
+  const q = ["SELECT sig, v, app, loc, kind, SUBSTR(msg, 1, 120) AS msg, brand, model, android, os, n, installs, first, last FROM crashes WHERE 1=1"], b = [];
+  if (v) { b.push(v); q.push(`AND v = ?${b.length}`); }
+  if (app) { b.push(app); q.push(`AND app = ?${b.length}`); }
+  q.push("ORDER BY n DESC, last DESC LIMIT 200");
+  const { results } = await env.DB.prepare(q.join(" ")).bind(...b).all();
+  return json({ crashes: results });
+}
+
 export default {
-  async scheduled(_event, env, ctx) { ctx.waitUntil(refresh(env)); },
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(refresh(env));
+    ctx.waitUntil(env.DB.prepare("DELETE FROM crash_day WHERE day < ?1").bind(today()).run());
+  },
 
   async fetch(req, env) {
     const url = new URL(req.url);
@@ -54,6 +110,9 @@ export default {
       if (row) await env.DB.prepare(DAY).bind(day, r.app, row.first === day ? 1 : 0).run();
       return new Response(null, { status: 204 });
     }
+
+    if (url.pathname === "/v1/crash" && req.method === "POST") return crash(req, env);
+    if (url.pathname === "/v1/crashes" && (req.method === "GET" || req.method === "DELETE")) return crashes(req, env, url);
 
     if (url.pathname === "/v1/tvs" && req.method === "GET") {
       const cache = caches.default, key = new Request(url.origin + "/v1/tvs");

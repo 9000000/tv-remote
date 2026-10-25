@@ -5,7 +5,7 @@ import java.io.StringWriter
 
 /** The words of the dialog, in the app's language when it is shown (the shared apps read i18n/<lang>.json, the others strings.xml). */
 class GuardWords(val title: String, val lastTime: String, val copy: String, val copied: String, val share: String, val close: String,
-                 val repeat: (Int) -> String)
+                 val sent: String = "", val repeat: (Int) -> String)
 
 /**
  * The deciding and the text of the error guard (Guard.kt), with nothing of Android in it so a unit test and the computer app
@@ -52,6 +52,21 @@ object GuardLogic {
         val sw = StringWriter()
         t.printStackTrace(PrintWriter(sw))
         return sw.toString().lineSequence().filter { it.isNotBlank() }.take(lines).joinToString("\n")
+    }
+
+    /** The stack without its first line (that is "class: message", sent as kind and msg): what Census.crash takes. */
+    fun stack(t: Throwable): String {
+        val sw = StringWriter()
+        t.printStackTrace(PrintWriter(sw))
+        return sw.toString().substringAfter('\n', "").trim()
+    }
+
+    /** [report]'s text back into (kind, message, stack): the error of the last run that died, sent at the next start. null = not a report. */
+    fun split(report: String): Triple<String, String, String>? {
+        val trace = report.substringAfter("\n\n", "").trim()
+        if (trace.isEmpty()) return null
+        val first = trace.lineSequence().first()
+        return Triple(first.substringBefore(": ").trim(), if (": " in first) first.substringAfter(": ").trim() else "", trace.substringAfter('\n', "").trim())
     }
 
     /** Two throws are "the same error" when they are the same class thrown from the same place: counted, not shown twice. */

@@ -196,6 +196,45 @@ object Census {
         } finally { c.disconnect() }
     } catch (e: Exception) { false }
 
+    // ------------------------------------------------------------------ crash reports (the error box / dialog, with the same switch)
+
+    /** The device facts a crash carries, like a ping's `tv`: the computer says os / arch / java, the Android apps (CensusAndroid) their Build. */
+    @Volatile var device: () -> JSONObject = {
+        JSONObject().put("os", System.getProperty("os.name", "") + " " + System.getProperty("os.version", "")).put("arch", System.getProperty("os.arch", ""))
+            .put("java", System.getProperty("java.version", ""))
+    }
+    private val crashSent = HashSet<String>()                         // errors already reported in this run
+    @Volatile private var crashRetryAt = 0L                           // after a failed send, a minute of quiet
+
+    private val LINES = Regex("(:\\d+){1,2}(?=\\)|$)")
+    /** "The same error": the kind and the first five frames without their line numbers. */
+    fun crashKey(kind: String, stack: String): String =
+        kind + stack.lineSequence().map { it.trim() }.filter { it.startsWith("at ") || it.contains('@') }.take(5).joinToString("\n", "\n") { it.replace(LINES, "") }
+
+    /**
+     * Report one error, scrubbed (Scrub): [where] is "kotlin" or "page". Sent once per error per run, only when the stats switch is on,
+     * blocking up to the 4 s timeout: callers on the UI thread use [crash]. true = the server has it (now or earlier in this run).
+     */
+    fun crashNow(where: String, kind: String, msg: String, stack: String): Boolean {
+        if (!live()) return false
+        val k = Scrub.text(kind).take(120).ifBlank { "Error" }
+        val m = Scrub.text(msg).replace(Regex("\\s+"), " ").trim().take(300)
+        val st = Scrub.text(stack).trim().take(8192)
+        val key = crashKey(k, st)
+        synchronized(crashSent) { if (key in crashSent) return true }
+        if (clock() < crashRetryAt) return false
+        val body = JSONObject().put("id", id()).put("app", app).put("v", clean(version)).put("where", where)
+            .put("dev", try { device() } catch (e: Throwable) { JSONObject() }).put("kind", k).put("msg", m).put("stack", st).toString()
+        return if (post(url.trimEnd('/') + "/v1/crash", body)) { synchronized(crashSent) { crashSent.add(key) }; true }
+        else { crashRetryAt = clock() + 60_000; false }
+    }
+
+    /** [crashNow] off the caller's thread; [done] gets the answer (on that thread). */
+    fun crash(where: String, kind: String, msg: String, stack: String, done: ((Boolean) -> Unit)? = null) {
+        if (!live()) { done?.invoke(false); return }
+        later { done?.invoke(crashNow(where, kind, msg, stack)) }
+    }
+
     /** For tests: forget what is kept in memory. */
-    fun reset() { synchronized(tvs) { tvs.clear() }; synchronized(sendLock) { retryAt.clear() } }
+    fun reset() { synchronized(tvs) { tvs.clear() }; synchronized(sendLock) { retryAt.clear() }; synchronized(crashSent) { crashSent.clear() }; crashRetryAt = 0L }
 }

@@ -29,3 +29,24 @@ CREATE TABLE IF NOT EXISTS summary (
   k     TEXT PRIMARY KEY,      -- 'tvs'
   body  TEXT NOT NULL          -- the JSON reply
 ) WITHOUT ROWID;
+
+-- Crash reports (POST /v1/crash): one row per (signature, app version). sig = sha256(app + kind + top 5 meaningful frames, no line numbers).
+-- One sample message / stack / device per row; `installs` counts distinct hashed ids (crash_ids, capped). The table is cut to 5000 rows (oldest `last` go).
+CREATE TABLE IF NOT EXISTS crashes (
+  sig     TEXT NOT NULL,
+  v       TEXT NOT NULL,
+  app     TEXT NOT NULL,       -- setup | phone | pc
+  loc     TEXT NOT NULL,       -- kotlin | page
+  kind    TEXT NOT NULL,       -- exception class / error name
+  msg     TEXT, stack TEXT,
+  brand   TEXT, model TEXT, android TEXT, sdk INTEGER, os TEXT, arch TEXT, java TEXT,   -- the first device that sent it
+  n       INTEGER NOT NULL,
+  installs INTEGER NOT NULL DEFAULT 1,
+  first   TEXT NOT NULL,       -- YYYY-MM-DD (UTC)
+  last    TEXT NOT NULL,
+  PRIMARY KEY (sig, v)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS crashes_last ON crashes (last);
+CREATE TABLE IF NOT EXISTS crash_ids (sig TEXT NOT NULL, v TEXT NOT NULL, h TEXT NOT NULL, PRIMARY KEY (sig, v, h)) WITHOUT ROWID;
+-- a hashed id may send at most 20 crashes a day; old days are deleted by the cron
+CREATE TABLE IF NOT EXISTS crash_day (h TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (h, day)) WITHOUT ROWID;

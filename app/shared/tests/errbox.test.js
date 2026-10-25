@@ -6,15 +6,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-function page() {
+function page(extra = {}) {
   const listeners = {}, mk = (tag) => ({ tag, children: [], className: '', textContent: '', attrs: {}, on: {},
     append(...c) { this.children.push(...c); }, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(e, f) { this.on[e] = f; },
     remove() { this.removed = true; const i = body.children.indexOf(this); if (i >= 0) body.children.splice(i, 1); }, focus() {}, select() {} });
   const body = mk('body'), clip = [];
   const window = { addEventListener: (e, f) => { listeners[e] = f; } };
   const sandbox = { window, document: { createElement: mk, body, execCommand: () => true }, location: { href: 'http://x/', search: '' },
-    navigator: { userAgent: 'test', clipboard: { writeText: (t) => { clip.push(t); return Promise.resolve(); } } } };
+    navigator: { userAgent: 'test', clipboard: { writeText: (t) => { clip.push(t); return Promise.resolve(); } } }, ...extra };
   vm.createContext(sandbox);
+  if (extra.fetch) vm.runInContext(fs.readFileSync(path.join(__dirname, '../web/js/scrub.js'), 'utf8'), sandbox);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../web/js/errbox.js'), 'utf8'), sandbox);
   const text = (e, out = []) => { out.push(e.textContent); e.children.forEach((c) => text(c, out)); return out.join('\n'); };
   return { listeners, body, clip, text, window };
@@ -66,4 +67,25 @@ test('Copy puts the whole report on the clipboard and Close removes the box', as
   assert.doesNotMatch(p.text(box), /at f19/);
   row.children[1].on.click();
   assert.equal(p.body.children.length, 0);
+});
+
+test('the error is posted to /api/crash scrubbed, once, and the box says so when the core sent it', async () => {
+  const posts = [];
+  const p = page({ fetch: (url, o) => { posts.push({ url, body: JSON.parse(o.body), keepalive: o.keepalive }); return Promise.resolve({ ok: true, json: () => Promise.resolve({ sent: true }) }); } });
+  const e = { message: 'connect to 192.168.1.9 failed', error: Object.assign(new Error('x'), { name: 'TypeError', stack: 'TypeError: x\n    at f (http://10.0.0.2:8765/js/f.js?k=SECRET:1:1)\n    at /Users/bob/a.js:2:2' }) };
+  p.listeners.error(e); p.listeners.error(e);
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(posts.length, 1);
+  assert.equal(posts[0].url, '/api/crash'); assert.equal(posts[0].keepalive, true);
+  const b = posts[0].body;
+  assert.equal(b.kind, 'TypeError'); assert.equal(b.msg, 'connect to x.x.x.x failed');
+  assert.ok(!/192\.168|10\.0\.0|SECRET|bob/.test(JSON.stringify(b)), JSON.stringify(b));
+  assert.match(p.text(p.body.children[0]), /err\.sent/);
+});
+
+test('a failed report is silent: no box line, no throw', async () => {
+  const p = page({ fetch: () => Promise.reject(new Error('offline')) });
+  p.listeners.error({ message: 'boom', error: new Error('boom') });
+  await new Promise((r) => setTimeout(r, 5));
+  assert.doesNotMatch(p.text(p.body.children[0]), /err\.sent/);
 });

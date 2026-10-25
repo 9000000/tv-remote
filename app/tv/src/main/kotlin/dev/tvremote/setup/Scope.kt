@@ -20,7 +20,7 @@ object Scope {
 
     private val VIEW_GET = setOf("/api/state", "/api/about", "/api/setup/need", "/api/screen", "/api/video", "/api/audio", "/api/watchers",
         "/api/app/icon", "/api/app/meta", "/api/playing", "/api/caps", "/api/rules", "/api/scenes", "/api/paired", "/api/screen/state", "/api/dim", "/api/channels/manage", "/api/channels/categories", "/api/channels/export")
-    private val VIEW_POST = setOf("/api/adb/connect", "/api/paired/forget")   // forget: only itself (RemoteService.route)
+    private val VIEW_POST = setOf("/api/adb/connect", "/api/paired/forget", "/api/crash")   // forget: only itself (RemoteService.route)
     private val REMOTE_GET = VIEW_GET + setOf("/api/apps", "/api/clip", "/api/inputs", "/api/channels", "/api/tvkbd")
     private val REMOTE_POST = VIEW_POST + setOf("/api/key", "/api/type", "/api/touch", "/api/clip", "/api/app", "/api/app/launch",
         "/api/playing", "/api/search", "/api/draw", "/api/notify", "/api/screen/off", "/api/screen/on", "/api/dim", "/api/scene/run", "/api/rules", "/api/input", "/api/channels/open", "/api/channels/manage", "/api/channels/import")

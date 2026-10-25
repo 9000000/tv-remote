@@ -1,0 +1,32 @@
+{
+  "note": "text -> Scrub.text (Scrub.kt, js/scrub.js). Both must give `out` for every `in`; running it on `out` again changes nothing, except where again is false (typed text keeps only its length).",
+  "cases": [
+    {"name": "plain text stays", "in": "TypeError: x is not a function at show (/js/errbox.js:12:5)", "out": "TypeError: x is not a function at show (/js/errbox.js:12:5)"},
+    {"name": "ipv4", "in": "failed to connect to /192.168.1.23:5555 and 10.0.2.2", "out": "failed to connect to /x.x.x.x:5555 and x.x.x.x"},
+    {"name": "ipv4 in a url", "in": "GET http://192.168.0.7:8765/api/state?k=abc123", "out": "GET http://x.x.x.x:8765/api/state?k=…"},
+    {"name": "not an ip: version and out-of-range", "in": "build 14.0.0 and 999.1.1.1", "out": "build 14.0.0 and 999.1.1.1"},
+    {"name": "ipv6 full", "in": "from 2001:0db8:85a3:0000:0000:8a2e:0370:7334 ok", "out": "from x.x.x.x ok"},
+    {"name": "ipv6 short and link-local", "in": "[fe80::1a2b:3c4d] and 2001:db8::ff00:42:8329 and ::1", "out": "[x.x.x.x] and x.x.x.x and x.x.x.x"},
+    {"name": "not ipv6: times, method refs", "in": "at 12:30:45 Foo::bar Cafe::get", "out": "at 12:30:45 Foo::bar Cafe::get"},
+    {"name": "mac", "in": "device aa:bb:cc:dd:ee:ff paired", "out": "device xx:xx:xx:xx:xx:xx paired"},
+    {"name": "mac dashes", "in": "AA-BB-CC-DD-EE-FF", "out": "xx:xx:xx:xx:xx:xx"},
+    {"name": "mac mixed with ip", "in": "10.1.2.3 aa:bb:cc:dd:ee:ff", "out": "x.x.x.x xx:xx:xx:xx:xx:xx"},
+    {"name": "macOS home path", "in": "/Users/bob/Desktop/tv-remote/app.kt:5", "out": "~/Desktop/tv-remote/app.kt:5"},
+    {"name": "home path linux", "in": "open /home/alice/.config/x failed", "out": "open ~/.config/x failed"},
+    {"name": "home path windows", "in": "C:\\Users\\Bro\\AppData\\x.json and D:/Users/z/y", "out": "~\\AppData\\x.json and ~/y"},
+    {"name": "home path windows doubled backslashes", "in": "C:\\\\Users\\\\carol\\\\a", "out": "~\\\\a"},
+    {"name": "file url", "in": "file:///Users/bob/x.html", "out": "file://~/x.html"},
+    {"name": "not a home path", "in": "/data/user/0/dev.tvremote.phone/files and /homepage/x", "out": "/data/user/0/dev.tvremote.phone/files and /homepage/x"},
+    {"name": "pass in a link", "in": "http://127.0.0.1:8765/?k=sEcReT&x=1", "out": "http://x.x.x.x:8765/?k=…&x=1"},
+    {"name": "pass and token params", "in": "/a?pass=1234&token=abc&key=zz&other=ok", "out": "/a?pass=…&token=…&key=…&other=ok"},
+    {"name": "client key and token json", "in": "{\"client-key\":\"abc\",\"token\":\"def\",\"x\":1}", "out": "{\"client-key\":\"…\",\"token\":\"…\",\"x\":1}"},
+    {"name": "wifi password", "in": "{\"ssid\":\"home\",\"pass\":\"hunter2\"} WIFI:S:home;T:WPA;P:hunter2;;", "out": "{\"ssid\":\"home\",\"pass\":\"…\"} WIFI:…"},
+    {"name": "bot token", "in": "https://api.telegram.org/bot123456:ABC-def_ghi/getUpdates", "out": "https://api.telegram.org/bot…/getUpdates"},
+    {"name": "bearer", "in": "Authorization: Bearer abc.DEF-123", "out": "Authorization: Bearer …"},
+    {"name": "typed text", "again": false, "in": "{\"text\":\"my secret\",\"Cmd\":\"Click\"}", "out": "{\"text\":\"…(9)\",\"Cmd\":\"Click\"}"},
+    {"name": "email", "in": "sent by bro.tran+tv@gmail.com to x", "out": "sent by email@x to x"},
+    {"name": "not an email: firefox frame", "in": "show@http://x:8765/js/a.js:1:2", "out": "show@http://x:8765/js/a.js:1:2"},
+    {"name": "lines kept", "in": "java.lang.X: boom\n\tat a.B.c(B.kt:1)\n\tat /Users/bob/x 10.0.0.1", "out": "java.lang.X: boom\n\tat a.B.c(B.kt:1)\n\tat ~/x x.x.x.x"},
+    {"name": "empty", "in": "", "out": ""}
+  ]
+}

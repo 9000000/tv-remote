@@ -60,12 +60,15 @@ class WireLog(private val max: Int = 500) {
         private val WIFI = Regex("WIFI:.*?(?<!\\\\);;|(\"pass\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\.)*(\")")
         private const val LONG = 600
 
-        fun clean(text: String): String {
-            val t = SECRET.replace(text) { m -> if (m.groupValues[3].isNotEmpty()) m.groupValues[3] + "…" else m.groupValues[1] + "…" + m.groupValues[2] }
+        /** Keys, tokens, typed text (its length only), MAC addresses and Wi-Fi passwords blanked; line breaks and length kept (Scrub starts here). */
+        fun blank(text: String): String =
+            SECRET.replace(text) { m -> if (m.groupValues[3].isNotEmpty()) m.groupValues[3] + "…" else m.groupValues[1] + "…" + m.groupValues[2] }
                 .let { TYPED.replace(it) { m -> if (m.groupValues[2] in KEEP) m.value else m.groupValues[1] + "…(" + m.groupValues[2].length + ")" + m.groupValues[3] } }
                 .let { MAC.replace(it, "xx:xx:xx:xx:xx:xx") }
                 .let { WIFI.replace(it) { m -> if (m.groupValues[1].isNotEmpty()) m.groupValues[1] + "…" + m.groupValues[2] else "WIFI:…" } }
-                .replace("\n", "\\n")
+
+        fun clean(text: String): String {
+            val t = blank(text).replace("\n", "\\n")
             return if (t.length > LONG) t.take(LONG) + " …(" + t.length + ")" else t
         }
     }

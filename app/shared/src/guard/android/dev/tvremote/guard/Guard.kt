@@ -48,6 +48,14 @@ object Guard {
     private val main by lazy { Handler(Looper.getMainLooper()) }
     private val stamps = ArrayDeque<Long>()
     private var debuggable = false
+    private var bodyView: TextView? = null              // the open dialog's text, to add the "report sent" line to
+
+    /**
+     * Where an error is reported to (kind, message, stack, done: true = it was sent). Set by the apps that have the anonymous stats switch
+     * (core/CensusAndroid.kt), which decides whether anything goes; TV Home, Channels and Games have no such switch, so this stays null
+     * there and nothing is ever sent. Called off the main thread's work: it must return at once.
+     */
+    @Volatile var crash: ((String, String, String, (Boolean) -> Unit) -> Unit)? = null
     private var prev: Thread.UncaughtExceptionHandler? = null
 
     /** [share]: a Share button too (the phone; the TV has nowhere to share to). */
@@ -69,6 +77,7 @@ object Guard {
                 val p = pending ?: return
                 pending = null
                 show(a, words(a).lastTime, p, GuardLogic.key(Throwable(p)))
+                GuardLogic.split(p)?.let { (k, m, st) -> send(k, m, st, GuardLogic.key(Throwable(p))) }
             }
             override fun onActivityPaused(a: Activity) { dialog?.let { if (top.get() === a) { it.dismiss(); dialog = null } } }
             override fun onActivityCreated(a: Activity, b: Bundle?) {}
@@ -120,6 +129,20 @@ object Guard {
     private fun report(th: Thread, t: Throwable) {
         val text = save(th, t, died = false)
         main.post { top.get()?.let { show(it, words(it).title, text, GuardLogic.key(t), t) } }
+        send(t.javaClass.name, t.message ?: "", GuardLogic.stack(t), GuardLogic.key(t))
+    }
+
+    /** Hand the error to [crash] (if any); when it was sent, say so in the dialog showing it. Never throws, never waits. */
+    private fun send(kind: String, msg: String, stack: String, key: String) {
+        val c = crash ?: return
+        try { c(kind, msg, stack) { ok -> if (ok) main.post { markSent(key) } } } catch (e: Throwable) { }
+    }
+
+    private fun markSent(key: String) {
+        val d = dialog ?: return
+        val v = bodyView ?: return
+        val line = top.get()?.let { words(it).sent }.orEmpty()
+        if (d.isShowing && key == shownKey && line.isNotEmpty() && !v.text.endsWith(line)) v.text = v.text.toString() + "\n" + line
     }
 
     private fun save(th: Thread, t: Throwable, died: Boolean): String {
@@ -155,7 +178,8 @@ object Guard {
             .setPositiveButton(w.copy, null).setNegativeButton(w.close, null)
         if (share) b.setNeutralButton(w.share, null)
         val dlg = b.create()
-        dlg.setOnDismissListener { if (dialog === dlg) dialog = null }
+        dlg.setOnDismissListener { if (dialog === dlg) { dialog = null; bodyView = null } }
+        bodyView = tv
         dlg.show()
         dialog = dlg
         dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {          // listeners set after show(): Copy must not close it

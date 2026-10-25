@@ -302,6 +302,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun put(key: String, value: String) { prefs.edit().putString(key, value).apply() }
         })
         c.useTestFile(getExternalFilesDir(null))
+        dev.tvremote.core.CensusAndroid.use()                       // errors the guard catches are reported with the same switch
         c.self = {
             val m = HashMap<String, String>()
             m["ro.product.brand"] = Build.BRAND; m["ro.product.model"] = Build.MODEL; m["ro.product.device"] = Build.DEVICE

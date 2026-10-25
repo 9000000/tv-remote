@@ -19,7 +19,7 @@ kotlin {
 }
 // Android only: decoding the picture and sound (TvAndroid, AudioOut), the QR bitmap. Meta and Caps, started on the TV, are Java
 // (src/main/java) and reach the computer as assets/tvr-helper.jar, already dexed.
-sourceSets["main"].kotlin.exclude("**/core/picture/TvAndroid.kt", "**/core/picture/AudioOut.kt", "**/core/web/Qr.kt", "**/core/Upright.kt")
+sourceSets["main"].kotlin.exclude("**/core/picture/TvAndroid.kt", "**/core/picture/AudioOut.kt", "**/core/web/Qr.kt", "**/core/Upright.kt", "**/core/CensusAndroid.kt")
 
 dependencies {
     implementation("com.android.tools.build:apksig:8.9.2")           // AppCopy: signs the rewritten APK (the same jar the Android build uses)

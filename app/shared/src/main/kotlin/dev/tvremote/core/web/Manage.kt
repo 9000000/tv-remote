@@ -105,6 +105,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         try {
             when (what) {
                 "census" -> return census(r)
+                "crash" -> return crash(r)
                 "apps" -> return HttpServer.Response.json(apps(r.q("system") == "1"))
                 "apps/report" -> return HttpServer.Response.json(appsReport())
                 "privacy" -> if (!post) return HttpServer.Response.json(privacy.snapshot(r.q("since").toIntOrNull() ?: 0, r.q("id").toIntOrNull() ?: -1))   // the scan under way or the last one (Privacy.kt); a route nobody but the owner may use (Scope allows none of it)
@@ -1361,6 +1362,17 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     companion object {
+        /**
+         * `/api/crash`: the page's error box reports an error ({kind, msg, stack}) through its own core, which scrubs it again, adds the
+         * device's facts and sends it with the stats switch (Census.crashNow): the answer says whether the server has it.
+         */
+        fun crash(r: HttpServer.Request): HttpServer.Response {
+            if (r.method != "POST") return HttpServer.Response.error(405, "post")
+            val b = r.json()
+            val sent = dev.tvremote.core.Census.crashNow("page", b.optString("kind", "Error").take(120), b.optString("msg").take(600), b.optString("stack").take(16384))
+            return HttpServer.Response.json(JSONObject().put("sent", sent))
+        }
+
         /** `/api/census`: the Settings switch of the anonymous stats (Census.kt), the same on every core; POST {on: bool} turns it on or off. */
         fun census(r: HttpServer.Request): HttpServer.Response {
             if (r.method == "POST") dev.tvremote.core.Census.enabled = r.json().optBoolean("on", true)

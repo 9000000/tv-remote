@@ -37,6 +37,7 @@ fun main(args: Array<String>) {
             System.getProperty("os.name") + " " + System.getProperty("os.version"), System.getProperty("os.arch"), th.name, t)
         System.err.println(text)
         try { File(data, "guard-last.txt").writeText(text) } catch (_: Exception) { }
+        dev.tvremote.core.Census.crash("kotlin", t.javaClass.name, t.message.orEmpty(), dev.tvremote.guard.GuardLogic.stack(t))   // with the stats switch, off this thread
     }
     val url = "http://127.0.0.1:$port"
     val passFile = File(if (packaged) data else File(repo, ".cache/desktop").also { it.mkdirs() }, if (port == 8765) "pass" else "pass-$port")   // a test server on its own port keeps its own

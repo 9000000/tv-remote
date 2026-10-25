@@ -214,6 +214,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             override fun put(key: String, value: String) { prefs.edit().putString(key, value).apply() }
         })
         dev.tvremote.core.Census.useTestFile(getExternalFilesDir(null))
+        dev.tvremote.core.CensusAndroid.use()                     // errors the guard catches are reported with the same switch
         soundPace()                                               // Listen.kt
         reachAroundVpn()                                          // a TV at home stays reachable with a VPN on
         dev.tvremote.core.WireLog.app = "TV Remote " + version() + " (phone, Android " + android.os.Build.VERSION.RELEASE + ")"
