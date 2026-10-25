@@ -5,7 +5,17 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-25**, upstream `Gathin23/cleanyourtv` at `575d73f0f3` (2026-10-25 07:50 UTC, 409 commits after `c965ef4b11`;
+Last read: **2026-10-25 (evening)**, upstream at `67dc5bee16` (99 commits after `575d73f0f3`; 12 `debloat.txt`). Into bloat.json:
+SUGGEST `jiumao.screen.systemadplayer` (ad player, hy320), Philips `customautologservice` (logging), `tpv.nftgallery`; KEEP Sony
+`scrums.action` (the Action Menu and its remote button: upstream un-disabled it on kd-43x8000g, it was mislabelled "usage metrics"),
+Philips `ipcontrol` (LAN control, kept by a 65PUS9206 owner); FACTORY (never touched, cleanyourtv #470): Skyworth `testtime`, Allwinner
+`dragonbox` / `agingdragonbox` / `dragonatt`, `htc.hyk_test`, `oem.qa`, `sdt.producttest`. Left out: Fire OS internals (`dpcclient`,
+`spiderpork`, `neodelegate`, `cirruscloud`, `ivona.*` TTS, `dummy.*` stubs: roles unclear), stores (`master.tv.market`,
+`overseas.store.appstore`, `nettv.market`: maybe the only one), Philips `nettvapp*` / `fitness` / Play-Fi (choices), `tcl.esticker`
+(upstream disabled it a day only). Facts not acted on yet: Sony VU3 app keys die with launcherx off (scancodes 758 569 653 652); a
+key helper eats a held volume key's repeat (Android 12 KeyboardInterceptor); TCL needs `appops set <pkg> APP_AUTO_START allow` for a
+third-party screensaver; TCL 32S5400A keeps 500 MB free, `pm trim-caches 4G` lets installs through.
+Before that: **2026-10-25**, upstream `Gathin23/cleanyourtv` at `575d73f0f3` (2026-10-25 07:50 UTC, 409 commits after `c965ef4b11`;
 66 new or changed `debloat.txt`, 173 distinct packages in their added lines, 141 that nothing of ours held; issues / PRs up to ~#1600).
 Went to `docs/optimize/bloat.json` (9 suggested, 6 keep patterns), not Bloat.kt. SUGGEST: Realtek `storemode` (retail demo, kogan-g7),
 `karaoke.userguide`, `android.autoinstalls.config.RTKSTBAndroid.device` (partner app installer, rocktek-gx1); Hisense / Vidda `hitv.das`
@@ -245,8 +255,8 @@ Sixth read, ideas that are not lists (2026-10-25, upstream `c965ef4b11..575d73f0
 ## Syncing again
 
 ```
-gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 575d73f0f3?
-gh api repos/Gathin23/cleanyourtv/compare/575d73f0f3...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
+gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 67dc5bee16?
+gh api repos/Gathin23/cleanyourtv/compare/67dc5bee16...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
 gh pr list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh issue list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh api repos/Gathin23/cleanyourtv/forks --paginate --jq '.[] | select(.pushed_at > "2026-10-19T12:00:00Z") | .full_name'

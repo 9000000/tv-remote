@@ -78,7 +78,10 @@
     "com.sony.dtv.touchpad.tutorial": "Sony touchpad tutorial",
     "com.sony.dtv.shopsettings": "Sony shop mode",
     "com.tcl.c2dm.client": "TCL push client",
-    "com.google.android.tvtutorials": "Android TV tutorials"
+    "com.google.android.tvtutorials": "Android TV tutorials",
+    "com.jiumao.screen.systemadplayer": "Ad player",
+    "org.droidtv.customautologservice": "Philips logging",
+    "com.tpv.nftgallery": "Philips NFT gallery"
   },
   "drop": [
     "com.xm.webcontent"
@@ -108,7 +111,15 @@
     "com\\.google\\.android\\.tv\\.remote\\.service",
     "org\\.droidtv\\.tv\\.agent",
     "com\\.oceanwing\\.(receiver|nebulalinker)",
-    "com\\.zhixin\\.(nebulasmart|remoteautopair|apphelper|projector\\.settings|nebulasetupwizard)"
+    "com\\.zhixin\\.(nebulasmart|remoteautopair|apphelper|projector\\.settings|nebulasetupwizard)",
+    "com\\.sony\\.dtv\\.scrums\\.action",
+    "org\\.droidtv\\.ipcontrol"
   ],
-  "factory": []
+  "factory": [
+    "com\\.skyworth\\.testtime",
+    "com\\.softwinner\\.(dragonbox|agingdragonbox|dragonatt)",
+    "com\\.htc\\.hyk_test",
+    "com\\.oem\\.qa",
+    "com\\.sdt\\.producttest"
+  ]
 }
