@@ -32,7 +32,8 @@ object ThemePreview {
     private const val NO_WALL = 0xFF2A2F3A.toInt()                  // a background nothing is known of yet: the Themes page's own plain tile
     private const val PLAY_BG = 0xB3000000.toInt()                  // the "moves" pill: dark at 70% so the white triangle reads on a bright wall
 
-    private val cache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) { override fun sizeOf(k: String, b: Bitmap) = b.byteCount }
+    // 1/16 of the heap in bytes (4-16 MB), let go when the picker closes
+    private val cache = object : LruCache<String, Bitmap>((Runtime.getRuntime().maxMemory() / 16).toInt().coerceIn(4 shl 20, 16 shl 20)) { override fun sizeOf(k: String, b: Bitmap) = b.byteCount }
     fun cached(key: String): Bitmap? = cache.get(key)
     fun forget() = cache.evictAll()
 

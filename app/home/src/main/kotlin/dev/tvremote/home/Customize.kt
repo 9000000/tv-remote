@@ -237,7 +237,7 @@ object Customize {
         val tiles = ArrayList<Pair<String, View>>()
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
-        dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
+        dialog.setOnDismissListener { shots.shutdownNow(); ThemePreview.forget(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
         val waiting = ArrayList<Pair<ImageView, Bitmap>>()
         var slid = !Motion.on
@@ -324,6 +324,21 @@ object Customize {
             fun mark() { val now = Store.get(a).optString("theme"); for ((k, v) in themeTiles) { v.isSelected = k == now; v.findViewWithTag<View>("check")?.visibility = if (k == now) View.VISIBLE else View.GONE } }
             fun apply(op: JSONObject) { Store.change(a, JSONObject().put("theme", op)) }
             lateinit var draw: () -> Unit
+            // a preview is drawn only when its tile is within one tile of the screen (a long list of community themes costs nothing until scrolled to)
+            val pending = ArrayList<Pair<View, () -> Unit>>()
+            val loc = IntArray(2)
+            fun pump() {
+                val sh = a.resources.displayMetrics.heightPixels
+                val it = pending.iterator()
+                while (it.hasNext()) {
+                    val (v, go) = it.next()
+                    if (!v.isAttachedToWindow) continue
+                    v.getLocationOnScreen(loc)
+                    if (loc[1] + v.height > -v.height && loc[1] < sh + v.height) { it.remove(); try { go() } catch (e: java.util.concurrent.RejectedExecutionException) { } }
+                }
+            }
+            page.viewTreeObserver.addOnScrollChangedListener { pump() }
+            page.viewTreeObserver.addOnGlobalLayoutListener { if (pending.isNotEmpty()) pump() }
             // the preview is the theme's home screen in miniature (ThemePreview): drawn once off the main thread, kept by theme + list rev + size + picture
             fun themeTile(id: String, name: String, conf: JSONObject, tiles: List<String>, look: String, shot: java.io.File?, mine: Boolean, by: String = ""): View {
                 val t = FrameLayout(a).apply {
@@ -334,7 +349,7 @@ object Customize {
                     val key = ThemePreview.key(id, conf, tiles, shotsW, shot)
                     val drawn = ThemePreview.cached(key)
                     if (drawn != null) pv.setImageBitmap(drawn)
-                    else shots.execute { val b = ThemePreview.get(a, key, conf, tiles, shot, look, shotsW, shotsW * 9 / 16, dp(12).toFloat()); a.runOnUiThread { if (!a.isDestroyed) put(pv, b) } }
+                    else pending.add(this to { shots.execute { val b = ThemePreview.get(a, key, conf, tiles, shot, look, shotsW, shotsW * 9 / 16, dp(12).toFloat()); a.runOnUiThread { if (!a.isDestroyed) put(pv, b) } } })
                     foreground = StateListDrawable().apply {
                         addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
@@ -381,7 +396,7 @@ object Customize {
                 }
             }
             draw = {
-                page.removeAllViews(); themeTiles.clear()
+                page.removeAllViews(); themeTiles.clear(); pending.clear()
                 val c = Store.get(a)
                 col = page
                 val mine = c.optJSONArray("themes")

@@ -631,6 +631,7 @@ async function homeOpen() {
     const p = (r.photos || []).find((x) => x.id === k) || ((r.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === k), t = p && homeThumbs[k + ':' + p.v];
     return el('i', t ? {} : { className: 'add' }, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : k === 'bing' ? '🌐' : k === 'web' ? '🖥️' : /^vid:/.test(k) ? '🎬' : '🖼️');
   };
+  const homeFaceIO = () => homeFaceIO.io || (homeFaceIO.io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { homeFaceIO.io.unobserve(e.target); const f = e.target.paintNow; e.target.paintNow = null; e.target.dataset.lazy = ''; if (f) f(); } }, { rootMargin: '300px 0px' }));
   // a theme's preview (homeThemePaint): a small canvas of its own home screen, the background picture TV Home kept for it under it; made once per look
   const themeFace = (id, conf, mine, look, tiles) => {
     const shot = homeShots[mine ? 'mine' : 'ready'][id], p = !shot && (r.photos || []).find((x) => x.id === conf.wall), thumb = shot || (p && homeThumbs[p.id + ':' + p.v]) || '';
@@ -640,8 +641,11 @@ async function homeOpen() {
       cv = el('canvas', { width: 320, height: 180 });
       homeFaces.set(key, cv);
       if (homeFaces.size > 80) homeFaces.delete(homeFaces.keys().next().value);
-      homeThemePaint(cv, conf, tiles, null, look);
-      if (thumb) { const img = new Image(); img.onload = () => homeThemePaint(cv, conf, tiles, img, look); img.src = 'data:image/jpeg;base64,' + thumb; }
+      // painted (and its picture decoded) only once it is near the screen: a list of 40 themes costs the few in view; without
+      // IntersectionObserver at once. Kept in homeFaces, so a redraw of the list reuses the painted one.
+      const paint = () => { homeThemePaint(cv, conf, tiles, null, look);
+        if (thumb) { const img = new Image(); img.decoding = 'async'; img.onload = () => homeThemePaint(cv, conf, tiles, img, look); img.src = 'data:image/jpeg;base64,' + thumb; } };
+      if ('IntersectionObserver' in window) { cv.dataset.lazy = '1'; homeFaceIO().observe(cv); cv.paintNow = paint; } else paint();
     }
     return el('i', {}, cv);
   };

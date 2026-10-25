@@ -21,8 +21,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tên app đặt lại trên TV Home hiện đúng ở mọi danh sách app (Lịch mở app, Ứng dụng...).
 - TV Home → Chủ đề: nút ⓘ mở bảng "chủ đề chỉnh gì" ngay trên màn hình (trước hiện tận cuối trang, như không bấm được).
 - Tối ưu TV / Ứng dụng: không tắt app Android luôn giữ chạy (PERSISTENT: tắt cũng tự bật lại), Google partner setup, các app cài đặt ban đầu, bàn phím phụ, âm thanh Dolby (theo danh sách của tv-detox).
+- Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- Themes: previews are drawn only when scrolled near (TV Home and web page); less memory with many community themes.
 - Anonymous stats: TV Home sends the daily stats (a TV with only TV Home is counted now); TV Home, TV Channels and TV Games send error reports. They follow TV Setup's **Send anonymous stats** switch; without TV Setup, TV Home has its own in Customize → System (Channels and Games: on, no switch yet).
 - Automatic error reports: an error shown in the “Something went wrong” box / dialog is now also sent anonymously (same **Send anonymous stats** switch; off sends nothing) with brand/model/Android or OS; IPs, folder paths, keys and emails are removed before sending, each error once per run. The box adds “Error report sent”. TV Home, TV Channels and TV Games have no such switch, so they send nothing
 - TV Home, D-pad: Down from the top buttons now lands on the card right below (nearest by x) instead of skipping to the app grid; from a card, Down goes to the grid's nearest column.

@@ -110,19 +110,48 @@
   }
   carousel("car"); carousel("th");
 
-  // a theme's picture, large: a dialog (Esc, the X and a tap outside close it, arrows go through the themes); focus goes back to the card
-  (function(){
-    var d = document.getElementById("th-zoom"); if (!d || !d.showModal) return;
-    var cards = Array.prototype.slice.call(document.querySelectorAll("#th [data-th]")), at = 0, from = null;
+  // the themes' pictures load as the row scrolls near (loading=lazy alone is not enough: Chrome pulls a whole scroller at once, and
+  // some browsers never fire it inside a horizontal one). Two steps: the row waits until its section is near the screen, then a card
+  // is loaded when it is within ~one card of the row's visible part. Without IntersectionObserver every picture loads at once.
+  function loadImg(img){ var d = img && img.getAttribute("data-src"); if (d){ img.removeAttribute("data-src"); img.src = d; } }
+  function lazyRow(track){
+    var imgs = function(){ return Array.prototype.slice.call(track.querySelectorAll("img[data-src]")); };
+    if (!("IntersectionObserver" in window)){ imgs().forEach(loadImg); return; }
+    var rowIo = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if (e.isIntersecting){ loadImg(e.target); rowIo.unobserve(e.target); } });
+    }, {root: track, rootMargin: "0px 400px 0px 400px"});
+    var wake = new IntersectionObserver(function(es){
+      if (!es.some(function(e){ return e.isIntersecting; })) return;
+      wake.disconnect(); imgs().forEach(function(i){ rowIo.observe(i); });
+    }, {rootMargin: "300px 0px"});
+    wake.observe(track);
+  }
+  lazyRow(document.getElementById("th"));
+
+  // a theme's picture, large: a dialog (Esc, the X and a tap outside close it, arrows go through the themes, the community's too);
+  // focus goes back to the card
+  var zoom = (function(){
+    var d = document.getElementById("th-zoom"); if (!d || !d.showModal) return null;
+    var at = 0, from = null, cards = [];
     var img = d.querySelector("img"), nm = d.querySelector(".th-name");
+    function all(){ return Array.prototype.slice.call(document.querySelectorAll("#th [data-th], #cm [data-th]")); }
     function show(i){
+      cards = all(); if (!cards.length) return;
       at = (i + cards.length) % cards.length;
-      var small = cards[at].querySelector("img").src, big = small.replace(/\.webp$/, "-big.webp"), want = at;
+      var pic = cards[at].querySelector("img"); loadImg(pic);
+      var small = pic.src, big = small.replace(/\.webp$/, "-big.webp"), want = at;
       img.src = small; nm.innerHTML = cards[at].querySelector("h3").innerHTML;   // the card's picture at once (already loaded),
       var b = new Image(); b.onload = function(){ if (at === want) img.src = big; }; b.src = big;   // then 1280x720 (~45 KB) only when zoomed
-      new Image().src = cards[(at + 1) % cards.length].querySelector("img").src.replace(/\.webp$/, "-big.webp");   // the next one ready
+      var nx = cards[(at + 1) % cards.length].querySelector("img"); loadImg(nx);
+      new Image().src = nx.src.replace(/\.webp$/, "-big.webp");   // the next one ready
     }
-    cards.forEach(function(c, i){ c.addEventListener("click", function(){ from = c; show(i); d.showModal(); }); });
+    ["th", "cm"].forEach(function(id){
+      var t = document.getElementById(id); if (!t) return;
+      t.addEventListener("click", function(e){
+        var c = e.target.closest && e.target.closest("[data-th]"); if (!c || !t.contains(c)) return;
+        from = c; show(all().indexOf(c)); d.showModal();
+      });
+    });
     d.querySelector(".th-x").onclick = function(){ d.close(); };
     d.querySelector(".th-p").onclick = function(){ show(at - 1); };
     d.querySelector(".th-n").onclick = function(){ show(at + 1); };
@@ -131,6 +160,45 @@
       if (e.key === "ArrowRight"){ e.preventDefault(); show(at + 1); } else if (e.key === "ArrowLeft"){ e.preventDefault(); show(at - 1); }
     });
     d.addEventListener("close", function(){ if (from) from.focus(); });
+    return d;
+  })();
+
+  // the community's row, from the signed list the site already serves (entries with community:true, newest = last in the file);
+  // read once, when the section is near. No entry (or no list) = the row stays hidden and takes no room. The names are users' words:
+  // set as text, never as markup; the picture's file name only if it is a plain id.
+  (function(){
+    var box = document.getElementById("cm-box"), tr = document.getElementById("cm"), sec = document.getElementById("themes");
+    if (!box || !tr || !sec) return;
+    function pair(tag, vi, en, cls){
+      var f = document.createDocumentFragment();
+      [["vi", vi], ["en", en]].forEach(function(p){ var s = document.createElement("span"); s.className = p[0]; s.textContent = p[1]; f.appendChild(s); });
+      var e = document.createElement(tag); if (cls) e.className = cls; e.appendChild(f); return e;
+    }
+    function build(list){
+      var items = list.filter(function(t){ return t && t.community === true && /^[a-z0-9][a-z0-9-]*$/i.test(String(t.id)); }).reverse();
+      if (!items.length) return;
+      items.forEach(function(t, i){
+        var nm = t.names || {}, vi = String(nm.vi || nm.en || t.id), en = String(nm.en || nm.vi || t.id), by = String(t.by || "").slice(0, 60);
+        var c = document.createElement("button"); c.type = "button"; c.className = "fc thc"; c.setAttribute("data-th", "c" + i); c.setAttribute("aria-haspopup", "dialog");
+        var im = document.createElement("img");
+        im.setAttribute("data-src", "img/themes/" + t.id + ".webp"); im.width = 480; im.height = 270; im.alt = ""; im.loading = "lazy"; im.decoding = "async";
+        c.appendChild(im); c.appendChild(pair("h3", vi, en));
+        if (by) c.appendChild(pair("p", "bởi " + by, "by " + by));
+        tr.appendChild(c);
+      });
+      var own = document.createElement("a"); own.className = "fc thc thc-own"; own.href = "guide#home-themes";
+      own.innerHTML = '<span class="thc-ph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>' +
+        '<h3><span class="vi">Tạo của bạn</span><span class="en">Create yours</span></h3><p><span class="vi">Chia sẻ chủ đề của bạn</span><span class="en">Share your theme</span></p>';
+      tr.appendChild(own);
+      box.hidden = false; carousel("cm"); lazyRow(tr);
+    }
+    function load(){
+      fetch("home/themes.json").then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){ if (j && Array.isArray(j.themes)) build(j.themes); }).catch(function(){});
+    }
+    if (!("IntersectionObserver" in window)){ load(); return; }
+    var io = new IntersectionObserver(function(es){ if (es.some(function(e){ return e.isIntersecting; })){ io.disconnect(); load(); } }, {rootMargin: "600px 0px"});
+    io.observe(sec);
   })();
 
   document.getElementById("yr").textContent = new Date().getFullYear();
