@@ -4,9 +4,7 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## 0.24.1 - 2026-10-25
-
-Web 0.24.1 · app điện thoại 0.24.1 · app TV 0.24.1 · TV Home 0.11.0 · TV Channels 0.7.0 · TV Games 0.7.0
+## Unreleased
 
 **Tiếng Việt**
 - TV Setup: “Cập nhật ngay” không còn đòi ADB. TV không có ADB thì TV Setup cập nhật bằng trình cài của Android, giống TV Home.
