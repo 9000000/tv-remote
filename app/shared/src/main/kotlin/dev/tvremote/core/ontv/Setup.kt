@@ -98,12 +98,16 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          * The same steps as [undo], for a computer with nothing but adb (our apps broken or gone): each app back on, the home screen
          * before chosen again, the records and animations as Undo leaves them. A name that is not a package is dropped, not quoted.
          */
+        /** The script's file name: the same in the download and in the script's own "how to run" line. */
+        fun restoreName(model: String) = "tv-restore-" + model.replace(Regex("[^A-Za-z0-9_.-]+"), "-").trim('-').ifEmpty { "tv" } + ".sh"
+
         fun restoreScript(model: String, date: String, host: String, apps: List<String>, home: String): String {
             val pkgs = apps.filter { SAFE.matches(it) }.distinct()
             val b = StringBuilder("#!/bin/sh\n")
             b.append("# Restore for the TV ").append(model.replace(Regex("[^\\w .-]"), "").trim().ifEmpty { "?" }).append(", saved ").append(date.replace(Regex("[^\\w :+-]"), "")).append(" by TV Remote (Optimize TV, Undo).\n")
             b.append("# Needs only adb on this computer. With the TV on the network:  adb connect ").append(host.replace(Regex("[^\\w.:-]"), "")).append(":5555\n")
-            b.append("#   then  sh restore.sh      (several devices: ADB_SERIAL=<ip>:5555 sh restore.sh)\n")
+            val f = restoreName(model)
+            b.append("#   then  sh ").append(f).append("      (several devices: ADB_SERIAL=<ip>:5555 sh ").append(f).append(")\n")
             b.append("A=\"adb\"; [ -n \"\$ADB_SERIAL\" ] && A=\"adb -s \$ADB_SERIAL\"\n")
             for (p in pkgs) b.append("\$A shell 'pm enable --user 0 ").append(p).append("'\n")
             if (home.isNotEmpty() && SAFE.matches(home) && '/' in home)

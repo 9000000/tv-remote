@@ -152,7 +152,7 @@ class SetupTest {
             "#!/bin/sh",
             "# Restore for the TV BRAVIA 4K, saved 2026-10-25 09:00:00 by TV Remote (Optimize TV, Undo).",
             "# Needs only adb on this computer. With the TV on the network:  adb connect 192.168.1.5:5555",
-            "#   then  sh restore.sh      (several devices: ADB_SERIAL=<ip>:5555 sh restore.sh)",
+            "#   then  sh tv-restore-BRAVIA-4K.sh      (several devices: ADB_SERIAL=<ip>:5555 sh tv-restore-BRAVIA-4K.sh)",
             "A=\"adb\"; [ -n \"\$ADB_SERIAL\" ] && A=\"adb -s \$ADB_SERIAL\"",
             "\$A shell 'pm enable --user 0 com.google.android.tvlauncher'",
             "\$A shell 'pm enable --user 0 com.google.android.tungsten.setupwraith/.Home'",

@@ -256,7 +256,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val model = sh("getprop ro.product.model").trim()
                     val script = s.restore(model, java.time.LocalDateTime.now().withNano(0).toString().replace('T', ' '), link.host)
                     val out = HttpServer.Response.of("text/x-shellscript; charset=utf-8", script.toByteArray())
-                    val name = "tv-restore-" + model.replace(Regex("[^A-Za-z0-9_.-]+"), "-").trim('-').ifEmpty { "tv" } + ".sh"
+                    val name = Setup.restoreName(model)
                     out.headers["Content-Disposition"] = "attachment; filename=\"$name\"; filename*=UTF-8''$name"
                     return out
                 }
