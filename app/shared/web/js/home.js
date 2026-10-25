@@ -286,7 +286,6 @@ async function homeOpen() {
   } });
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
-  const power = el('input', { type: 'checkbox', onchange: () => send({ power: power.checked }) });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
   // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
@@ -295,7 +294,6 @@ async function homeOpen() {
   const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' });
   const keysOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.keys_old') });   // a TV Home from before them
   const autoNote = el('p', { className: 'note' });
-  const powerOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.power_old') });   // a TV Home from before the button: the switch stays, with how to get it
   // the cards over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
   const wTurnOn = async (w) => {
@@ -453,10 +451,6 @@ async function homeOpen() {
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
-    power.checked = c.power !== false;
-    const noPower = c.power === undefined;                           // a TV Home older than the power button: shown off, with its update
-    power.disabled = noPower; powerOld.hidden = !noPower;
-    if (noPower) power.checked = false;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
     keyOn.checked = !!c.keyon;
@@ -758,7 +752,7 @@ async function homeOpen() {
       el('h3', { className: 'secthead', textContent: T('home.sec_grid') }), colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
     ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, feedHead, feedLine, feedList, feedNote, noteHead, noteLine, qrHead, qrList, qrNote]],
-    ['system', 'power', 260, 'home.g_system', [check(power, 'home.power'), powerOld, check(dream, 'home.dream')]],
+    ['system', 'power', 260, 'home.g_system', [check(dream, 'home.dream')]],
     ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote]],
     ['lang', 'globe', 200, 'home.lang', [langs]],
   ];
@@ -799,7 +793,7 @@ async function homeOpen() {
       c.colsOk ? T('home.sum_cols', { n: c.cols || 5 }) : '', c.rowsOk ? (c.rows >= 1 ? T('home.sum_rows', { n: c.rows }) : T('home.sum_rows_auto')) : '',
       c.hidden.length ? T('home.sum_hidden', { n: c.hidden.length }) : ''].filter(Boolean).join(' · '));
     put(subs.widgets, 'textContent', c.widgets ? T('home.sum_widgets', { n: c.widgets.length }) : '');
-    put(subs.system, 'textContent', T('home.sum_system', { power: onOff(c.power !== false), dream: onOff(!!c.dream) }));
+    put(subs.system, 'textContent', T('home.sum_system', { dream: onOff(!!c.dream) }));
     put(subs.keys, 'textContent', T('home.sum_keys', { keys: onOff(!!c.keyon), auto: onOff(!!c.autoon) }));
     put(subs.lang, 'textContent', T(c.lang === 'vi' ? 'home.lang_vi' : c.lang === 'en' ? 'home.lang_en' : 'home.lang_tv'));
     rows.lang.hidden = c.lang === undefined;                        // a TV Home older than the choice

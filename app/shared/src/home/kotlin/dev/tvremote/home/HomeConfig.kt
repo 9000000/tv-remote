@@ -32,8 +32,6 @@ import org.json.JSONObject
  *           runs in between. A TV Home that does this reports "wrotate": true (the page keeps its one-choice list for one that
  *           does not)
  *   clock24 24-hour clock; greet: the greeting under the clock
- *   power   the round power button in the top bar (screen off / standby / power off, for a remote whose own button is broken); on by
- *           default. A TV Home that has this reports "power" in what it sends back, so the page offers the switch only to one that does
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
@@ -550,7 +548,6 @@ object HomeConfig {
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
-            .put("power", o.optBoolean("power", true))
             .put("anim", o.optBoolean("anim", true))
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")

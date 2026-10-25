@@ -31,7 +31,6 @@ class HomeConfigTest {
         assertEquals(true, c.getBoolean("clock24"))
         assertEquals(true, c.getBoolean("greet"))
         assertEquals(true, c.getBoolean("anim"))
-        assertEquals(true, c.getBoolean("power"))                   // the bar's power button is on until switched off
     }
 
     @Test fun theDockKeepsRealPackagesOnceAndAtMostSix() {
@@ -205,9 +204,9 @@ class HomeConfigTest {
         assertFalse(n.getBoolean("clock24"))
     }
 
-    @Test fun powerButtonDefaultsOnAndMergesOff() {
-        assertFalse(HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("power", false)).getBoolean("power"))
-        assertEquals(true, HomeConfig.clean(JSONObject().put("power", "no")).getBoolean("power"))
+    @Test fun theRetiredPowerOptionIsDroppedFromOldSettings() {      // the bar has no power button any more: its actions are in the Control Center
+        assertFalse(HomeConfig.clean(JSONObject().put("power", false)).has("power"))
+        assertFalse(HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("power", false)).has("power"))
     }
 
     @Test fun animIsABooleanAndMerges() {

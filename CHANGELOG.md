@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: Trung tâm điều khiển vẽ lại giống Tùy chỉnh và menu giữ OK (bảng kính 460 dp, ô 16 dp, chữ 15/12 sp, thay vì 600 dp); thanh trên chỉ còn nút Mạng và Cài đặt: nút Nguồn vào và nút Nguồn chuyển vào Trung tâm điều khiển (thêm **Chế độ chờ**); bỏ công tắc “Nút nguồn” trong Tùy chỉnh và trang web.
 - TV Home: gợi ý một lần “Giữ OK hoặc bấm ☰ trên một app để xem thêm” dưới hàng app đầu; tắt bằng ✕ hoặc khi đã mở menu của app.
 - App máy tính (Mac): mở từ thư mục Tải xuống thì hỏi “Chuyển TV Remote vào Applications?” (mỗi bản một lần) để tự cập nhật được; thẻ cập nhật cũng có nút **Chuyển vào Applications**. Bản chép được kiểm tra, bản cũ vào Thùng rác, dữ liệu giữ nguyên.
 - Thống kê ẩn danh: TV Home gửi thống kê hằng ngày (TV chỉ cài TV Home cũng được đếm); TV Home, Kênh TV, Game TV gửi lỗi. Theo công tắc **Gửi thống kê ẩn danh** của TV Setup; không có TV Setup thì TV Home có công tắc ở Tùy chỉnh → Hệ thống (Kênh TV, Game TV: bật sẵn, chưa có công tắc).
@@ -26,6 +27,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- TV Home: the Control Center is redrawn like Customize and the hold-OK menu (glass panel 460 dp, 16 dp tiles, 15/12 sp text, was 600 dp); the top bar keeps only Network and Settings: the Inputs and Power buttons moved into the Control Center (new **Standby**); the "Power button" switch is gone from Customize and the web page.
 - TV Home: a one-time tip “Hold OK or press ☰ on an app for more options” under the first row of apps; gone after ✕ or once an app menu was opened.
 - Computer app (Mac): opened from Downloads it asks "Move TV Remote to Applications?" (once per version) so it can update itself; the update card has a **Move to Applications** button too. The copy is checked, the old one goes to the Trash, your data stays.
 - Themes: previews are drawn only when scrolled near (TV Home and web page); less memory with many community themes.

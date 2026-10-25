@@ -242,19 +242,13 @@
     <string name="pq_note_snap">A picture of the page every few minutes, then it is closed. Blur and dim work as on a photo.</string>
     <string name="pq_note_keep">A picture of the page every few minutes; the page stays open (hidden) and keeps where it was.</string>
     <string name="pq_close">Close</string>
-    <string name="power">Power</string>
     <string name="power_screen_off">Screen off</string>
     <string name="power_standby">Standby</string>
     <string name="power_off">Power off fully</string>
-    <string name="power_off_now">Power off now</string>
-    <string name="power_keep">Keep it on</string>
     <string name="power_missing">Needs the latest TV Setup on this TV</string>
     <string name="c_home_screen">Home screen</string>
     <string name="c_home_screen_sub">Use another launcher (needs TV Setup)</string>
     <string name="c_home_screen_need">Needs the TV Setup app · Downloader code %1$s</string>
-    <string name="power_needs_setup">The power button needs the TV Setup app</string>
-    <string name="power_setup_code">Install with Downloader: code %1$s</string>
-    <string name="power_setup_phone">Or install it from the TV Remote phone app</string>
     <string name="power_untrusted">TV Home and TV Setup come from two different places: install both from the same one</string>
     <string name="power_noadb">TV Setup has no ADB yet: turn on USB debugging first</string>
     <string name="power_failed">The TV did not do it</string>
@@ -267,7 +261,6 @@
     <string name="c_tiles">Live widgets</string>
     <string name="c_tiles_on">On the grid</string>
     <string name="c_tiles_none">Live widgets come from TV Setup and TV Channels: install or update them to get them</string>
-    <string name="c_power">Power button in the bar</string>
     <string name="g_look">Look</string>
     <string name="g_system">System</string>
     <string name="g_back">Back</string>
@@ -279,7 +272,6 @@
     <string name="g_rows_n">%1$s rows</string>
     <string name="g_rows_auto">auto rows</string>
     <string name="g_widgets_n">%1$d on</string>
-    <string name="g_power">Power</string>
     <string name="g_dream">Screensaver</string>
     <string name="g_keys">Keys &amp; startup</string>
     <string name="g_keys_sum">%1$d keys · open at power-on: %2$s</string>
@@ -540,7 +532,8 @@
     <string name="cc_title">Control Center</string>
     <string name="cc_android">Android TV %1$s</string>
     <string name="cc_open_settings">Open settings</string>
-    <string name="cc_customize_sub">Background, apps, widgets</string>
+    <string name="cc_customize">Customize</string>
+    <string name="cc_customize_sub">Look, apps, widgets</string>
     <string name="cc_net">Network</string>
     <string name="cc_net_wifi">Wi-Fi · %1$s</string>
     <string name="cc_net_eth">Ethernet · %1$s</string>
@@ -555,8 +548,8 @@
     <string name="cc_need_setup">Needs TV Setup</string>
     <string name="cc_restart">Restart</string>
     <string name="cc_clear_ram">Clear RAM</string>
-    <string name="cc_confirm_off">Press again to power off</string>
-    <string name="cc_confirm_restart">Press again to restart</string>
+    <string name="cc_confirm_off">Press again</string>
+    <string name="cc_confirm_restart">Press again</string>
     <string name="cc_working">Clearing…</string>
     <string name="cc_footer">CPU %1$s · RAM %2$s</string>
     <string name="cc_footer_ram">RAM %1$s</string>

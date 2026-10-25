@@ -143,6 +143,7 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 | **Dialog sheet** (choices) | `TvUi.sheet(c, R.style.Dialog, w)` + `TvUi.sheetTitle()` + `TvUi.row`s (`tvui/Tv.kt`) | Channels | 380-420 dp wide; Back closes it |
 | **Popup on a scrim** | `scrim(panel(title).apply { addView(menuButton(...).withIcon(R.drawable.ic_x)) })` (`tvui/Tv.kt`, used `LibraryActivity.kt` `popup()`) | Games | always add a Close button; Back closes; first entry focused |
 | **System list menu** | `TvGlass.menu` (glass panel, icon + label rows, as Customize) | Home's app menu; Setup uses `TvUi.menu` (see Dialogs below) | for plain lists of actions only |
+| **Control Center** (tiles + actions) | `ui/ControlCenter.kt`: `TvGlass.panelBg` 460 dp, two columns of `TvGlass` row tiles (16 dp, icon 26, name 15 sp, state 12 sp `TvGlass.HINT`), `Motion.pop`; an armed action is red and asks in its name line | Home | no look of its own: Customize's tile |
 | **Drop-down from a head button** | `Drop.show(a, anchor, rows)` | Home | a Dialog: Home and Back close it |
 | **App / game tile** | Home `Tile` (`HomeActivity.kt:857`); Games `shell()` | Home, Games | 16:9; rings outside the face; name under it, in the row gap |
 | **Action tile** (icon, title, one line) | Setup `Tile` (`MainActivity.kt:73`): `say()`, `work(on)` spinner, `enable()` | Setup | |

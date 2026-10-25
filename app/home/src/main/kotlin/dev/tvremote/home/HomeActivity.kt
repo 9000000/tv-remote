@@ -86,7 +86,7 @@ import dev.tvremote.home.widgets.Widgets
 import dev.tvremote.home.ui.Zoom
 
 /**
- * The home screen: the clock, round buttons in one capsule (inputs, network, settings = the Control Center, power), and ONE grid of apps: the favourites
+ * The home screen: the clock, two round buttons in one capsule (network, settings = the Control Center: inputs and the power actions are in it), and ONE grid of apps: the favourites
  * first, then every other app.
  * Plain views, built in code: it has to come up at once on the weakest TV chip. What it shows is set in [Store], from here
  * (hold OK on an app) or from the phone / computer (HomeReceiver).
@@ -101,9 +101,7 @@ class HomeActivity : Activity() {
     private lateinit var dateLine: TextView
     private lateinit var greetLine: TextView
     private lateinit var netPill: BarBtn
-    private lateinit var inputsPill: BarBtn
     private lateinit var settingsPill: BarBtn
-    private lateinit var powerPill: BarBtn
     private lateinit var bar: TopBar
     private lateinit var grid: LinearLayout                         // the favourites first, then every other app, then the hidden apps' tile: one grid
     private var apps: List<App> = emptyList()
@@ -214,32 +212,18 @@ class HomeActivity : Activity() {
         left.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
         bar = TopBar(this, ::dp)
-        inputsPill = BarBtn(this, R.drawable.ic_input, getString(R.string.inputs), ::dp) { inputs() }
         netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for the TV's settings, TV Home's and the everyday switches: the Control Center (ui/ControlCenter.kt); a second button beside it read as the same thing
         settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.settings), ::dp) {
             open = dev.tvremote.home.ui.ControlCenter.show(this, bar.capsule, { open(it) }, { inputs() }, { customize() })
         }
-        // for a remote whose own power button is broken: three named actions TV Setup runs (Power.kt), the hard one asks again
-        powerPill = BarBtn(this, R.drawable.ic_power, getString(R.string.power), ::dp) {
-            if (!setupThere()) { open = Drop.show(this, bar.capsule, needSetup()); return@BarBtn }
-            open = Drop.show(this, bar.capsule, listOf(
-                Drop.Row(R.drawable.ic_eye_off, getString(R.string.power_screen_off)) { Power.run(this, Power.SCREEN_OFF) },
-                Drop.Row(R.drawable.ic_moon, getString(R.string.power_standby)) { Power.run(this, Power.STANDBY) },
-                Drop.Row(R.drawable.ic_power, getString(R.string.power_off)) {
-                    open = Drop.show(this, bar.capsule, listOf(                // Cancel first: the focus lands on the safe choice
-                        Drop.Row(R.drawable.ic_close, getString(R.string.power_keep)) { },
-                        Drop.Row(R.drawable.ic_power, getString(R.string.power_off_now)) { Power.run(this, Power.POWER_OFF) }))
-                }))
-        }
-        for (b in listOf(inputsPill, netPill, settingsPill, powerPill)) bar.add(b)
+        for (b in listOf(netPill, settingsPill)) bar.add(b)
         for (b in bar.buttons) b.setOnKeyListener { v, code, e ->           // Down from the bar: the widget below it first, the grid only when there is none
             code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.nearestHot(centre(v))?: below(v))?.let { go(it); true } == true
         }
-        // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
-        inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
-        settingsPill.id = View.generateViewId(); powerPill.id = View.generateViewId()
-        powerPill.nextFocusRightId = powerPill.id
+        // the row's two ends stay put: Android's own search went from the left pill down-left onto a tile, and OK then opened its app
+        netPill.nextFocusLeftId = View.generateViewId().also { netPill.id = it }
+        settingsPill.id = View.generateViewId(); settingsPill.nextFocusRightId = settingsPill.id
         bar.focusIn = { scrollToY(0) }
         head.addView(bar)
         col.addView(head)
@@ -715,7 +699,6 @@ class HomeActivity : Activity() {
         if (!Motion.glass) glass.hide()
         wall()
         clockAndDay()
-        powerBar()
         widgetsRead()
         syncTiles()
         val byPkg = apps.associateBy { it.pkg }
@@ -1245,28 +1228,6 @@ class HomeActivity : Activity() {
         @Suppress("DEPRECATION") (applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo?.ssid
             ?.removeSurrounding("\"")?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
     } catch (e: Exception) { null }
-
-    private fun setupThere() = try { packageManager.getPackageInfo("dev.tvremote.setup", 0); true } catch (e: Exception) { false }
-
-    /**
-     * Without TV Setup (it runs the power actions: TV Home has no ADB) the button stays and says how to get it: a button that
-     * vanished read as a bug. Downloader opens when the TV has it; the code is the one the site gives for TV Setup.
-     */
-    private fun needSetup(): List<Drop.Row> {
-        val dl = packageManager.getLaunchIntentForPackage("com.esaba.downloader")
-        return listOf(
-            Drop.Row(R.drawable.ic_info, getString(R.string.power_needs_setup)) { },
-            Drop.Row(R.drawable.ic_download, getString(R.string.power_setup_code, SETUP_CODE)) { if (dl != null) try { startActivity(dl) } catch (e: Exception) { } },
-            Drop.Row(R.drawable.ic_phone, getString(R.string.power_setup_phone)) { })
-    }
-
-    /** The power button shows unless Customize switched it off; the settings button is then the row's right end again. */
-    private fun powerBar() {
-        val on = conf.optBoolean("power", true)
-        powerPill.visibility = if (on) View.VISIBLE else View.GONE
-        settingsPill.nextFocusRightId = if (on) powerPill.id else settingsPill.id
-        bar.requestLayout()
-    }
 
     private fun clockAndDay() {
         val h24 = conf.optBoolean("clock24", true)
