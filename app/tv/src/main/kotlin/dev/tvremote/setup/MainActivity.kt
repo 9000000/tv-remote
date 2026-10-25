@@ -705,7 +705,32 @@ class MainActivity : Activity() {
             TvUi.Item(R.drawable.ic_code, T("tv_main.open_developer_options")) { devOptions() },
             TvUi.Item(R.drawable.ic_power, T("tv_main.turn_back_on"), on = { KeepAdb.on(this) }) { KeepAdb.set(this, !KeepAdb.on(this)); log(keepText()) },
             TvUi.Item(R.drawable.ic_globe, "Tailscale", tsStatus) { if (adb == null) log(T("tv_main.needs_adb_turn_on")) else tailscale() },
-            TvUi.Item(R.drawable.ic_unlink, T("tv_main.forget_adb_keys")) { forgetAdbKeys() }))
+            TvUi.Item(R.drawable.ic_unlink, T("tv_main.forget_adb_keys")) { forgetAdbKeys() },
+            TvUi.Item(R.drawable.ic_send, T("support.send"), T("support.send_sub")) { supportSend() },
+            if (Support.open()) TvUi.Item(R.drawable.ic_stop, T("support.stop"), T("support.stop_sub", "code" to spaced(Support.code), "min" to supportLeft())) {
+                Support.stop(this); log(T("support.stopped")) }
+            else TvUi.Item(R.drawable.ic_eye, T("support.open", "min" to Support.MINUTES), T("support.open_sub")) { supportOpen() }))
+    }
+
+    // Support (Support.kt): a code to read out to whoever helps, and for a while their reading of this app's own state
+    private fun spaced(c: String) = if (c.length == 8) c.substring(0, 4) + " " + c.substring(4) else c
+    private fun supportLeft() = ((Support.until - System.currentTimeMillis()) / 60000 + 1).coerceAtLeast(0)
+    private fun showCode(code: String, sub: String) = menu(T("support.code_title"), listOf(TvUi.Item(R.drawable.ic_check, spaced(code), sub) { }))
+
+    private fun supportSend() {
+        log(T("support.sending"))
+        Thread({
+            val code = Support.send(this, version())
+            ui { if (code == null) log(T("support.no_net")) else { log(T("support.sent", "code" to spaced(code))); showCode(code, T("support.read_out")) } }
+        }, "support-send").apply { isDaemon = true }.start()
+    }
+
+    private fun supportOpen() {
+        log(T("support.sending"))
+        Support.start(this, version()) { code -> ui {
+            if (code == null) log(T("support.no_net"))
+            else { log(T("support.opened", "code" to spaced(code), "min" to Support.MINUTES)); showCode(code, T("support.opened_sub", "min" to Support.MINUTES)) }
+        } }
     }
 
     /**

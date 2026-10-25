@@ -155,6 +155,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         fun secure(): Boolean = running?.https != null
         /** connecting | allow | ready | error: the state of the input session, for the app's own screen. */
         fun adbState(): String = adbState
+        /** Why the last session failed, as the TV said it (Support's report). */
+        fun adbDetail(): String = adbDetail
         /** A command in the TV's shell over our own ADB link (null without one): what apps may not read, like /proc/stat. */
         fun shell(cmd: String): String? = try { running?.link?.get()?.shell(cmd) } catch (e: Exception) { null }
         /** The ADB session itself (null without the service or a link): HomePower runs its fixed actions on it. */
@@ -331,6 +333,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this
         DimLayer.restore(this)
+        if (!Support.open()) Support.clean(this)                         // a support pass left by a TV Setup that was killed while open
         dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
             " (TV web page, Android " + Build.VERSION.RELEASE + ")"
         if (Build.VERSION.SDK_INT >= 26) {

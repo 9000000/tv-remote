@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - Web của TV: TV chưa có ADB thì không tự hiện được mã ghép đôi; trang giờ bảo mở app TV Setup, mã nằm ở màn hình chính.
 - Tự kiểm tra: box của nhà mạng (FPT, Viettel) được báo thẳng là nhà mạng khóa Tùy chọn nhà phát triển, không còn gợi ý cách của TCL.
+- TV Setup: Kết nối → **Gửi cho hỗ trợ** gửi thông số TV và nhật ký, hiện mã 8 số để đọc cho người giúp. **Cho hỗ trợ xem 30 phút**: người giúp chỉ đọc được trạng thái TV, không bấm hay đổi gì, dừng được bất cứ lúc nào. Không cần Tailscale hay TeamViewer.
 
 **English**
 - TV web page: a TV with no ADB cannot put up the pairing code by itself; the page now says to open TV Setup, whose main screen shows it.
 - Self-check: ISP boxes (FPT, Viettel) are told plainly that the provider locked Developer options, no more TCL hint.
+- TV Setup: Connection → **Send to support** sends the TV's details and log and shows an 8-digit code to read to whoever helps. **Let support look for 30 min**: they can only read the TV's state, never press or change anything; stop it any time. No Tailscale or TeamViewer needed.
 
 ## 0.24.1 - 2026-10-25
 

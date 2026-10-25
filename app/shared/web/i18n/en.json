@@ -3872,5 +3872,19 @@
  "home.badge_photos": "×{n}",
  "home.badge_slides": "Slideshow",
  "core.fr_home_media_big": "A photo or video is over 60 MB",
- "core.fr_home_media_missing": "The theme's photo/video was not found on the TV"
+ "core.fr_home_media_missing": "The theme's photo/video was not found on the TV",
+ "support.send": "Send to support",
+ "support.send_sub": "The TV's details and log, for an 8-digit code",
+ "support.open": "Let support look for {min} min",
+ "support.open_sub": "Reading the state only, nothing pressed or changed",
+ "support.stop": "Stop support looking",
+ "support.stop_sub": "Code {code} · {min} min left",
+ "support.code_title": "Support code",
+ "support.read_out": "Read this code out to whoever helps you.",
+ "support.opened_sub": "Read this code out to whoever helps you. They can look for {min} min; stop it under Connection.",
+ "support.sending": "Sending to support...",
+ "support.sent": "Sent. Support code: {code}",
+ "support.opened": "Support can look at this TV for {min} min, code {code}. Stop: Connection → Stop support looking.",
+ "support.stopped": "Stopped: support can no longer look.",
+ "support.no_net": "Could not send: the TV is not on the Internet. Check the network, then try again."
 }

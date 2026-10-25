@@ -50,3 +50,17 @@ CREATE INDEX IF NOT EXISTS crashes_last ON crashes (last);
 CREATE TABLE IF NOT EXISTS crash_ids (sig TEXT NOT NULL, v TEXT NOT NULL, h TEXT NOT NULL, PRIMARY KEY (sig, v, h)) WITHOUT ROWID;
 -- a hashed id may send at most 20 crashes a day; old days are deleted by the cron
 CREATE TABLE IF NOT EXISTS crash_day (h TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (h, day)) WITHOUT ROWID;
+
+-- Support (src/support.js): what a TV sent when its owner pressed "Send to support", under an 8-digit code read out to the
+-- project's owner; key = sha256 of the TV's key for that code (hashId). live = until when (ms) the TV lets the owner GET its /api.
+CREATE TABLE IF NOT EXISTS support (
+  code TEXT PRIMARY KEY, key TEXT NOT NULL, h TEXT NOT NULL, app TEXT, v TEXT, model TEXT, report TEXT,
+  made INTEGER NOT NULL, live INTEGER NOT NULL DEFAULT 0, seen INTEGER NOT NULL
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS support_h ON support (h, made);
+-- The owner's questions to a live TV and its answers; deleted after a day by the cron.
+CREATE TABLE IF NOT EXISTS support_q (
+  code TEXT NOT NULL, id INTEGER NOT NULL, path TEXT NOT NULL, asked INTEGER NOT NULL, taken INTEGER NOT NULL DEFAULT 0,
+  status INTEGER, body TEXT, answered INTEGER,
+  PRIMARY KEY (code, id)
+) WITHOUT ROWID;

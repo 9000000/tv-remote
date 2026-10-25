@@ -1,5 +1,6 @@
 // tvr-census: an anonymous count of which TVs the apps ran on. Stores no IP, no headers, no user agent;
 // the install id is kept only as the first 8 bytes of its sha256. See ../README.md.
+import { support, prune } from "./support.js";
 import { MAX_BODY, validate, hashId, today, aggregate, series, MAX_CRASH, CRASH_PER_DAY, CRASH_ROWS, CRASH_IDS, validateCrash, crashSig, sameSecret } from "./logic.js";
 
 const CORS = { "access-control-allow-origin": "*" };
@@ -95,6 +96,7 @@ export default {
   async scheduled(_event, env, ctx) {
     ctx.waitUntil(refresh(env));
     ctx.waitUntil(env.DB.prepare("DELETE FROM crash_day WHERE day < ?1").bind(today()).run());
+    ctx.waitUntil(prune(env));
   },
 
   async fetch(req, env) {
@@ -120,6 +122,8 @@ export default {
 
     if (url.pathname === "/v1/crash" && req.method === "POST") return crash(req, env);
     if (url.pathname === "/v1/crashes" && (req.method === "GET" || req.method === "DELETE")) return crashes(req, env, url);
+
+    if (url.pathname === "/v1/support" || url.pathname.startsWith("/v1/support/")) return support(req, env, url, json);
 
     if (url.pathname === "/v1/tvs" && req.method === "GET") {
       const cache = caches.default, key = new Request(url.origin + "/v1/tvs");
