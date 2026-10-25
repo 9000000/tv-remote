@@ -62,7 +62,7 @@ class SceneService : Service() {
                 }
             } catch (e: Exception) { e.message }
             ui.post {
-                if (said != null && !(said.startsWith("✓") && scene == null)) Toast.makeText(this, said, Toast.LENGTH_SHORT).show()   // keys say nothing when they worked
+                if (said != null && !(said.startsWith("✓") && scene == null)) Toast.makeText(this, dev.tvremote.tvui.Marks.plain(said), Toast.LENGTH_SHORT).show()   // keys say nothing when they worked
                 busy = false
                 stopSelf()
             }

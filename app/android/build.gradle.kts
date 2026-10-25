@@ -46,7 +46,7 @@ android {
     lint { checkReleaseBuilds = false }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
-    sourceSets["main"].java.srcDirs("../shared/conscrypt", "../shared/src/selfupdate/kotlin")             // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt); SelfUpdate.stage: the shared download + install session
+    sourceSets["main"].java.srcDirs("../shared/conscrypt", "../shared/src/selfupdate/kotlin", "../shared/src/marks/kotlin")             // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt); SelfUpdate.stage: the shared download + install session
 }
 
 dependencies {

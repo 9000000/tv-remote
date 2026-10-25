@@ -29,8 +29,9 @@ internal fun MainActivity.toggleListen() {
 internal fun MainActivity.listenMenu() {
     val share = prefs.getBoolean("listenShare", false)
     val menu = android.widget.PopupMenu(this, listenChip)
-    menu.menu.add(0, 0, 0, T("listen.only_the_phone") + (if (!share) "  ✓" else "")).icon = listenArt(false)
-    menu.menu.add(0, 1, 1, T("listen.tv_and_phone") + (if (share) "  ✓" else "")).icon = listenArt(true)
+    menu.menu.add(1, 0, 0, T("listen.only_the_phone")).also { it.icon = listenArt(false); it.isChecked = !share }
+    menu.menu.add(1, 1, 1, T("listen.tv_and_phone")).also { it.icon = listenArt(true); it.isChecked = share }
+    menu.menu.setGroupCheckable(1, true, true)                    // the system draws the chosen one's mark, not a ✓ in the words
     if (android.os.Build.VERSION.SDK_INT >= 29) menu.setForceShowIcon(true)
     menu.setOnMenuItemClickListener { item ->
         if ((item.itemId == 1) != share) { prefs.edit().putBoolean("listenShare", item.itemId == 1).apply(); soundChanged() }

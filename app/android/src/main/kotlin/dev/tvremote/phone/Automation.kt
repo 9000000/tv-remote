@@ -21,7 +21,7 @@ import java.util.Locale
 // phone's scenes (SceneStore), and sentences carried out here before the TV's Assistant is asked (Voice.kt). Bedtime, app
 // limits and editing scenes are on the Automation tab of the Manage screen.
 
-private fun MainActivity.toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+private fun MainActivity.toast(text: String) = Toast.makeText(this, dev.tvremote.tvui.Marks.plain(text), Toast.LENGTH_SHORT).show()   // a toast has no icons: no marks
 
 /** The TV's clock to this phone's: "23:10" for the moment the timer ends. */
 private fun hm(tvTime: Long, tvNow: Long): String = SimpleDateFormat("HH:mm", Locale.US).format(Date(tvTime - (tvNow - System.currentTimeMillis())))
@@ -112,7 +112,7 @@ internal fun MainActivity.runScene(sc: JSONObject) {
         val failed = Scenes.run(steps, target)
         ui.post {
             if (isFinishing || (failed != null && offerSetup(java.io.IOException(failed)))) return@post   // e.g. its timer needs a newer TV Setup
-            toast(if (failed == null) "✓ " + sc.optString("name") else T("automation.some_steps_did_not", "steps" to failed))
+            toast(if (failed == null) T("auto.done", "name" to sc.optString("name")) else T("automation.some_steps_did_not", "steps" to failed))
         }
     }.start()
 }

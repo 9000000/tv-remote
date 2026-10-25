@@ -383,22 +383,27 @@ class LibraryActivity : ComponentActivity() {
             }
         }
         searchBox = f
-        var rb: TextView? = null                                      // an icon alone: it turns while the site is asked
-        rb = pill("", 15f, lead = R.drawable.ic_refresh, animate = { animOn }, focused = ::centreFocused) { rb?.let { refreshNow(it) } }.apply { contentDescription = getString(R.string.refresh_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
-        addView(rb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
-        var cb: TextView? = null                                      // 4, 5 or 6 games a row: smaller tiles, more of them on the screen
-        cb = pill(cols.toString(), 15f, lead = R.drawable.ic_grid, animate = { animOn }, focused = ::centreFocused) {
-            cols = if (cols >= 6) 4 else cols + 1
-            getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
-            cb?.let { it.pillText(cols.toString()); it.contentDescription = getString(R.string.cols_pill, cols) }
-            tileCache.clear()                                          // kept tiles outside the rows would keep the old size
-            resizeTiles()                                              // the same views, a new size: no rebuild, no picture work (it took ~0.7 s on the test box)
-        }.apply { contentDescription = getString(R.string.cols_pill, cols) }
-        addView(cb, LinearLayout.LayoutParams(-2, dp(40)).apply { marginEnd = dp(12) })
-        val gb = pill("", 15f, lead = R.drawable.ic_globe, animate = { animOn }, focused = ::centreFocused) { languages() }.apply { contentDescription = getString(R.string.lang_pill); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
-        addView(gb, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
-        if (refocusLang) { refocusLang = false; gb.post { gb.requestFocus() } }   // after the rebuild in the new language the focus is back on the globe
+        var gear: TextView? = null                                    // refresh, tiles a row, language, new folder: one button, not four (they are rarely used)
+        gear = pill("", 15f, lead = R.drawable.ic_settings, animate = { animOn }, focused = ::centreFocused) { gear?.let { settings(it) } }.apply { contentDescription = getString(R.string.settings); setPadding(dp(11), 0, 0, 0); minWidth = 0; compoundDrawablePadding = 0 }
+        addView(gear, LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginEnd = dp(12) })
+        if (refocusLang) { refocusLang = false; gear.post { gear.requestFocus() } }   // after the rebuild in the new language the focus is back on the gear
         addView(f, LinearLayout.LayoutParams(dp(280), dp(40)))
+    }
+
+    /** The gear's sheet: refresh the list (the gear turns meanwhile), tiles a row (4, 5, 6), language, a new folder. */
+    private fun settings(gear: TextView, at: Int = 0) {
+        popup(getString(R.string.settings), listOf(
+            getString(R.string.refresh_pill) to { closeOverlay(); refreshNow(gear) },
+            getString(R.string.cols_pill, cols) to {
+                cols = if (cols >= 6) 4 else cols + 1
+                getSharedPreferences("games", MODE_PRIVATE).edit().putInt("cols", cols).apply()
+                tileCache.clear()                                      // kept tiles outside the rows would keep the old size
+                resizeTiles()                                          // the same views, a new size: no rebuild, no picture work (it took ~0.7 s on the test box)
+                settings(gear, 1)                                      // the sheet stays, showing the new number
+            },
+            getString(R.string.lang_pill) to { closeOverlay(); languages() },
+            getString(R.string.grp_new_item) to { closeOverlay(); newGroup() },
+        ), replace = overlay != null, focusIndex = at, icons = listOf(R.drawable.ic_refresh, R.drawable.ic_grid, R.drawable.ic_globe, R.drawable.ic_folder_plus))
     }
 
     /** The 🌐 sheet: follow the TV / Tiếng Việt / English, the current one ticked; a change builds the screen again in it. */
@@ -406,10 +411,10 @@ class LibraryActivity : ComponentActivity() {
         val now = Lang.pref(this)
         val names = mapOf("" to getString(R.string.lang_auto), "vi" to "Tiếng Việt", "en" to "English")
         popup(getString(R.string.lang_title), Lang.CHOICES.map { l ->
-            ((if (l == now) "✓  " else "     ") + names[l]) to {
+            names[l]!! to {
                 if (l != now) { Lang.set(this, l); refocusLang = true; recreate() } else closeOverlay()
             }
-        }, focusIndex = Lang.CHOICES.indexOf(now), icons = Lang.CHOICES.map { R.drawable.ic_globe })
+        }, focusIndex = Lang.CHOICES.indexOf(now), icons = Lang.CHOICES.map { if (it == now) R.drawable.ic_check else null })   // the chosen one carries the tick
     }
 
     private fun firstTile(): View? { val b = sections ?: return null; return findTile(b) }
@@ -553,10 +558,6 @@ class LibraryActivity : ComponentActivity() {
         addView(LinearLayout(context).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(dp(8), dp(14), 0, dp(8)); clipChildren = false
             addView(label(title, 22f, 0xFFAAB0C0.toInt()).apply { gravity = Gravity.START; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(560) })
-            if (add) {
-                addView(View(context), LinearLayout.LayoutParams(dp(16), 1))
-                addView(pill(getString(R.string.grp_new_pill), 15f, animate = { animOn }, focused = ::centreFocused) { newGroup() })
-            }
             if (group != null) {
                 val sp = { View(context).also { v -> v.layoutParams = LinearLayout.LayoutParams(dp(16), 1) } }
                 addView(sp())
@@ -617,9 +618,9 @@ class LibraryActivity : ComponentActivity() {
     private fun groupPicker(i: Item) {
         val sh = Shelf.get(this)
         val e = ArrayList<Pair<String, () -> Unit>>()
-        sh.groups.forEach { g -> e += ((if (sh.inGroup(g.id, i.id)) "✓  " else "     ") + g.name) to { Shelf.change(this) { it.toggleIn(g.id, i.id) }; closeOverlay(); renderSections() } }
+        sh.groups.forEach { g -> e += g.name to { Shelf.change(this) { it.toggleIn(g.id, i.id) }; closeOverlay(); renderSections() } }
         e += getString(R.string.grp_new_item) to { closeOverlay(); askName(getString(R.string.grp_new), sh.freeName(getString(R.string.grp_default))) { n -> val g = Shelf.newGroup(this, n); Shelf.change(this) { it.toggleIn(g.id, i.id) }; renderSections() } }
-        popup(getString(R.string.m_group), e, replace = true)
+        popup(getString(R.string.m_group), e, replace = true, icons = sh.groups.map { if (sh.inGroup(it.id, i.id)) R.drawable.ic_check else null } + R.drawable.ic_folder_plus)   // a tick on the groups it is in
     }
 
     private fun pinGame(i: Item) {
@@ -639,7 +640,7 @@ class LibraryActivity : ComponentActivity() {
     }
 
     /** A card over the library: a title and buttons; Back / Close leaves it ([dispatchKeyEvent]). */
-    private fun popup(title: String, entries: List<Pair<String, () -> Unit>>, replace: Boolean = false, extra: ((LinearLayout) -> Unit)? = null, focusIndex: Int = 0, icons: List<Int> = emptyList(), close: Boolean = true) {
+    private fun popup(title: String, entries: List<Pair<String, () -> Unit>>, replace: Boolean = false, extra: ((LinearLayout) -> Unit)? = null, focusIndex: Int = 0, icons: List<Int?> = emptyList(), close: Boolean = true) {
         if (replace) { overlay?.let { root.removeView(it) }; overlay = null } else lastFocus = currentFocus
         var first: View? = null
         val v = scrim(panel(title).apply {

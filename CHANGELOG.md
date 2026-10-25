@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Games: đầu màn chính gọn lại — Làm mới, số ô mỗi hàng, Ngôn ngữ và Nhóm mới gom vào một nút **Cài đặt** (bánh răng) cạnh ô tìm kiếm, thay cho 3 nút tròn và nút "＋ Nhóm".
+- TV Setup, TV Home, TV Games, TV Channels, app điện thoại: các ký hiệu chữ ✓ ✗ ✕ ⏻ ▶ ♪ ★ trên màn hình gốc đổi thành icon nét (không còn lệch cỡ hay ra ô vuông trên TV thiếu font).
 - Trang web (app máy tính, app điện thoại, web của TV): các ký hiệu chữ ✓ ✕ ✗ ⏻ ⚠ ★ đổi thành icon nét như các nút khác (ký hiệu chữ mỗi TV/máy vẽ một kiểu, TV cũ có khi không có); ngôi sao kênh yêu thích tô đầy khi bật.
 - TV Home → Bảng điều khiển nhanh: ô **Bluetooth** giờ mở đúng màn ghép nối phụ kiện của Android TV (trước đây trên FPT Play và các TV Android 12+ nó rơi về trang Cài đặt chính vì thiếu quyền “Thiết bị lân cận”). Quyền được cấp qua ADB khi cài TV Home; cài kiểu khác thì TV hỏi một lần.
 - TV Home, chủ đề: tệp `.tvtheme.json` giờ **kèm ảnh/video riêng** của chủ đề (hộp “Kèm ảnh/video”, hiện dung lượng; mỗi mục tối đa 60 MB); nhập lại thì tự gửi từng ảnh/video lên TV, có tiến độ và nút Hủy (hủy hoặc lỗi thì gỡ phần vừa thêm). Tệp cũ vẫn đọc được. Gửi chủ đề lên kho cộng đồng giờ mang **đủ các ảnh trong vòng xoay** (tối đa 10, tự nén ≤1920 px và ≤350 KB) thay vì chỉ một ảnh; video vẫn chưa gửi được. Thẻ chủ đề có nhãn “▶ Video”, “🖼 ×N”, “🖼 Trình chiếu” (trang web và trang Chủ đề của TV Home).
@@ -41,6 +43,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- TV Games: a tidier main screen header — Refresh, tiles per row, Language and New folder moved into one **Settings** (gear) button beside search, instead of three round buttons and a "＋ Folder" pill.
+- TV Setup, TV Home, TV Games, TV Channels, Phone app: the plain marks ✓ ✗ ✕ ⏻ ▶ ♪ ★ on native screens are line icons now (no odd sizes or empty boxes on TVs whose font lacks them).
 - The web page (Computer app, Phone app, the TV's page): the text marks ✓ ✕ ✗ ⏻ ⚠ ★ became line icons like the other buttons' (each TV or computer draws a text mark its own way, an old TV sometimes not at all); a favourite channel's star is filled.
 - TV Home → Quick settings: the **Bluetooth** tile opens Android TV's accessory pairing screen again (on FPT Play and other Android 12+ TVs it fell to the main Settings page for want of the "Nearby devices" permission). The permission is granted over ADB when TV Home is installed; installed another way, the TV asks once.
 - TV Home themes: a `.tvtheme.json` file can now **carry the theme's own photos and videos** (an “Include photos/videos” box showing the size; 60 MB per item); importing uploads each one to the TV with progress and a Cancel button (a cancel or an error removes what was just added). Old files still import. Sharing a theme to the community store now sends **every photo of the rotation** (max 10, each re-encoded to ≤1920 px and ≤350 KB) instead of one; videos still cannot be shared. Theme tiles show “▶ Video”, “🖼 ×N”, “🖼 Slideshow” tags (web page and TV Home's Themes page).

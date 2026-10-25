@@ -191,11 +191,15 @@ object PhotoScreen {
         }
         val note = Font.on(TextView(a)).apply { textSize = 12f; setTextColor(FAINT); gravity = Gravity.CENTER }
         lateinit var live: TextView; lateinit var shot: TextView; lateinit var every: TextView; lateinit var keep: TextView
+        fun tick(t: TextView, on: Boolean) {                         // the ✓ of the chosen chip, a line icon in the words' colour
+            val d = if (on) a.getDrawable(R.drawable.ic_check)!!.mutate().also { it.setTint(Color.WHITE); it.setBounds(0, 0, dp(16), dp(16)) } else null
+            t.setCompoundDrawablesRelative(d, null, null, null); t.compoundDrawablePadding = dp(6)
+        }
         fun paint() {
             val c = Store.get(a)
             val snap = c.optString("wmode") == "snap"
-            live.text = (if (snap) "" else "✓ ") + a.getString(R.string.pq_mode_live); live.background = look(!snap)
-            shot.text = (if (snap) "✓ " else "") + a.getString(R.string.pq_mode_snap); shot.background = look(snap)
+            live.text = a.getString(R.string.pq_mode_live); tick(live, !snap); live.background = look(!snap)
+            shot.text = a.getString(R.string.pq_mode_snap); tick(shot, snap); shot.background = look(snap)
             every.text = a.getString(R.string.pq_every, c.optInt("wsnap", HomeConfig.WSNAP_DEFAULT))
             keep.text = a.getString(if (c.optBoolean("wkeep")) R.string.pq_keep_on else R.string.pq_keep_off)
             every.visibility = if (snap) View.VISIBLE else View.INVISIBLE; keep.visibility = every.visibility   // kept in place: the panel does not grow under Close

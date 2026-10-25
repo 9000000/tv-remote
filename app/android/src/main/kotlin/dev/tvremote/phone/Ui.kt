@@ -128,6 +128,7 @@ internal fun Context.label(s: String, sp: Int, color: Int): TextView {
     v.text = s
     v.textSize = sp.toFloat()
     v.setTextColor(color)
+    if (s.any { dev.tvremote.tvui.Marks.SET.indexOf(it) >= 0 }) v.setMarked(s)     // a text mark in the words is drawn as an icon
     return v
 }
 
@@ -148,11 +149,21 @@ internal fun Context.note(s: String): TextView {
 /** A fill that takes white words and icons in both themes (the blue and the green are dark enough for it; BTN and CARD are not). */
 internal fun onFill(color: Int): Boolean = color == ACCENT || color == GREEN
 
+/** The line icon for a text mark (✓ ✗ ⚠ ▶ ...): a font may draw it at its own size and baseline, or not at all (app/DESIGN-TV.md §5). */
+internal fun markIcon(ch: Char): Int = when (ch) {
+    '✓', '✔' -> R.drawable.ic_check; '✗', '✕', '✖' -> R.drawable.ic_close; '⚠' -> R.drawable.ic_alert; '▶' -> R.drawable.ic_play
+    '⏻' -> R.drawable.ic_power; '⏹' -> R.drawable.ic_stop; '⏸' -> R.drawable.ic_pause; '♪' -> R.drawable.ic_music
+    '↻' -> R.drawable.ic_refresh; '↩' -> R.drawable.ic_undo; '★', '☆' -> R.drawable.ic_star; '⚙' -> R.drawable.ic_settings
+    '⬇' -> R.drawable.ic_download; '⌫' -> R.drawable.ic_backspace; else -> 0 }
+
+/** [s] with its text marks drawn as line icons (the icon follows the text colour); for words that come with a mark in them. */
+internal fun TextView.setMarked(s: CharSequence) { text = dev.tvremote.tvui.Marks.text(context, s, ::markIcon) }
+
 /** [s] as a button's or row's words; "@name|Words" puts the line icon ic_name (dev/gen/gen_icons.py, the one js/ui.js ICON gives that
  *  emoji) in front, in the text's colour. Anything else is plain text, and an icon left from before is dropped. */
 internal fun TextView.setLabel(s: String) {
     val art = if (s.startsWith("@") && '|' in s) s.substring(1, s.indexOf('|')) else null
-    text = if (art != null) s.substringAfter("|") else s
+    setMarked(if (art != null) s.substringAfter("|") else s)          // a mark inside the words (a trailing ✓) becomes an icon too
     val id = if (art != null) resources.getIdentifier("ic_$art", "drawable", context.packageName) else 0
     if (id == 0) { setCompoundDrawablesRelative(null, null, null, null); return }
     val d = resources.getDrawable(id, null).mutate()

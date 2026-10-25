@@ -1,6 +1,7 @@
 package dev.tvremote.setup
 
 import dev.tvremote.core.T
+import dev.tvremote.tvui.Marks
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
@@ -219,7 +220,8 @@ class PinActivity : Activity() {
     }
 
     private fun button(label: String, run: () -> Unit): Button = Button(this).apply {
-        text = label
+        text = Marks.text(this@PinActivity, label) { if (it == '✕') R.drawable.ic_close else if (it == '⌫') R.drawable.ic_backspace else 0 }   // ✕ ⌫ as line icons
+        if (label == "✕") contentDescription = T("common.close")
         isAllCaps = false
         textSize = 20f
         setTextColor(Color.WHITE)

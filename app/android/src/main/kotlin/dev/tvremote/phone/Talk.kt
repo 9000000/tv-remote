@@ -275,7 +275,7 @@ internal class Talk(private val a: MainActivity) {
             contentDescription = T("talk.mode_old"); setOnClickListener { a.setTalkMode("old"); close(); a.speak() }
         }, LinearLayout.LayoutParams(-2, a.dp(40)).apply { rightMargin = a.dp(8) })
         top.addView(TextView(a).apply {
-            text = "✕"; textSize = 20f; setTextColor(TEXT); gravity = Gravity.CENTER; background = a.box(BTN, 14)
+            setMarked("✕"); textSize = 20f; setTextColor(TEXT); gravity = Gravity.CENTER; background = a.box(BTN, 14)
             contentDescription = T("common.close"); setOnClickListener { close() }
         }, LinearLayout.LayoutParams(a.dp(48), a.dp(48)))
         c.addView(top, LinearLayout.LayoutParams(-1, -2))

@@ -2,6 +2,7 @@ package dev.tvremote.setup
 
 import android.app.Activity
 import dev.tvremote.core.T
+import dev.tvremote.tvui.Marks
 import dev.tvremote.tvui.TvUi
 import dev.tvremote.core.Words
 import android.graphics.Color
@@ -796,10 +797,8 @@ class MainActivity : Activity() {
             r.setPadding(dp(14), dp(10), dp(14), dp(10))
             r.isFocusable = true
             r.isClickable = true
-            val mark = TextView(this)
-            mark.gravity = Gravity.CENTER
-            mark.textSize = 16f
-            mark.typeface = Typeface.DEFAULT_BOLD
+            val mark = ImageView(this)                                  // the tick is a line icon, drawn only while ticked
+            mark.setPadding(dp(4), dp(4), dp(4), dp(4))
             r.addView(mark, LinearLayout.LayoutParams(dp(26), dp(26)))
             val w = LinearLayout(this)
             w.orientation = LinearLayout.VERTICAL
@@ -816,8 +815,8 @@ class MainActivity : Activity() {
             fun paint() {
                 val f = r.isFocused
                 r.background = if (f) box(ACCENT, 12, 2) else box(TILE, 12, 0)
-                mark.text = if (ticked[0]) "✓" else ""
-                mark.setTextColor(if (f) ACCENT else Color.WHITE)
+                mark.setImageResource(if (ticked[0]) R.drawable.ic_check else 0)
+                mark.imageTintList = android.content.res.ColorStateList.valueOf(if (f) ACCENT else Color.WHITE)
                 mark.background = if (ticked[0]) box(if (f) Color.WHITE else ACCENT, 7, 0) else GradientDrawable().apply { cornerRadius = dp(7).toFloat(); setStroke(dp(2), if (f) Color.WHITE else MUTED) }
                 st.setTextColor(if (f) Color.WHITE else MUTED)
             }
@@ -901,7 +900,7 @@ class MainActivity : Activity() {
                 have = pkgs.take()
                 home = now.take()
                 g0 = list.take()
-            } catch (e: Exception) { ui { log("✗ " + reason(e)); wait.second.text = "✗ " + reason(e); wait.third.visibility = View.GONE }; return@Thread }
+            } catch (e: Exception) { ui { log("✗ " + reason(e)); wait.second.text = marked("✗ " + reason(e)); wait.third.visibility = View.GONE }; return@Thread }
             g = dev.tvremote.core.ontv.Launchers.Gallery(g0.updated, g0.entries + installedLaunchers(g0), g0.base)
             ui { if (wait.first.isShowing) { showLaunchers(a, g, facts, have, home); wait.first.dismiss() } }   // closed while loading: nothing opens
         }.start()
@@ -1005,7 +1004,7 @@ class MainActivity : Activity() {
                         if (end != "kept") throw java.io.IOException("launcher:rolledback:" + (dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).state()?.why ?: "timeout"))
                     }
                     ui { log("✓ " + e.name); d.dismiss() }
-                } catch (x: Exception) { ui { running = false; status.text = "✗ " + why(x); log("✗ " + why(x)) } }
+                } catch (x: Exception) { ui { running = false; status.text = marked("✗ " + why(x)); log("✗ " + why(x)) } }
             }.start()
         }
         fun card(e: dev.tvremote.core.ontv.Launchers.Entry): View {
@@ -1068,7 +1067,7 @@ class MainActivity : Activity() {
         foot.setPadding(0, dp(16), 0, 0)
         val back = smallButton(T("launcher.back")) {
             if (running) return@smallButton
-            Thread { try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).rollback("user"); ui { log("✓ " + T("launcher.back")); d.dismiss() } } catch (x: Exception) { ui { status.text = "✗ " + reason(x) } } }.start()
+            Thread { try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).rollback("user"); ui { log("✓ " + T("launcher.back")); d.dismiss() } } catch (x: Exception) { ui { status.text = marked("✗ " + reason(x)) } } }.start()
         }
         val close = smallButton(T("common.close")) { if (running) stopped = true else d.dismiss() }
         foot.addView(back)
@@ -1158,8 +1157,8 @@ class MainActivity : Activity() {
         ui {
             if (!logUsed) { logUsed = true; logView.setText("", android.widget.TextView.BufferType.EDITABLE); logView.setTextColor(TvUi.TEXT) }
             // one colour per kind, read from the line's own mark before a font without it drops the mark: one look tells a failure from a step
-            val tint = kind ?: when (line.trimStart().firstOrNull()) { '✗', '❌' -> BAD; '⚠' -> WARN; '✓', '✅' -> OK; else -> null }
-            val row = android.text.SpannableString("$at  ${drawable(line)}\n")
+            val tint = kind ?: when (val m = Marks.lead(line)) { null -> line.trimStart().firstOrNull().let { if (it == '❌') BAD else if (it == '✅') OK else null }; '✗', '✕', '✖' -> BAD; '⚠' -> WARN; else -> OK.takeIf { m == '✓' || m == '✔' } }
+            val row = Marks.text(this, "$at  ${drawable(line)}\n", ::markIcon)   // the marks are drawn as line icons
             row.setSpan(android.text.style.ForegroundColorSpan(TvUi.DIM), 0, at.length, 0)   // the time stays quiet
             if (tint != null) row.setSpan(android.text.style.ForegroundColorSpan(tint), at.length, row.length, 0)
             val atEnd = scroll.scrollY + scroll.height >= logView.bottom + scroll.paddingBottom - dp(8)   // read before the append: a reader higher up is not yanked down
@@ -1173,14 +1172,22 @@ class MainActivity : Activity() {
         }
     }
 
-    /** [line] without the symbols this TV's font has no glyph for (✗ ✓ ⚠ came out as empty boxes on a Chinese Xiaomi): the words say it anyway. */
+    private fun marked(s: String) = Marks.text(this, s, ::markIcon)
+
+    private fun markIcon(ch: Char) = when (ch) {
+        '✓', '✔' -> R.drawable.ic_check; '✗', '✕', '✖' -> R.drawable.ic_close; '⚠' -> R.drawable.ic_alert; '▶' -> R.drawable.ic_play
+        '⏻' -> R.drawable.ic_power; '⏹' -> R.drawable.ic_stop; '⏸' -> R.drawable.ic_pause; '♪' -> R.drawable.ic_music
+        '↻' -> R.drawable.ic_refresh; '↩' -> R.drawable.ic_undo; '★', '☆' -> R.drawable.ic_star; '⚙' -> R.drawable.ic_settings
+        '⬇' -> R.drawable.ic_download; else -> 0 }
+
+    /** [line] without the symbols this TV's font has no glyph for (emoji; the plain marks ✗ ✓ ⚠ are icon spans, [Marks]): the words say it anyway. */
     private fun drawable(line: String): String {
         if (android.os.Build.VERSION.SDK_INT < 23) return line
         val p = logView.paint
         val sb = StringBuilder(); var i = 0
         while (i < line.length) {
             val n = Character.charCount(line.codePointAt(i)); val ch = line.substring(i, i + n)
-            if (line.codePointAt(i) < 0x2000 || p.hasGlyph(ch)) sb.append(ch) else if (i + n < line.length && line[i + n] == ' ') i++   // its space goes with it
+            if (line.codePointAt(i) < 0x2000 || Marks.isMark(line, i) || p.hasGlyph(ch)) sb.append(ch) else if (i + n < line.length && line[i + n] == ' ') i++   // its space goes with it
             i += n
         }
         return sb.toString()
@@ -1218,7 +1225,7 @@ class MainActivity : Activity() {
 
     private fun text(s: String, sp: Int, color: Int, bold: Boolean): TextView {
         val t = TextView(this)
-        t.text = s
+        t.text = marked(s)                                    // words from the i18n files may carry a mark
         t.textSize = sp.toFloat()
         t.setTextColor(color)
         if (bold) t.typeface = Typeface.DEFAULT_BOLD
@@ -1228,7 +1235,7 @@ class MainActivity : Activity() {
     /** The smaller buttons of the right-hand card; the focused one is unmistakable on a TV. */
     private fun smallButton(label: String, l: View.OnClickListener): Button {
         val b = Button(this)
-        b.text = label
+        b.text = marked(label)
         b.textSize = 13f
         b.isAllCaps = false
         b.setOnClickListener(l)

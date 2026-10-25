@@ -88,10 +88,9 @@
     <string name="f_players_2">2 players</string>
     <string name="f_players_34">3–4 players</string>
     <string name="genre_other">Other</string>
-    <string name="grp_new_pill">＋ Folder</string>
     <string name="grp_new">New folder</string>
     <string name="grp_default">Folder</string>
-    <string name="grp_new_item">＋ New folder…</string>
+    <string name="grp_new_item">New folder…</string>
     <string name="grp_rename">Rename</string>
     <string name="grp_delete">Delete</string>
     <string name="grp_delete_q">Delete the folder \"%1$s\"? The games stay.</string>
@@ -119,6 +118,7 @@
     <string name="pin_full">Dock is full (6): remove one item, then pin again</string>
     <string name="lang_title">Choose language</string>
     <string name="lang_auto">Follow the TV</string>
+    <string name="settings">Settings</string>
     <string name="lang_pill">Language</string>
     <string name="refresh_pill">Refresh</string>
     <string name="cols_pill">%d per row</string>

@@ -88,10 +88,9 @@
     <string name="f_players_2">2 người</string>
     <string name="f_players_34">3–4 người</string>
     <string name="genre_other">Khác</string>
-    <string name="grp_new_pill">＋ Nhóm</string>
     <string name="grp_new">Nhóm mới</string>
     <string name="grp_default">Nhóm</string>
-    <string name="grp_new_item">＋ Nhóm mới…</string>
+    <string name="grp_new_item">Nhóm mới…</string>
     <string name="grp_rename">Đổi tên</string>
     <string name="grp_delete">Xóa</string>
     <string name="grp_delete_q">Xóa nhóm \"%1$s\"? Game vẫn còn.</string>
@@ -119,6 +118,7 @@
     <string name="pin_full">Dock TV Home đã đầy (6) — bỏ bớt một mục rồi ghim lại</string>
     <string name="lang_title">Chọn ngôn ngữ</string>
     <string name="lang_auto">Theo TV</string>
+    <string name="settings">Cài đặt</string>
     <string name="lang_pill">Ngôn ngữ</string>
     <string name="refresh_pill">Làm mới</string>
     <string name="cols_pill">%d cột</string>

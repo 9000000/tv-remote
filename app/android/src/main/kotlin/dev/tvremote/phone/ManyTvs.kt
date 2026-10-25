@@ -40,7 +40,7 @@ private class Part(val ip: String, val line: TextView) {
 /** The TV could not be reached at all: said as is, not through Errors (whose "network is slow" would mislead here). */
 private class Unreachable(msg: String) : Exception(msg)
 
-private fun MainActivity.toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+private fun MainActivity.toast(text: String) = Toast.makeText(this, dev.tvremote.tvui.Marks.plain(text), Toast.LENGTH_SHORT).show()   // a toast has no icons: no marks
 
 /** Beside the heading of the saved TVs once there are two of them: small, in the accent colour, so it is seen without a whole row. */
 internal fun MainActivity.fleetButton(): android.widget.Button {
@@ -224,7 +224,7 @@ private fun MainActivity.launcherCards(g: dev.tvremote.core.ontv.Launchers.Galle
         top.addView(pic, LinearLayout.LayoutParams(dp(112), dp(63)))
         val words = col()
         words.addView(label(e.name, 16, TEXT).apply { typeface = android.graphics.Typeface.DEFAULT_BOLD })
-        words.addView(label(if (e.kind == "play") "▶ " + T("launcher.badge_play") else e.version, 12, ACCENT_TEXT), gap(2))
+        words.addView(label("", 12, ACCENT_TEXT).apply { setMarked(if (e.kind == "play") "▶ " + T("launcher.badge_play") else e.version) }, gap(2))
         top.addView(words, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
         card.addView(top)
         card.addView(label(e.desc(lang), 14, MUTED).apply { setLineSpacing(dp(2).toFloat(), 1f) }, gap(8))
@@ -539,14 +539,14 @@ private fun MainActivity.fleetRun(title: String, ips: List<String>, stoppable: B
         override fun run() {
             for (p in parts) {
                 val pct = p.job.optInt("pct", 0)
-                p.line.text = when {
+                p.line.setTextColor(when (p.state) { 1 -> OK_TEXT; 2 -> ERR_TEXT; else -> MUTED })
+                p.line.setMarked(when {
                     p.state != 0 -> p.step
                     p.link?.waitingForUser() == true -> T("many_tvs.the_tv_asks_allow")
                     pct in 1..89 -> T("many_tvs.copying_to_the_tv", "pct" to pct)
                     pct >= 90 -> T("many_tvs.installing")
                     else -> p.step
-                }
-                p.line.setTextColor(when (p.state) { 1 -> OK_TEXT; 2 -> ERR_TEXT; else -> MUTED })
+                })
             }
             if (parts.all { it.state != 0 }) {
                 val bad = parts.count { it.state == 2 }
