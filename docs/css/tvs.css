@@ -56,3 +56,4 @@
 .dc-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 0;color:var(--muted);font-size:13px}
 .dc-key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 .dc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tvp>.lead{max-width:none}
