@@ -19,6 +19,7 @@ object Games {
 
     @Throws(IOException::class)
     fun state(sh: (String) -> String): JSONObject = app.state(sh)
+    fun refresh() = app.refresh()
 
     @Throws(IOException::class)
     fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject = app.install(adb, dir, lang, go)

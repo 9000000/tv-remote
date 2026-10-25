@@ -168,6 +168,16 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             return JSONObject().put("on", p.getString("census.on", null) != "0").put("id", p.getString("census.id", null)?.takeIf { it.length == 36 } ?: "")
         }
 
+        /**
+         * What the apps ask before showing their own Update popup (HomeInfo "updates"): {silent: true} when [AutoUpdate] is on and the
+         * service holds an ADB link (or is dialling it), so it installs their updates itself within hours. Not asking the link to
+         * dial: "closed" / "unauthorized" is a TV where it cannot.
+         */
+        fun updatesState(c: Context): JSONObject {
+            val st = try { running?.link?.state() } catch (e: Exception) { null }
+            return JSONObject().put("silent", AutoUpdate.on(c) && (st == "ready" || st == "unknown"))
+        }
+
         fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
 
         /** The service runs for the web remote, and also, with the web remote off, while timers or limits need watching. */

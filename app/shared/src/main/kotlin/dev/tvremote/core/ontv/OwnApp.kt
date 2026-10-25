@@ -42,6 +42,9 @@ class OwnApp(val pkg: String, val apk: String, private val versionKey: String, p
 
     fun latest(version: String): Release? = look(version).release
 
+    /** Forget what GitHub said, so the next [state] asks again (TV Setup's own timer, which wants the news within hours, not 6). */
+    fun refresh() { seen = null }
+
     /** Installs it, or puts the newer one over it (its own data stays). [go] false once downloaded: not now (it was opened meanwhile). */
     @Throws(IOException::class)
     fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject {

@@ -1,5 +1,7 @@
 package dev.tvremote.setup
 
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +13,7 @@ import dev.tvremote.core.ontv.Home
 import dev.tvremote.core.ontv.SetupUpdate
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.update.Release
+import dev.tvremote.update.UpdatePlan
 import java.io.File
 
 /**
@@ -20,8 +23,9 @@ import java.io.File
  * The install is [SetupUpdate]'s: a new version that does not start well is replaced by the old one, data and all, and never
  * tried again. Android 9 and older cannot put the old one back: there a version that fails is only noted, and the phone or
  * computer app, which sees TV Setup missing or broken, offers to install the next one (SetupBanner).
- * It also updates TV Home, TV Channels and TV Games when they are on the TV ([ownApps]): those ask for themselves only since
- * they carry SelfUpdate, and a copy from before that never would.
+ * It also updates TV Home, TV Channels and TV Games when they are on the TV ([ownApps], every [UpdatePlan.CHECK], sooner when one
+ * had to wait): those carry SelfUpdate but leave a new release to this for [UpdatePlan.GRACE] when HomeInfo "updates" says it is
+ * on and has ADB, so their own Update popup is the exception; a copy from before SelfUpdate never asked at all.
  */
 internal class AutoUpdate(private val c: Context, private val version: String, private val adb: () -> Adb?, private val busy: () -> String?) {
     companion object {
@@ -61,15 +65,15 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
     private fun step(): Long {
         if (!on(c)) return 60 * MIN
         val now = System.currentTimeMillis()
-        if (now - appsAt >= 6 * 60 * MIN) adb()?.let { a -> appsAt = if (ownApps(a)) now else now - 5 * 60 * MIN }   // one had to wait: again in an hour
-        if (found == null && now - checkedAt < 6 * 60 * MIN) return 60 * MIN
-        if (now - checkedAt >= 6 * 60 * MIN) {
+        if (now - appsAt >= UpdatePlan.CHECK) adb()?.let { a -> appsAt = if (ownApps(a)) now else now - UpdatePlan.CHECK + UpdatePlan.RETRY }   // one had to wait: again soon
+        if (found == null && now - checkedAt < UpdatePlan.CHECK) return 20 * MIN
+        if (now - checkedAt >= UpdatePlan.CHECK) {
             checkedAt = now
             val r = Release.newer(version, "tv", "tv-setup.apk")
             if (r?.version != found?.version) apk = null
             found = r
         }
-        val r = found ?: return 60 * MIN
+        val r = found ?: return 20 * MIN
         val a = adb() ?: return 10 * MIN
         val s = SetupUpdate.state(a)
         if (SetupUpdate.bad(s, r.version)) return 6 * 60 * MIN        // it broke here once: wait for the next version
@@ -92,25 +96,49 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
 
     /**
      * TV Home, TV Channels and TV Games put up to date when installed and a newer one is out (each checked against the signed
-     * SHA256SUMS, their data kept). An install closes the app: TV Channels and TV Games only while the TV is in standby (one
-     * checked as not on the screen was opened during the push and install and closed under the person), asked again once
-     * downloaded. TV Home waits for an app to be opened or the TV to sleep. False when one had to wait.
+     * SHA256SUMS, their data kept), so that they rarely need to ask for themselves (SelfUpdate waits for this, UpdatePlan.quiet).
+     * An install closes the app, so it goes in only when nobody is in it ([UpdatePlan.mayInstall]): in standby anything, awake TV
+     * Home when it is not on top, TV Channels / TV Games when not on top and not in front within the last 30 minutes either
+     * (one checked as not on the screen was opened during the push and install and closed under the person: so the file is
+     * downloaded first and the check made again right before the install, [free]). Awake installs also wait for [busy] (the remote
+     * or a session in use). False when one had to wait.
      */
     private fun ownApps(a: Adb): Boolean {
         val sh: (String) -> String = { a.shell(it) }
         var waited = false
-        fun free(pkg: String, asleep: Boolean = false): Boolean {
-            if (!sh("dumpsys power | grep -m1 mWakefulness=").contains("Awake")) return true
-            if (asleep) { waited = true; return false }
-            val top = sh("dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'")
-            return (!top.contains("$pkg/")).also { if (!it) waited = true }
+        fun top(pkg: String) = sh("dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'").contains("$pkg/")
+        fun free(pkg: String, careful: Boolean): Boolean {
+            val now = System.currentTimeMillis()
+            val awake = sh("dumpsys power | grep -m1 mWakefulness=").contains("Awake")
+            val ok = !awake || ((!careful || busy() == null) && UpdatePlan.mayInstall(true, top(pkg), if (careful) lastUsed(pkg, now) else null, now, careful))
+            if (!ok) waited = true
+            return ok
         }
+        Channels.refresh(); Games.refresh()                           // asked again now, not from the 6 h the pages keep
         for ((pkg, state, install) in listOf(
             Triple(Channels.PKG, { Channels.state(sh) }, { Channels.install(a, dir, Words.lang) { free(Channels.PKG, true) } }),
             Triple(Games.PKG, { Games.state(sh) }, { Games.install(a, dir, Words.lang) { free(Games.PKG, true) } }))) {
-            try { val s = state(); if (s.optBoolean("installed") && s.has("latest") && free(pkg, true)) install() } catch (e: Exception) { }   // next time
+            try {
+                val s = state()
+                if (s.optBoolean("installed") && s.has("latest")) {
+                    if (top(pkg)) waited = true else install()        // on screen: no download wasted; install() asks free() again once it has the file
+                }
+            } catch (e: Exception) { android.util.Log.w("AutoUpdate", pkg, e) }   // next time
         }
-        try { if (free(HomeConfig.PKG)) Home.update(a, dir, Words.lang) { free(HomeConfig.PKG) } } catch (e: Exception) { }   // not on this TV ("home:missing"), offline: next time
+        try { if (free(HomeConfig.PKG, false)) Home.update(a, dir, Words.lang) { free(HomeConfig.PKG, false) } } catch (e: Exception) { }   // not on this TV ("home:missing"), offline: next time
         return !waited
     }
+
+    /** The last time [pkg] came to or left the front within a day, or null when the usage log is empty (no usage access: nothing to go by). Events only; cheap. */
+    private fun lastUsed(pkg: String, now: Long): Long? = try {
+        val ev = (c.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 86_400_000L, now)
+        val e = UsageEvents.Event()
+        var any = false
+        var last = 0L
+        while (ev.hasNextEvent()) {
+            ev.getNextEvent(e); any = true
+            if (e.packageName == pkg && (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND || e.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND)) last = e.timeStamp
+        }
+        if (any) last else null                                       // 0: not seen today, long ago enough
+    } catch (e: Exception) { null }
 }

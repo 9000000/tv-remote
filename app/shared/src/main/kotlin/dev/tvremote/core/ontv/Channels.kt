@@ -22,6 +22,7 @@ object Channels {
 
     @Throws(IOException::class)
     fun state(sh: (String) -> String): JSONObject = app.state(sh)
+    fun refresh() = app.refresh()
 
     /** Installs it, or puts the newer one over it (favourites and groups stay): checked against the release's signed SHA256SUMS. */
     @Throws(IOException::class)
