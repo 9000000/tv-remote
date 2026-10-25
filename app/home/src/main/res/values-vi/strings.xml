@@ -536,14 +536,11 @@
     <string name="cc_title">Trung tâm điều khiển</string>
     <string name="cc_android">Android TV %1$s</string>
     <string name="cc_open_settings">Mở cài đặt</string>
+    <string name="cc_customize_sub">Hình nền, app, widget</string>
     <string name="cc_net">Mạng</string>
     <string name="cc_net_wifi">Wi-Fi · %1$s</string>
     <string name="cc_net_eth">Cáp mạng · %1$s</string>
     <string name="cc_net_none">Chưa có mạng</string>
-    <string name="cc_clock">Đồng hồ</string>
-    <string name="cc_clock_24">24 giờ</string>
-    <string name="cc_clock_12">12 giờ</string>
-    <string name="cc_motion">Hiệu ứng chuyển động</string>
     <string name="cc_on">Bật</string>
     <string name="cc_off">Tắt</string>
     <string name="cc_kids">Khoá trẻ em</string>
@@ -559,5 +556,4 @@
     <string name="cc_working">Đang dọn…</string>
     <string name="cc_footer">CPU %1$s · RAM %2$s</string>
     <string name="cc_footer_ram">RAM %1$s</string>
-    <string name="cc_bluetooth">Bluetooth</string>
 </resources>

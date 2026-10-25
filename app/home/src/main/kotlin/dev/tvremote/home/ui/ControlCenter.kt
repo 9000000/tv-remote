@@ -42,8 +42,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * The Control Center (Trung tâm điều khiển): one glass panel under the top bar with the TV's everyday switches, after webOS's. Large tiles
  * (icon, name, one line of state), a row of round buttons (power off, restart, screen off, clear RAM) and a footer with CPU and RAM,
- * read every [TICK_MS] only while it is open. What TV Home does itself (the clock, motion, the network line, the settings screens) is done
- * here; the sleep timer, kids mode, the power buttons and the CPU go through TV Setup's HomeInfo (it answers only TV Home): named words, never a
+ * read every [TICK_MS] only while it is open. It is the top bar's settings button: only what people use often is here (the owner,
+ * 2026-10-25: a 24-hour clock or the sound screen is set once in a TV's life), the rest stays in TV settings and Customize. TV Home does the
+ * network line and the settings screens itself; the sleep timer, kids mode, the power buttons and the CPU go through TV Setup's HomeInfo (it answers only TV Home): named words, never a
  * command line from here. Without TV Setup, or an old one, those say "Needs TV Setup" greyed. No brightness slider: measured on a real box,
  * the system brightness does nothing on TVs.
  */
@@ -60,8 +61,6 @@ object ControlCenter {
     private const val CC_BOTTOM = 0xFF181A20.toInt()
     private const val CC_EDGE = 0x40FFFFFF
     private val SLEEP_STEPS = intArrayOf(30, 60, 90, 120)             // minutes: HomeControl.SLEEP on TV Setup's side
-    private val PICTURE = listOf(Settings.ACTION_DISPLAY_SETTINGS)   // vendors' own picture screens: none found on the stock images, add them here as they turn up (an unresolved one is skipped)
-    private val SOUND = listOf(Settings.ACTION_SOUND_SETTINGS)
 
     private val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(INK, Color.WHITE))
     private val subTint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(INK_DIM, DIM))
@@ -123,10 +122,10 @@ object ControlCenter {
         }
     }
 
-    /** Opens the panel over [anchor] (the top bar's capsule), its right edge on the anchor's. [open] starts a settings action, [inputs] is the Inputs pill's list. */
-    fun show(a: Activity, anchor: View, open: (String) -> Unit, inputs: () -> Unit): Dialog = Panel(a, anchor, open, inputs).dialog
+    /** Opens the panel over [anchor] (the top bar's capsule), its right edge on the anchor's. [open] starts a settings action, [inputs] is the Inputs pill's list, [customize] TV Home's own settings. */
+    fun show(a: Activity, anchor: View, open: (String) -> Unit, inputs: () -> Unit, customize: () -> Unit): Dialog = Panel(a, anchor, open, inputs, customize).dialog
 
-    private class Panel(val a: Activity, val anchor: View, val open: (String) -> Unit, val inputs: () -> Unit) {
+    private class Panel(val a: Activity, val anchor: View, val open: (String) -> Unit, val inputs: () -> Unit, val customize: () -> Unit) {
         private val d = a.resources.displayMetrics.density
         private fun dp(v: Number) = (v.toFloat() * d).toInt()
         private val dm = a.resources.displayMetrics
@@ -140,7 +139,7 @@ object ControlCenter {
         private var hold = 0L                                         // a message in the footer (confirm, clearing) keeps its place until then
         private var footText = ""
         private var armed: Round? = null
-        private lateinit var net: CcTile; private lateinit var clock: CcTile; private lateinit var motion: CcTile
+        private lateinit var net: CcTile
         private lateinit var kids: CcTile; private lateinit var sleep: CcTile
 
         private fun toast(id: Int) = Toast.makeText(a, id, Toast.LENGTH_SHORT).show()
@@ -176,12 +175,6 @@ object ControlCenter {
             }, "home-cc-control").apply { isDaemon = true }.start()
         }
 
-        private fun paintOwn() {
-            val c = Store.get(a)
-            clock.state(a.getString(if (c.optBoolean("clock24", true)) R.string.cc_clock_24 else R.string.cc_clock_12))
-            motion.state(a.getString(if (c.optBoolean("anim", true)) R.string.cc_on else R.string.cc_off))
-        }
-
         private fun paintNet(n: Pair<Int, String>) { net.icon(if (n.first == 2) R.drawable.ic_router else R.drawable.ic_wifi); net.state(when (n.first) {
             2 -> a.getString(R.string.cc_net_eth, n.second); 1 -> a.getString(R.string.cc_net_wifi, n.second); else -> a.getString(R.string.cc_net_none) }) }
 
@@ -204,7 +197,7 @@ object ControlCenter {
                     val c = ask("control", null)
                     a.runOnUiThread {
                         if (!dialog.isShowing) return@runOnUiThread
-                        paintNet(n); ctl = c; paintCtl(); paintOwn()
+                        paintNet(n); ctl = c; paintCtl()
                         val ram = mem?.let { String.format(Locale.US, "%.1f/%.1f GB", it.first / 1e9, it.second / 1e9) }
                         footText = if (ram == null) "" else if (cpu != null) a.getString(R.string.cc_footer, "${Math.round(cpu * 100)}%", ram)
                             else if (hasSetup()) a.getString(R.string.cc_footer, "…", ram) else a.getString(R.string.cc_footer_ram, ram)
@@ -231,22 +224,18 @@ object ControlCenter {
             })
 
             net = tile(R.drawable.ic_wifi, R.string.cc_net) { go(listOf(Settings.ACTION_WIFI_SETTINGS, Settings.ACTION_SETTINGS)) }
-            tile(R.drawable.ic_settings, R.string.tv_settings) { go(listOf(Settings.ACTION_SETTINGS)) }.state(a.getString(R.string.cc_open_settings))
-            if (PICTURE.any(::resolves)) tile(R.drawable.ic_monitor, R.string.picture) { go(PICTURE) }.state(a.getString(R.string.cc_open_settings))
-            if (SOUND.any(::resolves)) tile(R.drawable.ic_vol_up, R.string.sound) { go(SOUND) }.state(a.getString(R.string.cc_open_settings))
-            clock = tile(R.drawable.ic_clock, R.string.cc_clock) { Store.change(a, JSONObject().put("clock24", !Store.get(a).optBoolean("clock24", true))); paintOwn() }
-            motion = tile(R.drawable.ic_sparkle, R.string.cc_motion) { Store.change(a, JSONObject().put("anim", !Store.get(a).optBoolean("anim", true))); paintOwn() }
             tile(R.drawable.ic_input, R.string.inputs) { dialog.dismiss(); inputs() }.state("HDMI · AV")
-            kids = tile(R.drawable.ic_lock, R.string.cc_kids) {
-                val c = ctl
-                if (c != null) { if (c.optBoolean("kids")) toast(R.string.cc_kids_unlock) else if (!c.optBoolean("pin")) toast(R.string.cc_kids_nopin) else control("kids:on") }
-            }
             sleep = tile(R.drawable.ic_timer, R.string.cc_sleep) {
                 val left = ((ctl?.optLong("sleep_at") ?: 0L) - System.currentTimeMillis()).coerceAtLeast(0).let { (it + 59_999) / 60_000L }   // rounded up, as the tile says it: 29.9 is "30 left", the next step is 60
                 control("sleep:" + (if (left <= 0) SLEEP_STEPS.first() else SLEEP_STEPS.firstOrNull { it > left } ?: 0))   // off -> 30 -> 60 -> 90 -> 120 -> off
             }
-            if (resolves(Settings.ACTION_BLUETOOTH_SETTINGS)) tile(R.drawable.ic_bluetooth, R.string.cc_bluetooth) { go(listOf(Settings.ACTION_BLUETOOTH_SETTINGS)) }.state(a.getString(R.string.cc_open_settings))
-            paintOwn(); paintCtl(); paintNet(network(a))
+            kids = tile(R.drawable.ic_lock, R.string.cc_kids) {
+                val c = ctl
+                if (c != null) { if (c.optBoolean("kids")) toast(R.string.cc_kids_unlock) else if (!c.optBoolean("pin")) toast(R.string.cc_kids_nopin) else control("kids:on") }
+            }
+            tile(R.drawable.ic_settings, R.string.tv_settings) { go(listOf(Settings.ACTION_SETTINGS)) }.state(a.getString(R.string.cc_open_settings))
+            tile(R.drawable.ic_sliders, R.string.customize) { dialog.dismiss(); customize() }.state(a.getString(R.string.cc_customize_sub))
+            paintCtl(); paintNet(network(a))
 
             val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
             for (i in tiles.indices step 2) {

@@ -86,7 +86,7 @@ import dev.tvremote.home.widgets.Widgets
 import dev.tvremote.home.ui.Zoom
 
 /**
- * The home screen: the clock, three round buttons in one capsule (inputs, network, settings), and ONE grid of apps: the favourites
+ * The home screen: the clock, round buttons in one capsule (inputs, network, settings = the Control Center, power), and ONE grid of apps: the favourites
  * first, then every other app.
  * Plain views, built in code: it has to come up at once on the weakest TV chip. What it shows is set in [Store], from here
  * (hold OK on an app) or from the phone / computer (HomeReceiver).
@@ -103,7 +103,6 @@ class HomeActivity : Activity() {
     private lateinit var netPill: BarBtn
     private lateinit var inputsPill: BarBtn
     private lateinit var settingsPill: BarBtn
-    private lateinit var controlPill: BarBtn
     private lateinit var powerPill: BarBtn
     private lateinit var bar: TopBar
     private lateinit var grid: LinearLayout                         // the favourites first, then every other app, then the hidden apps' tile: one grid
@@ -217,18 +216,9 @@ class HomeActivity : Activity() {
         bar = TopBar(this, ::dp)
         inputsPill = BarBtn(this, R.drawable.ic_input, getString(R.string.inputs), ::dp) { inputs() }
         netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
-        // one button for both settings, the TV's and TV Home's: two buttons side by side read as the same thing
+        // one button for the TV's settings, TV Home's and the everyday switches: the Control Center (ui/ControlCenter.kt); a second button beside it read as the same thing
         settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.settings), ::dp) {
-            open = Drop.show(this, bar.capsule, listOf(
-                Drop.Row(R.drawable.ic_settings, getString(R.string.tv_settings)) { open(Settings.ACTION_SETTINGS) }) +
-                listOf(Settings.ACTION_DISPLAY_SETTINGS to (R.drawable.ic_monitor to R.string.picture), Settings.ACTION_SOUND_SETTINGS to (R.drawable.ic_vol_up to R.string.sound))
-                    .filter { Intent(it.first).resolveActivity(packageManager) != null }          // a TV without that screen shows no dead row
-                    .map { (act, v) -> Drop.Row(v.first, getString(v.second)) { open(act) } } + listOf(
-                Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
-        }
-        // the Control Center: the TV's everyday switches in one glass panel (ui/ControlCenter.kt)
-        controlPill = BarBtn(this, R.drawable.ic_control, getString(R.string.cc_title), ::dp) {
-            open = dev.tvremote.home.ui.ControlCenter.show(this, bar.capsule, { open(it) }, { inputs() })
+            open = dev.tvremote.home.ui.ControlCenter.show(this, bar.capsule, { open(it) }, { inputs() }, { customize() })
         }
         // for a remote whose own power button is broken: three named actions TV Setup runs (Power.kt), the hard one asks again
         powerPill = BarBtn(this, R.drawable.ic_power, getString(R.string.power), ::dp) {
@@ -242,14 +232,13 @@ class HomeActivity : Activity() {
                         Drop.Row(R.drawable.ic_power, getString(R.string.power_off_now)) { Power.run(this, Power.POWER_OFF) }))
                 }))
         }
-        for (b in listOf(inputsPill, netPill, settingsPill, controlPill, powerPill)) bar.add(b)
+        for (b in listOf(inputsPill, netPill, settingsPill, powerPill)) bar.add(b)
         for (b in bar.buttons) b.setOnKeyListener { _, code, e ->
             code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
         inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
-        settingsPill.id = View.generateViewId(); controlPill.id = View.generateViewId(); powerPill.id = View.generateViewId()
-        settingsPill.nextFocusRightId = controlPill.id
+        settingsPill.id = View.generateViewId(); powerPill.id = View.generateViewId()
         powerPill.nextFocusRightId = powerPill.id
         bar.focusIn = { scrollToY(0) }
         head.addView(bar)
@@ -1201,7 +1190,7 @@ class HomeActivity : Activity() {
     private fun powerBar() {
         val on = conf.optBoolean("power", true)
         powerPill.visibility = if (on) View.VISIBLE else View.GONE
-        controlPill.nextFocusRightId = if (on) powerPill.id else controlPill.id   // the row's right end stays put, whichever button it is
+        settingsPill.nextFocusRightId = if (on) powerPill.id else settingsPill.id
         bar.requestLayout()
     }
 

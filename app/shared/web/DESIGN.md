@@ -193,6 +193,9 @@ hue; in `button`, `label.filebtn`, `a.linkbtn` the button's colour. An icon-only
 - Kotlin uses the same files (`core/Words.kt`); server errors arrive already in the page's language; English from a library
   gets a line in `FRIENDLY` (`js/core.js`).
 - Labels short; English is the longest: check 400 px in English.
+- **Words: short.** A note under a field or in a dialog is one or two short sentences (about 15 words), never a paragraph that
+  explains how it works: say what the person must know, leave the rest to the guide. No entry over 25 words
+  (`tests/short_words.test.js`; `tests/long_words.json` lists the old ones and only shrinks). The same in TV apps' strings.
 
 ## 6. Cores, capabilities, the remote
 
