@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Home: mọi thẻ trừ đồng hồ (lịch, dùng nhiều, hẹn giờ, thị trường, tin tức, thẻ QR) có thêm kiểu "tonal" (thẻ ấm, một đường vẽ chung với thời tiết/hệ thống/âm lịch/không khí), chọn trong ⚙ của thẻ ở mọi app. Giao diện Tết: lịch âm + lịch tháng cùng tonal; giao diện Buổi sáng: đồng hồ sáng cho cùng một họ.
+- TV Home: trình đọc tin cắt phần tóm tắt theo dòng nguyên, dòng cuối kết thúc bằng "…" (trước đây hở nửa dòng ở mép); tên thẻ trong dải ⚙ của web không còn bị gạch ngang
 
 **English**
 - TV Home: every card except the clock (calendar, most used, timer, market, news, QR cards) now has the "tonal" look (warm card, one shared drawing path with weather / system / lunar / air), chosen in the card's ⚙ on every client. Tết theme: lunar + calendar both tonal; Morning theme: light clock to match the tonal family.
+- TV Home: the news reader cuts the summary at whole lines, the last ending in "…" (no half line at the edge); card names in the web ⚙ strip are no longer struck through
 
 ## 0.22.1 - 2026-10-25
 

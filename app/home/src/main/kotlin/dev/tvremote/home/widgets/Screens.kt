@@ -120,8 +120,13 @@ class NewsActivity : Activity() {
         who.addView(label("${i + 1} / ${items.size}", 14f, DIMC))
         col.addView(who)
         col.addView(label(it.title, 28f, Color.WHITE, true).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END; setPadding(0, dpx(14), 0, dpx(8)) })
-        val sum = ScrollView(this).apply { isFocusable = false; isVerticalScrollBarEnabled = false }
-        sum.addView(label(it.summary.ifEmpty { it.link }, 19f, BODY).apply { setLineSpacing(0f, 1.12f) })
+        val sum = android.widget.FrameLayout(this)
+        val body = label(it.summary.ifEmpty { it.link }, 19f, BODY).apply { setLineSpacing(0f, 1.12f); ellipsize = TextUtils.TruncateAt.END }
+        sum.addView(body)
+        sum.addOnLayoutChangeListener { _, _, t, _, b, _, _, _, _ ->      // whole lines only: the room is cut to a line count, the last one ends in "…" (a half line at the edge read as a fault)
+            val n = ((b - t) / body.lineHeight).coerceAtLeast(1)
+            if (body.maxLines != n) body.maxLines = n
+        }
         col.addView(sum, LinearLayout.LayoutParams(-1, 0, 1f))
         var first: View? = null
         val rest = (1..2).map { n -> (i + n) % items.size }.filter { n -> n != i }.distinct()
