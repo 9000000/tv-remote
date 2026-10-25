@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Channels: mỗi thể loại ở thanh bên (Tin tức, Thể thao, Thiếu nhi, Phim…) có icon riêng, nhìn lướt là thấy.
 - TV Games: đầu màn chính gọn lại — Làm mới, số ô mỗi hàng, Ngôn ngữ và Nhóm mới gom vào một nút **Cài đặt** (bánh răng) cạnh ô tìm kiếm, thay cho 3 nút tròn và nút "＋ Nhóm".
 - TV Setup, TV Home, TV Games, TV Channels, app điện thoại: các ký hiệu chữ ✓ ✗ ✕ ⏻ ▶ ♪ ★ trên màn hình gốc đổi thành icon nét (không còn lệch cỡ hay ra ô vuông trên TV thiếu font).
 - Trang web (app máy tính, app điện thoại, web của TV): các ký hiệu chữ ✓ ✕ ✗ ⏻ ⚠ ★ đổi thành icon nét như các nút khác (ký hiệu chữ mỗi TV/máy vẽ một kiểu, TV cũ có khi không có); ngôi sao kênh yêu thích tô đầy khi bật.
@@ -43,6 +44,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- TV Channels: each category in the side list (News, Sports, Kids, Movies…) has its own icon, found at a glance.
 - TV Games: a tidier main screen header — Refresh, tiles per row, Language and New folder moved into one **Settings** (gear) button beside search, instead of three round buttons and a "＋ Folder" pill.
 - TV Setup, TV Home, TV Games, TV Channels, Phone app: the plain marks ✓ ✗ ✕ ⏻ ▶ ♪ ★ on native screens are line icons now (no odd sizes or empty boxes on TVs whose font lacks them).
 - The web page (Computer app, Phone app, the TV's page): the text marks ✓ ✕ ✗ ⏻ ⚠ ★ became line icons like the other buttons' (each TV or computer draws a text mark its own way, an old TV sometimes not at all); a favourite channel's star is filled.

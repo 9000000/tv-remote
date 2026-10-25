@@ -323,7 +323,7 @@ class BrowseActivity : Activity() {
         if (all.isNotEmpty()) {
         add(TvUi.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL, ALL)
         all.groupingBy { it.first().group }.eachCount().entries.sortedByDescending { it.value }.forEach { (g, n) ->
-            add(TvUi.row(this, 0, groupName(g), "$n") { pick(g) }, group == g, g)
+            add(TvUi.row(this, groupIcon(g), groupName(g), "$n") { pick(g) }, group == g, g)
         }
         }
         if (hadFocus && at in 0 until rail.childCount) rail.getChildAt(at).requestFocus()   // a rebuilt list keeps the person's place
@@ -964,6 +964,18 @@ class BrowseActivity : Activity() {
 
         /** iptv-org's group names in the app's language where we have them; its "Undefined" (no category given) is "Other". */
         fun groupName(g: String) = if (Lang.code() == "vi") VI[g.lowercase()] ?: g else if (g.equals("undefined", true)) "Other" else g
+
+        /** A line icon per iptv-org category: the list is read at a glance (an unknown category gets the plain TV). */
+        fun groupIcon(g: String) = when (g.lowercase()) {
+            "news" -> R.drawable.ic_news; "sports" -> R.drawable.ic_trophy; "movies", "series" -> R.drawable.ic_film
+            "kids", "animation" -> R.drawable.ic_smile; "music" -> R.drawable.ic_music; "documentary" -> R.drawable.ic_camera
+            "education" -> R.drawable.ic_book; "religious" -> R.drawable.ic_flame; "lifestyle" -> R.drawable.ic_heart
+            "cooking" -> R.drawable.ic_utensils; "travel" -> R.drawable.ic_compass; "business" -> R.drawable.ic_banknote
+            "comedy" -> R.drawable.ic_laugh; "family" -> R.drawable.ic_users; "culture", "legislative", "public" -> R.drawable.ic_landmark
+            "outdoor" -> R.drawable.ic_tent; "science" -> R.drawable.ic_flask; "shop" -> R.drawable.ic_store; "weather" -> R.drawable.ic_weather
+            "auto" -> R.drawable.ic_car; "classic" -> R.drawable.ic_hourglass; "relax" -> R.drawable.ic_moon; "entertainment" -> R.drawable.ic_sparkle
+            "undefined" -> R.drawable.ic_more; else -> R.drawable.ic_tv
+        }
 
         private val VI = mapOf(
             "general" to "Tổng hợp", "news" to "Tin tức", "entertainment" to "Giải trí", "movies" to "Phim", "series" to "Phim bộ",
