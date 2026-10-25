@@ -293,7 +293,7 @@ object ControlCenter {
                 addView(Font.on(TvUi.text(a, a.getString(R.string.cc_title), 20f, Color.WHITE, bold = true)).also(bold).apply { maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
                 // the TV's own name (Settings > Device name, e.g. "FPT Play 650"), else its model: "Android TV 14" told nobody which TV
                 val name = (try { Settings.Global.getString(a.contentResolver, "device_name") } catch (e: Exception) { null })?.takeIf { it.isNotBlank() } ?: Build.MODEL
-                addView(Font.on(TvUi.text(a, a.getString(R.string.cc_android, name, Build.VERSION.RELEASE), 14f, TvGlass.HINT)).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(200) })
+                addView(Font.on(TvUi.text(a, a.getString(R.string.cc_android, name, Build.VERSION.RELEASE), 14f, TvGlass.HINT)).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(150); setPadding(dp(12), 0, 0, 0) })   // the title (~200 dp) keeps its room in the 408 dp row; a long name ends in …
             }, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(16), dp(12), dp(16), dp(12)) })
 
             net = tile(R.drawable.ic_wifi, R.string.cc_net) { go(listOf(Settings.ACTION_WIFI_SETTINGS, Settings.ACTION_SETTINGS)) }
@@ -330,7 +330,7 @@ object ControlCenter {
 
             val grid = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(12), dp(8), dp(12), dp(8)) }
             for (i in 0 until info step 2) {
-                val row = LinearLayout(a).apply { clipChildren = false }
+                val row = LinearLayout(a).apply { clipChildren = false; clipToPadding = false }   // else it clips at its bounds: a focused tile came out cut at the sides
                 row.addView(tiles[i], LinearLayout.LayoutParams(0, -2, 1f))
                 if (i + 1 < info) row.addView(tiles[i + 1], LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(8) })
                 else row.addView(View(a), LinearLayout.LayoutParams(0, 1, 1f).apply { leftMargin = dp(8) })
