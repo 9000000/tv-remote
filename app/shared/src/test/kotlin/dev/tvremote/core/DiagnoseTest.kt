@@ -95,7 +95,7 @@ class DiagnoseTest {
             val (et, ef) = Diagnose.say(code, f, "en")
             assertTrue(code, vt.isNotBlank() && vf.isNotBlank() && et.isNotBlank() && ef.isNotBlank())
             assertTrue(code, vt != et && vf != ef)
-            assertTrue(code, Diagnose.actions(code).isNotEmpty() && "retry" in Diagnose.actions(code))
+            assertTrue(code, Diagnose.actions(code).isNotEmpty() && ("retry" in Diagnose.actions(code) || code == Diagnose.SETUP_OFF))   // SETUP_OFF: a banner on a TV that answers, Fix only
         }
         assertTrue(Diagnose.say(Diagnose.MOVED, facts(moved = Diagnose.Found("192.168.1.31", "Living room")), "en").second.contains("192.168.1.31"))
     }
