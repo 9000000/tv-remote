@@ -2251,6 +2251,8 @@
  "tv_main.signed_out": "signed out",
  "tv_main.not_installed": "not installed",
  "tv_main.enable_adb_howto": "Turn on “ADB debugging”: Settings → Device Preferences (Google TV, Chromecast: System) → About → press OK 7 times on “Build” (“Android TV OS build”), then back in the same list, Developer options → “ADB debugging” (or “USB debugging”).",
+ "tv_main.adb_no_port": "“ADB debugging” is on, but the TV opens no network ADB port (5555).",
+ "tv_main.adb_no_port_howto": "Unplug the TV/box, plug it back in, open TV Setup. Still the same: network ADB is blocked here; the phone app still sends keys.",
  "tv_main.adb_refused": "The TV refused the ADB connection: “ADB debugging” is off.",
  "setup.for_this_tv": "For {name}",
  "setup.adb_general": "The usual way (Android TV)",

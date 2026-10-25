@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Setup: khi “Gỡ lỗi ADB” đã bật mà box vẫn không cho kết nối (vài box FPT Play chỉ mở ADB qua cáp), TV Setup nói đúng như vậy và chỉ cách làm, thay vì bảo bật lại một thứ đã bật.
+
+**English**
+- TV Setup: when “ADB debugging” is on but the box still refuses the connection (some FPT Play boxes open ADB over the cable only), TV Setup now says so and what to do, instead of asking to turn on what is already on.
+
 ## 0.23.0 - 2026-10-25
 
 Web 0.23.0 · app điện thoại 0.23.0 · app TV 0.23.0 · TV Home 0.10.0 · TV Channels 0.7.0 · TV Games 0.7.0

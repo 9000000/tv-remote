@@ -605,6 +605,16 @@ class MainActivity : Activity() {
                 ui {
                     setStatus(BAD, T("tv_main.no_adb_connection"), T("tv_main.turn_on_adb_debugging"))
                     val refused = (e.message ?: "").contains("refused", ignoreCase = true)   // on this very TV a refused port is ADB off, never a slow network
+                    // ...or ADB on over USB only: some boxes (an FPT Play box) open no port 5555, and "turn it on" would send the person in circles
+                    val adbOn = try { android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0) == 1 } catch (x: Exception) { false }
+                    if (refused && adbOn) {
+                        setStatus(BAD, T("tv_main.no_adb_connection"), "")
+                        log("✗ " + T("tv_main.adb_no_port"))
+                        howto(T("tv_main.adb_no_port_howto"))
+                        tiles[1].enable(true)
+                        tiles[1].view.requestFocus()
+                        return@ui
+                    }
                     log("✗ " + if (refused) T("tv_main.adb_refused") else reason(e))
                     if (android.os.Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true)) howto(T("tv_main.xiaomi_adb"))
                     else if (android.os.Build.MANUFACTURER.equals("TCL", ignoreCase = true)) howto(T("setup.tcl_hidden_adb"))   // TCL China: a key sequence, no Developer options   // China's PatchWall has no Developer options: ADB is under Account & Security
