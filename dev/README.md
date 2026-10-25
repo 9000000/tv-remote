@@ -38,7 +38,7 @@ Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.m
 |---|---|
 | `gen_icons.py` | the line icons: the web sprite and `res/drawable/ic_*.xml` of the apps. Add an icon here |
 | `round_icons.py` | the logo's rounded corners everywhere it is a picture, and `app/desktop/icon.icns` / `.ico` |
-| `channels_art.py`, `games_art.py` | TV Channels' and TV Games' launcher icons and banners |
+| `brand_art.py` | the TV apps' banners (all four, one style) and icons (Home, Channels, Games), with their copies |
 | `wallpapers.py` | TV Home's wallpaper gallery (`docs/home/`), signed |
 | `gen_wallspec.py` | `WallSpec.kt`, the wallpapers TV Home paints, from the page's recipes |
 | `ir_codes.py` | `assets/ir/codes.json` of the phone app, from Flipper-IRDB (CC0) |
