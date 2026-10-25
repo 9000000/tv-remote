@@ -437,7 +437,7 @@ object HomeConfig {
         }
         return out
     }
-    private fun themeName(s: String) = s.replace(Regex("\\s+"), " ").trim().take(THEME_NAME_MAX).trim()
+    fun themeName(s: String) = s.replace(Regex("\\s+"), " ").trim().take(THEME_NAME_MAX).trim()
 
     /** The theme [id] (the person's or a ready-made one) as its settings, or null. */
     fun theme(c: JSONObject, id: String): JSONObject? =

@@ -113,6 +113,17 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "home" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Home.call({ sh(it) }, if (post) r.json() else null,
                     if (!post && r.q("thumbs") == "1") "--ez thumbs true" else "").also { h ->   // TV Home's settings (thumbs: the photos' small pictures too)
                         labels?.own(dev.tvremote.core.ontv.Home.names(h.optJSONObject("config"))) })   // the names given there reach every app list
+                "home/theme" -> if (!post) {                          // one theme as a file to keep (<name>.tvtheme.json): a download, like the scenes backup
+                    val cfg = dev.tvremote.core.ontv.Home.call({ sh(it) }, null).optJSONObject("config") ?: throw IOException("home:missing")
+                    val id = r.q("id")
+                    fun find(a: org.json.JSONArray?) = (0 until (a?.length() ?: 0)).map { a!!.getJSONObject(it) }.firstOrNull { it.optString("id") == id }
+                    val t = find(cfg.optJSONArray("themes")) ?: find(cfg.optJSONArray("themesBuiltin")) ?: throw IOException("home:theme_missing")
+                    val name = dev.tvremote.home.HomeConfig.themeName(r.q("name").ifEmpty { t.optString("name") }).ifEmpty { id }
+                    val doc = JSONObject().put("tvtheme", 1).put("name", name).put("conf", dev.tvremote.home.HomeConfig.pickTheme(t.optJSONObject("conf") ?: JSONObject()))
+                    val out = HttpServer.Response.of("application/json; charset=utf-8", doc.toString(2).toByteArray())
+                    out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + URLEncoder.encode(name.replace(Regex("[^\\p{L}\\p{N}_.\\- ()]"), "_") + ".tvtheme.json", "UTF-8").replace("+", "%20")
+                    return out
+                }
                 "home/web/check" -> if (!post) return HttpServer.Response.json(dev.tvremote.home.WebCheck.check(r.q("u")))   // the background page, tried from this device: the TV's own answer is on TV Home's page
                 "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))

@@ -22,6 +22,9 @@ const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.
   190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
+const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'vsound', 'vvol', 'widgets', 'wsize', 'wopt', 'cols', 'rows', 'focus', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS
+const HOME_THEME_FILE_MAX = 32768;                                 // a theme file is a few KB; more is not one
+const homeOwnWall = (k) => /^(photo\d*|vid:.*)$/.test(String(k));    // the person's own picture or video: it stays on the TV, a file cannot carry it
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 let homeShots = { mine: {}, ready: {} };                             // the theme previews' backgrounds (TV Home's themeshots), by theme id
@@ -595,7 +598,33 @@ async function homeOpen() {
   const themeSave = el('button', { type: 'button', className: 'primary', textContent: T('home.theme_save_look'), onclick: () => { const n = themeName.value.trim(); if (n) { send({ theme: { save: n } }); themeName.value = ''; } } });
   themeName.addEventListener('keydown', (e) => { if (e.key === 'Enter') themeSave.click(); });
   const themeNote = el('p', { className: 'note', textContent: T('home.theme_note') }), themeHint = el('p', { className: 'note', textContent: T('home.theme_hint') });
-  const themeLine = el('div', { className: 'group' }, themeName, el('div', { className: 'actions' }, themeSave));
+  // import: the file's settings go to TV Home as ordinary settings with {theme:{save}} in the same send (HomeConfig.merge reads the keys first), so the TV needs no update
+  const themeFile = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
+  const themeImport = el('button', { type: 'button', textContent: T('home.theme_import'), onclick: () => themeFile.click() });
+  themeFile.addEventListener('change', async () => {
+    const f = themeFile.files[0]; themeFile.value = '';
+    if (!f) return;
+    if (f.size > HOME_THEME_FILE_MAX) { toast(T('home.theme_import_big')); return; }
+    let d = null;
+    try { d = JSON.parse(await f.text()); } catch (err) { d = null; }
+    const name = d && typeof d.name === 'string' ? d.name.replace(/\s+/g, ' ').trim().slice(0, 24) : '';
+    if (!d || d.tvtheme !== 1 || !name || !d.conf || typeof d.conf !== 'object' || Array.isArray(d.conf)) { toast(T('home.theme_import_bad')); return; }
+    const mine = r.config.themes || [];
+    if (mine.length >= HOME_THEMES_MAX && !mine.some((t) => t.name.toLowerCase() === name.toLowerCase())) { toast(T('home.theme_full')); return; }
+    const conf = {};
+    for (const k of HOME_THEME_KEYS) if (k in d.conf) conf[k] = d.conf[k];
+    let own = false;
+    if (homeOwnWall(conf.wall)) { own = true; conf.wall = 'night'; }
+    if (Array.isArray(conf.walls)) {
+      const keep = conf.walls.filter((k) => !homeOwnWall(k));
+      own = own || keep.length !== conf.walls.length;
+      conf.walls = keep.length ? keep : [conf.wall || 'night'];
+      if (!conf.wall) conf.wall = conf.walls[0];
+    }
+    await send({ ...conf, theme: { save: name } });
+    toast(T(own ? 'home.theme_imported_wall' : 'home.theme_imported', { name }));
+  });
+  const themeLine = el('div', { className: 'group' }, themeName, el('div', { className: 'actions' }, themeSave, themeImport, themeFile));
   const wallFace = (k) => {
     if (HOME_WALLS[k]) { const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')'); return dot; }
     if (HOME_ART_IDS.includes(k)) { const cv = el('canvas', { width: 128, height: 72 }); homeArtPaint(cv.getContext('2d'), 128, 72, k); return el('i', {}, cv); }
@@ -640,7 +669,16 @@ async function homeOpen() {
     const showInfo = (id, name, conf) => {
       put('#infotitle', 'textContent', 'ⓘ ' + name);
       $('#infobody').replaceChildren(el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
+      if (id !== 'before') $('#infobody').append(el('div', { className: 'actions' }, el('button', { type: 'button', className: 'small', textContent: T('home.theme_export'), onclick: () => exportTheme(id, name, conf) })));
       if (!$('#infodlg').open) $('#infodlg').showModal();
+    };
+    // a download from the server (it names the file, as the scenes backup; works in the phone app's web view); on TV Home's own page
+    // there is no such route, so the page makes the file itself
+    const exportTheme = (id, name, conf) => {
+      const a = homeLink.direct
+        ? el('a', { href: URL.createObjectURL(new Blob([JSON.stringify({ tvtheme: 1, name, conf }, null, 2)], { type: 'application/json' })), download: name.replace(/[\\/:*?"<>|]/g, '_') + '.tvtheme.json' })
+        : el('a', { href: 'api/home/theme?download=1&id=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name), download: '' });
+      document.body.append(a); a.click(); a.remove();
     };
     const tile = (id, name, conf, mine, look, tiles = []) => {
       const on = c.theme === id;

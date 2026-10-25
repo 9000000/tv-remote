@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home, chủ đề: xuất ra tệp `<tên>.tvtheme.json` (nút trong ⓘ của từng chủ đề, cả chủ đề có sẵn) và "Nhập chủ đề" đọc tệp đó thành chủ đề của bạn; ảnh/video nền riêng không đi theo tệp (dùng nền mặc định, có báo)
 - TV Home: mọi thẻ trừ đồng hồ (lịch, dùng nhiều, hẹn giờ, thị trường, tin tức, thẻ QR) có thêm kiểu "tonal" (thẻ ấm, một đường vẽ chung với thời tiết/hệ thống/âm lịch/không khí), chọn trong ⚙ của thẻ ở mọi app. Giao diện Tết: lịch âm + lịch tháng cùng tonal; giao diện Buổi sáng: đồng hồ sáng cho cùng một họ.
 - TV Home: trình đọc tin cắt phần tóm tắt theo dòng nguyên, dòng cuối kết thúc bằng "…" (trước đây hở nửa dòng ở mép); tên thẻ trong dải ⚙ của web không còn bị gạch ngang
 - Gửi lên TV, phát video: box FPT không còn đứng im (bản chép cho trình phát của TV Setup giờ đọc được).
@@ -17,6 +18,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tối ưu TV / Ứng dụng: không tắt app Android luôn giữ chạy (PERSISTENT: tắt cũng tự bật lại), Google partner setup, các app cài đặt ban đầu, bàn phím phụ, âm thanh Dolby (theo danh sách của tv-detox).
 
 **English**
+- TV Home themes: export a theme to a `<name>.tvtheme.json` file (button in each theme's ⓘ, ready-made ones too) and "Import theme" reads one back as your own theme; your own photo/video backgrounds do not travel in the file (the default is used, with a note)
 - TV Home: every card except the clock (calendar, most used, timer, market, news, QR cards) now has the "tonal" look (warm card, one shared drawing path with weather / system / lunar / air), chosen in the card's ⚙ on every client. Tết theme: lunar + calendar both tonal; Morning theme: light clock to match the tonal family.
 - TV Home: the news reader cuts the summary at whole lines, the last ending in "…" (no half line at the edge); card names in the web ⚙ strip are no longer struck through
 - Send to TV, play a video: the FPT box no longer sits still (the copy for TV Setup's player is now readable).
