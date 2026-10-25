@@ -65,9 +65,14 @@ export function emulator(t) {
 
 // rows: SELECT brand, model, device, android, COUNT(*) n GROUP BY brand, model, device, android. Only what the site shows: the ok
 // flags and last day stay in D1 for a later dashboard (they were 52% of the reply, unread)
+// TV Setup / TV Home also run on phones and tablets (not leanback): such a report stays in D1 but is not a TV on the site's list.
+// The phone / computer apps keep theirs: they report LG / Samsung / Roku TVs, which are not leanback either.
+export const listed = (r) => !((r.app === "setup" || r.app === "home") && Number(r.leanback) === 0 && r.leanback !== null && r.leanback !== undefined);
+
 export function aggregate(rows, now = new Date()) {
   const by = new Map();
   for (const r of rows) {
+    if (!listed(r)) continue;
     const key = r.brand + "\u0000" + r.model;
     let m = by.get(key);
     if (!m) by.set(key, (m = { brand: r.brand, model: r.model, count: 0, android: new Set(), devices: new Set(), tv: 0, box: 0, projector: 0 }));

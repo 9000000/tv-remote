@@ -3,6 +3,7 @@
 // what to do, in the banner at the top, instead of leaving the person with a red chip and a raw error. The same check backs
 // the phone's native screens. Cancel stops waiting; Retry connects again, and a TV that is still out of reach is checked again.
 const DIAG_TONE = { up: 'ok', wireless: 'warn', adb_off: 'warn', remote_off: 'warn', allow: 'warn', closed: 'warn', moved: 'warn' };   // the others are 'bad'
+let diagSetupKey = '';
 let diagKey = '', diagBad = 0, diagCtl = null;
 const diagAsked = new Set();                                         // TVs whose pairing window was opened for the person already: once, not at every check
 
@@ -12,12 +13,29 @@ function diagNeeded(s) {
   return !(s.adb && s.adb.state === 'ready');
 }
 
+// A Fire TV whose first setup never finished (user_setup_complete = 0) answers every key but Home and Alexa. ADB is up here, so the
+// self-check above does not run; this one asks once per TV (Diagnose.SETUP_OFF) and offers the one `settings put` only on Fix.
+async function diagSetup(s) {
+  if (CORE === 'tv' || picking || !s.host || !s.connected || !(s.adb && s.adb.state === 'ready') || (s.kind || 'android') !== 'android') return;
+  const key = s.host; if (diagSetupKey === key) return; diagSetupKey = key;
+  let r = null;
+  try { const x = await fetch('/api/diagnose/setup?lang=' + LANG); if (x.ok) r = await x.json(); } catch {}
+  if (!r || r.code !== 'setup_off' || diagSetupKey !== key) return;
+  const box = $('#diag');
+  box.className = 'banner warn';
+  box.replaceChildren(el('b', { textContent: r.title }), el('p', { textContent: r.fix }),
+    el('div', { className: 'actions' }, el('button', { className: 'small primary', textContent: T('diagnose.fix_setup'), onclick: async () => {
+      await api('/api/diagnose/setup', {}, true); box.hidden = true; box.replaceChildren(); } })));
+  box.hidden = false;
+}
+
 function diagHide() {
   if (diagCtl) { diagCtl.abort(); diagCtl = null; }
   put('#diag', 'hidden', true); $('#diag').replaceChildren();
 }
 
 function diagWatch(s) {
+  diagSetup(s);
   if (!diagNeeded(s)) { diagBad = 0; if (diagKey) { diagKey = ''; diagHide(); } return; }
   const key = s.host + '|' + (s.kind || 'android');
   if (diagKey === key || ++diagBad < 2) return;                      // one miss is often the TV or this device waking

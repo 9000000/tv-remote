@@ -21,7 +21,7 @@ RETURNING first`;
 const DAY = `INSERT INTO days (day, app, active, new) VALUES (?1, ?2, 1, ?3)
 ON CONFLICT (day, app) DO UPDATE SET active = COALESCE(active, 0) + 1, new = new + excluded.new`;
 
-const AGG = `SELECT brand, model, device, android, COUNT(*) AS n FROM tvs GROUP BY brand, model, device, android LIMIT 5000`;
+const AGG = `SELECT brand, model, device, android, app, leanback, COUNT(*) AS n FROM tvs GROUP BY brand, model, device, android, app, leanback LIMIT 5000`;
 
 // The totals are worked out once an hour (wrangler.toml crons) and kept as one row: the GROUP BY reads every install, so doing it
 // on each cache miss (10 min x every Cloudflare place a visitor comes from) would grow with the installs toward the free 5M rows

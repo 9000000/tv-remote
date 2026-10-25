@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validate, str, hashId, aggregate, kindOf, series, MAX_BODY } from "../src/logic.js";
+import { validate, str, hashId, aggregate, kindOf, series, listed, MAX_BODY } from "../src/logic.js";
 
 const ID = "3f2b8c1e-5a4d-4e6f-9a7b-1c2d3e4f5a6b";
 const ping = (o = {}) => JSON.stringify({ id: ID, app: "setup", v: "0.21.1", tv: { brand: "Sony", model: "BRAVIA 4K", android: "14", sdk: 34, leanback: true }, ok: { adb: true, video: false }, ...o });
@@ -74,3 +74,15 @@ test("validate: TV Home, TV Channels and TV Games are known apps; an unknown one
   for (const app of ["home", "channels", "games"]) assert.equal(validate(ping({ app })).app, app);
   assert.equal(validate(ping({ app: "karaoke" })), null);
 })
+
+test("aggregate: setup / home reports from a non-leanback device (a phone) are not listed; phone / pc apps' are", () => {
+  const r = (app, leanback) => ({ brand: "samsung", model: "SM-A156E", device: "a15", android: "14", app, leanback, n: 1 });
+  assert.equal(listed(r("setup", 0)), false);
+  assert.equal(listed(r("home", 0)), false);
+  assert.equal(listed(r("setup", 1)), true);
+  assert.equal(listed(r("setup", null)), true);
+  assert.equal(listed(r("phone", 0)), true);
+  assert.equal(listed(r("pc", 0)), true);
+  const a = aggregate([r("setup", 0), r("home", 0), r("phone", 0), r("setup", 1)], new Date("2026-10-25T00:00:00Z"));
+  assert.equal(a.installs, 2);
+});

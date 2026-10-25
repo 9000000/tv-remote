@@ -221,6 +221,12 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 }
                 "tvset" -> if (!post) return tvsetRead()
                 "log" -> return text(TvShell.log(r.q("pkg"), r.q("since")), 20000)
+                "diagnose/setup" -> {                                 // Fire TV, first setup unfinished: Home / Alexa keys dead (Diagnose.SETUP_OFF)
+                    if (post) { sh(dev.tvremote.core.Diagnose.SETUP_FIX); return HttpServer.Response.json(JSONObject().put("ok", true)) }   // only after the person pressed Fix
+                    val lang = r.q("lang").takeIf { it.isNotEmpty() }?.let(Words::pick) ?: r.lang
+                    val res = dev.tvremote.core.Diagnose.setup(sh(dev.tvremote.core.Diagnose.SETUP_READ), link.get().host, lang)
+                    return HttpServer.Response.json(if (res == null) JSONObject().put("code", "ok") else dev.tvremote.core.Diagnose.json(res, lang))
+                }
                 "diagnose" -> return diagnose(r, link)                // why the TV does not answer: one conclusion (Diagnose.kt)
                 "wirelog" -> {
                     if (post) { WireLog.all.add("page", r.json().optString("said").take(500)); return HttpServer.Response.json(JSONObject().put("ok", true)) }   // what went wrong inside the page (a decoder that gave nothing), for the same log

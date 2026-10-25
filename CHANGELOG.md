@@ -8,6 +8,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Setup cài nhầm trên điện thoại: hiện một lần hộp “Đây là điện thoại” với nút tải / mở app điện thoại hoặc “Vẫn dùng ở đây” (nhớ, không hỏi lại).
+- Xiaomi MiTV-MOOQ0: nút Nguồn vào của điều khiển (gửi KEYCODE_MEDIA_RECORD) mở danh sách nguồn vào qua TV Setup; chỉ trên model này, TV khác không đổi (cleanyourtv #1368).
+- Tự kiểm tra: Fire TV chưa hoàn tất cài đặt ban đầu (`user_setup_complete` = 0, nút Home/Alexa chết) được báo ở đầu trang, bấm **Sửa** mới chạy `settings put secure user_setup_complete 1`.
+- Hướng dẫn: thêm 2 dòng trong Lỗi thường gặp (Fire TV nút Home/Alexa; Cài đặt TV đứng ở trang giọng nói: `pm clear com.google.android.tts`).
+- Danh sách TV trên trang web không còn đếm điện thoại/máy tính bảng chạy TV Setup hoặc TV Home (vẫn lưu, chỉ không liệt kê).
 - TV Home, Trung tâm điều khiển: các nút nguồn thành một hàng 2 nút tròn (Dọn RAM, Tắt TV: menu Màn chờ, Tắt màn hình, Khởi động lại, Tắt hẳn; Màn chờ chạy ngay, không cần TV Setup) + dòng CPU/RAM nhỏ (thấp hơn; bỏ Chế độ chờ); ô Mạng hiện tên Wi-Fi; ô Nguồn vào chỉ hiện khi TV có nguồn vào (thật, đọc như menu Nguồn vào; thêm Coocaa và app Live TV), hộp không có thì thành ô Bluetooth; ô Khoá trẻ em: bật thì chạm để tắt qua màn hình mã PIN của TV Setup, chưa có PIN thì chạm mở thẳng chỗ đặt PIN; chưa có TV Setup thì các ô vẫn mờ, chạm ra cách cài (Downloader).
 - TV Home: Trung tâm điều khiển vẽ lại giống Tùy chỉnh và menu giữ OK (bảng kính 460 dp, ô 16 dp, chữ 15/12 sp, thay vì 600 dp); thanh trên chỉ còn nút Mạng và Cài đặt: nút Nguồn vào và nút Nguồn chuyển vào Trung tâm điều khiển (thêm **Chế độ chờ**); bỏ công tắc “Nút nguồn” trong Tùy chỉnh và trang web.
 - TV Home: gợi ý một lần “Giữ OK hoặc bấm ☰ trên một app để xem thêm” dưới hàng app đầu; tắt bằng ✕ hoặc khi đã mở menu của app.
@@ -30,6 +34,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 - TV Setup installed on a phone by mistake: a one-time “This is a phone” box with a button to get / open the phone app, or “Use it here anyway” (remembered, never asked again).
+- Xiaomi MiTV-MOOQ0: the remote's Input button (sends KEYCODE_MEDIA_RECORD) opens the inputs list through TV Setup; this model only, other TVs unchanged (cleanyourtv #1368).
+- Self-check: a Fire TV whose first setup never finished (`user_setup_complete` = 0, Home/Alexa buttons dead) is reported at the top of the page; `settings put secure user_setup_complete 1` runs only after you press **Fix**.
+- Guide: two more rows in Common problems (Fire TV Home/Alexa buttons; TV Settings frozen on the speech page: `pm clear com.google.android.tts`).
+- The site's TV list no longer counts phones and tablets that run TV Setup or TV Home (still stored, just not listed).
 - TV Home Control Center: the power buttons are 2 round buttons (Clear RAM, Turn off the TV: a menu of Screensaver, Screen off, Restart, Power off; the Screensaver runs at once, no TV Setup) + a small CPU/RAM line; the Network tile shows the Wi-Fi name; the Inputs tile shows only where the TV has inputs (read as the Inputs menu does; plus Coocaa and Live TV apps), a box without them gets a Bluetooth tile; input names are cleaned (Philips "Xbox&GAME_CONSOLE", "null"), TCL and XGIMI panels are tried when the list is empty; Kids lock tile: when on, a tap turns it off through TV Setup's PIN screen, with no PIN a tap opens the place to set one; without TV Setup the tiles stay greyed and a tap shows how to install it (Downloader).
 - TV Home: the Control Center is redrawn like Customize and the hold-OK menu (glass panel 460 dp, 16 dp tiles, 15/12 sp text, was 600 dp); the top bar keeps only Network and Settings: the Inputs and Power buttons moved into the Control Center (new **Standby**); the "Power button" switch is gone from Customize and the web page.
 - TV Home: a one-time tip “Hold OK or press ☰ on an app for more options” under the first row of apps; gone after ✕ or once an app menu was opened.

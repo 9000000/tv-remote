@@ -65,7 +65,17 @@ class KeyFixTest {
 
     @Test fun theAddOnIsAskedAboutEveryKeyTheAppMayTake() {
         val asked = dev.tvremote.setup.keys.KeysProtocol.INTEREST
-        assertTrue(asked.containsAll(KeyFix.RULES.keys)); assertTrue(asked.containsAll(KeyFix.COLOUR)); assertTrue(asked.containsAll(HoldKeys.KEYS)); assertTrue(asked.containsAll(MicVoice.KEYS))
+        assertTrue(asked.containsAll(KeyFix.RULES.keys)); assertTrue(asked.containsAll(KeyFix.COLOUR)); assertTrue(asked.containsAll(HoldKeys.KEYS)); assertTrue(asked.containsAll(MicVoice.KEYS)); assertTrue(asked.containsAll(KeyFix.DEVICE_KEYS.map { it.code }))
+    }
+
+    @Test fun xiaomiMooq0InputButtonIsMediaRecordAndOpensInputsOnlyThere() {
+        assertEquals(KeyFix.INPUT, KeyFix.forDevice("MiTV-MOOQ0", "croods")[130]?.act)
+        assertEquals(KeyFix.INPUT, KeyFix.forDevice("mitv-mooq0", null)[130]?.act)
+        assertEquals(KeyFix.INPUT, KeyFix.forDevice(null, "croods")[130]?.act)
+        assertTrue(KeyFix.forDevice("BRAVIA 4K", "BRAVIA_ATV3")[130] == null); assertTrue(KeyFix.forDevice(null, null).isEmpty())
+        val p = KeyFix.plan(emptyMap(), { true }, { true }, device = KeyFix.forDevice("MiTV-MOOQ0", "croods"))
+        assertEquals(setOf(130), p.keys); assertEquals(KeyFix.INPUT, KeyFix.decide(p, 130)?.act)
+        assertTrue(KeyFix.plan(emptyMap(), { true }, { true }, device = KeyFix.forDevice("Other", "x")).isEmpty())
     }
 
     @Test fun noAccessibilityServiceInThisApp() {                      // Play Protect blocks one from a browser or Downloader: they live in app/tvkeys

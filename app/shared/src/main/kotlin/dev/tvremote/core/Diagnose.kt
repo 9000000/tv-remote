@@ -68,7 +68,8 @@ object Diagnose {
     const val MOVED = "moved"                  // nothing at this address; the same TV, by name, answers at another
     const val VPN = "vpn"                      // nothing answers and a VPN is carrying the traffic
     const val OFF = "off"                      // nothing answers: off, asleep, or another address
-    val CODES = listOf(CLOCK, NO_WIFI, OTHER_NET, TAILSCALE, ALLOW, WIRELESS, ADB_OFF, REMOTE_OFF, UP, CLOSED, MOVED, VPN, OFF)
+    const val SETUP_OFF = "setup_off"          // a Fire TV whose setup never finished: Home and Alexa keys do nothing (checked while ADB is up)
+    val CODES = listOf(SETUP_OFF, CLOCK, NO_WIFI, OTHER_NET, TAILSCALE, ALLOW, WIRELESS, ADB_OFF, REMOTE_OFF, UP, CLOSED, MOVED, VPN, OFF)
 
     const val ADB = 5555
     private const val SETUP = 8765
@@ -109,8 +110,25 @@ object Diagnose {
         return UP
     }
 
+    /** One read over ADB (measured: one short line each): who made the device, and whether Android thinks its first setup was finished. */
+    const val SETUP_READ = "getprop ro.product.manufacturer; settings get secure user_setup_complete"
+    /** The fix, run only after the person pressed Fix. */
+    const val SETUP_FIX = "settings put secure user_setup_complete 1"
+
+    /** [SETUP_READ]'s output is a Fire TV (Amazon) with `user_setup_complete` = 0. Any other maker, or a missing / "null" value, is fine. */
+    fun setupIncomplete(out: String): Boolean {
+        val l = out.trim().lines().map { it.trim() }.filter { it.isNotEmpty() }
+        return l.size >= 2 && l[0].contains("amazon", true) && l.last() == "0"
+    }
+
+    /** The finding for a TV whose [SETUP_READ] said [out], or null when nothing is wrong. Not part of [run]: ADB is up then, no one asks "why can't I reach the TV". */
+    fun setup(out: String, ip: String, lang: String): Result? =
+        if (!setupIncomplete(out)) null else Result(SETUP_OFF, ip, Remote.Kind.ANDROID, null,
+            listOf(Check("setup", false, Words.get(lang, "diagnose_kt.setup_off_note"))), 0)
+
     /** What each conclusion needs the person (or the page) to do next. */
     fun actions(code: String): List<String> = when (code) {
+        SETUP_OFF -> listOf("fixsetup")
         WIRELESS -> listOf("wireless", "retry")
         ADB_OFF -> listOf("adbhelp", "retry")
         MOVED -> listOf("use", "retry")
@@ -124,6 +142,8 @@ object Diagnose {
     fun say(code: String, f: Facts, lang: String): Pair<String, String> {
         fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
         return when (code) {
+            SETUP_OFF -> t("diagnose_kt.setup_off_title") to
+                t("diagnose_kt.setup_off_fix")
             CLOCK -> t("diagnose_kt.tv_s_date_time") to
                 t("diagnose_kt.tv_answers_but_secure")
             NO_WIFI -> t("diagnose_kt.device_not_wi_fi") to

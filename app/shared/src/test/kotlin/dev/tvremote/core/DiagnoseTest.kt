@@ -33,6 +33,17 @@ class DiagnoseTest {
         check(Diagnose.REMOTE_OFF, facts(open = listOf(5555)))
     }
 
+    @Test fun fireTvWithUnfinishedSetup() {
+        assertTrue(Diagnose.setupIncomplete("Amazon\n0\n"))
+        assertTrue(Diagnose.setupIncomplete("amazon\r\n0"))
+        assertTrue(!Diagnose.setupIncomplete("Amazon\n1\n")); assertTrue(!Diagnose.setupIncomplete("Amazon\nnull\n"))
+        assertTrue(!Diagnose.setupIncomplete("Sony\n0\n")); assertTrue(!Diagnose.setupIncomplete("")); assertTrue(!Diagnose.setupIncomplete("0"))
+        val r = Diagnose.setup("Amazon\n0", "192.168.1.9", "en")!!
+        assertEquals(Diagnose.SETUP_OFF, r.code); assertEquals(listOf("fixsetup"), Diagnose.actions(r.code))
+        assertTrue(Diagnose.json(r, "vi").getString("title").isNotBlank()); assertTrue(Diagnose.setup("Amazon\n1", "x", "en") == null)
+        assertEquals("settings put secure user_setup_complete 1", Diagnose.SETUP_FIX)
+    }
+
     @Test fun nothingOpen() {
         check(Diagnose.OFF, facts())                                                                // all silent: off, asleep, other address
         check(Diagnose.CLOSED, facts(refused = listOf(5555, 6466, 6467, 8765)))                     // refused: the TV's card answers

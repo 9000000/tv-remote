@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.content.pm.PackageManager
@@ -41,6 +42,17 @@ object KeyFix {
         284 to Rule(HOME),                                            // KEYCODE_ALL_APPS
         176 to Rule(SETTINGS))                                        // KEYCODE_SETTINGS
 
+    /**
+     * Keys that one model's remote sends differently and nobody answers (not a dead global key, so [plan]'s table does not see them):
+     * a Xiaomi MiTV-MOOQ0's Input button is KEYCODE_MEDIA_RECORD (130, cleanyourtv #1368). Matched by Build.MODEL or Build.DEVICE; other TVs never.
+     */
+    class DeviceKey(val model: String, val device: String, val code: Int, val rule: Rule)
+    val DEVICE_KEYS = listOf(DeviceKey("MiTV-MOOQ0", "croods", 130, Rule(INPUT)))
+
+    /** [DEVICE_KEYS] of this [model] / [device]: code → rule. */
+    fun forDevice(model: String?, device: String?): Map<Int, Rule> =
+        DEVICE_KEYS.filter { it.model.equals(model, true) || it.device.equals(device, true) }.associate { it.code to it.rule }
+
     /** The key names global_keys.xml uses, for the codes of [RULES] (the file is written with names, not numbers). */
     val NAMES: Map<String, Int> = mapOf(
         "KEYCODE_TV" to 170, "KEYCODE_TV_INPUT" to 178, "KEYCODE_BUTTON_3" to 190, "KEYCODE_BUTTON_4" to 191,
@@ -51,8 +63,9 @@ object KeyFix {
      * [alive] says is gone, and, for an app key, with its app [launchable] (the key then does nothing, as before, when it is not).
      * Returns the rule with the package that will open.
      */
-    fun plan(mapped: Map<Int, String>, alive: (String) -> Boolean, launchable: (String) -> Boolean, user: Map<Int, String> = emptyMap()): Map<Int, Rule> {
-        val out = HashMap<Int, Rule>()
+    fun plan(mapped: Map<Int, String>, alive: (String) -> Boolean, launchable: (String) -> Boolean, user: Map<Int, String> = emptyMap(),
+             device: Map<Int, Rule> = emptyMap()): Map<Int, Rule> {
+        val out = HashMap<Int, Rule>(device)
         for ((code, rule) in RULES) {
             val to = mapped[code] ?: continue                         // not a global key here: the focused app gets it, nothing to fix
             if (to != NOBODY && alive(to)) continue                   // still has its handler: not ours to take
@@ -153,7 +166,7 @@ object KeyFix {
     fun launchable(c: Context, pkg: String): Boolean = c.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null
         || c.packageManager.getLaunchIntentForPackage(pkg) != null
 
-    fun current(c: Context): Map<Int, Rule> = plan(keyMap(c), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
+    fun current(c: Context): Map<Int, Rule> = plan(keyMap(c), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE))
 
     // ---- on or off -------------------------------------------------------------------------------------------------
 
@@ -209,7 +222,7 @@ object KeyFix {
             val has = has(was)
             val old = hasStale(was)                                   // updated from a TV Setup that had the services inside: move the entry
             val map = keyMap(c)
-            val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c))
+            val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE))
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
             val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c) || MicVoice.on(c)   // a dead key to bring back, "hold to use Input" (HoldKeys), or the mic button (MicVoice)
             if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
