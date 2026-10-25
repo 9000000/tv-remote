@@ -33,12 +33,12 @@
   .tv-a{grid-column:1;grid-row:2}.tv-b{grid-column:3;grid-row:1}.tv-c{grid-column:2;grid-row:1}
 }
 .tvs-home{padding:64px 0 24px}
-.tvs-home .wrap>h2{text-align:center}.tvs-home .lead{margin:0 auto 24px;text-align:center}
+.tvs-home .wrap{text-align:center}.tvs-home .tvs-box{text-align:left}.tvs-home .lead{margin:0 auto 24px;text-align:center}
 .tvs-home .tvs-box{max-width:980px;margin:0 auto}
 .tvs-home .tv-list{max-height:none}
 .tvs-foot{margin-top:14px;color:var(--dim);font-size:13px}
 .tvp{padding-top:40px;padding-bottom:64px}
-.tvp h1{font-size:clamp(28px,4vw,40px);font-weight:800;margin:10px 0 12px}
+.tvp h1{margin:10px 0 12px}
 .tvp .tvs-box{margin-top:24px}
 /* the daily chart (js/tvs.js mountChart) */
 .tvs-chart{margin-bottom:16px}
@@ -57,3 +57,6 @@
 .dc-key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 .dc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .tvp>.lead{max-width:none}
+/* the headline in big numbers (js/tvs.js big): the count is the news, the section's name the eyebrow above it */
+.tvs-eye{background:linear-gradient(90deg,#8b7bff,#d06bff);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.04em;text-transform:none;font-size:15px}
+.tvs-big{font-size:clamp(34px,6.4vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.02em;margin:8px 0 14px}

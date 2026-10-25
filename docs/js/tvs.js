@@ -10,6 +10,7 @@
     units: ["{n} máy", "{n} TVs"], none: ["Không có mẫu nào khớp.", "No model matches."],
     empty: ["Chưa có dữ liệu. Danh sách sẽ hiện khi các app gửi báo cáo ẩn danh đầu tiên.", "No data yet. The list fills as the apps send their first anonymous reports."],
     off: ["Không tải được danh sách lúc này. Thử lại sau.", "Could not load the list right now. Try again later."],
+    big: ["{n} mẫu máy, {b} hãng", "{n} models, {b} brands"],
     load: ["Đang tải…", "Loading…"], more: ["Xem thêm ({n})", "Show more ({n})"], less: ["Thu gọn", "Show less"], all: ["Xem tất cả {b} hãng →", "See all {b} brands →"]
   };
   var SHOW = 3;                                                     // rows per brand before "Show more"
@@ -59,9 +60,20 @@
     }
     draw();
     new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang"] });
-    fetch(URL_).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ data = d && d.models ? d : { models: [] }; draw(); }).catch(function(){ failed = true; draw(); });
+    get().then(function(d){ data = d; draw(); }).catch(function(){ failed = true; draw(); });
   }
+  var once;                                                         // one request for the list and the headline
+  function get(){ return once || (once = fetch(URL_).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ return d && d.models ? d : { models: [] }; })); }
   document.querySelectorAll("[data-tvs]").forEach(mount);
+
+  // The headline in big numbers ([data-tvs-big]): its own words stay until the census answers, or when it cannot.
+  function big(el){
+    var m = null;
+    function draw(){ if (m && m.length) el.textContent = t("big", { n: m.length, b: new Set(m.map(function(x){ return x.brand; })).size }); }
+    get().then(function(d){ m = d.models; draw(); }).catch(function(){});
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang"] });
+  }
+  document.querySelectorAll("[data-tvs-big]").forEach(big);
 
   // The chart above the list on tvs.html ([data-tvs-chart]): GET /v1/days, devices active per day, stacked by app, plus the running total.
   // Fetched once, only when the chart scrolls into view (nothing is paid before the page shows it). Inline SVG, no library.
