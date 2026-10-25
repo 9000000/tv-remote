@@ -19,6 +19,11 @@ app/home/                TV Home, the launcher: plain Views, no :shared (it woul
                          In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS
 ```
 
+**The project's own apps first:** `Store.OWN` (TV Setup, TV Games, TV Channels) lead the first-run dock, and one installed later is
+moved in once (`Store.promote`, remembered per package: moved elsewhere by the user, it stays there). Without TV Setup the grid shows
+a **Get TV Setup** tile among them (`suggestSetup()`, the art `suggest_setup.png` from `dev/gen/brand_art.py`); it installs the
+release's `tv-setup.apk` through `SelfUpdate`, or is turned off for good (`Store.suggestOff`).
+
 ## Backgrounds
 
 Which path draws what (read before adding a theme or a wall kind):

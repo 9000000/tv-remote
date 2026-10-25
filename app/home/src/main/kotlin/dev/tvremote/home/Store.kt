@@ -61,7 +61,32 @@ object Store {
         prefs(c).edit().putString("conf", conf.toString()).apply()
         return effective(c, conf)
     }
-    private val FIRST_DOCK = listOf("com.google.android.youtube.tv", "com.netflix.ninja", "com.amazon.amazonvideo.livingroom",
+    /** The project's own TV apps: first in the dock when they come, so a person sees what goes with TV Home (the user, 2026-10-25). */
+    val OWN = listOf("dev.tvremote.setup", "dev.tvremote.games", "dev.tvremote.channels")
+
+    /**
+     * Each of [OWN] installed, once: put in the dock after the others of [OWN] at its front (the grid's front when the dock is full),
+     * unless it is placed already. Once only (prefs "promoted"): moved or hidden later, it stays where the person put it. True when
+     * it changed the settings (the screen is redrawn by [onChange]).
+     */
+    fun promote(c: Context, have: Collection<String>): Boolean {
+        val done = prefs(c).getStringSet("promoted", emptySet())!!
+        val now = OWN.filter { it in have && it !in done }
+        if (now.isEmpty()) return false
+        prefs(c).edit().putStringSet("promoted", done + now).apply()
+        val dock = list(c, "dock"); val order = list(c, "order"); val hidden = list(c, "hidden")
+        var changed = false
+        for (p in now) {
+            if (p in dock || p in hidden) continue
+            if (dock.size < HomeConfig.DOCK_MAX) dock.add(dock.indexOfFirst { it !in OWN }.let { if (it < 0) dock.size else it }, p)
+            else { order.remove(p); order.add(0, p) }
+            changed = true
+        }
+        if (changed) change(c, JSONObject().put("dock", org.json.JSONArray(dock)).put("order", org.json.JSONArray(order)))
+        return changed
+    }
+
+    private val FIRST_DOCK = OWN + listOf("com.google.android.youtube.tv", "com.netflix.ninja", "com.amazon.amazonvideo.livingroom",
         "com.disney.disneyplus", "com.google.android.youtube.tvmusic", "com.spotify.tv.android", "com.android.vending", "com.android.tv.settings")
 
     /** @throws SecurityException "dream" without WRITE_SECURE_SETTINGS (a client grants it over ADB first; the TV's own switch falls back to the system's screen) */
@@ -83,6 +108,8 @@ object Store {
     }
 
     /** The "hold OK for more" tip: its own flag, outside the settings, so a theme or an import never brings it back. */
+    fun suggestOff(c: Context) = prefs(c).getBoolean("suggest_setup_off", false)
+    fun suggestOff(c: Context, off: Boolean) = prefs(c).edit().putBoolean("suggest_setup_off", off).apply()
     fun tipIsDone(c: Context) = prefs(c).getBoolean("tip_menu_done", false)
     fun tipDone(c: Context) { if (!tipIsDone(c)) prefs(c).edit().putBoolean("tip_menu_done", true).apply() }
 

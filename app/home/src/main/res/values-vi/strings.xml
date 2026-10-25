@@ -561,4 +561,10 @@
     <string name="cc_footer_ram">RAM %1$s</string>
     <string name="tip_menu">Giữ OK hoặc bấm ☰ trên một app để xem thêm</string>
     <string name="tip_close">Đóng gợi ý</string>
+    <!-- TV Setup suggested on the grid while it is not installed -->
+    <string name="suggest_setup">Cài TV Setup</string>
+    <string name="suggest_note">Tối ưu TV, điều khiển bằng điện thoại, gán nút mở app. Miễn phí, cùng nhà với TV Home.</string>
+    <string name="suggest_install">Cài đặt</string>
+    <string name="suggest_hide">Không gợi ý nữa</string>
+    <string name="suggest_failed">Không tải được TV Setup (%1$s). Thử lại sau.</string>
 </resources>

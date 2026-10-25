@@ -204,11 +204,12 @@ object TvUi {
     /**
      * A list of choices in a [sheet], each with its icon and an optional second line. A switch ends in a ring, with [check] (the
      * app's own check icon) inside it while on, instead of "✓" / ": off" in its words; pressing it flips it in place.
-     * [accent] is the app's own colour (icons, ring, check), as in [row].
+     * [accent] is the app's own colour (icons, ring, check), as in [row]; [note] a dim line under the title.
      */
-    fun menu(c: Context, theme: Int, title: String, items: List<Item>, check: Int, accent: Int = ACCENT, w: Int = 460): Dialog {
+    fun menu(c: Context, theme: Int, title: String, items: List<Item>, check: Int, accent: Int = ACCENT, w: Int = 460, note: String = ""): Dialog {
         val (dlg, box) = sheet(c, theme, w)
         sheetTitle(box, title)
+        if (note.isNotEmpty()) sheetNote(box, note)
         items.forEach { item ->
             val sub = text(c, "", SP_COUNT, DIM).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END }
             val ring = FrameLayout(c).apply { val p = dp(c, 4).toInt(); setPadding(p, p, p, p) }

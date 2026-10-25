@@ -563,4 +563,10 @@
     <string name="cc_footer_ram">RAM %1$s</string>
     <string name="tip_menu">Hold OK or press ☰ on an app for more options</string>
     <string name="tip_close">Close tip</string>
+    <!-- TV Setup suggested on the grid while it is not installed -->
+    <string name="suggest_setup">Get TV Setup</string>
+    <string name="suggest_note">Optimize the TV, use a phone as the remote, buttons that open apps. Free, from the makers of TV Home.</string>
+    <string name="suggest_install">Install</string>
+    <string name="suggest_hide">Don\'t suggest again</string>
+    <string name="suggest_failed">Could not get TV Setup (%1$s). Try again later.</string>
 </resources>

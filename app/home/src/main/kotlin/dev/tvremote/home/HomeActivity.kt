@@ -324,28 +324,50 @@ class HomeActivity : Activity() {
     }
 
     /** Its download, with Cancel (and Back, Home); at 100 % Android's installer takes over with its own question. */
-    private fun updating(r: Release) {
+    private fun updating(r: Release, u: SelfUpdate = upd, title: String = getString(R.string.upd_title, r.version)) {
         val (d, box) = TvUi.sheet(this, R.style.TvSheet)
-        TvUi.sheetTitle(box, getString(R.string.upd_title, r.version))
+        TvUi.sheetTitle(box, title)
         val note = TvUi.sheetNote(box, getString(R.string.upd_loading, 0))
         box.addView(TvUi.button(this, getString(R.string.upd_cancel)) { d.dismiss() }, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
-        d.setOnDismissListener { upd.cancel() }
+        d.setOnDismissListener { u.cancel() }
         d.show()
         open = d
-        val started = upd.install(r, { pct ->
+        val started = u.install(r, { pct ->
             note.text = getString(R.string.upd_loading, pct)
             if (pct >= 100) { d.setOnDismissListener(null); d.dismiss() }
         }, { m ->
             d.setOnDismissListener(null); d.dismiss()
             val (f, fb) = TvUi.sheet(this, R.style.TvSheet)
-            TvUi.sheetTitle(fb, getString(R.string.upd_title, r.version))
-            TvUi.sheetNote(fb, getString(R.string.upd_failed, m))
+            TvUi.sheetTitle(fb, title)
+            TvUi.sheetNote(fb, if (u === upd) getString(R.string.upd_failed, m) else getString(R.string.suggest_failed, m))
             fb.addView(TvUi.button(this, getString(android.R.string.ok)) { f.dismiss() }, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END })
             f.show(); open = f
             fb.getChildAt(fb.childCount - 1).requestFocus()
         })
         if (!started) { d.setOnDismissListener(null); d.dismiss() }      // Android's "install unknown apps" first: back from it, onResume goes on
         else box.getChildAt(box.childCount - 1).requestFocus()
+    }
+
+    /** TV Setup suggested on the grid: not installed, not turned down. It does what a launcher cannot (ADB: Optimize TV, keys, the
+     *  phone's remote), so a TV with TV Home alone is told once where the rest is (the user, 2026-10-25). */
+    private fun suggestSetup() = !Store.suggestOff(this) && apps.none { it.pkg == Store.OWN[0] } && apps.isNotEmpty()
+
+    private fun askSetup() {
+        val acts = listOf(TvUi.Item(R.drawable.ic_download, getString(R.string.suggest_install)) { getSetup() },
+            TvUi.Item(R.drawable.ic_eye_off, getString(R.string.suggest_hide)) { Store.suggestOff(this, true); show() })
+        open = TvUi.menu(this, R.style.TvSheet, getString(R.string.suggest_setup), acts, R.drawable.ic_check, note = getString(R.string.suggest_note))
+    }
+
+    /** The latest TV Setup from the release, as TV Home's own update: Android's installer asks at the end. */
+    private fun getSetup() {
+        bg.execute {
+            val r = try { Release.newer("0", "tv", "tv-setup.apk") } catch (e: Exception) { null }
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                if (r != null) updating(r, SelfUpdate(this, "tv", "tv-setup.apk"), getString(R.string.suggest_setup))
+                else Toast.makeText(this, getString(R.string.suggest_failed, "GitHub"), Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onStart() {
@@ -713,12 +735,13 @@ class HomeActivity : Activity() {
         clockAndDay()
         widgetsRead()
         syncTiles()
+        if (Store.promote(this, apps.map { it.pkg })) return          // TV Setup, Games or Channels came: the change draws the screen again
         val byPkg = apps.associateBy { it.pkg }
         val byKey = byPkg + pins.filter { it.pkg !in byPkg }.associateBy { it.pkg }   // a pinned shortcut is one of the grid's tiles, with a place of its own like an app
         val dockPkgs = Store.list(this, "dock").filter { it in byKey }
         val hidden = Store.list(this, "hidden").toSet()
         val shownPins = pins.filter { it.pkg !in byPkg && it.pkg !in dockPkgs }   // a shortcut put on the grid by the picker shows as that tile, not twice
-        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names")
+        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names") + "|" + suggestSetup()
         if (key == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
         shownKey = key
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
@@ -733,6 +756,8 @@ class HomeActivity : Activity() {
         val gap = dp(GRID_GAP)
         val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
+        if (suggestSetup()) cells.add(favs.indexOfFirst { it.pkg !in Store.OWN }.let { if (it < 0) favs.size else it }, moves(Tile(this, null, w, getString(R.string.suggest_setup), ::dp,
+            art = getDrawable(R.drawable.suggest_setup), corner = getString(R.string.suggest_install)).apply { setOnClickListener { askSetup() } }) { askSetup() })   // with the project's other apps in the first row: seen, as its own would be
         cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { addPanel() } }, null))   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
         fill(cells, cols, gap)
         tileCache = made
@@ -1889,7 +1914,8 @@ class HomeActivity : Activity() {
  * One app: its banner (or icon on a colour, with the name; or, for a live tile, its own render: [LiveFace]), the name under it shown while focused. Focus grows it and rings it
  * ([TvTile]: the look is tvui's, TV Home's own moved there). [app] null: the "hidden apps" tile.
  */
-class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }, mark: Int = R.drawable.ic_eye_off) : TvTile(c, w, dp) {
+class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }, mark: Int = R.drawable.ic_eye_off,
+           art: android.graphics.drawable.Drawable? = null, corner: String? = null) : TvTile(c, w, dp) {
     private val content: View
     private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
     private val badge = BadgeView(c, dp)
@@ -1898,7 +1924,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
     init {
         Font.on(name)
         val h = w * 9 / 16
-        val banner = app?.banner
+        val banner = app?.banner ?: art                                // art: a tile that is not an app (TV Setup suggested)
         val liveFace = if (app?.live == true) LiveFace(c, w, h, label, say).also { it.set(Tiles.cached(app.pkg), animate = false) } else null
         faceColor(if (banner != null) 0xFF1E2230.toInt() else shade(app?.pkg ?: ""))
         if (liveFace != null) {                                       // a live tile draws itself ([Tiles]); its state comes from [live]
@@ -1921,6 +1947,10 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             content = inner
         }
         face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
+        if (corner != null) face.addView(Font.on(TextView(c)).apply {    // a suggestion, not an app on this TV: says so on its face
+            text = corner; textSize = 12f; setTextColor(Color.WHITE); setPadding(dp(10), dp(3), dp(10), dp(4))
+            background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(PILL_BG); setStroke(dp(1), PILL_EDGE) }
+        }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(8), dp(8), 0) })
         name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
     }
 
