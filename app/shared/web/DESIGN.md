@@ -176,7 +176,11 @@ App icons/names come from `appIcon(p)` / `appName(p)` / `onMeta(p, fn)`; in a fo
 
 Write the emoji first in a title or button label (`'🔍 ' + words`, or in the i18n words). `ICON` (`js/ui.js:62`) turns a
 leading emoji into a line icon from the SVG sprite: in `h2`, `h3`, `summary`, `.tabs .ico` (`ICON_TITLES`) it takes its own
-hue; in `button`, `label.filebtn`, `a.linkbtn` the button's colour. An icon-only button gets `.solo`.
+hue; in `button`, `label.filebtn`, `a.linkbtn`, `#toast` and the state marks (`ICON_MARKS`: ADB chip, `.fleetstep`, `.ltag`,
+`li.ok/.bad`, setup steps) the element's colour. An icon-only button gets `.solo`.
+- **Plain marks are icons too** (✓ ✕ ✗ ⏻ ⚠ ★ ☆ ▶ ⏸ ⏹ ↻ ↩): a font draws them at its own size, an old TV not at all. Write them
+  first, like an emoji; never mid-sentence: name the button in words ("press Quit", "tap the star"). A favourite's star is
+  filled by `.on > .ui-ic.i-star`.
 - New emoji in a title → add `'🆕': ['name', hue]` to `ICON` and the path to `dev/gen/gen_icons.py` (`tests/ui.test.js`
   fails otherwise). Hues per tab: `TAB_HUE` (`js/ui.js:76`).
 - Content keeps emoji: the remote's keys, app tiles, scene icons, flags, running text (`ICON_SKIP`, `js/ui.js:80`).

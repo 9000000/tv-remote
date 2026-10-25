@@ -199,7 +199,8 @@ One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.
   `vi.json` first, `en.json` complete). No new `t("vi", "en")` pairs.
 - Short labels: a verb or a noun, 1-3 words on a button, one line in a row; details go in the sub-line (`tv_dim`), not the label.
   Check that the Vietnamese fits too: it is usually longer.
-- Emoji: allowed in content and big states (Warn icons `😴 🌙 🧠 ⏳` `WarnActivity.kt:46`, Setup's rule lines, `✓`, Games `📱`).
+- Emoji: allowed in content and big states (Warn icons `😴 🌙 🧠 ⏳` `WarnActivity.kt:46`, Setup's rule lines, Games `📱`).
+  **Plain marks (✓ ✗ ✕ ⏻ ▶ ♪ ★) never**: a TV's font draws them at its own size or not at all; use an `ic_*` drawable.
   **Controls use line icons** (§5), not emoji.
 - Numbers and names come through placeholders (`%1$d`, `{n}`), never glued strings.
 

@@ -72,16 +72,21 @@ const ICON = {
   '📜': ['log', 210], '🔌': ['plug', 45], '💬': ['message', 200], '🎤': ['mic', 0], '🛒': ['store', 140], '🔧': ['wrench', 30],
   '📲': ['phone', 265], '🧽': ['eraser', 0], '⏸': ['pause', 210], '⏹': ['stop', 0], '☀️': ['wake', 45], '⏱️': ['timer', 280],
   '🛠️': ['settings', 210], '🔔': ['bell', 45], '▶': ['play', 210], '↩': ['undo', 210], '✅': ['check', 145], '🌡️': ['thermometer', 15], '🔵': ['bluetooth', 220],
+  // plain marks too (the user, 2026-10-25): a font draws them at its own size and baseline, an old TV's not at all
+  '✓': ['check', 145], '✔': ['check', 145], '✕': ['close', 0], '✖': ['close', 0], '✗': ['close', 0], '⏻': ['power', 260], '⚠': ['alert', 38],
+  '★': ['star', 45], '☆': ['star', 45], '♪': ['music', 290],
   '⭐': ['star', 45], '📤': ['send', 205], '📂': ['folder', 38], '🆕': ['sparkle', 180], '📡': ['wifi', 190], '📍': ['pin', 0], '📌': ['pin', 0], '➕': ['plus', 145],
 };
 const TAB_HUE = { remote: 220, apps: 265, files: 38, health: 350, auto: 20, tv: 175 };
 // where: titles (coloured) and buttons; not inside these
 const ICON_TITLES = 'h2, h3, details > summary, .setrow > b, .step b, .qr > b, .tabs .ico';
-const ICON_BTNS = 'button, label.filebtn, a.linkbtn';
+const ICON_BTNS = 'button, label.filebtn, a.linkbtn, #toast';
+// and the marks before a state's words (✓ done, ✗ failed, the ADB chip, a quick key's ⏻)
+const ICON_MARKS = '#chipAdb, .fleetstep, .ltag, .qkbadge, .tsok, .step .mark, li.ok, li.bad, li.yes, li.no';
 const ICON_SKIP = '.rc, .tiles, #scenetpl, #sceneicon, #steps .acts code, .item .ic0';
 const ICON_KEYS = Object.keys(ICON).sort((a, b) => b.length - a.length);
 UI.icon = (name, hue) => {
-  const s = el('span', { className: 'ui-ic' + (hue != null ? ' hue' : '') });
+  const s = el('span', { className: 'ui-ic i-' + name + (hue != null ? ' hue' : '') });
   if (hue != null) s.style.setProperty('--h', hue);
   s.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-' + name + '"/></svg>';
   return s;
@@ -107,8 +112,9 @@ function iconize(e) {
 function iconizeIn(n) {
   if (n.nodeType === 3) n = n.parentElement;
   if (!n || n.nodeType !== 1) return;
-  const own = n.closest(ICON_TITLES + ', ' + ICON_BTNS); if (own) iconize(own);
-  n.querySelectorAll(ICON_TITLES + ', ' + ICON_BTNS).forEach(iconize);
+  const all = ICON_TITLES + ', ' + ICON_BTNS + ', ' + ICON_MARKS;
+  const own = n.closest(all); if (own) iconize(own);
+  n.querySelectorAll(all).forEach(iconize);
 }
 // after i18n.js (loaded first, so its observer runs first): it translates with the emoji still there
 iconizeIn(document.body);

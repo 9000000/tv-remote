@@ -302,7 +302,7 @@ function setPicking(on, tvName) {
 let ADB = { state: 'unknown' }, autoView = new URLSearchParams(location.search).has('view');
 // a few words on the chip, so the header stays on one line on a phone; the whole sentence on hover
 const ADB_TEXT = {
-  ready: ['ok', 'ADB ✓', T('core.adb_ready')],
+  ready: ['ok', '✓ ADB', T('core.adb_ready')],
   unauthorized: ['warn', T('core.adb_wait_short'), T('core.adb_wait_long')],
   closed: ['bad', T('core.adb_closed_short'), T('core.adb_closed_long')],
   offline: ['warn', 'ADB offline', 'ADB: offline'],

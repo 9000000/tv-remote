@@ -100,6 +100,7 @@ h2 .lower { text-transform:none; letter-spacing:0; font-weight:500; }   /* "· c
 /* icons in titles, tabs and buttons (js/ui.js ICON): a title's in its own colour, a button's in the button's */
 .ui-ic { display:inline-flex; vertical-align:-.2em; margin-right:.4em; flex:none; }
 .ui-ic .ic { width:1.15em; height:1.15em; }
+.on > .ui-ic.i-star .ic { fill:currentColor; }                     /* a favourite: the star filled (☆ and ★ draw one star) */
 .ui-ic.hue { color:hsl(var(--h) 70% 36%); }
 [data-theme=dark] .ui-ic.hue { color:hsl(var(--h) 80% 68%); }
 h2 .ui-ic .ic { width:15px; height:15px; }
