@@ -10,6 +10,7 @@ Run them from the repo root (`dev/test/emu.sh`, `python3 dev/gen/gen_icons.py`);
 | `shots/` | the site's screenshots and the pictures composed from them |
 | `sign/` | the signed lists on the site (`docs/**.json` + `.sig`) |
 | `optimize_images.py` | every tracked PNG / JPEG / WebP made smaller (dry run; `--write` applies; needs Pillow, numpy for the lossy step). Skips the hash-pinned `docs/home/` and `docs/launchers/` |
+| `themes/` | the community theme queue (Cloudflare Worker + D1 `tvr-themes`); reviewed with `sign/review_themes.py` |
 | `release/` | releases, update keys and their backup (only when the maintainer says so) |
 
 Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.md` (the TV apps' shared look),
@@ -61,6 +62,7 @@ release key; its public half is `Launchers.KEYS`). Run after every edit of the l
 | `sign_games.py` | `docs/games/games.json`: TV Games' cores, suggested web games, homebrew |
 | `sign_providers.py` | `docs/channels/providers.json`: TV Channels' extra sources, e.g. VieON |
 | `sign_bloat.py` | `docs/optimize/bloat.json`: Optimize TV's suggestions added from the site |
+| `review_themes.py` | reviews the community themes sent from TV Home (HTML page, then approve / reject / skip each): saves the pictures, adds the theme to `docs/home/themes.json`, signs it; commits nothing |
 | `sign_themes.py` | `docs/home/themes.json`: TV Home's ready-made themes (names per language, looks; a theme may set `wurl`, so only a signed list may). Packed in the APK by `:home` `packThemes`; `HomeThemesTest` keeps the copy equal; stamps `rev` (the higher one wins, so an undeployed site never overwrites a newer APK). Web backgrounds go through `docs/home/loop.html` (host allow-list); each theme names its `src` + licence: Sa Pa photo = Wikimedia Commons CC0 `File:Rice terraces in Sapa, Vietnam.jpg`; beach video = CC0 `File:Sunset timelapse on the beach in Libreville, Gabon.webm`; city video = CC0 `File:Shanghai Bund, Lujiazui Skyline Timelapse.webm` (480p transcodes) |
 | `sign_downloader.py` | `docs/data/downloader.json`: the Downloader codes |
 

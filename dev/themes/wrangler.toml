@@ -1,0 +1,9 @@
+name = "tvr-themes"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tvr-themes"
+database_id = "038a2f49-0e8f-43ad-b30a-4142be2a364d"
