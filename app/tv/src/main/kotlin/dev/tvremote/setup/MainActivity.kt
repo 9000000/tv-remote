@@ -82,7 +82,7 @@ class MainActivity : Activity() {
     private val HOWTO = Color.rgb(138, 180, 248)                       // what to do next: a light blue, apart from white info and the three states
     private val PILL = Color.argb(153, 0, 0, 0)                        // the pill on an app's banner: TV Home's name scrim
     private val PILL_ON = Color.argb(230, 22, 128, 72)                // ...on a green that says it is on this TV
-    private val ECO_W = 128                                           // an app's banner, dp: three and a line of words fit beside the log's width
+    private val ECO_W = 112                                           // an app's banner, dp: small, so the log below keeps its lines
 
     /**
      * One of the project's other TV apps (Bundle.apps) as TV Home draws a tile: its banner, the same rise and ring on focus, and a
@@ -90,6 +90,7 @@ class MainActivity : Activity() {
      */
     private inner class Eco(val app: dev.tvremote.core.ontv.Bundle.App, banner: Int) :
         dev.tvremote.tvui.TvTile(this@MainActivity, dp(ECO_W), { n -> (n.toFloat() * resources.displayMetrics.density).roundToInt() }) {
+        init { name.visibility = View.GONE }                          // what it does goes in the words beside it
         val key = app.pkg.substringAfterLast('.')                    // home, channels, games
         val sub = when (key) { "home" -> T("eco.home_sub"); "channels" -> T("eco.channels_sub"); else -> T("eco.games_sub") }   // what it is, beside the banners while focused
         override val glassy get() = false                         // no gliding glass on this screen: the ring
@@ -100,14 +101,19 @@ class MainActivity : Activity() {
             fill(ImageView(context).apply { setImageResource(banner); scaleType = ImageView.ScaleType.CENTER_CROP })
             pill.textSize = 10f; pill.setTextColor(Color.WHITE); pill.setPadding(dp(7), dp(2), dp(7), dp(2))
             face.addView(pill, android.widget.FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(dp(5), dp(5), dp(5), dp(5)) })
-            setOnFocusChangeListener { _, f -> focus(f); ecoNote?.text = if (f) sub else ecoText() }
+            setOnFocusChangeListener { _, f -> focus(f); ecoNote?.text = if (f) said() else ecoText() }
             setOnClickListener { if (!busy) ecoPress(this) else log(T("tv_main.busy")) }
         }
         fun paint() {
             on = try { packageManager.getPackageInfo(app.pkg, 0); true } catch (e: Exception) { false }
             pill.text = T(if (on) "eco.on" else "eco.off")
             pill.background = box(if (on) PILL_ON else PILL, 10, 0)
-            name.text = T(if (on) "eco.open" else "eco.get", "name" to app.name)
+            if (hasFocus()) ecoNote?.text = said()
+        }
+        /** Beside the banners, not under them (no gap to keep for a name: the log below keeps its lines): what OK does, what it is. */
+        fun said(): CharSequence {
+            val act = T(if (on) "eco.open" else "eco.get", "name" to app.name)
+            return android.text.SpannableString("$act\n$sub").apply { setSpan(android.text.style.ForegroundColorSpan(TvUi.TEXT), 0, act.length, 0) }
         }
     }
     private var eco: List<Eco> = emptyList()
@@ -265,7 +271,7 @@ class MainActivity : Activity() {
         }
 
         if (!phone) {                                                 // the project's TV apps: what a phone running TV Setup has no use for
-            left.addView(section(T("eco.title")), margins(top = 16))
+            left.addView(section(T("eco.title")), margins(top = 12))
             val row = LinearLayout(this)
             row.clipChildren = false
             row.gravity = Gravity.CENTER_VERTICAL
@@ -285,7 +291,7 @@ class MainActivity : Activity() {
         spinner.isIndeterminate = true
         spinner.visibility = View.INVISIBLE
         actHead.addView(spinner, LinearLayout.LayoutParams(dp(16), dp(16)).apply { leftMargin = dp(10) })
-        left.addView(actHead, margins(top = if (eco.isEmpty()) 18 else 36))   // a focused banner's name shows in that gap
+        left.addView(actHead, margins(top = 18))
         logView = text(T("tv_main.activity_empty"), 14, MUTED, false)   // until the first line
         logView.setLineSpacing(dp(3).toFloat(), 1f)
         scroll = ScrollView(this)
