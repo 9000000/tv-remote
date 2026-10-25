@@ -279,3 +279,4 @@ function fleetCheckoutReport(j) {
     el('div', { className: 'acts fleetgo' }, el('button', { className: 'primary', type: 'button', textContent: T('fleet.co_r_done'), onclick: () => $('#infodlg').close() })));
   $('#infodlg').showModal();
 }
+fleetCheck($('#tvlist')?.children.length || 0);                        // the saved list may be drawn before this file loaded

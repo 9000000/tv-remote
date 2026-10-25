@@ -269,7 +269,7 @@ async function loadTvs() {
       setLabel(el('button', { className: 'small danger', onclick: async () => { if (await ask(T('setup.forget_ask', { name: t.name || t.host }), { ok: T('setup.delete'), danger: true })) { await api('/api/tv/remove', { host: t.host }); await refresh(); loadTvs(); loadSteps(); } } }), '🗑', T('setup.delete'), true))));
   $('#tvlist').replaceChildren(...rows);
   put('#savedcard', 'hidden', !rows.length); $('#pickcols').classList.toggle('solo', !rows.length);   // nothing saved: no empty box, just the search
-  fleetCheck(rows.length);
+  if (typeof fleetCheck === 'function') fleetCheck(rows.length);   // fleet.js comes later in the page: a list drawn before it loads is counted there
   tvstatMount(r.tvs, rows);                                           // tvstatus.js: on / standby / off under each name
 }
 function scanRow(f) {
