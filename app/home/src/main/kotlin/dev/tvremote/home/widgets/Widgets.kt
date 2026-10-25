@@ -133,7 +133,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     val hot = ArrayList<View>()
     var onOpen: ((String) -> Unit)? = null
     var onUp: ((View) -> Unit)? = null
-    var onDown: (() -> Unit)? = null
+    var onDown: ((View) -> Unit)? = null
 
     /** The hot card nearest above-or-below the x of a tile, for Up from the first row of the grid. */
     fun nearestHot(x: Int): View? {
@@ -155,7 +155,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                 KeyEvent.KEYCODE_DPAD_LEFT -> { hot.getOrNull(i - 1)?.requestFocus(); true }
                 KeyEvent.KEYCODE_DPAD_RIGHT -> { hot.getOrNull(i + 1)?.requestFocus(); true }
                 KeyEvent.KEYCODE_DPAD_UP -> { if (k == "news" && newsAt > 0) { newsAt--; onWeather?.invoke() } else onUp?.invoke(v); true }
-                KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else onDown?.invoke(); true }
+                KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else onDown?.invoke(v); true }
                 else -> false
             }
         }

@@ -135,7 +135,7 @@ class HomeActivity : Activity() {
     private var lastOpened: String?                                 // kept in prefs: the home may be made again while the app is open
         get() = getSharedPreferences("nav", MODE_PRIVATE).getString("last", null)
         set(v) { getSharedPreferences("nav", MODE_PRIVATE).edit().putString("last", v).apply() }
-    private var topAt: View? = null                                 // the tile left by Up: Down from the buttons lands on it
+    private var topAt: View? = null; private var topVia: View? = null   // the tile left by Up and the card it went to: Down from that card lands back on it
     private var stepping = false
     internal companion object {
         var reopen = false                                            // across recreate(): the panel was open when the language changed
@@ -233,8 +233,8 @@ class HomeActivity : Activity() {
                 }))
         }
         for (b in listOf(inputsPill, netPill, settingsPill, powerPill)) bar.add(b)
-        for (b in bar.buttons) b.setOnKeyListener { _, code, e ->
-            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it); true } == true
+        for (b in bar.buttons) b.setOnKeyListener { v, code, e ->           // Down from the bar: the widget below it first, the grid only when there is none
+            code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.nearestHot(centre(v))?: below(v))?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
         inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
@@ -246,7 +246,7 @@ class HomeActivity : Activity() {
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onOpen = { k -> startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> bar.buttons.filter { it.isShown }.minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
-        widgets.onDown = { (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it) } }
+        widgets.onDown = { v -> below(v)?.let { go(it) } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
 
         // ONE grid: the favourites are its first tiles, then every other app; no panel, the wallpaper stays whole
@@ -544,6 +544,13 @@ class HomeActivity : Activity() {
 
     private fun firstGridTile(): View? = (grid.getChildAt(0) as? ViewGroup)?.getChildAt(0)
 
+    /** Where Down from [v] (a bar button or a card) lands in the grid: the tile it came up from (a card only), else the first row's tile nearest in x. */
+    private fun below(v: View): View? {
+        topAt?.takeIf { it.isAttachedToWindow && topVia != null && topVia === v }?.let { return it }
+        val row = grid.getChildAt(0) as? ViewGroup ?: return null
+        return row.getChildAt(Nav.nearest(centres(row), centre(v)).takeIf { it >= 0 } ?: return null)
+    }
+
     private val changed = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
             val pkg = i.data?.schemeSpecificPart
@@ -827,7 +834,7 @@ class HomeActivity : Activity() {
         val col = (grid.getChildAt(row) as ViewGroup).indexOfChild(v)
         val to = Nav.grid(rows, row, col, wantCol, dir)
         if (to == null) {
-            if (dir == Nav.Dir.UP) { topAt = v; val at = IntArray(2); v.getLocationOnScreen(at); (widgets.nearestHot(at[0] + v.width / 2) ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
+            if (dir == Nav.Dir.UP) { val hot = widgets.nearestHot(centre(v)); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }
