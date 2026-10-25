@@ -124,6 +124,7 @@ class MainActivity : Activity() {
     private inner class Tile(icon: Int, title: String, sub: String, run: () -> Unit) {
         val view = LinearLayout(this@MainActivity)
         private val subView: TextView
+        private val headView: TextView
         private val badge = ImageView(this@MainActivity)
         private val wheel = ProgressBar(this@MainActivity)              // in place of the icon while this tile's work runs
         init {
@@ -147,6 +148,7 @@ class MainActivity : Activity() {
             words.orientation = LinearLayout.VERTICAL
             words.setPadding(dp(10), 0, 0, 0)
             val head = text(title, 13, TvUi.TEXT, true)
+            headView = head
             head.maxLines = 2                                         // four tiles across: a long name wraps, not "Manage on th…"
             head.ellipsize = TextUtils.TruncateAt.END
             words.addView(head)
@@ -158,7 +160,7 @@ class MainActivity : Activity() {
             view.setOnClickListener { if (!busy) run() else log(T("tv_main.busy")) }
             view.setOnFocusChangeListener { v, f ->
                 v.background = if (f) TvUi.ring(this@MainActivity, TILE, dp(14).toFloat()) else box(TILE, 14, 0)
-                badge.background = box(if (f) Color.argb(60, 255, 255, 255) else TvUi.CARD, 10, 0)
+                badge.background = box(if (f) Color.argb(60, 255, 255, 255) else badgeFill, 10, 0)
                 subView.setTextColor(if (f) Color.WHITE else MUTED)
                 v.animate().scaleX(if (f) 1.06f else 1f).scaleY(if (f) 1.06f else 1f).setDuration(120).start()
             }
@@ -174,6 +176,12 @@ class MainActivity : Activity() {
             badge.imageAlpha = if (on) 0 else 255
         }
         fun enable(on: Boolean) { view.isEnabled = on; view.alpha = if (on) 1f else 0.4f }
+        /** A new title and icon; [hot] fills the icon's square with the accent: something is waiting to be done here. */
+        fun show(title: String, sub: String, icon: Int, hot: Boolean = false) {
+            headView.text = title; say(sub); badge.setImageResource(icon); badgeFill = if (hot) ACCENT else TvUi.CARD
+            if (!view.hasFocus()) badge.background = box(badgeFill, 10, 0)
+        }
+        private var badgeFill = TvUi.CARD
     }
 
     /**
@@ -216,8 +224,8 @@ class MainActivity : Activity() {
         names.orientation = LinearLayout.VERTICAL
         names.setPadding(resources.getDimension(R.dimen.tv_head_gap).toInt(), 0, 0, 0)
         names.addView(text("TV Setup", if (phone) 20 else 24, TvUi.TEXT, true))
-        names.addView(text((if (phone) T("tv_main.version_n", "v" to version()) + released().let { if (it.isEmpty()) "" else " · $it" }
-            else released().ifEmpty { "TV" }) + "   ·   Hoang Tran   ·   tvremote.pages.dev", 12, MUTED, false))   // TV: the version is on Update, top right
+        names.addView(text("v" + version() + released().let { if (it.isEmpty()) "" else " · $it" }
+            + " · Hoang Tran · tvremote.pages.dev", 12, MUTED, false).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END })   // the version in use here; the Update tile says whether a newer one exists
         head.addView(names, LinearLayout.LayoutParams(0, -2, 1f))
         left.addView(head)
 
@@ -249,7 +257,7 @@ class MainActivity : Activity() {
 
         if (phone) left.addView(section(T("tv_main.actions")), margins(top = 14))   // TV: no section names, the log keeps the room (the user, 2026-10-25)
         tsStatus = T("tv_main.away_from_home")
-        updateTile = Tile(R.drawable.ic_download, T("setup.update_ok"), T("tv_main.ver_short", "v" to version())) { updateMenu() }
+        updateTile = Tile(R.drawable.ic_download, T("setup.update_ok"), T("tv_main.checking_for_a_new")) { updateMenu() }
         connTile = Tile(R.drawable.ic_refresh, T("tv_main.connection"), T("tv_main.connection_sub")) { connectionMenu() }
         // four tiles, not nine: the rest sit in short menus. The code below counts these by place: 0 needs ADB, 1 and 2 work without
         tiles = listOf(
@@ -328,8 +336,8 @@ class MainActivity : Activity() {
         Thread {                                                      // asks GitHub for the latest release, nothing else is sent
             try {
                 val r = Release.newer(version(), "tv", "tv-setup.apk")
-                if (r != null) ui { updateTile.say(T("tv_main.new_version_select", "v" to r.version)) }
-            } catch (ignored: Exception) { }                          // offline: stay quiet, the tile still checks on demand
+                ui { newer = r?.version ?: ""; showUpdate() }
+            } catch (ignored: Exception) { ui { showUpdate() } }      // offline: the tile still checks on demand
         }.start()
     }
 
@@ -356,6 +364,17 @@ class MainActivity : Activity() {
     private fun version(): String =
         try { packageManager.getPackageInfo(packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
 
+    /** The newest release when it is newer than this one, "" when this is the newest, null when not known (offline, not asked yet). */
+    private var newer: String? = null
+
+    /** The Update tile says what is true now: a newer version to install (lit), up to date, or not known (the user, 2026-10-26:
+     *  an "Update" tile always there, with a version number nobody could tell was this one or the next, was confusing). */
+    private fun showUpdate() = when (val v = newer) {
+        null -> updateTile.show(T("setup.update_ok"), T("tv_main.update_check"), R.drawable.ic_download)
+        "" -> updateTile.show(T("tv_main.up_to_date"), autoText(), R.drawable.ic_check)
+        else -> updateTile.show(T("tv_main.update_to", "v" to v), T("tv_main.update_from", "v" to version()), R.drawable.ic_download, hot = true)
+    }
+
     private fun autoText() = if (AutoUpdate.on(this)) T("tv_main.automatic_updates_on") else T("tv_main.automatic_updates_off")
 
     /**
@@ -367,7 +386,7 @@ class MainActivity : Activity() {
         if (busy) return
         menu("TV Setup " + version(), listOf(
             TvUi.Item(R.drawable.ic_download, T("tv_main.update_now")) { if (adb == null) selfUpdate() else update() },
-            TvUi.Item(R.drawable.ic_refresh, T("tv_main.automatic_updates"), on = { AutoUpdate.on(this) }) { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()) },
+            TvUi.Item(R.drawable.ic_refresh, T("tv_main.automatic_updates"), on = { AutoUpdate.on(this) }) { AutoUpdate.set(this, !AutoUpdate.on(this)); log(autoText()); showUpdate() },
             TvUi.Item(R.drawable.ic_trash, T("tv_main.remove_tv_setup")) { askRemove() }))
     }
 
@@ -375,6 +394,7 @@ class MainActivity : Activity() {
         job { _ ->
             log(T("tv_main.checking_for_a_new"))
             val r = Release.newer(version(), "tv", "tv-setup.apk")
+            ui { newer = r?.version ?: ""; showUpdate() }
             if (r == null) { log(T("tv_main.newest_version", "v" to version())); return@job }
             val a = adb ?: throw java.io.IOException("ADB")
             if (SetupUpdate.bad(SetupUpdate.state(a), r.version)) {
@@ -403,6 +423,7 @@ class MainActivity : Activity() {
         Thread {
             try {
                 val r = Release.newer(version(), "tv", "tv-setup.apk")
+                ui { newer = r?.version ?: ""; showUpdate() }
                 if (r == null) log(T("tv_main.newest_version", "v" to version())) else ui { install(r) }
             } catch (e: Exception) { log("✗ " + reason(e)) }
             busy = false
