@@ -149,7 +149,7 @@ That's it. A ready TV opens straight on the Remote tab. Without ADB the Phone an
 2. Open Downloader. If it asks for access to files, choose **Allow**.
 3. Type the code **`2397346`** and choose **Go** (no Downloader: `go.aftvnews.com/<code>` in a browser also works).
 4. Choose **Install**. If it says installs from this source are not allowed: allow Downloader, press Back, choose Install again.
-5. Open **TV Setup**. If ADB is still off, it explains how and opens Developer options for you.
+5. Open **TV Setup**. If ADB is still off, it explains how and opens Developer options for you. Once ADB works it installs TV Home, TV Channels and TV Games too, and asks whether to keep TV Home as the home screen.
 6. Scan its **QR code** with the phone's camera and type the 6-digit code. Done.
 
 The other codes work the same way: phone app `2973135`, TV Home `4356026`, TV Channels `8135635`, TV Games `2294968`.

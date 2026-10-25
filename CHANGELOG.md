@@ -9,10 +9,16 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Setup: khi “Gỡ lỗi ADB” đã bật mà box vẫn không cho kết nối (vài box FPT Play chỉ mở ADB qua cáp), TV Setup nói đúng như vậy và chỉ cách làm, thay vì bảo bật lại một thứ đã bật.
 - TV Setup trên box nhà mạng (FPT Play, Viettel): mở thẳng Tùy chọn nhà phát triển như trước, không bảo bấm 7 lần vào “Bản dựng” (box đòi mật khẩu); trang bị khóa thì nói rõ.
+- Bật ADB bằng phím: danh sách “Mở Cài đặt qua màn hình chính khác” có thêm TV Home của dự án, đứng đầu: đã cài thì mở (bánh răng mở Cài đặt), chưa cài thì cài qua Downloader như TV Setup.
+- TV Setup: có ADB là tự cài TV Home, TV Channels, TV Games (thiếu cái nào cài cái đó), rồi hỏi một lần có giữ TV Home làm màn hình chính không: không bấm gì thì TV quay lại như cũ.
+- TV Setup: “Mở Tùy chọn nhà phát triển” luôn mở thẳng trang đó trên mọi TV; trang báo “không dùng được” thì mới chỉ cách bấm 7 lần vào “Bản dựng” (trừ box nhà mạng).
 
 **English**
 - TV Setup: when “ADB debugging” is on but the box still refuses the connection (some FPT Play boxes open ADB over the cable only), TV Setup now says so and what to do, instead of asking to turn on what is already on.
 - TV Setup on Internet provider boxes (FPT Play, Viettel): opens Developer options directly again, never asks for the 7 presses on “Build” (the box asks for a password); says so when the page is locked.
+- Turning ADB on with keys: the “other home screen” list now has the project’s own TV Home first: opens it if installed (its gear opens Settings), otherwise installs it through Downloader like TV Setup.
+- TV Setup: once it has ADB it installs TV Home, TV Channels and TV Games (whichever are missing), then asks once whether to keep TV Home as the home screen; press nothing and the TV goes back.
+- TV Setup: “Open Developer options” always opens that page directly, on every TV; only when it says “not available” does it point at the 7 presses on “Build” (never on provider boxes).
 
 ## 0.23.0 - 2026-10-25
 

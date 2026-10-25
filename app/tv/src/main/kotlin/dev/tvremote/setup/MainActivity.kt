@@ -596,6 +596,7 @@ class MainActivity : Activity() {
                 val s = Setup(a, getExternalFilesDir(null), Words.lang, Setup.Log { log(it) })
                 setup = s
                 try { lastUpdate(a) } catch (ignored: Exception) { }
+                bundle(s)
                 showStatus(s)
                 connecting = false
                 ui { setEnabled(true); if (openLaunchers) { openLaunchers = false; chooseLauncher() } }
@@ -725,15 +726,15 @@ class MainActivity : Activity() {
             log(T("tv_main.dev_locked")); return
         }
         val isp = ispBox()
-        val off = android.os.Build.TYPE == "user" && !isp &&                 // an ISP box: its 7 presses ask an ISP password, its page may open anyway
+        val off = android.os.Build.TYPE == "user" &&
             android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) != 1
         val dev = T("tv_main.developer_options")
+        // the page itself first, always: it opens on boxes whose 7 presses are guarded (FPT); still off elsewhere, it only says
+        // "not available", and the words then point at About. An ISP box never gets About: its 7 presses ask the ISP's password.
         val tries = if (isp) listOf(
             dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
             dev to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
-            dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings")) else if (off) listOf(
-            T("tv_main.about_press_ok_7") to android.content.Intent(android.provider.Settings.ACTION_DEVICE_INFO_SETTINGS),
-            T("page.settings") to android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) else listOf(
+            dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings")) else listOf(
             dev to android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS),
             dev to android.content.Intent().setClassName("com.android.tv.settings", "com.android.tv.settings.system.development.DevelopmentActivity"),
             dev to android.content.Intent().setClassName("com.android.settings", "com.android.settings.DevelopmentSettings"),
@@ -752,12 +753,56 @@ class MainActivity : Activity() {
             window.decorView.postDelayed({
                 if (hasWindowFocus()) attempt(i + 1)
                 else {
-                    howto(if (off) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
+                    howto(if (off && name != dev) T("tv_main.dev_off_opened", "name" to name) else T("tv_main.opened_turn_on", "name" to name))
                     if (isp) howto(T("tv_main.isp_locked"))                    // the page only says "not available": the ISP locked it
+                    else if (off && name == dev) howto(T("tv_main.dev_off_try"))
                 }
             }, 1200)
         }
         attempt(0)
+    }
+
+    /**
+     * TV Home, Channels and Games onto the TV once ADB works ([Bundle]): the site shows them, the install guide only installs TV
+     * Setup. Twice at most per TV, as a box may drop an app it does not allow the moment it lands; never on a phone.
+     */
+    private fun bundle(s: Setup) {
+        if (!packageManager.hasSystemFeature("android.software.leanback")) return
+        val p = getSharedPreferences("remote", MODE_PRIVATE)
+        val tries = p.getInt("bundle_tries", 0)
+        if (tries >= 2) return
+        val a = adb ?: return
+        val todo = try { dev.tvremote.core.ontv.Bundle.missing { a.shell(it, 10000) } } catch (e: Exception) { return }
+        if (todo.isEmpty()) { p.edit().putInt("bundle_tries", 2).apply(); homeOnce(a); return }
+        p.edit().putInt("bundle_tries", tries + 1).apply()
+        ui {
+            job { _ ->
+                var all = true
+                for (app in todo) {
+                    log(T("tv_main.bundle_installing", "name" to app.name))
+                    try {
+                        app.install(a, getExternalFilesDir("update"), Words.lang)
+                        log("✓ " + T("tv_main.bundle_installed", "name" to app.name))
+                    } catch (e: Exception) { all = false; log("✗ " + app.name + ": " + reason(e)) }
+                }
+                if (all) p.edit().putInt("bundle_tries", 2).apply()
+                homeOnce(a)
+            }
+        }
+    }
+
+    /**
+     * TV Home as the home screen, offered once per TV: the launcher list opens and swaps to it at once, and the TV's own
+     * Keep / Go back question (with its countdown, back by itself when nobody answers) is the confirmation.
+     */
+    private fun homeOnce(a: Adb) {
+        val p = getSharedPreferences("remote", MODE_PRIVATE)
+        if (p.getBoolean("home_offered", false)) return
+        if (busy) { Thread { while (busy) Thread.sleep(300); homeOnce(a) }.start(); return }   // the installs' job: the list waits for it
+        val now = try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow() } catch (e: Exception) { return }
+        if (now.startsWith(dev.tvremote.home.HomeConfig.PKG + "/") || !a.shell("pm path ${dev.tvremote.home.HomeConfig.PKG}").contains("package:")) return
+        p.edit().putBoolean("home_offered", true).apply()
+        ui { chooseLauncher(dev.tvremote.home.HomeConfig.PKG) }
     }
 
     private fun interface Job { @Throws(Exception::class) fun run(setup: Setup) }
@@ -899,7 +944,7 @@ class MainActivity : Activity() {
     }
 
     /** The launcher gallery on the TV itself: signed list, each card focusable with the remote, install checked and put back by [LauncherInstall]. */
-    private fun chooseLauncher() {
+    private fun chooseLauncher(auto: String? = null) {   // [auto]: that one swapped to at once (the TV still asks Keep / Go back)
         val a = adb ?: return
         if (busy) return
         log(T("launcher.loading"))
@@ -923,7 +968,7 @@ class MainActivity : Activity() {
                 g0 = list.take()
             } catch (e: Exception) { ui { log("✗ " + reason(e)); wait.second.text = marked("✗ " + reason(e)); wait.third.visibility = View.GONE }; return@Thread }
             g = dev.tvremote.core.ontv.Launchers.Gallery(g0.updated, g0.entries + installedLaunchers(g0), g0.base)
-            ui { if (wait.first.isShowing) { showLaunchers(a, g, facts, have, home); wait.first.dismiss() } }   // closed while loading: nothing opens
+            ui { if (wait.first.isShowing) { showLaunchers(a, g, facts, have, home, auto); wait.first.dismiss() } }   // closed while loading: nothing opens
         }.start()
     }
 
@@ -988,7 +1033,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showLaunchers(a: Adb, g: dev.tvremote.core.ontv.Launchers.Gallery, facts: dev.tvremote.core.ontv.Launchers.Facts, have: Set<String>, home: String) {
+    private fun showLaunchers(a: Adb, g: dev.tvremote.core.ontv.Launchers.Gallery, facts: dev.tvremote.core.ontv.Launchers.Facts, have: Set<String>, home: String, auto: String? = null) {
         val pics = ArrayList<Pair<dev.tvremote.core.ontv.Launchers.Entry, ImageView>>()
         val d = android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
         val root = android.widget.FrameLayout(this)
@@ -1099,6 +1144,7 @@ class MainActivity : Activity() {
         d.setOnDismissListener { stopped = true }                      // Back while installing stops it, same as Close
         d.show()
         list.getChildAt(0)?.requestFocus()
+        g.entries.firstOrNull { it.pkg == auto && it.pkg != home && dev.tvremote.core.ontv.Launchers.fits(it, facts).ok }?.let { install(it) }
     }
 
     /** Removing this app leaves the TV as it was before it: apps Optimize TV turned off come back on first (Undo). */

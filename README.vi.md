@@ -153,7 +153,7 @@ Xong. TV sẵn sàng thì vào thẳng tab Remote. Chưa có ADB thì app điệ
 2. Mở Downloader. Nó xin quyền truy cập tệp thì chọn **Cho phép**.
 3. Ở ô nhập địa chỉ, gõ mã **`2397346`** rồi chọn **Go** (không có Downloader: mở `go.aftvnews.com/<mã>` trong trình duyệt cũng tải được).
 4. TV hỏi cài đặt: chọn **Cài đặt**. TV báo chưa cho phép cài từ nguồn này: bật cho Downloader, bấm Quay lại, rồi chọn Cài đặt.
-5. Mở **TV Setup**. Chưa bật Gỡ lỗi ADB thì app chỉ cách và mở thẳng Tùy chọn nhà phát triển.
+5. Mở **TV Setup**. Chưa bật Gỡ lỗi ADB thì app chỉ cách và mở thẳng Tùy chọn nhà phát triển. Có ADB rồi, app tự cài thêm TV Home, TV Channels, TV Games và hỏi có giữ TV Home làm màn hình chính không.
 6. Quét **mã QR** bằng camera điện thoại, nhập **mã 6 số** hiện trên TV. Xong.
 
 Các mã khác dùng y hệt: app điện thoại `2973135`, TV Home `4356026`, TV Channels `8135635`, TV Games `2294968`.
