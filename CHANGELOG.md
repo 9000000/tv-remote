@@ -9,10 +9,20 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Home: mọi thẻ trừ đồng hồ (lịch, dùng nhiều, hẹn giờ, thị trường, tin tức, thẻ QR) có thêm kiểu "tonal" (thẻ ấm, một đường vẽ chung với thời tiết/hệ thống/âm lịch/không khí), chọn trong ⚙ của thẻ ở mọi app. Giao diện Tết: lịch âm + lịch tháng cùng tonal; giao diện Buổi sáng: đồng hồ sáng cho cùng một họ.
 - TV Home: trình đọc tin cắt phần tóm tắt theo dòng nguyên, dòng cuối kết thúc bằng "…" (trước đây hở nửa dòng ở mép); tên thẻ trong dải ⚙ của web không còn bị gạch ngang
+- Gửi lên TV, phát video: box FPT không còn đứng im (bản chép cho trình phát của TV Setup giờ đọc được).
+- Sức khỏe → Quyền riêng tư: mỗi app có menu ⋯ như tab Ứng dụng; app TV cần (Trợ lý Google, bàn phím) giờ thu từng quyền được (vd micro) trong Chi tiết & quyền, có hỏi trước, cho lại được.
+- Chi tiết app: TV có hồ sơ thứ hai không còn hiện sai quyền (micro báo "Không" dù đang cấp).
+- Tên app đặt lại trên TV Home hiện đúng ở mọi danh sách app (Lịch mở app, Ứng dụng...).
+- TV Home → Chủ đề: nút ⓘ mở bảng "chủ đề chỉnh gì" ngay trên màn hình (trước hiện tận cuối trang, như không bấm được).
 
 **English**
 - TV Home: every card except the clock (calendar, most used, timer, market, news, QR cards) now has the "tonal" look (warm card, one shared drawing path with weather / system / lunar / air), chosen in the card's ⚙ on every client. Tết theme: lunar + calendar both tonal; Morning theme: light clock to match the tonal family.
 - TV Home: the news reader cuts the summary at whole lines, the last ending in "…" (no half line at the edge); card names in the web ⚙ strip are no longer struck through
+- Send to TV, play a video: the FPT box no longer sits still (the copy for TV Setup's player is now readable).
+- Health → Privacy: every app has the Apps tab's ⋯ menu; an app the TV needs (Google's assistant, the keyboard) can now lose one permission (e.g. the microphone) in Details & permissions, asked first, given back the same way.
+- App details: a TV with a second profile no longer shows the wrong grants (the microphone read "No" while held).
+- Names given to apps on TV Home show in every app list (App schedule, Apps...).
+- TV Home → Themes: ⓘ opens what a theme sets right on screen (it used to appear at the very bottom, as if nothing happened).
 
 ## 0.22.1 - 2026-10-25
 
