@@ -40,3 +40,19 @@
 .tvp{padding-top:40px;padding-bottom:64px}
 .tvp h1{font-size:clamp(28px,4vw,40px);font-weight:800;margin:10px 0 12px}
 .tvp .tvs-box{margin-top:24px}
+/* the daily chart (js/tvs.js mountChart) */
+.tvs-chart{margin-bottom:16px}
+.dc-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}
+.dc-t{margin:0;font-size:17px}
+.dc-tot{margin:0;color:var(--muted);font-size:14px}.dc-tot b{color:var(--text);font-size:22px;font-weight:800;margin-right:2px}
+.dc-plot{position:relative;overflow:hidden;margin-top:10px;min-height:150px}
+.dc-plot svg{display:block;max-width:100%;touch-action:pan-y}
+.dc-grid{stroke:var(--line);stroke-width:1}
+.dc-ax{fill:var(--dim);font-size:11px;font-family:"JetBrains Mono",ui-monospace,monospace}
+.dc-hit{fill:transparent;cursor:pointer}
+.dc-bar{opacity:.78;rx:2}
+.dc-day.on .dc-bar{opacity:1}.dc-day.on .dc-hit{fill:rgba(91,140,255,.1)}
+.dc-read{margin:8px 0 0;color:var(--text);font-size:14px;min-height:3em}
+.dc-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:8px 0 0;color:var(--muted);font-size:13px}
+.dc-key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.dc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
