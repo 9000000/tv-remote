@@ -115,7 +115,7 @@ class HomeActivity : Activity() {
     private var conf = JSONObject()
     private var wallShown = ""
     private val CAP_X = 48; private val CAP_Y = 6                     // the slideshow caption's place (dp): top right, above the buttons' pill, where no card or tile reaches
-    private val CAP_INK = 0xE6FFFFFF.toInt(); private val CAP_DIM = 0x99FFFFFF.toInt()
+    private val CAP_INK = 0xE6FFFFFF.toInt(); private val CAP_DIM = 0x59FFFFFF.toInt()   // the credit: there to be found, not read (at 60% it drew the eye: the user, 2026-10-26)
     private var lastWall = ""
     private var web: android.webkit.WebView? = null                 // the "web" wall's page, behind the grid and over the window's gradient; null for every other wall
     private var webDim: View? = null
@@ -1365,7 +1365,8 @@ class HomeActivity : Activity() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; isFocusable = false; isClickable = false; alpha = 0f
             addView(text(14f, CAP_INK).apply { typeface = Font.medium; text = s.line(vi); gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-            if (s.credit.isNotEmpty()) addView(text(12f, CAP_DIM).apply { text = "© " + s.credit; gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+            if (s.credit.isNotEmpty() && !s.credit.endsWith("/ Unsplash")) addView(text(11f, CAP_DIM).apply { text = "© " + s.credit;   // Unsplash asks no credit (the user wanted none); CC BY photos must keep theirs
+                gravity = Gravity.END; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
         }
         root.addView(box, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(dp(CAP_X * 2), dp(CAP_Y), dp(CAP_X), 0) })
         box.animate().alpha(1f).setDuration(800).start()
