@@ -1,4 +1,0 @@
-#!/bin/sh
-# keeps the codegraph index (.codegraph/, gitignored) in step with the tree; ~0.3 s, in the background, nothing when not installed
-command -v codegraph >/dev/null 2>&1 && [ -d .codegraph ] && (codegraph sync -q . >/dev/null 2>&1 &)
-exit 0

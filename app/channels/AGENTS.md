@@ -1,0 +1,13 @@
+# app/channels: TV Channels
+
+Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases apply here too). What is where:
+
+```
+app/channels/            TV Channels: BrowseActivity (countries, categories, favourites, groups, search), PlayActivity (ExoPlayer, the
+                         lineup, a dead stream falls to the next), ChannelsReceiver + Edit (favourites and groups edited from the clients over ADB: DUMP-protected, whole state by channel id, `Edit` cleans it; a country's channels go to a file the shell reads: `core/ontv/Channels.kt` `manage`, `/api/channels/manage`, `js/chan_manage.js`), Catalog (iptv-org's m3u, kept a day), Playlists (the person's own m3u links, max 5, set with `lists` in the same broadcast: `Edit.cleanLists`, fetched with a 5 MB cap, kept a day, a row each under "Your lists"; Xtream Codes not done), Store (prefs), Find (a name -> a
+                         channel), Pins (links and pinned shortcuts), ChannelTile + HomeInfo (the "Keep watching" live tile for TV Home, which it alone may ask), Providers (more sources than iptv-org, e.g. VieON: each kind is
+                         code here, their addresses / headers / on-off in `docs/channels/providers.json`, signed by `dev/sign/sign_providers.py`
+                         with the launcher list's key, read from the site, else GitHub, else the APK's packed copy; Ed25519 from
+                         `app/shared/src/sign`), Guide + GuideList (the programme guide from the providers with a "guide": TV360 by
+                         name, VieON by its id; now / next on the player and the cards, the day's list). AndroidX (Media3, RecyclerView) here only; no :shared
+```

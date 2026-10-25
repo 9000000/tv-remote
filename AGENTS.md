@@ -34,69 +34,16 @@ Only the Phone app and the Computer app have them (the TV web page needs TV Setu
 ## Layout
 
 ```
-app/shared/web/          THE web UI (index.html, css/*.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
-app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work (Java helpers Meta / Caps / Playing / Screen stay
-                         in `core`: TV Setup and app_process call them by name):
-  remote/                one TV's own remote link, by brand, behind `Remote`: Atv (Android TV, keys without ADB), Lg, Samsung,
-                         Roku, Ssdp (finding them), WebSocket, Inputs (HDMI and other sources)
-  adb/                   Adb, AdbLink, AdbPrompt ("Allow USB debugging?"), Spake2 + AdbTls + Mdns (pairing and connecting through
-                         Android 11+ Wireless debugging: SPAKE2 with BoringSSL's own M/N, TLS 1.3 through `app/shared/conscrypt`
-                         ConscryptBackend, found by mDNS; Phone and Computer apps only, `Manage.canPair`), TvShell, Pkg
-  picture/               Tv (scrcpy session, video/audio/control), Feeds, AudioOut (Opus playback), Downmix, SoundQueue
-  web/                   Manage (the /api core for the web UI), HttpServer, WebPage, Invite, Qr, Transfer (Stop, no room), Hook, Telegram + TelegramHttp (the Telegram bot: long polling, runs in TV Setup; commands, alerts via `RemoteService.alert(kind)`, history, `/start <code>` pairing; the phone/computer card reaches it through Manage `/api/telegram` -> RulesReceiver `do:"telegram"`; TV Home asks HomeInfo `call("telegram", ""|"code")` -> `{state: token_missing|none|ready, bot, code, code_left, link}`, see dev/DECISIONS.md)
-                         (Home Assistant / Shortcuts: `/api/hook`, its own token; TV Setup on 8765, the computer app on port+1 only while on)
-  ontv/                  things done on the TV over ADB: Setup (Optimize TV; TV Home as the home screen; Bloat: brands' apps,
-                         plus `docs/optimize/bloat.json` from the site, signed by `dev/sign/sign_bloat.py`, only adding to keep), SetupNeed / SetupUpdate, SetupFiles (reading TV Setup's
-                         files: the shell, or TV Setup hands them over where the shell may not, a TCL on Android 11), RulesClient (TV Setup's
-                         rules), Draw (strokes to TV Setup's layer), Notify, NowPlaying (through Playing), RemoteLabels (app
-                         names, pictures and Caps, through Meta and Caps: Java in src/main/java, dexed into
-                         assets/tvr-helper.jar by :shared:tvHelper, kept in git; app/shared/assets/README.md), ScreenOff, Sensors, Meminfo, Tailscale
-  scenes/                Scenes (scenes + key names), Voice (spoken commands), RemoteSpec (remote.json)
-  (guard)                `app/shared/src/guard`: Guard.kt (every Android app: keeps the main looper alive, shows the error in a dialog; DECISIONS.md) + GuardLogic.kt (also the computer app); the page's is `js/errbox.js`. An error shown there is also sent to the census worker (`POST /v1/crash`, `Census.crash`, `Scrub.kt` + `js/scrub.js`, one case table `tests/scrub_cases.json`) when the stats switch is on; the apps without :shared (TV Home, Channels, Games) have no switch and send nothing (`Guard.crash` stays null)
-  (core itself)          Errors, Diagnose (the self-check when a TV cannot be reached: one conclusion + fix, `/api/diagnose`, `js/diagnose.js`, phone `Diagnosing.kt`), WireLog (what the TVs said and the errors shown, keys blanked: About → Send the log,
-                         `/api/wirelog`), Fleet (several saved TVs at once), SameTv (one TV saved under two addresses), B64, SelfSigned
-app/android/.../phone/   phone app, one file per part, as extension functions on MainActivity: MainActivity (state, lifecycle),
-                         Ui, Net, PickerScreen, RemoteScreen, Typing, InfoScreens, KeysOnly, AdbHelp, Media, Managing (the
-                         web UI in a WebView), Updater, Listen + ListenService (🎧), Automation (timer, scenes, voice),
-                         SceneStore, Headless + SceneActivity/SceneService (widget, tiles, shortcuts), PadMap (a game controller → keys; the page's is `js/gamepad.js`), AirMouse (the gyroscope as a pointer: a virtual HID mouse through scrcpy, `Tv.mouseOpen`; LG's pointer by `Remote.pointer`), Diagnosing (the self-check's screen), Tiles, RemoteWidget, ManyTvs (the list of TVs:
-                         install / remove / restart on several at once), SetupBanner (a new TV Setup), Drawing (✏️ on the picture), NowPlayingBar
-                         (the now playing strip, the TV's clipboard), IrRemote + Ir + IrCodes (the infrared remote on the phone's IR LED: screen,
-                         encoders NEC / Samsung32 / SIRC / RC5 / RC6 / RCA / raw, `assets/ir/codes.json` made by `dev/gen/ir_codes.py` from Flipper-IRDB, CC0)
-app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (web server), ManageActivity (the web UI on the
-                         TV itself: a WebView in its own process, `?ontv=1`, D-pad focus in `js/ontv.js`), PairActivity, Stats, TrustReceiver, Scope (what a shared browser may do: full / remote / view),
-                         Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits, the full memory notice), DnsWatch (turns off a
-                         DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), NotifyLayer + NotifyReceiver (the message card in a corner; `Notify.kt` in the shared code is the one place its corner / seconds are clamped), Nightly (2-5 am in standby: caches, `cmd package compile` of the apps used, `stats/nightly.json` for Health), KeepAdb (ADB debugging
-                         back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB)
-app/tvkeys/               TV Setup Keys (`dev.tvremote.setup.keys`): the ONLY place with an accessibility service (KeyCatch, KeyFixService), thin: it hands each key of `KeysProtocol.INTEREST` to TV Setup's `KeysBridge` and does what it answers (the logic stays in KeyFix / HoldKeys / Rules). TV Setup declares none, because Play Protect blocks an app that does when it comes from a browser or Downloader (DECISIONS.md). No number of its own: TV Setup's `app/tv/VERSION`, same signing key (`app/tv/signing.jks`; a signature permission lets them trust each other); gradle `packKeys*` puts its APK in tv-setup.apk as `assets/tvkeys.apk`, `KeysAddon.kt` installs it over TV Setup's own ADB link when a feature needs it (and again when the version differs)
-app/home/                TV Home, the launcher: plain Views, no :shared (it would pack the web UI; its "Manage from phone" page is packed from app/shared/web by packHomeWeb and served by ManageServer); HomeActivity (clock, dock,
-                         grid, long-press menu), Widgets (system / usage / lunar / timer / note cards; usage, timer and CPU from TV
-                         Setup's HomeInfo provider, which answers only TV Home by its signing key; also its live tiles, `apps/Tiles.kt` here / `HomeTiles.kt` there, keys `tile:<pkg>/<id>`, a `layout` each: gauge / next / toggle; a second provider, TV Channels' own HomeInfo, both pinned by signing key), Lunar (the lunar calendar, offline), Apps, Store (prefs), HomeReceiver (`--es set <b64 json>`, DUMP-protected, like
-                         RulesReceiver). Its Kotlin (`dev.tvremote.home`) is grouped by who uses whom: the root keeps the entry points (HomeApp, HomeActivity, HomeReceiver, Store, Customize, Lang, Font, Power, the screensaver HomeDream / DreamSettings / Dream) and the components other apps start by name (PinActivity, OpenActivity: a moved class would break `screensaver_components` and TV Setup's `HomeKeys`); subpackages `widgets/` (cards + Weather, Lunar, MonthGrid, QrCard), `wall/` (backgrounds), `apps/` (Apps, Pins, Tiles, Badges, Nav, InputOpen), `keys/` (Keys, QuickKeys, Targets, Picker), `manage/` (ManageServer, HomeApi, Access, PhotoScreen), `ui/` (TopBar, Drop, Zoom, Frost). The ready-made themes are the site's signed list `docs/home/themes.json` (`dev/sign/sign_themes.py`; `Themes.kt` reads site, GitHub, kept copy, packed copy; `HomeConfig.parseReady` cleans each look; `/api/home` `themesBuiltin` carries `names`). Its settings' shape is ONE file, `app/shared/src/home/kotlin/.../HomeConfig.kt`, compiled
-                         into :shared, :desktop and :home; the clients' side is `core/ontv/Home.kt` + `/api/home` + `js/home.js`.
-                         In the gallery it is kind "self": its APK is the latest release's `tv-home.apk`, pinned by SHA256SUMS
-app/channels/            TV Channels: BrowseActivity (countries, categories, favourites, groups, search), PlayActivity (ExoPlayer, the
-                         lineup, a dead stream falls to the next), ChannelsReceiver + Edit (favourites and groups edited from the clients over ADB: DUMP-protected, whole state by channel id, `Edit` cleans it; a country's channels go to a file the shell reads: `core/ontv/Channels.kt` `manage`, `/api/channels/manage`, `js/chan_manage.js`), Catalog (iptv-org's m3u, kept a day), Playlists (the person's own m3u links, max 5, set with `lists` in the same broadcast: `Edit.cleanLists`, fetched with a 5 MB cap, kept a day, a row each under "Your lists"; Xtream Codes not done), Store (prefs), Find (a name -> a
-                         channel), Pins (links and pinned shortcuts), ChannelTile + HomeInfo (the "Keep watching" live tile for TV Home, which it alone may ask), Providers (more sources than iptv-org, e.g. VieON: each kind is
-                         code here, their addresses / headers / on-off in `docs/channels/providers.json`, signed by `dev/sign/sign_providers.py`
-                         with the launcher list's key, read from the site, else GitHub, else the APK's packed copy; Ed25519 from
-                         `app/shared/src/sign`), Guide + GuideList (the programme guide from the providers with a "guide": TV360 by
-                         name, VieON by its id; now / next on the player and the cards, the day's list). AndroidX (Media3, RecyclerView) here only; no :shared
-app/games/               TV Games: LibraryActivity (the games, Suggestions from the catalog), GameActivity (LibretroDroid, save / load),
-                         WebGameActivity (a web game in a WebView: keys, the Gamepad API and `window.tvpad`, WEBGAMES.md), GameServer (8780:
-                         the pad page `assets/pad`, uploads, WebSocket slots 1-4), Systems (extension -> system -> core, pad layout), Catalog +
-                         Cores (`docs/games/games.json`, signed by `dev/sign/sign_games.py` with the launcher list's key: cores downloaded by sha256 from
-                         the `cores-1` release made by `dev/release/cores.sh`, suggested web games, free homebrew; fceumm packed as the offline fallback)
-app/karaoke/             TV Karaoke: MainActivity (queue screen + WebView player), KaraokeServer (8790: pad page `assets/pad`, WebSocket), Session (queue, key, volume), KaraokeQueue + Search (`SearchParse`: API / InnerTube / HTML, unit-tested) + KeyRules; plain Views, no :shared
-app/gradle/              the Gradle build of everything Kotlin (settings point at ../shared, ../android, ../tv, ../home, ../desktop); open it in Android Studio
-app/desktop/             the computer app on the shared Kotlin core (JVM, no adb/Python/ffmpeg), the "pc" core: Server.kt
-                         (the routes only the computer has) + Manage.kt; Pass.kt (a key per start, in the link the window and browser open: tests pass `TVR_PASS` and `?k=`); Updater.kt (updates itself from releases, swapped in by a script once it quits); Window.kt shows the page in the system's web view
-                         (native/: webview, kept in git, native/README.md). `./gradlew :desktop:installDist`, then
-                         `app/desktop/build/install/desktop/bin/desktop --port 8769 [--window]` (inside the repo: its tvs.json, keys in
-                         .cache/keys). `./gradlew :desktop:packageApp` -> the app for this system + zip / tar.gz (own Java via jlink;
-                         data in the user's app data folder); .github/workflows/desktop.yml builds and opens it on Mac, Windows, Linux
-app/shared/tests/        node tests of the page's scripts, and the case tables the Kotlin tests read too (its README.md)
-dev/                     test/ (emu.sh, smoke.py, layout.js, audit.js), gen/ (icons, wallpapers), shots/, sign/ (the site's signed lists), release/, optimize_images.py (shrinks tracked pictures; never touches `docs/home/` and `docs/launchers/`: their SHA-256 is signed) : dev/README.md
+app/shared/    the web UI (web/), the Kotlin core all apps share (src/.../core/: remote adb picture web ontv scenes, guard), page tests
+app/android/   Phone app            app/tv/        TV Setup             app/tvkeys/    TV Setup Keys (the accessibility add-on)
+app/home/      TV Home              app/channels/  TV Channels          app/games/     TV Games
+app/desktop/   Computer app         app/karaoke/   TV Karaoke (shelved) app/gradle/    the Gradle build of everything Kotlin
+dev/           test/ (emu.sh, smoke.py, layout.js, audit.js), gen/ (icons, wallpapers), shots/, sign/ (the site's signed lists), release/,
+               optimize_images.py (never touches docs/home/ and docs/launchers/: their SHA-256 is signed); dev/README.md
 ```
+
+Each `app/<x>/AGENTS.md` (loaded as its `CLAUDE.md` when you work in that folder) lists its files and what each does;
+read it before changing that app. A file map for one app belongs there, a rule for every app here.
 
 ## Rules that matter
 
@@ -261,25 +208,9 @@ What it takes care of, for doing it by hand:
   tools (`codegraph_explore`, `codegraph_node`, callers / callees / impact); without them the CLI says the same:
   `codegraph explore "<what you look for>"`, `codegraph node <Symbol>`, `codegraph callers <fn>`, `codegraph impact <Symbol>`.
   Once per clone: `npm i -g @colbymchenry/codegraph && codegraph init .` (the index `.codegraph/` is gitignored, ~60 MB);
-  the git hooks in `dev/hooks` (post-commit / merge / checkout / rewrite) run `codegraph sync` after that, so it stays current.
+  the MCP server keeps it current itself (a file watcher, and a catch-up on connect for a pull or checkout made meanwhile).
   Use grep for words and strings (i18n ids, JSON keys), codegraph for "who calls / what breaks if I change this".
 - Agents checking crashes or reviewing community themes: [dev/census/CRASHES.md](dev/census/CRASHES.md) and [dev/themes/REVIEW.md](dev/themes/REVIEW.md) (`crashes.py --json`, `review_themes.py --list --json`).
-- **TV Home backgrounds, which path draws what** (read before adding a theme or a wall kind):
-
-  | `wall` | Drawn by | Rotates (`walls` + `wevery`) |
-  |---|---|---|
-  | gradients, drawn scenes, `bing`, `photo*`, `vid:<id>` | native (`wall/Wall.kt`, `WallArt`, `VideoWall`) | yes (`HomeConfig.next`) |
-  | `web` + `loop.html?i=<jpg>` (the site's photo themes, the gallery) | native picture, cached (`wall/NetPicture.kt` `direct()`) | no: `web` is never in `walls` |
-  | `web` + `loop.html?v=<video>` (the site's video themes) | native player (`wall/WebVideo.kt` `direct()`) | no |
-  | `web` + `loop.html?s=<list>` (a slideshow, `docs/home/<list>.json`) | native in new TV Homes; older ones run loop.html's own slideshow | inside the slideshow |
-  | `web` + any other page (Immich Kiosk, a dashboard) | a WebView (`wall/WebWall.kt`) | no |
-
-  A WebView wall was measured slow on the FPT Play box (cold start + uncached download), so every site theme goes native; loop.html
-  stays only as the fallback for older TV Homes and the page's preview. Its allowed hosts are listed twice: loop.html `HOSTS` and the
-  `HOSTS` of NetPicture / WebVideo. Themes live in `docs/home/themes.json` (signed, `dev/sign/sign_themes.py`, bump `rev`), photos come
-  from `dev/gen/wallpapers.py` (Wikimedia Commons, licence + author kept), and a TV Home asks for the list again on Home (a day old) and
-  on opening Themes (an hour), `Themes.refresh`.
-
 - Downloader (AFTVnews) short codes, always pointing at the latest release: **2397346** → `tv-setup.apk`, **2973135** → `tv-remote.apk`, **4356026** → `tv-home.apk`, **8135635** → `tv-channels.apk`, **2294968** → `tv-games.apk`. They are listed once in `docs/data/downloader.json`, signed by `dev/sign/sign_downloader.py` (the launcher list's key; run it after every edit and commit the `.sig` with it); the apps read it through `core/Downloader.kt` (site, else GitHub, else the copy kept, else `PACKED`, which `DownloaderTest` keeps equal to the file; an unsigned list is ignored: a code makes the TV install what it points at), and the page asks `/api/downloader`. The words take `{code}`, never the digits. The static pages of `docs/` and the READMEs keep the codes as text. Downloader registers the `downloader:` scheme: opening `downloader://<code>` (an intent, or the remote protocol's launch command) makes it fetch the APK and bring up the installer with nothing typed. Only send it once Downloader is known to be installed; a link the TV has no app for can make it drop the remote connection.
 - TV Setup also runs on phones and tablets (needs ADB on port 5555 there). Tell a TV from a phone with the `android.software.leanback` feature, never the screen size alone: a 1080p TV is only `sw540dp`. Optimize TV refuses non-TVs (`Setup.tvOnly`).
 - TV Setup keeps its state on the TV: `/data/local/tmp/tvr-disabled.txt` (apps Optimize TV turned off, for Undo), stats in `/sdcard/Android/data/dev.tvremote.setup/files/stats/`.
