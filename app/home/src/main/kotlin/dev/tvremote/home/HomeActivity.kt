@@ -589,7 +589,7 @@ class HomeActivity : Activity() {
         while (p != null && p !== content) { y += p.top; p = p.parent as? View }
         val h = dp(48)
         tipBelow = y + row.height + dp(40) + h <= scroll.height - dp(8)
-        val at = if (tipBelow) y + row.height + dp(40) else y - h - dp(10)
+        val at = if (tipBelow) y + row.height + dp(40) else y - h - dp(24)   // clear of the focused tile, which grows when focused
         val lp = tipView.layoutParams as FrameLayout.LayoutParams
         if (lp.topMargin != at) { lp.topMargin = at; tipView.requestLayout() }
     }
