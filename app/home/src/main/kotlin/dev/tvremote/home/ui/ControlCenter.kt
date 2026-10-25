@@ -88,7 +88,7 @@ object ControlCenter {
             words.addView(sub.apply { textSize = 12f; setTextColor(TvGlass.HINT); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; visibility = GONE })
             addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
             setOnClickListener { press() }
-            onFocusChangeListener = OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+            // no pop: the white edge and lighter fill say focus; scaled, a tile at the panel's edge came out cut (the user, 2026-10-25)
         }
 
         fun icon(res: Int) = pic.setImageResource(res)
