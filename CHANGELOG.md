@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Setup: nút "Dùng launcher gốc của TV" (trước là "↩ Về launcher của TV", nằm cạnh Đóng nên dễ bấm nhầm) giờ hỏi lại trước khi đổi màn hình chính.
+
+**English**
+- TV Setup: "Use the TV's own launcher" (was "↩ Back to the TV's own", beside Close and easy to press by mistake) now asks before it changes the home screen.
+
 ## 0.25.0 - 2026-10-26
 
 Web 0.25.0 · app điện thoại 0.25.0 · app TV 0.25.0 · TV Home 0.12.0 · TV Channels 0.8.0 · TV Games 0.8.0

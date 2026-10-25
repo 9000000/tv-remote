@@ -1326,7 +1326,9 @@ class MainActivity : Activity() {
         foot.setPadding(0, dp(16), 0, 0)
         val back = smallButton(T("launcher.back")) {
             if (running) return@smallButton
-            Thread { try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).rollback("user"); ui { log("✓ " + T("launcher.back")); d.dismiss() } } catch (x: Exception) { ui { status.text = marked("✗ " + reason(x)) } } }.start()
+            TvUi.confirm(this, R.style.TvSheet, T("launcher.back"), T("launcher.restore_ask"), T("launcher.restore"), T("common.cancel"), accent = ACCENT) {   // it sat beside Close and was pressed as "back" (the user, 2026-10-26)
+                Thread { try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).rollback("user"); ui { log(T("launcher.back")); d.dismiss() } } catch (x: Exception) { ui { status.text = marked("✗ " + reason(x)) } } }.start()
+            }
         }
         val close = smallButton(T("common.close")) { if (running) stopped = true else d.dismiss() }
         foot.addView(back)

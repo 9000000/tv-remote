@@ -2623,7 +2623,7 @@
  "launcher.title": "🏠 Home screen",
  "launcher.note": "Change the TV's home screen. If the new launcher fails, the TV goes back to its own.",
  "launcher.open": "🖼️ Launcher gallery",
- "launcher.back": "↩ Back to the TV's own",
+ "launcher.back": "Use the TV's own launcher",
  "launcher.dlg_title": "🖼️ Launcher gallery",
  "launcher.loading": "Loading the list...",
  "launcher.unreadable": "Could not load the launcher list. Check the network and try again.",
