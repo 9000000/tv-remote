@@ -2092,11 +2092,12 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
            private val art: android.graphics.drawable.Drawable? = null, corner: String? = null) : TvTile(c, w, dp) {
     private val content: View
     private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
-    private val badge = BadgeView(c, dp)
+    private val k = (w / dp(150).toFloat()).coerceIn(0.6f, 1f)        // the tile's size against 5 columns: the badge, the names and the pill shrink with the picture (many columns: they covered it, the user 2026-10-26)
+    private val badge = BadgeView(c, dp, k)
     private var shownMark: Badges.Mark? = null
 
     init {
-        Font.on(name)
+        Font.on(name); name.textSize = 13f * k
         val h = w * 9 / 16
         val banner = app?.banner ?: art                                // art: a tile that is not an app (TV Setup suggested)
         val liveFace = if (app?.live == true) LiveFace(c, w, h, label, say).also { it.set(Tiles.cached(app.pkg), animate = false) } else null
@@ -2110,7 +2111,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             fill(content)
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
-            val ts = if (h < dp(80)) 10f else 12f                     // many columns make small tiles: the name was cut under the icon (the user, 2026-10-26)
+            val ts = (12f * k).coerceAtLeast(9f)                      // many columns make small tiles: the name was cut under the icon (the user, 2026-10-26)
             val icon = minOf(h * 45 / 100, h - dp(12) - ((ts + if (corner != null) ts - 2 else 0f) * 1.35f * c.resources.displayMetrics.scaledDensity).toInt() - dp(2))   // what is left once the name and paddings fit
             inner.addView(ImageView(c).apply {
                 if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(mark); imageTintList = ColorStateList.valueOf(Color.WHITE) }
@@ -2125,11 +2126,11 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
             fill(inner)
             content = inner
         }
-        face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
+        face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, (dp(6) * k).toInt(), (dp(6) * k).toInt(), 0) })
         if (corner != null && banner != null) face.addView(Font.on(TextView(c)).apply {    // a suggestion, not an app on this TV: says so on its face
-            text = corner; textSize = 12f; setTextColor(Color.WHITE); setPadding(dp(10), dp(3), dp(10), dp(4))
+            text = corner; textSize = 12f * k; setTextColor(Color.WHITE); setPadding((dp(10) * k).toInt(), (dp(3) * k).toInt(), (dp(10) * k).toInt(), (dp(4) * k).toInt())
             background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(PILL_BG); setStroke(dp(1), PILL_EDGE) }
-        }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(8), dp(8), 0) })
+        }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, (dp(8) * k).toInt(), (dp(8) * k).toInt(), 0) })
         name.text = if (banner != null) label else ""                 // a tile without a banner already shows its name inside
     }
 
@@ -2172,7 +2173,8 @@ private const val POWER_INK = 0xFF7EE0A1.toInt()                    // the power
  * A pill on a tile's corner: a lock, an hourglass and the time left, or the power mark of the app opened at power-on. Drawn by hand with the paints and icons made once, and
  * measured only when the mark changes: nothing is allocated while it is drawn (or while the tile grows).
  */
-class BadgeView(c: Context, private val dp: (Number) -> Int) : View(c) {
+class BadgeView(c: Context, dp0: (Number) -> Int, k: Float = 1f) : View(c) {
+    private val dp: (Number) -> Int = { n -> (dp0(n) * k).toInt() }        // a smaller tile, a smaller badge
     private val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = PILL_BG }
     private val text = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE; textSize = dp(13).toFloat(); typeface = Font.medium
