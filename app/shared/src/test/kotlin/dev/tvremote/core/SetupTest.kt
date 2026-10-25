@@ -77,6 +77,14 @@ class SetupTest {
         assertFalse(Setup.inUse(""))
     }
 
+    @Test fun setupAppsAudioAndKeyboardStayOn() {                       // tv-detox's never list
+        for (p in listOf("com.google.android.partnersetup", "com.google.android.onetimeinitializer", "com.google.android.leanback.ime",
+                "com.android.tv.provision", "com.android.inputdevices", "com.dolby.android.audio.service", "com.android.se"))
+            assertTrue(p, Setup.mustKeep(p))
+        assertFalse("com.google.android.partnersetup" in dev.tvremote.core.ontv.Bloat.SUGGEST)
+        assertFalse(Setup.mustKeep("com.android.service"))                  // "se" is that one name, not a prefix
+    }
+
     @Test fun factoryTestAppsAreKnownByName() {
         for (p in listOf("com.cvte.tv.hkcfac", "com.mediatek.factorymode", "com.tcl.factory", "com.xm.tvfac.ui", "com.hisense.FactoryTest"))
             assertTrue(p, Bloat.FACTORY.matches(p))

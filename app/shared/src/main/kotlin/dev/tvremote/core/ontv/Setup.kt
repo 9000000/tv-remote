@@ -63,7 +63,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata" +
             "|provision|tv\\.provision|managedprovisioning|inputdevices|location\\.fused|externalstorage|keychain|se)" +   // setup, keyboards' layouts, storage: tv-detox's never list
             "|com\\.dolby\\.android\\.audio\\.service" +                       // no sound without it on some TVs (tv-detox)
-            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|leanback\\.ime|onetimeinitializer|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
+            "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|leanback\\.ime|onetimeinitializer|partnersetup|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
             "|dev\\.tvremote\\.setup(\\.keys)?|com\\.tailscale\\.ipn")   // TV Home only while it is the home screen (callers check); TV Channels, TV Games and the Phone app are ordinary apps
         /**
          * The apps whose permissions stay as they are: the system's own core and this project's. Another app the TV needs (Google's
@@ -77,10 +77,11 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
          * An app that asks for the TV's own input hardware (HDMI, AV, the tuner), whatever its name: turned off, a OnePlus showed "No
          * Signal" on every input, even once it was back on (cleanyourtv #321). Or one that owns a saved Wi-Fi network: Android forgets
          * an app's networks when it goes, and the TV loses the network and this ADB with it (a TCL's belonged to setupwraith, the
-         * emulator's to com.android.tv.provision). One shell call, made only before turning one off, clearing or removing it.
+         * emulator's to com.android.tv.provision). Or a PERSISTENT one: Android starts it again, it never stays off (tv-detox).
+         * One shell call, made only before turning one off, clearing or removing it.
          */
         fun inUse(sh: (String) -> String, p: String): Boolean = inUse(
-            sh("dumpsys package $p 2>/dev/null | grep -c 'android.permission.TV_INPUT_HARDWARE'; dumpsys wifi 2>/dev/null | grep -cE 'cname=$p([ ,]|$)'" +
+            sh("dumpsys package $p 2>/dev/null | grep -cE 'android.permission.TV_INPUT_HARDWARE| pkgFlags=.*PERSISTENT'; dumpsys wifi 2>/dev/null | grep -cE 'cname=$p([ ,]|$)'" +
                 // the TV's Settings and inputs, whatever the brand calls them: a Sony whose Settings another tool removed hung at its logo
                 "; cmd package query-activities --brief -a android.settings.SETTINGS 2>/dev/null | grep -c '^ *$p/'" +
                 "; cmd package query-activities --brief -a android.intent.action.VIEW -t vnd.android.cursor.item/channel 2>/dev/null | grep -c '^ *$p/'"))
@@ -151,7 +152,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         tvOnly()
         Bloat.fresh()
         val enabled = sh("pm list packages -e").split("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
-        val guard = handlers()
+        val guard = handlers() + persistent()
         val suggest = suggested().filter { it in enabled && it !in guard }
         val home = homeNow()
         val shown = HashSet<String>()
@@ -238,6 +239,10 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
      */
     private fun handlers(): Set<String> = sh("cmd package query-activities --brief -a android.intent.action.VIEW -t vnd.android.cursor.item/channel 2>/dev/null;" +
         " cmd package query-activities --brief -a android.settings.SETTINGS 2>/dev/null").split("\n").filter { it.contains('/') }.map { it.trim().substringBefore('/') }.toSet()
+
+    /** The PERSISTENT apps, never offered: filtered on the TV, ~150 B and ~35 ms where the whole dump is ~600 KB (emulator). */
+    private fun persistent(): Set<String> = sh("dumpsys package packages 2>/dev/null | awk '/^  Package \\[/{p=\$2} / pkgFlags=\\[.*PERSISTENT/{print substr(p,2,length(p)-2)}'")
+        .split("\n").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
 
     /** The app the Home button opens now ("android" when Android asks which one). */
     private fun homeNow(): String = last(sh(RESOLVE_HOME)).substringBefore('/')

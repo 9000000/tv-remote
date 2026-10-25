@@ -14,6 +14,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chi tiết app: TV có hồ sơ thứ hai không còn hiện sai quyền (micro báo "Không" dù đang cấp).
 - Tên app đặt lại trên TV Home hiện đúng ở mọi danh sách app (Lịch mở app, Ứng dụng...).
 - TV Home → Chủ đề: nút ⓘ mở bảng "chủ đề chỉnh gì" ngay trên màn hình (trước hiện tận cuối trang, như không bấm được).
+- Tối ưu TV / Ứng dụng: không tắt app Android luôn giữ chạy (PERSISTENT: tắt cũng tự bật lại), Google partner setup, các app cài đặt ban đầu, bàn phím phụ, âm thanh Dolby (theo danh sách của tv-detox).
 
 **English**
 - TV Home: every card except the clock (calendar, most used, timer, market, news, QR cards) now has the "tonal" look (warm card, one shared drawing path with weather / system / lunar / air), chosen in the card's ⚙ on every client. Tết theme: lunar + calendar both tonal; Morning theme: light clock to match the tonal family.
@@ -23,6 +24,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - App details: a TV with a second profile no longer shows the wrong grants (the microphone read "No" while held).
 - Names given to apps on TV Home show in every app list (App schedule, Apps...).
 - TV Home → Themes: ⓘ opens what a theme sets right on screen (it used to appear at the very bottom, as if nothing happened).
+- Optimize TV / Apps: never turns off an app Android keeps running (PERSISTENT: it would not stay off), Google partner setup, the setup and keyboard helpers, Dolby audio (from tv-detox's list).
 
 ## 0.22.1 - 2026-10-25
 

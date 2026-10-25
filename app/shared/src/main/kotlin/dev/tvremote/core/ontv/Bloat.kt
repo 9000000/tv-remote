@@ -15,7 +15,6 @@ object Bloat {
         "com.google.android.tv.bugreportsender" to "Bug report sender",
         "com.android.tv.feedbackconsent" to "Feedback consent",
         "android.autoinstalls.config.google.gtvpai" to "Google TV partner app installer",
-        "com.google.android.partnersetup" to "Google partner setup",
         // partner-app installers of other makers (Play Auto Install configs, one per maker)
         "android.autoinstalls.config.JVC" to "JVC app installer",
         "android.autoinstalls.config.SW" to "Skyworth app installer",
