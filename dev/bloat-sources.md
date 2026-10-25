@@ -5,7 +5,29 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-24**, upstream `Gathin23/cleanyourtv` at `c965ef4b11` (new since `f9f0c5353e`: 12 debloat.txt, 85 packages that
+Last read: **2026-10-25**, upstream `Gathin23/cleanyourtv` at `575d73f0f3` (2026-10-25 07:50 UTC, 409 commits after `c965ef4b11`;
+66 new or changed `debloat.txt`, 173 distinct packages in their added lines, 141 that nothing of ours held; issues / PRs up to ~#1600).
+Went to `docs/optimize/bloat.json` (9 suggested, 6 keep patterns), not Bloat.kt. SUGGEST: Realtek `storemode` (retail demo, kogan-g7),
+`karaoke.userguide`, `android.autoinstalls.config.RTKSTBAndroid.device` (partner app installer, rocktek-gx1); Hisense / Vidda `hitv.das`
+(telemetry) and `jamdeo.screensaver` (ad screensaver; two cold reboots, vidda-c1s); Sony `touchpad.tutorial`, `shopsettings` (retail demo);
+TCL `c2dm.client` (push); `google.android.tvtutorials` (4 lists). KEEP: `com.google.android.tv.remote.service` (the G10 list now keeps it:
+disabled, the remote's mic button dies, `AtvSearchAssistantService not found`; it is also what the Android TV Remote protocol on 6466 / 6467
+talks to, so our Phone / Computer apps' keys without ADB would die too); Sony `b2b.hotelmode` (disabled: TV Settings opens blank, the
+settings provider reads it; kdl-43w950d, kd-55x8000c); Realtek `slices` (Settings slices; kogan-g7, against rocktek-gx1 which turns it
+off: KEEP wins); Philips `org.droidtv.tv.agent`; the Anker Nebula projector's `oceanwing.(receiver|nebulalinker)` and
+`zhixin.(nebulasmart|remoteautopair|apphelper|projector.settings|nebulasetupwizard)` (remote, accessibility, pairing, keystone). Left out
+(about 120): streaming / user apps (Netflix, Disney+, Prime, HBO, Pluto, Hotstar, Spotify, VLC, ES / file managers, MX Player), Google core
+(katniss, tvlauncher, tvrecommendations, play.games, tts, setupwraith, launcherx, mediashell, backdrop, partnersetup), AOSP and mainline
+(dcolor-gd2 and panavox-google-tv turn off adservices / federatedcompute / healthconnect / backup: as before), Sony `b2b.*` other than
+hotelmode (hotel / pro), DLNA / Miracast / Wi-Fi Direct (casting), `osat.*` (USB players), `tvcamera`, WoL services,
+`indiametarecommendation` and `tvlaunchercustomizer` (Sony recommendation / home rows stay a choice), TCL's Chinese content (`ffkaraoke`,
+`ffeducation`, `vod`, `tliveplay`, `weixin`, `browser`, `wholenetsearch`, `gamebar`, `common.weather`, `notereminder`), Xiaomi `mitv.tvlock`,
+`milinkservice`, `smartshare`, `mimusic2`, Hisense `hotelmenu` / `autotest` / `ar.baike` / `foodmanage` / `calendar`, games (`doodle`,
+`vectorunit`, `xformgames`), `konka.livewallpaper`, `miniTV` (a choice). Owners' notes: TCL `overseasappshow` re-enables promo packages
+at boot (tcl-43p725), `com.cltv.fast` and Haier `gamingbar` come back at boot (Re-optimize covers it). Forks that moved since 2026-10-24: briansilah (daily launcher improvements, nothing for the lists),
+maydings/vibe-launcher (2.0 - 2.3 releases, ported `InputOpen` pinning that we already have), itsmeterrylin (Fire TV AFTKM: only
+`minitv` new, a choice), thefirstparth (no commits); ~520 other forks only mirror upstream (not compared one by one). Before that:
+**2026-10-24**, upstream `Gathin23/cleanyourtv` at `c965ef4b11` (new since `f9f0c5353e`: 12 debloat.txt, 85 packages that
 nothing of ours held; Acer ar55ar2851udpro, Haier hr9216eu, Hotack smart2kpjt, Master-G mga3200, Philips 65oled706 / 65pml9506, RCA
 rc50a21s, Sankey hi3751v350, Thomson 32he5800, Xiaomi aesp0, TCL 43s5k). SUGGEST (10, pure ads / tracking / promo): Philips
 `nettvrecommender` + `recommendation` (Top Picks row, philips-65oled706 / 65pml9506; the mainline three acer / hotack add stay
@@ -154,6 +176,35 @@ Fifth read (2026-10-24, vgscity/vgs-cleantv 2.8.0: 260 cleanyourtv lists up to 9
   (`homwee.store`); hotel mode; the mixed ones already listed below (`exhibit`, `overseasappshow`, Sony Discover, Skyworth
   `leanbacklauncher.customizer`).
 
+Sixth read, ideas that are not lists (2026-10-25, upstream `c965ef4b11..575d73f0f3`; for the user to pick, none built):
+- **Philips input names**: the TV saves a name as `Xbox&GAME_CONSOLE` and an unnamed port as the text `null` (their `InputNames.java`, c492a229,
+  #1424). Our `home/apps/Inputs.kt` shows them raw. YES: small, a pure function + test (`tidy`: strip a suffix of 3+ capitals, emoji by type).
+- **Live TV opens by itself at power-on** (Changhong / Homwee AI PONT, MediaTek `BootBroadcastReceiver`; `power_on_home`, fa18823b
+  `HomeKeyService.powerOnRedirect`, TROUBLESHOOTING): not in our Home. MAYBE: TV Home could send Home back when the live TV package is
+  resumed before any key within ~60 s of boot / screen-on; needs a window event, which only the add-on (`app/tvkeys`) sees. Off by default.
+- **Input button maps** (our `KeysBridge` / `KeyFix`): Xiaomi MOOQ0 sends `KEYCODE_MEDIA_RECORD` for Input (#1368, `input_key_keycodes`).
+  YES for the key table, if our Home already opens its Inputs menu on a key; check `KeyFix` for 130 on Xiaomi.
+- **Vendor input switching when TIF has nothing**: Coocaa (`com.skyworth.tv` provider, already ported in `Inputs.kt`), Xiaomi China
+  `com.xiaomi.mitv.tvplayer.EXTSRC_PLAY` with an int extra `input` (`input_sources` map, MainActivity `openInput`), XGIMI
+  `com.xgimi.action.hdmiPlayer`, TCL China source panel `com.tcl.settings/.ShowWindowService` action `com.tcl.insrc.SHOW_WINDOW`
+  (tcl-tc8000). YES for TCL / XGIMI as a fallback row when `Inputs.rows` is empty; Xiaomi needs the number per port (no way to read it).
+- **Bluetooth status / control centre / screensaver**: their launcher has no Bluetooth tile (only `T_Solo`, TCL's Bluetooth music app, opt-in,
+  #1315) and no control centre (`QuickSettingsActivity` opens system settings). Nothing to take. Screensaver: `ClockDream` only; a disabled
+  `dreamx` leaves `screensaver_components` pointing at it (already noted below).
+- **Standby row for a set whose IR remote is dead** (#1595): `performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)` from a bound accessibility
+  service. NO: our Control Center already has Standby (keyevent 223, no service needed).
+- **TCL tc8000 won't wake from the remote while a key-filtering accessibility service is bound with the screen off** (7ace8931,
+  `GuardKeep` / `GuardRevival`): the add-on's `KeyFixService` could do the same. MAYBE: wait for a report on our side.
+- **Troubleshooting**: `settings get secure user_setup_complete` = 0 holds back Home and Alexa buttons (Fire TV 4K 1st gen, 664d908b): YES, a line
+  in `Diagnose` (read-only check, one `settings put` to fix). `cmd hdmi_control setsam on` wakes an ARC / eARC soundbar that slept while the TV
+  stays on (5c818a3c): MAYBE as a scene step. `pm clear com.google.android.tts` when Settings freezes on Accessibility's TTS row (ANR in
+  TextToSpeech shutdown, 61f9f345): YES as a guide line. `adb tcpip 5555` over USB opens the port when there is no Wireless debugging entry
+  (#1489): we only say USB debugging in the guide. TCL G05: Safety Guard > Auto Launch Permission is the `AUTO_START` switch (7bc0a278).
+  Sony BRAVIA: Home Theatre Control panel opens for 0.5 s and wakes the soundbar without ADB. Private DNS goes around a router that routes by domain.
+- **Their tools** (not ours to copy, but the same trap exists in `Setup.kt`): their disable script dropped setupwraith (Wi-Fi guard) and still
+  disabled launcherx because another Home was installed but not set (#1573). Ours: `LauncherSwap` checks Home with `mFocusedApp` and rolls back;
+  worth one test that setupwraith kept + launcherx off is never the end state.
+
 ## Not taken (yet), and why
 
 - Google's mainline modules (`adservices`, `ondevicepersonalization`, `federatedcompute`, 4–6 lists): Android's own APEX parts,
@@ -194,8 +245,8 @@ Fifth read (2026-10-24, vgscity/vgs-cleantv 2.8.0: 260 cleanyourtv lists up to 9
 ## Syncing again
 
 ```
-gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 0ed6c5bccc?
-gh api repos/Gathin23/cleanyourtv/compare/0ed6c5bccc...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
+gh api repos/Gathin23/cleanyourtv/commits/main --jq '.sha[0:10]+" "+.commit.committer.date'   # changed since 575d73f0f3?
+gh api repos/Gathin23/cleanyourtv/compare/575d73f0f3...main --jq '.files[].filename'           # capped at 300 files: for a big gap diff git/trees/<sha>?recursive=1 blob shas under examples/ instead
 gh pr list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh issue list -R Gathin23/cleanyourtv --state all -L 200 --search "created:>2026-10-19"
 gh api repos/Gathin23/cleanyourtv/forks --paginate --jq '.[] | select(.pushed_at > "2026-10-19T12:00:00Z") | .full_name'

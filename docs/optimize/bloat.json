@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-24",
+  "updated": "2026-10-25",
   "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign/sign_bloat.py, commit both files.",
   "suggest": {
     "android.autoinstalls.config.askey.tvbox": "Askey app installer",
@@ -69,7 +69,16 @@
     "com.amazon.livedeviceservice": "Amazon device metrics",
     "com.amazon.ceviche": "Amazon data collection",
     "com.amazon.uxnotification": "Amazon promo pop-ups",
-    "com.amazon.systemnotices": "Amazon system notices pop-ups"
+    "com.amazon.systemnotices": "Amazon system notices pop-ups",
+    "android.autoinstalls.config.RTKSTBAndroid.device": "Realtek app installer",
+    "com.realtek.storemode": "Realtek store mode",
+    "com.realtek.karaoke.userguide": "Realtek karaoke how-to",
+    "com.hisense.hitv.das": "Hisense usage reporting",
+    "com.jamdeo.screensaver": "Hisense ad screensaver",
+    "com.sony.dtv.touchpad.tutorial": "Sony touchpad tutorial",
+    "com.sony.dtv.shopsettings": "Sony shop mode",
+    "com.tcl.c2dm.client": "TCL push client",
+    "com.google.android.tvtutorials": "Android TV tutorials"
   },
   "drop": [
     "com.xm.webcontent"
@@ -93,7 +102,13 @@
     "com\\.google\\.android\\.sss\\.authbridge",
     "com\\.google\\.android\\.marvin\\.talkback",
     "com\\.android\\.providers\\.calendar",
-    "com\\.google\\.android\\.syncadapters\\.calendar"
+    "com\\.google\\.android\\.syncadapters\\.calendar",
+    "com\\.sony\\.dtv\\.b2b\\.hotelmode",
+    "com\\.realtek\\.slices",
+    "com\\.google\\.android\\.tv\\.remote\\.service",
+    "org\\.droidtv\\.tv\\.agent",
+    "com\\.oceanwing\\.(receiver|nebulalinker)",
+    "com\\.zhixin\\.(nebulasmart|remoteautopair|apphelper|projector\\.settings|nebulasetupwizard)"
   ],
   "factory": []
 }
