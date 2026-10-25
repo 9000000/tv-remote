@@ -989,11 +989,13 @@ class HomeActivity : Activity() {
         if (to !in m.indices) { t.nudge(if (d == 1) 1 else if (d == -1) -1 else 0, if (d == cols) 1 else 0); return true }
         val before = shown.associateWith { val xy = IntArray(2); it.getLocationOnScreen(xy); xy }
         m.add(to, m.removeAt(at))
-        val all: List<View> = m + shown.filter { it.app == null }      // each tile once: the old code listed every pin again after the apps, and a pin put on the grid (already in [movable]) was added to a second row: the crash
+        val rows = (0 until grid.childCount).map { r -> (grid.getChildAt(r) as ViewGroup).let { row -> (0 until row.childCount).map { row.getChildAt(it) } } }
+        val next = m.iterator()                                       // apps take the apps' places in order; every other tile (Play Next, + Add, Get TV Setup) keeps its own,
+        val laid = rows.map { row -> row.map { v -> if ((v as? Tile)?.app != null) next.next() else v } }   // so the Play Next row stays a row (laid out i / cols, it broke the grid: the user, 2026-10-26)
         val gap = dp(GRID_GAP)
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()
-        all.forEachIndexed { i, v ->                                   // the same rows (a step moves no row): their fade and the page stay, nothing is re-made or veiled
-            (grid.getChildAt(i / cols) as ViewGroup).addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
+        laid.forEachIndexed { r, row ->                               // the same rows (a step moves no row): their fade and the page stay, nothing is re-made or veiled
+            row.forEachIndexed { i, v -> (grid.getChildAt(r) as ViewGroup).addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = gap }) }
         }
         stepping = true; try { t.requestFocus() } finally { stepping = false }
         t.carry(true)
