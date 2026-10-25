@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: gợi ý một lần “Giữ OK hoặc bấm ☰ trên một app để xem thêm” dưới hàng app đầu; tắt bằng ✕ hoặc khi đã mở menu của app.
+- App máy tính (Mac): mở từ thư mục Tải xuống thì hỏi “Chuyển TV Remote vào Applications?” (mỗi bản một lần) để tự cập nhật được; thẻ cập nhật cũng có nút **Chuyển vào Applications**. Bản chép được kiểm tra, bản cũ vào Thùng rác, dữ liệu giữ nguyên.
 - Thống kê ẩn danh: TV Home gửi thống kê hằng ngày (TV chỉ cài TV Home cũng được đếm); TV Home, Kênh TV, Game TV gửi lỗi. Theo công tắc **Gửi thống kê ẩn danh** của TV Setup; không có TV Setup thì TV Home có công tắc ở Tùy chỉnh → Hệ thống (Kênh TV, Game TV: bật sẵn, chưa có công tắc).
 - Báo lỗi tự động: lỗi hiện trong hộp/hộp thoại “Có lỗi xảy ra” giờ cũng được gửi ẩn danh (cùng công tắc **Gửi thống kê ẩn danh**; tắt thì không gửi) kèm hãng/model/bản Android hoặc hệ điều hành; đã xóa IP, đường dẫn thư mục, khóa, email trước khi gửi, mỗi lỗi gửi một lần mỗi lần chạy. Hộp báo thêm dòng “Đã gửi báo lỗi”. TV Home, TV Channels, TV Games chưa có công tắc nên không gửi
 - TV Home, điều khiển: bấm Xuống từ nút trên cùng giờ vào thẻ ngay bên dưới (gần nhất theo chiều ngang) thay vì nhảy thẳng xuống lưới app; từ thẻ Xuống vào cột gần nhất của lưới.
@@ -24,6 +26,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- TV Home: a one-time tip “Hold OK or press ☰ on an app for more options” under the first row of apps; gone after ✕ or once an app menu was opened.
+- Computer app (Mac): opened from Downloads it asks "Move TV Remote to Applications?" (once per version) so it can update itself; the update card has a **Move to Applications** button too. The copy is checked, the old one goes to the Trash, your data stays.
 - Themes: previews are drawn only when scrolled near (TV Home and web page); less memory with many community themes.
 - Anonymous stats: TV Home sends the daily stats (a TV with only TV Home is counted now); TV Home, TV Channels and TV Games send error reports. They follow TV Setup's **Send anonymous stats** switch; without TV Setup, TV Home has its own in Customize → System (Channels and Games: on, no switch yet).
 - Automatic error reports: an error shown in the “Something went wrong” box / dialog is now also sent anonymously (same **Send anonymous stats** switch; off sends nothing) with brand/model/Android or OS; IPs, folder paths, keys and emails are removed before sending, each error once per run. The box adds “Error report sent”. TV Home, TV Channels and TV Games have no such switch, so they send nothing

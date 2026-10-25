@@ -21,6 +21,8 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
     val asset = if (os == "mac") "TV-Remote-mac.zip" else "TV-Remote-$os-$arch." + if (os == "linux") "tar.gz" else "zip"   // Mac: one app for both chips
     /** The app itself: TV Remote.app, the "TV Remote" folder, tv-remote; $APPDIR (res's parent) is inside it. null: run from the repo. */
     private val root: File? = res?.absoluteFile?.parentFile?.let { if (os == "windows") it.parentFile else it.parentFile?.parentFile }
+    val bundle: File? get() = System.getenv("TVR_FAKE_BUNDLE")?.let { File(it) } ?: root   // tests: a made-up translocated path
+                                       // the app's folder (Mover)
     private val work = root?.let { File(it.parentFile, ".tv-remote-update") }
     private val timer = Executors.newSingleThreadScheduledExecutor { Thread(it, "update").apply { isDaemon = true } }
 
@@ -101,7 +103,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
     fun json(): JSONObject {
         val r = found
         return JSONObject().put("current", version).put("packaged", root != null).put("state", state).put("pct", pct).put("error", error)
-            .put("version", r?.version ?: "").put("notes", r?.notes ?: "").put("auto", writable)
+            .put("version", r?.version ?: "").put("notes", r?.notes ?: "").put("auto", writable).put("move", Mover.can(bundle))
             .put("url", "https://github.com/${Release.REPO}/releases/latest/download/$asset")
     }
 

@@ -65,6 +65,7 @@ fun main(args: Array<String>) {
     val link = pass.link("http://127.0.0.1:$bound")
     println("Remote: $link  (TV ${(first ?: saved.current).ifEmpty { "not chosen yet" }})")
     Runtime.getRuntime().addShutdownHook(Thread { http.stop(); server.close() })   // Ctrl+C, logging out: the TV's sessions end too
+    if (packaged) Thread({ Thread.sleep(2500); Mover.offer(server.updater.bundle, server.version) { done.countDown() } }, "move").apply { isDaemon = true }.start()
     if (window) {
         Thread({ done.await(); Window.close() }, "quit").apply { isDaemon = true }.start()   // the page's "Tắt" closes the window too
         if (Window.show(repo, link, pass.key)) { println("Window closed."); server.updater.quitting(); System.exit(0) }

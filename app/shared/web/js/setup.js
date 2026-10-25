@@ -142,9 +142,9 @@ function showUpdate(u) {
   put('#updnote', 'textContent', u.state === 'downloading' ? T('setup.update_downloading', { pct: u.pct })
     : u.state === 'installing' ? T('setup.update_installing')
     : u.state === 'error' ? T('setup.update_failed', { err: friendly(u.error) })
-    : !u.auto ? T('setup.update_manual')
+    : !u.auto ? T(u.move ? 'setup.update_move' : 'setup.update_manual')
     : T('setup.update_ready'));
-  put('#updgo', 'textContent', u.auto ? T('page.update') : T('setup.download_update'));
+  put('#updgo', 'textContent', u.auto ? T('page.update') : u.move ? T('setup.move_btn') : T('setup.download_update'));
   put('#updacts', 'hidden', u.state === 'installing' || u.state === 'downloading' && !updPoll);
   clearTimeout(updPoll); updPoll = null;
   if (u.state === 'downloading' || u.state === 'installing') updPoll = setTimeout(pollUpdate, 1000);
@@ -154,6 +154,7 @@ if (CORE === 'pc') { pollUpdate(); setInterval(() => { if (!updPoll) pollUpdate(
 $('#updlater').addEventListener('click', () => { updLater = true; put('#update', 'hidden', true); });
 $('#updgo').addEventListener('click', async () => {
   const u = await api('/api/update'); if (!u) return;
+  if (!u.auto && u.move) { const r = await api('/api/update', { do: 'move' }); if (r) put('#updnote', 'textContent', T('setup.update_installing')); return; }   // Mover.kt: copies, quits, opens the copy
   if (!u.auto) { window.open(u.url, '_blank'); return; }
   const notes = (u.notes || '').replace(/\*\*/g, '').replace(/\r/g, '');
   if (!await ask(T('setup.update_ask', { version: u.version }) + (notes ? '\n\n' + (notes.length > 900 ? notes.slice(0, 900) + '...' : notes) : ''), { ok: T('setup.update_ok') })) return;

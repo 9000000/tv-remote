@@ -39,7 +39,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     private val helper: () -> ByteArray = { helperFile.readBytes() }
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
     private val jar: () -> ByteArray = { jarFile.readBytes() }
-    private val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
+    val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
     init {
         WireLog.app = "TV Remote $version (computer)"
         dev.tvremote.core.Census.init("pc", version, object : dev.tvremote.core.Census.Store {
@@ -318,7 +318,9 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "/api/update" -> when (d.optString("do")) {
                 "check" -> { updater.check(); Response.json(updater.json()) }
                 "install" -> { updater.install(); Response.json(updater.json()) }
-                else -> Response.error(400, "do: check or install")
+                "move" -> { val b = updater.bundle; if (b == null || !Mover.can(b)) Response.error(400, Words.get(r.lang, "pc.move_failed", "why" to "-"))
+                    else Mover.move(b) { Thread { Thread.sleep(500); stop() }.start() }?.let { Response.error(400, it) } ?: Response.ok() }
+                else -> Response.error(400, "do: check, install or move")
             }
             "/api/shutdown" -> { Thread { Thread.sleep(300); stop() }.start(); Response.ok() }   // after this reply has gone out
             else -> null
