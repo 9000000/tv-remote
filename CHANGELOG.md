@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Setup: nút "Dùng launcher gốc của TV" (trước là "↩ Về launcher của TV", nằm cạnh Đóng nên dễ bấm nhầm) giờ hỏi lại trước khi đổi màn hình chính.
 - TV Home: không gì bị ép hiện trên màn hình chính. Tuỳ chỉnh (trên TV và trong app/web) có công tắc cho đồng hồ, ngày, nút Wi-Fi, nút cài đặt, ô Thêm, ô gợi ý TV Setup và hàng Xem tiếp (mặc định vẫn bật hết). Hàng Xem tiếp không còn lặp các kênh yêu thích của TV Channels.
+- TV Home: giữ OK (hoặc phím Menu) trên một phần tử của màn hình chính mở menu nhỏ của nó, đổi ngay tại chỗ và thấy kết quả liền (cỡ, kiểu thẻ, ẩn, đổi chỗ, nút, ô Thêm, ô gợi ý, hàng Xem tiếp). Đồng hồ, ngày, thẻ thụ động chỉ chọn được trong "Sửa màn hình chính" (có trong các menu đó và trong Tuỳ chỉnh); phím mũi tên ngoài chế độ đó không đổi.
 
 **English**
 - TV Setup: "Use the TV's own launcher" (was "↩ Back to the TV's own", beside Close and easy to press by mistake) now asks before it changes the home screen.
 - TV Home: nothing is forced onto the home screen. Customize (on the TV and in the app/web) has a switch for the clock, the date, the Wi-Fi button, the settings button, the Add tile, the Get TV Setup tile and the Play Next row (all on by default). The Play Next row no longer repeats TV Channels' favourites.
+- TV Home: hold OK (or the Menu key) on an element of the home screen for its small menu, changed in place and seen at once (size, card style, hide, move, buttons, Add tile, Get TV Setup tile, Play Next row). The clock, the date and passive cards take focus only in "Edit home screen" (in those menus and in Customize); the D-pad outside that mode is unchanged.
 
 ## 0.25.0 - 2026-10-26
 

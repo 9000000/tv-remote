@@ -125,6 +125,7 @@ class HomeActivity : Activity() {
     private val netBad = HashSet<String>()                          // those the player could not play this run: the page is shown instead
     private var snapper: WebSnapper? = null                         // "web" in snap mode: takes the pictures that are the background (no page on screen)
     private lateinit var head: LinearLayout
+    private lateinit var headLeft: LinearLayout
     private var scrollAnim: ObjectAnimator? = null
     private val zoom by lazy { Zoom(this) }
     private var away = false                                        // really left (stopped), not just paused: only then does the screen come in again
@@ -207,7 +208,18 @@ class HomeActivity : Activity() {
         // the clock, then the greeting (small, above: it is read once) and the day beside it (one row: under the clock they took
         // the room of the cards), the three buttons on the right
         head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false }  // a focused button grows past its row
-        val left = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false }
+        val left = LinearLayout(this).apply {                       // focusable: long OK / Menu on the clock, the day or the greeting is their menu
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false
+            isFocusable = false; isClickable = true; id = View.generateViewId()   // a stop only in edit mode
+            setPadding(dp(14), dp(6), dp(14), dp(6));             setOnLongClickListener { headMenu(); true }
+            setOnKeyListener { v, code, e ->
+                if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) headMenu(); true }
+                else code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.hotAt(centre(v)) ?: below(v))?.let { go(it); true } == true
+            }
+            setOnClickListener { headMenu() }
+            setOnFocusChangeListener { _, f -> if (f) scrollToY(0) }
+        }
+        headLeft = left; paintHead()
         clock = TextClock(this).apply {
             textSize = 60f; setTextColor(Color.WHITE); typeface = Font.light
             includeFontPadding = false; shadow(this)
@@ -219,15 +231,18 @@ class HomeActivity : Activity() {
         rule = View(this).apply { setBackgroundColor(HEAD_RULE) }
         left.addView(rule, LinearLayout.LayoutParams(dp(1), dp(56)).apply { leftMargin = dp(28); rightMargin = dp(28) })
         left.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-        head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
+        head.addView(left, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = -dp(14) })   // its padding is the ring's room: the clock stays where it was
         bar = TopBar(this, ::dp)
-        netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
+        netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { if (editing) barMenu(netPill) else open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for the TV's settings, TV Home's and the everyday switches: the Control Center (ui/ControlCenter.kt); a second button beside it read as the same thing
         settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.cc_title), ::dp) {   // the gear people know; its name says Control Center (the user tried a switches icon, 2026-10-25)
+            if (editing) { barMenu(settingsPill); return@BarBtn }
             open = dev.tvremote.home.ui.ControlCenter.show(this, bar.capsule, { open(it) }, { inputs() }, { customize() })
         }
         for (b in listOf(netPill, settingsPill)) bar.add(b)
+        for (b in bar.buttons) b.setOnLongClickListener { barMenu(b); true }
         for (b in bar.buttons) b.setOnKeyListener { v, code, e ->           // Down from the bar: the widget below it first, the grid only when there is none
+            if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) barMenu(v as BarBtn); return@setOnKeyListener true }
             code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.hotAt(centre(v))?: below(v))?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from the left pill down-left onto a tile, and OK then opened its app
@@ -237,7 +252,8 @@ class HomeActivity : Activity() {
         head.addView(bar)
         col.addView(head)
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
-        widgets.onOpen = { k -> startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
+        widgets.onMenu = ::widgetMenu
+        widgets.onOpen = { k -> if (editing || k !in OPENS) widgets.hot.firstOrNull { it.tag == k }?.let { widgetMenu(k, it) } else startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> bar.buttons.filter { it.isShown }.minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
         widgets.onDown = { v -> below(v)?.let { go(it) } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
@@ -375,10 +391,111 @@ class HomeActivity : Activity() {
         try { if (i != null) startActivity(i) else toast(R.string.no_open) } catch (e: Exception) { toast(R.string.no_open) }
     }
 
-    private fun watchMenu(it: Watch.Item) {
-        open = TvUi.menu(this, R.style.TvSheet, it.app, listOf(TvUi.Item(R.drawable.ic_eye_off, getString(R.string.watch_hide)) { Store.rowsOff(this, it.pkg); watchRead() }),
-            R.drawable.ic_check, note = getString(R.string.watch_note))
+    private fun watchMenu(it: Watch.Item) =
+        elementMenu(it.app, listOf(TvUi.Item(R.drawable.ic_eye_off, getString(R.string.watch_hide)) { Store.rowsOff(this, it.pkg); watchRead() },
+            hideItem(R.string.watch_hide_all, "showWatch"), moreItem(), editItem()), getString(R.string.watch_note))
+
+    // ---- the small menu of each element on the home screen (long OK, or Menu): the SAME switches as Customize, applied live behind it ----
+
+    private fun editItem() = TvUi.Item(R.drawable.ic_pen, getString(R.string.el_edit)) { edit() }
+    private fun moreItem(at: String = "look") = TvUi.Item(R.drawable.ic_sliders, getString(R.string.el_more)) { customize(at) }
+    private fun hideItem(label: Int, key: String) = TvUi.Item(R.drawable.ic_eye_off, getString(label)) { Store.change(this, JSONObject().put(key, false)) }
+    /** A switch that stays in the menu: the home screen behind it changes at once. */
+    private fun switchItem(icon: Int, label: Int, key: String) = TvUi.Item(icon, getString(label), { "" }, { Store.get(this).optBoolean(key, true) })
+        { Store.change(this, JSONObject().put(key, !Store.get(this).optBoolean(key, true))) }
+
+    /** [items] in TvUi.menu, a narrow sheet on the half of the screen away from [anchor] so the element being changed stays in view, the dim light. */
+    private fun elementMenu(title: String, items: List<TvUi.Item>, note: String = "", anchor: View? = currentFocus) {
+        val x = anchor?.let { v -> IntArray(2).also { v.getLocationOnScreen(it) }[0] + v.width / 2 } ?: 0
+        val dlg = TvUi.menu(this, R.style.TvSheet, title, items, R.drawable.ic_check, w = 320, note = note)
+        dlg.window?.apply {
+            setGravity(if (x < resources.displayMetrics.widthPixels / 2) Gravity.END else Gravity.START)
+            attributes = attributes.apply { this.x = dp(24) }
+            setDimAmount(0.1f)
+        }
+        dlg.setOnDismissListener { ui.postDelayed({ if (!isDestroyed) settle() }, 350) }   // 350: the cards are read again off the main thread
+        open = dlg
     }
+
+    // ---- edit mode: every element takes the focus (an outline each); OK opens its menu, Back leaves. Normal D-pad paths are untouched ----
+    private var editing = false
+    private val hint by lazy {
+        TvUi.text(this, getString(R.string.el_edit_hint), TvUi.SP_ROW).apply {
+            setPadding(dp(20), dp(10), dp(20), dp(10)); background = TvUi.round(TvUi.SHEET_FILL, dp(TvUi.R_PILL).toFloat(), 1, TvUi.SHEET_EDGE); visibility = View.GONE
+            (window.decorView as ViewGroup).findViewById<FrameLayout>(android.R.id.content).addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply { bottomMargin = dp(28) })
+        }
+    }
+    private fun paintHead() {
+        headLeft.background = if (!editing) null else android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), TvUi.ring(this@HomeActivity, TvUi.FOCUS_FILL, dp(18).toFloat()))
+            addState(intArrayOf(), TvUi.round(Color.TRANSPARENT, dp(18).toFloat(), dp(2), EDIT_EDGE))
+        }
+    }
+    internal fun edit() {
+        if (editing) return
+        editing = true; widgets.editing = true; hint.visibility = View.VISIBLE
+        paintHead(); show(); widgetsRead()                           // a rebuild gives the cards their stops; the focus comes back to the card it was on
+        ui.postDelayed({ if (!isDestroyed && currentFocus == null) settle() }, 350)
+    }
+    private fun endEdit() {
+        editing = false; widgets.editing = false; hint.visibility = View.GONE
+        paintHead(); show(); widgetsRead()
+        ui.postDelayed({ if (!isDestroyed) settle() }, 350)           // a card that took no focus before gives it back to a neighbour
+    }
+
+    private var wantTag: String? = null                               // the card next to one just hidden
+    /** After a menu: an element that went leaves the focus nowhere; it lands on its nearest neighbour. */
+    private fun settle() {
+        if (open?.isShowing == true) return
+        val cur = currentFocus
+        if (cur != null && cur.isShown && cur.isFocusable) return
+        val tag = wantTag; wantTag = null
+        (tag?.let { t -> widgets.hot.firstOrNull { it.tag == t && it.isShown } }
+            ?: headLeft.takeIf { it.isShown && it.isFocusable } ?: bar.buttons.firstOrNull { it.isShown } ?: firstGridTile())?.requestFocus()
+    }
+
+    private fun widgetName(k: String) = getString(resources.getIdentifier("w_$k", "string", packageName).takeIf { it != 0 } ?: R.string.w_qr)
+
+    private fun widgetMenu(k: String, v: View) {
+        val opts = HomeConfig.options(k).map { it.id }
+        val on = Store.list(this, "widgets")
+        val items = ArrayList<TvUi.Item>()
+        if ("size" in opts) items.add(TvUi.Item(R.drawable.ic_expand, getString(R.string.el_big), { "" }, { k in HomeConfig.bigs(Store.get(this)) }) {
+            val sizes = JSONObject((Store.get(this).optJSONObject("wsize") ?: JSONObject()).toString())   // the key Customize's gear writes
+            Store.change(this, JSONObject().put("wsize", sizes.put(k, if (k in HomeConfig.bigs(Store.get(this))) "small" else "big")))
+        })
+        if ("look" in opts) items.add(TvUi.Item(R.drawable.ic_scene, getString(R.string.el_tonal), { "" }, { HomeConfig.optValue(Store.get(this), k, "look") == "tonal" }) {
+            val tonal = HomeConfig.optValue(Store.get(this), k, "look") == "tonal"
+            Store.change(this, JSONObject().put("wopt", JSONObject().put(k, JSONObject().put("look", if (tonal) "glass" else "tonal"))))
+        })
+        val i = on.indexOf(k)
+        if (on.size > 1 && i >= 0) {
+            val j = if (i > 0) i - 1 else 1
+            items.add(TvUi.Item(if (i > 0) R.drawable.ic_left else R.drawable.ic_right, getString(if (i > 0) R.string.el_earlier else R.string.el_later)) {
+                val n = on.toMutableList(); n[i] = n[j]; n[j] = k; Store.putList(this, "widgets", n); wantTag = k
+            })
+        }
+        items.add(TvUi.Item(R.drawable.ic_eye_off, getString(R.string.el_hide_card)) {
+            val h = widgets.hot; val at = h.indexOfFirst { it.tag == k }
+            wantTag = (h.getOrNull(at + 1) ?: h.getOrNull(at - 1))?.tag as? String
+            Store.putList(this, "widgets", on - k)
+        })
+        items.add(moreItem("widgets")); items.add(editItem())
+        elementMenu(widgetName(k), items, anchor = v)
+    }
+
+    private fun headMenu() = elementMenu(getString(R.string.el_head), listOf(
+        switchItem(R.drawable.ic_clock, R.string.show_clock, "showClock"), switchItem(R.drawable.ic_calendar, R.string.show_date, "showDate"),
+        switchItem(R.drawable.ic_message, R.string.greet, "greet"), moreItem(), editItem()), anchor = headLeft)
+
+    private fun barMenu(b: BarBtn) {
+        val gear = b === settingsPill
+        elementMenu(b.label, listOf(hideItem(if (gear) R.string.el_hide_gear else R.string.el_hide_net, if (gear) "showGear" else "showNet"), moreItem(), editItem()),
+            if (gear) getString(R.string.el_note_gear) else "", anchor = b)
+    }
+
+    private fun addMenu(t: View) = elementMenu(getString(R.string.add), listOf(hideItem(R.string.el_hide_add, "showAdd"), moreItem(), editItem()), getString(R.string.el_note_add), t)
+    private fun suggestMenu(t: View) = elementMenu(getString(R.string.suggest_setup), listOf(hideItem(R.string.suggest_hide, "showSuggest"), moreItem(), editItem()), anchor = t)
 
     private fun suggestSetup() = conf.optBoolean("showSuggest", true) && !Store.suggestOff(this) && apps.none { it.pkg == Store.OWN[0] } && apps.isNotEmpty()
 
@@ -558,7 +675,7 @@ class HomeActivity : Activity() {
     }
 
     @Deprecated("Back on a home screen goes nowhere")
-    override fun onBackPressed() { if (!locked && SystemClock.uptimeMillis() - back > 500) toTop() }
+    override fun onBackPressed() { if (editing) { endEdit(); return }; if (!locked && SystemClock.uptimeMillis() - back > 500) toTop() }
 
     // Android 13+ hands the Back that closed a menu or the panel to the home too: it must not also move the focus to the dock
     private var back = 0L
@@ -787,11 +904,11 @@ class HomeActivity : Activity() {
         val w = tileW()                                               // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
         if (suggestSetup()) cells.add(favs.indexOfFirst { it.pkg !in Store.OWN }.let { if (it < 0) favs.size else it }, moves(Tile(this, null, w, getString(R.string.suggest_setup), ::dp,
-            art = getDrawable(R.drawable.suggest_setup), corner = getString(R.string.suggest_install)).apply { setOnClickListener { askSetup() } }) { askSetup() })   // with the project's other apps in the first row: seen, as its own would be
-        if (conf.optBoolean("showAdd", true)) cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { addPanel() } }, null))   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
+            art = getDrawable(R.drawable.suggest_setup), corner = getString(R.string.suggest_install)).apply { setOnClickListener { if (editing) suggestMenu(this) else askSetup() }; setOnLongClickListener { suggestMenu(this); true } }) { suggestMenu(currentFocus ?: grid) })   // with the project's other apps in the first row: seen, as its own would be
+        if (conf.optBoolean("showAdd", true)) cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { if (editing) addMenu(this) else addPanel() }; setOnLongClickListener { addMenu(this); true } }) { addMenu(currentFocus ?: grid) })   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
         // other apps' Play Next and channels ([Watch]): a row of their own under the first one, where Android TV's launcher puts them
         val shows = watch.map { (it, pic) -> moves(Tile(this, null, w, it.title, ::dp, mark = R.drawable.ic_play, art = pic?.let { b -> android.graphics.drawable.BitmapDrawable(resources, b) }, corner = if (pic == null) it.app else null)
-            .apply { setOnClickListener { _ -> watchOpen(it) } }) { watchMenu(it) } }
+            .apply { setOnClickListener { _ -> if (editing) watchMenu(it) else watchOpen(it) }; setOnLongClickListener { _ -> watchMenu(it); true } }) { watchMenu(it) } }
         val at = minOf(cols, cells.size)
         cells.addAll(at, shows)
         fill(cells, cols, gap, if (shows.isEmpty()) emptySet() else setOf(at, at + shows.size))
@@ -1026,6 +1143,7 @@ class HomeActivity : Activity() {
 
     private fun makeTile(a: App, w: Int) = Tile(this, a, w, a.label, ::dp, ::tileSays).apply {
         setOnClickListener {
+            if (editing) { menu(a); return@setOnClickListener }
             if (a.live) { pressTile(a); return@setOnClickListener }   // a live tile does its job in place: no app opens, no zoom
             fun go(o: Bundle?) { if (!(if (a.pin != null) Pins.open(this@HomeActivity, a, o) else Apps.launch(this@HomeActivity, a.pkg, o))) { zoom.end(); toast(R.string.no_open) } }
             fun start() { lastOpened = a.pkg; if (!zoom.open(this, ::go)) go(null) }
@@ -1405,6 +1523,10 @@ class HomeActivity : Activity() {
         rule.visibility = if (clock.isShown && (dateLine.isShown || greetLine.isShown)) View.VISIBLE else View.GONE   // the line between them only while there are two sides
         netPill.visibility = if (conf.optBoolean("showNet", true)) View.VISIBLE else View.GONE
         settingsPill.visibility = if (conf.optBoolean("showGear", true)) View.VISIBLE else View.GONE
+        headLeft.isFocusable = editing && (clock.isShown || dateLine.isShown || greetLine.isShown)   // a stop in edit mode only
+        val ends = bar.buttons.filter { it.visibility == View.VISIBLE }
+        for (b in ends.drop(1)) b.nextFocusLeftId = View.NO_ID
+        ends.firstOrNull()?.nextFocusLeftId = if (headLeft.isFocusable) headLeft.id else ends.first().id   // the row's end stays put, or goes to the clock
         bar.visibility = if (bar.buttons.any { it.visibility == View.VISIBLE }) View.VISIBLE else View.GONE   // no capsule round nothing
         @Suppress("DEPRECATION") val net = (getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo
         val (label, off) = @Suppress("DEPRECATION") when {
@@ -2029,6 +2151,8 @@ const val DIM = 0.6f                                                  // the til
 @Volatile var rowsFit = 0.0
 
 const val GRID_GAP = 32                                               // dp between tiles, across and down: room under a focused tile for its name
+private val OPENS = setOf("weather", "news", "market")             // the cards that open a screen on OK; the others open their menu
+private const val EDIT_EDGE = 0x80FFFFFF.toInt()                       // an element's outline in edit mode
 private const val HEAD_DIM = 0xB3FFFFFF.toInt()                       // the greeting over the day
 private const val PILL_BG = 0xE6101420.toInt()                          // the dark pill: the move hint, the menu tip, the name tags
 private const val PILL_EDGE = 0x33FFFFFF                                // its 1 dp edge

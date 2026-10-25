@@ -578,4 +578,20 @@
     <string name="watch_hide">Không hiện hàng của app này</string>
     <string name="watch_note">Xem tiếp và kênh app này chia sẻ với Android TV. Hiện lại từ ô + (Thêm).</string>
     <string name="add_row">Hàng Xem tiếp của app</string>
+    <string name="el_more">Thêm…</string>
+    <string name="el_big">To</string>
+    <string name="el_tonal">Thẻ đặc</string>
+    <string name="el_earlier">Đưa lên trước</string>
+    <string name="el_later">Đưa ra sau</string>
+    <string name="el_hide_card">Ẩn thẻ này</string>
+    <string name="el_head">Đồng hồ và ngày</string>
+    <string name="el_hide_net">Ẩn nút Wi-Fi</string>
+    <string name="el_hide_gear">Ẩn nút cài đặt</string>
+    <string name="el_hide_add">Ẩn ô Thêm</string>
+    <string name="el_note_gear">Vẫn mở được: Menu trên một app, rồi Tùy chỉnh TV Home.</string>
+    <string name="el_note_add">App và lối tắt đã ẩn vẫn nằm trong Tùy chỉnh và trên điện thoại.</string>
+    <string name="watch_hide_all">Ẩn cả hàng</string>
+    <string name="el_edit">Sửa màn hình chính</string>
+    <string name="el_edit_sub">Mọi thứ đều chọn được: OK để chỉnh, Back là xong.</string>
+    <string name="el_edit_hint">OK: chỉnh  ·  Back: xong</string>
 </resources>

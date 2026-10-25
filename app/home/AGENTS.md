@@ -26,6 +26,8 @@ release's `tv-setup.apk` through `SelfUpdate`, or is turned off for good (`showS
 
 **Nothing is forced on the first screen:** every element it draws has a `show*` switch in `HomeConfig.SHOWS` (clock, date, Wi-Fi button, settings button, "+ Add", Get TV Setup, Play Next row; all on by default), in the TV's Customize and in `js/home.js`. A new element needs its switch in the same change. Hiding the gear leaves the Menu key and the clients as the way back.
 
+**Every element has its own small menu** (long OK, or Menu, on what already takes the focus: app tiles, Play Next items, the weather / news / market cards, the top-bar buttons, + Add, Get TV Setup): `HomeActivity.elementMenu` (a narrow `TvUi.menu` on the side of the screen away from the element), with the SAME `HomeConfig` keys Customize writes (`Store.change`), applied live behind it; a switch stays open, a hide closes it and `settle()` puts the focus on a neighbour. The clock / day / greeting and the passive cards (system, lunar, ...) are NOT focus stops in normal mode (the D-pad must not get harder): "Edit home screen" (`edit()`, an item in each menu and a row in Customize > Keys) makes every element focusable with an outline and a hint line, OK opens its menu, Back leaves it. A new element: its menu in `HomeActivity` and its stop in edit mode.
+
 **Play Next and channels** (`apps/Watch.kt`): the rows other apps publish to TvProvider (Watch Next, preview channels), read with
 READ_TV_LISTINGS (runtime: `HomeConfig.GRANT_WIFI` grants it over ADB with the others; without it, or before Android 8, no row) and
 drawn as one row under the apps (`HomeActivity.watchRead` / `show`). Menu on one hides that app's row (`Store.rowsOff`), + brings it

@@ -580,4 +580,20 @@
     <string name="watch_hide">Don\'t show this app\'s row</string>
     <string name="watch_note">Play Next and channels this app shares with Android TV. Brought back from + (Add).</string>
     <string name="add_row">Its Play Next row</string>
+    <string name="el_more">More…</string>
+    <string name="el_big">Big</string>
+    <string name="el_tonal">Solid card</string>
+    <string name="el_earlier">Move earlier</string>
+    <string name="el_later">Move later</string>
+    <string name="el_hide_card">Hide this card</string>
+    <string name="el_head">Clock and day</string>
+    <string name="el_hide_net">Hide the Wi-Fi button</string>
+    <string name="el_hide_gear">Hide the settings button</string>
+    <string name="el_hide_add">Hide the Add tile</string>
+    <string name="el_note_gear">Still there: Menu on an app, then Customize TV Home.</string>
+    <string name="el_note_add">Hidden apps and shortcuts stay in Customize and on the phone.</string>
+    <string name="watch_hide_all">Hide the whole row</string>
+    <string name="el_edit">Edit home screen</string>
+    <string name="el_edit_sub">Every element takes the focus: OK changes it, Back is done.</string>
+    <string name="el_edit_hint">OK: change  ·  Back: done</string>
 </resources>

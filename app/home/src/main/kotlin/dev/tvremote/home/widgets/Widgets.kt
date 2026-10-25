@@ -85,6 +85,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         internal const val DIM = 0xA6FFFFFF.toInt()
         private const val HOT_FILL = 0x14FFFFFF                         // a focused card (weather, news): a faint veil under its white ring
+        private const val HOT_FILL_EDGE = 0x80FFFFFF.toInt()              // a card's outline in edit mode
         internal const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
@@ -132,6 +133,10 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** The cards the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
     val hot = ArrayList<View>()
     var onOpen: ((String) -> Unit)? = null
+    /** Edit mode: every card takes the focus (an outline each), not only the three that open a screen. Set before [show]. */
+    var editing = false
+    /** Long OK or Menu on any card: its small menu (size, look, hide...), live on the card itself. */
+    var onMenu: ((String, View) -> Unit)? = null
     var onUp: ((View) -> Unit)? = null
     var onDown: ((View) -> Unit)? = null
 
@@ -149,10 +154,13 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         v.isFocusable = true; v.tag = k; hot.add(v)
         if (Build.VERSION.SDK_INT >= 23) v.foreground = android.graphics.drawable.StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(3), Color.WHITE); setColor(HOT_FILL) })
+            if (editing) addState(intArrayOf(), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(2), HOT_FILL_EDGE) })   // at rest: the outline says "you can change this"
         }
         if (k == "news") v.setOnFocusChangeListener { _, f -> newsFocused = f }
         v.setOnClickListener { onOpen?.invoke(k) }
+        v.setOnLongClickListener { onMenu?.invoke(k, v); true }
         v.setOnKeyListener { _, code, e ->
+            if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) onMenu?.invoke(k, v); return@setOnKeyListener true }
             if (e.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
             val i = hot.indexOf(v)
             when (code) {
@@ -291,7 +299,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                         }
                     }
                 } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
-                if (k == "weather" || k == "news" || k == "market") hotify(v, k)
+                if (editing || k == "weather" || k == "news" || k == "market") hotify(v, k)   // the others take no focus but in edit mode: the D-pad stays as it was
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
