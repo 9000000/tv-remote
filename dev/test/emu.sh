@@ -146,7 +146,7 @@ reset() {
 
 # every emulator on this computer, this project's or not, with or without a window: what it is, how long, how hot, what is in front
 status() {
-  local rows; rows="$(ps -Ao pid=,etime=,args= | grep '[q]emu-system.*-avd ' || true)"
+  local rows; rows="$(ps -wwAo pid=,etime=,args= | grep '[q]emu-system.*-avd ' || true)"
   [ -n "$rows" ] || { echo "No emulator running"; return; }
   local pids; pids="$(echo "$rows" | awk '{printf "-pid %s ", $1}')"
   local cpu; cpu="$(top -l 2 -s 1 $pids -stats pid,cpu | awk 'NF==2 && $1 ~ /^[0-9]+$/ {c[$1]=$2} END {for (p in c) print p, c[p]}')"   # the second sample: now, not since start

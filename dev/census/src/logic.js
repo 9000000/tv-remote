@@ -84,3 +84,20 @@ export function aggregate(rows, now = new Date()) {
   })).sort((a, b) => b.count - a.count || a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
   return { updated: today(now), installs: models.reduce((s, m) => s + m.count, 0), models };
 }
+
+// rows: SELECT day, app, active, new FROM days ORDER BY day -> one entry a day, apps side by side, and the running total of installs
+export function series(rows, now = new Date()) {
+  const by = new Map();
+  for (const r of rows) {
+    let d = by.get(r.day);
+    if (!d) by.set(r.day, (d = { day: r.day, active: {}, new: {} }));
+    if (r.active != null) d.active[r.app] = Number(r.active) || 0;
+    d.new[r.app] = Number(r.new) || 0;
+  }
+  let total = 0;
+  const days = [...by.values()].sort((a, b) => (a.day < b.day ? -1 : 1)).map((d) => {
+    total += Object.values(d.new).reduce((s, n) => s + n, 0);
+    return { ...d, total };
+  });
+  return { updated: today(now), installs: total, days };
+}

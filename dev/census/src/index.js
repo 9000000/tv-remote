@@ -1,6 +1,6 @@
 // tvr-census: an anonymous count of which TVs the apps ran on. Stores no IP, no headers, no user agent;
 // the install id is kept only as the first 8 bytes of its sha256. See ../README.md.
-import { MAX_BODY, validate, hashId, today, aggregate } from "./logic.js";
+import { MAX_BODY, validate, hashId, today, aggregate, series } from "./logic.js";
 
 const CORS = { "access-control-allow-origin": "*" };
 const json = (o, status = 200, extra = {}) =>
@@ -14,7 +14,12 @@ ON CONFLICT (h, brand, model) DO UPDATE SET
   leanback=excluded.leanback, app=excluded.app, v=excluded.v,
   adb=COALESCE(excluded.adb, adb), video=COALESCE(excluded.video, video), optimize=COALESCE(excluded.optimize, optimize),
   last=excluded.last
-WHERE tvs.last < excluded.last`;
+WHERE tvs.last < excluded.last
+RETURNING first`;
+
+// counts the day's first counted ping: active always, new when the install was first seen today
+const DAY = `INSERT INTO days (day, app, active, new) VALUES (?1, ?2, 1, ?3)
+ON CONFLICT (day, app) DO UPDATE SET active = COALESCE(active, 0) + 1, new = new + excluded.new`;
 
 const AGG = `SELECT brand, model, device, android, leanback, COUNT(*) AS n,
   SUM(adb=1) AS adb_y, COUNT(adb) AS adb_n, SUM(video=1) AS video_y, COUNT(video) AS video_n,
@@ -33,9 +38,11 @@ export default {
       const r = validate(text);
       if (!r) return json({ error: "bad body" }, 400);
       const h = await hashId(r.id);
-      await env.DB.prepare(UPSERT)
-        .bind(h, r.brand, r.model, r.device, r.board, r.hw, r.soc, r.android, r.sdk, r.leanback, r.app, r.v, r.adb, r.video, r.optimize, today())
-        .run();
+      const day = today();
+      const row = await env.DB.prepare(UPSERT)
+        .bind(h, r.brand, r.model, r.device, r.board, r.hw, r.soc, r.android, r.sdk, r.leanback, r.app, r.v, r.adb, r.video, r.optimize, day)
+        .first();
+      if (row) await env.DB.prepare(DAY).bind(day, r.app, row.first === day ? 1 : 0).run();
       return new Response(null, { status: 204 });
     }
 
@@ -45,6 +52,16 @@ export default {
       if (hit) return hit;
       const { results } = await env.DB.prepare(AGG).all();
       const res = json(aggregate(results), 200, { "cache-control": "public, max-age=600" });
+      await cache.put(key, res.clone());
+      return res;
+    }
+
+    if (url.pathname === "/v1/days" && req.method === "GET") {
+      const cache = caches.default, key = new Request(url.origin + "/v1/days");
+      const hit = await cache.match(key);
+      if (hit) return hit;
+      const { results } = await env.DB.prepare("SELECT day, app, active, new FROM days ORDER BY day LIMIT 20000").all();
+      const res = json(series(results), 200, { "cache-control": "public, max-age=600" });
       await cache.put(key, res.clone());
       return res;
     }

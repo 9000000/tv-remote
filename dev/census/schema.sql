@@ -13,3 +13,13 @@ CREATE TABLE IF NOT EXISTS tvs (
   PRIMARY KEY (h, brand, model)
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS tvs_model ON tvs (brand, model);
+
+-- One row per (UTC day, app): installs that pinged that day (`active`) and of those, first seen that day (`new`).
+-- Fed by the ping's upsert (it returns a row only for the first counted ping of the day), for the growth chart.
+CREATE TABLE IF NOT EXISTS days (
+  day     TEXT NOT NULL,       -- YYYY-MM-DD (UTC)
+  app     TEXT NOT NULL,       -- setup | phone | pc
+  active  INTEGER,             -- NULL on days before the table existed (only `new` could be rebuilt from tvs.first)
+  new     INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, app)
+) WITHOUT ROWID;

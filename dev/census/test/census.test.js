@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validate, str, hashId, aggregate, kindOf, MAX_BODY } from "../src/logic.js";
+import { validate, str, hashId, aggregate, kindOf, series, MAX_BODY } from "../src/logic.js";
 
 const ID = "3f2b8c1e-5a4d-4e6f-9a7b-1c2d3e4f5a6b";
 const ping = (o = {}) => JSON.stringify({ id: ID, app: "setup", v: "0.21.1", tv: { brand: "Sony", model: "BRAVIA 4K", android: "14", sdk: 34, leanback: true }, ok: { adb: true, video: false }, ...o });
@@ -50,4 +50,16 @@ test("aggregate: merges android rows, rates, sorts, no ids", () => {
   assert.equal(s.ok.adb.rate, 0.67); assert.equal(s.ok.video.rate, 0.5); assert.equal(s.ok.optimize.rate, null);
   assert.deepEqual(s.devices, ["a1"]); assert.equal(a.installs, 8); assert.equal(a.updated, "2026-10-25");
   assert.ok(!JSON.stringify(a).includes('"h"'));
+});
+
+test("series: apps side by side, running total from new, active missing before the table", () => {
+  const s = series([
+    { day: "2026-10-02", app: "setup", active: 3, new: 1 },
+    { day: "2026-10-01", app: "setup", active: null, new: 2 },
+    { day: "2026-10-01", app: "phone", active: null, new: 1 },
+    { day: "2026-10-02", app: "pc", active: 1, new: 0 },
+  ], new Date("2026-10-03T00:00:00Z"));
+  assert.equal(s.installs, 4);
+  assert.deepEqual(s.days.map((d) => [d.day, d.total]), [["2026-10-01", 3], ["2026-10-02", 4]]);
+  assert.deepEqual(s.days[0].active, {}); assert.deepEqual(s.days[1].active, { setup: 3, pc: 1 });
 });
