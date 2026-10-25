@@ -670,9 +670,12 @@ class HomeActivity : Activity() {
                 if (removed && apps.any { it.grid && Target.pkg(it.pkg) == pkg }) apps = apps.filter { !(it.grid && Target.pkg(it.pkg) == pkg) }
                 val was = apps.firstOrNull { it.pkg == pkg }
                 if (one == null && was == null) return@runOnUiThread    // not an app this screen lists (a service, a library)
-                // a part of it turned on or off with its name and entry the same: some boxes' apps do it every 15 s, and each rebuilt the grid
+                // a part of it turned on or off with its name and entry the same: some boxes' apps do it every 15 s, and each rebuilt the grid.
+                // An update is not that: its APK moved, and the kept entry would read its pictures again from the old, deleted file after a
+                // trim (TV Setup's tile came back as Android's default icon)
                 if (one != null && was != null && one.label == was.label && one.info?.name == was.info?.name
-                    && one.info?.iconResource == was.info?.iconResource && one.info?.bannerResource == was.info?.bannerResource) return@runOnUiThread
+                    && one.info?.iconResource == was.info?.iconResource && one.info?.bannerResource == was.info?.bannerResource
+                    && one.info?.applicationInfo?.sourceDir == was.info?.applicationInfo?.sourceDir) return@runOnUiThread
                 apps = (apps.filter { it.pkg != pkg } + listOfNotNull(one)).sortedBy { it.label.lowercase() }
                 shownKey = ""; show()
                 pinsRead()                                            // an app's pins leave with it
