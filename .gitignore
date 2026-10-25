@@ -31,3 +31,5 @@ dev/package-lock.json
 
 # per-machine speed baselines (dev/perf): never committed
 dev/perf/.local/
+# wrangler dev / d1 local state and cache (dev/census)
+.wrangler/
