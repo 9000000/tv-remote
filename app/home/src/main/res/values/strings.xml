@@ -569,4 +569,7 @@
     <string name="suggest_install">Install</string>
     <string name="suggest_hide">Don\'t suggest again</string>
     <string name="suggest_failed">Could not get TV Setup (%1$s). Try again later.</string>
+    <string name="watch_hide">Don\'t show this app\'s row</string>
+    <string name="watch_note">Play Next and channels this app shares with Android TV. Brought back from + (Add).</string>
+    <string name="add_row">Its Play Next row</string>
 </resources>

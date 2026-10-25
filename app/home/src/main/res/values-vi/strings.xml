@@ -567,4 +567,7 @@
     <string name="suggest_install">Cài đặt</string>
     <string name="suggest_hide">Không gợi ý nữa</string>
     <string name="suggest_failed">Không tải được TV Setup (%1$s). Thử lại sau.</string>
+    <string name="watch_hide">Không hiện hàng của app này</string>
+    <string name="watch_note">Xem tiếp và kênh app này chia sẻ với Android TV. Hiện lại từ ô + (Thêm).</string>
+    <string name="add_row">Hàng Xem tiếp của app</string>
 </resources>

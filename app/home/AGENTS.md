@@ -24,6 +24,12 @@ moved in once (`Store.promote`, remembered per package: moved elsewhere by the u
 a **Get TV Setup** tile among them (`suggestSetup()`, the art `suggest_setup.png` from `dev/gen/brand_art.py`); it installs the
 release's `tv-setup.apk` through `SelfUpdate`, or is turned off for good (`Store.suggestOff`).
 
+**Play Next and channels** (`apps/Watch.kt`): the rows other apps publish to TvProvider (Watch Next, preview channels), read with
+READ_TV_LISTINGS (runtime: `HomeConfig.GRANT_WIFI` grants it over ADB with the others; without it, or before Android 8, no row) and
+drawn as one row under the apps (`HomeActivity.watchRead` / `show`). Menu on one hides that app's row (`Store.rowsOff`), + brings it
+back. A launcher may read only rows marked searchable (the default) and may not filter with a `selection`: hence the filtering in
+Kotlin. TV Channels writes its own (`HomeRows.kt` there) and is the test subject on the emulator.
+
 ## Backgrounds
 
 Which path draws what (read before adding a theme or a wall kind):
@@ -39,5 +45,5 @@ Which path draws what (read before adding a theme or a wall kind):
 A WebView wall was measured slow on the FPT Play box (cold start + uncached download), so every site theme goes native; loop.html
 stays only as the fallback for older TV Homes and the page's preview. Its allowed hosts are listed twice: loop.html `HOSTS` and the
 `HOSTS` of NetPicture / WebVideo. Themes live in `docs/home/themes.json` (signed, `dev/sign/sign_themes.py`, bump `rev`), photos come
-from `dev/gen/wallpapers.py` (Wikimedia Commons, licence + author kept), and a TV Home asks for the list again on Home (a day old) and
+from `dev/gen/wallpapers.py` (Unsplash or Wikimedia Commons, licence + author kept; calm, few details: the tiles sit on them), and a TV Home asks for the list again on Home (a day old) and
 on opening Themes (an hour), `Themes.refresh`.

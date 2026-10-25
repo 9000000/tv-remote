@@ -210,6 +210,7 @@ object TvUi {
         val (dlg, box) = sheet(c, theme, w)
         sheetTitle(box, title)
         if (note.isNotEmpty()) sheetNote(box, note)
+        val first = box.childCount                                     // the first choice: after the title, and the note when there is one
         items.forEach { item ->
             val sub = text(c, "", SP_COUNT, DIM).apply { maxLines = 3; ellipsize = TextUtils.TruncateAt.END }
             val ring = FrameLayout(c).apply { val p = dp(c, 4).toInt(); setPadding(p, p, p, p) }
@@ -240,7 +241,7 @@ object TvUi {
             show()
         }
         dlg.show()
-        box.getChildAt(1)?.requestFocus()
+        box.getChildAt(first)?.requestFocus()
         return dlg
     }
 

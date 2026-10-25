@@ -33,6 +33,7 @@ object Store {
         val out = JSONArray()
         (if (on) now + ch else now).forEach { out.put(write(it)) }
         p(c).edit().putString("favs", out.toString()).apply()
+        HomeRows.favourites(c)
         return on
     }
 
@@ -58,6 +59,7 @@ object Store {
     fun replace(c: Context, favs: List<Channel>, groups: List<Group>) {
         p(c).edit().putString("favs", JSONArray().apply { favs.forEach { put(write(it)) } }.toString()).apply()
         saveGroups(c, groups)
+        HomeRows.favourites(c)
     }
     fun group(c: Context, id: String): Group? = groups(c).firstOrNull { it.id == id }
 
@@ -109,7 +111,7 @@ object Store {
     fun last(c: Context): String? = p(c).getString("last", null)
     fun setLast(c: Context, id: String) = p(c).edit().putString("last", id).apply()
     /** The last channel watched whole (name, logo, streams), for TV Home's "Keep watching" tile, which needs no list read to show it. */
-    fun setLastChannel(c: Context, ch: Channel) { p(c).edit().putString("last_ch", write(ch).toString()).apply(); publishLast(c, ch) }
+    fun setLastChannel(c: Context, ch: Channel) { p(c).edit().putString("last_ch", write(ch).toString()).apply(); publishLast(c, ch); HomeRows.watched(c, ch) }
 
     /** The dynamic launcher shortcut `last` (TV Home's picker lists it): the channel just watched, so it follows what is playing. */
     private fun publishLast(c: Context, ch: Channel) {

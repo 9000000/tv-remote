@@ -74,6 +74,7 @@ class BrowseActivity : Activity() {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        if (b == null) HomeRows.favourites(this)                       // the row Android's launchers show, from favourites saved before it existed
         val d = { v: Number -> TvUi.dp(this, v).toInt() }
         val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // app/DESIGN-TV.md
         val root = LinearLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }

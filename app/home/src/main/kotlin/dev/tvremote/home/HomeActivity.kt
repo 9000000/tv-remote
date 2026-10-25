@@ -70,6 +70,7 @@ import dev.tvremote.home.manage.PhotoScreen
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.widgets.sample
 import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.Watch
 import dev.tvremote.home.apps.LiveFace
 import dev.tvremote.home.ui.BarBtn
 import dev.tvremote.home.ui.TopBar
@@ -297,6 +298,7 @@ class HomeActivity : Activity() {
         away = false
         if (trimmed && !locked) untrim()                              // a trim queued while away landed between onStart and here (away still true): blurred wallpaper, no banners, until Home was left again (a Coocaa)
         appsSince()
+        watchRead()
         Keys.push(this)                                               // TV Setup keeps the keys and the power-on app: told again, so a TV Setup installed later has them
         badgesRead()
         pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
@@ -350,6 +352,31 @@ class HomeActivity : Activity() {
 
     /** TV Setup suggested on the grid: not installed, not turned down. It does what a launcher cannot (ADB: Optimize TV, keys, the
      *  phone's remote), so a TV with TV Home alone is told once where the rest is (the user, 2026-10-25). */
+    private var watch: List<Pair<Watch.Item, android.graphics.Bitmap?>> = emptyList()
+    private val watchBg = java.util.concurrent.Executors.newSingleThreadExecutor()   // posters come over the network: not on [bg], which the tiles wait on
+
+    /** Other apps' rows read again (on every return to Home: something was just watched); the grid is drawn again only when they changed. */
+    private fun watchRead() {
+        val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT); val w = tileW()
+        watchBg.execute {
+            val got = Watch.read(this, cols, Store.rowsOff(this)).map { it to Watch.art(this, it, w, TvUi.CARD) }
+            runOnUiThread {
+                if (isDestroyed || got.map { it.first.key + it.first.title + (it.second != null) } == watch.map { it.first.key + it.first.title + (it.second != null) }) return@runOnUiThread
+                watch = got; show()
+            }
+        }
+    }
+
+    private fun watchOpen(it: Watch.Item) {
+        val i = Watch.intent(it)
+        try { if (i != null) startActivity(i) else toast(R.string.no_open) } catch (e: Exception) { toast(R.string.no_open) }
+    }
+
+    private fun watchMenu(it: Watch.Item) {
+        open = TvUi.menu(this, R.style.TvSheet, it.app, listOf(TvUi.Item(R.drawable.ic_eye_off, getString(R.string.watch_hide)) { Store.rowsOff(this, it.pkg); watchRead() }),
+            R.drawable.ic_check, note = getString(R.string.watch_note))
+    }
+
     private fun suggestSetup() = !Store.suggestOff(this) && apps.none { it.pkg == Store.OWN[0] } && apps.isNotEmpty()
 
     private fun askSetup() {
@@ -742,10 +769,10 @@ class HomeActivity : Activity() {
         val hidden = Store.list(this, "hidden").toSet()
         val shownPins = pins.filter { it.pkg !in byPkg && it.pkg !in dockPkgs }   // a shortcut put on the grid by the picker shows as that tile, not twice
         val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names") + "|" + suggestSetup()
-        if (key == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
-        shownKey = key
+        val all = key + "|" + watch.joinToString(",") { it.first.key + it.first.title + (it.second != null) }
+        if (all == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
+        shownKey = all
         val made = HashMap<String, Tile>()                            // the tiles kept for the next build: those of apps still here
-        val width = resources.displayMetrics.widthPixels - dp(96)
         val favs = dockPkgs.map { byKey.getValue(it) }
 
         for (r in 0 until grid.childCount) (grid.getChildAt(r) as ViewGroup).removeAllViews()   // the tiles leave their rows alive, to be put in new ones
@@ -754,12 +781,17 @@ class HomeActivity : Activity() {
         val rest = (shownPins + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }).sortedBy { place[it.pkg] ?: if (it.pin != null && !it.grid) -1 else Int.MAX_VALUE }   // a pin nobody placed stays where it always was: right after the favourites
         val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT)
         val gap = dp(GRID_GAP)
-        val w = (width - (cols - 1) * gap) / cols                     // one size for every tile: the favourites are only the first ones
+        val w = tileW()                                               // one size for every tile: the favourites are only the first ones
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
         if (suggestSetup()) cells.add(favs.indexOfFirst { it.pkg !in Store.OWN }.let { if (it < 0) favs.size else it }, moves(Tile(this, null, w, getString(R.string.suggest_setup), ::dp,
             art = getDrawable(R.drawable.suggest_setup), corner = getString(R.string.suggest_install)).apply { setOnClickListener { askSetup() } }) { askSetup() })   // with the project's other apps in the first row: seen, as its own would be
         cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { addPanel() } }, null))   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
-        fill(cells, cols, gap)
+        // other apps' Play Next and channels ([Watch]): a row of their own under the first one, where Android TV's launcher puts them
+        val shows = watch.map { (it, pic) -> moves(Tile(this, null, w, it.title, ::dp, mark = R.drawable.ic_play, art = pic?.let { b -> android.graphics.drawable.BitmapDrawable(resources, b) }, corner = if (pic == null) it.app else null)
+            .apply { setOnClickListener { _ -> watchOpen(it) } }) { watchMenu(it) } }
+        val at = minOf(cols, cells.size)
+        cells.addAll(at, shows)
+        fill(cells, cols, gap, if (shows.isEmpty()) emptySet() else setOf(at, at + shows.size))
         tileCache = made
         badgeTiles()
         ui.removeCallbacks(tileTick); if (!away && liveViews().isNotEmpty()) ui.post(tileTick)   // a new grid asks at once
@@ -769,14 +801,20 @@ class HomeActivity : Activity() {
         if (again != null) again.requestFocus() else if (near != null) near.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
     }
 
-    private fun fill(cells: List<View>, cols: Int, gap: Int) {
+    private fun tileW(): Int { val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT); return (resources.displayMetrics.widthPixels - dp(96) - (cols - 1) * dp(GRID_GAP)) / cols }
+
+    /** [breaks]: where a row starts early (the Play Next row stands alone). */
+    private fun fill(cells: List<View>, cols: Int, gap: Int, breaks: Set<Int> = emptySet()) {
         var row: LinearLayout? = null
+        var n = 0
         cells.forEachIndexed { i, v ->
-            if (i % cols == 0) {
+            if (i == 0 || n == cols || i in breaks) {
                 row = Flat(this).apply { orientation = LinearLayout.HORIZONTAL; clipChildren = false; clipToPadding = false }
                 grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = gap })   // as far apart as the tiles are side by side
+                n = 0
             }
-            row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (i % cols > 0) leftMargin = gap })
+            row!!.addView(v, LinearLayout.LayoutParams(-2, -2).apply { if (n > 0) leftMargin = gap })
+            n++
         }
         veil(false)                                                   // new rows come shown: the hidden ones at once, not seen fading out
     }
@@ -1849,6 +1887,8 @@ class HomeActivity : Activity() {
         if (Tiles.status(this) == Tiles.OK) for (t in Tiles.available(this).filter { it.key !in onGrid })
             rows.add(TvGlass.Item(Tiles.iconRes(this, t), t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
                 .also { it.picture = icon(HomeConfig.tileProvider(t.key)) })
+        for (p in Store.rowsOff(this)) { val l = try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(p, 0)).toString() } catch (e: Exception) { continue }
+            rows.add(TvGlass.Item(0, l, getString(R.string.add_row), false, false) { Store.rowsOn(this, p); open?.dismiss(); watchRead() }.also { it.picture = icon(p) }) }   // a row hidden from its menu comes back here
         if (Pins.can(this)) {
             val l = Pins.report(this, JSONObject()).optJSONArray("pinsAvail")
             var n = 0
@@ -1915,7 +1955,7 @@ class HomeActivity : Activity() {
  * ([TvTile]: the look is tvui's, TV Home's own moved there). [app] null: the "hidden apps" tile.
  */
 class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int, say: (String) -> String = { it }, mark: Int = R.drawable.ic_eye_off,
-           art: android.graphics.drawable.Drawable? = null, corner: String? = null) : TvTile(c, w, dp) {
+           private val art: android.graphics.drawable.Drawable? = null, corner: String? = null) : TvTile(c, w, dp) {
     private val content: View
     private var pic: ImageView? = null                              // the picture, so it can be let go and put back ([release])
     private val badge = BadgeView(c, dp)
@@ -1959,7 +1999,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
 
     /** The picture let go (memory is short while the screen is hidden) and put back; the tile keeps its place and its colour meanwhile. */
     fun release() { pic?.setImageDrawable(null) }
-    fun restore() { pic?.setImageDrawable(app?.banner ?: app?.icon) }
+    fun restore() { pic?.setImageDrawable(app?.banner ?: app?.icon ?: art) }
 
     /** The lock or the time left on the corner; nothing when [m] is null. Set only when it differs, so nothing is laid out for the same mark. */
     fun mark(m: Badges.Mark?, label: (Int) -> String) {

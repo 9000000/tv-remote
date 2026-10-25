@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />   <!-- the Wi-Fi's name on the network button: granted over ADB only (HomeConfig.GRANT_WIFI) -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- Android 12+ wants it beside FINE -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />     <!-- Android TV's pairing screen (Control Center's Bluetooth) needs it: ADB grants it (HomeConfig.GRANT_WIFI), else asked on the first press -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />       <!-- other apps' Play Next and channels (apps/Watch.kt): granted over ADB (HomeConfig.GRANT_WIFI) -->
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />   <!-- only ever granted over ADB (Dream.kt): the screensaver switch -->
     <queries>                                                         <!-- the apps it lists, and TV Setup for the usage card -->
         <package android:name="dev.tvremote.setup" />

@@ -110,6 +110,10 @@ object Store {
     /** The "hold OK for more" tip: its own flag, outside the settings, so a theme or an import never brings it back. */
     fun suggestOff(c: Context) = prefs(c).getBoolean("suggest_setup_off", false)
     fun suggestOff(c: Context, off: Boolean) = prefs(c).edit().putBoolean("suggest_setup_off", off).apply()
+    /** Apps whose Play Next and channels stay off the home screen (the row's menu). */
+    fun rowsOff(c: Context): Set<String> = prefs(c).getStringSet("rows_off", null).orEmpty()
+    fun rowsOff(c: Context, pkg: String) = prefs(c).edit().putStringSet("rows_off", rowsOff(c) + pkg).apply()
+    fun rowsOn(c: Context, pkg: String) = prefs(c).edit().putStringSet("rows_off", rowsOff(c) - pkg).apply()
     fun tipIsDone(c: Context) = prefs(c).getBoolean("tip_menu_done", false)
     fun tipDone(c: Context) { if (!tipIsDone(c)) prefs(c).edit().putBoolean("tip_menu_done", true).apply() }
 

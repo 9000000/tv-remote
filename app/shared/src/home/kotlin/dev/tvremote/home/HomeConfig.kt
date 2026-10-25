@@ -103,8 +103,9 @@ object HomeConfig {
     const val DREAM = "$PKG/.HomeDream"                               // the screensaver's component, as `screensaver_components` writes it
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
     /** Granted over ADB when TV Home is installed or set up, never asked on the TV: the Wi-Fi's name is location to Android (8.1+), and
-     *  Android TV's "pair an accessory" screen (Control Center's Bluetooth) refuses to open for an app without BLUETOOTH_CONNECT (12+). */
-    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; "
+     *  Android TV's "pair an accessory" screen (Control Center's Bluetooth) refuses to open for an app without BLUETOOTH_CONNECT (12+),
+     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt). */
+    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; pm grant $PKG android.permission.READ_TV_LISTINGS >/dev/null 2>&1; "
     const val DOCK_MAX = 6
     const val COLS_MIN = 4; const val COLS_MAX = 8; const val COLS_DEFAULT = 5
     const val ROWS_MAX = 10.0
