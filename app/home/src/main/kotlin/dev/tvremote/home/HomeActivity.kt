@@ -215,7 +215,7 @@ class HomeActivity : Activity() {
         bar = TopBar(this, ::dp)
         netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for the TV's settings, TV Home's and the everyday switches: the Control Center (ui/ControlCenter.kt); a second button beside it read as the same thing
-        settingsPill = BarBtn(this, R.drawable.ic_toggles, getString(R.string.cc_title), ::dp) {   // the switches icon: it opens the Control Center, no longer Settings
+        settingsPill = BarBtn(this, R.drawable.ic_settings, getString(R.string.cc_title), ::dp) {   // the gear people know; its name says Control Center (the user tried a switches icon, 2026-10-25)
             open = dev.tvremote.home.ui.ControlCenter.show(this, bar.capsule, { open(it) }, { inputs() }, { customize() })
         }
         for (b in listOf(netPill, settingsPill)) bar.add(b)

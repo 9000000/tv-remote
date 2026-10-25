@@ -137,7 +137,6 @@ ICONS = {
     "banknote": ["M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z", "M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6", "M6 12h.01", "M18 12h.01"],
     "external": ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"],
     "eraser": ["m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21", "M22 21H7", "m5 11 9 9"],
-    "toggles": ["M7 3h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8z", "M16 5a2 2 0 1 0 0 4a2 2 0 1 0 0-4", "M7 13h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8z", "M8 15a2 2 0 1 0 0 4a2 2 0 1 0 0-4"],   # TV Home's Control Center button
 }
 # TV Games only (its genres and the columns pill): not in the page's sprite or the other apps
 GAME_ICONS = {
