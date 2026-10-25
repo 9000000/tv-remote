@@ -265,6 +265,14 @@
     <string name="g_bg_set">%1$d pictures · %2$s</string>
     <string name="g_shade_n">shade %1$d%%</string>
     <string name="g_sec_show">Screen</string>
+    <string name="g_sec_shown">On the home screen</string>
+    <string name="show_clock">Clock</string>
+    <string name="show_date">Date</string>
+    <string name="show_net">Wi-Fi button</string>
+    <string name="show_gear">Settings button</string>
+    <string name="show_add">Add tile</string>
+    <string name="show_suggest">Get TV Setup tile</string>
+    <string name="show_watch">Play Next row</string>
     <string name="g_sec_grid">App grid</string>
     <string name="g_cols_n">%1$d columns</string>
     <string name="g_rows_n">%1$s rows</string>

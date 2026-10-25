@@ -32,6 +32,11 @@ import org.json.JSONObject
  *           runs in between. A TV Home that does this reports "wrotate": true (the page keeps its one-choice list for one that
  *           does not)
  *   clock24 24-hour clock; greet: the greeting under the clock
+ *   show*   whether each thing TV Home draws on its first screen is there ([SHOWS], all true: nothing is forced on the person):
+ *           showClock, showDate (the clock and the day beside it), showNet (the Wi-Fi button), showGear (the settings button; the
+ *           Menu key and the clients still reach Customize), showAdd (the "+ Add" tile), showSuggest (the "Get TV Setup" tile),
+ *           showWatch (the Play Next / channels row, on top of hiding one app's from its menu). A TV Home older than these
+ *           does not report them, so a page offers them only to one that does
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
@@ -360,6 +365,8 @@ object HomeConfig {
     val THEME_KEYS = listOf("wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol",
         "widgets", "wsize", "wopt", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
     private val THEME_ID = Regex("t[0-9]{1,4}")
+    /** What the first screen draws that the person can take off (not in a theme: a look does not hide the way to the settings). */
+    val SHOWS = listOf("showClock", "showDate", "showNet", "showGear", "showAdd", "showSuggest", "showWatch")
 
     /** [c] (a cleaned config) cut down to a theme's settings, the QR cards left out: their codes (and a Wi-Fi password) are not a look. */
     fun pickTheme(c: JSONObject): JSONObject {
@@ -550,6 +557,7 @@ object HomeConfig {
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
+            .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
             .put("anim", o.optBoolean("anim", true))
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")
             .put("focus", o.optString("focus").takeIf { it == "ring" } ?: "glass")

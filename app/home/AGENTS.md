@@ -22,12 +22,14 @@ app/home/                TV Home, the launcher: plain Views, no :shared (it woul
 **The project's own apps first:** `Store.OWN` (TV Setup, TV Games, TV Channels) lead the first-run dock, and one installed later is
 moved in once (`Store.promote`, remembered per package: moved elsewhere by the user, it stays there). Without TV Setup the grid shows
 a **Get TV Setup** tile among them (`suggestSetup()`, the art `suggest_setup.png` from `dev/gen/brand_art.py`); it installs the
-release's `tv-setup.apk` through `SelfUpdate`, or is turned off for good (`Store.suggestOff`).
+release's `tv-setup.apk` through `SelfUpdate`, or is turned off for good (`showSuggest`; the old `Store.suggestOff` flag is moved into it once).
+
+**Nothing is forced on the first screen:** every element it draws has a `show*` switch in `HomeConfig.SHOWS` (clock, date, Wi-Fi button, settings button, "+ Add", Get TV Setup, Play Next row; all on by default), in the TV's Customize and in `js/home.js`. A new element needs its switch in the same change. Hiding the gear leaves the Menu key and the clients as the way back.
 
 **Play Next and channels** (`apps/Watch.kt`): the rows other apps publish to TvProvider (Watch Next, preview channels), read with
 READ_TV_LISTINGS (runtime: `HomeConfig.GRANT_WIFI` grants it over ADB with the others; without it, or before Android 8, no row) and
 drawn as one row under the apps (`HomeActivity.watchRead` / `show`). Menu on one hides that app's row (`Store.rowsOff`), + brings it
-back. A launcher may read only rows marked searchable (the default) and may not filter with a `selection`: hence the filtering in
+back; `showWatch` turns the whole row off. TV Channels' preview-channel programs are left out (they repeat its pinned shortcuts), its Play Next stays. A launcher may read only rows marked searchable (the default) and may not filter with a `selection`: hence the filtering in
 Kotlin. TV Channels writes its own (`HomeRows.kt` there) and is the test subject on the emulator.
 
 ## Backgrounds

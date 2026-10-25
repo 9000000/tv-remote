@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Setup: nút "Dùng launcher gốc của TV" (trước là "↩ Về launcher của TV", nằm cạnh Đóng nên dễ bấm nhầm) giờ hỏi lại trước khi đổi màn hình chính.
+- TV Home: không gì bị ép hiện trên màn hình chính. Tuỳ chỉnh (trên TV và trong app/web) có công tắc cho đồng hồ, ngày, nút Wi-Fi, nút cài đặt, ô Thêm, ô gợi ý TV Setup và hàng Xem tiếp (mặc định vẫn bật hết). Hàng Xem tiếp không còn lặp các kênh yêu thích của TV Channels.
 
 **English**
 - TV Setup: "Use the TV's own launcher" (was "↩ Back to the TV's own", beside Close and easy to press by mistake) now asks before it changes the home screen.
+- TV Home: nothing is forced onto the home screen. Customize (on the TV and in the app/web) has a switch for the clock, the date, the Wi-Fi button, the settings button, the Add tile, the Get TV Setup tile and the Play Next row (all on by default). The Play Next row no longer repeats TV Channels' favourites.
 
 ## 0.25.0 - 2026-10-26
 

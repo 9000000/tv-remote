@@ -52,7 +52,8 @@ object Watch {
         } catch (e: Exception) { emptyList() }                        // SecurityException (taken back), a TV without TvProvider
 
         val next = rows(TvContract.WatchNextPrograms.CONTENT_URI, "last_engagement_time_utc_millis DESC", "n")
-        val shows = rows(TvContract.PreviewPrograms.CONTENT_URI, "channel_id, weight DESC", "p").groupBy { it.pkg }.mapValues { it.value.take(PER_APP) }
+        // TV Channels' favourites are left out: they repeat the shortcuts people pin from TV Channels (its Play Next, the last watched, stays)
+        val shows = rows(TvContract.PreviewPrograms.CONTENT_URI, "channel_id, weight DESC", "p").filter { it.pkg != "dev.tvremote.channels" }.groupBy { it.pkg }.mapValues { it.value.take(PER_APP) }
         val out = ArrayList(next.distinctBy { it.intent }.take(max))
         val queues = shows.values.map { ArrayDeque(it) }
         while (out.size < max && queues.any { it.isNotEmpty() }) for (q in queues) if (out.size < max) q.removeFirstOrNull()?.let { s -> if (out.none { it.intent == s.intent }) out.add(s) }

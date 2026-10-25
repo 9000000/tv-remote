@@ -286,6 +286,10 @@ async function homeOpen() {
   } });
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
+  // what the first screen draws, each can go (HomeConfig.SHOWS); an older TV Home does not report them, so none is offered to it
+  const SHOWS = ['showClock', 'showDate', 'showNet', 'showGear', 'showAdd', 'showSuggest', 'showWatch'];
+  const shows = Object.fromEntries(SHOWS.map((k) => [k, el('input', { type: 'checkbox', onchange: () => send({ [k]: shows[k].checked }) })]));
+  const showHead = el('h3', { className: 'secthead', textContent: T('home.g_sec_shown') });
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
   // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
@@ -449,6 +453,8 @@ async function homeOpen() {
     chips(vfps, 'vfps', ['', '60', '30', '24', '15'], (k) => k ? T('home.v_fps_n', { n: k }) : T('home.v_orig'));
     chips(vres, 'vres', ['', '1080', '720', '480'], (k) => k ? T('home.v_res_n', { n: k }) : T('home.v_res_screen'));
     everyHead.hidden = every.hidden = !c.wrotate; if (!c.wrotate) everyNote.hidden = true;
+    for (const k of SHOWS) { shows[k].checked = c[k] !== false; shows[k].closest('label').hidden = c[k] === undefined; }
+    showHead.hidden = c.showClock === undefined;
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
@@ -810,6 +816,8 @@ async function homeOpen() {
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
       hScenes, wScenes, hColours, walls]],
     ['look', 'sparkle', 180, 'home.g_look', [el('h3', { className: 'secthead', textContent: T('home.sec_show') }), focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet'),
+      showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(shows.showGear, 'home.show_gear'),
+      check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'),
       el('h3', { className: 'secthead', textContent: T('home.sec_grid') }), colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
       el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
     ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, feedHead, feedLine, feedList, feedNote, noteHead, noteLine, qrHead, qrList, qrNote]],

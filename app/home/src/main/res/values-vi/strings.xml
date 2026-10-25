@@ -263,6 +263,14 @@
     <string name="g_bg_set">%1$d hình · %2$s</string>
     <string name="g_shade_n">phủ tối %1$d%%</string>
     <string name="g_sec_show">Hiển thị</string>
+    <string name="g_sec_shown">Hiện trên màn hình chính</string>
+    <string name="show_clock">Đồng hồ</string>
+    <string name="show_date">Ngày</string>
+    <string name="show_net">Nút Wi-Fi</string>
+    <string name="show_gear">Nút cài đặt</string>
+    <string name="show_add">Ô Thêm</string>
+    <string name="show_suggest">Gợi ý TV Setup</string>
+    <string name="show_watch">Hàng Xem tiếp</string>
     <string name="g_sec_grid">Lưới ứng dụng</string>
     <string name="g_cols_n">%1$d cột</string>
     <string name="g_rows_n">%1$s hàng</string>

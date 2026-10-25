@@ -102,6 +102,7 @@ class HomeActivity : Activity() {
     private lateinit var glass: Glass
     private lateinit var clock: TextClock
     private lateinit var dateLine: TextView
+    private lateinit var rule: View
     private lateinit var greetLine: TextView
     private lateinit var netPill: BarBtn
     private lateinit var settingsPill: BarBtn
@@ -215,7 +216,8 @@ class HomeActivity : Activity() {
         dateLine = text(22f, Color.WHITE).apply { typeface = Font.medium }
         val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(greetLine); addView(dateLine) }
         left.addView(clock)
-        left.addView(View(this).apply { setBackgroundColor(HEAD_RULE) }, LinearLayout.LayoutParams(dp(1), dp(56)).apply { leftMargin = dp(28); rightMargin = dp(28) })
+        rule = View(this).apply { setBackgroundColor(HEAD_RULE) }
+        left.addView(rule, LinearLayout.LayoutParams(dp(1), dp(56)).apply { leftMargin = dp(28); rightMargin = dp(28) })
         left.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
         head.addView(left, LinearLayout.LayoutParams(0, -2, 1f))
         bar = TopBar(this, ::dp)
@@ -250,7 +252,7 @@ class HomeActivity : Activity() {
 
         setContentView(root)
         ThemeShots.live = { webShot() }                                // a theme saved on a web wall: the page as it is drawn now
-        Store.onChange = { conf = Store.get(this); readNames(); if (conf.optString("lang") != Lang.shown) relang() else { show(); wallTimer(); bingCheck(); peek() } }
+        Store.onChange = { conf = Store.get(this); readNames(); if (conf.optString("lang") != Lang.shown) relang() else { show(); watchRead(); wallTimer(); bingCheck(); peek() } }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -261,6 +263,7 @@ class HomeActivity : Activity() {
             @Suppress("DEPRECATION") addAction(ConnectivityManager.CONNECTIVITY_ACTION)
             addAction(Intent.ACTION_DREAMING_STARTED); addAction(Intent.ACTION_DREAMING_STOPPED)
         })
+        if (Store.suggestOff(this)) { Store.suggestOff(this, false); conf = Store.change(this, JSONObject().put("showSuggest", false)) }   // the old "hide" flag is now the setting everyone sees
         loadApps()
         if (Motion.on) enter(true)
         if (reopen) { reopen = false; ui.post { customize("lang") } }
@@ -359,7 +362,7 @@ class HomeActivity : Activity() {
     private fun watchRead() {
         val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT); val w = tileW()
         watchBg.execute {
-            val got = Watch.read(this, cols, Store.rowsOff(this)).map { it to Watch.art(this, it, w, TvUi.CARD) }
+            val got = (if (conf.optBoolean("showWatch", true)) Watch.read(this, cols, Store.rowsOff(this)) else emptyList()).map { it to Watch.art(this, it, w, TvUi.CARD) }
             runOnUiThread {
                 if (isDestroyed || got.map { it.first.key + it.first.title + (it.second != null) } == watch.map { it.first.key + it.first.title + (it.second != null) }) return@runOnUiThread
                 watch = got; show()
@@ -377,11 +380,11 @@ class HomeActivity : Activity() {
             R.drawable.ic_check, note = getString(R.string.watch_note))
     }
 
-    private fun suggestSetup() = !Store.suggestOff(this) && apps.none { it.pkg == Store.OWN[0] } && apps.isNotEmpty()
+    private fun suggestSetup() = conf.optBoolean("showSuggest", true) && !Store.suggestOff(this) && apps.none { it.pkg == Store.OWN[0] } && apps.isNotEmpty()
 
     private fun askSetup() {
         val acts = listOf(TvUi.Item(R.drawable.ic_download, getString(R.string.suggest_install)) { getSetup() },
-            TvUi.Item(R.drawable.ic_eye_off, getString(R.string.suggest_hide)) { Store.suggestOff(this, true); show() })
+            TvUi.Item(R.drawable.ic_eye_off, getString(R.string.suggest_hide)) { Store.change(this, JSONObject().put("showSuggest", false)) })   // the same switch as in Customize
         open = TvUi.menu(this, R.style.TvSheet, getString(R.string.suggest_setup), acts, R.drawable.ic_check, note = getString(R.string.suggest_note))
     }
 
@@ -768,7 +771,7 @@ class HomeActivity : Activity() {
         val dockPkgs = Store.list(this, "dock").filter { it in byKey }
         val hidden = Store.list(this, "hidden").toSet()
         val shownPins = pins.filter { it.pkg !in byPkg && it.pkg !in dockPkgs }   // a shortcut put on the grid by the picker shows as that tile, not twice
-        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names") + "|" + suggestSetup()
+        val key = (dockPkgs + shownPins.map { it.pkg }).joinToString(",") + "|" + apps.filter { it.pkg !in dockPkgs && it.pkg !in hidden }.joinToString(",") { it.pkg } + "|" + apps.count { it.pkg in hidden } + "|" + conf.optInt("cols") + "|" + conf.optJSONArray("order") + "|" + conf.optJSONObject("names") + "|" + suggestSetup() + "|" + conf.optBoolean("showAdd", true)
         val all = key + "|" + watch.joinToString(",") { it.first.key + it.first.title + (it.second != null) }
         if (all == shownKey) { badgeTiles(); return }                 // nothing that decides the tiles changed: not one view is rebuilt (the power mark may have)
         shownKey = all
@@ -785,7 +788,7 @@ class HomeActivity : Activity() {
         val cells: MutableList<View> = (favs + rest).map { tile(it, w, made) }.toMutableList()
         if (suggestSetup()) cells.add(favs.indexOfFirst { it.pkg !in Store.OWN }.let { if (it < 0) favs.size else it }, moves(Tile(this, null, w, getString(R.string.suggest_setup), ::dp,
             art = getDrawable(R.drawable.suggest_setup), corner = getString(R.string.suggest_install)).apply { setOnClickListener { askSetup() } }) { askSetup() })   // with the project's other apps in the first row: seen, as its own would be
-        cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { addPanel() } }, null))   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
+        if (conf.optBoolean("showAdd", true)) cells.add(moves(Tile(this, null, w, getString(R.string.add), ::dp, mark = R.drawable.ic_plus).apply { setOnClickListener { addPanel() } }, null))   // the way to put anything on the grid: hidden apps, shortcuts, live tiles
         // other apps' Play Next and channels ([Watch]): a row of their own under the first one, where Android TV's launcher puts them
         val shows = watch.map { (it, pic) -> moves(Tile(this, null, w, it.title, ::dp, mark = R.drawable.ic_play, art = pic?.let { b -> android.graphics.drawable.BitmapDrawable(resources, b) }, corner = if (pic == null) it.app else null)
             .apply { setOnClickListener { _ -> watchOpen(it) } }) { watchMenu(it) } }
@@ -1397,6 +1400,12 @@ class HomeActivity : Activity() {
         dateLine.text = day
         greetLine.text = greet
         greetLine.visibility = if (conf.optBoolean("greet", true)) View.VISIBLE else View.GONE
+        clock.visibility = if (conf.optBoolean("showClock", true)) View.VISIBLE else View.GONE
+        dateLine.visibility = if (conf.optBoolean("showDate", true)) View.VISIBLE else View.GONE
+        rule.visibility = if (clock.isShown && (dateLine.isShown || greetLine.isShown)) View.VISIBLE else View.GONE   // the line between them only while there are two sides
+        netPill.visibility = if (conf.optBoolean("showNet", true)) View.VISIBLE else View.GONE
+        settingsPill.visibility = if (conf.optBoolean("showGear", true)) View.VISIBLE else View.GONE
+        bar.visibility = if (bar.buttons.any { it.visibility == View.VISIBLE }) View.VISIBLE else View.GONE   // no capsule round nothing
         @Suppress("DEPRECATION") val net = (getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).activeNetworkInfo
         val (label, off) = @Suppress("DEPRECATION") when {
             net == null || !net.isConnected -> getString(R.string.offline) to true

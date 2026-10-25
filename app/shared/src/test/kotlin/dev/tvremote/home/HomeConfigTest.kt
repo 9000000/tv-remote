@@ -204,6 +204,16 @@ class HomeConfigTest {
         assertFalse(n.getBoolean("clock24"))
     }
 
+    @Test fun everythingOnTheFirstScreenIsOnUntilTurnedOff() {
+        val c = HomeConfig.clean(JSONObject())
+        for (k in HomeConfig.SHOWS) assertTrue(k, c.getBoolean(k))
+        val n = HomeConfig.merge(c, JSONObject().put("showSuggest", false).put("showWatch", false))
+        assertFalse(n.getBoolean("showSuggest")); assertFalse(n.getBoolean("showWatch"))
+        assertTrue(n.getBoolean("showAdd") && n.getBoolean("showGear"))
+        assertTrue(HomeConfig.clean(JSONObject().put("showAdd", "junk")).getBoolean("showAdd"))   // not a boolean: the default
+        assertFalse(HomeConfig.pickTheme(n).has("showWatch"))     // a look does not hide the way to the settings
+    }
+
     @Test fun theRetiredPowerOptionIsDroppedFromOldSettings() {      // the bar has no power button any more: its actions are in the Control Center
         assertFalse(HomeConfig.clean(JSONObject().put("power", false)).has("power"))
         assertFalse(HomeConfig.merge(HomeConfig.clean(JSONObject()), JSONObject().put("power", false)).has("power"))
