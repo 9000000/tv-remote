@@ -17,6 +17,11 @@ ON CONFLICT (h, brand, model) DO UPDATE SET
 WHERE tvs.last < excluded.last
 RETURNING first`;
 
+// A second ping the same day is not counted again, but its results are kept: the apps ping again when one becomes true (the first
+// ping comes with ADB, the picture and Optimize TV later), and the upsert above dropped it, so 297 of 298 rows had no optimize.
+const RESULTS = `UPDATE tvs SET adb=COALESCE(?4, adb), video=COALESCE(?5, video), optimize=COALESCE(?6, optimize)
+WHERE h = ?1 AND brand = ?2 AND model = ?3`;
+
 // counts the day's first counted ping: active always, new when the install was first seen today
 const DAY = `INSERT INTO days (day, app, active, new) VALUES (?1, ?2, 1, ?3)
 ON CONFLICT (day, app) DO UPDATE SET active = COALESCE(active, 0) + 1, new = new + excluded.new`;
@@ -108,6 +113,8 @@ export default {
         .bind(h, r.brand, r.model, r.device, r.board, r.hw, r.soc, r.android, r.sdk, r.leanback, r.app, r.v, r.adb, r.video, r.optimize, day)
         .first();
       if (row) await env.DB.prepare(DAY).bind(day, r.app, row.first === day ? 1 : 0).run();
+      else if (r.adb != null || r.video != null || r.optimize != null)
+        await env.DB.prepare(RESULTS).bind(h, r.brand, r.model, r.adb, r.video, r.optimize).run();
       return new Response(null, { status: 204 });
     }
 
