@@ -76,7 +76,7 @@ main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking 
 .chip.warn { background:var(--warn-bg); color:var(--warn); }
 .chip.bad { background:var(--bad-bg); color:var(--bad); }
 /* uploads and installs float above every tab: started from a button halfway down the page, they are seen without scrolling */
-#jobscard { position:fixed; right:16px; bottom:16px; width:min(380px, calc(100vw - 32px)); max-height:min(46vh, 420px); overflow:auto; z-index:15; box-shadow:0 12px 36px rgba(0,0,0,.28); }
+#jobscard { position:fixed; right:16px; bottom:calc(16px + var(--cover-b, 0px)); width:min(380px, calc(100vw - 32px)); max-height:min(46vh, 420px); overflow:auto; z-index:15; box-shadow:0 12px 36px rgba(0,0,0,.28); }
 body.pip #jobscard { bottom:calc(var(--pip-h, 0px) + 28px); z-index:16; }   /* above the TV's mini picture (screen.js measures it), not under it */
 @media (max-width:640px) { /* a sheet along the bottom, thumbs' reach */
   #jobscard { left:8px; right:8px; width:auto; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); max-height:40vh; border-radius:16px; }
@@ -249,7 +249,8 @@ dialog img { max-width:96vw; max-height:92vh; display:block; border-radius:8px; 
 @media (min-width:900px) {
   #pickcols.solo { columns:1; }
 }
-#toast { position:fixed; inset:auto auto 18px 50%; margin:0; border:0; overflow:visible; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:10px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; z-index:20; }
+/* --cover-b: what the phone app's small TV player hides of the page's bottom (Pip.kt report()); the toast, .errbox and #jobscard rise above it */
+#toast { position:fixed; inset:auto auto calc(18px + var(--cover-b, 0px)) 50%; margin:0; border:0; overflow:visible; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:10px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90vw; z-index:20; }
 #toast.show { opacity:.94; }
 /* "Look at the TV": the whole screen, because nothing else can be done until the TV has been answered */
 #allow, #connecting, #rebootdlg { width:100vw; height:100vh; max-width:none; max-height:none; margin:0; padding:0; border:0; background:var(--bg); color:var(--ink); }

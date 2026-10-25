@@ -54,7 +54,15 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var loaded = false                                        // the page is loaded for [forHost]
     private var picking: ValueCallback<Array<Uri>>? = null
     private var pending: String? = null                               // what to do on the page once it has loaded (open's "then")
+    private var coverB = 0                                            // CSS px of the page's bottom under the small player (Pip.kt)
     private val webPage by lazy { dev.tvremote.core.web.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
+
+    /** The small player floats over the page's bottom: its toast, error box and jobs card rise above it (`--cover-b`, css/page.css). */
+    fun cover(px: Int, again: Boolean = false) {
+        if (px == coverB && !again) return
+        coverB = px
+        web.evaluateJavascript("document.documentElement.style.setProperty('--cover-b','${px}px')", null)
+    }
 
     init {
         view.setBackgroundColor(BG)
@@ -81,7 +89,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                 a.web(u.toString())
                 return true
             }
-            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; web.evaluateJavascript(it, null) } }
+            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; web.evaluateJavascript(it, null) }; cover(coverB, true) }
         }
         web.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {

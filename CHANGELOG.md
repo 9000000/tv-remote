@@ -34,6 +34,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tên app đặt lại trên TV Home hiện đúng ở mọi danh sách app (Lịch mở app, Ứng dụng...).
 - TV Home → Chủ đề: nút ⓘ mở bảng "chủ đề chỉnh gì" ngay trên màn hình (trước hiện tận cuối trang, như không bấm được).
 - Chủ đề: chia sẻ lên cửa hàng bị từ chối khi ảnh xem trước gần 150 KB; ảnh JPEG progressive khi nhập giờ được chuyển lại đúng chuẩn; video WebM trong tệp chủ đề mang đúng loại `video/webm`; nhãn Video / ×N dùng icon thay emoji (emoji hiện sai trên nhiều font).
+- App điện thoại → Quản lý: thông báo, hộp lỗi và thẻ tiến độ không còn bị hình TV nổi che (nằm ngay trên nó).
 - Tối ưu TV / Ứng dụng: không tắt app Android luôn giữ chạy (PERSISTENT: tắt cũng tự bật lại), Google partner setup, các app cài đặt ban đầu, bàn phím phụ, âm thanh Dolby (theo danh sách của tv-detox).
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
@@ -66,6 +67,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Names given to apps on TV Home show in every app list (App schedule, Apps...).
 - TV Home → Themes: ⓘ opens what a theme sets right on screen (it used to appear at the very bottom, as if nothing happened).
 - Themes: sharing to the store was refused when the preview came near 150 KB; progressive JPEGs are re-encoded on import; WebM videos in a theme file are labelled `video/webm`; the Video / ×N tags use icons instead of emoji (emoji draw wrong on many fonts).
+- Phone app → Manage: toasts, the error box and the jobs card are no longer hidden by the floating TV picture (they sit just above it).
 - Optimize TV / Apps: never turns off an app Android keeps running (PERSISTENT: it would not stay off), Google partner setup, the setup and keyboard helpers, Dolby audio (from tv-detox's list).
 
 ## 0.22.1 - 2026-10-25

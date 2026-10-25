@@ -50,7 +50,7 @@ input[type=number] { width:84px; }
    nothing inside needs a margin; titles: h2 the card's (small capitals), h3 a group's; p.note a line of explanation. ---- */
 :root { --gap:12px; }
 h3 { font-size:14px; font-weight:600; margin:0; }
-.errbox { position:fixed; inset:auto 12px 12px 12px; max-width:560px; margin:0 auto; z-index:100; display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:12px 14px; background:var(--bad-bg); color:var(--ink); border:1px solid var(--bad); border-radius:var(--radius); box-shadow:0 12px 36px rgba(0,0,0,.35); }   /* js/errbox.js: above the toast and the TV's mini picture */
+.errbox { position:fixed; inset:auto 12px calc(12px + var(--cover-b, 0px)) 12px; max-width:560px; margin:0 auto; z-index:100; display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:12px 14px; background:var(--bad-bg); color:var(--ink); border:1px solid var(--bad); border-radius:var(--radius); box-shadow:0 12px 36px rgba(0,0,0,.35); }   /* js/errbox.js: above the toast and the TV's mini picture */
 .errbox b { color:var(--bad); }
 .errbox span { color:var(--muted); font-size:13px; }
 .errbox pre { flex:1 0 100%; margin:0; max-height:30vh; overflow:auto; font:12px/1.4 ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; word-break:break-word; user-select:text; -webkit-user-select:text; }

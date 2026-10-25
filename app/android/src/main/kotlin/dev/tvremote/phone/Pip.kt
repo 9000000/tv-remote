@@ -56,6 +56,7 @@ internal fun MainActivity.setFloat(mode: Int) {
         mini.mode(mode == FLOAT_PIP)
         mini.visibility = View.VISIBLE
     }
+    mini.report()
     pipUpdate()
 }
 
@@ -251,7 +252,15 @@ internal class MiniPlayer(private val a: MainActivity) : FrameLayout(a) {
         val p = parent as? View ?: return
         val tx = translationX.coerceIn(-(p.width - width - 2 * m).toFloat().coerceAtLeast(0f), 0f)
         val ty = translationY.coerceIn(-(p.height - height - 2 * m).toFloat().coerceAtLeast(0f), 0f)
-        if (animate) animate().translationX(tx).translationY(ty).setDuration(160).start() else { translationX = tx; translationY = ty }
+        if (animate) animate().translationX(tx).translationY(ty).setDuration(160).withEndAction { report() }.start() else { translationX = tx; translationY = ty; report() }
+    }
+
+    /** How much of Manage's page bottom it covers, when it sits in the lower half (dragged up, nothing at the bottom is hidden). */
+    fun report() {
+        val p = parent as? View ?: return
+        val top = top + translationY
+        val px = if (visibility != VISIBLE || pip || p.height == 0 || top < p.height / 2f) 0 else ((p.height - top) / a.resources.displayMetrics.density).toInt()
+        a.managing.cover(px)
     }
 
     init { closeBtn.setOnClickListener { a.closeMini() } }
