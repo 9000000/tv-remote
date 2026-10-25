@@ -11,7 +11,11 @@ import android.media.AudioManager
 import android.view.InputDevice
 import dev.tvremote.home.apps.Inputs
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
@@ -62,6 +66,40 @@ import java.util.concurrent.atomic.AtomicBoolean
 object ControlCenter {
     private const val TICK_MS = 2000L
     private const val R_TILE = 16                                      // a row of the glass panel: Customize's and the long-press menu's
+    /** What the last reading found, kept for the session: the panel then opens without asking the system on the UI thread (a cold open cost ~25 ms of it on the FPT box). */
+    private class Seen(val inputs: Boolean, val net: Pair<Int, String>, val line: String?)
+    @Volatile private var seen: Seen? = null
+    @Volatile private var lastFoot = ""                          // the footer's CPU / RAM line of the last open
+    @Volatile private var lastCtl: JSONObject? = null            // TV Setup's last answer: the timer and kids tiles open as they were, not greyed until it answers
+
+    /** Reads it on a thread of its own once the home is up, so the first open is as quick as the next. */
+    fun warm(a: Activity) {
+        if (seen != null) return
+        Thread({ try { for (r in ICONS26) glyph(a, r, 26); glyph(a, R.drawable.ic_eraser, 22); glyph(a, R.drawable.ic_power, 22); val ins = Inputs.rows(a) { }; seen = Seen(Inputs.showTile(ins.size, Inputs.liveApp(a) != null, Inputs.isBox()), network(a), inputsLine(a, ins)) } catch (e: Exception) { } }, "home-cc-warm").apply { isDaemon = true }.start()
+    }
+
+    /**
+     * A line icon as a bitmap, drawn once per session: a vector icon is rasterised again by the render thread for every new ImageView (0.7 ms each,
+     * 8 of them in the panel's first frame on the FPT box). The bitmap is shared, a drawable of it is new for each view.
+     */
+    private val bitmaps = java.util.concurrent.ConcurrentHashMap<Long, Bitmap>()
+    private fun glyph(c: Context, res: Int, dp: Int): Drawable {
+        val px = (dp * c.resources.displayMetrics.density).toInt()
+        val bmp = bitmaps.getOrPut(res.toLong() shl 32 or px.toLong()) {
+            val v = c.getDrawable(res)!!.mutate()
+            Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888).also { v.setBounds(0, 0, px, px); v.draw(Canvas(it)) }
+        }
+        return BitmapDrawable(c.resources, bmp)
+    }
+    private val ICONS26 = intArrayOf(R.drawable.ic_wifi, R.drawable.ic_router, R.drawable.ic_input, R.drawable.ic_bluetooth, R.drawable.ic_timer, R.drawable.ic_lock,
+        R.drawable.ic_settings, R.drawable.ic_sliders, R.drawable.ic_clock, R.drawable.ic_eye_off, R.drawable.ic_refresh, R.drawable.ic_power)
+
+    private fun inputsLine(a: Context, rows: List<Drop.Row>): String {
+        val on = rows.filter { it.on != null }
+        return if (rows.isEmpty()) a.getString(R.string.cc_open_settings) else if (on.isNotEmpty()) on.first().label + (if (on.size > 1) " +" + (on.size - 1) else "")
+            else a.resources.getQuantityString(R.plurals.cc_inputs_count, rows.size, rows.size)
+    }
+
     private val SLEEP_STEPS = intArrayOf(30, 60, 90, 120)             // minutes: HomeControl.SLEEP on TV Setup's side
 
     /**
@@ -82,7 +120,7 @@ object ControlCenter {
                 addState(intArrayOf(android.R.attr.state_focused), TvGlass.glass(c, R_TILE, TvGlass.ROW_FOCUS, Color.WHITE))
                 addState(intArrayOf(), TvGlass.glass(c, R_TILE, TvGlass.ROW_FILL, TvGlass.ROW_EDGE))
             }
-            addView(pic.apply { setImageResource(icon); imageTintList = ColorStateList.valueOf(Color.WHITE) }, LayoutParams(dp(26), dp(26)))
+            addView(pic.apply { setImageDrawable(glyph(c, icon, 26)); imageTintList = ColorStateList.valueOf(Color.WHITE) }, LayoutParams(dp(26), dp(26)))
             val words = LinearLayout(c).apply { orientation = VERTICAL }
             words.addView(title.apply { text = name; textSize = 15f; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
             words.addView(sub.apply { textSize = 12f; setTextColor(TvGlass.HINT); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; visibility = GONE })
@@ -91,10 +129,10 @@ object ControlCenter {
             // no pop: the white edge and lighter fill say focus; scaled, a tile at the panel's edge came out cut (the user, 2026-10-25)
         }
 
-        fun icon(res: Int) = pic.setImageResource(res)
+        fun icon(res: Int) = pic.setImageDrawable(glyph(pic.context, res, 26))
 
         /** The state line; empty hides it (an action's tile is then one line). */
-        fun say(text: String) { sub.text = text; sub.visibility = if (text.isEmpty()) GONE else VISIBLE }
+        fun say(text: String) { if (sub.text.toString() != text) sub.text = text; val v = if (text.isEmpty()) GONE else VISIBLE; if (sub.visibility != v) sub.visibility = v }   // the same words again (every 2 s) must not ask for a layout
 
         fun state(text: String, needSetup: Boolean = false) {
             need = needSetup; say(text)
@@ -113,7 +151,7 @@ object ControlCenter {
         init {
             orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false; clipToPadding = false   // clipToPadding clips to the bounds even with no padding: the disc's focus pop came out cut flat on top
             disc.apply {
-                isFocusable = true; isClickable = true; setImageResource(icon); imageTintList = ColorStateList.valueOf(Color.WHITE)
+                isFocusable = true; isClickable = true; setImageDrawable(glyph(c, icon, 22)); imageTintList = ColorStateList.valueOf(Color.WHITE)
                 setPadding(dp(13), dp(13), dp(13), dp(13)); contentDescription = name
                 background = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(TvGlass.ROW_FOCUS); setStroke(dp(1), Color.WHITE) })
@@ -137,10 +175,10 @@ object ControlCenter {
         val dialog = Dialog(a, R.style.Menu)
         private val ui = Handler(Looper.getMainLooper())
         private val busy = AtomicBoolean()
-        private var ctl: JSONObject? = null                           // TV Setup's {sleep_at, kids, pin}; null = no TV Setup, or one without it
+        private var ctl: JSONObject? = lastCtl                           // TV Setup's {sleep_at, kids, pin}; null = no TV Setup, or one without it
         private val tiles = ArrayList<CcTile>()
         private var hold = 0L                                         // a message in the footer (clearing, what came free) keeps its place until then
-        private var footText = ""
+        private var footText = lastFoot
         private val footer = Font.on(TextView(a)).apply { textSize = 12f; setTextColor(TvGlass.HINT); maxLines = 1; gravity = Gravity.CENTER; ellipsize = TextUtils.TruncateAt.END }
         private lateinit var net: CcTile
         private var inputTile: CcTile? = null; private var btTile: CcTile? = null
@@ -211,7 +249,7 @@ object ControlCenter {
                 val out = ask("control", word)
                 a.runOnUiThread {
                     if (!dialog.isShowing) return@runOnUiThread
-                    ctl = out; paintCtl()
+                    ctl = out; if (out != null) lastCtl = out; paintCtl()
                     when (out?.optString("error")) {
                         "pin" -> toast(R.string.cc_kids_nopin)
                         "bad", "failed" -> if (word == "kids:off") toast(R.string.cc_kids_unlock) else if (word == "kids:setup") toast(R.string.cc_kids_nopin)   // a TV Setup older than the word
@@ -225,11 +263,7 @@ object ControlCenter {
             2 -> a.getString(R.string.cc_net_eth); 1 -> n.second.ifEmpty { a.getString(R.string.wifi) }; else -> a.getString(R.string.cc_net_none) }) }
 
         /** The Inputs tile's line, from the one reading the menu uses: what is connected, else how many there are. */
-        private fun paintInputs(rows: List<Drop.Row>) {
-            val on = rows.filter { it.on != null }
-            inputTile?.state(if (rows.isEmpty()) a.getString(R.string.cc_open_settings) else if (on.isNotEmpty()) on.first().label + (if (on.size > 1) " +" + (on.size - 1) else "")
-                else a.resources.getQuantityString(R.plurals.cc_inputs_count, rows.size, rows.size))
-        }
+        private fun paintInputs(rows: List<Drop.Row>) { inputTile?.state(inputsLine(a, rows)) }
 
         /** Bluetooth with no permission: the adapter, then a connected audio device or game pad by name (the remote never counts). */
         private fun btState(): String {
@@ -269,11 +303,13 @@ object ControlCenter {
                     val c = ask("control", null)
                     a.runOnUiThread {
                         if (!dialog.isShowing) return@runOnUiThread
-                        paintNet(n); ctl = c; paintCtl(); paintBt(); paintInputs(ins)
+                        seen = Seen(inputTile != null, n, if (inputTile != null) inputsLine(a, ins) else null)
+                        paintNet(n); ctl = c; lastCtl = c; paintCtl(); paintBt(); paintInputs(ins)
                         val mm = mem?.let { String.format(Locale.US, "%.1f/%.1f GB", it.first / 1e9, it.second / 1e9) }
                         footText = if (mm == null) "" else if (cpu != null) a.getString(R.string.cc_footer, "${Math.round(cpu * 100)}%", mm)
                             else if (hasSetup()) a.getString(R.string.cc_footer, "…", mm) else a.getString(R.string.cc_footer_ram, mm)
-                        if (System.currentTimeMillis() >= hold) { hold = 0L; footer.text = footText }
+                        lastFoot = footText
+                        if (System.currentTimeMillis() >= hold) { hold = 0L; if (footer.text.toString() != footText) footer.text = footText }
                     }
                 } finally { busy.set(false) }
             }, "home-cc").apply { isDaemon = true }.start()
@@ -298,8 +334,8 @@ object ControlCenter {
 
             net = tile(R.drawable.ic_wifi, R.string.cc_net) { go(listOf(Settings.ACTION_WIFI_SETTINGS, Settings.ACTION_SETTINGS)) }
             // Inputs only where the TV lists some (or may keep them outside the TV Input Framework); a box with none has Bluetooth in that slot
-            val ins = Inputs.rows(a) { }
-            if (Inputs.showTile(ins.size, Inputs.liveApp(a) != null, Inputs.isBox())) { inputTile = tile(R.drawable.ic_input, R.string.inputs) { dialog.dismiss(); inputs() }; paintInputs(ins) }
+            val known = seen ?: (Inputs.rows(a) { }.let { ins -> Seen(Inputs.showTile(ins.size, Inputs.liveApp(a) != null, Inputs.isBox()), network(a), inputsLine(a, ins)) })   // cold: asked here, once
+            if (known.inputs) { inputTile = tile(R.drawable.ic_input, R.string.inputs) { dialog.dismiss(); inputs() }; known.line?.let { inputTile?.state(it) } }
             else if (a.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) { btTile = tile(R.drawable.ic_bluetooth, R.string.cc_bluetooth) { go(listOf(Settings.ACTION_BLUETOOTH_SETTINGS, PAIR, Settings.ACTION_SETTINGS)) }; paintBt() }   // FPT Play (Android 14) has no BLUETOOTH_SETTINGS: its Settings answers only the pairing screen
             sleep = tile(R.drawable.ic_timer, R.string.cc_sleep) {
                 val left = ((ctl?.optLong("sleep_at") ?: 0L) - System.currentTimeMillis()).coerceAtLeast(0).let { (it + 59_999) / 60_000L }   // rounded up, as the tile says it: 29.9 is "30 left", the next step is 60
@@ -311,7 +347,7 @@ object ControlCenter {
             }
             tile(R.drawable.ic_settings, R.string.tv_settings) { go(listOf(Settings.ACTION_SETTINGS)) }.state(a.getString(R.string.cc_open_settings))
             tile(R.drawable.ic_sliders, R.string.cc_customize) { dialog.dismiss(); customize() }.state(a.getString(R.string.cc_customize_sub))
-            paintCtl(); paintNet(network(a))
+            paintCtl(); paintNet(known.net)           // the last reading; refresh() below corrects it off the UI thread
             val info = tiles.size
 
             // what the old power button did, through TV Setup (Power.kt): screen off, clear RAM, and "Turn off the TV" (power off / restart, asked in a dialog)
@@ -347,6 +383,7 @@ object ControlCenter {
             col.addView(actions, LinearLayout.LayoutParams(-1, -2))
             col.addView(footer, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(16), dp(12), dp(16), dp(8)) })
 
+            footer.text = footText
             dialog.setContentView(col)
             val sw = dm.widthPixels
             val w = minOf(dp(460), sw - dp(32))                       // Customize's panel width

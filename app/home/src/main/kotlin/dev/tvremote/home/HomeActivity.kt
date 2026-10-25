@@ -283,6 +283,7 @@ class HomeActivity : Activity() {
         super.onResume()
         if (locked) return
         if (wantInputs) { wantInputs = false; bar.post { inputs() } }   // started by the Input key: the menu once the home is up
+        dev.tvremote.home.ui.ControlCenter.warm(this)
         Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
         zoom.back()                                                   // the plate that grew over the opened app shrinks into its tile
         clockAndDay()
