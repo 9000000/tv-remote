@@ -2111,7 +2111,7 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
         } else {
             val inner = LinearLayout(c).apply { orientation = VERTICAL; gravity = Gravity.CENTER; setPadding(dp(6), dp(4), dp(6), dp(4)) }
             val ts = if (h < dp(80)) 10f else 12f                     // many columns make small tiles: the name was cut under the icon (the user, 2026-10-26)
-            val icon = minOf(h * 45 / 100, h - dp(12) - (ts * 1.35f * c.resources.displayMetrics.scaledDensity).toInt() - dp(2))   // what is left once the name and paddings fit
+            val icon = minOf(h * 45 / 100, h - dp(12) - ((ts + if (corner != null) ts - 2 else 0f) * 1.35f * c.resources.displayMetrics.scaledDensity).toInt() - dp(2))   // what is left once the name and paddings fit
             inner.addView(ImageView(c).apply {
                 if (app?.icon != null) { setImageDrawable(app.icon); pic = this } else { setImageResource(mark); imageTintList = ColorStateList.valueOf(Color.WHITE) }
             }, LayoutParams(icon, icon))
@@ -2119,11 +2119,14 @@ class Tile(c: Context, val app: App?, w: Int, label: String, dp: (Number) -> Int
                 text = label; textSize = ts; includeFontPadding = false; setTextColor(Color.WHITE); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER
                 setPadding(0, dp(4), 0, 0)
             }, LayoutParams(-1, -2))
+            if (corner != null) inner.addView(Font.on(TextView(c)).apply {   // whose it is, under the name: as a corner pill it sat on the icon of a small tile (the user, 2026-10-26)
+                text = corner; textSize = ts - 2; setTextColor(0xB3FFFFFF.toInt()); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; gravity = Gravity.CENTER; includeFontPadding = false
+            }, LayoutParams(-1, -2))
             fill(inner)
             content = inner
         }
         face.addView(badge, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-        if (corner != null) face.addView(Font.on(TextView(c)).apply {    // a suggestion, not an app on this TV: says so on its face
+        if (corner != null && banner != null) face.addView(Font.on(TextView(c)).apply {    // a suggestion, not an app on this TV: says so on its face
             text = corner; textSize = 12f; setTextColor(Color.WHITE); setPadding(dp(10), dp(3), dp(10), dp(4))
             background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(12).toFloat(); setColor(PILL_BG); setStroke(dp(1), PILL_EDGE) }
         }, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, dp(8), dp(8), 0) })
