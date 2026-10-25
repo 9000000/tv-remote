@@ -62,9 +62,17 @@ release key; its public half is `Launchers.KEYS`). Run after every edit of the l
 | `sign_games.py` | `docs/games/games.json`: TV Games' cores, suggested web games, homebrew |
 | `sign_providers.py` | `docs/channels/providers.json`: TV Channels' extra sources, e.g. VieON |
 | `sign_bloat.py` | `docs/optimize/bloat.json`: Optimize TV's suggestions added from the site |
-| `review_themes.py` | reviews the community themes sent from TV Home (HTML page, then approve / reject / skip each): saves the pictures, adds the theme to `docs/home/themes.json`, signs it; commits nothing |
+| `review_themes.py` | (also behind `dev/admin.py`) reviews the community themes sent from TV Home (HTML page, then approve / reject / skip each): saves the pictures, adds the theme to `docs/home/themes.json`, signs it; commits nothing |
 | `sign_themes.py` | `docs/home/themes.json`: TV Home's ready-made themes (names per language, looks; a theme may set `wurl`, so only a signed list may). Packed in the APK by `:home` `packThemes`; `HomeThemesTest` keeps the copy equal; stamps `rev` (the higher one wins, so an undeployed site never overwrites a newer APK). Web backgrounds go through `docs/home/loop.html` (host allow-list); each theme names its `src` + licence: Sa Pa photo = Wikimedia Commons CC0 `File:Rice terraces in Sapa, Vietnam.jpg`; beach video = CC0 `File:Sunset timelapse on the beach in Libreville, Gabon.webm`; city video = CC0 `File:Shanghai Bund, Lujiazui Skyline Timelapse.webm` (480p transcodes) |
 | `sign_downloader.py` | `docs/data/downloader.json`: the Downloader codes |
+
+## admin.py
+
+`python3 dev/admin.py [--port N]`: the owner's local admin page (Vietnamese), instead of terminal prompts. Opens `http://127.0.0.1:<port>/?k=<random key per run>`;
+127.0.0.1 only, every request (page, API, pictures) must carry the key and a local Host. The tokens (`~/.tv-remote-release/themes-admin-token`, `crash-token`) are read here, never sent to the browser.
+Tab **Chủ đề chờ duyệt**: a card per pending community theme (preview, wall photo, sender, settings, red flags, free slots of `READY_MAX`); Duyệt runs `review_themes.py`'s own `approve()` (pictures, `themes.json`, signature) and shows the files + the `git add` / `git commit` lines to copy; nothing is committed or pushed. Bỏ rejects (the reason is asked but the API has no field: not stored).
+Tab **Lỗi**: the census worker's crashes by count, filter by app / version, a click shows the stack and device, Xóa removes it (all versions).
+Tests: `THEMES_URL`, `THEMES_TOKEN_FILE`, `CENSUS_URL`, `CRASH_TOKEN` point it at local `wrangler dev` workers (`dev/themes`, `dev/census`).
 
 ## release/
 

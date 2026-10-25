@@ -20,7 +20,12 @@ SITE = "https://tvremote.pages.dev"
 LIST = os.path.join(ROOT, "docs", "home", "themes.json")
 WALL_DIR = os.path.join(ROOT, "docs", "home", "community")
 IMG_DIR = os.path.join(ROOT, "docs", "img", "themes")
+READY_MAX = 120   # HomeConfig.READY_MAX: TV Home reads at most this many ready themes
 LOOK = "mist"   # the list's drawn stand-in for a photo wall (sign_themes.py wants one); the real picture is the thumb
+
+
+def say(*a):   # where approve() reports; dev/admin.py swaps it to collect the lines for its page
+    print(*a)
 
 
 def call(path, method="GET", token=""):
@@ -99,8 +104,8 @@ def page(items, tmp):
 def approve(t, token, tmp):
     d = json.load(open(LIST, encoding="utf-8"))
     taken = {x["id"] for x in d["themes"]}
-    if len(d["themes"]) >= 40:
-        print("  ! the list already holds 40 themes (HomeConfig.READY_MAX): TV Home would ignore this one. Not approved.")
+    if len(d["themes"]) >= READY_MAX:
+        say("  ! the list already holds %d themes (HomeConfig.READY_MAX): TV Home would ignore this one. Not approved." % READY_MAX)
         return False
     i = pick_id(t["name"], taken)
     conf = no_urls(t["conf"])
@@ -136,7 +141,7 @@ def approve(t, token, tmp):
         # a web wall without a photo of ours (a foreign page was dropped above only when it carried a URL in another key): not allowed
         conf.pop("wurl", None)
         conf["wall"] = "dawn"
-        print("  ! its web wall was not ours: the wall is now 'dawn'")
+        say("  ! its web wall was not ours: the wall is now 'dawn'")
     elif conf.get("wall") in ("bing",):
         entry["look"] = LOOK
     entry["conf"] = conf
@@ -144,25 +149,41 @@ def approve(t, token, tmp):
     with open(LIST, "w", encoding="utf-8") as f:
         json.dump(d, f, ensure_ascii=False, indent=1); f.write("\n")
     run(sys.executable, os.path.join(ROOT, "dev", "sign", "sign_themes.py"))
-    print("  approved as %s" % i)
+    say("  approved as %s" % i)
     return i
 
 
-def main():
-    token = open(TOKEN_FILE).read().strip()
-    items = json.loads(call("/v1/admin/pending", token=token))
-    if not items:
-        print("nothing pending")
-        return
-    tmp = tempfile.mkdtemp(prefix="tvr-themes-")
+def fetch_assets(items, token, tmp):
+    """Preview (and wall photo, when sent) of each pending theme into tmp; sets t["has_wall"]."""
     for t in items:
         open(os.path.join(tmp, t["id"] + ".preview"), "wb").write(call("/v1/admin/%s/preview" % t["id"], token=token))
+        t["has_wall"] = False
         try:
             open(os.path.join(tmp, t["id"] + ".wall.jpg"), "wb").write(call("/v1/admin/%s/wall" % t["id"], token=token))
             t["has_wall"] = True
         except urllib.error.HTTPError as e:
             if e.code != 404:
                 raise
+
+
+def git_paths(added):
+    """Files an approval wrote (relative to the repo), for git add."""
+    paths = ["docs/home/themes.json", "docs/home/themes.json.sig"] + ["docs/img/themes/%s%s.webp" % (i, s) for i in added for s in ("", "-big")]
+    return paths + [p for i in added for p in ("docs/home/community/%s.jpg" % i, "docs/home/community/%s-t.jpg" % i) if os.path.exists(os.path.join(ROOT, p))]
+
+
+def read_token():
+    return open(TOKEN_FILE).read().strip()
+
+
+def main():
+    token = read_token()
+    items = json.loads(call("/v1/admin/pending", token=token))
+    if not items:
+        print("nothing pending")
+        return
+    tmp = tempfile.mkdtemp(prefix="tvr-themes-")
+    fetch_assets(items, token, tmp)
     page(items, tmp)
     webbrowser.open("file://" + os.path.join(tmp, "index.html"))
     print("review page: %s/index.html" % tmp)
@@ -188,10 +209,10 @@ def main():
             added.append(i)
     shutil.rmtree(tmp, ignore_errors=True)
     if added:
-        paths = ["docs/home/themes.json", "docs/home/themes.json.sig"] + ["docs/img/themes/%s%s.webp" % (i, s) for i in added for s in ("", "-big")]
-        paths += [p for i in added for p in ("docs/home/community/%s.jpg" % i, "docs/home/community/%s-t.jpg" % i) if os.path.exists(os.path.join(ROOT, p))]
+        paths = git_paths(added)
         print("\nNext (nothing committed): git add " + " ".join(paths))
         print("Also bump app/home/VERSION if the packed copy changed (HomeThemesTest keeps it equal).")
 
 
-main()
+if __name__ == "__main__":
+    main()

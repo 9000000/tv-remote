@@ -25,6 +25,7 @@ npx wrangler d1 execute tvr-themes --local --file=schema.sql
 echo 'ADMIN_TOKEN=any-local-string-of-16+' > .dev.vars        # gitignored
 npx wrangler dev --local --ip 127.0.0.1 --port 8796
 npx wrangler deploy                                 # secrets: wrangler secret put ADMIN_TOKEN / SALT
+python3 dev/admin.py                                # the same review in a local web page (dev/README.md "admin.py")
 python3 dev/sign/review_themes.py                   # from the repo root; THEMES_URL=http://127.0.0.1:8796 for a local worker
 ```
 Ready-theme ids are `c_<slug>` (underscore, at most 16: TV Home's id rule has no "-"). TV Home shows at most 40 ready themes (`HomeConfig.READY_MAX`).

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Remote - Admin</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--fg:#1a1d21;--mut:#69707a;--line:#dde0e5;--acc:#2563eb;--accfg:#fff;--bad:#c62828;--ok:#1b7f3b;--tint:#e8efff}
+@media (prefers-color-scheme:dark){:root{--bg:#121417;--card:#1b1e23;--fg:#e8eaed;--mut:#9aa1ab;--line:#2d3138;--acc:#5b8def;--accfg:#0b1020;--bad:#ff7b72;--ok:#56d364;--tint:#1f2a44}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 12px}
+nav{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+button,select,input{font:inherit;color:inherit}
+button{min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);cursor:pointer}
+button.on{background:var(--tint);border-color:var(--acc)}
+button.primary{background:var(--acc);border-color:var(--acc);color:var(--accfg)}
+button.danger{color:var(--bad)}
+button.small{min-height:30px;padding:0 10px;font-size:13px}
+button:disabled{opacity:.5;cursor:default}
+select,input{min-height:38px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.theme{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:16px}
+.theme img{width:100%;aspect-ratio:16/9;object-fit:contain;background:#000;border-radius:8px;display:block}
+.theme h2{font-size:17px;margin:0 0 4px;overflow-wrap:anywhere}
+.mut{color:var(--mut);font-size:13px}
+.flag{color:var(--bad);font-weight:600;margin:4px 0;overflow-wrap:anywhere}
+.wall{margin-top:8px}
+.wall img{max-width:200px}
+table{border-collapse:collapse;width:100%}
+td,th{text-align:left;padding:4px 8px 4px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:500;font-size:13px}
+.conf td:first-child{white-space:nowrap;color:var(--mut)}
+.conf td:last-child{font-family:ui-monospace,monospace;font-size:12.5px;overflow-wrap:anywhere}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--mut);padding:32px 8px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.bar .grow{flex:1}
+.result{margin-top:12px;padding:10px;border-radius:8px;background:var(--tint);overflow-wrap:anywhere}
+.result pre,.stack{margin:6px 0 0;padding:10px;background:var(--bg);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;font:12.5px/1.4 ui-monospace,monospace;user-select:all}
+.err{color:var(--bad);margin:8px 0;overflow-wrap:anywhere}
+.crash tbody tr.row{cursor:pointer}
+.crash tbody tr.row:hover{background:var(--tint)}
+.crash td.num{text-align:right;padding-right:12px}
+.crash td.msg{overflow-wrap:anywhere;max-width:420px}
+.detail td{border:0}
+@media (max-width:700px){
+ .theme{grid-template-columns:1fr}
+ .crash thead{display:none}
+ .crash,.crash tbody,.crash tr,.crash td{display:block;width:100%}
+ .crash tr.row{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:8px 10px;background:var(--card)}
+ .crash td{border:0;padding:1px 0}
+ .crash td.num{text-align:left;padding-right:0}
+ .crash td.msg{max-width:none}
+ .crash td[data-l]::before{content:attr(data-l) ": ";color:var(--mut);font-size:13px}
+ .crash tr.detail,.crash tr.detail td{display:block;padding:0}
+}
+</style>
+</head>
+<body>
+<main>
+<h1>TV Remote - Admin</h1>
+<nav>
+ <button id="tab-themes" class="on">Chủ đề chờ duyệt</button>
+ <button id="tab-crashes">Lỗi</button>
+</nav>
+<section id="themes"></section>
+<section id="crashes" hidden></section>
+</main>
+<script>
+const KEY = new URLSearchParams(location.search).get('k') || '';
+const $ = (id) => document.getElementById(id);
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return e;
+}
+async function api(path, method = 'GET', params = {}) {
+  const q = new URLSearchParams({ ...params, k: KEY });
+  const r = await fetch(path + '?' + q, { method, headers: { 'x-admin-key': KEY } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error || ('Lỗi ' + r.status)); e.body = j; throw e; }
+  return j;
+}
+const img = (id, what) => '/api/themes/' + id + '/' + what + '?k=' + encodeURIComponent(KEY);
+const fmtDate = (s) => new Date(s * 1000).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
+function short(v) { const s = typeof v === 'string' ? v : JSON.stringify(v); return s.length > 120 ? s.slice(0, 117) + '...' : s; }
+
+/* ---- Themes ---- */
+async function loadThemes() {
+  const box = $('themes');
+  box.replaceChildren(h('p', { class: 'empty' }, 'Đang tải...'));
+  let d;
+  try { d = await api('/api/themes'); }
+  catch (e) { box.replaceChildren(h('p', { class: 'err' }, e.message), h('button', { onclick: loadThemes }, 'Thử lại')); return; }
+  const left = d.slots.max - d.slots.used;
+  const head = h('div', { class: 'bar' },
+    h('span', { class: 'grow' }, d.items.length + ' chủ đề chờ duyệt'),
+    h('span', { class: 'mut' }, 'Chỗ còn lại: ' + left + ' / ' + d.slots.max + ' (đang có ' + d.slots.used + ')'),
+    h('button', { class: 'small', onclick: loadThemes }, 'Tải lại'));
+  box.replaceChildren(head);
+  if (!d.items.length) box.append(h('p', { class: 'empty card' }, 'Không có chủ đề nào chờ duyệt.'));
+  for (const t of d.items) box.append(themeCard(t, left));
+}
+function themeCard(t, left) {
+  const conf = Object.entries(t.conf).map(([k, v]) => h('tr', {}, h('td', {}, k), h('td', {}, short(v))));
+  const out = h('div');
+  const ok = h('button', { class: 'primary', onclick: () => decide(t, 'approve', out, card) }, 'Duyệt');
+  const no = h('button', { class: 'danger', onclick: () => decide(t, 'reject', out, card) }, 'Bỏ');
+  if (left <= 0) { ok.disabled = true; ok.title = 'Danh sách đã đầy'; }
+  const card = h('div', { class: 'card theme' },
+    h('div', {}, h('img', { src: img(t.id, 'preview'), alt: 'Xem trước ' + t.name }),
+      t.has_wall && h('div', { class: 'wall' }, h('div', { class: 'mut' }, 'Ảnh nền riêng'), h('a', { href: img(t.id, 'wall'), target: '_blank' }, h('img', { src: img(t.id, 'wall'), alt: 'Ảnh nền' })))),
+    h('div', {},
+      h('h2', {}, t.name),
+      h('div', { class: 'mut' }, 'bởi ' + t.by + ' · ' + t.lang + ' · ' + fmtDate(t.at) + ' · ' + t.id),
+      t.flags.map((f) => h('div', { class: 'flag' }, 'Cảnh báo: ' + f)),
+      h('table', { class: 'conf' }, h('tbody', {}, conf)),
+      h('div', { class: 'actions' }, ok, no), out));
+  return card;
+}
+async function decide(t, what, out, card) {
+  const btns = card.querySelectorAll('button'); btns.forEach((b) => b.disabled = true);
+  out.replaceChildren();
+  try {
+    if (what === 'reject') {
+      const why = prompt('Lý do bỏ (không bắt buộc, không được lưu):', '');
+      if (why === null) { btns.forEach((b) => b.disabled = false); return; }
+      await api('/api/themes/' + t.id + '/reject', 'POST');
+      card.replaceChildren(h('p', { class: 'mut' }, 'Đã bỏ "' + t.name + '".'));
+      return;
+    }
+    const r = await api('/api/themes/' + t.id + '/approve', 'POST');
+    btns.forEach((b) => b.remove());
+    out.replaceChildren(h('div', { class: 'result' },
+      h('b', {}, 'Đã duyệt: ' + r.id),
+      r.log.map((l) => h('div', {}, l)),
+      h('div', { class: 'mut' }, 'Đã ghi ' + r.files.length + ' tệp. Chưa commit, chưa push. Chạy trong thư mục repo:'),
+      h('pre', {}, r.cmd), h('div', { class: 'mut' }, r.note)));
+  } catch (e) {
+    btns.forEach((b) => b.disabled = false);
+    out.replaceChildren(h('div', { class: 'err' }, e.message), (e.body && e.body.log || []).map((l) => h('div', { class: 'mut' }, l)));
+  }
+}
+
+/* ---- Crashes ---- */
+let CR = [];
+async function loadCrashes() {
+  const box = $('crashes');
+  box.replaceChildren(h('p', { class: 'empty' }, 'Đang tải...'));
+  try { CR = (await api('/api/crashes')).crashes; }
+  catch (e) { box.replaceChildren(h('p', { class: 'err' }, e.message), h('button', { onclick: loadCrashes }, 'Thử lại')); return; }
+  drawCrashes();
+}
+function opts(sel, vals, all) {
+  const cur = sel.value; sel.replaceChildren(h('option', { value: '' }, all), vals.map((v) => h('option', { value: v }, v))); sel.value = cur;
+}
+function drawCrashes() {
+  const box = $('crashes');
+  if (!CR.length) { box.replaceChildren(h('div', { class: 'bar' }, h('span', { class: 'grow' }, '0 lỗi'), h('button', { class: 'small', onclick: loadCrashes }, 'Tải lại')),
+    h('p', { class: 'empty card' }, 'Chưa có báo lỗi nào. Tốt.')); return; }
+  const fa = h('select', { 'aria-label': 'Lọc app' }), fv = h('select', { 'aria-label': 'Lọc phiên bản' });
+  const upd = () => rows(fa.value, fv.value);
+  fa.addEventListener('change', upd); fv.addEventListener('change', upd);
+  opts(fa, [...new Set(CR.map((r) => r.app))].sort(), 'Mọi app');
+  opts(fv, [...new Set(CR.map((r) => r.v))].sort().reverse(), 'Mọi phiên bản');
+  const count = h('span', { class: 'grow' });
+  const body = h('tbody');
+  box.replaceChildren(h('div', { class: 'bar' }, count, fa, fv, h('button', { class: 'small', onclick: loadCrashes }, 'Tải lại')),
+    h('div', { class: 'card' }, h('table', { class: 'crash' },
+      h('thead', {}, h('tr', {}, ['App', 'Bản', 'Loại', 'Thông báo', 'Lần', 'Máy', 'Gần nhất'].map((x) => h('th', {}, x)))), body)));
+  function rows(app, v) {
+    const list = CR.filter((r) => (!app || r.app === app) && (!v || r.v === v)).sort((a, b) => b.n - a.n);
+    count.textContent = list.length + ' lỗi';
+    body.replaceChildren(...list.flatMap((r) => crashRow(r)));
+  }
+  rows('', '');
+}
+function crashRow(r) {
+  const det = h('tr', { class: 'detail', hidden: true }, h('td', { colspan: 7 }));
+  const tr = h('tr', { class: 'row', tabindex: 0, onclick: () => toggle(r, det), onkeydown: (e) => { if (e.key === 'Enter') toggle(r, det); } },
+    h('td', { 'data-l': 'App' }, r.app), h('td', { 'data-l': 'Bản' }, r.v), h('td', { 'data-l': 'Loại' }, r.kind),
+    h('td', { class: 'msg', 'data-l': 'Thông báo' }, short(r.msg || '').slice(0, 90)),
+    h('td', { class: 'num', 'data-l': 'Lần' }, r.n), h('td', { class: 'num', 'data-l': 'Máy' }, r.installs), h('td', { 'data-l': 'Gần nhất' }, r.last));
+  return [tr, det];
+}
+async function toggle(r, det) {
+  if (!det.hidden) { det.hidden = true; return; }
+  det.hidden = false;
+  const cell = det.firstChild; cell.replaceChildren(h('span', { class: 'mut' }, 'Đang tải...'));
+  try {
+    const s = (await api('/api/crashes', 'GET', { sig: r.sig })).crashes;
+    cell.replaceChildren(...s.map((x) => {
+      const dev = ['brand', 'model', 'android', 'os', 'arch', 'java'].map((k) => x[k]).filter(Boolean).join(' ');
+      return h('div', { class: 'card' },
+        h('div', {}, h('b', {}, x.kind + ': '), x.msg),
+        h('div', { class: 'mut' }, x.app + ' ' + x.v + ' · ' + x.loc + ' · ' + x.n + ' lần, ' + x.installs + ' máy · ' + x.first + ' .. ' + x.last),
+        h('div', { class: 'mut' }, 'Máy: ' + (dev || '?')),
+        h('pre', { class: 'stack' }, x.stack || '(không có stack)'),
+        h('div', { class: 'actions' }, h('button', { class: 'danger small', onclick: () => del(r, x) }, 'Xóa (đã xử lý)')));
+    }));
+  } catch (e) { cell.replaceChildren(h('div', { class: 'err' }, e.message)); }
+}
+async function del(r) {
+  if (!confirm('Xóa lỗi này (mọi phiên bản)?')) return;
+  try { await api('/api/crashes', 'DELETE', { sig: r.sig }); CR = CR.filter((x) => x.sig !== r.sig); drawCrashes(); }
+  catch (e) { alert(e.message); }
+}
+
+/* ---- tabs ---- */
+let crashesLoaded = false;
+function show(which) {
+  $('themes').hidden = which !== 'themes'; $('crashes').hidden = which !== 'crashes';
+  $('tab-themes').classList.toggle('on', which === 'themes'); $('tab-crashes').classList.toggle('on', which === 'crashes');
+  if (which === 'crashes' && !crashesLoaded) { crashesLoaded = true; loadCrashes(); }
+  try { history.replaceState(null, '', '#' + which); } catch (e) {}
+}
+$('tab-themes').onclick = () => show('themes');
+$('tab-crashes').onclick = () => show('crashes');
+loadThemes();
+show(location.hash === '#crashes' ? 'crashes' : 'themes');
+</script>
+</body>
+</html>
