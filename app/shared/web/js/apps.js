@@ -110,31 +110,14 @@ function renderApps() {
     el('button', { className: 'sys' + (sys ? ' on' : ''), type: 'button', ariaPressed: String(sys), title: T('apps.show_system'),   // which apps are listed at all: a switch, not a kind
       onclick: () => { $('#appssys').checked = !sys; loadApps(); } }, (sys ? '✓ ' : '') + T('apps.system_apps')));
   const mk = (pkg) => {
-    const run = async (name, label) => {
-      if (name === 'uninstall' && !await ask(T('apps.uninstall_ask', { name: appName(pkg) }), { ok: T('apps.remove'), danger: true })) return;
-      if (name === 'disable' && !await ask(T('apps.disable_ask', { name: appName(pkg) }), { ok: T('apps.disable_app') })) return;
-      if (name === 'clear' && !await ask(T('apps.clear_ask', { name: appName(pkg) }), { ok: T('apps.clear_data'), danger: true })) return;
-      const r = await api('/api/app/' + name, { pkg }); if (!r) return;
-      toast(T('apps.what_name', { what: label, name: appName(pkg) }));
-      if (['launch', 'stop', 'clear'].includes(name)) return;
-      if (name === 'uninstall') { appsAll = appsAll.filter((p) => p !== pkg); appsInfo.delete(pkg); }   // the list as it is, less one row: no reading every app again
-      else appsInfo.set(pkg, { ...info, off: name === 'disable' });
-      renderApps(); quickLoaded = false; loadQuick();
-    };
     const info = appsInfo.get(pkg) || {};
     const icon = appsIcon(pkg, info.off), title = el('span', { textContent: META.get(pkg)?.label || pkg.split('.').pop() });
     // one button for what is wanted most, everything else behind ⋯
-    const more = el('button', { className: 'small iconbtn', title: T('page.more_actions'), ariaLabel: T('page.more_actions'), textContent: '⋯', onclick: (e) => popover(e.currentTarget, [
-      info.off ? ['↩', T('apps.turn_on'), () => run('enable', T('apps.turn_on'))] : ['▶', T('apps.open'), () => run('launch', T('apps.open'))],
-      ['ℹ️', T('apps.details'), () => appDetails(pkg)],
-      ['📋', T('apps.copy_package'), () => copyText(pkg)],
-      info.keep || info.off ? null : ['⏹', T('apps.stop'), () => run('stop', T('apps.stop'))],   // 🔒 must keep: the TV needs it, so no stop / clear / off / remove
-      info.off ? null : ['📜', T('apps.view_log'), () => appLog(pkg)],
-      ['💾', T('apps.backup'), () => appBackup(pkg)],
-      info.keep || info.off ? null : ['🧽', T('apps.clear_data'), () => run('clear', T('apps.clear_data'))],
-      info.keep || info.off ? null : ['⏸', T('apps.disable_app'), () => run('disable', T('apps.disable_app'))],
-      info.keep ? null : ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
-    ]) });
+    const more = el('button', { className: 'small iconbtn', title: T('page.more_actions'), ariaLabel: T('page.more_actions'), textContent: '⋯', onclick: (e) => appMenu(e.currentTarget, pkg, info, (name) => {
+      if (name === 'uninstall') { appsAll = appsAll.filter((p) => p !== pkg); appsInfo.delete(pkg); }   // the list as it is, less one row: no reading every app again
+      else appsInfo.set(pkg, { ...info, off: name === 'disable' });
+      renderApps(); quickLoaded = false; loadQuick();
+    }) });
     const row = el('div', { className: 'item' + (info.off ? ' off' : '') + (open ? ' proc' : '') }, icon, el('div', { className: 'name' },
       el('div', { className: 'nameline' }, title, ...(open ? recentsTag(pkg) : appTags(pkg, info))), open ? el('small', { textContent: recentsSub(pkg), title: pkg }) : el('small', { className: 'pkg', title: pkg }, el('span', { textContent: pkg }), ...(info.version ? [el('span', { className: 'ver', textContent: info.version })] : []))),
       el('div', { className: 'acts' }, ...(open ? recentsActs(pkg) : []), more));
@@ -165,14 +148,39 @@ $('#appsf').addEventListener('submit', (e) => e.preventDefault());
 $('#appssys').addEventListener('change', loadApps);
 $('#appsreload').addEventListener('click', () => { loadApps(); recentsNow(true); });
 
+// ⋯ one app's actions, for the Apps tab's rows and Health's privacy list. info: { keep, off }; done(name) once the app was turned
+// on / off or removed; skip: actions the caller shows as buttons of its own
+function appMenu(btn, pkg, info, done, skip = []) {
+  const run = async (name, label) => {
+    if (name === 'uninstall' && !await ask(T('apps.uninstall_ask', { name: appName(pkg) }), { ok: T('apps.remove'), danger: true })) return;
+    if (name === 'disable' && !await ask(T('apps.disable_ask', { name: appName(pkg) }), { ok: T('apps.disable_app') })) return;
+    if (name === 'clear' && !await ask(T('apps.clear_ask', { name: appName(pkg) }), { ok: T('apps.clear_data'), danger: true })) return;
+    const r = await api('/api/app/' + name, { pkg }); if (!r) return;
+    toast(T('apps.what_name', { what: label, name: appName(pkg) }));
+    if (!['launch', 'stop', 'clear'].includes(name)) done(name);
+  };
+  const no = (name) => skip.includes(name);
+  popover(btn, [
+    info.off ? (no('enable') ? null : ['↩', T('apps.turn_on'), () => run('enable', T('apps.turn_on'))]) : ['▶', T('apps.open'), () => run('launch', T('apps.open'))],
+    ['ℹ️', T('apps.details'), () => appDetails(pkg, info.keep)],
+    ['📋', T('apps.copy_package'), () => copyText(pkg)],
+    info.keep || info.off ? null : ['⏹', T('apps.stop'), () => run('stop', T('apps.stop'))],   // 🔒 must keep: the TV needs it, so no stop / clear / off / remove
+    info.off ? null : ['📜', T('apps.view_log'), () => appLog(pkg)],
+    ['💾', T('apps.backup'), () => appBackup(pkg)],
+    info.keep || info.off ? null : ['🧽', T('apps.clear_data'), () => run('clear', T('apps.clear_data'))],
+    info.keep || info.off || no('disable') ? null : ['⏸', T('apps.disable_app'), () => run('disable', T('apps.disable_app'))],
+    info.keep || no('uninstall') ? null : ['🗑', T('apps.remove'), () => run('uninstall', T('apps.remove')), 'danger'],
+  ]);
+}
+
 // ℹ️ one app in detail: version, dates, memory, start at boot, and the permissions a person can give or take back
-async function appDetails(pkg) {
+async function appDetails(pkg, keepHint) {
   const body = $('#infobody');
   put('#infotitle', 'textContent', 'ℹ️ ' + appName(pkg)); body.replaceChildren(el('p', { className: 'muted', textContent: T('health.reading_from_the_tv') }));
   if (!$('#infodlg').open) $('#infodlg').showModal();
   const r = await api('/api/app/info?pkg=' + encodeURIComponent(pkg));
   if (!r || !$('#infodlg').open) return;
-  const a = appInfoRead(r.text), keep = (appsInfo.get(pkg) || {}).keep;
+  const a = appInfoRead(r.text), keep = (appsInfo.get(pkg) || {}).keep ?? keepHint;   // from Health the Apps tab may not be read yet
   if (!a.found) { body.replaceChildren(el('p', { className: 'muted', textContent: T('apps.gone') })); return; }
   const kv = el('dl', { className: 'kv' });
   const add = (k, v) => { if (v) kv.append(el('dt', { textContent: k }), el('dd', { className: 'v', textContent: v })); };
@@ -191,13 +199,14 @@ async function appDetails(pkg) {
     if (keep) parts.push(el('p', { className: 'muted', textContent: T('apps.keep_perms') }));
     for (const p of a.perms) {
       const seg = el('div', { className: 'seg mini' }, ...[[true, T('apps.allow')], [false, T('apps.no')]].map(([on, label]) => el('button', {
-        className: p.granted === on ? 'on' : '', textContent: label, disabled: keep || p.locked,
+        className: p.granted === on ? 'on' : '', textContent: label, disabled: p.locked,
         onclick: async () => {
           if (p.granted === on) return;
+          if (keep && !on && !await ask(T('apps.keep_perm_ask', { name: appName(pkg), perm: permName(p.name) }), { ok: T('priv.revoke') })) return;
           const x = await api('/api/app/perm', { pkg, perm: p.name, on });
           if (!x) return;
           if (/^ok$/m.test(x.text)) toast(T(on ? 'apps.perm_allowed' : 'apps.perm_off', { name: permName(p.name) })); else toast(T('apps.perm_failed', { why: friendly(x.text.trim()) }));
-          appDetails(pkg);
+          appDetails(pkg, keepHint);
         } })));
       const twin = a.perms.filter((q) => permName(q.name) === permName(p.name)).length > 1;   // fine and coarse location, Bluetooth's three: told apart by their own names
       parts.push(el('div', { className: 'permrow' }, el('span', { title: p.name }, permName(p.name), twin ? el('small', { className: 'muted', textContent: p.name.replace(/^.*\./, '') }) : null),

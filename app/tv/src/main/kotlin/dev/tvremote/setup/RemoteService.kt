@@ -341,7 +341,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         link = l
         startCensus(l)
         manage = Manage(l, object : Manage.Labels {
-            override fun label(pkg: String): String? =
+            @Volatile var own: Map<String, String>? = null              // TV Home's names, read once over ADB, then kept by the page's changes
+            override fun own(m: Map<String, String>) { own = m }
+            override fun label(pkg: String): String? = (own ?: try { dev.tvremote.core.ontv.Home.ownNames { l.get().shell(it) }.also { own = it } } catch (e: Exception) { emptyMap() })[pkg] ?:   // no ADB yet: asked again
                 try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString() } catch (e: Exception) { null }
             override fun icons(): Boolean = true
             private val caps by lazy { Caps.report(this@RemoteService) }   // the hardware does not change while TV Setup runs

@@ -617,9 +617,8 @@ async function homeOpen() {
     return el('i', {}, cv);
   };
   const themeUses = (c, id) => [...(c.themes || []), ...(c.before ? [{ conf: c.before }] : [])].some((t) => t.conf.wall === id || (t.conf.walls || []).includes(id));   // HomeConfig.themeUses
-  // what a theme sets, read only: name: value rows under the tiles (the TV shows the same on a long press)
-  const themeInfo = el('div', { className: 'group', hidden: true });
-  let themeInfoOf = '';
+  // what a theme sets, read only: name: value rows in the details dialog (the TV shows the same on a long press). Under the tiles it
+  // opened below the fold, a long way from the ⓘ: nothing seemed to happen (phone, 2026-10-25)
   const themeWall = (k) => HOME_WALL_WORDS[k] ? T(HOME_WALL_WORDS[k]) : k === 'bing' ? T('home.wall_bing') : k === 'web' ? T('home.wall_web') : /^vid:/.test(k) ? (((r.video || {}).items || []).find((v) => v.id === k) || {}).name || T('home.wall_video')
     : k === 'photo' ? T('home.wall_photo') : /^photo\d+$/.test(k) ? T('home.wall_photo_n', { n: +k.slice(5) }) : k;
   const themeRows = (conf) => {
@@ -639,10 +638,9 @@ async function homeOpen() {
   };
   function drawThemes(c) {
     const showInfo = (id, name, conf) => {
-      if (themeInfoOf === id && !themeInfo.hidden) { themeInfo.hidden = true; return; }
-      themeInfoOf = id;
-      themeInfo.replaceChildren(el('h3', { textContent: name }), el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
-      themeInfo.hidden = false;
+      put('#infotitle', 'textContent', 'ⓘ ' + name);
+      $('#infobody').replaceChildren(el('div', { className: 'list' }, ...themeRows(conf).map(([k, v]) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: k }), el('small', { textContent: v }))))));
+      if (!$('#infodlg').open) $('#infodlg').showModal();
     };
     const tile = (id, name, conf, mine, look, tiles = []) => {
       const on = c.theme === id;
@@ -666,7 +664,7 @@ async function homeOpen() {
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const vFold = UI.card(T('home.v_head'), { fold: true }, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
   const GROUPS = [
-    ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady, themeInfo]],
+    ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady]],
     ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote,
       hOnline, wOnline, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote,
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,

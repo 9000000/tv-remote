@@ -105,7 +105,7 @@
     const block = [];
     for (let i = start + 1; i < lines.length && /^ {3,}/.test(lines[i]); i++) block.push(lines[i]);
     const runtime = new Map(), install = new Set(), requested = [];
-    let sect = '';
+    let sect = '', user = null, first = null;                         // a TV with a second profile lists each user's grants: the first (0) is the one pm changes
     for (const l of block) {
       const t = l.trim(), ind = l.length - l.trimStart().length;
       let m;
@@ -117,10 +117,10 @@
       else if (/^(pkg)?[fF]lags=\[/.test(t) && /\bSYSTEM\b/.test(t)) { o.system = true; o.updatedSystem = o.updatedSystem || /UPDATED_SYSTEM_APP/.test(t); }
       if (/:$/.test(t) && !t.includes(' ')) sect = t;                 // "requested permissions:" has a space: see below
       else if (/^(requested|install|runtime) permissions:$/.test(t)) sect = t.split(' ')[0];
-      else if (/^User \d+:/.test(t)) sect = 'user';
+      else if ((m = /^User (\d+):/.exec(t))) { sect = 'user'; user = m[1]; if (first === null) first = user; }
       else if (ind >= 6 && sect === 'requested' && /^[\w.]+$/.test(t.split(':')[0])) requested.push(t.split(/[:,\s]/)[0]);
       else if (ind >= 6 && sect === 'install' && (m = /^([\w.]+): granted=/.exec(t))) install.add(m[1]);
-      else if (ind >= 8 && sect === 'runtime' && (m = /^([\w.]+): granted=(true|false)(.*)$/.exec(t)))
+      else if (ind >= 8 && sect === 'runtime' && user === first && (m = /^([\w.]+): granted=(true|false)(.*)$/.exec(t)))
         runtime.set(m[1], { name: m[1], granted: m[2] === 'true', locked: /SYSTEM_FIXED|POLICY_FIXED/.test(m[3]) });
     }
     // Android 9 lists only the runtime permissions given so far: the others an app asked for show as not given

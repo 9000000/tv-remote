@@ -63,6 +63,12 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata)" +
             "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
             "|dev\\.tvremote\\.setup(\\.keys)?|com\\.tailscale\\.ipn")   // TV Home only while it is the home screen (callers check); TV Channels, TV Games and the Phone app are ordinary apps
+        /**
+         * The apps whose permissions stay as they are: the system's own core and this project's. Another app the TV needs (Google's
+         * assistant, the keyboard, the launcher) may lose one, one at a time from its details: given back the same way (the
+         * assistant kept the microphone open on an FPT box).
+         */
+        val PERMS_FIXED = Regex("android|com\\.android\\.(?!inputmethod).*|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|ext\\..*|modulemetadata)|dev\\.tvremote\\..*|com\\.tailscale\\.ipn")
         /** What the Apps tab marks "must keep" and refuses to stop, clear, turn off or remove: [PROTECTED] and the brands' own [Bloat.KEEP]. */
         fun mustKeep(p: String) = PROTECTED.matches(p) || Bloat.keep(p)
         /**

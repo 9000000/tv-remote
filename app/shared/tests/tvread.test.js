@@ -125,6 +125,9 @@ test('one app in detail (tvshell.app_info)', () => {
     .replace('4242 4243', '').replace(/TOTAL.*\n/, '').replace(/com\.google[^\n]*Receiver\n$/, ''));
   assert.deepEqual(b.perms[1], { name: 'android.permission.RECORD_AUDIO', granted: false, locked: true });
   assert.deepEqual([b.pids, b.ramKb, b.boot], [[], 0, false]);
+  // a second profile (Google TV's, user 10) lists its own grants after user 0's: pm changes user 0's, so those are shown
+  const two = appInfoRead(SONY_YT.replace('        android.permission.RECORD_AUDIO: granted=true\n', '        android.permission.RECORD_AUDIO: granted=true\n    User 10: installed=true\n      runtime permissions:\n        android.permission.RECORD_AUDIO: granted=false\n'));
+  assert.equal(two.perms.find((p) => p.name.endsWith('RECORD_AUDIO')).granted, true);
   assert.equal(appInfoRead('Unable to find package: x').found, false);
   assert.equal(permName('android.permission.RECORD_AUDIO'), 'Micro'); assert.equal(permName('android.permission.READ_MEDIA_VIDEO'), 'Tệp, ảnh và video');
   assert.equal(permName('com.x.permission.ODD'), 'ODD');

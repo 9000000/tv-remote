@@ -14,14 +14,19 @@ import dev.tvremote.core.web.Manage
 class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private val cache: File? = null) : Manage.Labels {
     private val jar by lazy(helper)
     @Volatile private var names: Map<String, String>? = null
+    @Volatile private var own: Map<String, String> = emptyMap()      // the names given on TV Home win over the apps' own (a YouTube for Tizen renamed there)
     @Volatile private var ok = false
     @Volatile private var stamps: Map<String, String>? = null         // package -> "time size" of its PNG on the TV, once Meta has run
     private val running = Any()
     @Volatile private var failedAt = 0L                              // when Meta last gave nothing: asked again after RETRY, not on every app of the list
 
     /** Every app's display name, by package. */
+    fun names(): Map<String, String> = system().let { if (own.isEmpty()) it else it + own }
+    /** TV Home's names as they are now: after the page changed them, so nothing waits for the next run of Meta. */
+    override fun own(m: Map<String, String>) { own = m }
+
     @Synchronized
-    fun names(): Map<String, String> {
+    private fun system(): Map<String, String> {
         names?.let { return it }
         if (System.currentTimeMillis() - failedAt < RETRY) return emptyMap()
         val saved = load()
@@ -54,6 +59,7 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
                     if (p.size == 3 && p[0].endsWith(".png")) st[p[0].removeSuffix(".png")] = p[1] + " " + p[2]
                 }
                 stamps = st
+                own = try { Home.ownNames { a.shell(it) } } catch (e: Exception) { own }
                 ok = true
                 names = out
                 save(out)
@@ -78,7 +84,7 @@ class RemoteLabels(private val link: AdbLink, helper: () -> ByteArray, private v
         a.shell("CLASSPATH=$remote app_process / dev.tvremote.core.Caps 2>/dev/null", 20000).takeIf { it.isNotBlank() }?.also { caps = it }
     } catch (e: IOException) { null }
 
-    override fun label(pkg: String): String? = names()[pkg]
+    override fun label(pkg: String): String? = own[pkg] ?: system()[pkg]
 
     override fun icons(): Boolean { names(); return ok }
 

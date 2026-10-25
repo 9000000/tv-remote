@@ -33,6 +33,16 @@ object Home {
         return r
     }
 
+    /** The names the person gave apps on TV Home (its "names"), by package; empty without TV Home. No GitHub check, unlike [call]. */
+    fun ownNames(sh: (String) -> String): Map<String, String> {
+        val m = Regex("data=\"([A-Za-z0-9+/=]+)\"").find(sh("am broadcast --include-stopped-packages -n ${HomeConfig.RECEIVER} 2>&1")) ?: return emptyMap()
+        return names(JSONObject(String(B64.decode(m.groupValues[1]), Charsets.UTF_8)).optJSONObject("config"))
+    }
+    fun names(config: JSONObject?): Map<String, String> {
+        val n = config?.optJSONObject("names") ?: return emptyMap()
+        return n.keys().asSequence().mapNotNull { k -> n.optString(k).trim().takeIf { it.isNotEmpty() }?.let { k to it } }.toMap()
+    }
+
     @Volatile private var unasked = false                              // the last [latest] could not reach GitHub
     @Volatile private var checked: Triple<Long, String, Release?>? = null
     /** A newer TV Home than [version], asked of GitHub at most every 6 hours; null when none, or GitHub cannot be asked. */

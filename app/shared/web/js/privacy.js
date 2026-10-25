@@ -81,6 +81,8 @@ function privItem(r) {
       if (!r.off && !await ask(T('apps.disable_ask', { name }), { ok: T('apps.disable_app') })) return;
       act(r.off ? '/api/privacy/on' : '/api/privacy/off', () => T('apps.what_name', { what: T(r.off ? 'apps.turn_on' : 'apps.disable_app'), name }));
     } }));
+  acts.push(el('button', { className: 'small iconbtn', title: T('page.more_actions'), ariaLabel: T('page.more_actions'), textContent: '⋯',   // the Apps tab's menu: details & one permission at a time (also for an app the TV needs), log, backup
+    onclick: (e) => appMenu(e.currentTarget, r.pkg, { keep, off: r.off }, () => {}, ['enable', 'disable', 'uninstall']) }));   // those three are the buttons above, which keep the scan's row true
   const lines = r.ev.filter((e) => e.id !== 'boot').map(privSay);
   if (keep && !r.own) lines.push(T('priv.keep'));
   return UI.item({ icon: privIcons.get(r.pkg), name, sub: lines.join(' · '), extra: [el('div', { className: 'ptags' }, ...tags)], acts });

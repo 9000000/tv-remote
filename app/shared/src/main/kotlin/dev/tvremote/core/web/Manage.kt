@@ -55,6 +55,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         fun icons(): Boolean
         /** What the TV's hardware can do, as [Caps] prints it; null where it cannot be asked. */
         fun caps(): String? = null
+        /** The names given on TV Home (its settings were just read or changed): they win over the apps' own. */
+        fun own(m: Map<String, String>) {}
     }
 
     /** Told when a device was let in through the TV's question (TV Setup shows it on the TV). */
@@ -109,7 +111,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "screen/state" -> if (!post) return HttpServer.Response.json(JSONObject().put("off", ScreenOff.isOff { sh(it) }))
                 "dim" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Dim.call({ sh(it) }, if (post) r.json() else null))
                 "home" -> return HttpServer.Response.json(dev.tvremote.core.ontv.Home.call({ sh(it) }, if (post) r.json() else null,
-                    if (!post && r.q("thumbs") == "1") "--ez thumbs true" else ""))   // TV Home's settings (thumbs: the photos' small pictures too)
+                    if (!post && r.q("thumbs") == "1") "--ez thumbs true" else "").also { h ->   // TV Home's settings (thumbs: the photos' small pictures too)
+                        labels?.own(dev.tvremote.core.ontv.Home.names(h.optJSONObject("config"))) })   // the names given there reach every app list
                 "home/web/check" -> if (!post) return HttpServer.Response.json(dev.tvremote.home.WebCheck.check(r.q("u")))   // the background page, tried from this device: the TV's own answer is on TV Home's page
                 "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
@@ -268,7 +271,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 }
                 "app/perm" -> {
                     val d = r.json(); val pkg = d.optString("pkg")
-                    if (Setup.PROTECTED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
+                    if (Setup.PERMS_FIXED.matches(pkg)) throw IllegalArgumentException("protected: the TV needs this app")
                     text(TvShell.perm(pkg, d.optString("perm"), d.optBoolean("on")), 20000)
                 }
                 "tvset" -> { val d = r.json(); val k = d.optString("key"); val v = d.optString("value")
