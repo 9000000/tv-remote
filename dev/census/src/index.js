@@ -21,10 +21,7 @@ RETURNING first`;
 const DAY = `INSERT INTO days (day, app, active, new) VALUES (?1, ?2, 1, ?3)
 ON CONFLICT (day, app) DO UPDATE SET active = COALESCE(active, 0) + 1, new = new + excluded.new`;
 
-const AGG = `SELECT brand, model, device, android, leanback, COUNT(*) AS n,
-  SUM(adb=1) AS adb_y, COUNT(adb) AS adb_n, SUM(video=1) AS video_y, COUNT(video) AS video_n,
-  SUM(optimize=1) AS optimize_y, COUNT(optimize) AS optimize_n, MAX(last) AS last
-FROM tvs GROUP BY brand, model, device, android, leanback LIMIT 5000`;
+const AGG = `SELECT brand, model, device, android, COUNT(*) AS n FROM tvs GROUP BY brand, model, device, android LIMIT 5000`;
 
 export default {
   async fetch(req, env) {

@@ -5,7 +5,7 @@ The apps send one ping a day; the site's home page and `docs/tvs.html` read the 
 
 - `POST /v1/ping` (JSON, at most 4 KB, answers 204): `{id, app: setup|phone|pc, v, tv: {brand, model, device, board, hw, soc, android, sdk, leanback}, ok: {adb, video, optimize}}`.
   `ok` flags are `true` / `false` / missing (not tried). Unknown fields are dropped, strings trimmed to 64 characters.
-- `GET /v1/tvs` -> `{updated, installs, models: [{brand, model, count, android[], devices[], kind: tv|box|projector, ok: {adb|video|optimize: {n, rate}}, last}]}`; cached 10 minutes; no ids.
+- `GET /v1/tvs` -> `{updated, installs, models: [{brand, model, count, android[], devices[], kind: tv|box|projector}]}` (the ok flags and last day stay in D1, not sent); cached 10 minutes; no ids.
 - `GET /v1/days` -> `{updated, installs, days: [{day, active: {setup, phone, pc}, new: {…}, total}]}` for the growth chart; cached 10 minutes. `active` = installs that pinged that UTC day, `new` = first seen that day, `total` = running sum of `new`. Before 2026-10-25 only `new` exists (rebuilt from `tvs.first`).
 - Stored: sha256(id) cut to 16 hex, the model strings, flags, first / last day. **Not stored:** IP, headers, user agent. One row per (install, model);
   a second ping the same UTC day changes nothing. The kind is worked out from the names in `src/logic.js` `kindOf` (not stored).

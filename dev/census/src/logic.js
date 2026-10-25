@@ -55,32 +55,25 @@ export function kindOf(brand, model, device) {
 
 const verKey = (a) => parseFloat(a) || 0;
 
-// rows: SELECT brand, model, android, leanback, COUNT(*) n, SUM(adb=1) adb_y, COUNT(adb) adb_n, ... , MAX(last) last GROUP BY brand, model, device, android, leanback
+// rows: SELECT brand, model, device, android, COUNT(*) n GROUP BY brand, model, device, android. Only what the site shows: the ok
+// flags and last day stay in D1 for a later dashboard (they were 52% of the reply, unread)
 export function aggregate(rows, now = new Date()) {
   const by = new Map();
   for (const r of rows) {
     const key = r.brand + "\u0000" + r.model;
     let m = by.get(key);
-    if (!m) by.set(key, (m = { brand: r.brand, model: r.model, count: 0, android: new Set(), devices: new Set(), tv: 0, box: 0, projector: 0, last: "", c: {} }));
+    if (!m) by.set(key, (m = { brand: r.brand, model: r.model, count: 0, android: new Set(), devices: new Set(), tv: 0, box: 0, projector: 0 }));
     const n = Number(r.n) || 0;
     m.count += n;
     if (r.android) m.android.add(r.android);
     if (r.device && r.device !== r.model && m.devices.size < 4) m.devices.add(r.device);
     m[kindOf(r.brand, r.model, r.device)] += n;
-    if ((r.last || "") > m.last) m.last = r.last;
-    for (const k of OKS) {
-      const c = (m.c[k] ||= { y: 0, n: 0 });
-      c.y += Number(r[k + "_y"]) || 0;
-      c.n += Number(r[k + "_n"]) || 0;
-    }
   }
   const models = [...by.values()].map((m) => ({
     brand: m.brand, model: m.model, count: m.count,
     android: [...m.android].sort((a, b) => verKey(b) - verKey(a)),
     devices: [...m.devices].sort(),
     kind: ["tv", "box", "projector"].reduce((k, x) => (m[x] > m[k] ? x : k), "tv"),
-    ok: Object.fromEntries(OKS.map((k) => [k, { n: m.c[k].n, rate: m.c[k].n ? Math.round((m.c[k].y / m.c[k].n) * 100) / 100 : null }])),
-    last: m.last,
   })).sort((a, b) => b.count - a.count || a.brand.localeCompare(b.brand) || a.model.localeCompare(b.model));
   return { updated: today(now), installs: models.reduce((s, m) => s + m.count, 0), models };
 }

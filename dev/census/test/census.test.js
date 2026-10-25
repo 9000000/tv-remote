@@ -46,8 +46,8 @@ test("aggregate: merges android rows, rates, sorts, no ids", () => {
   const a = aggregate(rows, new Date("2026-10-25T00:00:00Z"));
   assert.equal(a.models[0].model, "MIBOX4"); assert.equal(a.models[0].kind, "box");
   const s = a.models[1];
-  assert.equal(s.count, 3); assert.deepEqual(s.android, ["11", "9"]); assert.equal(s.last, "2026-10-20");
-  assert.equal(s.ok.adb.rate, 0.67); assert.equal(s.ok.video.rate, 0.5); assert.equal(s.ok.optimize.rate, null);
+  assert.equal(s.count, 3); assert.deepEqual(s.android, ["11", "9"]);
+  assert.equal(s.ok, undefined); assert.equal(s.last, undefined);                 // kept in D1, not sent
   assert.deepEqual(s.devices, ["a1"]); assert.equal(a.installs, 8); assert.equal(a.updated, "2026-10-25");
   assert.ok(!JSON.stringify(a).includes('"h"'));
 });
