@@ -8,6 +8,7 @@
     guide: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z"/><path d="M4 21.5V5.5M8 7h8"/>',
     apps: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/>',
     tvs: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    themes: '<circle cx="8" cy="8" r="1.6"/><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M21 15l-5-5L5 21"/>',
     demo: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z"/>',
     features: '<path d="M12 3l2.2 5.3L20 9l-4.4 3.8L17 18.5 12 15.6 7 18.5l1.4-5.7L4 9l5.8-.7Z"/>',
     ext: '<path d="M7 17L17 7M9 7h8v8"/>'
@@ -19,6 +20,7 @@
     { id: "features", href: "#remote", vi: "Tính năng", en: "Features" },
     { id: "tvs", href: "#tvs", vi: "TV đã chạy", en: "TVs it ran on" },
     { id: "guide", href: "guide", vi: "Hướng dẫn", en: "Guide", page: true },
+    { id: "themes", href: "themes", vi: "Chủ đề", en: "Themes", page: true },
     { id: "demo", href: "demo/", vi: "Dùng thử", en: "Live demo", page: true }
   ];
   var own = page === "home" || page === "tour";                       // pages with their own Install part

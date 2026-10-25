@@ -133,6 +133,7 @@ def vn():
         im, author, page, lic = commons(name)
         im = fit(im, ay, ax)
         _, n = save(im, os.path.join(OUT, "vn-" + i + ".jpg"), quality=82)
+        save(im.resize((320, 180), Image.LANCZOS), os.path.join(OUT, "vn-" + i + "-t.jpg"), quality=72)   # the themes page's slideshow card cycles these
         items.append({"file": "vn-" + i + ".jpg", "vi": vi, "en": en, "credit": author + ", " + lic, "source": page})
         print("vn", i, n // 1024, "KB", author, lic)
     items.append({"file": "terraces-sapa.jpg", "vi": "Ruộng bậc thang Sa Pa", "en": "Sa Pa rice terraces", "credit": "David McKelvey, CC BY 2.0",

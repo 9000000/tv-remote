@@ -11,6 +11,12 @@
     "vi": "Ảnh đẹp khắp Việt Nam, đổi mỗi 5 phút, có chú thích",
     "en": "Vietnam's loveliest places, a new one every 5 minutes, captioned"
    },
+   "tags": [
+    "slideshow",
+    "vietnam",
+    "nature",
+    "city"
+   ],
    "conf": {
     "wall": "web",
     "wurl": "https://tvremote.pages.dev/home/loop.html?s=vn",
@@ -42,6 +48,9 @@
     "vi": "Ai cũng dùng được: đồng hồ kim, thời tiết và lịch âm cỡ lớn",
     "en": "Anyone: analog clock, big weather and lunar cards"
    },
+   "tags": [
+    "art"
+   ],
    "conf": {
     "wall": "midnight",
     "shade": 50,
@@ -77,6 +86,10 @@
     "vi": "Xem tối, đọc không chói",
     "en": "Evenings, easy on the eyes"
    },
+   "tags": [
+    "art",
+    "night"
+   ],
    "conf": {
     "wall": "dusk",
     "shade": 55,
@@ -107,6 +120,9 @@
     "vi": "Phòng khách sáng, nhìn từ xa",
     "en": "A bright living room, read from afar"
    },
+   "tags": [
+    "art"
+   ],
    "conf": {
     "wall": "dawn",
     "shade": 40,
@@ -138,6 +154,9 @@
     "vi": "Xem thời tiết và chất lượng không khí trước khi ra khỏi nhà",
     "en": "Weather and air quality before leaving home"
    },
+   "tags": [
+    "art"
+   ],
    "conf": {
     "wall": "peach",
     "shade": 40,
@@ -173,6 +192,10 @@
     "vi": "Ảnh nền đổi mỗi ngày: núi, đồng cỏ, biển, cồn cát",
     "en": "A background that turns daily: peaks, meadow, sea, dunes"
    },
+   "tags": [
+    "art",
+    "nature"
+   ],
    "conf": {
     "wall": "peaks",
     "walls": [
@@ -206,6 +229,10 @@
     "vi": "Phòng khách: ảnh Bing của ngày, đổi vài giờ một lần, ít chữ",
     "en": "Living room: the day's Bing picture, changing every few hours, few words"
    },
+   "tags": [
+    "photo",
+    "nature"
+   ],
    "conf": {
     "wall": "bing",
     "walls": [
@@ -243,6 +270,11 @@
     "vi": "Người nhớ quê: ảnh Sa Pa phủ cả màn hình, qua đường dẫn web",
     "en": "Homesick: a Sa Pa photo across the screen, from a web link"
    },
+   "tags": [
+    "photo",
+    "vietnam",
+    "nature"
+   ],
    "conf": {
     "wall": "web",
     "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fterraces-sapa.jpg",
@@ -274,6 +306,10 @@
     "vi": "Thư giãn cuối ngày: ảnh hoàng hôn trên biển phủ cả màn hình",
     "en": "Unwinding: a sunset beach photo across the screen"
    },
+   "tags": [
+    "photo",
+    "nature"
+   ],
    "conf": {
     "wall": "web",
     "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fbeach-sunset.jpg",
@@ -308,6 +344,10 @@
     "vi": "Thư giãn cuối ngày: video hoàng hôn trên biển chạy nền",
     "en": "Unwinding: a sunset beach video in the background"
    },
+   "tags": [
+    "video",
+    "nature"
+   ],
    "conf": {
     "wall": "web",
     "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fe%2Feb%2FSunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm%2F330px--Sunset_timelapse_on_the_beach_in_Libreville%252C_Gabon.webm.jpg",
@@ -342,6 +382,11 @@
     "vi": "Video du thuyền trên vịnh Hạ Long chạy nền",
     "en": "A video cruise across Ha Long Bay in the background"
    },
+   "tags": [
+    "video",
+    "vietnam",
+    "nature"
+   ],
    "conf": {
     "wall": "web",
     "wurl": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Ftranscoded%2Fb%2Fbe%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm.480p.vp9.webm&p=https%3A%2F%2Fupload.wikimedia.org%2Fwikipedia%2Fcommons%2Fthumb%2Fb%2Fbe%2FHa_Long_Bay%252C_Vietnam_-_Dec_2024.webm%2F330px--Ha_Long_Bay%252C_Vietnam_-_Dec_2024.webm.jpg",
@@ -376,6 +421,11 @@
     "vi": "Cú đêm: ảnh thành phố về đêm, đồng hồ lớn",
     "en": "Night owls: a night-city photo, a big clock"
    },
+   "tags": [
+    "photo",
+    "city",
+    "night"
+   ],
    "conf": {
     "wall": "web",
     "wurl": "https://tvremote.pages.dev/home/loop.html?i=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fhk-night.jpg",
@@ -411,6 +461,9 @@
     "vi": "Người hay chỉnh TV: bộ nhớ, ứng dụng dùng nhiều, 7 cột",
     "en": "Tinkerers: memory, most-used apps, 7 columns"
    },
+   "tags": [
+    "art"
+   ],
    "conf": {
     "wall": "midnight",
     "shade": 60,
@@ -443,6 +496,10 @@
     "vi": "Chơi game trên TV: đèn neon, thẻ RAM sống để dọn bộ nhớ",
     "en": "Gaming on the TV: neon lights, a live RAM tile to clear memory"
    },
+   "tags": [
+    "art",
+    "night"
+   ],
    "conf": {
     "wall": "bokeh",
     "shade": 40,
@@ -475,6 +532,10 @@
     "vi": "Fan thể thao: nền sân cỏ, thẻ Xem tiếp kênh của TV Channels",
     "en": "Sports fans: a pitch green background, TV Channels' Continue-watching tile"
    },
+   "tags": [
+    "photo",
+    "night"
+   ],
    "conf": {
     "wall": "web",
     "shade": 35,
@@ -514,6 +575,11 @@
     "vi": "Nhà có trẻ nhỏ: màu kẹo, ô ứng dụng to (4 cột)",
     "en": "Homes with small children: candy colours, big tiles (4 columns)"
    },
+   "tags": [
+    "photo",
+    "kids",
+    "nature"
+   ],
    "conf": {
     "wall": "web",
     "shade": 10,
@@ -549,6 +615,9 @@
     "vi": "Người lớn tuổi: đồng hồ to, ít ứng dụng, viền chọn rõ, tương phản cao",
     "en": "Older people: a big clock, few apps, a clear ring, high contrast"
    },
+   "tags": [
+    "art"
+   ],
    "conf": {
     "wall": "navy",
     "shade": 70,
@@ -579,6 +648,10 @@
     "vi": "Dịp Tết và rằm: lịch âm và lịch tháng cỡ lớn, thẻ ấm",
     "en": "Tết and full-moon days: big lunar and month cards in warm tones"
    },
+   "tags": [
+    "photo",
+    "vietnam"
+   ],
    "conf": {
     "wall": "web",
     "shade": 40,
@@ -617,6 +690,10 @@
     "vi": "Xem trước khi ngủ: tối, ít động, thẻ Hẹn giờ tắt ở đầu",
     "en": "Winding down: dark and still, the sleep-timer tile first"
    },
+   "tags": [
+    "photo",
+    "night"
+   ],
    "conf": {
     "wall": "web",
     "shade": 70,
@@ -657,6 +734,10 @@
     "vi": "Tối xem phim: ghế đỏ rạp hát, không thẻ, chỉ ứng dụng",
     "en": "Movie night: a theatre in red, no cards, just the apps"
    },
+   "tags": [
+    "photo",
+    "night"
+   ],
    "conf": {
     "wall": "web",
     "shade": 55,
@@ -682,6 +763,10 @@
     "vi": "Thích gọn: nền xám than, không thẻ, không hiệu ứng",
     "en": "Clean lovers: charcoal, no cards, no effects"
    },
+   "tags": [
+    "art",
+    "minimal"
+   ],
    "conf": {
     "wall": "graphite",
     "shade": 50,
@@ -694,5 +779,5 @@
    }
   }
  ],
- "rev": 1792923431
+ "rev": 1792925472
 }

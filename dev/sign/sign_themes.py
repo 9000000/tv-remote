@@ -2,7 +2,7 @@
 """dev/sign/sign_themes.py: checks docs/home/themes.json and signs it (themes.json.sig, Ed25519, base64).
 
 The list holds TV Home's ready-made themes (id, names per language, conf = the same keys HomeConfig cleans, optional "tiles" (live tiles added first to the grid, kept beside the person's own), "look" (a drawn wall for its picture), "thumb" (a small https picture of a photo / web / video background, ~330 px, for its preview), "for" (who it is for), "src" (licence of a web background), "by" + "community": true (sent by a person, reviewed: dev/themes), optional "since" = the
-first TV Home version that shows it). TV Home reads it from the site, else GitHub, else the copy it kept, else the one packed in
+first TV Home version that shows it), optional "tags" (only the site's themes page reads them; TV Home ignores them). TV Home reads it from the site, else GitHub, else the copy it kept, else the one packed in
 its APK; a list without a good signature is ignored. It is signed because a theme may set "wurl" (a web page as the background),
 which only a signed list can. It uses the launcher list's key (LAUNCHERS_KEY, default ~/.tv-remote-release/launchers.key).
 
@@ -16,6 +16,7 @@ LIST = os.path.join(ROOT, "docs", "home", "themes.json")
 KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/launchers.key"))
 LOOKS = ["dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon", "night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember",
          "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss"]   # HomeConfig.ART + PLAIN: what a tile's picture can be drawn from
+TAGS = {"video", "slideshow", "photo", "art", "minimal", "vietnam", "kids", "night", "nature", "city", "community"}   # docs/js/themes.js
 TILE = re.compile(r"tile:[a-z][a-z0-9_.]*/[a-z0-9_]+")
 THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle", "wopt",
               "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]   # HomeConfig.THEME_KEYS
@@ -49,7 +50,7 @@ def check():
         if "wurl" in t["conf"] and not t["conf"]["wurl"].startswith("https://"):
             fail("%s: wurl is not https" % i)
         for k in t:
-            if k not in ("id", "names", "for", "conf", "since", "tiles", "look", "src", "thumb", "by", "community"):
+            if k not in ("id", "names", "for", "conf", "since", "tiles", "look", "src", "thumb", "by", "community", "tags"):
                 fail("%s: unknown field %s" % (i, k))
         f = t.get("for") or {}
         com = t.get("community") is True   # a theme sent by a person (dev/sign/review_themes.py): "by" = their name, no "for" line needed
@@ -74,6 +75,8 @@ def check():
             fail("%s: thumb must be a short https address (a small picture of the background, 330 px)" % i)
         if "wurl" in t["conf"] and not t.get("src") and not com:
             fail("%s: a web background needs 'src' (where it is from, its licence)" % i)
+        if not set(t.get("tags", [])) <= TAGS:
+            fail("%s: tags must be from %s (the showcase page, docs/themes.html; TV Home ignores them)" % (i, ", ".join(sorted(TAGS))))
         if t.get("since") and not re.fullmatch(r"\d+(\.\d+){1,2}", t["since"]):
             fail("%s: bad since" % i)
     if not ids:

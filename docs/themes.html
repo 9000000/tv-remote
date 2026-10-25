@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi" data-lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chủ đề TV Home · TV Remote</title>
+<meta name="description" content="Tất cả chủ đề có sẵn của TV Home: ảnh, video, trình chiếu, tìm và lọc, xem lớn, tải tệp chủ đề. / Every ready-made TV Home theme: photos, videos, slideshows; search, filter, preview, download the theme file.">
+<meta name="theme-color" content="#0a0d14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Chủ đề TV Home / TV Home themes">
+<meta property="og:image" content="https://tvremote.pages.dev/img/og-vi.jpg">
+<meta property="og:url" content="https://tvremote.pages.dev/themes">
+<meta property="og:site_name" content="TV Remote">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://tvremote.pages.dev/themes">
+<link rel="alternate" hreflang="vi" href="https://tvremote.pages.dev/themes?lang=vi">
+<link rel="alternate" hreflang="en" href="https://tvremote.pages.dev/themes?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://tvremote.pages.dev/themes">
+<script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})()</script>
+<link rel="icon" href="img/icon.png?v=1024">
+<link rel="apple-touch-icon" href="img/icon-180.png?v=1024">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/themes.css">
+</head>
+<body>
+
+<script src="js/nav.js" data-page="themes"></script>
+
+<main class="wrap tp">
+  <span class="eyebrow"><span class="vi">TV Home</span><span class="en">TV Home</span></span>
+  <h1><span class="vi">Chủ đề có sẵn</span><span class="en">Ready-made themes</span></h1>
+  <p class="lead"><span class="vi">Một lần bấm là đổi cả màn hình: nền, thẻ, lưới, viền chọn. Bấm một chủ đề để xem lớn.</span><span class="en">One press changes the whole screen: background, cards, grid, focus. Tap a theme to see it large.</span></p>
+
+  <div class="tp-bar">
+    <label class="tp-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" data-ph-vi="Tìm chủ đề" data-ph-en="Search themes" placeholder="Tìm chủ đề" aria-label="Search">
+    </label>
+    <label class="tp-sort"><span class="vi">Xếp theo</span><span class="en">Sort</span>
+      <select id="sort">
+        <option value="list" data-vi="Mặc định" data-en="Default">Mặc định</option>
+        <option value="name" data-vi="Tên A-Z" data-en="Name A-Z">Tên A-Z</option>
+      </select>
+    </label>
+  </div>
+  <div class="tp-chips" id="chips" role="group" aria-label="Filter"></div>
+  <p class="tp-count" id="count" aria-live="polite"></p>
+
+  <div class="tp-grid" id="grid"><noscript>JavaScript is needed to list the themes.</noscript></div>
+  <p class="tp-empty" id="empty" hidden><span class="vi">Không có chủ đề nào khớp.</span><span class="en">No theme matches.</span></p>
+
+  <p class="tp-foot"><span class="vi">Chủ đề của riêng bạn: <a href="guide#home-themes">cách lưu và chia sẻ →</a></span><span class="en">Your own themes: <a href="guide#home-themes">how to save and share →</a></span></p>
+</main>
+
+<dialog id="dlg" class="tp-dlg" aria-labelledby="d-name">
+  <button type="button" class="tp-x" id="d-x" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="tp-stage" id="d-stage"></div>
+  <p class="tp-cap" id="d-cap" hidden></p>
+  <div class="tp-body">
+    <h2 id="d-name"></h2>
+    <p class="tp-for" id="d-for"></p>
+    <div class="tp-tags" id="d-tags"></div>
+    <dl class="tp-facts" id="d-facts"></dl>
+    <h3><span class="vi">Dùng chủ đề này</span><span class="en">Use this theme</span></h3>
+    <ol class="tp-steps">
+      <li><span class="vi">Trên TV Home: Tuỳ chỉnh → Chủ đề → Có sẵn, chọn tên này.</span><span class="en">On TV Home: Customize → Themes → Ready-made, pick this name.</span></li>
+      <li><span class="vi">Hoặc trong app TV Remote: tab Home → Chủ đề → Nhập chủ đề, chọn tệp tải ở dưới.</span><span class="en">Or in the TV Remote app: Home tab → Themes → Import theme, with the file below.</span></li>
+    </ol>
+    <div class="tp-act"><button type="button" class="btn btn-ghost" id="d-dl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg><span class="vi">Tải tệp chủ đề</span><span class="en">Download theme file</span></button></div>
+  </div>
+</dialog>
+
+<footer>
+  <div class="wrap">
+    <div>© <span id="yr">2026</span> Hoang Tran · <a href="https://github.com/HoangTran0410/tv-remote">tv-remote</a></div>
+    <div>
+      <a href="./"><span class="vi">Trang chủ</span><span class="en">Home</span></a> ·
+      <a href="guide"><span class="vi">Hướng dẫn</span><span class="en">Guide</span></a> ·
+      <a href="https://github.com/HoangTran0410/tv-remote/releases"><span class="vi">Các bản phát hành</span><span class="en">Releases</span></a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement, T = { vi: "Chủ đề TV Home · TV Remote", en: "TV Home themes · TV Remote" };
+  function setLang(l){
+    root.dataset.lang = l; root.lang = l; document.title = T[l];
+    document.querySelectorAll(".lang button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.set === l); });
+    var q = document.getElementById("q"); q.placeholder = q.dataset["ph" + (l === "en" ? "En" : "Vi")];
+    document.querySelectorAll("option[data-vi]").forEach(function(o){ o.textContent = o.dataset[l]; });
+    try { localStorage.setItem("lang", l); } catch(e){}
+    document.dispatchEvent(new CustomEvent("langchange"));
+  }
+  setLang(root.dataset.lang);
+  document.querySelectorAll(".lang button").forEach(function(b){ b.onclick = function(){ setLang(b.dataset.set); }; });
+  document.getElementById("yr").textContent = new Date().getFullYear();
+})();
+</script>
+<script src="js/themes.js"></script>
+</body>
+</html>

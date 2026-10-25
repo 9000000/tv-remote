@@ -129,6 +129,8 @@
 .h-themes{padding-top:40px}
 button.fc{font:inherit;text-align:left;cursor:pointer;width:auto}
 .thc img{aspect-ratio:16/9}
+.car-all{font-size:14px;font-weight:700;color:var(--blue);white-space:nowrap;padding:0 4px}
+.car-all:hover{text-decoration:underline}
 .thc-own{text-decoration:none}
 .cm{margin-top:40px}   /* the community's row: shown only when the list has some */
 .cm .car-head{margin-bottom:16px}
