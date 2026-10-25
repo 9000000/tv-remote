@@ -5,13 +5,14 @@ import android.net.Uri
 import android.widget.Toast
 
 /**
- * The power button's three actions. TV Home has no ADB: it names one of three words and TV Setup (its HomeInfo provider, which
+ * The power button's actions (and the Control Center's). TV Home has no ADB: it names one of a few words and TV Setup (its HomeInfo provider, which
  * answers only this app by its key) runs the fixed command for it. Never a command line from here.
  */
 object Power {
     const val SCREEN_OFF = "screen_off"
     const val STANDBY = "standby"
     const val POWER_OFF = "power_off"
+    const val REBOOT = "reboot"
 
     /** Asks TV Setup on a thread of its own (the screen helper takes a second or two) and says the answer in a toast. */
     fun run(a: Activity, action: String) {

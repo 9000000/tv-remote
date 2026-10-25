@@ -103,6 +103,7 @@ class HomeActivity : Activity() {
     private lateinit var netPill: BarBtn
     private lateinit var inputsPill: BarBtn
     private lateinit var settingsPill: BarBtn
+    private lateinit var controlPill: BarBtn
     private lateinit var powerPill: BarBtn
     private lateinit var bar: TopBar
     private lateinit var grid: LinearLayout                         // the favourites first, then every other app, then the hidden apps' tile: one grid
@@ -225,6 +226,10 @@ class HomeActivity : Activity() {
                     .map { (act, v) -> Drop.Row(v.first, getString(v.second)) { open(act) } } + listOf(
                 Drop.Row(R.drawable.ic_sliders, getString(R.string.customize)) { customize() }))
         }
+        // the Control Center: the TV's everyday switches in one glass panel (ui/ControlCenter.kt)
+        controlPill = BarBtn(this, R.drawable.ic_control, getString(R.string.cc_title), ::dp) {
+            open = dev.tvremote.home.ui.ControlCenter.show(this, bar.capsule, { open(it) }, { inputs() })
+        }
         // for a remote whose own power button is broken: three named actions TV Setup runs (Power.kt), the hard one asks again
         powerPill = BarBtn(this, R.drawable.ic_power, getString(R.string.power), ::dp) {
             if (!setupThere()) { open = Drop.show(this, bar.capsule, needSetup()); return@BarBtn }
@@ -237,13 +242,14 @@ class HomeActivity : Activity() {
                         Drop.Row(R.drawable.ic_power, getString(R.string.power_off_now)) { Power.run(this, Power.POWER_OFF) }))
                 }))
         }
-        for (b in listOf(inputsPill, netPill, settingsPill, powerPill)) bar.add(b)
+        for (b in listOf(inputsPill, netPill, settingsPill, controlPill, powerPill)) bar.add(b)
         for (b in bar.buttons) b.setOnKeyListener { _, code, e ->
             code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (topAt?.takeIf { it.isAttachedToWindow } ?: firstGridTile())?.let { go(it); true } == true
         }
         // the row's two ends stay put: Android's own search went from Inputs down-left onto a tile, and OK then opened its app
         inputsPill.nextFocusLeftId = View.generateViewId().also { inputsPill.id = it }
-        settingsPill.id = View.generateViewId(); powerPill.id = View.generateViewId()
+        settingsPill.id = View.generateViewId(); controlPill.id = View.generateViewId(); powerPill.id = View.generateViewId()
+        settingsPill.nextFocusRightId = controlPill.id
         powerPill.nextFocusRightId = powerPill.id
         bar.focusIn = { scrollToY(0) }
         head.addView(bar)
@@ -1195,7 +1201,7 @@ class HomeActivity : Activity() {
     private fun powerBar() {
         val on = conf.optBoolean("power", true)
         powerPill.visibility = if (on) View.VISIBLE else View.GONE
-        settingsPill.nextFocusRightId = if (on) powerPill.id else settingsPill.id
+        controlPill.nextFocusRightId = if (on) powerPill.id else controlPill.id   // the row's right end stays put, whichever button it is
         bar.requestLayout()
     }
 

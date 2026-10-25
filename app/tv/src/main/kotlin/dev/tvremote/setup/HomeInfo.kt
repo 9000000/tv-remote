@@ -29,20 +29,25 @@ import java.util.Locale
  * and "telegram" (the bot's state for TV Home's card: {state: none | token_missing | ready, bot, link, code, code_left}; RemoteService.telegramForHome),
  * and "app" (HomeApp: one app's lock, daily limit, force stop and cache, for TV Home's long-press menu; `arg` {pkg, op, ...}),
  * and "capture" (`arg` "1" / "0": while "1", the remote keys of the map go to TV Home's screen unopened, for its assign-a-key page),
- * and "power" (HomePower: screen off, standby, power off; `arg` the action, "result" ok / noadb / failed).
+ * and "power" (HomePower: screen off, standby, restart, power off; `arg` the action, "result" ok / noadb / failed),
+ * and "control" (HomeControl: the Control Center's sleep timer and kids mode on; `arg` "" | "sleep:<min>" | "kids:on"; {sleep_at, kids, pin, error?}).
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
  * a build signed with one key for both), gets an answer.
  */
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val c = context ?: return null
-        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do", "telegram", "app", "capture")) return null
+        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do", "telegram", "app", "capture", "control")) return null
         // TV Home's package name signed by another key (built elsewhere, a fork): said as such, nothing else given, so the
         // button tells the person to install both from one place instead of "update TV Setup", which would not help
         if (!trusted(c, Binder.getCallingUid())) return if (fromHome(c, Binder.getCallingUid())) Bundle().apply { putString("result", "untrusted") } else null
         if (method == "power") {                                       // the power button: `arg` is one of HomePower's three words, nothing else is run
             val token = Binder.clearCallingIdentity()
             try { return Bundle().apply { putString("result", HomePower.run(c, arg.orEmpty())) } } finally { Binder.restoreCallingIdentity(token) }
+        }
+        if (method == "control") {                                     // saving the rules and starting the watcher: our own identity
+            val token = Binder.clearCallingIdentity()
+            try { return Bundle().apply { putString("json", HomeControl.run(c, arg).toString()) } } finally { Binder.restoreCallingIdentity(token) }
         }
         if (method == "keys") return keys(c, arg)
         if (method == "capture") { KeysBridge.capture(arg == "1"); return Bundle().apply { putString("json", "{}") } }   // TV Home's "assign a key" page is open: the keys reach it instead of opening their apps

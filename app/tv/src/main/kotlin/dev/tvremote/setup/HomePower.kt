@@ -5,19 +5,21 @@ import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.ontv.ScreenOff
 
 /**
- * What TV Home's power button may ask of this app (HomeInfo "power"): three fixed actions, named, never a command line, so a
+ * What TV Home's power button may ask of this app (HomeInfo "power"): four fixed actions, named, never a command line, so a
  * caller (even one that got past the key check) can only do these. The ADB loopback session runs them; TV Home has no ADB.
  */
 object HomePower {
     const val SCREEN_OFF = "screen_off"
     const val STANDBY = "standby"
     const val POWER_OFF = "power_off"
+    const val REBOOT = "reboot"
 
     /** The shell line of an action, null for any other word. [SCREEN_OFF] has none: it starts the helper (ScreenOff.kt). */
     fun command(action: String): String? = when (action) {
         STANDBY -> "input keyevent 223"                                // KEYCODE_SLEEP, what Guard uses too: the TV wakes on its remote
         // `reboot -p` is allowed to the shell on Android 9-14 (it only sets sys.powerctl); some builds lack the flag, `svc power shutdown` is the same by the framework
         POWER_OFF -> "reboot -p || svc power shutdown"
+        REBOOT -> "reboot"                                           // allowed to the shell like `reboot -p`; the Control Center asks twice first
         else -> null
     }
 

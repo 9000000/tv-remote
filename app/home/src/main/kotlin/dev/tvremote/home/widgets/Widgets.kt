@@ -122,12 +122,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     }
 
     /** (used, total) bytes of RAM from /proc/meminfo, which any app may read; null when it cannot be read. */
-    private fun memory(): Pair<Long, Long>? = try {
-        val m = java.io.File("/proc/meminfo").readText()
-        fun kb(k: String) = Regex("^$k:\\s+(\\d+)", RegexOption.MULTILINE).find(m)?.groupValues?.get(1)?.toLongOrNull()
-        val total = kb("MemTotal"); val free = kb("MemAvailable")
-        if (total == null || free == null || total <= 0) null else ((total - free).coerceAtLeast(0) * 1024) to total * 1024
-    } catch (e: Exception) { null }
+    private fun memory(): Pair<Long, Long>? = memoryUsage()
 
     /** Set by the screen: the weather arrived (or failed) on its own thread, the cards are read again. */
     var onWeather: (() -> Unit)? = null
@@ -434,3 +429,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     internal fun grad(colors: IntArray, w: Float) = LinearGradient(0f, 0f, w, 0f, colors[0], colors[1], Shader.TileMode.CLAMP)
 
 }
+
+/** (used, total) bytes of RAM from /proc/meminfo (MemAvailable, as TV Setup's RAM tile reads it), which any app may read; null when it cannot be read. The system card and the Control Center share it. */
+internal fun memoryUsage(): Pair<Long, Long>? = try {
+    val m = java.io.File("/proc/meminfo").readText()
+    fun kb(k: String) = Regex("^$k:\\s+(\\d+)", RegexOption.MULTILINE).find(m)?.groupValues?.get(1)?.toLongOrNull()
+    val total = kb("MemTotal"); val free = kb("MemAvailable")
+    if (total == null || free == null || total <= 0) null else ((total - free).coerceAtLeast(0) * 1024) to total * 1024
+} catch (e: Exception) { null }

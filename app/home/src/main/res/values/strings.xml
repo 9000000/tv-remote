@@ -534,4 +534,32 @@
     <string name="home_ov_mine">Mine</string>
     <string name="home_ov_both">Both</string>
     <string name="wall_loading">Loading background…</string>
+    <!-- Control Center (ControlCenter.kt) -->
+    <string name="cc_title">Control Center</string>
+    <string name="cc_android">Android TV %1$s</string>
+    <string name="cc_open_settings">Open settings</string>
+    <string name="cc_net">Network</string>
+    <string name="cc_net_wifi">Wi-Fi · %1$s</string>
+    <string name="cc_net_eth">Ethernet · %1$s</string>
+    <string name="cc_net_none">No network</string>
+    <string name="cc_clock">Clock</string>
+    <string name="cc_clock_24">24-hour</string>
+    <string name="cc_clock_12">12-hour</string>
+    <string name="cc_motion">Motion effects</string>
+    <string name="cc_on">On</string>
+    <string name="cc_off">Off</string>
+    <string name="cc_kids">Kids lock</string>
+    <string name="cc_kids_nopin">No PIN set yet</string>
+    <string name="cc_kids_unlock">Turn off with the PIN in Lock &amp; limits</string>
+    <string name="cc_sleep">Sleep timer</string>
+    <string name="cc_sleep_left">%1$s min left</string>
+    <string name="cc_need_setup">Needs TV Setup</string>
+    <string name="cc_restart">Restart</string>
+    <string name="cc_clear_ram">Clear RAM</string>
+    <string name="cc_confirm_off">Press again to power off</string>
+    <string name="cc_confirm_restart">Press again to restart</string>
+    <string name="cc_working">Clearing…</string>
+    <string name="cc_footer">CPU %1$s · RAM %2$s</string>
+    <string name="cc_footer_ram">RAM %1$s</string>
+    <string name="cc_bluetooth">Bluetooth</string>
 </resources>

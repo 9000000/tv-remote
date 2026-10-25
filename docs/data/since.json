@@ -34,6 +34,7 @@
   "home-qr": {"since": "0.21.0"},
   "home-tiles": {"since": "0.21.0"},
   "home-themes": {"since": "0.22.0"},
+  "home-control": {"since": "next", "setup": "next"},
   "home-app-menu": {"since": "0.22.0"},
   "home-widgets": {"since": "0.22.0"},
   "home-quickkeys": {"since": "0.22.0"},
