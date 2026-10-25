@@ -3784,5 +3784,19 @@
  "support.sent": "Đã gửi. Mã hỗ trợ: {code}",
  "support.opened": "Hỗ trợ xem được TV này {min} phút, mã {code}. Dừng: Kết nối → Dừng cho hỗ trợ xem.",
  "support.stopped": "Đã dừng: hỗ trợ không xem được nữa.",
- "support.no_net": "Không gửi được: TV chưa vào được Internet. Kiểm tra mạng rồi thử lại."
+ "support.no_net": "Không gửi được: TV chưa vào được Internet. Kiểm tra mạng rồi thử lại.",
+ "eco.title": "HỆ SINH THÁI",
+ "eco.on": "Đã cài",
+ "eco.off": "Chưa cài",
+ "eco.open": "Mở {name}",
+ "eco.get": "Cài {name}",
+ "eco.home_sub": "Màn hình chính nhẹ, không quảng cáo, tùy biến cao: hình nền, widget, chủ đề.",
+ "eco.channels_sub": "Kênh truyền hình miễn phí từ khắp nơi, xem ngay trên TV.",
+ "eco.games_sub": "Trò chơi trên TV, điện thoại làm tay cầm.",
+ "eco.home_set": "Cài và đặt làm màn hình chính",
+ "eco.home_set_sub": "TV hỏi Giữ hay Quay lại: chọn Giữ.",
+ "eco.note_noadb": "Không có ADB vẫn cài được TV Home: màn hình chính nhẹ, tùy biến cao, mở như một app.",
+ "eco.note_adb": "TV Home: màn hình chính nhẹ, không quảng cáo, chỉnh từ điện thoại.",
+ "eco.installer_asks": "Android sẽ hỏi: chọn Cài đặt.",
+ "eco.none": "Bản phát hành mới nhất chưa có {name}."
 }

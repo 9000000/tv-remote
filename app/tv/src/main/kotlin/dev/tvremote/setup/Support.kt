@@ -58,7 +58,7 @@ object Support {
             val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val code = send(app, version) ?: return@Thread said(null)   // always fresh: the facts of now with the code
             val key = p.getString("key", "") ?: ""
-            val r = post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", MINUTES)) ?: return@Thread said(null)
+            val r = post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", MINUTES))?.takeIf { it.has("live") } ?: return@Thread said(null)
             until = r.optLong("live")
             stopThread()
             asked = 0
@@ -92,6 +92,7 @@ object Support {
         try {
             while (thread === me && System.currentTimeMillis() < until) {
                 val r = post("${base()}/poll", JSONObject().put("code", code).put("key", key))
+                if (r != null && r.has("error")) break                // the code is gone (deleted, expired): nobody can ask any more
                 if (r != null) {
                     until = r.optLong("live", until)
                     val asks = r.optJSONArray("asks")
@@ -132,7 +133,8 @@ object Support {
             c.requestMethod = "POST"; c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
             c.outputStream.use { it.write(body.toString().toByteArray()) }
-            if (c.responseCode !in 200..299) null
+            if (c.responseCode == 403 || c.responseCode == 404) JSONObject().put("error", c.responseCode)   // refused: not a network hiccup to wait out
+            else if (c.responseCode !in 200..299) null
             else c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }.let { if (it.isBlank()) JSONObject() else JSONObject(it) }
         } finally { c.disconnect() }
     } catch (e: Exception) { null }

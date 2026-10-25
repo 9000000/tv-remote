@@ -3886,5 +3886,19 @@
  "support.sent": "Sent. Support code: {code}",
  "support.opened": "Support can look at this TV for {min} min, code {code}. Stop: Connection → Stop support looking.",
  "support.stopped": "Stopped: support can no longer look.",
- "support.no_net": "Could not send: the TV is not on the Internet. Check the network, then try again."
+ "support.no_net": "Could not send: the TV is not on the Internet. Check the network, then try again.",
+ "eco.title": "MORE TV APPS",
+ "eco.on": "Installed",
+ "eco.off": "Not installed",
+ "eco.open": "Open {name}",
+ "eco.get": "Install {name}",
+ "eco.home_sub": "A light home screen with no ads, made your way: backgrounds, widgets, themes.",
+ "eco.channels_sub": "Free TV channels from everywhere, right on the TV.",
+ "eco.games_sub": "Games on the TV, with phones as pads.",
+ "eco.home_set": "Install and make it the home screen",
+ "eco.home_set_sub": "The TV asks Keep or Go back: choose Keep.",
+ "eco.note_noadb": "No ADB? TV Home still installs: a light home screen you can make your own, opened like any app.",
+ "eco.note_adb": "TV Home: a light home screen with no ads, set up from your phone.",
+ "eco.installer_asks": "Android will ask: choose Install.",
+ "eco.none": "The latest release has no {name} yet."
 }

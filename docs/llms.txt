@@ -55,7 +55,7 @@ Keys work without ADB on the phone and computer apps (Google's Android TV Remote
 - [Live demo](https://tvremote.pages.dev/demo/): a picker of four apps in the browser, nothing installed or sent: the real remote page against a made-up TV (#remote), TV Home (#home), TV Channels with real streams (#channels) and TV Games with a playable quiz and phone pads (#games)
 - [User guide](https://tvremote.pages.dev/guide): step by step for every feature (install, remote, typing, voice, picture, game controller, apps, files, timers, scenes, Home Assistant, Tailscale, troubleshooting), Vietnamese and English, with search
 - [How the apps fit together](https://tvremote.pages.dev/apps): a map of what each app (phone, web page, computer, TV Setup, TV Home, TV Channels, TV Games) needs from the others, by what route, what happens when one is missing, and how each is installed; Vietnamese and English.
-- [TVs it ran on](https://tvremote.pages.dev/tvs): the TVs, boxes and projectors the apps have run on, counted anonymously (brand, model, Android version; no IP, no account), with search; also a section of the home page
+- [TVs in use](https://tvremote.pages.dev/tvs): the TVs, boxes and projectors the apps have run on, counted anonymously (brand, model, Android version; no IP, no account), with search (a growing list, not a compatibility list: any Android / Google TV works); also a section of the home page
 - [README (English)](https://github.com/HoangTran0410/tv-remote/blob/main/README.md): setup for each app, Tailscale, troubleshooting, security, technical details
 - [README (Tiếng Việt)](https://github.com/HoangTran0410/tv-remote/blob/main/README.vi.md)
 - [Changelog](https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md)

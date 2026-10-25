@@ -80,6 +80,39 @@ class MainActivity : Activity() {
     private val WARN = Color.rgb(240, 179, 74)
     private val BAD = Color.rgb(255, 112, 112)
     private val HOWTO = Color.rgb(138, 180, 248)                       // what to do next: a light blue, apart from white info and the three states
+    private val PILL = Color.argb(153, 0, 0, 0)                        // the pill on an app's banner: TV Home's name scrim
+    private val PILL_ON = Color.argb(230, 22, 128, 72)                // ...on a green that says it is on this TV
+    private val ECO_W = 128                                           // an app's banner, dp: three and a line of words fit beside the log's width
+
+    /**
+     * One of the project's other TV apps (Bundle.apps) as TV Home draws a tile: its banner, the same rise and ring on focus, and a
+     * pill saying whether it is on this TV. OK opens it, or offers to install it, with no ADB too (the user, 2026-10-25: TV Home first).
+     */
+    private inner class Eco(val app: dev.tvremote.core.ontv.Bundle.App, banner: Int) :
+        dev.tvremote.tvui.TvTile(this@MainActivity, dp(ECO_W), { n -> (n.toFloat() * resources.displayMetrics.density).roundToInt() }) {
+        val key = app.pkg.substringAfterLast('.')                    // home, channels, games
+        val sub = when (key) { "home" -> T("eco.home_sub"); "channels" -> T("eco.channels_sub"); else -> T("eco.games_sub") }   // what it is, beside the banners while focused
+        override val glassy get() = false                         // no gliding glass on this screen: the ring
+        var on = false; private set
+        private val pill = TextView(context)
+        init {
+            faceColor(TvUi.CARD)                                      // the face's rounded outline, which clips the banner
+            fill(ImageView(context).apply { setImageResource(banner); scaleType = ImageView.ScaleType.CENTER_CROP })
+            pill.textSize = 10f; pill.setTextColor(Color.WHITE); pill.setPadding(dp(7), dp(2), dp(7), dp(2))
+            face.addView(pill, android.widget.FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(dp(5), dp(5), dp(5), dp(5)) })
+            setOnFocusChangeListener { _, f -> focus(f); ecoNote?.text = if (f) sub else ecoText() }
+            setOnClickListener { if (!busy) ecoPress(this) else log(T("tv_main.busy")) }
+        }
+        fun paint() {
+            on = try { packageManager.getPackageInfo(app.pkg, 0); true } catch (e: Exception) { false }
+            pill.text = T(if (on) "eco.on" else "eco.off")
+            pill.background = box(if (on) PILL_ON else PILL, 10, 0)
+            name.text = T(if (on) "eco.open" else "eco.get", "name" to app.name)
+        }
+    }
+    private var eco: List<Eco> = emptyList()
+    private var ecoNote: TextView? = null
+    private var ecoWaiting: Eco? = null                               // Android's "install unknown apps" switch was opened for this one
 
     /** An action: an icon, a title, and one line beside it saying what it does or where it stands. */
     private inner class Tile(icon: Int, title: String, sub: String, run: () -> Unit) {
@@ -231,6 +264,20 @@ class MainActivity : Activity() {
             left.addView(r, margins(top = 8))
         }
 
+        if (!phone) {                                                 // the project's TV apps: what a phone running TV Setup has no use for
+            left.addView(section(T("eco.title")), margins(top = 16))
+            val row = LinearLayout(this)
+            row.clipChildren = false
+            row.gravity = Gravity.CENTER_VERTICAL
+            val pics = mapOf("home" to R.drawable.eco_home, "channels" to R.drawable.eco_channels, "games" to R.drawable.eco_games)
+            eco = dev.tvremote.core.ontv.Bundle.apps.map { Eco(it, pics.getValue(it.pkg.substringAfterLast('.'))) }
+            eco.forEachIndexed { i, e -> row.addView(e, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(14) }) }
+            ecoNote = text("", 12, MUTED, false).also { it.maxLines = 4; it.ellipsize = TextUtils.TruncateAt.END }
+            row.addView(ecoNote, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(18) })
+            left.addView(row, margins(top = 8))
+            ecoPaint()
+        }
+
         val actHead = LinearLayout(this)
         actHead.gravity = Gravity.CENTER_VERTICAL
         actHead.addView(section(T("tv_main.activity")))
@@ -238,7 +285,7 @@ class MainActivity : Activity() {
         spinner.isIndeterminate = true
         spinner.visibility = View.INVISIBLE
         actHead.addView(spinner, LinearLayout.LayoutParams(dp(16), dp(16)).apply { leftMargin = dp(10) })
-        left.addView(actHead, margins(top = 18))
+        left.addView(actHead, margins(top = if (eco.isEmpty()) 18 else 36))   // a focused banner's name shows in that gap
         logView = text(T("tv_main.activity_empty"), 14, MUTED, false)   // until the first line
         logView.setLineSpacing(dp(3).toFloat(), 1f)
         scroll = ScrollView(this)
@@ -426,6 +473,11 @@ class MainActivity : Activity() {
         askOnPhone()
         pairLine.removeCallbacks(pairPoll); pairPoll.run()
         showWeb()
+        ecoPaint()                                                    // back from an app's install or from the app itself
+        ecoWaiting?.let { e ->                                        // back from "install unknown apps": on with it when it was switched on
+            ecoWaiting = null
+            if (android.os.Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls()) ecoInstall(e)
+        }
         val s = setup
         if (s != null && !busy) Thread { try { showStatus(s) } catch (ignored: Exception) { } }.start()   // back from Tailscale / Play Store: refresh the IPs
         else if (setup == null && retryOnResume && !connecting) { retryOnResume = false; connect() }   // back from Developer options: ADB may be on now
@@ -626,11 +678,12 @@ class MainActivity : Activity() {
                 bundle(s)
                 showStatus(s)
                 connecting = false
-                ui { setEnabled(true); if (openLaunchers) { openLaunchers = false; chooseLauncher() } }
+                ui { setEnabled(true); ecoPaint(); if (openLaunchers) { openLaunchers = false; chooseLauncher() } }
             } catch (e: Exception) {
                 adb = null; setup = null
                 connecting = false
                 ui {
+                    ecoPaint()
                     setStatus(BAD, T("tv_main.no_adb_connection"), T("tv_main.turn_on_adb_debugging"))
                     val refused = (e.message ?: "").contains("refused", ignoreCase = true)   // on this very TV a refused port is ADB off, never a slow network
                     // ...or ADB on over USB only: some boxes (an FPT Play box) open no port 5555, and "turn it on" would send the person in circles
@@ -713,6 +766,64 @@ class MainActivity : Activity() {
     }
 
     // Support (Support.kt): a code to read out to whoever helps, and for a while their reading of this app's own state
+    private fun ecoPaint() { eco.forEach { it.paint() }; if (eco.none { it.hasFocus() }) ecoNote?.text = ecoText() }
+
+    /** Beside the banners: TV Home first, and that it needs no ADB, on the TVs that have none (the user, 2026-10-25). */
+    private fun ecoText(): String = when {
+        eco.firstOrNull()?.on == true -> ""                       // all set: no line to read, the tiles say it
+        adb == null && !connecting -> T("eco.note_noadb")
+        else -> T("eco.note_adb")
+    }
+
+    /** On this TV: opened. Not yet: install it (and for TV Home with ADB, make it the home screen too). */
+    private fun ecoPress(e: Eco) {
+        if (e.on) {
+            val i = packageManager.getLeanbackLaunchIntentForPackage(e.app.pkg) ?: packageManager.getLaunchIntentForPackage(e.app.pkg)
+            if (i != null) try { startActivity(i); return } catch (x: Exception) { }
+        }
+        val items = mutableListOf(TvUi.Item(R.drawable.ic_download, T("eco.get", "name" to e.app.name), e.sub) { ecoInstall(e) })
+        if (e.app.pkg == dev.tvremote.home.HomeConfig.PKG && adb != null)
+            items += TvUi.Item(R.drawable.ic_home, T("eco.home_set"), T("eco.home_set_sub")) { chooseLauncher(dev.tvremote.home.HomeConfig.PKG) }
+        menu(e.app.name, items)
+    }
+
+    /** Over ADB as Bundle does, with no question; without it, Android's installer asks (once allowed to install apps, as [selfUpdate]). */
+    private fun ecoInstall(e: Eco) {
+        val a = adb
+        if (a != null && setup != null) {
+            job { _ ->
+                log(T("tv_main.bundle_installing", "name" to e.app.name))
+                e.app.install(a, getExternalFilesDir("update"), Words.lang)
+                log("✓ " + T("tv_main.bundle_installed", "name" to e.app.name))
+                ui { ecoPaint() }
+            }
+            return
+        }
+        if (busy) return
+        if (android.os.Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) try {
+            startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:$packageName")))
+            ecoWaiting = e
+            log(T("tv_main.allow_installs"))
+            return
+        } catch (x: Exception) { }                                    // no such screen on this TV: Android's installer asks its own way
+        busy = true
+        spinner.visibility = View.VISIBLE
+        log(T("tv_main.bundle_installing", "name" to e.app.name))
+        dev.tvremote.update.SelfUpdate.Installed.failed = { m -> ui { log("✗ " + e.app.name + ": " + m.ifEmpty { "Android" }) } }
+        Thread {
+            try {
+                val r = Release.newer("0", e.app.key, e.app.apk) ?: throw java.io.IOException(T("eco.none", "name" to e.app.name))
+                var last = -25
+                dev.tvremote.update.SelfUpdate.stage(this, r, android.content.Intent(this, dev.tvremote.update.SelfUpdate.Installed::class.java), false) { pct ->
+                    if (pct >= last + 25) { last = pct; log("  $pct%") }
+                }
+                log(T("eco.installer_asks"))
+            } catch (x: Exception) { log("✗ " + reason(x)) }
+            busy = false
+            ui { spinner.visibility = View.INVISIBLE }
+        }.start()
+    }
+
     private fun spaced(c: String) = if (c.length == 8) c.substring(0, 4) + " " + c.substring(4) else c
     private fun supportLeft() = ((Support.until - System.currentTimeMillis()) / 60000 + 1).coerceAtLeast(0)
     private fun showCode(code: String, sub: String) = menu(T("support.code_title"), listOf(TvUi.Item(R.drawable.ic_check, spaced(code), sub) { }))
