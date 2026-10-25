@@ -6,7 +6,7 @@
     kinds: [["all", "Tất cả", "All"], ["tv", "Tivi", "TVs"], ["box", "Box, que", "Boxes, sticks"], ["projector", "Máy chiếu", "Projectors"]],
     badge: { tv: ["Tivi", "TV"], box: ["Box", "Box"], projector: ["Máy chiếu", "Projector"] },
     search: ["Tìm hãng, mẫu, mã máy…", "Search brand, model, device…"],
-    sum: ["{n} mẫu · {b} hãng", "{n} models · {b} brands"],
+    sum: ["{d} thiết bị · {n} mẫu · {b} hãng", "{d} devices · {n} models · {b} brands"],
     units: ["{n} máy", "{n} TVs"], none: ["Không có mẫu nào khớp.", "No model matches."],
     empty: ["Chưa có dữ liệu. Danh sách sẽ hiện khi các app gửi báo cáo ẩn danh đầu tiên.", "No data yet. The list fills as the apps send their first anonymous reports."],
     off: ["Không tải được danh sách lúc này. Thử lại sau.", "Could not load the list right now. Try again later."],
@@ -43,7 +43,7 @@
       var groups = {}, order = [];
       shown.forEach(function(m){ var g = groups[m.brand] || (groups[m.brand] = { brand: m.brand, n: 0, rows: [] }); if (!g.rows.length) order.push(g); g.n += m.count; g.rows.push(m); });
       order.sort(function(a, b){ return b.n - a.n || a.brand.localeCompare(b.brand); });
-      sum.textContent = t("sum", { n: shown.length, b: order.length });
+      sum.textContent = t("sum", { d: shown.reduce(function(a, m){ return a + (m.count || 0); }, 0), n: shown.length, b: order.length });
       var cut = limit && !q && kind === "all" && order.length > limit;
       var fold = !q && kind === "all";                                  // a search or a chip shows every match
       var html = (cut ? order.slice(0, limit) : order).map(function(g){
