@@ -504,7 +504,7 @@ Thay đổi từng bản: [CHANGELOG.md](CHANGELOG.md).
 
 ## Quyền riêng tư
 
-Mỗi ngày app gửi một ghi chú ẩn danh để biết TV nào chạy tốt: hãng, model, chip và bản Android của TV, bản của app, ADB / hình / Tối ưu TV có chạy được không, và một mã ngẫu nhiên tạo trên máy bạn; lỗi của app cũng được gửi (mỗi lỗi một lần), đã xóa IP, tên thư mục, khóa và email. **Không bao giờ** gửi: địa chỉ IP, số serial, tên TV, app đã cài, tài khoản, tên Wi-Fi. Tắt ở **Cài đặt → Gửi thống kê ẩn danh** (app điện thoại: **Cài đặt → Quyền riêng tư**); tắt thì không gửi gì.
+Mỗi ngày app gửi một ghi chú ẩn danh để biết TV nào chạy tốt: hãng, model, chip và bản Android của TV, bản của app, ADB / hình / Tối ưu TV có chạy được không, và một mã ngẫu nhiên tạo trên máy bạn; lỗi của app cũng được gửi (mỗi lỗi một lần), đã xóa IP, tên thư mục, khóa và email. **Không bao giờ** gửi: địa chỉ IP, số serial, tên TV, app đã cài, tài khoản, tên Wi-Fi. Tắt ở **Cài đặt → Gửi thống kê ẩn danh** (app điện thoại: **Cài đặt → Quyền riêng tư**); tắt thì không gửi gì. TV Home (thống kê và lỗi), Kênh TV và Game TV (lỗi) theo công tắc của TV Setup; không có TV Setup thì TV Home có công tắc riêng ở Tùy chỉnh.
 
 ## Giấy phép
 

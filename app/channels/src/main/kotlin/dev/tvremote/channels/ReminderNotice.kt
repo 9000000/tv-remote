@@ -35,6 +35,7 @@ class ChannelsApp : Application() {
     override fun onCreate() {
         super.onCreate()
         dev.tvremote.guard.Guard.install(this, { c -> guardWords(c) })
+        dev.tvremote.report.OwnReport.start(this, "channels")            // anonymous error reports (TV Setup's switch, else on)
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(a: Activity) { ReminderNotice.front = WeakReference(a) }
             override fun onActivityPaused(a: Activity) { if (ReminderNotice.front?.get() === a) ReminderNotice.front = null }

@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Thống kê ẩn danh: TV Home gửi thống kê hằng ngày (TV chỉ cài TV Home cũng được đếm); TV Home, Kênh TV, Game TV gửi lỗi. Theo công tắc **Gửi thống kê ẩn danh** của TV Setup; không có TV Setup thì TV Home có công tắc ở Tùy chỉnh → Hệ thống (Kênh TV, Game TV: bật sẵn, chưa có công tắc).
 - Báo lỗi tự động: lỗi hiện trong hộp/hộp thoại “Có lỗi xảy ra” giờ cũng được gửi ẩn danh (cùng công tắc **Gửi thống kê ẩn danh**; tắt thì không gửi) kèm hãng/model/bản Android hoặc hệ điều hành; đã xóa IP, đường dẫn thư mục, khóa, email trước khi gửi, mỗi lỗi gửi một lần mỗi lần chạy. Hộp báo thêm dòng “Đã gửi báo lỗi”. TV Home, TV Channels, TV Games chưa có công tắc nên không gửi
 - TV Home: nút Cài đặt mở **Trung tâm điều khiển**: Mạng (Wi-Fi/cáp + IP), Nguồn vào, Hẹn giờ tắt, Khoá trẻ em, Cài đặt TV, Tùy chỉnh TV Home; nút Tắt nguồn / Khởi động lại (bấm hai lần) / Tắt màn hình / Dọn RAM và dòng CPU · RAM. Khoá, hẹn giờ, nguồn, CPU cần TV Setup (không có thì mờ)
 - TV Home, chủ đề: **Chia sẻ lên cửa hàng** (nút trong ⓘ của chủ đề bạn tự lưu, trên điện thoại/máy tính): chụp màn hình TV Home với giao diện đó (kèm ảnh nền riêng dưới 1 MB), có tiến trình và nút Hủy; chủ đề được duyệt rồi hiện ở nhóm **Cộng đồng** (kèm “bởi” tên người gửi) trên web và trong danh sách chủ đề của TV Home
@@ -21,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Tối ưu TV / Ứng dụng: không tắt app Android luôn giữ chạy (PERSISTENT: tắt cũng tự bật lại), Google partner setup, các app cài đặt ban đầu, bàn phím phụ, âm thanh Dolby (theo danh sách của tv-detox).
 
 **English**
+- Anonymous stats: TV Home sends the daily stats (a TV with only TV Home is counted now); TV Home, TV Channels and TV Games send error reports. They follow TV Setup's **Send anonymous stats** switch; without TV Setup, TV Home has its own in Customize → System (Channels and Games: on, no switch yet).
 - Automatic error reports: an error shown in the “Something went wrong” box / dialog is now also sent anonymously (same **Send anonymous stats** switch; off sends nothing) with brand/model/Android or OS; IPs, folder paths, keys and emails are removed before sending, each error once per run. The box adds “Error report sent”. TV Home, TV Channels and TV Games have no such switch, so they send nothing
 - TV Home: the Settings button opens the **Control Center**: Network (Wi-Fi/Ethernet + IP), Inputs, Sleep timer, Kids lock, TV settings, Customize TV Home; Power off / Restart (two presses) / Screen off / Clear RAM and a CPU · RAM line. Lock, timer, power and CPU need TV Setup (greyed without it)
 - TV Home themes: **Share to the store** (a button in ⓘ of your own themes, on the phone or computer): takes a screenshot of TV Home in that look (with your own photo background, under 1 MB), with progress and Cancel; an approved theme shows in a **Community** group (with “by” the sender) on the web and in TV Home's own theme list

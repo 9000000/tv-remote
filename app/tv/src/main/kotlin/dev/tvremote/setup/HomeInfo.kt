@@ -37,6 +37,8 @@ import java.util.Locale
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         val c = context ?: return null
+        if (method == "census")                                        // read-only: the stats switch + install id, for TV Home, Channels and Games (own keys)
+            return if (censusCaller(c, Binder.getCallingUid())) Bundle().apply { putString("json", RemoteService.censusState(c).toString()) } else null
         if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do", "telegram", "app", "capture", "control")) return null
         // TV Home's package name signed by another key (built elsewhere, a fork): said as such, nothing else given, so the
         // button tells the person to install both from one place instead of "update TV Setup", which would not help
@@ -150,6 +152,13 @@ class HomeInfo : ContentProvider() {
         }, "home-cpu").apply { isDaemon = true }.start()
     }
 
+    /** One of our own apps (CENSUS_APPS) by its signing key. */
+    private fun censusCaller(c: Context, uid: Int): Boolean {
+        val pm = c.packageManager
+        val mine = certs(pm, c.packageName)
+        return (pm.getPackagesForUid(uid) ?: emptyArray()).any { pkg -> censusOk(pkg, certs(pm, pkg), mine) }
+    }
+
     private fun fromHome(c: Context, uid: Int) = c.packageManager.getPackagesForUid(uid)?.contains(HOME) == true
 
     private fun trusted(c: Context, uid: Int): Boolean {
@@ -187,6 +196,14 @@ class HomeInfo : ContentProvider() {
             if (all <= 0) return null
             return ((all - (idle(y) - idle(x))).toFloat() / all).coerceIn(0f, 1f)
         }
+        /** The apps that may read the stats switch, each with the certificate (SHA-256) of its own signing.jks. */
+        val CENSUS_APPS = mapOf(
+            "dev.tvremote.home" to "657aabacfdccbc22ff1f61138df7efd79fae765df742f7d15d80dac84c7d81b3",        // app/home/signing.jks
+            "dev.tvremote.channels" to "a3e09c97fb750bf09285d6fa7c065d4c63ee6d8247b1caaa555dd279e2534b6a",    // app/channels/signing.jks
+            "dev.tvremote.games" to "b7b61e8be4809effc2b4c16ab75a320b9b655d45a0ef5f0f706feb483bbff567")       // app/games/signing.jks
+
+        /** [pkg] is one of those apps and [theirs] (its signing digests) hold its pinned one, or one of [mine] (debug builds of all apps share a key). */
+        fun censusOk(pkg: String, theirs: List<String>, mine: List<String>): Boolean = CENSUS_APPS[pkg]?.let { pin -> theirs.any { it == pin || it in mine } } == true
         const val HOME = "dev.tvremote.home"
         const val HOME_CERT = "657aabacfdccbc22ff1f61138df7efd79fae765df742f7d15d80dac84c7d81b3"   // app/home/signing.jks, alias tvhome
     }

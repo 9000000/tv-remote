@@ -1,7 +1,7 @@
 // Pure functions of the census Worker (no Worker APIs, so node can test them).
 export const MAX_BODY = 4096;
 const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const APPS = ["setup", "phone", "pc"];
+const APPS = ["setup", "phone", "pc", "home", "channels", "games"];   // home: TV Home pings (a TV with only TV Home counts); channels / games: errors only
 const OKS = ["adb", "video", "optimize"];
 
 // A string cleaned for storage: no control characters, trimmed, at most 64 characters. Not a string -> "".

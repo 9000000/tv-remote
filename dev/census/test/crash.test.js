@@ -18,7 +18,7 @@ test("validateCrash: the computer app sends os / arch / java and no brand", () =
   assert.equal(r.os, "Mac OS X 15"); assert.equal(r.arch, "aarch64"); assert.equal(r.java, "21.0.4"); assert.equal(r.brand, "");
 });
 test("validateCrash: rejects malformed, a bad place, an oversize body", () => {
-  for (const t of ["", "{", "[]", body({ id: "x" }), body({ app: "home" }), body({ where: "js" }), body({ kind: "" }), body({ stack: "x".repeat(MAX_CRASH) })])
+  for (const t of ["", "{", "[]", body({ id: "x" }), body({ app: "karaoke" }), body({ where: "js" }), body({ kind: "" }), body({ stack: "x".repeat(MAX_CRASH) })])
     assert.equal(validateCrash(t), null, t.slice(0, 40));
 });
 test("validateCrash: emulators are rejected like a ping", () => {
@@ -59,3 +59,7 @@ test("sameSecret", async () => {
   assert.equal(await sameSecret("", "abc"), false);
   assert.equal(await sameSecret("abc", undefined), false);
 });
+
+test("validateCrash: TV Home, Channels and Games report too", () => {
+  for (const app of ["home", "channels", "games"]) assert.equal(validateCrash(body({ app })).app, app);
+})

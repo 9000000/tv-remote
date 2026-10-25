@@ -21,6 +21,8 @@
         <package android:name="com.tailscale.ipn" />                  <!-- its updates, to switch it back on (TailscaleWatch) -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /></intent>   <!-- home screens left out of TV Home's usage card (HomeInfo) -->
         <package android:name="dev.tvremote.home" />                  <!-- TV Home's key, checked before it is told the usage -->
+        <package android:name="dev.tvremote.channels" />              <!-- Channels and Games: their key, checked before they are told the stats switch (HomeInfo "census") -->
+        <package android:name="dev.tvremote.games" />
     </queries>
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

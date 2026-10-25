@@ -12,5 +12,6 @@ class GamesApp : Application() {
             GuardWords(c.getString(R.string.err_title), c.getString(R.string.err_last_time), c.getString(R.string.err_copy), c.getString(R.string.err_copied),
                 c.getString(R.string.err_share), c.getString(R.string.err_close)) { n -> c.getString(R.string.err_repeat, n) }
         })
+        dev.tvremote.report.OwnReport.start(this, "games")            // anonymous error reports (TV Setup's switch, else on)
     }
 }

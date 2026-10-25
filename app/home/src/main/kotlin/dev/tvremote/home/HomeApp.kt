@@ -14,6 +14,7 @@ class HomeApp : Application() {
             GuardWords(c.getString(R.string.err_title), c.getString(R.string.err_last_time), c.getString(R.string.err_copy), c.getString(R.string.err_copied),
                 c.getString(R.string.err_share), c.getString(R.string.err_close)) { n -> c.getString(R.string.err_repeat, n) }
         })
+        dev.tvremote.report.OwnReport.start(this, "home", ping = true)        // anonymous error reports + the daily census ping (TV Setup's switch, else Customize's)
         CrashLoop.watch(this)
         dev.tvremote.home.widgets.Sources.start(this)                         // the market sources and news feeds: kept or packed list now, the site's when newer
         Themes.start(this)                                                  // the ready-made themes: kept or packed list now, the site's when it is newer

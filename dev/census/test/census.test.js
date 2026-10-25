@@ -69,3 +69,8 @@ test("validate: Android emulators are not counted", () => {
   assert.equal(validate(ping({ tv: { brand: "Android", model: "Android SDK built for arm64" } })), null);
   assert.equal(validate(ping({ tv: { brand: "google", model: "Chromecast", device: "boreal", hw: "boreal" } })).model, "Chromecast");
 });
+
+test("validate: TV Home, TV Channels and TV Games are known apps; an unknown one is not", () => {
+  for (const app of ["home", "channels", "games"]) assert.equal(validate(ping({ app })).app, app);
+  assert.equal(validate(ping({ app: "karaoke" })), null);
+})

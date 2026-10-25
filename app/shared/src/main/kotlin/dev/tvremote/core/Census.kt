@@ -2,8 +2,6 @@ package dev.tvremote.core
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
 
 /**
@@ -16,7 +14,7 @@ import java.util.UUID
  */
 object Census {
     /** The server. ONE place to change; a host containing REPLACE (a placeholder) is never sent to. */
-    const val URL = "https://tvr-census.99-hoangtran.workers.dev"
+    const val URL = Report.URL
 
     /** Where the app keeps the switch, the id and what it sent (prefs on Android, tvs.json on the computer). */
     interface Store {
@@ -33,7 +31,7 @@ object Census {
     /** false: work inline (tests). */
     @Volatile var background = true
     /** The send: true when the server took it. Replaced in tests. */
-    @Volatile var post: (String, String) -> Boolean = ::httpPost
+    @Volatile var post: (String, String) -> Boolean = Report::httpPost
 
     fun init(app: String, version: String, store: Store) { this.app = app; this.version = version; this.store = store }
 
@@ -83,7 +81,7 @@ object Census {
     private val KEYS = setOf("ro.product.brand", "ro.product.model", "ro.product.device", "ro.product.board", "ro.hardware",
         "ro.soc.model", "ro.board.platform", "ro.build.version.release", "ro.build.version.sdk")
 
-    private fun clean(s: String?): String = (s ?: "").filter { !it.isISOControl() }.trim().take(64)
+    private fun clean(s: String?) = Report.clean(s)
 
     /** Three results; null = not known (yet). */
     class Ok(val adb: Boolean? = null, val video: Boolean? = null, val optimize: Boolean? = null) {
@@ -92,29 +90,12 @@ object Census {
     }
 
     /** The whole body of a ping: these fields and no others. */
-    fun payload(id: String, app: String, v: String, p: Props, ok: Ok): JSONObject {
-        val m = p.map
-        val tv = JSONObject()
-            .put("brand", clean(m["ro.product.brand"])).put("model", clean(m["ro.product.model"]))
-            .put("device", clean(m["ro.product.device"])).put("board", clean(m["ro.product.board"]))
-            .put("hw", clean(m["ro.hardware"]))
-            .put("soc", clean(m["ro.soc.model"]).ifEmpty { clean(m["ro.board.platform"]) })
-            .put("android", clean(m["ro.build.version.release"])).put("sdk", m["ro.build.version.sdk"]?.trim()?.toIntOrNull() ?: 0)
-            .put("leanback", p.leanback)
-        return JSONObject().put("id", id).put("app", app).put("v", clean(v)).put("tv", tv)
-            .put("ok", JSONObject().put("adb", ok.adb ?: JSONObject.NULL).put("video", ok.video ?: JSONObject.NULL).put("optimize", ok.optimize ?: JSONObject.NULL))
-    }
+    fun payload(id: String, app: String, v: String, p: Props, ok: Ok): JSONObject = Report.pingBody(id, app, v, p.map, p.leanback, ok.adb, ok.video, ok.optimize)
 
     // ------------------------------------------------------------------ the once-a-day gate
 
     /** [prev] is what was kept after the last send: `day|version|mask`. Due when none, the day or version changed, or a result became true. */
-    fun due(prev: String?, day: Long, ver: String, mask: Int): Boolean {
-        if (prev == null) return true
-        val p = prev.split('|')
-        if (p.size != 3) return true
-        val was = p[2].toIntOrNull() ?: return true
-        return p[0] != day.toString() || p[1] != ver || (mask and was.inv()) != 0
-    }
+    fun due(prev: String?, day: Long, ver: String, mask: Int) = Report.due(prev, day, ver, mask)
 
     // ------------------------------------------------------------------ the events the apps report
 
@@ -183,19 +164,6 @@ object Census {
         Thread({ try { f() } catch (e: Throwable) { } }, "census").apply { isDaemon = true }.start()
     }
 
-    private fun httpPost(to: String, body: String): Boolean = try {
-        val c = URL(to).openConnection() as HttpURLConnection
-        try {
-            c.connectTimeout = 4000
-            c.readTimeout = 4000
-            c.requestMethod = "POST"
-            c.doOutput = true
-            c.setRequestProperty("Content-Type", "application/json")
-            c.outputStream.use { it.write(body.toByteArray()) }
-            c.responseCode in 200..299
-        } finally { c.disconnect() }
-    } catch (e: Exception) { false }
-
     // ------------------------------------------------------------------ crash reports (the error box / dialog, with the same switch)
 
     /** The device facts a crash carries, like a ping's `tv`: the computer says os / arch / java, the Android apps (CensusAndroid) their Build. */
@@ -203,13 +171,9 @@ object Census {
         JSONObject().put("os", System.getProperty("os.name", "") + " " + System.getProperty("os.version", "")).put("arch", System.getProperty("os.arch", ""))
             .put("java", System.getProperty("java.version", ""))
     }
-    private val crashSent = HashSet<String>()                         // errors already reported in this run
-    @Volatile private var crashRetryAt = 0L                           // after a failed send, a minute of quiet
+    private val once = Report.Once { clock() }                        // errors already reported in this run; after a failed send, a minute of quiet
 
-    private val LINES = Regex("(:\\d+){1,2}(?=\\)|$)")
-    /** "The same error": the kind and the first five frames without their line numbers. */
-    fun crashKey(kind: String, stack: String): String =
-        kind + stack.lineSequence().map { it.trim() }.filter { it.startsWith("at ") || it.contains('@') }.take(5).joinToString("\n", "\n") { it.replace(LINES, "") }
+    fun crashKey(kind: String, stack: String) = Report.crashKey(kind, stack)
 
     /**
      * Report one error, scrubbed (Scrub): [where] is "kotlin" or "page". Sent once per error per run, only when the stats switch is on,
@@ -217,16 +181,8 @@ object Census {
      */
     fun crashNow(where: String, kind: String, msg: String, stack: String): Boolean {
         if (!live()) return false
-        val k = Scrub.text(kind).take(120).ifBlank { "Error" }
-        val m = Scrub.text(msg).replace(Regex("\\s+"), " ").trim().take(300)
-        val st = Scrub.text(stack).trim().take(8192)
-        val key = crashKey(k, st)
-        synchronized(crashSent) { if (key in crashSent) return true }
-        if (clock() < crashRetryAt) return false
-        val body = JSONObject().put("id", id()).put("app", app).put("v", clean(version)).put("where", where)
-            .put("dev", try { device() } catch (e: Throwable) { JSONObject() }).put("kind", k).put("msg", m).put("stack", st).toString()
-        return if (post(url.trimEnd('/') + "/v1/crash", body)) { synchronized(crashSent) { crashSent.add(key) }; true }
-        else { crashRetryAt = clock() + 60_000; false }
+        val b = Report.crashBody(id(), app, version, where, try { device() } catch (e: Throwable) { JSONObject() }, kind, msg, stack)
+        return once.send(url.trimEnd('/') + "/v1/crash", crashKey(b.getString("kind"), b.getString("stack")), post) { b }
     }
 
     /** [crashNow] off the caller's thread; [done] gets the answer (on that thread). */
@@ -236,5 +192,5 @@ object Census {
     }
 
     /** For tests: forget what is kept in memory. */
-    fun reset() { synchronized(tvs) { tvs.clear() }; synchronized(sendLock) { retryAt.clear() }; synchronized(crashSent) { crashSent.clear() }; crashRetryAt = 0L }
+    fun reset() { synchronized(tvs) { tvs.clear() }; synchronized(sendLock) { retryAt.clear() }; once.reset() }
 }

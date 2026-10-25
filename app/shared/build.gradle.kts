@@ -12,6 +12,7 @@ android {
     sourceSets["main"].assets.srcDirs("assets", "web")
     sourceSets["main"].java.srcDirs("src/home/kotlin")                 // HomeConfig: TV Home's settings, compiled into app/home too
     sourceSets["main"].java.srcDirs("src/guard/kotlin", "src/guard/android")   // Guard: the error guard, compiled into app/home, channels and games too
+    sourceSets["main"].java.srcDirs("src/report/kotlin")               // Report + Scrub: the sending core, compiled into app/home, channels and games too
     sourceSets["main"].java.srcDirs("src/sign/kotlin")                 // Ed25519: compiled into app/channels too (its signed providers.json)
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }

@@ -47,25 +47,15 @@ class WireLog(private val max: Int = 500) {
     }
 
     companion object {
-        private val SECRET = Regex("(\"(?:client-key|token)\"\\s*:\\s*\")[^\"]*(\")|([?&]token=)[^&\\s\"]*|(?<=/bot)\\d+:[A-Za-z0-9_-]+")
         /** What every app sends behind "Gửi nhật ký". */
         val all = WireLog()
         /** Which app and version, set by each app when it starts. */
         @Volatile var app = "TV Remote"
 
-        private val TYPED = Regex("(\"(?:text|Cmd)\"\\s*:\\s*\")([^\"]*)(\")")
-        private val KEEP = setOf("Click", "Press", "Release")
-        private val MAC = Regex("\\b[0-9A-Fa-f]{2}(?:[:-][0-9A-Fa-f]{2}){5}\\b")
-        // A Wi-Fi code's text and the card that makes it carry the network's password: never into a log
-        private val WIFI = Regex("WIFI:.*?(?<!\\\\);;|(\"pass\"\\s*:\\s*\")(?:[^\"\\\\]|\\\\.)*(\")")
         private const val LONG = 600
 
         /** Keys, tokens, typed text (its length only), MAC addresses and Wi-Fi passwords blanked; line breaks and length kept (Scrub starts here). */
-        fun blank(text: String): String =
-            SECRET.replace(text) { m -> if (m.groupValues[3].isNotEmpty()) m.groupValues[3] + "…" else m.groupValues[1] + "…" + m.groupValues[2] }
-                .let { TYPED.replace(it) { m -> if (m.groupValues[2] in KEEP) m.value else m.groupValues[1] + "…(" + m.groupValues[2].length + ")" + m.groupValues[3] } }
-                .let { MAC.replace(it, "xx:xx:xx:xx:xx:xx") }
-                .let { WIFI.replace(it) { m -> if (m.groupValues[1].isNotEmpty()) m.groupValues[1] + "…" + m.groupValues[2] else "WIFI:…" } }
+        fun blank(text: String): String = Scrub.blank(text)
 
         fun clean(text: String): String {
             val t = blank(text).replace("\n", "\\n")

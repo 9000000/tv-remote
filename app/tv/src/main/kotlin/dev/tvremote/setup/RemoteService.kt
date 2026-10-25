@@ -160,6 +160,12 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         /** The ADB session itself (null without the service or a link): HomePower runs its fixed actions on it. */
         fun adb(): dev.tvremote.core.adb.Adb? = try { running?.link?.get() } catch (e: Exception) { null }
 
+        /** The anonymous-stats switch and install id as the census keeps them (Census.enabled / Census.id): what TV Home, Channels and Games follow (HomeInfo "census"). */
+        fun censusState(c: Context): JSONObject {
+            val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            return JSONObject().put("on", p.getString("census.on", null) != "0").put("id", p.getString("census.id", null)?.takeIf { it.length == 36 } ?: "")
+        }
+
         fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
 
         /** The service runs for the web remote, and also, with the web remote off, while timers or limits need watching. */

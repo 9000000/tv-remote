@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />               <!-- a reminder over other apps; allowed through ADB (appops) -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-    <queries><package android:name="dev.tvremote.home" /></queries>   <!-- TV Home's key, checked before it is told the tile (HomeInfo) -->
+    <queries><package android:name="dev.tvremote.home" /><package android:name="dev.tvremote.setup" /></queries>   <!-- TV Home's key, checked before it is told the tile (HomeInfo); TV Setup holds the stats switch (OwnReport) -->
     <application android:name=".ChannelsApp" android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false"
         android:theme="@style/Channels" android:supportsRtl="false" android:usesCleartextTraffic="true">
         <!-- the list; usesCleartextTraffic: many public streams are plain http -->
