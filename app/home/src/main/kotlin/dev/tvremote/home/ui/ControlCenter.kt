@@ -111,7 +111,7 @@ object ControlCenter {
         var press: () -> Unit = {}
 
         init {
-            orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false
+            orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; clipChildren = false; clipToPadding = false   // clipToPadding clips to the bounds even with no padding: the disc's focus pop came out cut flat on top
             disc.apply {
                 isFocusable = true; isClickable = true; setImageResource(icon); imageTintList = ColorStateList.valueOf(Color.WHITE)
                 setPadding(dp(13), dp(13), dp(13), dp(13)); contentDescription = name
@@ -291,7 +291,9 @@ object ControlCenter {
             col.addView(LinearLayout(a).apply {
                 gravity = Gravity.CENTER_VERTICAL
                 addView(Font.on(TvUi.text(a, a.getString(R.string.cc_title), 20f, Color.WHITE, bold = true)).also(bold).apply { maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
-                addView(Font.on(TvUi.text(a, a.getString(R.string.cc_android, Build.VERSION.RELEASE), 14f, TvGlass.HINT)).apply { maxLines = 1 })
+                // the TV's own name (Settings > Device name, e.g. "FPT Play 650"), else its model: "Android TV 14" told nobody which TV
+                val name = (try { Settings.Global.getString(a.contentResolver, "device_name") } catch (e: Exception) { null })?.takeIf { it.isNotBlank() } ?: Build.MODEL
+                addView(Font.on(TvUi.text(a, a.getString(R.string.cc_android, name, Build.VERSION.RELEASE), 14f, TvGlass.HINT)).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; maxWidth = dp(200) })
             }, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(16), dp(12), dp(16), dp(12)) })
 
             net = tile(R.drawable.ic_wifi, R.string.cc_net) { go(listOf(Settings.ACTION_WIFI_SETTINGS, Settings.ACTION_SETTINGS)) }
@@ -340,7 +342,7 @@ object ControlCenter {
                 override fun onMeasure(w: Int, h: Int) = super.onMeasure(w, MeasureSpec.makeMeasureSpec(maxH.coerceAtLeast(dp(140)), MeasureSpec.AT_MOST))
             }.apply { isVerticalScrollBarEnabled = false; clipChildren = false; clipToPadding = false; addView(grid) }, LinearLayout.LayoutParams(-1, -2))
 
-            val actions = LinearLayout(a).apply { clipChildren = false; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(12), dp(4), dp(12), 0) }
+            val actions = LinearLayout(a).apply { clipChildren = false; clipToPadding = false; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(12), dp(4), dp(12), 0) }
             for (r in acts) actions.addView(r, LinearLayout.LayoutParams(dp(120), -2))
             col.addView(actions, LinearLayout.LayoutParams(-1, -2))
             col.addView(footer, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(16), dp(12), dp(16), dp(8)) })

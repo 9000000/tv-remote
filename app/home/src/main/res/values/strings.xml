@@ -528,7 +528,7 @@
     <string name="wall_loading">Loading background…</string>
     <!-- Control Center (ControlCenter.kt) -->
     <string name="cc_title">Control Center</string>
-    <string name="cc_android">Android TV %1$s</string>
+    <string name="cc_android">%1$s · Android %2$s</string>
     <string name="cc_open_settings">Open settings</string>
     <string name="cc_customize">Customize</string>
     <string name="cc_customize_sub">Look, apps, widgets</string>

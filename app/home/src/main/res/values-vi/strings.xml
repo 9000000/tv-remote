@@ -526,7 +526,7 @@
     <string name="wall_loading">Đang tải hình nền…</string>
     <!-- Control Center (ControlCenter.kt) -->
     <string name="cc_title">Trung tâm điều khiển</string>
-    <string name="cc_android">Android TV %1$s</string>
+    <string name="cc_android">%1$s · Android %2$s</string>
     <string name="cc_open_settings">Mở cài đặt</string>
     <string name="cc_customize">Tùy chỉnh</string>
     <string name="cc_customize_sub">Giao diện, app, widget</string>
