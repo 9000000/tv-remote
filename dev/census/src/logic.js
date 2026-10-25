@@ -24,6 +24,7 @@ export function validate(text) {
   if (!t || typeof t !== "object" || Array.isArray(t)) return null;
   const brand = str(t.brand), model = str(t.model);
   if (!brand || !model) return null;
+  if (emulator(t)) return null;                                       // the project's own test AVDs showed on the site as a TV model
   const sdk = Number.isInteger(t.sdk) && t.sdk > 0 && t.sdk < 100 ? t.sdk : null;
   const ok = b.ok && typeof b.ok === "object" && !Array.isArray(b.ok) ? b.ok : {};
   const row = {
@@ -54,6 +55,13 @@ export function kindOf(brand, model, device) {
 }
 
 const verKey = (a) => parseFloat(a) || 0;
+
+// An Android emulator (Google's images: ranchu / goldfish hardware, sdk_* or "Android SDK built for" models, emu* / generic* devices)
+export function emulator(t) {
+  const s = (k) => (typeof t[k] === "string" ? t[k].toLowerCase() : "");
+  return /^(ranchu|goldfish)/.test(s("hw")) || /^goldfish/.test(s("board")) || /^(sdk_|android sdk built for)/.test(s("model"))
+    || /^(emu64|emulator|generic)/.test(s("device"));
+}
 
 // rows: SELECT brand, model, device, android, COUNT(*) n GROUP BY brand, model, device, android. Only what the site shows: the ok
 // flags and last day stay in D1 for a later dashboard (they were 52% of the reply, unread)

@@ -63,3 +63,9 @@ test("series: apps side by side, running total from new, active missing before t
   assert.deepEqual(s.days.map((d) => [d.day, d.total]), [["2026-10-01", 3], ["2026-10-02", 4]]);
   assert.deepEqual(s.days[0].active, {}); assert.deepEqual(s.days[1].active, { setup: 3, pc: 1 });
 });
+
+test("validate: Android emulators are not counted", () => {
+  assert.equal(validate(ping({ tv: { brand: "google", model: "sdk_google_atv64_amati_arm64", device: "emu64a", hw: "ranchu", board: "goldfish_arm64" } })), null);
+  assert.equal(validate(ping({ tv: { brand: "Android", model: "Android SDK built for arm64" } })), null);
+  assert.equal(validate(ping({ tv: { brand: "google", model: "Chromecast", device: "boreal", hw: "boreal" } })).model, "Chromecast");
+});
