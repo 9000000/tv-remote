@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Tối ưu TV: nút **Lưu script khôi phục** tải file `.sh` chạy bằng adb trên máy tính, làm lại các bước Hoàn tác (bật lại app, trả màn hình chính cũ) khi app hỏng hoặc đã xoá; chỉ hiện khi TV đã tối ưu.
+- Đổi màn hình chính: TV bo mạch MOKA (Kalley, PRISM+) hoặc không có màn hình chờ khi khởi động được báo đúng lý do, không còn nói “TV mở lại màn hình chính của nó”.
 - TV Setup cài nhầm trên điện thoại: hiện một lần hộp “Đây là điện thoại” với nút tải / mở app điện thoại hoặc “Vẫn dùng ở đây” (nhớ, không hỏi lại).
 - Xiaomi MiTV-MOOQ0: nút Nguồn vào của điều khiển (gửi KEYCODE_MEDIA_RECORD) mở danh sách nguồn vào qua TV Setup; chỉ trên model này, TV khác không đổi (cleanyourtv #1368).
 - Tự kiểm tra: Fire TV chưa hoàn tất cài đặt ban đầu (`user_setup_complete` = 0, nút Home/Alexa chết) được báo ở đầu trang, bấm **Sửa** mới chạy `settings put secure user_setup_complete 1`.
@@ -33,6 +35,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Chủ đề: ảnh xem trước chỉ vẽ khi cuộn tới (TV Home và trang web), ít tốn bộ nhớ hơn khi có nhiều chủ đề cộng đồng.
 
 **English**
+- Optimize TV: **Save restore script** downloads a `.sh` that does Undo's steps with only adb on a computer (apps back on, the old home screen chosen again), for when our apps are broken or gone; shown only once the TV is optimized.
+- Changing the home screen: MOKA-board TVs (Kalley, PRISM+) and TVs with no stand-in screen at startup now get the real reason, not "the TV opened its own home screen".
 - TV Setup installed on a phone by mistake: a one-time “This is a phone” box with a button to get / open the phone app, or “Use it here anyway” (remembered, never asked again).
 - Xiaomi MiTV-MOOQ0: the remote's Input button (sends KEYCODE_MEDIA_RECORD) opens the inputs list through TV Setup; this model only, other TVs unchanged (cleanyourtv #1368).
 - Self-check: a Fire TV whose first setup never finished (`user_setup_complete` = 0, Home/Alexa buttons dead) is reported at the top of the page; `settings put secure user_setup_complete 1` runs only after you press **Fix**.

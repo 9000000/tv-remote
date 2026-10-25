@@ -105,6 +105,17 @@ class LauncherTest {
         assertEquals("timeout", s.state()!!.why)
     }
 
+    @Test fun aMokaBoardIsToldWhyAndNothingIsTouched() {            // Kalley / PRISM+: the wizard returns at every boot, a loop at the logo
+        for (maker in listOf("MOKA\nKalley", "Google\nPRISM+")) {
+            val tv = Tv(); tv.maker = maker; val s = LauncherSwap({ tv.sh(it) })
+            assertFalse(s.take("com.new.home", 30))
+            assertEquals("board", s.refused)
+            assertEquals("launcher.why_board", LauncherSwap.whyId(s.refused))
+            assertTrue(tv.said.none { it.startsWith("pm disable") })
+            assertEquals(null, s.state())                               // no record: the watchdog has nothing to guard
+        }
+    }
+
     @Test fun aHomeThatDoesNotLandIsPutBackAtOnce() {
         val tv = Tv(pick = false); val s = LauncherSwap({ tv.sh(it) })
         assertFalse(s.take("com.new.home", 30))

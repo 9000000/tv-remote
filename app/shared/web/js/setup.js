@@ -13,7 +13,7 @@ async function runSetup(mode, choice) {
   if (j && j.status === 'running') j = null;
   if (j) { log.textContent = (j.log || '') + (j.status === 'done' ? '\n' + T('setup.done_line') : '\n❌ ' + T('setup.error_msg', { msg: friendly(j.msg) })); toast(j.status === 'done' ? T('setup.finished') : T('setup.error_msg', { msg: friendly(j.msg) })); appsStale(); applyAdb(); }
   else log.textContent += '\n❌ ' + T('setup.lost_connection');
-  btns.forEach((b) => { b.disabled = false; });
+  btns.forEach((b) => { b.disabled = false; }); restoreState();
 }
 // "Optimize TV" asks first what to do: what this TV has, suggested apps ticked, any other app the person wants off
 function optRow(name, sub, checked, data) {
@@ -48,6 +48,15 @@ $('#optclose').addEventListener('click', () => $('#optdlg').close());
 $('#optcancel').addEventListener('click', () => $('#optdlg').close());
 $('#setupapply').addEventListener('click', () => chooseOptimize());
 $('#setupundo').addEventListener('click', () => runSetup('undo'));
+// the script that does Undo with only adb: offered while there is something to restore; the server names the file and says "download"
+async function restoreState() {
+  if (ADB.state !== 'ready') return put('#setuprestore', 'hidden', true);
+  const s = await api('/api/setup/restore', null, true); put('#setuprestore', 'hidden', !(s && s.has));
+}
+onTvChange(() => put('#setuprestore', 'hidden', true));
+$('#setuprestore').addEventListener('click', () => {
+  const a = el('a', { href: 'api/setup/restore.sh', download: '' }); document.body.append(a); a.click(); a.remove();
+});
 
 // ---------- settings: theme (js/theme.js) and language (i18n.js: one button per file in LANGS, each in its own words) ----------
 $('#langpick').append(...Object.entries(LANGS).map(([k, name]) => { const b = el('button', { textContent: name, lang: k }); b.dataset.v = k; return b; }));

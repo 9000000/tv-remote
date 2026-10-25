@@ -91,6 +91,29 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         private const val TMP = "/data/local/tmp/tvr-setup.apk"
         const val ANIM = "window_animation_scale transition_animation_scale animator_duration_scale"
 
+        /** A package, or one screen of it ("pkg/.Home"): the only shapes that may land in a shell script. */
+        private val SAFE = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+(/[\\w.$]+)?")
+
+        /**
+         * The same steps as [undo], for a computer with nothing but adb (our apps broken or gone): each app back on, the home screen
+         * before chosen again, the records and animations as Undo leaves them. A name that is not a package is dropped, not quoted.
+         */
+        fun restoreScript(model: String, date: String, host: String, apps: List<String>, home: String): String {
+            val pkgs = apps.filter { SAFE.matches(it) }.distinct()
+            val b = StringBuilder("#!/bin/sh\n")
+            b.append("# Restore for the TV ").append(model.replace(Regex("[^\\w .-]"), "").trim().ifEmpty { "?" }).append(", saved ").append(date.replace(Regex("[^\\w :+-]"), "")).append(" by TV Remote (Optimize TV, Undo).\n")
+            b.append("# Needs only adb on this computer. With the TV on the network:  adb connect ").append(host.replace(Regex("[^\\w.:-]"), "")).append(":5555\n")
+            b.append("#   then  sh restore.sh      (several devices: ADB_SERIAL=<ip>:5555 sh restore.sh)\n")
+            b.append("A=\"adb\"; [ -n \"\$ADB_SERIAL\" ] && A=\"adb -s \$ADB_SERIAL\"\n")
+            for (p in pkgs) b.append("\$A shell 'pm enable --user 0 ").append(p).append("'\n")
+            if (home.isNotEmpty() && SAFE.matches(home) && '/' in home)
+                b.append("\$A shell 'cmd package set-home-activity ").append(home).append("'\n")
+            b.append("\$A shell 'rm -f ").append(OFF_LIST).append(' ').append(LauncherSwap.REC).append("'\n")
+            b.append("\$A shell 'for k in ").append(ANIM).append("; do settings put global \$k 1.0; done'\n")
+            b.append("echo \"Done: ").append(pkgs.size).append(" apps on again.\"\n")
+            return b.toString()
+        }
+
         private fun last(out: String): String = out.split("\n").dropLastWhile { it.isEmpty() }.lastOrNull() ?: ""
     }
 
@@ -224,6 +247,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             log.line(t("optimize.done_press_home_see"))
         } else {
             log.line(t("optimize.home_kept", "home" to homeNow()))
+            if (refused.isNotEmpty()) log.line(t(LauncherSwap.whyId(refused)))   // the reason, when it is one the person can know
             log.line(t("optimize.done"))
         }
     }
@@ -260,7 +284,8 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
      * not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home button that lands on a setup wizard
      * or a picker is worse than the old home screen. Recorded on the TV, so the watchdog of TV Setup guards it too.
      */
-    private fun takeHome(): Boolean = LauncherSwap(sh).take(HOME_PKG)
+    private fun takeHome(): Boolean { val s = LauncherSwap(sh); return s.take(HOME_PKG).also { refused = s.refused } }
+    private var refused = ""
 
     private fun keyboardNow(): String = sh("settings get secure default_input_method").trim()
 
@@ -276,6 +301,13 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         val pick = ok.firstOrNull { it.startsWith("com.google.android.inputmethod.latin/") } ?: ok[0]
         sh("ime set $pick")
         log.line(t("optimize.keyboard_set", "ime" to pick.substringBefore('/')))
+    }
+
+    /** [restoreScript] for this TV as it is now: what [undo] would turn on, and the home screen the swap replaced. */
+    @Throws(IOException::class)
+    fun restore(model: String, date: String, host: String): String {
+        val home = LauncherSwap(sh).state()?.let { it.prev.takeIf { p -> p.substringBefore('/') != it.pkg } } ?: ""
+        return restoreScript(model, date, host, undoable().filter { has(it.substringBefore('/')) }, home)
     }
 
     @Throws(Exception::class)

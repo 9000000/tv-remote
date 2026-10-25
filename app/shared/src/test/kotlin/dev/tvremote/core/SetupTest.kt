@@ -144,6 +144,37 @@ class SetupTest {
         assertFalse(tv.setup().optimized())
     }
 
+    @Test fun theRestoreScriptIsUndoForAShell() {
+        val out = Setup.restoreScript("BRAVIA 4K", "2026-10-25 09:00:00", "192.168.1.5",
+            listOf("com.google.android.tvlauncher", "com.google.android.tungsten.setupwraith/.Home", "x; reboot", "a.b'c", "com.mitv.tvhome"),
+            "com.google.android.tvlauncher/.MainActivity")
+        val expected = listOf(
+            "#!/bin/sh",
+            "# Restore for the TV BRAVIA 4K, saved 2026-10-25 09:00:00 by TV Remote (Optimize TV, Undo).",
+            "# Needs only adb on this computer. With the TV on the network:  adb connect 192.168.1.5:5555",
+            "#   then  sh restore.sh      (several devices: ADB_SERIAL=<ip>:5555 sh restore.sh)",
+            "A=\"adb\"; [ -n \"\$ADB_SERIAL\" ] && A=\"adb -s \$ADB_SERIAL\"",
+            "\$A shell 'pm enable --user 0 com.google.android.tvlauncher'",
+            "\$A shell 'pm enable --user 0 com.google.android.tungsten.setupwraith/.Home'",
+            "\$A shell 'pm enable --user 0 com.mitv.tvhome'",
+            "\$A shell 'cmd package set-home-activity com.google.android.tvlauncher/.MainActivity'",
+            "\$A shell 'rm -f ${Setup.OFF_LIST} ${dev.tvremote.core.ontv.LauncherSwap.REC}'",
+            "\$A shell 'for k in ${Setup.ANIM}; do settings put global \$k 1.0; done'",
+            "echo \"Done: 3 apps on again.\"", "")
+        assertEquals(expected.joinToString("\n"), out)
+        assertFalse("reboot" in out)                                   // a name that is not a package never reaches the script
+    }
+
+    @Test fun theRestoreScriptOfATvNamesWhatUndoWouldTurnOn() {
+        val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.HOME_PKG, "com.android.tv.settings")
+        tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
+        val script = tv.setup().restore("Model X", "now", "10.0.2.2")
+        assertTrue("pm enable --user 0 ${Setup.LAUNCHERX}'" in script)
+        assertTrue("setupwraith/.Home'" in script)
+        tv.setup().undo()
+        assertFalse(tv.setup().optimized())
+    }
+
     @Test fun homeThatWillNotMoveGetsItsHomeScreensBack() {
         val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.HOME_PKG, "com.brand.home")
         tv.homes["com.brand.home"] = 5                                 // a brand's own home screen, not on our lists

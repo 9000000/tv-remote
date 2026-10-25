@@ -67,8 +67,8 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
         progress?.at("swap", 85)
         if (cancelled()) throw IOException("stopped")
         if (!swap.take(e.pkg, confirmSec, before)) {                  // not the home screen: already put back
-            val why = swap.state()?.why ?: ""
-            throw IOException(if (why in setOf("wifi", "wifi_unknown", "cast")) "launcher:rolledback:$why" else "launcher:home")   // what the person can act on
+            val why = swap.refused.ifEmpty { swap.state()?.why ?: "" }
+            throw IOException(if (why in setOf("wifi", "wifi_unknown", "cast", "board", "boot")) "launcher:rolledback:$why" else "launcher:home")   // what the person can act on
         }
         return swap.state()?.state ?: "kept"
     }

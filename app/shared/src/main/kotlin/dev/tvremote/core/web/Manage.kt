@@ -249,6 +249,17 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "launcher/play" -> return HttpServer.Response.json(launcherApi.play(r.json().optString("id")))
                 "launcher/answer" -> return HttpServer.Response.json(launcherApi.answer(r.json().optBoolean("keep")))
                 "launcher/restore" -> return HttpServer.Response.json(launcherApi.restore())
+                "setup/restore" -> if (!post) return HttpServer.Response.json(JSONObject().put("has", Setup(link.get(), dir, r.lang) { }.optimized()))   // whether the card offers the script
+                "setup/restore.sh" -> if (!post) {                    // a plain shell script that does Undo with only adb: a download, like the scenes backup
+                    val s = Setup(link.get(), dir, r.lang) { }
+                    if (!s.optimized()) throw IOException("setup:nothing_to_restore")
+                    val model = sh("getprop ro.product.model").trim()
+                    val script = s.restore(model, java.time.LocalDateTime.now().withNano(0).toString().replace('T', ' '), link.host)
+                    val out = HttpServer.Response.of("text/x-shellscript; charset=utf-8", script.toByteArray())
+                    val name = "tv-restore-" + model.replace(Regex("[^A-Za-z0-9_.-]+"), "-").trim('-').ifEmpty { "tv" } + ".sh"
+                    out.headers["Content-Disposition"] = "attachment; filename=\"$name\"; filename*=UTF-8''$name"
+                    return out
+                }
                 "setup/plan" -> return HttpServer.Response.json(Setup(link.get(), dir, r.lang) { }.plan { labels?.label(it) })
                 "adb/prompt" -> {                                     // the TV's "Allow USB debugging?" question, if it is up
                     val p = if (link.state() == "ready") AdbPrompt.read(link.get()) else null
@@ -696,8 +707,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     "[ -n \"\$c\" ] && cmd package set-home-activity \$c >/dev/null 2>&1")
         } else if (pkg !in Setup.LAUNCHER && (swapped || stockOn())) {
             if (!swap.take(pkg)) {
-                val why = swap.state()?.why ?: ""                     // the Wi-Fi or casting the wizard holds: what to do about it, not only "refused"
-                val say = if (why in setOf("wifi", "wifi_unknown", "cast")) Words.get(lang, LauncherSwap.whyId(why)) else Words.get(lang, "tvset.home_refused")
+                val why = swap.refused.ifEmpty { swap.state()?.why ?: "" }   // the Wi-Fi or casting the wizard holds: what to do about it, not only "refused"
+                val say = if (why in setOf("wifi", "wifi_unknown", "cast", "board", "boot")) Words.get(lang, LauncherSwap.whyId(why)) else Words.get(lang, "tvset.home_refused")
                 return HttpServer.Response.json(JSONObject().put("text", "home $say"))
             }
         } else return text(TvShell.tvset("home", value), 60000)

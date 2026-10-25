@@ -46,7 +46,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
 
         /** The words (their id) for why a swap was put back ([Rec.why]): one table for TV Setup, the page and the computer's settings. */
         fun whyId(why: String): String =
-            if (why in setOf("crash", "home", "timeout", "interrupted", "wifi", "wifi_unknown", "cast")) "launcher.why_$why" else "launcher.why_user"
+            if (why in setOf("crash", "home", "timeout", "interrupted", "wifi", "wifi_unknown", "cast", "board", "boot")) "launcher.why_$why" else "launcher.why_user"
 
         /** The saved Wi-Fi networks and who saved each (`cname=<name>:<uid>`), one shell call: the same lines on Android 9 and 14. */
         const val WIFI_OWNERS = "dumpsys wifi 2>/dev/null | grep -oE 'cname=[^ ]*|ID: [0-9]+ SSID|WifiConfigManager' | sort -u"
@@ -93,6 +93,10 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val active get() = state == "swapping" || state == "pending" || state == "kept"
     }
 
+    /** Why the last [take] never started ("board": the maker's wizard returns every boot; "boot": no launcher can start before the unlock). No record is saved then. */
+    var refused = ""
+        private set
+
     fun tvNow(): Long = sh("date +%s").trim().toLongOrNull() ?: (System.currentTimeMillis() / 1000)
 
     fun state(): Rec? {
@@ -128,15 +132,16 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     @Throws(IOException::class)
     fun take(pkg: String, confirmSec: Int = 0, before: String = ""): Boolean {
         if (!PKG.matches(pkg)) throw IOException("bad package name")
+        refused = ""
         val all = homes()
         val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
         if (sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP }) {
-            log("this TV brings its setup wizard back at every boot"); return false
+            log("this TV brings its setup wizard back at every boot"); refused = "board"; return false
         }
         // Android starts Home before the first unlock: with no FallbackHome to stand in, a launcher that cannot start then left a Vision
         // (CVTE, Android 13) on a black screen at every boot (cleanyourtv). TV Home can
         if (all.none { "FallbackHome" in it } && sh("dumpsys package $pkg 2>/dev/null | grep -c DIRECT_BOOT_AWARE").trim().toIntOrNull() == 0) {
-            log("no FallbackHome, and the launcher cannot start before the unlock"); return false
+            log("no FallbackHome, and the launcher cannot start before the unlock"); refused = "boot"; return false
         }
         // [before]: read before its APK went in. Android 9 forgets the home chosen when a new launcher is installed (a BRAVIA then
         // answered its picker), and only Android 10+ keeps it as a role

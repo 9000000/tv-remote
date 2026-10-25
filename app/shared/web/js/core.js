@@ -267,7 +267,7 @@ const FRIENDLY = [
   [/launcher file does not match/i, T('core.fr_launcher_file')],
 ];
 const LAUNCH_WENT = { crash: 'launcher.why_crash', home: 'launcher.why_home', timeout: 'launcher.why_timeout', interrupted: 'launcher.why_interrupted', user: 'launcher.why_user',
-  wifi: 'launcher.why_wifi', wifi_unknown: 'launcher.why_wifi_unknown', cast: 'launcher.why_cast' };
+  wifi: 'launcher.why_wifi', wifi_unknown: 'launcher.why_wifi_unknown', cast: 'launcher.why_cast', board: 'launcher.why_board', boot: 'launcher.why_boot' };
 const ANDROID = { 21: '5.0', 22: '5.1', 23: '6', 24: '7', 25: '7.1', 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };
 const androidName = (sdk) => ANDROID[sdk] || 'SDK ' + sdk;
 const friendly = (m) => { m = String(m || ''); const f = FRIENDLY.find(([re]) => re.test(m)); return !f ? m : typeof f[1] === 'function' ? f[1](m.match(f[0])) : f[1]; };
@@ -502,7 +502,7 @@ function applyAdb() {
   if (bannerKey !== ADB.state) {                                      // rebuild only on change so buttons are not replaced mid-click
     bannerKey = ADB.state;
     document.querySelectorAll('[data-adb-banner]').forEach((b) => b.replaceChildren(...(ready ? [] : [buildBanner()])));
-    if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); loadTvset(); loadHold(); homeCard(); chanCard(); gameCard(); }   // the cards that ask over ADB: opened before it was up, they had stayed empty
+    if (ready && currentTab === 'tv' && typeof tsState === 'function') { tsState(); restoreState(); loadTvset(); loadHold(); homeCard(); chanCard(); gameCard(); }   // the cards that ask over ADB: opened before it was up, they had stayed empty
   }
   // a tab already shown with its data keeps it, scroll and all, under a veil that says ADB is coming back (or why not, with Retry);
   // the banner in place of the tab only when nothing was shown yet
