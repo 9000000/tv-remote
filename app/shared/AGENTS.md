@@ -6,6 +6,8 @@ Read with the root [AGENTS.md](../../AGENTS.md) (rules, build, tests, releases a
 
 ```
 app/shared/web/          THE web UI (index.html, css/*.css, js/*.js): the Computer app, the TV web page, the Phone app's Manage screen
+app/shared/i18n/         every app's words, every language (langs.json, <lang>.json for the page and T(), apps/<lang>/ for the native
+                         apps): the page still asks for i18n/<lang>.json (the computer app maps it, the APKs get it in their assets)
 app/shared/src/.../core/ Kotlin shared by the apps, one package per kind of work (Java helpers Meta / Caps / Playing / Screen stay
                          in `core`: TV Setup and app_process call them by name):
   remote/                one TV's own remote link, by brand, behind `Remote`: Atv (Android TV, keys without ADB), Lg, Samsung,

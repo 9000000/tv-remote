@@ -9,7 +9,7 @@ android {
     compileSdk = 35
     defaultConfig { minSdk = 21 }
     // assets/scrcpy-server.jar is started on the TV for the picture and the input; web/index.html is the page the apps serve
-    sourceSets["main"].assets.srcDirs("assets", "web")
+    sourceSets["main"].assets.srcDirs("assets", "web", layout.buildDirectory.dir("generated/assets/i18n"))   // + i18n/: the page's words (below)
     sourceSets["main"].java.srcDirs("src/home/kotlin")                 // HomeConfig: TV Home's settings, compiled into app/home too
     sourceSets["main"].java.srcDirs("src/guard/kotlin", "src/guard/android")   // Guard: the error guard, compiled into app/home, channels and games too
     sourceSets["main"].java.srcDirs("src/report/kotlin")               // Report + Scrub: the sending core, compiled into app/home, channels and games too
@@ -17,9 +17,15 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
-// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+// Words: app/shared/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
 extra["i18nLangs"] = true
 apply(from = "../gradle/i18n.gradle")
+// The page's words (langs.json, <lang>.json) next to the page in the assets, at i18n/ as the page asks for them; apps/ is built into res
+val i18nAssets by tasks.registering(Sync::class) {
+    from("i18n") { exclude("apps/**") }
+    into(layout.buildDirectory.dir("generated/assets/i18n/i18n"))
+}
+tasks.named("preBuild") { dependsOn(i18nAssets) }
 
 // Unit tests of the plain logic (scenes, voice commands, the sound downmix, paths): ./gradlew :shared:testDebugUnitTest.
 // org.json is the real library here: Android's own is only a stub off a device.

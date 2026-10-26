@@ -10,7 +10,7 @@ const read = (p) => fs.readFileSync(path.join(__dirname, '../', p), 'utf8');
 const mk = () => {
   const calls = [], toasts = [], sandbox = {
     window: { listeners: {}, addEventListener(n, f) { this.listeners[n] = f; } }, navigator: { getGamepads: () => [] }, document: { querySelector: () => null },
-    T: (id, a) => { let s = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n/vi.json'), 'utf8'))[id]; if (s == null) return id; return a ? s.replace(/\{(\w+)\}/g, (m, k) => (k in a ? a[k] : m)) : s; },
+    T: (id, a) => { let s = JSON.parse(fs.readFileSync(path.join(__dirname, '../i18n/vi.json'), 'utf8'))[id]; if (s == null) return id; return a ? s.replace(/\{(\w+)\}/g, (m, k) => (k in a ? a[k] : m)) : s; },
     currentTab: 'remote', picking: false, typingHere: () => false, can: () => true, screenOn: false,
     api: (u, b) => { calls.push(b.key); return Promise.resolve({}); }, toast: (m) => toasts.push(m), setInterval: () => 1, clearInterval() {}, Date, console,
   };

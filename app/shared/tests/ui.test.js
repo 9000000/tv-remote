@@ -57,7 +57,7 @@ test('words starting with a colour emoji have a line icon for it', () => {
   const ui = scripts.find(([f]) => f === 'ui.js')[1];
   const known = new Set([...ui.slice(ui.indexOf('const ICON = {'), ui.indexOf('};', ui.indexOf('const ICON = {'))).matchAll(/'([^']+)': \['/g)].map((m) => m[1]));
   const lead = /^\s*(\p{Emoji_Presentation}|\p{Extended_Pictographic}\uFE0F|[✓✔✕✖✗⏻⚠★☆♪↻↩▶⏸⏹⬇])/u;
-  const words = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n/vi.json'), 'utf8'));
+  const words = JSON.parse(fs.readFileSync(path.join(__dirname, '../i18n/vi.json'), 'utf8'));
   const bad = Object.entries(words).map(([k, v]) => [k, typeof v === 'string' && v.match(lead)?.[1]])
     .filter(([, e]) => e && !known.has(e) && !known.has(e.replace('\uFE0F', '')) && !TEXT_MARKS.has(e)).map(([k, e]) => e + ' ' + k);
   assert.deepEqual(bad, [], 'add it to ICON in js/ui.js (and its path to dev/gen/gen_icons.py), or to TEXT_MARKS when it is only in running text');

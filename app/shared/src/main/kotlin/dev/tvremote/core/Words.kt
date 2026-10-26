@@ -6,7 +6,7 @@ import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * The apps' words by id, from the files the page reads too (app/shared/web/i18n/<lang>.json, js/i18n.js): vi.json lists every
+ * The apps' words by id, from the files the page reads too (app/shared/i18n/<lang>.json, js/i18n.js): vi.json lists every
  * id, each other language the same ids; a missing one falls back to English, then Vietnamese, as on the page. `{name}` in the
  * words is filled from the args; an entry `{ "one": ..., "other": ... }` is picked by the arg `n`.
  * A new language is a file there, nothing in the code.
@@ -14,9 +14,9 @@ import java.util.concurrent.ConcurrentHashMap
 object Words {
     private val books = ConcurrentHashMap<String, Map<String, Any>>()   // first: lang below reads it while the object starts
 
-    /** Opens i18n/<lang>.json: the APKs' assets (the web folder is packed as assets), the computer app's page folder. */
+    /** Opens i18n/<lang>.json: the APKs' assets (packed there next to the page), the computer app's app/shared/i18n. */
     @Volatile var open: (String) -> InputStream? = { name ->                         // unit tests: run in app/shared or app/<app>
-        listOf(File("web", name), File("../shared/web", name)).firstOrNull { it.isFile }?.inputStream() }
+        listOf(File(name), File("../shared", name)).firstOrNull { it.isFile }?.inputStream() }
         set(v) { field = v; books.clear() }
 
     /** The language the app's own screens speak (the phone's Settings choice, the TV's language). */

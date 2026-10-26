@@ -189,7 +189,7 @@ class LauncherTest {
     }
 
     @Test fun everyReasonHasWords() {
-        val vi = java.io.File("web/i18n/vi.json").readText(); val en = java.io.File("web/i18n/en.json").readText()
+        val vi = java.io.File("i18n/vi.json").readText(); val en = java.io.File("i18n/en.json").readText()
         for (w in listOf("crash", "home", "timeout", "interrupted", "user", "wifi", "wifi_unknown", "cast", "?"))
             assertTrue(w, "\"${LauncherSwap.whyId(w)}\"" in vi && "\"${LauncherSwap.whyId(w)}\"" in en)
     }

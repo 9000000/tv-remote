@@ -18,7 +18,7 @@ kotlin {
     sourceSets["main"].kotlin.srcDir("../shared/src/guard/kotlin")    // GuardLogic: the text of an error report (the Android part, Guard.kt, stays out)
     sourceSets["main"].kotlin.srcDir("../shared/conscrypt")           // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt)
 }
-// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+// Words: app/shared/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
 extra["i18nLangs"] = true
 apply(from = "../gradle/i18n.gradle")
 // Android only: decoding the picture and sound (TvAndroid, AudioOut), the QR bitmap. Meta and Caps, started on the TV, are Java
@@ -52,6 +52,7 @@ val stageApp by tasks.registering(Sync::class) {
     into("res") {                                                     // the repo's own layout: Server.kt reads the same paths
         from("../..") { include("VERSION", "CHANGELOG.md") }
         from("../shared/web") { into("app/shared/web") }
+        from("../shared/i18n") { exclude("apps/**"); into("app/shared/i18n") }
         from("../shared/assets") { include("scrcpy-server.jar", "tvr-helper.jar"); into("app/shared/assets") }
         from("native") { include(if (os == "mac") "mac/**" else "$os-$arch/**"); into("app/desktop/native") }   // the window (Window.kt)
     }

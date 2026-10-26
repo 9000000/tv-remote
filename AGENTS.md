@@ -49,7 +49,7 @@ lists), release/; `optimize_images.py` never touches `docs/home/` and `docs/laun
   rules in app/shared/web/AGENTS.md.
 - **The apps map** lives once in `docs/data/apps-map.json`: `docs/apps.html` draws it; edit it, then `node dev/gen/apps_map.js` (the README mermaid blocks;
   `tests/apps_map.test.js` fails when they differ).
-- **Vietnamese is the source language; words go by id**, all under `app/shared/web/i18n/` (one place for every app and language):
+- **Vietnamese is the source language; words go by id**, all under `app/shared/i18n/` (one place for every app and language):
   `langs.json` (THE list of languages), `<lang>.json` (the page and `core/Words.kt`: `T('id')`, `T("id")`; `vi.json` first, `en.json`
   complete) and `apps/<lang>/<module>.json` (the native apps: home, games, channels, tvkeys, android, tvui; the Android ids; Gradle
   builds `res/values-<lang>` from them, `app/gradle/i18n.gradle`). **A new language = its files in that folder + one line in

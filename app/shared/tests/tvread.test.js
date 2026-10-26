@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 // the page's T(): the words of i18n/<LANG>.json (vi unless a test says otherwise), {name} filled in
-const book = (l) => JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n/' + l + '.json'), 'utf8'));
+const book = (l) => JSON.parse(fs.readFileSync(path.join(__dirname, '../i18n/' + l + '.json'), 'utf8'));
 const books = { vi: book('vi'), en: book('en') };
 globalThis.LANG = 'vi';
 globalThis.T = (id, a) => { const s = books[globalThis.LANG][id] ?? books.vi[id]; return s == null ? id : a ? s.replace(/\{(\w+)\}/g, (m, k) => (k in a ? a[k] : m)) : s; };

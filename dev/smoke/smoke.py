@@ -7,7 +7,7 @@ Rules this file keeps (why it is written this way):
   - every move is "dump, look at the focused node, press one key": no blind key chains;
   - DPAD_CENTER is pressed only right after a dump whose FOCUSED node is the one wanted (its bounds and its text / content-desc
     are checked), so a stray focus never opens or toggles something else;
-  - nodes are found by text / content-desc (the strings come from app/shared/web/i18n/apps/{en,vi}/home.json, so the same
+  - nodes are found by text / content-desc (the strings come from app/shared/i18n/apps/{en,vi}/home.json, so the same
     steps run in English and Vietnamese), never by fixed coordinates.
 Per screen it records: the focused node on entry (and whether it is the first control of the page), a screenshot, new error /
 crash lines of dev.tvremote.* since the step began, frames / janky frames from `dumpsys gfxinfo`, and whether BACK returns to the

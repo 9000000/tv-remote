@@ -7,7 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MAX = 25;
-const vi = JSON.parse(fs.readFileSync(path.join(__dirname, '../web/i18n/vi.json'), 'utf8'));
+const vi = JSON.parse(fs.readFileSync(path.join(__dirname, '../i18n/vi.json'), 'utf8'));
 const kept = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'long_words.json'), 'utf8')));
 const words = (s) => (typeof s === 'string' ? s : Object.values(s).join(' ')).replace(/<[^>]+>|\{\w+\}/g, ' ').split(/\s+/).filter(Boolean).length;
 

@@ -42,7 +42,7 @@ android {
     sourceSets["main"].res.srcDirs("../shared/src/tvui/res")                 // tv_style.xml: ONE copy for the TV apps (app/DESIGN-TV.md)
     sourceSets["main"].assets.srcDirs("../../docs/channels")          // providers.json + .sig: the copy used until the site's is read
 }
-// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+// Words: app/shared/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
 extra["i18nApps"] = listOf("channels", "tvui")
 extra["i18nLangs"] = true
 apply(from = "../gradle/i18n.gradle")

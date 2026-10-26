@@ -15,7 +15,7 @@ const spec = JSON.parse(read('shared/web/remote.json'));
 const entries = [...Object.values(spec.rows).flat(2), ...Object.values(spec.menus).flat()];
 
 // remote_spec.js on its own, as the page would run it (no other script of the page is needed until a handler runs)
-const book = (l) => JSON.parse(read('shared/web/i18n/' + l + '.json'));
+const book = (l) => JSON.parse(read('shared/i18n/' + l + '.json'));
 function pageSpec(core, lang) {
   const words = book(lang);
   const sandbox = { CORE: core, LANG: lang, document: {}, console, T: (id) => words[id] ?? id };   // i18n.js's T(), enough here

@@ -28,7 +28,7 @@ test('nothing to say for another wall or before a measurement', () => {
 
 test('its words exist in both languages', () => {
   for (const l of ['vi', 'en']) {
-    const w = JSON.parse(fs.readFileSync(path.join(__dirname, `../web/i18n/${l}.json`), 'utf8'));
+    const w = JSON.parse(fs.readFileSync(path.join(__dirname, `../i18n/${l}.json`), 'utf8'));
     for (const k of ['home.v_perf_ok', 'home.v_perf_bad', 'home.v_perf_off']) assert.ok(w[k], `${l} ${k}`);
   }
 });

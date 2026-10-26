@@ -33,7 +33,7 @@ const BUDGET = +arg('budget', 120) * 1000;                            // per tab
 const TABS = ['header', 'remote', 'apps', 'files', 'health', 'auto', 'tv'];
 const RUNS = [{ w: 1100, lang: 'vi', theme: 'light' }, { w: 400, lang: 'en', theme: 'dark' }]
   .concat(arg('all') ? [{ w: 1100, lang: 'en', theme: 'dark' }, { w: 400, lang: 'vi', theme: 'light' }] : []);
-const IDS = Object.keys(JSON.parse(fs.readFileSync(path.join(WEB, 'i18n/en.json'), 'utf8')));
+const IDS = Object.keys(JSON.parse(fs.readFileSync(path.join(WEB, '../i18n/en.json'), 'utf8')));
 const TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript', css: 'text/css', json: 'application/json', png: 'image/png',
   webp: 'image/webp', jpg: 'image/jpeg', svg: 'image/svg+xml', woff2: 'font/woff2', sig: 'text/plain' };
 

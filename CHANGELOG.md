@@ -11,14 +11,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games: mỗi game có logo riêng (hình vẽ + tên) thay cho ảnh chụp màn hình, nhìn là biết game gì; cả trên TV Home khi ghim.
 - Bản đồ thời tiết của TV Home: lớp Mây thay bằng Vệ tinh (ảnh vệ tinh thật, mới vài phút, thấy cả mây).
 - Lời chào của TV Home tự chọn được: Theo giờ ("Chào buổi tối"), Kèm tên ("Chào buổi tối, Hoàng") hay Tự viết; chỉnh trên TV Home (Giao diện) hoặc trong cài đặt TV Home ở app điện thoại, app máy tính, web của TV.
-- Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/web/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
+- Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
 - Pinning a game (TV Games) or a channel (TV Channels) to TV Home: the picture is sharp now (Android shrinks every shortcut icon to ~127 px, so a ~330 px tile was blurry; the pinning app keeps a 640×360 copy only TV Home can read, and TV Home draws it at the tile's size for its column count: ~0.25 MB a tile), with the source app's logo in the corner. Older pins: pin again to make them sharp.
 - TV Games: every game has its own logo (a drawing + its name) instead of a screenshot, so you know the game at a glance; pinned to TV Home too.
 - TV Home's weather map: the Clouds layer is now Satellite (real satellite pictures, minutes old, clouds included).
 - TV Home's greeting can be chosen: Time of day ("Good evening"), With a name ("Good evening, Sam") or My own words; set on TV Home (Look) or in TV Home settings on the phone app, computer app and TV web page.
-- Adding a language is now translation files in ONE folder (`app/shared/web/i18n/`: the page, and `apps/<code>/` for TV Home, Channels, Games, TV Setup Keys and the phone app) plus one line in `langs.json`; the hand-written `strings.xml` are gone and every language picker (the page, TV Home, Channels, Games, the phone app) reads the one list.
+- Adding a language is now translation files in ONE folder (`app/shared/i18n/`: the page, and `apps/<code>/` for TV Home, Channels, Games, TV Setup Keys and the phone app) plus one line in `langs.json`; the hand-written `strings.xml` are gone and every language picker (the page, TV Home, Channels, Games, the phone app) reads the one list.
 
 ## 0.28.0 - 2026-10-26
 

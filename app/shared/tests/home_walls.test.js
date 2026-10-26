@@ -24,8 +24,8 @@ test('the page and the TV hold the same recipes (python3 dev/gen/gen_wallspec.py
 
 test('every scene is in HomeConfig.ART, with its words in both languages and on the TV', () => {
   assert.deepEqual(Object.keys(art).sort(), [...ids].sort());
-  const vi = JSON.parse(fs.readFileSync(path.join(web, 'i18n/vi.json'), 'utf8')), en = JSON.parse(fs.readFileSync(path.join(web, 'i18n/en.json'), 'utf8'));
-  const strings = ['en', 'vi'].map((l) => fs.readFileSync(path.join(web, 'i18n/apps', l, 'home.json'), 'utf8'));
+  const vi = JSON.parse(fs.readFileSync(path.join(web, '../i18n/vi.json'), 'utf8')), en = JSON.parse(fs.readFileSync(path.join(web, '../i18n/en.json'), 'utf8'));
+  const strings = ['en', 'vi'].map((l) => fs.readFileSync(path.join(web, '../i18n/apps', l, 'home.json'), 'utf8'));
   for (const k of [...ids, 'bing']) {
     assert.ok(vi['home.wall_' + k] && en['home.wall_' + k], 'page words for ' + k);
     for (const s of strings) assert.ok(s.includes(`"wall_${k}":`), 'TV words for ' + k);
@@ -35,7 +35,7 @@ test('every scene is in HomeConfig.ART, with its words in both languages and on 
 test('the web page wall: in the whitelist, with its words on the page (the TV panel tile opens the QR screen: the address is pasted on a phone)', () => {
   assert.match(cfg, /val WALLS = [^\n]*\bWEB\b/);
   assert.match(cfg, /const val WURL_MAX = 500/);
-  const vi = JSON.parse(fs.readFileSync(path.join(web, 'i18n/vi.json'), 'utf8')), en = JSON.parse(fs.readFileSync(path.join(web, 'i18n/en.json'), 'utf8'));
+  const vi = JSON.parse(fs.readFileSync(path.join(web, '../i18n/vi.json'), 'utf8')), en = JSON.parse(fs.readFileSync(path.join(web, '../i18n/en.json'), 'utf8'));
   assert.match(cfg, /val WSNAPS = listOf\(1, 5, 15, 30, 60\)/);   // the page's chips (home.js) offer the same five
   assert.match(fs.readFileSync(path.join(web, 'js/home.js'), 'utf8'), /\[1, 5, 15, 30, 60\]/);
   for (const k of ['wall_web', 'web', 'web_ph', 'web_set', 'web_clear', 'web_bad', 'web_note', 'web_mode', 'web_mode_live', 'web_mode_snap', 'web_every', 'web_every_n', 'web_keep', 'web_mode_note_live', 'web_mode_note_snap', 'web_mode_note_keep']) assert.ok(vi['home.' + k] && en['home.' + k], k);

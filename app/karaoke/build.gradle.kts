@@ -41,7 +41,7 @@ android {
     kotlinOptions { jvmTarget = "11" }
     testOptions { unitTests.isReturnDefaultValues = true }
 }
-// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+// Words: app/shared/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
 extra["i18nApps"] = listOf("tvui")
 apply(from = "../gradle/i18n.gradle")
 

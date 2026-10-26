@@ -417,9 +417,9 @@ Code names, layout, tests and releases: [AGENTS.md](AGENTS.md). Dev tools: [dev/
 
 A language is **its translation files in one folder plus one line in one list**; no code changes.
 
-1. `app/shared/web/i18n/langs.json`: add `"xx": "Name in its own words"`.
-2. Copy `app/shared/web/i18n/en.json` to `xx.json` and translate it (the page, TV Setup and the Computer app).
-3. Copy the folder `app/shared/web/i18n/apps/en/` to `apps/xx/` and translate its six files (TV Home, Channels, Games, TV Setup Keys, the Phone app, the TV screens they share). Keep `%1$s`, `%d` and `{name}` as they are.
+1. `app/shared/i18n/langs.json`: add `"xx": "Name in its own words"`.
+2. Copy `app/shared/i18n/en.json` to `xx.json` and translate it (the page, TV Setup and the Computer app).
+3. Copy the folder `app/shared/i18n/apps/en/` to `apps/xx/` and translate its six files (TV Home, Channels, Games, TV Setup Keys, the Phone app, the TV screens they share). Keep `%1$s`, `%d` and `{name}` as they are.
 4. `node --test app/shared/tests/` checks that nothing is missing; a build makes the Android strings and every language picker from the same list.
 
 Missing words show in English. The website (`docs/`) stays Vietnamese and English.

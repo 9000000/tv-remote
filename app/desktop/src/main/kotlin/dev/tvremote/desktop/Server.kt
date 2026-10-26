@@ -33,8 +33,12 @@ import java.util.concurrent.atomic.AtomicLong
  * sound for this browser) are here; everything managed over ADB is Manage.kt's, as for TV Setup and the phone.
  */
 class Server(private val repo: File, private val keys: File, private val pass: Pass, private val cache: File, private val saved: Saved, first: String?, private val hookPort: Int, private val stop: () -> Unit) : HttpServer.Handler {
-    private val web = File(repo, "app/shared/web").also { w -> Words.open = { File(w, it).takeIf { f -> f.isFile }?.inputStream() } }
-    init { dev.tvremote.core.scenes.VoicePhrases.start({ File(web, it).inputStream() }, cache) }   // the page asks for the freshest signed words
+    private val web = File(repo, "app/shared/web")
+    private val words = File(repo, "app/shared/i18n")
+    /** A file of the page by its path in the page: i18n/ is app/shared/i18n (every app's words), the rest app/shared/web. */
+    private fun file(name: String) = if (name.startsWith("i18n/")) File(words, name.removePrefix("i18n/")) else File(web, name)
+    init { Words.open = { file(it).takeIf { f -> f.isFile }?.inputStream() } }
+    init { dev.tvremote.core.scenes.VoicePhrases.start({ file(it).inputStream() }, cache) }   // the page asks for the freshest signed words
     private val helperFile = File(repo, "app/shared/assets/tvr-helper.jar")   // Meta and Caps, started on the TV
     private val helper: () -> ByteArray = { helperFile.readBytes() }
     private val jarFile = File(repo, "app/shared/assets/scrcpy-server.jar")
@@ -121,10 +125,10 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         val p = page
         if (p != null && System.currentTimeMillis() - pageChecked < 1500) return p   // a page load asks for a dozen files at once
         pageChecked = System.currentTimeMillis()
-        val stamp = web.walk().filter { it.isFile }.maxOfOrNull { it.lastModified() } ?: 0L
+        val stamp = (web.walk() + words.walk()).filter { it.isFile }.maxOfOrNull { it.lastModified() } ?: 0L
         if (p != null && stamp == pageStamp) return p
         pageStamp = stamp
-        return WebPage({ name -> File(web, name).inputStream() }, "pc", (stamp / 1000).toString()).also { page = it }
+        return WebPage({ name -> file(name).inputStream() }, "pc", (stamp / 1000).toString()).also { page = it }
     }
 
     // ---------------------------------------------------------------- requests

@@ -63,7 +63,7 @@ test.after(() => {
 const read = (f) => fs.readFileSync(path.join(WEB, f), 'utf8');
 
 // the page's words: both languages are ~200 KB of JSON, read and parsed at every load
-budget('i18n.parse.vi', () => { assert.ok(Object.keys(JSON.parse(read('i18n/vi.json'))).length > 100); }, { floor: 3 });
+budget('i18n.parse.vi', () => { assert.ok(Object.keys(JSON.parse(read('../i18n/vi.json'))).length > 100); }, { floor: 3 });
 budget('remote.json.parse', () => { assert.ok(JSON.parse(read('remote.json'))); }, { batch: 20, floor: 0.5 });
 
 // the invite / pairing codes

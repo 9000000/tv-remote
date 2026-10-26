@@ -45,7 +45,7 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
-// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+// Words: app/shared/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
 extra["i18nApps"] = listOf("home", "tvui")
 extra["i18nLangs"] = true
 apply(from = "../gradle/i18n.gradle")
@@ -63,21 +63,22 @@ val copyQr = tasks.register<Copy>("copyQr") {
 // "Manage from phone": TV Home serves TV Home's own settings page (home.html and what it loads) from assets/homeweb. The files are the
 // ones TV Setup's web UI uses, copied from app/shared/web at build time, so the UI has ONE source; only the words the page needs travel.
 val webDir = file("../shared/web")
+val wordsDir = file("../shared/i18n")
 val homeWebJs = listOf("theme", "i18n", "qr", "base", "home_link", "home_media", "homeweb", "target", "appicon", "quickkeys", "ui", "home_walls", "home_qr", "home_order", "photofit", "home")
 val homeWebCss = listOf("base", "page", "apps", "remote", "auto", "kit")
 val homeWebWords = listOf("home.", "homeweb.", "common.", "core.", "apps.")
 val packHomeWeb = tasks.register("packHomeWeb") {
     val out = layout.buildDirectory.dir("generated/assets/homeweb")
-    inputs.dir(webDir); outputs.dir(out)
+    inputs.dir(webDir); inputs.dir(wordsDir); outputs.dir(out)
     doLast {
         val dir = out.get().asFile
         dir.deleteRecursively(); File(dir, "js").mkdirs(); File(dir, "css").mkdirs(); File(dir, "i18n").mkdirs()
         homeWebJs.forEach { File(webDir, "js/$it.js").copyTo(File(dir, "js/$it.js")) }
         homeWebCss.forEach { File(webDir, "css/$it.css").copyTo(File(dir, "css/$it.css")) }
-        File(webDir, "i18n/langs.json").copyTo(File(dir, "i18n/langs.json"))                     // the list: the page reads it (js/i18n.js)
-        @Suppress("UNCHECKED_CAST") val langs = (groovy.json.JsonSlurper().parse(File(webDir, "i18n/langs.json")) as Map<String, Any?>).keys
+        File(wordsDir, "langs.json").copyTo(File(dir, "i18n/langs.json"))                     // the list: the page reads it (js/i18n.js)
+        @Suppress("UNCHECKED_CAST") val langs = (groovy.json.JsonSlurper().parse(File(wordsDir, "langs.json")) as Map<String, Any?>).keys
         for (l in langs) {
-            @Suppress("UNCHECKED_CAST") val all = groovy.json.JsonSlurper().parse(File(webDir, "i18n/$l.json")) as Map<String, Any?>
+            @Suppress("UNCHECKED_CAST") val all = groovy.json.JsonSlurper().parse(File(wordsDir, "$l.json")) as Map<String, Any?>
             File(dir, "i18n/$l.json").writeText(groovy.json.JsonOutput.toJson(all.filterKeys { k -> homeWebWords.any { k.startsWith(it) } }))
         }
         val icons = File(webDir, "index.html").readText().substringAfter("<!-- icons:start -->").substringBefore("<!-- icons:end -->")
