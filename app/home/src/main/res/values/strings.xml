@@ -580,7 +580,7 @@
     <string name="watch_hide">Don\'t show %1$s\'s items</string>
     <string name="watch_note">Play Next and channels this app shares with Android TV. Brought back from + (Add).</string>
     <string name="add_row">Its Play Next row</string>
-    <string name="el_more">More…</string>
+    <string name="el_more">More settings…</string>
     <string name="el_big">Big</string>
     <string name="el_tonal">Solid card</string>
     <string name="el_earlier">Move earlier</string>
@@ -602,6 +602,7 @@
     <string name="watch_pin_same">Already on the grid</string>
     <string name="watch_pin_fail">Could not pin this</string>
     <string name="el_edit">Edit home screen</string>
+    <string name="el_done">Done editing</string>
     <string name="el_edit_sub">Every element takes the focus: OK changes it, Back is done.</string>
     <string name="el_edit_hint">OK: change  ·  Back: done</string>
 </resources>

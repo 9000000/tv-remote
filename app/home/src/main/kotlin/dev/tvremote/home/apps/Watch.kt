@@ -95,7 +95,7 @@ object Watch {
         }
         src.recycle()
         try {                                                         // whose it is: the app's icon small in a corner, as Android TV's launcher does (a name there hid the logos)
-            val d = c.packageManager.getApplicationIcon(i.pkg); val sz = h * 24 / 100; val m = h * 6 / 100
+            val d = c.packageManager.getApplicationIcon(i.pkg); val sz = h * 24 / 100; val m = h * 11 / 100   // m: past the 5 % the picture grows by inside a focused tile (TvTile), else the icon was cut
             d.setBounds(w - m - sz, h - m - sz, w - m, h - m); d.draw(cv)
         } catch (e: Exception) { }
         synchronized(cache) { cache[i.art + w] = out }

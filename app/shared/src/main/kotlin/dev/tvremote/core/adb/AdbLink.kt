@@ -68,6 +68,9 @@ class AdbLink(val keyDir: File, val host: String) {
 
     fun waitingForUser(): Boolean = waiting
 
+    /** The last dial did not get through: "unknown" is then a TV without ADB being asked again, not a link coming up. */
+    fun failing(): Boolean = failed
+
     /**
      * How things stand, without waiting for anything: ready, unauthorized (the TV is asking the person), unknown (connecting)
      * or closed. Asking is also what starts a connection when there is none, so whoever shows this keeps it alive.

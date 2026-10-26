@@ -109,8 +109,13 @@ object Pins {
         val go = android.content.Intent(intent).apply { if (action == null) action = android.content.Intent.ACTION_VIEW }
         val info = android.content.pm.ShortcutInfo.Builder(c, id).setShortLabel(label.take(40)).setIntent(go)
             .also { b -> icon?.let { b.setIcon(android.graphics.drawable.Icon.createWithBitmap(it)) } }.build()
+        c.getSharedPreferences(SRC, Context.MODE_PRIVATE).edit().putString(id, source).apply()   // whose it is: the shortcut itself is this home's
         return try { if (sm.requestPinShortcut(info, null)) Made.OK else Made.FAIL } catch (e: Exception) { Made.FAIL }
     }
+
+    private const val SRC = "pin_src"
+    /** The app a Play Next item pinned by [pinIntent] came from (its menu named TV Home); null for any other shortcut. */
+    fun sourceOf(c: Context, id: String): String? = c.getSharedPreferences(SRC, Context.MODE_PRIVATE).getString(id, null)
 
     // ---- every shortcut an app offers (static, dynamic, pinned), for the picker and for a key / the grid that points at one ----
 

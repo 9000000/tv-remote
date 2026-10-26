@@ -174,8 +174,10 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
          * dial: "closed" / "unauthorized" is a TV where it cannot.
          */
         fun updatesState(c: Context): JSONObject {
-            val st = try { running?.link?.state() } catch (e: Exception) { null }
-            return JSONObject().put("silent", AutoUpdate.on(c) && (st == "ready" || st == "unknown"))
+            val l = running?.link
+            val st = try { l?.state() } catch (e: Exception) { null }
+            // "unknown" is also the redial every 10 s of a TV with no ADB at all (seen on an FPT box): quiet only if the last dial got through
+            return JSONObject().put("silent", AutoUpdate.on(c) && (st == "ready" || (st == "unknown" && l?.failing() == false)))
         }
 
         fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)

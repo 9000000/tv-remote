@@ -578,7 +578,7 @@
     <string name="watch_hide">Không hiện mục của %1$s</string>
     <string name="watch_note">Xem tiếp và kênh app này chia sẻ với Android TV. Hiện lại từ ô + (Thêm).</string>
     <string name="add_row">Hàng Xem tiếp của app</string>
-    <string name="el_more">Thêm…</string>
+    <string name="el_more">Tùy chỉnh khác…</string>
     <string name="el_big">To</string>
     <string name="el_tonal">Thẻ đặc</string>
     <string name="el_earlier">Đưa lên trước</string>
@@ -600,6 +600,7 @@
     <string name="watch_pin_same">Đã có trên lưới</string>
     <string name="watch_pin_fail">Không ghim được mục này</string>
     <string name="el_edit">Sửa màn hình chính</string>
+    <string name="el_done">Xong, thoát sửa</string>
     <string name="el_edit_sub">Mọi thứ đều chọn được: OK để chỉnh, Back là xong.</string>
     <string name="el_edit_hint">OK: chỉnh  ·  Back: xong</string>
 </resources>

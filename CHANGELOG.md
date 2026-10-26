@@ -13,6 +13,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: giữ OK (hoặc phím Menu) trên một phần tử của màn hình chính mở menu nhỏ của nó, đổi ngay tại chỗ và thấy kết quả liền (cỡ, kiểu thẻ, ẩn, đổi chỗ, nút, ô Thêm, ô gợi ý, hàng Xem tiếp). Đồng hồ, ngày, thẻ thụ động chỉ chọn được trong "Sửa màn hình chính" (có trong các menu đó và trong Tuỳ chỉnh); phím mũi tên ngoài chế độ đó không đổi.
 - TV Home: di chuyển app khi có hàng Xem tiếp không còn làm lệch lưới (hàng Xem tiếp giữ nguyên chỗ, app nhảy qua nó).
 - TV Home: hàng Xem tiếp có chỗ đặt (trên cùng, dưới hàng đầu, sau hàng cuối - mặc định, hoặc xen vào lưới) trong menu của nó, trong Tuỳ chỉnh và trong app/web; ở ba chỗ đầu nó là một hàng cuộn ngang tới 20 mục. Thêm "Ghim vào lưới" biến một mục thành ô app thường, và "Không hiện mục của {app}".
+- TV Home (thử trên box FPT): menu một phần tử giờ trả focus về đúng chỗ, đang Sửa thì có "Xong, thoát sửa", thoát Sửa bằng Back không còn mất focus, icon app trên ô Xem tiếp không bị cắt khi được chọn, ô Xem tiếp đã ghim ghi đúng app nguồn (không phải TV Home).
+- TV Setup: TV không có ADB không còn bị báo là "cập nhật ngầm được".
 
 **English**
 - TV Setup: "Use the TV's own launcher" (was "↩ Back to the TV's own", beside Close and easy to press by mistake) now asks before it changes the home screen.
@@ -21,6 +23,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: hold OK (or the Menu key) on an element of the home screen for its small menu, changed in place and seen at once (size, card style, hide, move, buttons, Add tile, Get TV Setup tile, Play Next row). The clock, the date and passive cards take focus only in "Edit home screen" (in those menus and in Customize); the D-pad outside that mode is unchanged.
 - TV Home: moving an app with the Play Next row shown no longer scrambles the grid (the row stays put, apps step over it).
 - TV Home: the Play Next row can sit on top, under the first row, after the last row (default) or among the tiles - set in its menu, in Customize and in the app/web page; in the first three it is a sideways-scrolling row of up to 20 items. New "Pin to the grid" turns an item into a normal app tile, and "Don't show {app}'s items". All long-press menus now share one glass look.
+- TV Home (tried on an FPT box): an element menu gives the focus back to its element, in Edit it offers "Done editing", leaving Edit with Back no longer loses the focus, the app icon on a focused Play Next tile is no longer cut, a pinned Play Next tile names its own app (not TV Home).
+- TV Setup: a TV without ADB is no longer reported as able to update quietly.
 
 ## 0.25.0 - 2026-10-26
 

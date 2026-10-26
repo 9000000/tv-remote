@@ -426,7 +426,8 @@ class HomeActivity : Activity() {
     private fun gi(icon: Int, label: String, on: (() -> Boolean)? = null, live: (() -> String)? = null, go: () -> Unit) =
         TvGlass.Item(icon, label, go = go).also { it.on = on; it.live = live }
 
-    private fun editItem() = gi(R.drawable.ic_pen, getString(R.string.el_edit)) { edit() }
+    private fun editItem() = if (editing) gi(R.drawable.ic_check, getString(R.string.el_done)) { endEdit() }   // already in it: the way out
+        else gi(R.drawable.ic_pen, getString(R.string.el_edit)) { edit() }
     private fun moreItem(at: String = "look") = gi(R.drawable.ic_sliders, getString(R.string.el_more)) { customize(at) }
     private fun hideItem(label: Int, key: String) = gi(R.drawable.ic_eye_off, getString(label)) { Store.change(this, JSONObject().put(key, false)) }
     /** A switch that stays in the menu: the home screen behind it changes at once. */
@@ -439,7 +440,11 @@ class HomeActivity : Activity() {
     private fun elementMenu(title: String, items: List<TvGlass.Item>, note: String = "", anchor: View? = currentFocus) {
         val x = anchor?.let { v -> IntArray(2).also { v.getLocationOnScreen(it) }[0] + v.width / 2 } ?: 0
         val dlg = TvGlass.menu(this, R.style.Menu, title, items, note = note, checkIcon = R.drawable.ic_check, sideRight = x < resources.displayMetrics.widthPixels / 2, font = glassFont)
-        dlg.setOnDismissListener { ui.postDelayed({ if (!isDestroyed) settle() }, 350) }   // 350: the cards are read again off the main thread
+        dlg.setOnDismissListener { ui.postDelayed({                    // 350: the cards are read again off the main thread
+            if (isDestroyed) return@postDelayed
+            // a switch rebuilds the screen behind the menu and the focus drifts (to the first tile): back to the element if it is still there
+            if (anchor != null && anchor.isAttachedToWindow && anchor.isShown && anchor.isFocusable) anchor.requestFocus() else settle()
+        }, 350) }
         open = dlg
     }
 
@@ -460,12 +465,12 @@ class HomeActivity : Activity() {
     internal fun edit() {
         if (editing) return
         editing = true; widgets.editing = true; hint.visibility = View.VISIBLE
-        paintHead(); show(); widgetsRead()                           // a rebuild gives the cards their stops; the focus comes back to the card it was on
+        paintHead(); clockAndDay(); show(); widgetsRead()            // a rebuild gives the cards their stops; the focus comes back to the card it was on
         ui.postDelayed({ if (!isDestroyed && currentFocus == null) settle() }, 350)
     }
     private fun endEdit() {
         editing = false; widgets.editing = false; hint.visibility = View.GONE
-        paintHead(); show(); widgetsRead()
+        paintHead(); clockAndDay(); show(); widgetsRead()             // clockAndDay: the clock stops being a stop now, not at the next tick (the focus landed on it, then on nothing)
         ui.postDelayed({ if (!isDestroyed) settle() }, 350)           // a card that took no focus before gives it back to a neighbour
     }
 
@@ -1651,7 +1656,7 @@ class HomeActivity : Activity() {
         capture(false); p.dialog.setOnKeyListener(null); amGroup = ""
         val rows = ArrayList<TvGlass.Item>()
         rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.am_open)) { launch(a) })
-        val source = if (a.live) HomeConfig.tileProvider(a.pkg) else (a.pin as? android.content.pm.ShortcutInfo)?.`package`
+        val source = if (a.live) HomeConfig.tileProvider(a.pkg) else (a.pin as? android.content.pm.ShortcutInfo)?.let { s -> if (s.`package` == packageName) Pins.sourceOf(this, s.id) ?: s.`package` else s.`package` }
         if (source != null) {                                         // a live tile or a pinned shortcut belongs to an app: its name and own icon, a press opens it
             val prov = source
             val pm = packageManager
