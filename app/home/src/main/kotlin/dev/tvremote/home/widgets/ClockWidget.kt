@@ -34,6 +34,13 @@ internal fun Widgets.clock(mode: Int): View {
     val dateF = SimpleDateFormat(if (mode != 0) android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMM")
         else if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
     val time = text("", if (mode == 2) 34f else 22f, Color.WHITE).apply { typeface = Font.medium }
+    // big beside the face in a narrow card (five in a row) "11:44" came out as "11:…": the digits shrink to the column first
+    fun fitTime() {
+        val room = ((time.parent as? View)?.width ?: 0) - time.paddingLeft - time.paddingRight
+        if (mode != 2 || room <= 0) return
+        var size = 34f; time.textSize = size
+        while (size > 20f && time.paint.measureText(time.text.toString()) > room) { size -= 1f; time.textSize = size }
+    }
     val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = if (mode == 1) 2 else 1; ellipsize = TextUtils.TruncateAt.END }
     // big beside two other big cards: "Chủ Nhật, 25 thg 10" broke in two; it falls to the short form ("CN, 25/10") when it does not fit
     val shortF = SimpleDateFormat(if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
@@ -48,8 +55,8 @@ internal fun Widgets.clock(mode: Int): View {
         // five cards in a row: even "Mon 26 Oct" was cut to "Mon 26 …"; the weekday and the day are what a glance wants
         date.text = if (fits(full)) full else if (fits(short)) short else (if (locale.language == "vi") viDay(now) + ", " else "") + tinyF.format(now)
     }
-    if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown) } }
-    val face = ClockFace(this@clock, a, face0, light0) { now -> time.text = timeF.format(now); put(now) }
+    if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown); fitTime() } }
+    val face = ClockFace(this@clock, a, face0, light0) { now -> time.text = timeF.format(now); fitTime(); put(now) }
     return LinearLayout(a).apply {
         Frost.on(this, dp(if (mode == 0) 18 else 22).toFloat(), dp(1))
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL

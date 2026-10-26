@@ -252,6 +252,8 @@
     <string name="power_failed">The TV did not do it</string>
     <string name="tile_need_setup">Needs a newer TV Setup</string>
     <string name="tile_need_setup_long">Live widgets need a newer TV Setup on this TV</string>
+    <string name="tile_update_setup">Update TV Setup</string>
+    <string name="tile_open_setup">Open TV Setup</string>
     <string name="tile_untrusted">TV Setup is from another source</string>
     <string name="tile_need_channels">Needs a newer TV Channels</string>
     <string name="tile_untrusted_channels">TV Channels is from another source</string>

@@ -176,8 +176,11 @@ object Tiles {
      * [FOLLOW_TRY] times), each state handed to [onState]. Call it from a thread of its own; false when it could not start.
      */
     fun press(c: Context, key: String, onState: (JSONObject) -> Unit): Boolean {
-        val open = (cached(key) ?: fetch(c, key)).optString("open")      // a tile that opens its app's screen: TV Home is in front, so it starts the link
+        val st = cached(key) ?: fetch(c, key)
+        val open = st.optString("open")                                 // a tile that opens its app's screen: TV Home is in front, so it starts the link
         if (open.isNotEmpty()) return launch(c, HomeConfig.tileProvider(key), open).also { onState(fetch(c, key)) }
+        val hand = st.optString("hand")                                 // one of TV Setup's own screens (watched today: Health), behind its PIN
+        if (hand.isNotEmpty() && c is android.app.Activity && HomeConfig.tileProvider(key) == "dev.tvremote.setup") return SetupHand.control(c, hand)?.has("error") == false
         if (!run(c, key)) { onState(fetch(c, key)); return false }
         Thread.sleep(FOLLOW_MS)
         var n = 0

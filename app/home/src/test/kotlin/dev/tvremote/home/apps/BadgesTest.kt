@@ -39,6 +39,13 @@ class BadgesTest {
         assertNull(info("""{"open":["a.b"]}""").of("c.d"))               // kids mode off: no lock from the list
     }
 
+    @Test fun liveTilesFollowTheAppTheyOpen() {
+        val i = info("""{"kids":true,"open":["dev.tvremote.channels"]}""")
+        assertNull(i.of("tile:dev.tvremote.setup/ram"))                 // Free RAM worked under a lock in kids mode
+        assertNull(i.of("tile:dev.tvremote.channels/last"))
+        assertEquals(Badges.LOCK, info("""{"kids":true}""").of("tile:dev.tvremote.channels/last"))
+    }
+
     @Test fun labels() {
         assertEquals("20p", Badges.label(20, "p", "g"))
         assertEquals("1g05", Badges.label(65, "p", "g"))

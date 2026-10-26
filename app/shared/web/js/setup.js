@@ -638,8 +638,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const want = new URLSearchParams(location.search).get('card');       // TV Home sends people to one card (the kids lock's PIN): scroll to it, focus its first control
   // a card filled from the rules (the kids card's Add app) may come after 900 ms: looked for again a few times
   const go = (n) => { const c = document.getElementById(want); if (!c) { if (n < 10) setTimeout(() => go(n + 1), 400); return; } if (c.tagName === 'DETAILS') c.open = true; c.scrollIntoView({ block: c.matches('button') ? 'center' : 'start' }); (c.matches('button, input, select, a') ? c : c.querySelector('button, input, select, a'))?.focus(); };
-  if (/^[a-z]+$/.test(want || '')) setTimeout(() => go(0), 900);
+  manageHow().then(() => { if (/^[a-z]+$/.test(want || '')) setTimeout(() => go(0), 900); });   // after the question: a modal dialog keeps the focus from the card
 });
+// ---------- on the TV itself (Manage on this TV): first, here with the remote or on a phone ----------
+// A phone types and scrolls better than a D-pad (the user, 2026-10-26). The QR is a one-time full invite (Invite.kt) to this same
+// tab and card, so the phone lands where the TV was going; Manage is behind TV Setup's PIN already (Guard.RULE_SCREENS).
+// No question where no phone beside the TV could open it: TV Setup on a phone, the web remote off, no Wi-Fi address.
+async function manageHow() {
+  if (!window.ONTV || CORE !== 'tv' || matchMedia('(pointer:coarse)').matches) return;
+  const r = await api('/api/share', { scope: 'full' }, true) || {};
+  if (!r.url || r.warn === 'tailscale_only') return;
+  const q = new URLSearchParams(), at = new URLSearchParams(location.search);
+  for (const k of ['tab', 'card']) if (/^[a-z]+$/.test(at.get(k) || '')) q.set(k, at.get(k));
+  const url = String(q) ? r.url.replace('/#', '/?' + q + '#') : r.url;
+  return new Promise((done) => {
+    const d = el('dialog', { className: 'ask how' }, el('div', { className: 'card' },
+      el('h3', { textContent: T('setup.how_title') }),
+      el('div', { className: 'qrs' }, qrBlock(T('setup.how_phone'), [T('setup.same_wifi'), T('setup.how_note')], url, true)),
+      UI.actions(UI.btn(T('setup.how_tv'), () => d.close(), 'primary'))));
+    d.addEventListener('close', () => { d.remove(); done(); });
+    document.body.append(d); d.showModal();
+  });
+}
+
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
 let polling = false;
 applyAdb(); refresh(); setInterval(async () => { if (polling || document.hidden) return; polling = true; try { await refresh(); } finally { polling = false; } }, 4000);

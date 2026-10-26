@@ -67,6 +67,7 @@ internal object HomeTiles {
         val big = if (m >= 60) Words.get(lang, "tile.watch_big", "h" to m / 60, "m" to "%02d".format(m % 60)) else Words.get(lang, "tile.watch_big_m", "m" to m)
         return JSONObject().put("id", WATCH).put("title", Words.get(lang, "tile.watch_title")).put("layout", "gauge").put("mode", "live")
             .put("icon", "tv").put("tone", "watch").put("big", big).put("accent", watchAccent(today))
+            .put("hand", "manage:health")                             // a press: the day's apps on Health (TV Home starts it, HomeControl)
             .put("progress", (today / 3600.0 / WATCH_FULL_H).coerceIn(0.0, 1.0))
             .put("small", Words.get(lang, "tile.watch_yesterday", "t" to duration(lang, yesterday)))
     }

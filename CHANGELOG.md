@@ -10,11 +10,21 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: mỗi widget (cả đồng hồ) chọn được nền: Kính, Tông màu, Màu đặc hoặc Không nền (chữ nằm thẳng trên hình nền, có bóng cho dễ đọc). Chọn trong cài đặt của widget hoặc menu của nó trên TV (Kiểu thẻ).
 - TV Home: khi bật chế độ trẻ em, mọi app cần PIN đều có icon khóa (trước chỉ app khóa riêng mới có, nên trông như không app nào bị khóa).
 - TV Home: ô Khóa trẻ em ở Trung tâm điều khiển giờ mở thẳng danh sách app trẻ được mở (sau PIN); trước chỉ bật/tắt. Giữ OK cũng mở. Sửa lỗi "stopped is not defined" khi trang Quản lý trên TV vừa mở.
+- TV Setup: mở Quản lý trên TV giờ hỏi trước "Quản lý bằng cách nào?": quét QR để quản lý trên điện thoại (gõ, cuộn dễ hơn) hoặc tiếp tục trên TV.
+- TV Home: TV Setup có icon khóa khi nó hỏi PIN; widget sống của TV Setup (Dọn RAM, Hẹn giờ tắt…) không còn icon khóa vì chúng chạy tại chỗ, widget của app khác theo khóa của app đó.
+- TV Home: bấm widget "Đã xem" mở tab Sức khỏe (sau PIN) thay vì báo "cần TV Setup mới hơn"; khi thật sự cần bản mới, hiện hộp chọn Cập nhật / Mở TV Setup thay vì toast.
+- TV Home: hàng Xem tiếp vẽ lại: poster dọc (Stremio…) to, có nền mờ và tên phim bên cạnh; ảnh ngang phủ kín ô; có thanh tiến độ đã xem.
+- TV Home: đồng hồ trong thẻ hẹp không còn bị cắt thành "11:…".
 
 **English**
 - TV Home: each widget (the clock too) picks its background: Glass, Tonal, Solid or None (the words right on the wallpaper, with a shadow to stay readable). In the widget's settings, or its menu on the TV (Look).
 - TV Home: in kids mode every app that asks the PIN shows the lock (only apps locked one by one did, so nothing looked locked).
 - TV Home: the Control Center's kids lock tile now opens the list of apps a child may open (behind the PIN); it only switched before. Long OK too. Fixed "stopped is not defined" when Manage opened on the TV.
+- TV Setup: opening Manage on the TV first asks "How do you want to manage?": scan a QR to manage on a phone (easier to type and scroll) or go on on the TV.
+- TV Home: TV Setup shows the lock when it asks the PIN; TV Setup's live widgets (Free RAM, Sleep timer…) no longer show one since they act in place, other apps' widgets follow that app's lock.
+- TV Home: the "Watched" widget opens Health (behind the PIN) instead of "needs a newer TV Setup"; when a newer one is really needed, a choice of Update / Open TV Setup replaces the toast.
+- TV Home: the Play Next row redrawn: tall posters (Stremio…) big on a blurred backdrop with the title beside; wide pictures fill the tile; a progress bar shows how far you watched.
+- TV Home: the clock in a narrow card no longer cuts to "11:…".
 
 ## 0.26.2 - 2026-10-26
 

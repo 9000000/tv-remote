@@ -250,6 +250,8 @@
     <string name="power_failed">TV không thực hiện được</string>
     <string name="tile_need_setup">Cần TV Setup mới hơn</string>
     <string name="tile_need_setup_long">Live widget cần TV Setup mới hơn trên TV này</string>
+    <string name="tile_update_setup">Cập nhật TV Setup</string>
+    <string name="tile_open_setup">Mở TV Setup</string>
     <string name="tile_untrusted">TV Setup khác nguồn cài</string>
     <string name="tile_need_channels">Cần TV Channels mới hơn</string>
     <string name="tile_untrusted_channels">TV Channels khác nguồn cài</string>

@@ -248,16 +248,7 @@ object ControlCenter {
         /** The sleep timer / kids mode word to TV Setup on a thread of its own, then the state again. */
         private fun control(word: String) {
             Thread({
-                // TV Setup hands back the screen a word opens (its PIN, its lock card): started from here, the app in front; TV Setup
-                // starting it from the background was dropped by Android 14
-                val b = try { a.contentResolver.call(Uri.parse(HomeConfig.USAGE), "control", word, android.os.Bundle().apply { putBoolean("hand", true) }) } catch (e: Exception) { null }
-                val out = b?.getString("json")?.let { try { JSONObject(it) } catch (e: Exception) { null } }
-                @Suppress("DEPRECATION") val go = b?.getParcelable<android.app.PendingIntent>("go")
-                if (go != null) try {
-                    val o = android.app.ActivityOptions.makeBasic()
-                    if (android.os.Build.VERSION.SDK_INT >= 34) o.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
-                    go.send(a, 0, null, null, null, null, o.toBundle())
-                } catch (e: Exception) { }
+                val out = dev.tvremote.home.apps.SetupHand.control(a, word)   // its PIN, its lock card: started from here (SetupHand)
                 a.runOnUiThread {
                     if (!dialog.isShowing) return@runOnUiThread
                     ctl = out; if (out != null) lastCtl = out; paintCtl()

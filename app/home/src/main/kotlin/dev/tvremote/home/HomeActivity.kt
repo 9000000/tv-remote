@@ -69,6 +69,7 @@ import dev.tvremote.home.wall.Online
 import dev.tvremote.home.manage.PhotoScreen
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.widgets.sample
+import dev.tvremote.home.apps.SetupHand
 import dev.tvremote.home.apps.Tiles
 import dev.tvremote.home.apps.Watch
 import dev.tvremote.home.apps.LiveFace
@@ -380,7 +381,7 @@ class HomeActivity : Activity() {
         watchBg.execute {
             val got = (if (conf.optBoolean("showWatch", true)) Watch.read(this, cap, Store.rowsOff(this)) else emptyList()).map { it to Watch.art(this, it, w, TvUi.CARD) }
             runOnUiThread {
-                if (isDestroyed || got.map { it.first.key + it.first.title + (it.second != null) } == watch.map { it.first.key + it.first.title + (it.second != null) }) return@runOnUiThread
+                if (isDestroyed || got.map { it.first.key + it.first.title + it.first.done + (it.second != null) } == watch.map { it.first.key + it.first.title + it.first.done + (it.second != null) }) return@runOnUiThread
                 watch = got; show()
             }
         }
@@ -1197,8 +1198,18 @@ class HomeActivity : Activity() {
     private fun pressTile(a: App) {
         Thread {                                                  // its own thread: the follow-up polls for up to 14 s, and on [bg] the wallpaper, widgets and apps waited behind it
             val ok = Tiles.press(this, a.pkg) { s -> runOnUiThread { tileShow(a.pkg, s) } }
-            if (!ok) runOnUiThread { if (!isDestroyed) toast(if (Tiles.status(this) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.tile_need_setup_long) }
+            if (!ok) runOnUiThread { if (!isDestroyed) needSetup(Tiles.status(this) == Tiles.UNTRUSTED) }
         }.start()
+    }
+
+    /** A tile TV Setup could not answer: a question with the way out (a toast left people looking for TV Setup themselves). */
+    private fun needSetup(untrusted: Boolean) {
+        val have = packageManager.getLaunchIntentForPackage(Store.OWN[0])
+        val acts = listOfNotNull(
+            if (untrusted) null else TvUi.Item(R.drawable.ic_download, getString(if (have != null) R.string.tile_update_setup else R.string.suggest_install)) { getSetup() },
+            have?.let { i -> TvUi.Item(R.drawable.ic_zap, getString(R.string.tile_open_setup)) { try { startActivity(i) } catch (e: Exception) { } } })
+        open = TvUi.menu(this, R.style.TvSheet, getString(R.string.tile_need_setup), acts, R.drawable.ic_check,
+            note = getString(if (untrusted) R.string.power_untrusted else R.string.tile_need_setup_long))
     }
 
     /** The tiles in the config ([HomeConfig] "tiles") are among the apps, so move, hide and the order work on them as on any app. */
@@ -1951,8 +1962,15 @@ class HomeActivity : Activity() {
             val now = System.currentTimeMillis()
             val names = (0..6).map { d -> if (d == 0) getString(R.string.am_week_today) else fmt.format(java.util.Date(now - d * 86_400_000L)) }
             val (v, b) = AppPages.week(this, r.optJSONArray("days") ?: org.json.JSONArray(), names, getString(R.string.am_week_more), note.ifEmpty { getString(R.string.am_week_more_hint) }) {
-                AppRules.ask(this, a.pkg, "manage") { m ->
-                    if (m?.optString("result") == "ok") p.dialog.dismiss() else weekPage(a, st, getString(R.string.am_week_more_fail))
+                bg.execute {                                          // TV Setup hands its Health screen back to start from here (SetupHand); an older one opens it itself
+                    val r = SetupHand.control(this, "manage:health")
+                    runOnUiThread {
+                        if (isDestroyed) return@runOnUiThread
+                        if (r?.has("error") == false) p.dialog.dismiss()
+                        else AppRules.ask(this, a.pkg, "manage") { m ->
+                            if (m?.optString("result") == "ok") p.dialog.dismiss() else weekPage(a, st, getString(R.string.am_week_more_fail))
+                        }
+                    }
                 }
             }
             p.view(title, v, 460, b, back)

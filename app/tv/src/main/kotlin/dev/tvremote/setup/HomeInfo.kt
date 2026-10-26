@@ -98,10 +98,13 @@ class HomeInfo : ContentProvider() {
                 rules.optJSONObject("limits")?.let { l ->
                     for (pkg in l.keys()) limits.put(JSONObject().put("pkg", pkg).put("min", l.optInt(pkg) + Rules.extra(rules, pkg, now)).put("used", today.optLong(pkg)))
                 }
-                val out = JSONObject().put("limits", limits).put("locked", JSONArray(Rules.locked(rules))).put("bed", Rules.inBedtime(rules, now))
+                // TV Setup asks its own PIN while a code is set (MainActivity, Guard.RULE_SCREENS), in kids mode or not: its tile had no lock
+                val self = Rules.hasCode(rules) && Rules.unlockUntil(rules, now) == 0L && !Guard.isOpen(c.packageName)
+                val out = JSONObject().put("limits", limits).put("locked", JSONArray(Rules.locked(rules) + (if (self) listOf(c.packageName) else emptyList())))
+                    .put("bed", Rules.inBedtime(rules, now))
                 // kids mode locks every app but these (Rules.needsPin): without it a TV Home showed no lock at all while each app asked the PIN
                 if (Rules.kidsMode(rules) && Rules.unlockUntil(rules, now) == 0L) {
-                    val open = HashSet(Rules.allow(rules) + Kids.free(c, now) + c.packageName)
+                    val open = HashSet(Rules.allow(rules) + Kids.free(c, now) + (if (self) emptyList() else listOf(c.packageName)))
                     rules.optJSONObject("unlock_apps")?.let { u -> for (k in u.keys()) if (u.optLong(k) > now) open.add(k) }
                     out.put("kids", true).put("open", JSONArray(open.toList()))
                 }

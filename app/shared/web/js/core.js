@@ -613,8 +613,12 @@ function warmTv() {
   if (CORE !== 'tv' || stopped || document.hidden || currentTab !== 'remote' || performance.now() - warmAt < 20000) return;
   warmAt = performance.now(); fetch('/api/warm', { method: 'POST' }).catch(() => {});
 }
-['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, warmTv, true));
-document.addEventListener('visibilitychange', warmTv);
+// once every script has run: a key reaching the page while it loads (the TV's PIN typed just before Manage opened) found
+// `stopped` / `currentTab` not declared yet and threw "is not defined"
+document.addEventListener('DOMContentLoaded', () => {
+  ['pointerdown', 'keydown'].forEach((ev) => document.addEventListener(ev, warmTv, true));
+  document.addEventListener('visibilitychange', warmTv);
+});
 
 // ---------- this device slept (a laptop's lid, a phone's screen) ----------
 // Its timers stood still and its streams broke under it: not the TV's fault. A stream that ends right after gets one more go

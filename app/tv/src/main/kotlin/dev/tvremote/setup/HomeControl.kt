@@ -8,8 +8,8 @@ import org.json.JSONObject
  * switched ON, named words and nothing else, never a rules JSON from the caller. Kids mode is not switched off from here: TV Home is
  * free in kids mode (Kids.ALWAYS), so a child could undo it from its own panel; "kids:off" only OPENS the PIN screen ([PinActivity] with
  * `kids_off`: the same PIN / Authenticator / backup code / ask a parent and Lockout as anywhere), and that screen changes the rules on a right code.
- * "kids:setup" opens TV Setup's Manage screen on the TV at the lock card, where the PIN is set.
- * `arg`: "" asks | "sleep:<minutes>" | "kids:on" | "kids:off" | "kids:setup". The answer {sleep_at, kids, pin, error?}: error "bad" | "pin"
+ * "kids:setup" opens TV Setup's Manage screen on the TV at the lock card, where the PIN is set; "manage:health" at the Health tab.
+ * `arg`: "" asks | "sleep:<minutes>" | "kids:on" | "kids:off" | "kids:setup" | "manage:health". The answer {sleep_at, kids, pin, error?}: error "bad" | "pin"
  * (kids needs a PIN or a code set first) | "failed" (the screen could not open). An old TV Setup answers "bad" to the last two.
  */
 object HomeControl {
@@ -21,7 +21,7 @@ object HomeControl {
         word.startsWith("sleep:") && word.substringAfter(':').toIntOrNull() in SLEEP -> "rules"
         word == "kids:on" -> "rules"
         word == "kids:off" -> "pin"
-        word == "kids:setup" -> "manage"
+        word == "kids:setup" || word == "manage:health" -> "manage"
         else -> "bad"
     }
 
@@ -31,7 +31,10 @@ object HomeControl {
     private fun screen(c: Context, word: String): android.content.Intent? = when (route(word)) {
         "pin" -> android.content.Intent(c, PinActivity::class.java).putExtra("kids_off", true)
         "manage" -> android.content.Intent(c, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass)
-            .putExtra(ManageActivity.TAB, "auto").putExtra(ManageActivity.SECTION, if (Rules.kidsMode(Rules.load(c))) "kidsadd" else "lockcard")   // on: the apps a child may open; off: the PIN first
+            .apply {
+                if (word == "manage:health") putExtra(ManageActivity.TAB, "health")   // TV Home's watched-today tile and an app's week
+                else putExtra(ManageActivity.TAB, "auto").putExtra(ManageActivity.SECTION, if (Rules.kidsMode(Rules.load(c))) "kidsadd" else "lockcard")   // on: the apps a child may open; off: the PIN first
+            }
         else -> null
     }
 
@@ -41,7 +44,7 @@ object HomeControl {
      * the kids tile closed the panel and nothing came). TV Home is the screen in front, so the start is its own.
      */
     fun handBack(c: Context, word: String): android.app.PendingIntent? = screen(c, word)?.let {
-        android.app.PendingIntent.getActivity(c, route(word).hashCode(), it.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+        android.app.PendingIntent.getActivity(c, word.hashCode(), it.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
             android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
