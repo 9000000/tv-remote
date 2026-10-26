@@ -12,7 +12,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: bỏ giới hạn 6 (app yêu thích + kênh ghim) khi ghim shortcut, ghim bao nhiêu cũng được; thông báo đổi thành "Đã thêm ra màn hình chính".
 - TV Setup: khi bạn bật "Cho hỗ trợ xem", đội hỗ trợ đọc được phím nào remote gửi (để sửa remote lạ mà không cần bạn mô tả); chỉ đọc, hết giờ là thôi.
 - TV Setup: nút lạ trên remote của một đời TV (vd. nút Input gửi mã khác) giờ được sửa từ danh sách trên site, không cần cập nhật app.
-- Gán phím: nút YouTube / Netflix / Prime cũng gán được app khác; TV Home nhớ phím số và phím màu bạn đã bấm, không còn xám 1–9 trên remote không tự khai báo.
+- Gán phím: nút YouTube / Netflix / Prime cũng gán được app khác.
 
 **English**
 - TV Home's ready-made themes (read from the site, no app update needed): new "See-through" theme (the day's Bing picture, cards with no background); "Photo frame", "Rice terraces", "Sunset beach (video)", "Ha Long Bay (video)" now use cards with no background.
@@ -20,7 +20,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: no more limit of 6 (favourite apps + pins) on pinned shortcuts; the message now says "On the home screen".
 - TV Setup: while you let support look, support can read which keys your remote sends (to fix an unusual remote without asking you to describe it); read-only, ends with the session.
 - TV Setup: an odd button on one TV model's remote (e.g. an Input button that sends another code) is now fixed from a list on the site, with no app update.
-- Assign keys: the YouTube / Netflix / Prime buttons can be given another app too; TV Home remembers the number and colour keys you pressed, so 1–9 are no longer greyed out on remotes that don't declare them.
+- Assign keys: the YouTube / Netflix / Prime buttons can be given another app too.
 
 ## 0.26.3 - 2026-10-26
 

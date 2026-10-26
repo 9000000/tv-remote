@@ -61,7 +61,6 @@ object Keys {
     /** A key pressed on TV Home's own screen: opens its app when one is chosen and installed. True = handled. Numbers and colours only. */
     fun onKey(a: Activity, e: KeyEvent): Boolean {
         val code = e.keyCode
-        seen(a, code)
         if (code !in HomeConfig.KEY_COLOURS && code !in HomeConfig.KEY_NUMBERS) return false
         val conf = Store.get(a)
         if (!conf.optBoolean("keyon")) return false
@@ -74,28 +73,12 @@ object Keys {
         return Targets.open(a, target)
     }
 
-    /** A key pressed on TV Home's screen: proof a remote here has it, kept with [have]'s list. */
-    private fun seen(c: Context, code: Int) {
-        if (code !in HomeConfig.KEY_COLOURS && code !in HomeConfig.KEY_NUMBERS) return
-        val had = prefs(c).getStringSet("have", emptySet())!!
-        if (code.toString() !in had) prefs(c).edit().putStringSet("have", had + code.toString()).apply()
-    }
-
     /**
      * The keys of [HomeConfig.KEY_COLOURS] / [HomeConfig.KEY_NUMBERS] a remote here has, as the codes: the union over the keyboards that
-     * are not virtual (the TV's own buttons and a paired remote say what they can send, InputDevice.hasKeys), and every key seen
-     * before: a Bluetooth remote that sleeps leaves the list (a Chromecast with a TIMvision remote: only Google's remote, no numbers,
-     * was left to answer). Null = not known (no device answered): the screens then leave every key on rather than greying a working one.
+     * are not virtual (the TV's own buttons and a paired remote say what they can send, InputDevice.hasKeys). Null = not known (no
+     * device answered): the screens then leave every key on rather than greying a working one.
      */
     fun have(c: Context): JSONArray? {
-        val now = haveNow() ?: return null
-        val had = prefs(c).getStringSet("have", emptySet())!!
-        val all = had + (0 until now.length()).map { now.getInt(it).toString() }
-        if (all.size != had.size) prefs(c).edit().putStringSet("have", all).apply()
-        return JSONArray((HomeConfig.KEY_COLOURS + HomeConfig.KEY_NUMBERS).filter { it.toString() in all })
-    }
-
-    private fun haveNow(): JSONArray? {
         val codes = (HomeConfig.KEY_COLOURS + HomeConfig.KEY_NUMBERS).toIntArray()
         val has = BooleanArray(codes.size)
         var seen = false
