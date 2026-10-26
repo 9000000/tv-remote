@@ -986,6 +986,7 @@ object Customize {
         android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()
     }
 
+    private const val GLYPH_SOLID = 0xE60E1016.toInt(); private const val GLYPH_NONE = 0x14FFFFFF   // a "solid" card, darker than the strip; "none": only its place
     private const val GLYPH_TONAL = 0xCCF6E9E0.toInt(); private const val GLYPH_PALE = 0xCCF4F4F6.toInt(); private const val GLYPH_INK = 0xFF2A2320.toInt()   // the strip's cards in the tonal look / a light clock
     private const val CHIP_FOCUS = 0x2EFFFFFF; private const val CHIP_REST = 0x12FFFFFF; private const val CHIP_EDGE = 0x1FFFFFFF   // a widget row's look button, as its size button
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
@@ -1170,10 +1171,10 @@ object Customize {
                 val w = room * col.weight / sum
                 val h = (height - g * (col.keys.size - 1)) / col.keys.size
                 col.keys.forEachIndexed { j, k ->
-                    val tonal = HomeConfig.optValue(conf, k, "look") == "tonal"
+                    val look = HomeConfig.optValue(conf, k, "look"); val tonal = look == "tonal"
                     val pale = k == "clock" && HomeConfig.optValue(conf, k, "theme") == "light"
                     paint.style = Paint.Style.FILL
-                    paint.color = if (tonal) GLYPH_TONAL else if (pale) GLYPH_PALE else if (k in big) 0x668AB4F8 else 0x30FFFFFF
+                    paint.color = if (tonal) GLYPH_TONAL else if (pale) GLYPH_PALE else if (look == "solid") GLYPH_SOLID else if (look == "none") GLYPH_NONE else if (k in big) 0x668AB4F8 else 0x30FFFFFF
                     cv.drawRoundRect(x, j * (h + g), x + w, j * (h + g) + h, g * 2, g * 2, paint)
                     if (named) drawName(cv, k, x, j * (h + g), w, h, pale || tonal)
                     if (k == mark) {

@@ -3004,6 +3004,8 @@
  "home.ov_light": "Light",
  "home.ov_glass": "Glass",
  "home.ov_tonal": "Tonal",
+ "home.ov_solid": "Solid",
+ "home.ov_none": "None",
  "home.ov_off": "Off",
  "home.ov_on": "On",
  "home.w_air": "Air quality card: index and PM2.5",

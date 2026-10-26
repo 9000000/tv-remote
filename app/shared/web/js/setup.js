@@ -216,14 +216,13 @@ $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#sendlog').addEventListener('click', sendWireLog);
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 
-// ---------- stop the local server from the page ----------
-let stopped = false;
+// ---------- stop the local server from the page (`stopped` lives in core.js) ----------
 $('#quit').addEventListener('click', async () => {
   if (!await ask(T('setup.quit_ask'), { ok: T('setup.quit_ok') })) return;
   $('#about').close();
   if (screenOn) stopScreen();
   if (!await api('/api/shutdown', {})) return;
-  stopped = true;
+  serverStopped();
   document.querySelector('main').replaceChildren(el('section', { className: 'card stopped' },
     el('h1', { textContent: T('setup.stopped_title') }), el('p', { className: 'muted', textContent: T('setup.stopped_note') })));
 });
@@ -637,7 +636,9 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (startTab === 'term') { showTab('files'); $('#termcard').open = true; }   // the terminal used to be a tab of its own
   document.documentElement.classList.add('tabbed');                   // the right tab is open: show it (theme.js)
   const want = new URLSearchParams(location.search).get('card');       // TV Home sends people to one card (the kids lock's PIN): scroll to it, focus its first control
-  if (/^[a-z]+$/.test(want || '')) setTimeout(() => { const c = document.getElementById(want); if (!c) return; if (c.tagName === 'DETAILS') c.open = true; c.scrollIntoView({ block: 'start' }); c.querySelector('button, input, select, a')?.focus(); }, 900);
+  // a card filled from the rules (the kids card's Add app) may come after 900 ms: looked for again a few times
+  const go = (n) => { const c = document.getElementById(want); if (!c) { if (n < 10) setTimeout(() => go(n + 1), 400); return; } if (c.tagName === 'DETAILS') c.open = true; c.scrollIntoView({ block: c.matches('button') ? 'center' : 'start' }); (c.matches('button, input, select, a') ? c : c.querySelector('button, input, select, a'))?.focus(); };
+  if (/^[a-z]+$/.test(want || '')) setTimeout(() => go(0), 900);
 });
 // One check at a time, and none while the page is hidden: a TV that is slow to answer must not pile them up.
 let polling = false;

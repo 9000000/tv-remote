@@ -210,14 +210,18 @@ object HomeConfig {
     class Opt(val id: String, val type: String, val values: List<String>, val default: String, val store: String = "wopt")
     private val SIZES = listOf("big", "small")
     val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news") + HomeQr.KEYS   // every card but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
+    // "solid": an opaque dark card, the photo hidden under it; "none": no card at all, the words on the wallpaper with a shadow
+    // (a person whose own photo is the point). The clock has no tonal form (its face and theme are its look)
+    val LOOKS = listOf("glass", "tonal", "solid", "none")
+    private val BARE = listOf("glass", "solid", "none")
     /** What a card really implements (the drawing code in app/home widgets): the options below are all it offers, every combination is drawn. */
     fun options(k: String): List<Opt> {
         val size = Opt("size", "choice", SIZES, defaultSize(k), "wsize")
         return when {
-            k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"))
-            k == "market" -> listOf(size, Opt("look", "choice", listOf("glass", "tonal"), "glass"), Opt("layout", "choice", listOf("card", "ticker"), "card"), Opt("show", "choice", listOf("all", "gold", "rates"), "all"), Opt("btc", "toggle", emptyList(), "off"))
-            k == "news" -> listOf(size, Opt("look", "choice", listOf("glass", "tonal"), "glass"), Opt("src", "choice", listOf("auto", "mine", "both"), "auto"))
-            k in TONAL -> listOf(size, Opt("look", "choice", listOf("glass", "tonal"), "glass"))
+            k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"), Opt("look", "choice", BARE, "glass"))
+            k == "market" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("layout", "choice", listOf("card", "ticker"), "card"), Opt("show", "choice", listOf("all", "gold", "rates"), "all"), Opt("btc", "toggle", emptyList(), "off"))
+            k == "news" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("src", "choice", listOf("auto", "mine", "both"), "auto"))
+            k in TONAL -> listOf(size, Opt("look", "choice", LOOKS, "glass"))
             k in WIDGETS -> listOf(size)
             else -> emptyList()
         }

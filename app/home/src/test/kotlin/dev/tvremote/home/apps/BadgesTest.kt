@@ -31,6 +31,14 @@ class BadgesTest {
         assertNull(Badges.NONE.of("any.app"))
     }
 
+    @Test fun kidsModeLocksAllButTheOpenOnes() {
+        val i = Badges.withOwn(info("""{"kids":true,"open":["yt.kids"],"limits":[{"pkg":"yt.kids","min":60,"used":600}]}"""), setOf("x.y"))
+        assertEquals(Badges.LOCK, i.of("any.app"))                       // a FPT box asked the PIN for every app, no tile had a lock
+        assertEquals(50, i.of("yt.kids")!!.minutes)                       // an open one keeps its time left
+        assertEquals(Badges.LOCK, i.of("x.y"))
+        assertNull(info("""{"open":["a.b"]}""").of("c.d"))               // kids mode off: no lock from the list
+    }
+
     @Test fun labels() {
         assertEquals("20p", Badges.label(20, "p", "g"))
         assertEquals("1g05", Badges.label(65, "p", "g"))

@@ -2920,6 +2920,8 @@
  "home.ov_light": "Sáng",
  "home.ov_glass": "Kính",
  "home.ov_tonal": "Tông màu",
+ "home.ov_solid": "Màu đặc",
+ "home.ov_none": "Không nền",
  "home.ov_off": "Tắt",
  "home.ov_on": "Bật",
  "home.w_air": "Thẻ chất lượng không khí: chỉ số và PM2.5",

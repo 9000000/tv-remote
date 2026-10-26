@@ -197,8 +197,9 @@ function homeThemePaint(cv, conf, tiles, img, look) {
     for (const col of packed.cols) {
       const cw = room * col.weight / sum, n = col.keys.length, ch = (rowH - (n - 1) * gap * 0.6) / n;
       col.keys.forEach((k, j) => {
-        const cy = y + j * (ch + gap * 0.6), tonal = (((conf.wopt || {})[k] || {}).look || (conf.wstyle || {})[k]) === 'tonal', pad = h * 0.03;
-        ctx.fillStyle = `rgba(${HOME_PREV.ink},${tonal ? 0.29 : 0.18})`; box(x, cy, cw, ch, h * 0.035);
+        const cy = y + j * (ch + gap * 0.6), look = ((conf.wopt || {})[k] || {}).look || (conf.wstyle || {})[k], pad = h * 0.03;
+        ctx.fillStyle = look === 'solid' ? 'rgba(24,27,34,0.94)' : `rgba(${HOME_PREV.ink},${look === 'tonal' ? 0.29 : 0.18})`;   // Frost's solid card; none: no card
+        if (look !== 'none') box(x, cy, cw, ch, h * 0.035);
         if (k === 'clock' && (n === 1 || ch > h * 0.12)) { ctx.strokeStyle = `rgba(${HOME_PREV.ink},0.7)`; ctx.lineWidth = Math.max(1, h * 0.008); ctx.beginPath(); ctx.arc(x + cw / 2, cy + ch / 2, Math.min(cw, ch) * 0.28, 0, 2 * Math.PI); ctx.stroke(); }
         else { bar(x + pad, cy + pad, cw * 0.42, h * 0.018, 0.4); if (ch > h * 0.12) bar(x + pad, cy + ch * 0.45, cw * 0.62, h * 0.045, 0.7); else bar(x + pad, cy + ch * 0.55, cw * 0.5, h * 0.03, 0.7); }
       });

@@ -26,6 +26,7 @@ import java.io.File
  */
 object ThemePreview {
     private const val INK = 0xFFFFFFFF.toInt()                      // every shape is this at some alpha: it reads on any wall
+    private const val SOLID = 0xF0181B22.toInt()                     // Frost's "solid" card
     private const val FILL_GLASS = 0x2E; private const val FILL_TONAL = 0x4A; private const val FILL_TILE = 0x26
     private const val LIVE_A = 0xFF4FC3A1.toInt(); private const val LIVE_B = 0xFFFFC857.toInt(); private const val LIVE_C = 0xFF8AB4F8.toInt(); private const val LIVE_D = 0xFFF28B82.toInt()
     private val LIVE = intArrayOf(LIVE_A, LIVE_B, LIVE_C, LIVE_D)
@@ -122,9 +123,9 @@ object ThemePreview {
                 val ch = (rowH - (n - 1) * gap * 0.6f) / n
                 col.keys.forEachIndexed { j, k ->
                     val cy = y + j * (ch + gap * 0.6f)
-                    val tonal = HomeConfig.optValue(conf, k, "look") == "tonal"
-                    p.color = (((if (tonal) FILL_TONAL else FILL_GLASS) shl 24) or (INK and 0xFFFFFF))
-                    cv.drawRoundRect(x, cy, x + cw, cy + ch, h * 0.035f, h * 0.035f, p)
+                    val look = HomeConfig.optValue(conf, k, "look")
+                    p.color = if (look == "solid") SOLID else (((if (look == "tonal") FILL_TONAL else FILL_GLASS) shl 24) or (INK and 0xFFFFFF))
+                    if (look != "none") cv.drawRoundRect(x, cy, x + cw, cy + ch, h * 0.035f, h * 0.035f, p)   // no card: only what is on it
                     val pad = h * 0.03f
                     if (k == "clock" && (n == 1 || ch > h * 0.12f)) {                    // the analog face
                         val d = minOf(cw, ch) * 0.56f

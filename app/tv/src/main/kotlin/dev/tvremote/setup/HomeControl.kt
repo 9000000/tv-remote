@@ -27,7 +27,26 @@ object HomeControl {
 
     private fun open(c: Context, i: android.content.Intent): Boolean = try { c.startActivity(i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)); true } catch (e: Exception) { false }
 
-    fun run(c: Context, arg: String?): JSONObject {
+    /** The screen a "pin" / "manage" word opens. */
+    private fun screen(c: Context, word: String): android.content.Intent? = when (route(word)) {
+        "pin" -> android.content.Intent(c, PinActivity::class.java).putExtra("kids_off", true)
+        "manage" -> android.content.Intent(c, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass)
+            .putExtra(ManageActivity.TAB, "auto").putExtra(ManageActivity.SECTION, if (Rules.kidsMode(Rules.load(c))) "kidsadd" else "lockcard")   // on: the apps a child may open; off: the PIN first
+        else -> null
+    }
+
+    /**
+     * That screen for TV Home to start itself: this app is in the background when the panel asks, and Android 10+ drops its own start
+     * without a word unless it may draw over others (granted through ADB: a TV without ADB for TV Setup, or the emulator, got nothing;
+     * the kids tile closed the panel and nothing came). TV Home is the screen in front, so the start is its own.
+     */
+    fun handBack(c: Context, word: String): android.app.PendingIntent? = screen(c, word)?.let {
+        android.app.PendingIntent.getActivity(c, route(word).hashCode(), it.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    /** [handOver]: the caller starts the screen itself ([handBack]); a TV Home older than that has this app open it. */
+    fun run(c: Context, arg: String?, handOver: Boolean = false): JSONObject {
         var error: String? = null
         val word = arg.orEmpty()
         try {
@@ -36,9 +55,7 @@ object HomeControl {
                 "rules" ->
                     if (word == "kids:on") Rules.change(c, JSONObject().put("do", "kids").put("mode", "kids"))
                     else Rules.change(c, JSONObject().put("do", "sleep").put("minutes", word.substringAfter(':').toInt()))
-                "pin" -> if (!open(c, android.content.Intent(c, PinActivity::class.java).putExtra("kids_off", true))) error = "failed"
-                "manage" -> if (!open(c, android.content.Intent(c, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass)
-                    .putExtra(ManageActivity.TAB, "auto").putExtra(ManageActivity.SECTION, "lockcard"))) error = "failed"
+                "pin", "manage" -> if (!handOver && !open(c, screen(c, word)!!)) error = "failed"
                 else -> error = "bad"
             }
         } catch (e: IllegalArgumentException) { error = "pin" }

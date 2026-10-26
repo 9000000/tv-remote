@@ -52,7 +52,13 @@ class HomeInfo : ContentProvider() {
         }
         if (method == "control") {                                     // saving the rules and starting the watcher: our own identity
             val token = Binder.clearCallingIdentity()
-            try { return Bundle().apply { putString("json", HomeControl.run(c, arg).toString()) } } finally { Binder.restoreCallingIdentity(token) }
+            try {
+                val over = extras?.getBoolean("hand") == true                // a TV Home that starts the screen itself (HomeControl.handBack)
+                return Bundle().apply {
+                    putString("json", HomeControl.run(c, arg, over).toString())
+                    if (over) HomeControl.handBack(c, arg.orEmpty())?.let { putParcelable("go", it) }
+                }
+            } finally { Binder.restoreCallingIdentity(token) }
         }
         if (method == "keys") return keys(c, arg)
         if (method == "capture") { KeysBridge.capture(arg == "1"); return Bundle().apply { putString("json", "{}") } }   // TV Home's "assign a key" page is open: the keys reach it instead of opening their apps
@@ -92,8 +98,14 @@ class HomeInfo : ContentProvider() {
                 rules.optJSONObject("limits")?.let { l ->
                     for (pkg in l.keys()) limits.put(JSONObject().put("pkg", pkg).put("min", l.optInt(pkg) + Rules.extra(rules, pkg, now)).put("used", today.optLong(pkg)))
                 }
-                return Bundle().apply { putString("json", JSONObject().put("limits", limits).put("locked", JSONArray(Rules.locked(rules)))
-                    .put("bed", Rules.inBedtime(rules, now)).toString()) }
+                val out = JSONObject().put("limits", limits).put("locked", JSONArray(Rules.locked(rules))).put("bed", Rules.inBedtime(rules, now))
+                // kids mode locks every app but these (Rules.needsPin): without it a TV Home showed no lock at all while each app asked the PIN
+                if (Rules.kidsMode(rules) && Rules.unlockUntil(rules, now) == 0L) {
+                    val open = HashSet(Rules.allow(rules) + Kids.free(c, now) + c.packageName)
+                    rules.optJSONObject("unlock_apps")?.let { u -> for (k in u.keys()) if (u.optLong(k) > now) open.add(k) }
+                    out.put("kids", true).put("open", JSONArray(open.toList()))
+                }
+                return Bundle().apply { putString("json", out.toString()) }
             } finally { Binder.restoreCallingIdentity(token) }
         }
         val token = Binder.clearCallingIdentity()                      // our own permissions from here (usage access)

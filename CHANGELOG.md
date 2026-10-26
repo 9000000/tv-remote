@@ -4,6 +4,18 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Home: mỗi widget (cả đồng hồ) chọn được nền: Kính, Tông màu, Màu đặc hoặc Không nền (chữ nằm thẳng trên hình nền, có bóng cho dễ đọc). Chọn trong cài đặt của widget hoặc menu của nó trên TV (Kiểu thẻ).
+- TV Home: khi bật chế độ trẻ em, mọi app cần PIN đều có icon khóa (trước chỉ app khóa riêng mới có, nên trông như không app nào bị khóa).
+- TV Home: ô Khóa trẻ em ở Trung tâm điều khiển giờ mở thẳng danh sách app trẻ được mở (sau PIN); trước chỉ bật/tắt. Giữ OK cũng mở. Sửa lỗi "stopped is not defined" khi trang Quản lý trên TV vừa mở.
+
+**English**
+- TV Home: each widget (the clock too) picks its background: Glass, Tonal, Solid or None (the words right on the wallpaper, with a shadow to stay readable). In the widget's settings, or its menu on the TV (Look).
+- TV Home: in kids mode every app that asks the PIN shows the lock (only apps locked one by one did, so nothing looked locked).
+- TV Home: the Control Center's kids lock tile now opens the list of apps a child may open (behind the PIN); it only switched before. Long OK too. Fixed "stopped is not defined" when Manage opened on the TV.
+
 ## 0.26.2 - 2026-10-26
 
 Web 0.26.2 · app điện thoại 0.26.2 · app TV 0.26.2 · TV Home 0.13.0 · TV Channels 0.9.0 · TV Games 0.9.0

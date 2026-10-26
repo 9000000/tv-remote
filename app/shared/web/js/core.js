@@ -327,6 +327,10 @@ if (INVITE) history.replaceState(null, '', location.pathname + location.search);
 let inviteBad = false, invited = INVITE ? fetch('/api/pair/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invite: INVITE }) })
   .then((x) => x.ok).catch(() => false) : null;
 let stateMiss = 0, adbSoon = 0, adbSoonMs = 125;
+// the server was stopped from the page (setup.js's Quit); declared here, before its first reader: setup.js loads ~30 scripts later,
+// and a key pressed while the page loaded (the TV's PIN typed just before Manage opened) reached warmTv first: "stopped is not defined"
+let stopped = false;
+function serverStopped() { stopped = true; }
 async function refresh() {
   if (stopped) return;
   let locked = false;

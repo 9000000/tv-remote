@@ -73,7 +73,7 @@ function packGlyph(p, big, x = {}) {
   const sum = Math.max(HOME_W.floor, p.cols.reduce((n, c) => n + c.weight, 0));
   for (const c of p.cols) {
     const col = el('b'); col.style.setProperty('--w', c.weight / sum * 100);
-    for (const k of c.keys) col.append(el('s', { className: [big.includes(k) ? 'big' : '', k === x.mark ? 'mark' : '', x.conf && homeOpt(x.conf, k, 'look') === 'tonal' ? 'tonal' : '', x.conf && k === 'clock' && homeOpt(x.conf, k, 'theme') === 'light' ? 'pale' : ''].filter(Boolean).join(' ') }, ...(x.mark ? [el('em', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]).split(':')[0] : k })] : [])));
+    for (const k of c.keys) col.append(el('s', { className: [big.includes(k) ? 'big' : '', k === x.mark ? 'mark' : '', x.conf && ['tonal', 'solid', 'none'].includes(homeOpt(x.conf, k, 'look')) ? homeOpt(x.conf, k, 'look') : '', x.conf && k === 'clock' && homeOpt(x.conf, k, 'theme') === 'light' ? 'pale' : ''].filter(Boolean).join(' ') }, ...(x.mark ? [el('em', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]).split(':')[0] : k })] : [])));
     g.append(col);
   }
   return g;
@@ -92,7 +92,7 @@ function layGlyph(k) {
 
 // The words the schema names by id (HomeConfig.options: label `home.o_<option>`, value `home.ov_<value>`), listed so the id check sees them used
 const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman',
-  'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_off', 'home.ov_on',
+  'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_solid', 'home.ov_none', 'home.ov_off', 'home.ov_on',
   'home.o_layout', 'home.o_show', 'home.o_btc', 'home.o_src', 'home.ov_card', 'home.ov_ticker', 'home.ov_all', 'home.ov_gold', 'home.ov_rates', 'home.ov_auto', 'home.ov_mine', 'home.ov_both'];
 // A card's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
 const homeOpt = (c, k, id) => {
@@ -101,7 +101,7 @@ const homeOpt = (c, k, id) => {
   return o && o.values.some((x) => x.id === v) ? v : o ? o.default : '';
 };
 
-// The card itself at the chosen options, drawn small: the clock as a face (10:10) in its face and theme, any other card as a glass or tonal card
+// The card itself at the chosen options, drawn small: the clock as a face (10:10) in its face and theme, any other card in its look (glass, tonal, solid, none)
 function homeCardPrev(k, c) {
   const big = homeSize(c, k) === 'big';
   if (k === 'clock') {
@@ -118,10 +118,9 @@ function homeCardPrev(k, c) {
     t += num.map(([n, x, y]) => `<text x="${x}" y="${y}" class="num">${n}</text>`).join('');
     const thin = face === 'minimal';
     t += `<line x1="50" y1="50" x2="${50 + 22 * Math.sin(305 * Math.PI / 180)}" y2="${50 - 22 * Math.cos(305 * Math.PI / 180)}" class="hand ${thin ? 'thin' : ''}"/><line x1="50" y1="50" x2="${50 + 34 * Math.sin(60 * Math.PI / 180)}" y2="${50 - 34 * Math.cos(60 * Math.PI / 180)}" class="hand ${thin ? 'thin' : ''}"/><circle cx="50" cy="50" r="3" class="pin"/>`;
-    return el('div', { className: 'wprev wclock ' + face + (light ? ' light' : ' dark') + (big ? ' big' : ''), role: 'img', 'aria-label': T('home.w_clock'), innerHTML: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="49" class="disc"/>${t}</svg>` });
+    return el('div', { className: 'wprev wclock ' + face + (light ? ' light' : ' dark') + (big ? ' big' : '') + ({ glass: ' look-glass', solid: ' look-solid' }[homeOpt(c, k, 'look') || 'glass'] || ''), role: 'img', 'aria-label': T('home.w_clock'), innerHTML: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="49" class="disc"/>${t}</svg>` });
   }
-  const tonal = homeOpt(c, k, 'look') === 'tonal';
-  return el('div', { className: 'wprev wcard ' + (tonal ? 'tonal' : 'glass') + (big ? ' big' : '') },
+  return el('div', { className: 'wprev wcard ' + (homeOpt(c, k, 'look') || 'glass') + (big ? ' big' : '') },
     el('small', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : k }), el('b', { textContent: '··' }), el('i'));
 }
 

@@ -28,6 +28,8 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
     private val place = Matrix()
     private val copy = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
     private var shaded: Bitmap? = null
+    /** The card's "look" (HomeConfig.LOOKS): "glass" this, "solid" an opaque card (no photo through it), "none" nothing drawn. */
+    var look = "glass"
 
     override fun onBoundsChange(b: android.graphics.Rect) {
         glass.bounds = b
@@ -35,6 +37,8 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
     }
 
     override fun draw(c: Canvas) {
+        if (look == "none") return
+        if (look == "solid") { c.drawRoundRect(box, radius, radius, OPAQUE); glass.draw(c); return }
         val soft = Frost.soft
         val v = callback as? View
         if (soft != null && v != null) {
@@ -56,6 +60,7 @@ class Frost(private val radius: Float, stroke: Int) : Drawable() {
 
     companion object {
         private val DARK = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x70000000 }
+        private val OPAQUE = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xF0181B22.toInt() }   // the dock's dark, nearly opaque: a busy photo stays out
         private val SOLID = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB8101218.toInt() }
         // a live page has no still copy to blur: one taken again and again (drawing the WebView to a bitmap) or a real blur
         // (RenderEffect: Android 12+, a BRAVIA is 9) costs every frame on these chips; a nearly opaque card is free and as readable

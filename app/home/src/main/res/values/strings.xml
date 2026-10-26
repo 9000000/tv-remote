@@ -83,8 +83,8 @@
     <string name="rot_pick">Pick 2 or more below</string>
     <string name="rot_set">✓ = in the rotation</string>
     <string name="w_system">System</string>
-    <string name="w_ram">Memory</string>
-    <string name="w_disk">Storage</string>
+    <string name="w_ram">RAM</string>
+    <string name="w_disk">Disk</string>
     <string name="w_up">On for</string>
     <string name="w_signal">Wi-Fi signal</string>
     <string name="w_adb">ADB</string>
@@ -492,6 +492,8 @@
     <string name="home_ov_light">Light</string>
     <string name="home_ov_glass">Glass</string>
     <string name="home_ov_tonal">Tonal</string>
+    <string name="home_ov_solid">Solid</string>
+    <string name="home_ov_none">None</string>
     <string name="home_ov_off">Off</string>
     <string name="home_ov_on">On</string>
     <string name="w_market">Market</string>
@@ -549,6 +551,7 @@
     <string name="cc_on">On</string>
     <string name="cc_off">Off</string>
     <string name="cc_kids">Kids lock</string>
+    <string name="cc_kids_on">On · press to pick apps</string>
     <string name="cc_kids_nopin">Set a PIN to turn on</string>
     <string name="cc_kids_unlock">Turn off with the PIN in Lock &amp; limits</string>
     <string name="cc_sleep">Sleep timer</string>
@@ -582,7 +585,6 @@
     <string name="add_row">Its Play Next row</string>
     <string name="el_more">More settings…</string>
     <string name="el_big">Big</string>
-    <string name="el_tonal">Solid card</string>
     <string name="el_earlier">Move earlier</string>
     <string name="el_later">Move later</string>
     <string name="el_hide_card">Hide this card</string>

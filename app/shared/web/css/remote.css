@@ -213,6 +213,8 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .packview s.big { background:var(--sel); box-shadow:inset 0 0 0 1.5px var(--accent); }
 .packview s.tonal { background:var(--wtonal); }   /* the strip in a card's settings: a tonal card warm, a light clock pale, the framed one outlined */
 .packview s.pale { background:var(--wpale); }
+.packview s.solid { background:var(--wsolid); color:#fff; }
+.packview s.none { background:none; box-shadow:inset 0 0 0 1px var(--btn-hi); }   /* no card: only its place */
 .packview s.mark { outline:2px solid var(--text); outline-offset:1px; }
 dialog.wset .card { width:min(520px, 94vw); }
 .wset .wstrip { padding:4px 3px; }
@@ -224,16 +226,20 @@ dialog.wset .card { width:min(520px, 94vw); }
 .wset .wopts { display:flex; flex-direction:column; gap:10px; }
 .wset .wopt { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .wset .wopt .lbl { font-weight:600; }
-.packview, .wprev { --wtonal:#f6e9e0; --wpale:#f4f4f6; --wink:#3b2a22; }   /* TV Home's Tonal.FILL / INK and the light clock's face */
+.packview, .wprev { --wtonal:#f6e9e0; --wpale:#f4f4f6; --wink:#3b2a22; --wsolid:#181b22; }   /* TV Home's Tonal.FILL / INK and the light clock's face */
 .wprev.wcard { width:150px; height:110px; border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box; }
 .wprev.wcard.big { width:250px; height:130px; }
 .wprev.wcard.glass { background:var(--btn-hi); }
 .wprev.wcard.tonal { background:var(--wtonal); color:var(--wink); }
+.wprev.wcard.solid { background:var(--wsolid); color:#fff; }   /* TV Home's Frost "solid" */
+.wprev.wcard.none { background:none; box-shadow:inset 0 0 0 1px var(--btn-hi); }
 .wprev.wcard b { font-size:34px; font-weight:400; line-height:1.1; }
 .wprev.wcard i { margin-top:auto; height:6px; width:60%; border-radius:3px; background:currentColor; opacity:.25; }
 .wprev.wclock { width:120px; height:120px; }
 .wprev.wclock.big { width:150px; height:150px; }
 .wprev.wclock svg { width:100%; height:100%; }
+.wprev.wclock.look-glass, .wprev.wclock.look-solid { padding:8px; border-radius:22px; box-sizing:border-box; background:var(--btn-hi); }   /* the card under the face; none: the face alone */
+.wprev.wclock.look-solid { background:var(--wsolid); }
 .wclock .disc { fill:#1c1c1e; stroke:rgba(255,255,255,.2); stroke-width:1; }
 .wclock.minimal.dark .disc { fill:#161618; }
 .wclock.roman.dark .disc { fill:#211c17; }

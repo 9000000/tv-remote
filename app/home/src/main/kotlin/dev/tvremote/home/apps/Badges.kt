@@ -15,16 +15,16 @@ object Badges {
      *  config, no TV Setup needed to show it). At most one is shown: the lock, then the time left, then the power mark. */
     data class Mark(val locked: Boolean, val minutes: Int, val power: Boolean = false)
 
-    /** The marks by app; [bed]: bedtime is on, which locks every app. */
-    class Info(val by: Map<String, Mark>, val bed: Boolean) {
-        fun of(pkg: String): Mark? = if (bed) LOCK else by[pkg]
+    /** The marks by app; [bed]: bedtime is on, which locks every app; [kids]: kids mode is on, which locks every app but [open]. */
+    class Info(val by: Map<String, Mark>, val bed: Boolean, val kids: Boolean = false, val open: Set<String> = emptySet()) {
+        fun of(pkg: String): Mark? = if (bed || (kids && pkg !in open)) LOCK else by[pkg]
     }
 
     val LOCK = Mark(true, 0)
     val POWER = Mark(false, 0, power = true)
     val NONE = Info(emptyMap(), false)
 
-    /** TV Setup's {limits: [{pkg, min, used (s)}], locked: [pkg], bed}; a limit with nothing left is a lock. */
+    /** TV Setup's {limits: [{pkg, min, used (s)}], locked: [pkg], bed, kids, open: [pkg]}; a limit with nothing left is a lock. */
     fun parse(o: JSONObject): Info {
         val by = HashMap<String, Mark>()
         val limits = o.optJSONArray("limits")
@@ -36,11 +36,12 @@ object Badges {
         }
         val locked = o.optJSONArray("locked")
         if (locked != null) for (i in 0 until locked.length()) by[locked.optString(i)] = LOCK
-        return Info(by, o.optBoolean("bed"))
+        val open = o.optJSONArray("open")?.let { a -> (0 until a.length()).map { a.optString(it) }.toSet() } ?: emptySet()
+        return Info(by, o.optBoolean("bed"), o.optBoolean("kids"), open)
     }
 
     /** [info] with TV Home's own locked apps ([HomeLock]) marked as locked too. */
-    fun withOwn(info: Info, own: Set<String>): Info = if (own.isEmpty()) info else Info(info.by + own.associateWith { LOCK }, info.bed)
+    fun withOwn(info: Info, own: Set<String>): Info = if (own.isEmpty()) info else Info(info.by + own.associateWith { LOCK }, info.bed, info.kids, info.open)
 
     /** "20m", "1h05": the time left in a few characters ([m], [h]: the units in the app's language). */
     fun label(minutes: Int, m: String, h: String) =

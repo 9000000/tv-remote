@@ -485,6 +485,7 @@ class HomeActivity : Activity() {
             ?: headLeft.takeIf { it.isShown && it.isFocusable } ?: bar.buttons.firstOrNull { it.isShown } ?: firstGridTile())?.requestFocus()
     }
 
+    private fun lookName(v: String) = resources.getIdentifier("home_ov_$v", "string", packageName).let { if (it != 0) getString(it) else v }
     private fun widgetName(k: String) = getString(resources.getIdentifier("w_$k", "string", packageName).takeIf { it != 0 } ?: R.string.w_qr)
 
     private fun widgetMenu(k: String, v: View) {
@@ -495,10 +496,12 @@ class HomeActivity : Activity() {
             val sizes = JSONObject((Store.get(this).optJSONObject("wsize") ?: JSONObject()).toString())   // the key Customize's gear writes
             Store.change(this, JSONObject().put("wsize", sizes.put(k, if (k in HomeConfig.bigs(Store.get(this))) "small" else "big")))
         })
-        if ("look" in opts) items.add(gi(R.drawable.ic_scene, getString(R.string.el_tonal), on = { HomeConfig.optValue(Store.get(this), k, "look") == "tonal" }) {
-            val tonal = HomeConfig.optValue(Store.get(this), k, "look") == "tonal"
-            Store.change(this, JSONObject().put("wopt", JSONObject().put(k, JSONObject().put("look", if (tonal) "glass" else "tonal"))))
-        })
+        HomeConfig.options(k).firstOrNull { it.id == "look" }?.let { o ->              // one press, the next look: the card changes behind the menu
+            fun now() = HomeConfig.optValue(Store.get(this), k, "look")
+            items.add(gi(R.drawable.ic_scene, getString(R.string.home_o_look), live = { lookName(now()) }) {
+                Store.change(this, JSONObject().put("wopt", JSONObject().put(k, JSONObject().put("look", o.values[(o.values.indexOf(now()) + 1) % o.values.size]))))
+            })
+        }
         val i = on.indexOf(k)
         if (on.size > 1 && i >= 0) {
             val j = if (i > 0) i - 1 else 1
@@ -724,7 +727,7 @@ class HomeActivity : Activity() {
     private fun badgesRead() {
         bg.execute {
             val info = Badges.withOwn(Badges.read(this) ?: Badges.NONE, HomeLock.locked(this))
-            runOnUiThread { if (!isDestroyed && !(info.bed == badges.bed && info.by == badges.by)) { badges = info; badgeTiles() } }
+            runOnUiThread { if (!isDestroyed && !(info.bed == badges.bed && info.by == badges.by && info.kids == badges.kids && info.open == badges.open)) { badges = info; badgeTiles() } }
         }
     }
 

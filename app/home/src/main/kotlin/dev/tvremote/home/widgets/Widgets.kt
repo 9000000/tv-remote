@@ -21,6 +21,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -299,6 +300,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                         }
                     }
                 } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
+                bare(v, k)
                 if (editing || k == "weather" || k == "news" || k == "market") hotify(v, k)   // the others take no focus but in edit mode: the D-pad stays as it was
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
@@ -417,6 +419,20 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             m >= 60 -> "${m / 60}h ${m % 60}m"
             else -> "${m}m"
         }
+    }
+
+    /** A card's "look" when it is "solid" or "none" (glass is how [card], [pill] and the clock are made; tonal is its own card). */
+    private fun bare(v: View, k: String) {
+        val l = opt(k, "look"); if (l != "solid" && l != "none") return
+        (v.background as? Frost)?.look = l
+        if (l == "none") shade(v)
+    }
+
+    // no card under them: a soft shadow keeps white words readable on a light part of the photo, as the clock above the dock has
+    private val BARE_SHADOW = 0xCC000000.toInt()
+    private fun shade(v: View) {
+        if (v is TextView) v.setShadowLayer(dp(6).toFloat(), 0f, dp(1).toFloat(), BARE_SHADOW)
+        else if (v is ViewGroup) for (i in 0 until v.childCount) shade(v.getChildAt(i))
     }
 
     internal fun card() = LinearLayout(a).apply {

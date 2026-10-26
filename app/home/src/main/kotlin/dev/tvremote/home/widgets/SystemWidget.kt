@@ -160,6 +160,7 @@ internal class Shrink(c: Context, private val most: Float, private val least: Fl
             var size = most
             textSize = size
             while (size > least && paint.measureText(text.toString()) > room) { size -= 1f; textSize = size }
+            if (paint.measureText(text.toString()) > room) letterSpacing = 0f      // the spaced capitals of a label give their room first
             ellipsize = TextUtils.TruncateAt.END                     // still too long at the least size: cut, as a last resort
         }
         super.onMeasure(w, h)

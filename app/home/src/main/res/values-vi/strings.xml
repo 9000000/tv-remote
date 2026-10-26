@@ -490,6 +490,8 @@
     <string name="home_ov_light">Sáng</string>
     <string name="home_ov_glass">Kính</string>
     <string name="home_ov_tonal">Tông màu</string>
+    <string name="home_ov_solid">Màu đặc</string>
+    <string name="home_ov_none">Không nền</string>
     <string name="home_ov_off">Tắt</string>
     <string name="home_ov_on">Bật</string>
     <string name="w_market">Thị trường</string>
@@ -547,6 +549,7 @@
     <string name="cc_on">Bật</string>
     <string name="cc_off">Tắt</string>
     <string name="cc_kids">Khoá trẻ em</string>
+    <string name="cc_kids_on">Bật · bấm để chọn app</string>
     <string name="cc_kids_nopin">Đặt mã PIN để bật</string>
     <string name="cc_kids_unlock">Tắt bằng mã PIN trong Khoá &amp; giới hạn</string>
     <string name="cc_sleep">Hẹn giờ tắt</string>
@@ -580,7 +583,6 @@
     <string name="add_row">Hàng Xem tiếp của app</string>
     <string name="el_more">Tùy chỉnh khác…</string>
     <string name="el_big">To</string>
-    <string name="el_tonal">Thẻ đặc</string>
     <string name="el_earlier">Đưa lên trước</string>
     <string name="el_later">Đưa ra sau</string>
     <string name="el_hide_card">Ẩn thẻ này</string>

@@ -69,7 +69,11 @@ class HomeConfigTest {
         assertEquals("tonal", HomeConfig.optValue(c, "weather", "look"))
         assertEquals("glass", HomeConfig.optValue(c, "air", "look"))                              // missing: the default
         assertEquals("roman", HomeConfig.optValue(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "roman"))), "clock", "face"))
-        assertEquals("", HomeConfig.optValue(c, "clock", "look"))                                  // the clock has no look
+        assertEquals("glass", HomeConfig.optValue(c, "clock", "look"))                             // the clock's look: glass / solid / none
+        val bare = HomeConfig.clean(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("look", "tonal"))
+            .put("lunar", JSONObject().put("look", "none")).put("system", JSONObject().put("look", "solid"))))
+        assertFalse(bare.getJSONObject("wopt").has("clock"))                                     // no tonal clock
+        assertEquals("none", HomeConfig.optValue(bare, "lunar", "look")); assertEquals("solid", HomeConfig.optValue(bare, "system", "look"))
         assertEquals("glass", HomeConfig.optValue(c, "calendar", "look")); assertEquals("glass", HomeConfig.optValue(c, "qr1", "look"))   // every other card has it
         assertFalse(HomeConfig.clean(JSONObject().put("wopt", JSONObject().put("clock", JSONObject().put("face", "classic")))).getJSONObject("wopt").has("clock"))   // a default is not kept
         assertEquals("big", HomeConfig.optValue(c, "weather", "size")); assertEquals("small", HomeConfig.optValue(c, "clock", "size"))   // the size is read from "wsize"
@@ -110,13 +114,13 @@ class HomeConfigTest {
         for (k in HomeConfig.WIDGETS) assertEquals("size", s.getJSONArray(k).getJSONObject(0).getString("id"))   // every card has a size, in "wsize"
         assertEquals("wsize", s.getJSONArray("clock").getJSONObject(0).getString("store"))
         val clock = s.getJSONArray("clock")
-        assertEquals(listOf("size", "face", "theme"), List(clock.length()) { clock.getJSONObject(it).getString("id") })
+        assertEquals(listOf("size", "face", "theme", "look"), List(clock.length()) { clock.getJSONObject(it).getString("id") })
         val face = clock.getJSONObject(1)
         assertEquals("classic", face.getString("default")); assertEquals("home.o_face", face.getString("label"))
         assertEquals(listOf("classic", "minimal", "roman"), List(3) { face.getJSONArray("values").getJSONObject(it).getString("id") })
         assertEquals("home.ov_minimal", face.getJSONArray("values").getJSONObject(1).getString("w"))
         assertEquals(2, s.getJSONArray("calendar").length())                                  // size + look
-        for (k in HomeConfig.WIDGETS) assertEquals(k != "clock", HomeConfig.options(k).any { it.id == "look" })   // the look is on every card but the clock
+        for (k in HomeConfig.WIDGETS) assertEquals(k != "clock", HomeConfig.options(k).first { it.id == "look" }.values.contains("tonal"))   // every card has a look, all but the clock a tonal one
         assertEquals("look", s.getJSONArray("weather").getJSONObject(1).getString("id"))
         for (k in HomeConfig.WIDGETS) for (o in HomeConfig.options(k)) assertTrue(o.default in (if (o.type == "toggle") listOf("off", "on") else o.values))
     }

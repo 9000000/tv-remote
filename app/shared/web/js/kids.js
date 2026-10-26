@@ -58,12 +58,12 @@ function renderKids(r) {
         el('div', { className: 'acts' }, act('🗑', () => kidsSave(k, { allow: k.allow.filter((x) => x !== p) }), 'danger', T('auto.kids_allow_remove'))));
     });
     body.push(UI.group(T('auto.kids_allow_title'), UI.list(names, T('auto.kids_allow_none')),
-      UI.actions(act(T('auto.kids_allow_add'), async () => {
+      UI.actions(Object.assign(act(T('auto.kids_allow_add'), async () => {
         if (!await kidsGate()) return;
         if (!pickApps.length) await loadPickApps();
         const pkg = await chooseApp(T('auto.kids_allow_pick'), choosable().filter((p) => !k.allow.includes(p))); if (!pkg) return;
         await kidsSave(k, { allow: [...k.allow, pkg] });
-      }))));
+      }), { id: 'kidsadd' }))));   // TV Home's kids tile lands here (?card=kidsadd)
   }
   // how a parent opens what is locked
   const canAsk = tgFull, canOffPin = !!k.methods.totp && !(r.lock && r.lock.recovery_left === 0);   // off only with Authenticator on and its backup codes shown

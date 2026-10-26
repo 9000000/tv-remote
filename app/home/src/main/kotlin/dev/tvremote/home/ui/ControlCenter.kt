@@ -112,6 +112,7 @@ object ControlCenter {
         private val sub = Font.on(TextView(c))
         var need = false
         var press: () -> Unit = {}
+        var hold: (() -> Unit)? = null                                     // long OK, when the tile has a second thing to open
 
         init {
             orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
@@ -126,6 +127,7 @@ object ControlCenter {
             words.addView(sub.apply { textSize = 12f; setTextColor(TvGlass.HINT); maxLines = 1; ellipsize = TextUtils.TruncateAt.END; visibility = GONE })
             addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
             setOnClickListener { press() }
+            setOnLongClickListener { hold?.let { if (need) press() else it() }; hold != null }
             // no pop: the white edge and lighter fill say focus; scaled, a tile at the panel's edge came out cut (the user, 2026-10-25)
         }
 
@@ -246,13 +248,22 @@ object ControlCenter {
         /** The sleep timer / kids mode word to TV Setup on a thread of its own, then the state again. */
         private fun control(word: String) {
             Thread({
-                val out = ask("control", word)
+                // TV Setup hands back the screen a word opens (its PIN, its lock card): started from here, the app in front; TV Setup
+                // starting it from the background was dropped by Android 14
+                val b = try { a.contentResolver.call(Uri.parse(HomeConfig.USAGE), "control", word, android.os.Bundle().apply { putBoolean("hand", true) }) } catch (e: Exception) { null }
+                val out = b?.getString("json")?.let { try { JSONObject(it) } catch (e: Exception) { null } }
+                @Suppress("DEPRECATION") val go = b?.getParcelable<android.app.PendingIntent>("go")
+                if (go != null) try {
+                    val o = android.app.ActivityOptions.makeBasic()
+                    if (android.os.Build.VERSION.SDK_INT >= 34) o.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                    go.send(a, 0, null, null, null, null, o.toBundle())
+                } catch (e: Exception) { }
                 a.runOnUiThread {
                     if (!dialog.isShowing) return@runOnUiThread
                     ctl = out; if (out != null) lastCtl = out; paintCtl()
                     when (out?.optString("error")) {
                         "pin" -> toast(R.string.cc_kids_nopin)
-                        "bad", "failed" -> if (word == "kids:off") toast(R.string.cc_kids_unlock) else if (word == "kids:setup") toast(R.string.cc_kids_nopin)   // a TV Setup older than the word
+                        "bad", "failed" -> if (word == "kids:off" || (word == "kids:setup" && ctl?.optBoolean("kids") == true)) toast(R.string.cc_kids_unlock) else if (word == "kids:setup") toast(R.string.cc_kids_nopin)   // a TV Setup older than the word
                         else -> if (word == "kids:setup" && out != null) dialog.dismiss()                // the Manage screen is over us
                     }
                 }
@@ -286,7 +297,7 @@ object ControlCenter {
         private fun paintCtl() {
             val c = ctl
             if (c == null) { kids.state(a.getString(R.string.cc_need_setup), true); sleep.state(a.getString(R.string.cc_need_setup), true); return }
-            kids.state(a.getString(if (c.optBoolean("kids")) R.string.cc_on else if (c.optBoolean("pin")) R.string.cc_off else R.string.cc_kids_nopin))
+            kids.state(a.getString(if (c.optBoolean("kids")) R.string.cc_kids_on else if (c.optBoolean("pin")) R.string.cc_off else R.string.cc_kids_nopin))
             val left = (c.optLong("sleep_at") - System.currentTimeMillis()).let { if (it > 0) (it + 59_999) / 60_000 else 0L }
             sleep.state(if (left > 0) a.getString(R.string.cc_sleep_left, left.toString()) else a.getString(R.string.cc_off))
         }
@@ -341,10 +352,12 @@ object ControlCenter {
                 val left = ((ctl?.optLong("sleep_at") ?: 0L) - System.currentTimeMillis()).coerceAtLeast(0).let { (it + 59_999) / 60_000L }   // rounded up, as the tile says it: 29.9 is "30 left", the next step is 60
                 control("sleep:" + (if (left <= 0) SLEEP_STEPS.first() else SLEEP_STEPS.firstOrNull { it > left } ?: 0))   // off -> 30 -> 60 -> 90 -> 120 -> off
             }
+            // on: TV Setup's lock card (behind its PIN), where the apps a child may open are chosen and kids mode turned off; a press
+            // that only asked the PIN to turn it off left no way to that list (the user, 2026-10-26). Long OK: the list, on or off
             kids = tile(R.drawable.ic_lock, R.string.cc_kids) {
                 val c = ctl
-                if (c != null) control(if (c.optBoolean("kids")) "kids:off" else if (!c.optBoolean("pin")) "kids:setup" else "kids:on")   // off = TV Setup's PIN screen, never from here
-            }
+                if (c != null) control(if (c.optBoolean("kids") || !c.optBoolean("pin")) "kids:setup" else "kids:on")
+            }.also { t -> t.hold = { if (ctl != null) control("kids:setup") } }
             tile(R.drawable.ic_settings, R.string.tv_settings) { go(listOf(Settings.ACTION_SETTINGS)) }.state(a.getString(R.string.cc_open_settings))
             tile(R.drawable.ic_sliders, R.string.cc_customize) { dialog.dismiss(); customize() }.state(a.getString(R.string.cc_customize_sub))
             paintCtl(); paintNet(known.net)           // the last reading; refresh() below corrects it off the UI thread

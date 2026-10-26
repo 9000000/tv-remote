@@ -37,12 +37,16 @@ internal fun Widgets.clock(mode: Int): View {
     val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = if (mode == 1) 2 else 1; ellipsize = TextUtils.TruncateAt.END }
     // big beside two other big cards: "Chủ Nhật, 25 thg 10" broke in two; it falls to the short form ("CN, 25/10") when it does not fit
     val shortF = SimpleDateFormat(if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
+    val tinyF = SimpleDateFormat(if (locale.language == "vi") "d" else "EEE d", locale)
     var shown = Date()
     fun put(now: Date) {
         shown = now
         val full = dateF.format(now).replaceFirstChar { it.uppercase() }
-        val fits = mode == 1 || (mode == 2 && (date.width == 0 || date.paint.measureText(full) <= date.width - date.paddingLeft - date.paddingRight))
-        date.text = if (fits) full else (if (locale.language == "vi") viDay(now) + ", " else "") + shortF.format(now)
+        val room = date.width - date.paddingLeft - date.paddingRight
+        fun fits(t: String) = mode == 1 || (mode == 2 && (date.width == 0 || date.paint.measureText(t) <= room))
+        val short = (if (locale.language == "vi") viDay(now) + ", " else "") + shortF.format(now)
+        // five cards in a row: even "Mon 26 Oct" was cut to "Mon 26 …"; the weekday and the day are what a glance wants
+        date.text = if (fits(full)) full else if (fits(short)) short else (if (locale.language == "vi") viDay(now) + ", " else "") + tinyF.format(now)
     }
     if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown) } }
     val face = ClockFace(this@clock, a, face0, light0) { now -> time.text = timeF.format(now); put(now) }
