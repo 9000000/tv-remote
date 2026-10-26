@@ -127,14 +127,16 @@ function draw(t) {
     $('#what').textContent = t.name(g.last.by) + ' · ' + W.T[g.last.c.type] + (g.last.c.type === 'straight' ? ' ' + g.last.c.n : '');
   } else { pile.replaceChildren(); pile.dataset.shown = ''; $('#what').textContent = ''; }
   $('#msg').replaceChildren(h('b', g.last && g.last.chop ? 'boom' : '', t.done ? '' : g.msg));
-  const ov = $('#over');
+  const ov = $('#over'), was = ov.hidden;
   ov.hidden = !t.done || !t.games;
-  if (t.done && t.games) {
+  const key = t.done && t.games ? t.order.join() + '|' + t.scores.join() + '|' + t.order.map((s) => t.name(s)).join() : '';
+  if (key && ov.dataset.k !== key) {                              // rebuilt (and so animated) only when the result changed, not on every redraw
+    ov.dataset.k = key; ov.classList.toggle('fresh', was);
     ov.replaceChildren(h('h1', '', '🏆 ' + W.win(t.name(t.order[0]))), ...t.order.map((s, r) => {
       const e = h('div', 'row' + (r ? '' : ' win')), p = t.points(r); e.style.setProperty('--pc', t.COLORS[s]);
       e.append(h('span', 'pl', W.place[r]), h('span', 'dot'), h('span', 'nm', t.name(s)), h('span', 'pt', (p > 0 ? '+' : '') + p + ' ' + W.pts), h('span', 'tt', String(t.scores[s])));
       return e;
     }), h('p', '', W.newg));
-  }
+  } else if (!key) { ov.dataset.k = ''; ov.classList.remove('fresh'); }
 }
 if (table.ok) table.go(); else draw(table);

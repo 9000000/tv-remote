@@ -187,6 +187,7 @@ function status(t) {
   }
   return G.owe > 1 ? `${who} · ${W.turns(G.owe)}` : W.pl(who);
 }
+let lastDraw = 0;
 function draw(t) {
   if (!t.ok) { $('#msg').replaceChildren(h('b', '', t.pad ? W.old : W.nopad), h('span', '', t.pad ? W.oldh : '')); return; }
   const G = g.G, act = t.done ? -1 : G.phase === 'give' ? G.pend.target : G.turn, rank = t.done ? t.order : G.outOrder.slice().reverse();
@@ -206,6 +207,8 @@ function draw(t) {
   }));
   // the draw pile: a stack of backs, how many cards, how many bombs are in it (public: one fewer than players alive)
   const dk = $('#deck'), stack = h('div', 'stack'); for (let i = 0; i < 3; i++) stack.append(h('i'));
+  if (lastDraw > G.draw.length && lastDraw - G.draw.length < 20) stack.classList.add('take');   // a card left the deck (a new game refills it: no pop)
+  lastDraw = G.draw.length;
   dk.replaceChildren(stack, h('b', '', String(G.draw.length)), h('span', '', W.bombs(MK.aliveList(G).length - 1)));
   // the discard: the cards just played, large
   const L = G.last, pile = $('#disc'), what = $('#what');

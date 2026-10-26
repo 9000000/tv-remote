@@ -69,9 +69,10 @@ function bestBox(list, mine, n) {
   return box;
 }
 
+const shown = {};                                                 // the score each chip last showed
 function drawBoard() {
   if (st.mode === 'lobby') { board.replaceChildren(); return; }   // the lobby already lists who joined
-  board.replaceChildren(...seats().map((p) => { const e = who(p, ' · ' + (score[p] || 0)); return e; }));
+  board.replaceChildren(...seats().map((p) => { const e = who(p, ' · ' + (score[p] || 0)); if ((score[p] || 0) > (shown[p] || 0)) e.classList.add('bump'); shown[p] = score[p] || 0; return e; }));   // bump: its score just grew
 }
 
 function lobby() {

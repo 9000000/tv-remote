@@ -67,3 +67,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 
 body.rmt-on #table{bottom:calc(var(--rmt-h,29.5vh) + 1vh)}body.rmt-on .seat.w,body.rmt-on .seat.e{top:calc((100% - var(--rmt-h,29.5vh)) / 2)}body.rmt-on .seat.s{display:none}   /* the TV remote's panel (_lib/table.js) takes the bottom */
 body.rmt-on #msg{top:9%}body.rmt-on #what{top:19%}body.rmt-on #disc{top:58%;transform:scale(.8) translate(-50%,-52%)}body.rmt-on #deck{transform:scale(.85) translateY(-52%)}body.rmt-on #nope{top:12%}
+/* motion: transform / opacity only. A played card lands with a small overshoot, the deck pops when a card leaves it */
+#disc.in .kc{animation:land .42s ease-out}
+.stack.take{animation:land .4s ease-out}
+@keyframes land{0%,55%{transform:none}78%{transform:scale(1.1)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){#disc.in .kc,.stack.take{animation:none}}

@@ -85,6 +85,7 @@ function cardEl(c, cls) {
   e.append(h('s'), h('b', '', w), h('i', '', w), h('u', '', w));   // s: the tilted white oval, b: the value on it
   return e;
 }
+let lastDraw = 0;
 function draw(t) {
   if (!t.ok) { $('#msg').replaceChildren(h('b', '', t.pad ? W.old : W.nopad), h('span', '', t.pad ? W.oldh : '')); return; }
   const st = g.st;
@@ -108,6 +109,8 @@ function draw(t) {
     pile.replaceChildren(cardEl(top, 'big')); void pile.offsetWidth; pile.classList.add('in');
   }
   const stock = $('#stock'); stock.replaceChildren(h('i'), h('span', '', String(st.draw.length)));
+  if (lastDraw > st.draw.length && lastDraw - st.draw.length < 20) { stock.classList.remove('take'); void stock.offsetWidth; stock.classList.add('take'); }   // a card left the stock (a new game refills it: no pop)
+  lastDraw = st.draw.length;
   const dir = $('#dir'); dir.textContent = st.dir === 1 ? '↺' : '↻';
   $('#what').textContent = W.color[st.color];
   $('#msg').replaceChildren(h('b', '', t.done ? '' : g.msg));

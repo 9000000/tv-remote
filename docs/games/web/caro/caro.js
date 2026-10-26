@@ -43,7 +43,7 @@ function newGame() {
   const ps = players();
   g.seat = pad && ps.length ? [ps[0] || 0, ps[1] || 0] : [1, 0];   // no phone: seat 1 is the TV remote (Enter / arrows), against the computer
   g.wait = false;
-  g.b = Caro.create(); g.last = -1; g.wl = null; g.over = false; g.draw = false; g.ts = g.starter;
+  g.b = Caro.create(); animT0 = -1e5; g.last = -1; g.wl = null; g.over = false; g.draw = false; g.ts = g.starter;
   g.cur.forEach((c) => { c.x = 7; c.y = 7; });
   layouts(); tell(); render(); maybeBot();
 }
@@ -56,9 +56,16 @@ function endTurnOrGame(i) {
   else { g.ts ^= 1; buzz(g.seat[g.ts], 80); if (g.seat[g.ts] && !g.seat[s]) Sfx.play('turn'); }   // a bot just moved: tell the human it is their turn
   tell(); render(); maybeBot();
 }
+// motion: the last stone pops in, a win draws its line stone to stone. Canvas, so a short rAF loop (a frozen page stops it) that ends by itself
+const REDUCE = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let animT0 = -1e5, animRaf = 0;
+const POP_MS = 220, LINE_MS = 650;
+const prog = (from, ms) => (REDUCE ? 1 : Math.max(0, Math.min(1, (performance.now() - animT0 - from) / ms)));
+function animTick() { animRaf = 0; drawBoard(); if (performance.now() - animT0 < (g.wl ? 250 + LINE_MS : POP_MS)) animRaf = requestAnimationFrame(animTick); }
+function kick() { if (REDUCE) return; animT0 = performance.now(); if (!animRaf) animRaf = requestAnimationFrame(animTick); }
 function place(i) {
   g.b[i] = markOf(g.ts); g.last = i; Sfx.play('place');
-  endTurnOrGame(i);
+  endTurnOrGame(i); kick();
 }
 function maybeBot() {
   clearTimeout(botTimer);
@@ -166,17 +173,19 @@ function drawBoard() {
     const v = g.b[i]; if (!v) continue;
     const x = at(i % N), y = at((i / N) | 0);
     if (win.has(i)) { ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(x, y, u * 0.56, 0, 7); ctx.fill(); }
-    ctx.fillStyle = v === 1 ? XC : OC; ctx.beginPath(); ctx.arc(x, y, u * 0.4, 0, 7); ctx.fill();
+    const pp = i === g.last ? prog(0, POP_MS) : 1, sc = pp < 1 ? 0.3 + 0.95 * Math.sin(pp * Math.PI * 0.62) / Math.sin(Math.PI * 0.62) - 0.25 * pp : 1;   // 0.3 -> ~1.15 -> 1
+    ctx.fillStyle = v === 1 ? XC : OC; ctx.beginPath(); ctx.arc(x, y, u * 0.4 * sc, 0, 7); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = u * 0.09; ctx.lineCap = 'round'; ctx.beginPath();
-    if (v === 1) { const r = u * 0.17; ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); }
-    else ctx.arc(x, y, u * 0.17, 0, 7);
+    if (v === 1) { const r = u * 0.17 * sc; ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); }
+    else ctx.arc(x, y, u * 0.17 * sc, 0, 7);
     ctx.stroke();
     if (i === g.last) { ctx.strokeStyle = '#111'; ctx.lineWidth = u * 0.07; ctx.beginPath(); ctx.arc(x, y, u * 0.5, 0, 7); ctx.stroke(); }
   }
   if (g.wl) {
     ctx.strokeStyle = '#111'; ctx.lineWidth = u * 0.1; ctx.beginPath();
     const a = g.wl[0], z = g.wl[g.wl.length - 1];
-    ctx.moveTo(at(a % N), at((a / N) | 0)); ctx.lineTo(at(z % N), at((z / N) | 0)); ctx.stroke();
+    const lp = prog(250, LINE_MS), ax = at(a % N), ay = at((a / N) | 0);
+    ctx.moveTo(ax, ay); ctx.lineTo(ax + (at(z % N) - ax) * lp, ay + (at((z / N) | 0) - ay) * lp); ctx.stroke();
   }
   if (!g.over && !g.wait) for (let n = 0; n < 2; n++) {          // each human's cursor; the one to move is thicker and drawn last, so two on one cell both show
     const s = n ? g.ts : g.ts ^ 1;

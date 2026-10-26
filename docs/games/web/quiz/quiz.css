@@ -41,3 +41,9 @@ h1{font-size:6.5vw;margin:0 0 1.5vh;text-align:center}
 .br .bc{color:var(--dim);font-size:1.8vw;max-width:14vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.br .bs{min-width:6vw;text-align:right}
 h1.one{font-size:5vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row span:last-child{white-space:nowrap}
+/* motion: transform / opacity only; the right answer pops, the wrong ones shake once then dim, a score that grew bumps */
+.opt.right{animation:qpop .5s ease-out}.opt.wrong{animation:qshake .35s ease-out}
+.chip.bump{animation:qpop .6s ease-out}
+@keyframes qpop{0%{transform:none}35%{transform:scale(1.07)}100%{transform:none}}
+@keyframes qshake{0%,100%{transform:none}25%{transform:translateX(-.7vw)}60%{transform:translateX(.7vw)}}
+@media (prefers-reduced-motion:reduce){.opt.right,.opt.wrong,.chip.bump{animation:none}}
