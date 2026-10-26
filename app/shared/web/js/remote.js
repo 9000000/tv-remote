@@ -217,22 +217,28 @@ document.addEventListener('keydown', (e) => {
   if (onButton && (e.key === 'Enter' || e.key === ' ' || e.key === 'Tab')) return;   // keyboard users still operate the page
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen
   const adb = ADB.state === 'ready' || NATIVE() && can('text');      // letters: ADB, or LG's / Samsung's keyboard link
-  if (keymap[e.key]) { e.preventDefault(); api('/api/key', { key: keymap[e.key] }); }
-  else if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat && !enterT) enterT = setTimeout(() => { enterLong = true; api('/api/key', { key: 'OK', dir: 'START_LONG' }); }, 400); }   // sent on keyup: held, it is a long OK
+  if (keymap[e.key] || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) keyDown(e.key); }   // sent on keyup: held, it is a long press
   else if (e.key === 'Backspace') { e.preventDefault(); if (adb) queue('/api/type', { del: 1 }); else api('/api/key', { key: 'DEL' }); }
   else if (!adb) return;                                              // letters need ADB
   else if (e.key === 'Delete') { e.preventDefault(); queue('/api/type', { fdel: 1 }); }
   else if (e.key.length === 1) { e.preventDefault(); queue('/api/type', { text: e.key }); }
 });
-// Enter held 0.4 s = OK held on the TV until it is let go (long-press menus), as the on-screen key; a short one is OK (or Enter in a field)
-let enterT = null, enterLong = false;
-const enterUp = (tap) => {
-  if (!enterT) return; clearTimeout(enterT); enterT = null;
-  if (enterLong) { enterLong = false; api('/api/key', { key: 'OK', dir: 'END_LONG' }); }
-  else if (tap) { if (ADB.state === 'ready' || NATIVE() && can('text')) queue('/api/type', { enter: true }); else api('/api/key', { key: 'OK' }); }
+// A key held 0.4 s = held on the TV until it is let go (fast scrolling, long-press menus), as the on-screen keys; a short one is one press
+// (Enter: OK, or Enter in a field)
+const held = {};                                                      // key -> { t: timer, long }
+const keyDown = (key) => {
+  if (held[key]) return; const h = held[key] = { long: false };
+  h.t = setTimeout(() => { h.long = true; api('/api/key', { key: keymap[key] || 'OK', dir: 'START_LONG' }); }, 400);
 };
-document.addEventListener('keyup', (e) => { if (e.key === 'Enter') enterUp(true); });
-window.addEventListener('blur', () => enterUp(false));               // let go elsewhere: no keyup here, the TV must not stay held
+const keyUp = (key, tap) => {
+  const h = held[key]; if (!h) return; clearTimeout(h.t); delete held[key];
+  if (h.long) api('/api/key', { key: keymap[key] || 'OK', dir: 'END_LONG' });
+  else if (!tap) return;
+  else if (keymap[key]) api('/api/key', { key: keymap[key] });
+  else if (ADB.state === 'ready' || NATIVE() && can('text')) queue('/api/type', { enter: true }); else api('/api/key', { key: 'OK' });
+};
+document.addEventListener('keyup', (e) => keyUp(e.key, true));
+window.addEventListener('blur', () => Object.keys(held).forEach((k) => keyUp(k, false)));   // let go elsewhere: no keyup here, the TV must not stay held
 document.addEventListener('paste', (e) => {                           // Cmd+V anywhere on the Remote tab pastes onto the TV
   if (window.ONTV || currentTab !== 'remote' || typingHere() || document.querySelector('dialog[open]') || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
