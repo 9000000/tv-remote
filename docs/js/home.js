@@ -2,8 +2,8 @@
 (function(){
   var root = document.documentElement;
   var titles = {
-    vi: "TV Remote: điều khiển Android TV từ điện thoại, iPhone, máy tính",
-    en: "TV Remote: control Android TV from your phone, iPhone or computer"
+    vi: "TV Remote · Điều khiển Android TV từ điện thoại",
+    en: "TV Remote · Control Android TV from your phone"
   };
   function setLang(l){
     root.dataset.lang = l; root.lang = l; document.title = titles[l];

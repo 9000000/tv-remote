@@ -1,7 +1,7 @@
 (function(){
   "use strict";
   var root = document.documentElement;
-  var TITLES = { vi: "Hướng dẫn dùng TV Remote", en: "TV Remote guide: step by step" };
+  var TITLES = { vi: "Hướng dẫn từng bước · TV Remote", en: "Step-by-step guide · TV Remote" };
   var PREV = { vi: "Trước", en: "Previous" }, NEXT = { vi: "Tiếp", en: "Next" };
   var FOR = { vi: "Mục này viết cho bản ", en: "Written for version " };
   var HOLD = { vi: "Tìm trong hướng dẫn…", en: "Search the guide…" };
@@ -218,7 +218,9 @@
   // the topic goes in ?t=id, not #id: a chat app's link preview never sees a # (_worker.js); a #id written by hand still opens it
   function here(){ return location.hash.slice(1) || new URLSearchParams(location.search).get("t") || ""; }
   function addr(id){ return location.pathname + "?t=" + encodeURIComponent(id); }
+  var boot = !/[?&]t=|#./.test(location.search + location.hash);   // landed on the guide itself: its own title stays (a crawler renders this page; the first topic's name must not replace it)
   function go(id){
+    boot = false;
     var t = find1(id);
     if (location.hash || here() !== t.id) history.pushState(null, "", addr(t.id));
     show(t.id); scrollTo(0, 0);
@@ -240,14 +242,14 @@
     paintSince(t, lang);
     var v = t.dataset.v, ver = document.querySelector(".gver");    // "next": checked against main, stamped by release.sh
     ver.hidden = !v || v === "next"; ver.textContent = ver.hidden ? "" : FOR[lang] + v;
-    document.title = textOf(t.querySelector("h3"), lang).replace(/^\S+\s/, "") + " · " + TITLES[lang];
+    document.title = boot ? TITLES[lang] : textOf(t.querySelector("h3"), lang).replace(/^\S+\s/, "") + " · " + TITLES[lang];
   }
   pager.addEventListener("click", function(e){
     var a = e.target.closest("a[data-t]"); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
     e.preventDefault(); go(a.dataset.t);
   });
-  addEventListener("popstate", function(){ show(here()); });
-  addEventListener("hashchange", function(){ history.replaceState(null, "", addr(find1(here()).id)); show(here()); scrollTo(0, 0); });   // a link written by hand: ?t= follows it
+  addEventListener("popstate", function(){ boot = false; show(here()); });
+  addEventListener("hashchange", function(){ boot = false; history.replaceState(null, "", addr(find1(here()).id)); show(here()); scrollTo(0, 0); });   // a link written by hand: ?t= follows it
 
   /* ---------- a screenshot opens full size on a click; a click or Esc closes it ---------- */
   (function(){

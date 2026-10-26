@@ -21,7 +21,7 @@ export default {
     const desc = (topic.pvi + " " + topic.pen).trim().slice(0, 300);
     const set = (v) => ({ element(e) { e.setAttribute("content", v); } });
     return new HTMLRewriter()
-      .on("title", { element(e) { e.setInnerContent(topic.vi + " · Hướng dẫn TV Remote"); } })
+      .on("title", { element(e) { e.setInnerContent(topic.vi + " · TV Remote"); } })
       .on('meta[property="og:title"]', set(title))
       .on('meta[name="twitter:title"]', set(title))
       .on('meta[property="og:url"]', set(url.origin + "/guide?t=" + id))

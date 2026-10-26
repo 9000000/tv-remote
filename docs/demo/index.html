@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TV Remote: dùng thử | live demo</title>
-<meta name="description" content="Try TV Remote, TV Home, TV Channels and TV Games in the browser with a made-up TV. Dùng thử TV Remote, TV Home, TV Channels và TV Games ngay trên trình duyệt.">
+<title>Dùng thử TV Remote ngay trên trình duyệt · TV Remote</title>
+<meta name="description" content="Dùng thử TV Remote, TV Home, TV Channels và TV Games ngay trên trình duyệt với một chiếc TV giả. Không cần cài gì.">
 <meta name="theme-color" content="#0a0d14">
 <link rel="icon" href="../img/icon.png?v=1024">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,6 +73,14 @@
   @media (max-width: 700px) { .cards { grid-template-columns: minmax(0, 1fr); gap: 14px; } #picker { padding: 18px 12px 32px; } #picker h1 { font-size: 24px; } .card .txt b { font-size: 22px; } .card .txt { padding: 14px 16px 16px; grid-template-columns: 56px 1fr; } .card .txt img { width: 56px; height: 56px; } }
   @media (max-width: 760px) { .bar { padding: 6px 12px; } #dl .t { display: none; } #demobar .brand { font-size: 0; gap: 0; margin-right: 0; } .bar .back span.l { display: inline; } }
 </style>
+<link rel="canonical" href="https://tvremote.pages.dev/demo/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Dùng thử TV Remote ngay trên trình duyệt / Try TV Remote in your browser">
+<meta property="og:description" content="Dùng thử TV Remote, TV Home, TV Channels và TV Games ngay trên trình duyệt với một chiếc TV giả. Không cần cài gì.">
+<meta property="og:image" content="https://tvremote.pages.dev/img/og-vi.jpg">
+<meta property="og:url" content="https://tvremote.pages.dev/demo/">
+<meta property="og:site_name" content="TV Remote">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 <body class="pick">
 <script src="../js/nav.js" data-page="demo" data-root="../"></script>
@@ -134,7 +142,7 @@
 
   function picker() {
     if (cur && frames[cur]) { if (TABS[cur].drop) drop(cur); else frames[cur].hidden = true; }   // a playing channel must stop when its page is left
-    cur = null; document.body.classList.add('pick'); document.title = lang() === 'en' ? 'TV Remote: live demo' : 'TV Remote: dùng thử';
+    cur = null; document.body.classList.add('pick'); document.title = lang() === 'en' ? 'Try TV Remote in your browser · TV Remote' : 'Dùng thử TV Remote ngay trên trình duyệt · TV Remote';
     window.scrollTo(0, 0); fitTop();
   }
   function show(t) {
@@ -143,7 +151,7 @@
     document.querySelectorAll('#sw [data-t]').forEach(function (a) { if (a.dataset.t === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     var T = TABS[t], l = lang() === 'en' ? 'en' : 'vi';
     $('#dlt').textContent = T.dl[l === 'en' ? 1 : 0]; $('#dl').href = T.href; $('#dl').title = T.dl[l === 'en' ? 1 : 0];
-    document.title = T.n + (l === 'en' ? ': live demo' : ': dùng thử');
+    document.title = T.n + (l === 'en' ? ': live demo' : ': dùng thử') + ' · TV Remote';
     stage.classList.toggle('fill', !!T.fill); fitTop();
     var f = frame(t); f.hidden = false;
     try { f.contentWindow.focus(); } catch (e) {}
