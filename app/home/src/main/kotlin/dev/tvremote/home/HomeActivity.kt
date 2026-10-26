@@ -1369,9 +1369,8 @@ class HomeActivity : Activity() {
                 if ((snap || Walls.isPicture(id)) && big == null) return@runOnUiThread   // no picture yet: the gradient stays
                 soft = small
                 val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
-                backdrop.show(look)
                 val moving = HomeConfig.isVideo(id)                      // the cards' blurred copy is still, the video is not: translucent cards like over the live page
-                Frost.show(if (moving) null else small, dm.widthPixels, dm.heightPixels, live = moving)
+                backdrop.show(look) { Frost.show(if (moving) null else small, dm.widthPixels, dm.heightPixels, live = moving) }
             }
         }
     }
@@ -1419,8 +1418,7 @@ class HomeActivity : Activity() {
                 hideLoading()
                 if (big == null) { android.util.Log.i("TvHomeWall", "picture wall failed: $pic"); return@runOnUiThread }
                 soft = small
-                backdrop.show(Backdrop.Look(colors, big))
-                Frost.show(small, dm.widthPixels, dm.heightPixels)
+                backdrop.show(Backdrop.Look(colors, big)) { Frost.show(small, dm.widthPixels, dm.heightPixels) }
                 android.util.Log.i("TvHomeWall", "picture wall shown in ${android.os.SystemClock.elapsedRealtime() - t0} ms (${if (cached) "cache" else "net"})")
             }
         }, "netpic").apply { isDaemon = true }.start()
@@ -1474,8 +1472,7 @@ class HomeActivity : Activity() {
                 hideLoading()
                 if (big == null) { slideAt = -1; return@runOnUiThread }   // not read: the old picture stays, the next slot tries again
                 soft = small
-                backdrop.show(Backdrop.Look(wallColors(conf.optString("wall"), conf), big))
-                Frost.show(small, dm.widthPixels, dm.heightPixels)
+                backdrop.show(Backdrop.Look(wallColors(conf.optString("wall"), conf), big)) { Frost.show(small, dm.widthPixels, dm.heightPixels) }
                 caption(s)
             }
             NetPicture.get(this, next.pic)                              // the next one into the cache now, so its turn is a read from the file

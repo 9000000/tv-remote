@@ -34,8 +34,11 @@ class Backdrop(private val target: View) {
 
     fun show(colors: IntArray, photo: Bitmap?, art: String? = null) = show(Look(colors, photo, art))
 
-    /** [l] painted off the main thread; the last call wins (an older one still painting is dropped). */
-    fun show(l: Look) {
+    /**
+     * [l] painted off the main thread; the last call wins (an older one still painting is dropped). [then] runs on the main thread
+     * with the swap (the cards' frost changes with the picture, not a few frames before it).
+     */
+    fun show(l: Look, then: (() -> Unit)? = null) {
         val dm = target.resources.displayMetrics
         val w = dm.widthPixels; val h = dm.heightPixels
         val g = ++gen; val k = strength; val d = dir
@@ -43,11 +46,14 @@ class Backdrop(private val target: View) {
             if (g != gen) return@execute
             val b = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) } catch (e: OutOfMemoryError) { return@execute }   // 565 would band every gradient
             draw(Canvas(b), w, h, l, k, d)
-            b.prepareToDraw()
+            // on the GPU here, not in the first frame that draws it: prepareToDraw left the FPT box 15 frames of "slow issue draw
+            // commands" (to 69 ms) per slide; a HARDWARE copy is uploaded by this thread and the 8 MB in the app's heap go
+            val out = if (android.os.Build.VERSION.SDK_INT >= 26) (try { b.copy(Bitmap.Config.HARDWARE, false) } catch (e: Throwable) { null })?.also { b.recycle() } ?: b else b
             target.post {
                 if (g != gen) return@post
-                target.background = BitmapDrawable(target.resources, b).apply { setDither(true) }
+                target.background = BitmapDrawable(target.resources, out).apply { setDither(true) }
                 target.invalidate()
+                then?.invoke()
             }
         }
     }

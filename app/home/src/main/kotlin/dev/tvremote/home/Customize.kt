@@ -59,20 +59,12 @@ object Customize {
     private const val CHECK_INK = 0xFF0B1020.toInt()
     const val NAME_SCRIM = 0x99000000.toInt()
     private const val RING_REST = 0x33FFFFFF
-    private const val TINT_THEMES = 0xFFFFC857.toInt()
-    private const val TINT_BG = 0xFF6F8DFF.toInt()                      // each group's chip hue on the first level: its icon in full, the chip a fifth of it
-    private const val TINT_LOOK = 0xFFB48CFF.toInt()
-    private const val TINT_WIDGETS = 0xFFFFB86B.toInt()
-    private const val TINT_SYSTEM = 0xFFFF7A8A.toInt()
-    private const val TINT_LANG = 0xFF7BE0A0.toInt()
-    private const val TINT_KEYS = 0xFFFFD27A.toInt()
     private const val ADD = "+add"                                 // the add cell among the wall tiles (not a wall)
-    private const val CHIP_ALPHA = 0x33000000                           // OR-ed into a tint
 
     /** One group of settings: a row on the first level and a page of controls behind it. [last] is where the focus was when it was left. */
     private val PREVIEW = setOf("themes", "bg", "look", "widgets")              // pages seen on Home as they change: no dim over it (cols / rows open their own stepper, the panel hidden)
 
-    private class Group(c: Context, val key: String, val name: Int, val icon: Int, val tint: Int) {
+    private class Group(c: Context, val key: String, val name: Int, val icon: Int) {
         val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
         val scroll = ScrollView(c).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(col) }
         val page = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
@@ -320,11 +312,11 @@ object Customize {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
         val groups = listOf(
-            Group(a, "themes", R.string.g_themes, R.drawable.ic_star, TINT_THEMES),
-            Group(a, "bg", R.string.bg, R.drawable.ic_image, TINT_BG), Group(a, "look", R.string.g_look, R.drawable.ic_sparkle, TINT_LOOK),
-            Group(a, "widgets", R.string.w_widgets, R.drawable.ic_gauge, TINT_WIDGETS),
-            Group(a, "system", R.string.g_system, R.drawable.ic_power, TINT_SYSTEM), Group(a, "keys", R.string.g_keys, R.drawable.ic_keyboard, TINT_KEYS),
-            Group(a, "lang", R.string.c_lang, R.drawable.ic_globe, TINT_LANG))
+            Group(a, "themes", R.string.g_themes, R.drawable.ic_star),
+            Group(a, "bg", R.string.bg, R.drawable.ic_image), Group(a, "look", R.string.g_look, R.drawable.ic_sparkle),
+            Group(a, "widgets", R.string.w_widgets, R.drawable.ic_gauge),
+            Group(a, "system", R.string.g_system, R.drawable.ic_power), Group(a, "keys", R.string.g_keys, R.drawable.ic_keyboard),
+            Group(a, "lang", R.string.c_lang, R.drawable.ic_globe))
         for (g in groups) g.col.setPadding(dp(28), dp(8), dp(28), dp(28))
         val top = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(28), dp(26), dp(28), dp(28)) }
         var col = groups[0].col                                        // the page being filled; each page's controls go into its own column
@@ -882,7 +874,7 @@ object Customize {
                     addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
                     addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
                 }
-                addView(ImageView(a).apply { setImageResource(R.drawable.ic_home); imageTintList = ColorStateList.valueOf(TINT_SYSTEM) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+                addView(ImageView(a).apply { setImageResource(R.drawable.ic_home); imageTintList = ColorStateList.valueOf(Color.WHITE) }, LinearLayout.LayoutParams(dp(26), dp(26)))
                 addView(LinearLayout(a).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(label(a.getString(R.string.c_home_screen), 15f, Color.WHITE))
@@ -943,17 +935,9 @@ object Customize {
 
         // the first level: a row per group (its icon in a tinted chip, the name, what it is set to now) and the way out
         top.addView(LinearLayout(a).apply {
-            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            addView(FrameLayout(a).apply {
-                background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(TINT_BG, 0xFF9B6BFF.toInt())).apply { cornerRadius = dp(14).toFloat() }
-                val (iv, s) = icon(R.drawable.ic_sliders, Color.WHITE, dp(24))
-                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
-            }, LinearLayout.LayoutParams(dp(48), dp(48)))
-            addView(LinearLayout(a).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(label(a.getString(R.string.customize), 22f, Color.WHITE).apply { typeface = Font.medium })
-                addView(label(a.getString(R.string.c_sub), 13f, DIM))
-            }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(14) })
+            orientation = LinearLayout.VERTICAL; setPadding(dp(4), 0, 0, 0)
+            addView(label(a.getString(R.string.customize), 20f, Color.WHITE).apply { typeface = Font.bold })
+            addView(label(a.getString(R.string.c_sub), 12f, TvGlass.HINT))
         })
         val topScroll = ScrollView(a).apply { isVerticalScrollBarEnabled = false; clipChildren = false; addView(top) }
         val stack = FrameLayout(a).apply { clipChildren = false }
@@ -1001,23 +985,18 @@ object Customize {
         }
         stepBack = ::leave
         for (g in groups) {
-            val chip = FrameLayout(a).apply {
-                background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor((g.tint and 0x00FFFFFF) or CHIP_ALPHA) }
-                val (iv, s) = icon(g.icon, g.tint, dp(24))
-                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
-            }
             val chevron = ImageView(a).apply { setImageResource(R.drawable.ic_right); imageTintList = ColorStateList.valueOf(DIM) }
-            g.sum = label("", 13f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+            g.sum = label("", 12f, TvGlass.HINT).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
             val row = LinearLayout(a).apply {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-                setPadding(dp(10), dp(8), dp(14), dp(8))
-                background = TvGlass.rowBg(a, 18)
-                addView(chip, LinearLayout.LayoutParams(dp(42), dp(42)))
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                background = TvGlass.rowBg(a, 16)
+                addView(icon(g.icon, Color.WHITE, dp(26)).first, LinearLayout.LayoutParams(dp(26), dp(26)))
                 addView(LinearLayout(a).apply {
                     orientation = LinearLayout.VERTICAL
-                    addView(label(a.getString(g.name), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
+                    addView(label(a.getString(g.name), 15f, Color.WHITE).apply { maxLines = 1 })
                     addView(g.sum!!)
-                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+                }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
                 addView(chevron, LinearLayout.LayoutParams(dp(22), dp(22)))
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f); chevron.imageTintList = ColorStateList.valueOf(if (f) Color.WHITE else DIM) }
                 setOnClickListener { enter(g) }
@@ -1034,7 +1013,7 @@ object Customize {
                     addState(intArrayOf(android.R.attr.state_focused), glass(16, TvGlass.ROW_FOCUS, Color.WHITE))
                     addState(intArrayOf(), GradientDrawable().apply { setColor(Color.TRANSPARENT) })
                 }
-                addView(ImageView(a).apply { setImageResource(R.drawable.ic_left); imageTintList = ColorStateList.valueOf(g.tint) }, LinearLayout.LayoutParams(dp(24), dp(24)))
+                addView(ImageView(a).apply { setImageResource(R.drawable.ic_left); imageTintList = ColorStateList.valueOf(Color.WHITE) }, LinearLayout.LayoutParams(dp(24), dp(24)))
                 addView(label(a.getString(g.name), 20f, Color.WHITE).apply { typeface = Font.medium }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                 setOnClickListener { leave() }
@@ -1047,36 +1026,28 @@ object Customize {
         // one QR for every setting: the same page as TV Setup's settings, served by TV Home itself (ManageServer)
         top.addView(LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-            setPadding(dp(10), dp(8), dp(14), dp(8))
-            background = TvGlass.rowBg(a, 18)
-            addView(FrameLayout(a).apply {
-                background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(ACCENT); alpha = 51 }
-                val (iv, s) = icon(R.drawable.ic_qr, ACCENT, dp(24))
-                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
-            }, LinearLayout.LayoutParams(dp(42), dp(42)))
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = TvGlass.rowBg(a, 16)
+            addView(icon(R.drawable.ic_qr, Color.WHITE, dp(26)).first, LinearLayout.LayoutParams(dp(26), dp(26)))
             addView(LinearLayout(a).apply {
                 orientation = LinearLayout.VERTICAL
-                addView(label(a.getString(R.string.mg_row), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
-                addView(label(a.getString(R.string.mg_row_sub), 13f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
-            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+                addView(label(a.getString(R.string.mg_row), 15f, Color.WHITE).apply { maxLines = 1 })
+                addView(label(a.getString(R.string.mg_row_sub), 12f, TvGlass.HINT).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
+            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             setOnClickListener { keepDim = true; PhotoScreen.show(a) { dialog.dismiss() } }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         // Telegram: a plain row (TV Setup is asked only once it is opened, so Customize stays light); without TV Setup the screen says how to get it
         top.addView(LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
-            setPadding(dp(10), dp(8), dp(14), dp(8))
-            background = TvGlass.rowBg(a, 18)
-            addView(FrameLayout(a).apply {
-                background = GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(ACCENT); alpha = 51 }
-                val (iv, s) = icon(R.drawable.ic_send, ACCENT, dp(24))
-                addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
-            }, LinearLayout.LayoutParams(dp(42), dp(42)))
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = TvGlass.rowBg(a, 16)
+            addView(icon(R.drawable.ic_send, Color.WHITE, dp(26)).first, LinearLayout.LayoutParams(dp(26), dp(26)))
             addView(LinearLayout(a).apply {
                 orientation = LinearLayout.VERTICAL
-                addView(label(a.getString(R.string.tg_row), 16f, Color.WHITE).apply { maxLines = 1; typeface = Font.medium })
-                addView(label(a.getString(R.string.tg_row_sub), 13f, DIM).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
-            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
+                addView(label(a.getString(R.string.tg_row), 15f, Color.WHITE).apply { maxLines = 1 })
+                addView(label(a.getString(R.string.tg_row_sub), 12f, TvGlass.HINT).apply { maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END })
+            }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
             onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             setOnClickListener { keepDim = true; TelegramScreen.show(a) }
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
