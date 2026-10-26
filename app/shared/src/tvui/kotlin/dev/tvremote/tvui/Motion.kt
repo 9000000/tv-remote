@@ -37,10 +37,10 @@ object Motion {
     /** [t] ms, shorter when calm: fewer frames to draw. */
     fun ms(t: Long): Long = if (calm) t * 11 / 20 else t
 
-    /** Little memory (Android's own flag, or 1.5 GB or less: TCL's 1 GB MT9221 boxes): calm unless chosen otherwise. */
+    /** Little memory (Android's own flag, or 2.25 GB or less: TCL's 1 GB MT9221, the 2 GB FPT Play): calm unless chosen otherwise. */
     fun lowRam(c: Context): Boolean {
         val am = c.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-        return am.isLowRamDevice || android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.totalMem <= 1536L * 1024 * 1024
+        return am.isLowRamDevice || android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }.totalMem <= 2304L * 1024 * 1024   // a "2 GB" box (the FPT Play: 1.8 GB): full motion took twice the CPU of calm there
     }
 
     /** [anim] the app's own switch; [motion] "calm" / "full" / anything else = by memory; [focus] "ring" = the ring, else the glass. */

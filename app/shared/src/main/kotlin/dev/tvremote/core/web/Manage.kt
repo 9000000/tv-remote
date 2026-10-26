@@ -292,7 +292,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     return HttpServer.Response.json(JSONObject().put("fingerprint", p?.fingerprint ?: ""))
                 }
                 "tvkbd" -> {                                          // is the TV's own keyboard up (the page opens its typing box)
-                    val up = link.state() == "ready" && try { kbdReader.ask { link.get().shell(it) } } catch (e: Exception) { false }
+                    val up = if (link.state() != "ready") false else try { kbdReader.ask { link.get().shell(it) } } catch (e: Exception) {
+                        return HttpServer.Response.error(503, "no answer") }   // unknown, not "down": the page keeps its typing box as it is
                     return HttpServer.Response.json(JSONObject().put("shown", up))
                 }
                 "adb/discover" -> if (canPair) return discoverPairing()     // where Conscrypt is packed: the phone, the computer, TV Setup (its own TV)

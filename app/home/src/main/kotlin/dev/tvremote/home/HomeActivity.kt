@@ -133,8 +133,7 @@ class HomeActivity : Activity() {
     private var trimmed = false                                     // the pictures were let go for memory while away ([trim])
     private var shownKey = ""                                       // what the tiles were built from: the same again builds nothing
     private var tileCache = HashMap<String, Tile>()                 // a tile is made once per app and size, then moved
-    private var picture: Bitmap? = null                             // the photo wallpaper and its blurred copy; let go in [trim], the small one stays as a stand-in
-    private var soft: Bitmap? = null
+    private var soft: Bitmap? = null                                // the photo wallpaper's small blurred copy (the cards' frost, the stand-in in [trim]); the photo itself is not kept, the [backdrop] has it painted
     private var badges = Badges.NONE
     private var focusNext: String? = null                          // a tile just added: the next [show] focuses it, so it can be moved at once
     private var wantCol = -1                                        // the grid column Up and Down try to keep ([Nav])
@@ -579,7 +578,6 @@ class HomeActivity : Activity() {
     private fun trim() {
         if (trimmed) return
         trimmed = true
-        picture = null
         val id = conf.optString("wall")
         detachWeb()                                                   // a page costs the most memory of any wall: gone while away, made again by [untrim]
         if (WallArt.has(id)) backdrop.show(wallColors(id, conf), null, id)      // a drawn scene costs nothing to keep: only the picture is repainted
@@ -1316,7 +1314,7 @@ class HomeActivity : Activity() {
         val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "") + (if (id == HomeConfig.OWN) conf.optString("wcol") + conf.optString("wdir") else "")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
-        if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
+        if (trimmed) { soft = null; return }          // away and short of memory: [untrim] brings it back
         loadWall(id)
     }
 
@@ -1342,7 +1340,7 @@ class HomeActivity : Activity() {
         val wasLive = web != null || video != null                   // a page or a video was the background: its colours stand in, not a stale picture
         if (HomeConfig.isVideo(id)) { netVideo = ""; attachVideo(id) } else if (!livePage) { netVideo = ""; detachVideo() }
         if (livePage) {                                               // a live page: no bitmap, so nothing to blur for the cards either (as a gradient)
-            picture = null; soft = null
+            soft = null
             Frost.show(null, dm.widthPixels, dm.heightPixels, live = true)
             backdrop.show(Backdrop.Look(colors))                      // the gradient is what shows while the page loads, and if it never does
             livePage(url)
@@ -1356,7 +1354,7 @@ class HomeActivity : Activity() {
             bg.execute { WebSnap.clear(this) }                        // not the web wall any more: its last picture is only a file taking room
         }
         if (!snap && !Walls.isPicture(id) && !WallArt.has(id)) {
-            picture = null; soft = null
+            soft = null
             Frost.show(null, dm.widthPixels, dm.heightPixels)
             val look = Backdrop.Look(colors)
             backdrop.show(look)
@@ -1369,7 +1367,7 @@ class HomeActivity : Activity() {
             runOnUiThread {
                 if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread   // another choice came meanwhile: its own load shows
                 if ((snap || Walls.isPicture(id)) && big == null) return@runOnUiThread   // no picture yet: the gradient stays
-                picture = big; soft = small
+                soft = small
                 val look = if (big != null) Backdrop.Look(colors, big) else Backdrop.Look(colors, null, id)
                 backdrop.show(look)
                 val moving = HomeConfig.isVideo(id)                      // the cards' blurred copy is still, the video is not: translucent cards like over the live page
@@ -1420,7 +1418,7 @@ class HomeActivity : Activity() {
                 if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread
                 hideLoading()
                 if (big == null) { android.util.Log.i("TvHomeWall", "picture wall failed: $pic"); return@runOnUiThread }
-                picture = big; soft = small
+                soft = small
                 backdrop.show(Backdrop.Look(colors, big))
                 Frost.show(small, dm.widthPixels, dm.heightPixels)
                 android.util.Log.i("TvHomeWall", "picture wall shown in ${android.os.SystemClock.elapsedRealtime() - t0} ms (${if (cached) "cache" else "net"})")
@@ -1475,7 +1473,7 @@ class HomeActivity : Activity() {
                 if (isDestroyed || trimmed || key != wallShown) return@runOnUiThread
                 hideLoading()
                 if (big == null) { slideAt = -1; return@runOnUiThread }   // not read: the old picture stays, the next slot tries again
-                picture = big; soft = small
+                soft = small
                 backdrop.show(Backdrop.Look(wallColors(conf.optString("wall"), conf), big))
                 Frost.show(small, dm.widthPixels, dm.heightPixels)
                 caption(s)

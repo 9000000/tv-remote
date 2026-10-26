@@ -16,6 +16,9 @@ import dev.tvremote.home.wallGradient
  * blended both full-screen layers on its GPU every frame: 45 ms a frame while focus moved, 9.5 ms with this one picture (the FPT
  * box: 15.8 ms either way). Changing it (a new choice, the rotation) switches at once: a cross-fade (two full-size bitmaps
  * blended on a thread) stalled the FPT box's main thread for up to a second, so there is none.
+ * The picture is painted on a thread of its own and sent to the GPU there ([Bitmap.prepareToDraw]); only the swap is on the main
+ * thread. Painted there, each slide of a slideshow (a new photo every few minutes) froze the focus for a frame or more, at random
+ * to the person: the FPT box's gfxinfo counted "slow bitmap uploads". A new bitmap each time: the old one goes with its drawable.
  */
 class Backdrop(private val target: View) {
     /** What is painted: a gradient, a drawn scene ([art], WallArt) or a photo over [colors] (any size: cropped to cover, like CENTER_CROP). */
@@ -26,21 +29,30 @@ class Backdrop(private val target: View) {
     /** Which way the next gradient runs ([wallDir]: only the person's own wall has a choice). */
     var dir = "tl_br"
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
-    private var made: Bitmap? = null
+    private val work = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "backdrop").apply { isDaemon = true } }
+    @Volatile private var gen = 0
 
     fun show(colors: IntArray, photo: Bitmap?, art: String? = null) = show(Look(colors, photo, art))
 
-    /** [l] painted at once, over the one picture kept (8 MB at 1080p: not a new one per change). */
+    /** [l] painted off the main thread; the last call wins (an older one still painting is dropped). */
     fun show(l: Look) {
         val dm = target.resources.displayMetrics
         val w = dm.widthPixels; val h = dm.heightPixels
-        val b = made?.takeIf { it.width == w && it.height == h } ?: Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { made = it }   // 565 would band every gradient
-        draw(Canvas(b), w, h, l)
-        target.background = BitmapDrawable(target.resources, b).apply { setDither(true) }
-        target.invalidate()
+        val g = ++gen; val k = strength; val d = dir
+        work.execute {
+            if (g != gen) return@execute
+            val b = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) } catch (e: OutOfMemoryError) { return@execute }   // 565 would band every gradient
+            draw(Canvas(b), w, h, l, k, d)
+            b.prepareToDraw()
+            target.post {
+                if (g != gen) return@post
+                target.background = BitmapDrawable(target.resources, b).apply { setDither(true) }
+                target.invalidate()
+            }
+        }
     }
 
-    private fun draw(c: Canvas, w: Int, h: Int, l: Look) {
+    private fun draw(c: Canvas, w: Int, h: Int, l: Look, strength: Float, dir: String) {
         val p = l.photo
         val art = l.art
         if (art != null && WallArt.has(art)) {

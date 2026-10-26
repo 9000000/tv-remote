@@ -52,7 +52,7 @@ import org.json.JSONObject
  *   lang    TV Home's words: "" the TV's own language, or one of [LANGS] whatever the TV is set to
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
- *   motion  how much moves while [anim] is on: "" this TV's choice (calm on one with little memory, 1.5 GB or less, or that Android
+ *   motion  how much moves while [anim] is on: "" this TV's choice (calm on one with little memory, 2.25 GB or less, or that Android
  *           calls low on RAM), "calm" (no overshoot, shorter, only the card grows: fewer frames on a weak chip), "full"
  *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
  *   cols    how many app tiles in a row of the grid, [COLS_MIN]..[COLS_MAX] (default [COLS_DEFAULT]). A TV Home that has this reports

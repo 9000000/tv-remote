@@ -52,15 +52,27 @@ object TvKeyboard {
         return if (i == to) out else null
     }
 
-    /** Asks the TV, the proto first; a TV without it is asked by the text dump from then on (one [Reader] per TV link). */
+    /**
+     * Asks the TV, the proto first; a TV that answers it with something else (no --proto) is asked by the text dump, and the
+     * proto again every [RETRY] asks (one [Reader] per TV link). The text dump runs the keyboard app's own dump: ~0.8 s of its
+     * CPU a call on the FPT box (Gboard, Android 14, 490 KB), against 37 ms and none for the proto; asked once a second it kept
+     * the box lagging. So an empty reply (a TV too busy to answer, a link dropping) is no answer at all: it throws, never switches.
+     */
     class Reader {
         private var proto = true
+        private var asks = 0
         fun ask(shell: (String) -> String): Boolean {
-            if (proto) fromProto(shell(PROTO))?.let { return it }
-            proto = false
+            if (!proto && ++asks % RETRY == 0) proto = true
+            if (proto) {
+                val out = shell(PROTO)
+                fromProto(out)?.let { return it }
+                if (out.isBlank()) throw java.io.IOException("no answer")
+                proto = false
+            }
             return shown(shell(CMD))
         }
     }
+    const val RETRY = 60
 
     /** What to do with the typing box when the TV keyboard's state is read; see [Follow]. */
     enum class Do { NONE, OPEN, CLOSE }

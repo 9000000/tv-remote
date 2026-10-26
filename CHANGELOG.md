@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home mượt hơn trên máy yếu: ảnh nền (cả lúc slideshow đổi ảnh) được vẽ và đưa lên GPU ở luồng riêng, không còn khựng focus. Trên FPT Play: khung chậm nhất 550 → ~100 ms, ít RAM hơn (bỏ một bản ảnh nền 8 MB giữ thừa; 188 → ~70-100 MB). Máy RAM 2 GB trở xuống tự dùng hiệu ứng "nhẹ" (hiệu ứng đầy đủ tốn gấp đôi CPU ở đó).
+- App điện thoại và app máy tính: TV trả lời chậm một lần (đang đứng máy) không còn làm app chuyển hẳn sang cách đọc bàn phím TV nặng (~0,8 s CPU của Gboard mỗi giây trên FPT Play); cách nhẹ được thử lại.
 - Game bài trên TV Games (Tiến lên, Mèo nổ, Colors): bài bay thật. Đánh bài thì bay từ tay (hoặc từ ghế) ra bàn, rút bài thì bay từ chồng bài về tay và lật mặt, chia bài ở đầu ván có từng lá một. Chọn / bỏ chọn một lá thì lá trượt lên xuống mượt (cả trên điện thoại lẫn bảng remote trên TV) thay vì nhảy ngay. Chỉ dùng transform/opacity nên TV box yếu vẫn mượt; tắt khi máy bật "giảm chuyển động".
 - TV Games: 15 game NES/homebrew có logo pixel-art riêng (chữ pixel, sprite 8-bit, nền tối có scanline, nhãn NES) thay cho logo bóng bẩy, khớp với hình ảnh trong game; game web giữ logo cũ.
 - TV Home: mọi thẻ widget và phần đầu trang (giờ, câu chào) đều chọn được bằng D-pad. Thẻ có màn riêng (thời tiết, tin, thị trường) thì OK mở màn đó; thẻ khác thì OK mở menu tuỳ chỉnh của thẻ.
@@ -31,6 +33,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
+- TV Home is smoother on weak TVs: the wallpaper (also each slideshow change) is painted and sent to the GPU on its own thread, the focus no longer stalls. FPT Play: slowest frame 550 → ~100 ms, less memory (an unused 8 MB copy of the wallpaper dropped; 188 → ~70-100 MB). TVs with 2 GB of RAM or less get "calm" motion by default (full motion took twice the CPU there).
+- Phone and Computer apps: one slow answer from the TV (a frozen box) no longer switches them for good to the heavy way of reading the TV keyboard (~0.8 s of Gboard's CPU every second on the FPT Play); the light way is tried again.
 - Card games in TV Games (Tiến lên, Boom Cats, Colors): cards really fly. A played card flies from the hand (or the seat) to the table, a drawn one from the deck to the hand and turns over, a new game deals one card at a time. Picking and un-picking a card slides it up and down smoothly (on the phone and in the TV remote panel) instead of jumping. transform/opacity only, so weak TV boxes stay smooth; off under "reduce motion".
 - TV Games: the 15 NES / homebrew games get their own pixel-art logos (pixel-font title, 8-bit sprite, dark scanline background, NES badge) instead of the glossy ones, matching how they look in play; web games keep theirs.
 - TV Home: every widget card and the header (clock, greeting) take the D-pad focus. Cards with a screen (weather, news, market) open it on OK; the others open their own settings menu.
