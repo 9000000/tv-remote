@@ -1,1 +1,262 @@
-{}
+{
+ "000d44a899f1fe556511419f|0.26.2": {
+  "at": "2026-10-26T21:47:35+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "0831a9cc1968dedff68abcc5|0.26.3": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "0f0bf561278c7d5229a700e5|0.23.0": {
+  "at": "2026-10-26T21:47:37+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "0f0bf561278c7d5229a700e5|0.26.2": {
+  "at": "2026-10-26T21:47:37+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "0f0bf561278c7d5229a700e5|0.26.3": {
+  "at": "2026-10-26T21:47:37+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "18d5207d7465e70cbd3ae5b1|0.26.3": {
+  "at": "2026-10-26T21:47:44+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "1b64c0fdb7081f015b2765c2|0.22.1": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.23.0": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 2,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.24.0": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 5,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.24.1": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 2,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.25.0": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 3,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.26.0": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.26.1": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 6,
+  "note": "fixed in 5d4096ec"
+ },
+ "1b64c0fdb7081f015b2765c2|0.26.3": {
+  "at": "2026-10-26T21:47:39+07:00",
+  "n": 2,
+  "note": "fixed in 5d4096ec"
+ },
+ "2da5cf8b449263057bedadf1|0.9.0": {
+  "at": "2026-10-26T21:47:36+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "304d571eb8351582e87856f4|0.26.3": {
+  "at": "2026-10-26T21:47:43+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "3165ca140d8765602735689f|0.23.0": {
+  "at": "2026-10-26T21:47:37+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "3165ca140d8765602735689f|0.26.2": {
+  "at": "2026-10-26T21:47:37+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "3165ca140d8765602735689f|0.26.3": {
+  "at": "2026-10-26T21:47:37+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "39af9333f7eea45d78f8bf79|0.8.0": {
+  "at": "2026-10-26T21:47:48+07:00",
+  "n": 3,
+  "note": "games 0.8.0 TLS handshake to a site with an unknown cert; watch"
+ },
+ "5b47665e5391015e7bcf0337|0.23.0": {
+  "at": "2026-10-26T21:47:41+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "6643ac5ba371539b73349499|0.26.3": {
+  "at": "2026-10-26T21:47:45+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "6ca924d6b3c5ee9382ca8aee|0.23.0": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 3,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "6ca924d6b3c5ee9382ca8aee|0.24.0": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "6ca924d6b3c5ee9382ca8aee|0.24.1": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "6ca924d6b3c5ee9382ca8aee|0.25.0": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 2,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "6ca924d6b3c5ee9382ca8aee|0.26.2": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 2,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "79d301739f47300b62afcc99|0.24.0": {
+  "at": "2026-10-26T21:47:42+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "80076832323d6921ebcd2475|0.13.1": {
+  "at": "2026-10-26T21:47:47+07:00",
+  "n": 1,
+  "note": "VerifyError R8 home 0.13.1 on Amlogic A9; watch for 0.14.0"
+ },
+ "802962226f397f482be0c37a|0.13.0": {
+  "at": "2026-10-26T21:47:36+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "93c1d74822c7d6a4439c956b|0.23.0": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "93c1d74822c7d6a4439c956b|0.26.2": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "93c1d74822c7d6a4439c956b|0.26.3": {
+  "at": "2026-10-26T21:47:40+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "9411a8842362d4da98cc461d|0.26.2": {
+  "at": "2026-10-26T21:47:41+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "9412b9fb2ac9be0836e7a3e7|0.23.0": {
+  "at": "2026-10-26T21:47:38+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "9412b9fb2ac9be0836e7a3e7|0.26.2": {
+  "at": "2026-10-26T21:47:38+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "9412b9fb2ac9be0836e7a3e7|0.26.3": {
+  "at": "2026-10-26T21:47:38+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "b6a3b10f364db6b1b1f97649|0.23.0": {
+  "at": "2026-10-26T21:47:35+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "b6a3b10f364db6b1b1f97649|0.24.1": {
+  "at": "2026-10-26T21:47:35+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "b6f2dbac085dd251c785a738|0.26.2": {
+  "at": "2026-10-26T21:47:46+07:00",
+  "n": 1,
+  "note": "zaloJSV2: injected by the Zalo in-app browser, not ours"
+ },
+ "c05b84ecf31e01fbc030366e|0.26.3": {
+  "at": "2026-10-26T21:47:47+07:00",
+  "n": 1,
+  "note": "M_ID: injected by a browser add-on, not ours"
+ },
+ "c2ce1b1434df896de8fd1d70|0.23.0": {
+  "at": "2026-10-26T21:47:34+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "c2ce1b1434df896de8fd1d70|0.26.3": {
+  "at": "2026-10-26T21:47:34+07:00",
+  "n": 3,
+  "note": "fixed in 5d4096ec"
+ },
+ "c2ce1b1434df896de8fd1d70|0.27.0": {
+  "at": "2026-10-26T21:47:34+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "c9ed129e030fd9374b14cfd4|0.26.3": {
+  "at": "2026-10-26T21:47:46+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "cdd3314554f5edfde8ff4338|0.26.3": {
+  "at": "2026-10-26T21:47:44+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "da6214721e9abe7601758e7a|0.26.3": {
+  "at": "2026-10-26T21:47:45+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "db46a10a0f1b67c78ae13f5f|0.23.0": {
+  "at": "2026-10-26T21:47:38+07:00",
+  "n": 1,
+  "note": "fixed in 5d4096ec"
+ },
+ "defef3515cb89aabff4263f5|0.26.2": {
+  "at": "2026-10-26T21:47:34+07:00",
+  "n": 2,
+  "note": "fixed in 5d4096ec"
+ },
+ "defef3515cb89aabff4263f5|0.26.3": {
+  "at": "2026-10-26T21:47:34+07:00",
+  "n": 3,
+  "note": "fixed in 5d4096ec"
+ },
+ "e183da6cf42d4c2e775d5eee|0.23.0": {
+  "at": "2026-10-26T21:47:42+07:00",
+  "n": 1,
+  "note": "old version (<=0.24): gone in current page"
+ },
+ "f3043f31e9ac948bffe2425a|0.26.3": {
+  "at": "2026-10-26T21:47:43+07:00",
+  "n": 1,
+  "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ }
+}
