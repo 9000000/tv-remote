@@ -58,7 +58,12 @@ object SupportDump {
         Regex("appops get [\\w.]+( [\\w_:]+)?"),
         Regex("cmd package (resolve-activity|query-activities|query-services|query-receivers|list packages)( [\\w.:/=-]+)*"),
         Regex("logcat -d( -[tsv] [\\w:*.]+| -b \\w+| [\\w]+:[VDIWEFS])*"),
-        Regex("(uptime|df( -h)?|ps -A( -o [\\w,]+)?|top -b -n 1( -m \\d+)?|wm (size|density)|id|date)")
+        Regex("(uptime|df( -h)?|ps -A( -o [\\w,]+)?|top -b -n 1( -m \\d+)?|wm (size|density)|id|date)"),
+        // a remote's keys (a Chromecast with a TIMvision remote, 2026-10-26): the system's key maps, which keys each remote declares
+        // (-p prints and ends), and the next presses while the person tries a button (timeout ends it if they press nothing)
+        Regex("(cat|ls( -l)?) /(system|vendor|product|odm)/usr/(keylayout|keychars|idc)(/[\\w-][\\w.-]*)?"),
+        Regex("getevent -(?=[lip]*p)[lip]+"),
+        Regex("timeout ([1-9]|1\\d|20) getevent -lt? -c \\d{1,3}")
     )
     private val ACTS = Regex("\\b(set|reset|unplug|enable|disable|force-idle|force-inactive|step|clear|kill|run|put|delete|write|unforce|--reset|start|stop|add|remove)\\b")
 

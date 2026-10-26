@@ -125,6 +125,7 @@ class KeysBridge : Service() {
     }
 
     private fun handle(code: Int, action: Int, repeat: Int, downTime: Long, eventTime: Long): Boolean {
+        if (action == KeyEvent.ACTION_DOWN && repeat == 0 && Support.open()) android.util.Log.i("KeyFix", "key $code")   // only while support looks: which code a remote's button sends
         if (code in MicVoice.KEYS) when (MicVoice.step(mic && !MicVoice.broken(), MicActivity.live != null, code, action, repeat, downTime, eventTime).also {
             android.util.Log.i("MicVoice", "key $code action $action repeat $repeat -> $it (on=$mic)")   // adb logcat -s MicVoice: which key a remote's mic button sends
         }) {

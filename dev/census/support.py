@@ -7,6 +7,9 @@
   support.py CODE --all              the usual reads in one go: about, state, diagnose, setup/version, wirelog
   support.py CODE sh "dumpsys package dev.tvremote.setup.keys"   any read-only command (TV Setup newer than 0.26.2: settings, dumpsys,
                                      getprop, pm list/dump, appops get, logcat -d); /api/support/prefs, /api/support/logcat
+  support.py CODE sh "getevent -pl"            a remote's keys (TV Setup newer than 0.26.3): what each remote declares; also
+                                     "timeout 15 getevent -lt -c 40" (the next presses), cat/ls /vendor|system/usr/keylayout/...,
+                                     and logcat -s KeyFix shows "key <code>" for each press while support looks
   support.py --delete CODE           forget it
   support.py --url http://127.0.0.1:8798   a local `wrangler dev`
 """

@@ -10,11 +10,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Theme có sẵn của TV Home (tải từ site, không cần cập nhật app): thêm theme "Trong veo" (ảnh Bing mỗi ngày, widget không nền); "Khung ảnh", "Ruộng bậc thang", "Hoàng hôn biển (video)", "Vịnh Hạ Long (video)" giờ dùng widget không nền.
 - TV Channels: kênh ghim ra màn hình chính không còn mang icon TV Channels khi tải logo chậm (dùng logo đã có sẵn); kênh đã ghim thiếu logo tự nhận logo khi mở TV Channels lần sau, TV Home vẽ lại ngay.
 - TV Home: bỏ giới hạn 6 (app yêu thích + kênh ghim) khi ghim shortcut, ghim bao nhiêu cũng được; thông báo đổi thành "Đã thêm ra màn hình chính".
+- TV Setup: khi bạn bật "Cho hỗ trợ xem", đội hỗ trợ đọc được phím nào remote gửi (để sửa remote lạ mà không cần bạn mô tả); chỉ đọc, hết giờ là thôi.
 
 **English**
 - TV Home's ready-made themes (read from the site, no app update needed): new "See-through" theme (the day's Bing picture, cards with no background); "Photo frame", "Rice terraces", "Sunset beach (video)", "Ha Long Bay (video)" now use cards with no background.
 - TV Channels: a channel pinned to the home screen no longer gets the TV Channels icon when its logo is slow (the logo already shown is used); pins missing their logo get it the next time TV Channels opens, and TV Home redraws them at once.
 - TV Home: no more limit of 6 (favourite apps + pins) on pinned shortcuts; the message now says "On the home screen".
+- TV Setup: while you let support look, support can read which keys your remote sends (to fix an unusual remote without asking you to describe it); read-only, ends with the session.
 
 ## 0.26.3 - 2026-10-26
 
