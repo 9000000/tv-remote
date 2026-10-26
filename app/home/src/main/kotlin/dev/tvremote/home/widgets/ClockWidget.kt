@@ -23,7 +23,7 @@ import java.util.Date
 
 /**
  * The clock card, [mode] 0: a pill in a stack (the face, the time and the date), 1: standing alone, the face filling the card,
- * 2: big, the face with the time and the date beside it. The face (classic, minimal, roman) and its theme (dark, light) are HomeConfig "wopt", independent of each other (see [ClockFace]).
+ * 2: big, the face with the time and the date beside it. The digital face is its own time and date: it fills the card in every mode. The face (classic, minimal, roman) and its theme (dark, light) are HomeConfig "wopt", independent of each other (see [ClockFace]).
  */
 internal fun Widgets.clock(mode: Int): View {
     val face0 = opt("clock", "face"); val light0 = opt("clock", "theme") == "light"
@@ -60,7 +60,7 @@ internal fun Widgets.clock(mode: Int): View {
     return LinearLayout(a).apply {
         Frost.on(this, dp(if (mode == 0) 18 else 22).toFloat(), dp(1))
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-        if (mode == 1) {
+        if (mode == 1 || face0 == "digital") {
             setPadding(dp(8), dp(8), dp(8), dp(8))
             addView(face, LayoutParams(-1, -1))
             return@apply
@@ -94,6 +94,13 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
     private val dim = if (dark) 0x66FFFFFF else 0x55000000
     private val orange = 0xFFFF9500.toInt()
     private val gold = if (light) GOLD_LIGHT else GOLD      // the roman face's ink: pale gold on dark, deep gold on light
+    private val red = if (light) RED_LIGHT else Widgets.ACCENT       // modern / digital: the date, in the calendar's red
+    private val locale = c.resources.configuration.locales[0]
+    private val digitsF = SimpleDateFormat(if (Store.get(c).optBoolean("clock24", true)) "HH:mm" else "h:mm", locale)
+    private val dateF = SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), locale)
+    private val dayF = SimpleDateFormat(if (locale.language == "vi") "d" else "EEE d", locale)
+    private var digits = ""; private var dateLine = ""; private var dayLine = ""
+    private val box = android.graphics.RectF()
     private val frame = Runnable { invalidate() }
     override fun onVisibilityAggregated(v: Boolean) { super.onVisibilityAggregated(v); if (v) invalidate() }
     override fun onDraw(cv: Canvas) {
@@ -104,6 +111,13 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
         if (cal.get(Calendar.MINUTE) != minute) { minute = cal.get(Calendar.MINUTE); val d = Date(now); post { onMinute(d) } }
         val min = cal.get(Calendar.MINUTE).toFloat()
         val hr = cal.get(Calendar.HOUR) + min / 60f
+        if (style == "digital" || style == "modern") {               // their words, once a minute: drawing allocates nothing else
+            val d = Date(now)
+            digits = digitsF.format(d); dateLine = dateF.format(d).replaceFirstChar { it.uppercase() }
+            dayLine = if (locale.language == "vi") host.viDay(d) + " " + dayF.format(d) else dayF.format(d).uppercase()
+        }
+        if (style == "digital") { digital(cv, w, h); return next(now) }
+        if (style == "modern") { modern(cv, cx, cy, r, hr, min); return next(now) }
         paint.style = Paint.Style.FILL
         paint.color = if (dark) (when (style) { "roman" -> DISC_ROMAN; "minimal" -> DISC_MINIMAL; else -> DISC_DARK }) else if (serif) DISC_ROMAN_LIGHT else DISC_LIGHT
         cv.drawCircle(cx, cy, r, paint)
@@ -148,11 +162,70 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
         paint.style = Paint.Style.FILL
         paint.color = if (serif) gold else ink; cv.drawCircle(cx, cy, r * 0.065f, paint)
         paint.color = orange; cv.drawCircle(cx, cy, r * 0.03f, paint)
+        next(now)
+    }
+    private fun next(now: Long) {
         removeCallbacks(frame)                                      // one pending frame, however many draws asked
         if (isShown && windowVisibility == VISIBLE) {
             postDelayed(frame, 60_000 - now % 60_000)
         }
     }
+    /** StandBy's Modern: every minute ticked (the hours bright), twelve numbers, thin hands, the weekday and day in the dial in red. */
+    private fun modern(cv: Canvas, cx: Float, cy: Float, r: Float, hr: Float, min: Float) {
+        paint.style = Paint.Style.FILL
+        paint.color = if (dark) DISC_DARK else DISC_LIGHT
+        cv.drawCircle(cx, cy, r, paint)
+        paint.style = Paint.Style.STROKE; paint.strokeCap = Paint.Cap.BUTT
+        val edge = r * 0.95f
+        for (i in 0 until 60) {
+            val hour = i % 5 == 0
+            paint.strokeWidth = if (hour) maxOf(1.5f, r * 0.026f) else maxOf(1f, r * 0.011f)
+            paint.color = if (hour) ink else dim
+            line(cv, cx, cy, i * 6f, edge - (if (hour) r * 0.11f else r * 0.055f), edge, paint)
+        }
+        paint.style = Paint.Style.FILL; paint.textAlign = Paint.Align.CENTER
+        if (r >= dp(34)) {
+            paint.typeface = Font.medium; paint.color = ink; paint.textSize = r * 0.19f
+            val fm = paint.fontMetrics; val ring = r * 0.67f
+            for (n in 1..12) {
+                val a = Math.toRadians(n * 30.0 - 90)
+                cv.drawText(n.toString(), cx + (ring * Math.cos(a)).toFloat(), cy + (ring * Math.sin(a)).toFloat() - (fm.ascent + fm.descent) / 2, paint)
+            }
+            paint.color = red; paint.textSize = r * 0.13f
+            cv.drawText(dayLine, cx, cy + r * 0.4f, paint)
+        }
+        paint.style = Paint.Style.STROKE; paint.strokeCap = Paint.Cap.ROUND; paint.color = ink
+        paint.strokeWidth = r * 0.06f; line(cv, cx, cy, hr * 30f, 0f, r * 0.5f, paint)
+        paint.strokeWidth = r * 0.04f; line(cv, cx, cy, min * 6f, 0f, r * 0.8f, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = orange; cv.drawCircle(cx, cy, r * 0.06f, paint)
+        paint.color = if (dark) DISC_DARK else DISC_LIGHT; cv.drawCircle(cx, cy, r * 0.025f, paint)
+    }
+
+    /** StandBy's Digital: a screen in the disc's colour, the date line in red over the time, the digits as large as the screen allows. */
+    private fun digital(cv: Canvas, w: Float, h: Float) {
+        paint.style = Paint.Style.FILL
+        paint.color = if (dark) DISC_DIGITAL else DISC_LIGHT
+        box.set(0f, 0f, w, h); cv.drawRoundRect(box, dp(16).toFloat(), dp(16).toFloat(), paint)
+        val pad = minOf(w, h) * 0.12f
+        paint.textAlign = Paint.Align.CENTER
+        paint.typeface = Font.medium
+        val sp = resources.displayMetrics.scaledDensity
+        var ds = (h * 0.15f).coerceIn(11f * sp, 22f * sp)                // the pill: still a line to read, not a speck
+        paint.textSize = ds
+        val line = if (paint.measureText(dateLine) <= w - pad * 2) dateLine else dayLine   // narrow: "T3 27"
+        while (ds > 9f * resources.displayMetrics.density && paint.measureText(line) > w - pad * 2) { ds -= 1f; paint.textSize = ds }
+        paint.typeface = Font.light
+        var ts = h - ds * 2.2f - pad; paint.textSize = ts
+        while (ts > 12f && paint.measureText(digits) > w - pad * 2) { ts -= 2f; paint.textSize = ts }
+        val cap = ts * 0.72f; val gap = ds * 0.5f
+        val top = (h - (ds + gap + cap)) / 2f
+        paint.color = ink
+        cv.drawText(digits, w / 2f, top + ds + gap + cap, paint)
+        paint.typeface = Font.medium; paint.textSize = ds; paint.color = red
+        cv.drawText(line, w / 2f, top + ds * 0.8f, paint)
+    }
+
     /** A stroke at [deg] clockwise from 12, from [from] to [to] of the centre. */
     private fun line(cv: Canvas, cx: Float, cy: Float, deg: Float, from: Float, to: Float, p: Paint) {
         val a = Math.toRadians(deg - 90.0); val co = Math.cos(a).toFloat(); val si = Math.sin(a).toFloat()
@@ -164,3 +237,4 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
 private const val DISC_DARK = 0xFF1C1C1E.toInt(); private const val DISC_MINIMAL = 0xFF161618.toInt(); private const val DISC_ROMAN = 0xFF211C17.toInt()
 private const val DISC_LIGHT = 0xFFF4F4F6.toInt(); private const val DISC_ROMAN_LIGHT = 0xFFF6F0E4.toInt()
 private const val GOLD = 0xFFE9D8A6.toInt(); private const val GOLD_LIGHT = 0xFF8C6D1F.toInt()
+private const val DISC_DIGITAL = 0xFF0B0B0C.toInt(); private const val RED_LIGHT = 0xFFD70015.toInt()   // StandBy's black; a red that reads on the light disc

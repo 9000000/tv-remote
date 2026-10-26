@@ -91,7 +91,7 @@ function layGlyph(k) {
 }
 
 // The words the schema names by id (HomeConfig.options: label `home.o_<option>`, value `home.ov_<value>`), listed so the id check sees them used
-const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman',
+const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman', 'home.ov_modern', 'home.ov_digital', 'home.ov_month', 'home.ov_date',
   'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_solid', 'home.ov_none', 'home.ov_off', 'home.ov_on',
   'home.o_layout', 'home.o_show', 'home.o_btc', 'home.o_src', 'home.ov_card', 'home.ov_ticker', 'home.ov_all', 'home.ov_gold', 'home.ov_rates', 'home.ov_auto', 'home.ov_mine', 'home.ov_both'];
 // A card's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
@@ -107,6 +107,15 @@ function homeCardPrev(k, c) {
   if (k === 'clock') {
     const face = homeOpt(c, k, 'face'), light = homeOpt(c, k, 'theme') === 'light';
     let t = '';
+    const look = ({ glass: ' look-glass', solid: ' look-solid' }[homeOpt(c, k, 'look') || 'glass'] || '');
+    if (face === 'digital')                                           // a screen: the red date line over the digits (ClockFace.digital)
+      return el('div', { className: 'wprev wclock digital' + (light ? ' light' : ' dark') + (big ? ' big' : '') + look, role: 'img', 'aria-label': T('home.w_clock'),
+        innerHTML: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="1" y="14" width="98" height="72" rx="14" class="disc"/><text x="50" y="38" class="date">27</text><text x="50" y="62" class="digits">10:10</text></svg>' });
+    if (face === 'modern') for (let i = 0; i < 60; i++) {            // every minute, the hours bright (ClockFace.modern)
+      if (i % 5 === 0) continue;
+      const a = i * 6 * Math.PI / 180;
+      t += `<line x1="${50 + 44 * Math.sin(a)}" y1="${50 - 44 * Math.cos(a)}" x2="${50 + 47 * Math.sin(a)}" y2="${50 - 47 * Math.cos(a)}" class="tick min"/>`;
+    }
     for (let i = 0; i < 12; i++) {
       const quarter = i % 3 === 0, a = i * 30 * Math.PI / 180;
       if (face === 'minimal' && !quarter) continue;
@@ -114,11 +123,13 @@ function homeCardPrev(k, c) {
       const r1 = face === 'minimal' ? 38 : quarter ? 41 : 44, x1 = 50 + 46 * Math.sin(a), y1 = 50 - 46 * Math.cos(a);
       t += `<line x1="${50 + r1 * Math.sin(a)}" y1="${50 - r1 * Math.cos(a)}" x2="${x1}" y2="${y1}" class="tick"/>`;
     }
-    const num = face === 'roman' ? [['XII', 50, 25], ['III', 75, 50], ['VI', 50, 75], ['IX', 25, 50]] : face === 'classic' ? [['12', 50, 25], ['3', 75, 50], ['6', 50, 75], ['9', 25, 50]] : [];
+    const num = face === 'roman' ? [['XII', 50, 25], ['III', 75, 50], ['VI', 50, 75], ['IX', 25, 50]] : face === 'classic' ? [['12', 50, 25], ['3', 75, 50], ['6', 50, 75], ['9', 25, 50]]
+      : face === 'modern' ? Array.from({ length: 12 }, (_, i) => [String(i + 1), 50 + 31 * Math.sin((i + 1) * Math.PI / 6), 50 - 31 * Math.cos((i + 1) * Math.PI / 6)]) : [];
     t += num.map(([n, x, y]) => `<text x="${x}" y="${y}" class="num">${n}</text>`).join('');
+    if (face === 'modern') t += '<text x="50" y="70" class="date">27</text>';
     const thin = face === 'minimal';
     t += `<line x1="50" y1="50" x2="${50 + 22 * Math.sin(305 * Math.PI / 180)}" y2="${50 - 22 * Math.cos(305 * Math.PI / 180)}" class="hand ${thin ? 'thin' : ''}"/><line x1="50" y1="50" x2="${50 + 34 * Math.sin(60 * Math.PI / 180)}" y2="${50 - 34 * Math.cos(60 * Math.PI / 180)}" class="hand ${thin ? 'thin' : ''}"/><circle cx="50" cy="50" r="3" class="pin"/>`;
-    return el('div', { className: 'wprev wclock ' + face + (light ? ' light' : ' dark') + (big ? ' big' : '') + ({ glass: ' look-glass', solid: ' look-solid' }[homeOpt(c, k, 'look') || 'glass'] || ''), role: 'img', 'aria-label': T('home.w_clock'), innerHTML: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="49" class="disc"/>${t}</svg>` });
+    return el('div', { className: 'wprev wclock ' + face + (light ? ' light' : ' dark') + (big ? ' big' : '') + look, role: 'img', 'aria-label': T('home.w_clock'), innerHTML: `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="49" class="disc"/>${t}</svg>` });
   }
   return el('div', { className: 'wprev wcard ' + (homeOpt(c, k, 'look') || 'glass') + (big ? ' big' : '') },
     el('small', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : k }), el('b', { textContent: '··' }), el('i'));

@@ -250,6 +250,14 @@ dialog.wset .card { width:min(520px, 94vw); }
 .wclock .hand { stroke:#fff; stroke-width:3.6; stroke-linecap:round; }
 .wclock .hand.thin { stroke-width:2; }
 .wclock .pin { fill:#ff9500; }
+.wclock.modern .num { font-size:9px; }
+.wclock .tick.min { stroke-width:.7; opacity:.45; }
+.wclock .date { fill:#ff453a; font-size:9px; font-weight:600; text-anchor:middle; dominant-baseline:central; }
+.wclock.digital.dark .disc { fill:#0b0b0c; }
+.wclock.digital .date { font-size:11px; }
+.wclock.digital .digits { fill:#fff; font-size:26px; font-weight:300; text-anchor:middle; dominant-baseline:central; }
+.wclock.digital.light .digits { fill:#1c1c1e; }
+.wclock.light .date { fill:#d70015; }
 .wclock.light .tick, .wclock.light .num, .wclock.light .hand { stroke:#1c1c1e; fill:#1c1c1e; }
 .wclock.light .num { stroke:none; }
 .wclock.roman.dark .tick, .wclock.roman.dark .hand { stroke:#e9d8a6; }

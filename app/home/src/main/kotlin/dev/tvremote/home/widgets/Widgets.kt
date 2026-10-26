@@ -282,7 +282,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                     if (full) when (k) {
                         "system" -> system(c, f, w)
                         "air" -> airGlass(c, f, true)
-                        "calendar" -> calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
+                        "calendar" -> if (opt("calendar", "layout") == "date") calendarDate(c, f) else calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
                         "weather" -> weather(c, f, w, fixed = true)
                         "market" -> if (opt("market", "layout") == "ticker") marketTicker(c, f, true) else marketFull(c, f)
                         "news" -> newsFull(c, f, w)

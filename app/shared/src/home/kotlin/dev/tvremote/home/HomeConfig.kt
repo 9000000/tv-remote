@@ -221,8 +221,9 @@ object HomeConfig {
     fun options(k: String): List<Opt> {
         val size = Opt("size", "choice", SIZES, defaultSize(k), "wsize")
         return when {
-            k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"), Opt("look", "choice", BARE, "glass"))
+            k == "clock" -> listOf(size, Opt("face", "choice", listOf("classic", "minimal", "roman", "modern", "digital"), "classic"), Opt("theme", "choice", listOf("dark", "light"), "dark"), Opt("look", "choice", BARE, "glass"))
             k == "market" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("layout", "choice", listOf("card", "ticker"), "card"), Opt("show", "choice", listOf("all", "gold", "rates"), "all"), Opt("btc", "toggle", emptyList(), "off"))
+            k == "calendar" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("layout", "choice", listOf("month", "date"), "month"))
             k == "news" -> listOf(size, Opt("look", "choice", LOOKS, "glass"), Opt("src", "choice", listOf("auto", "mine", "both"), "auto"))
             k in TONAL -> listOf(size, Opt("look", "choice", LOOKS, "glass"))
             k in WIDGETS -> listOf(size)

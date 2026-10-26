@@ -128,9 +128,9 @@ class HomeConfigTest {
         assertEquals(listOf("size", "face", "theme", "look"), List(clock.length()) { clock.getJSONObject(it).getString("id") })
         val face = clock.getJSONObject(1)
         assertEquals("classic", face.getString("default")); assertEquals("home.o_face", face.getString("label"))
-        assertEquals(listOf("classic", "minimal", "roman"), List(3) { face.getJSONArray("values").getJSONObject(it).getString("id") })
+        assertEquals(listOf("classic", "minimal", "roman", "modern", "digital"), List(5) { face.getJSONArray("values").getJSONObject(it).getString("id") })
         assertEquals("home.ov_minimal", face.getJSONArray("values").getJSONObject(1).getString("w"))
-        assertEquals(2, s.getJSONArray("calendar").length())                                  // size + look
+        assertEquals(3, s.getJSONArray("calendar").length())                                  // size + look + layout (month / date)
         for (k in HomeConfig.WIDGETS) assertEquals(k != "clock", HomeConfig.options(k).first { it.id == "look" }.values.contains("tonal"))   // every card has a look, all but the clock a tonal one
         assertEquals("look", s.getJSONArray("weather").getJSONObject(1).getString("id"))
         for (k in HomeConfig.WIDGETS) for (o in HomeConfig.options(k)) assertTrue(o.default in (if (o.type == "toggle") listOf("off", "on") else o.values))

@@ -170,6 +170,13 @@ The other look of EVERY home screen card but the clock (weather, system, lunar, 
 
 Two more looks for every card, the clock too (`HomeConfig.LOOKS`; the clock's are `glass` / `solid` / `none`): **solid**, the glass card's shape filled nearly opaque `#181B22` (`Frost.look`, a busy photo stays out); **none**, no card drawn at all, the words on the wallpaper with a 6 dp shadow (`Widgets.bare`), for a person whose own photo is the point. Both are the glass card's layout (one drawing path: `Frost.draw`), only the fill changes.
 
+**StandBy faces** (iPhone StandBy's spirit, drawn once a minute like every face): the clock's `face` adds **modern** (60 ticks, the
+hour ones bright, 12 numbers, the weekday and day in the dial in the calendar's red `ACCENT`) and **digital** (a screen in the
+theme's disc colour: the date line in red over the time, as large as the card allows; it fills the card at both sizes, the pill keeps
+the plain digits). The calendar's `layout` adds **date** (the weekday in red over the month's name, the day as the card's figure, the
+lunar date under it) beside the month grid. No second hand on Home: a redraw each second costs a weak box the D-pad's smoothness.
+The screensaver's StandBy styles are these same views, larger (`HomeDream`).
+
 | Part | Value |
 |---|---|
 | Card | opaque fill `Tonal.FILL` `#F6E9E0` (one warm tone, **not** taken from the wallpaper: TV Home has no colour pick), radius **28** dp, no border, no shadow, height = the cards' `BIG_H` |

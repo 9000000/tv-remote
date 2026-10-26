@@ -48,6 +48,23 @@ internal fun Widgets.calendarHalf(card: LinearLayout, f: Facts, room: Int) {
 }
 
 /** The month: the title and the lunar month and year of today, then one View drawing the weekdays and every day (solar only: a lunar line under each was too busy). */
+/** StandBy's Date: the weekday in red over the month's name, the day as the card's figure, the lunar date under it. */
+internal fun Widgets.calendarDate(card: LinearLayout, f: Facts) {
+    val c = f.cal ?: return
+    val loc = resources.configuration.locales[0]
+    val now = Date()
+    val d = c.moon
+    val month = a.resources.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
+    val head = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.BOTTOM }
+    head.addView(text(SimpleDateFormat("EEEE", loc).format(now).replaceFirstChar { it.uppercase() }, 17f, ACCENT).apply { typeface = BOLD; maxLines = 1 })
+    head.addView(text("  " + a.resources.getStringArray(R.array.cal_month)[c.grid.month - 1], 17f, DIM).apply { typeface = MEDIUM; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+    card.addView(head)
+    card.addView(text(SimpleDateFormat("d", loc).format(now), 84f, Color.WHITE).apply {
+        typeface = Font.medium; includeFontPadding = false; gravity = Gravity.CENTER_VERTICAL
+    }, LayoutParams(-1, 0, 1f))
+    card.addView(text(a.getString(R.string.lunar_title, if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString(), month), 13f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+}
+
 internal fun Widgets.calendar(card: LinearLayout, f: Facts, width: Int, maxH: Int = Int.MAX_VALUE) {
     val c = f.cal ?: return
     val r = a.resources
