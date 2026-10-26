@@ -42,13 +42,18 @@
     let n = s.length; while (n > 1 && c.measureText(s.slice(0, n) + '…').width > maxw) n--; return s.slice(0, n) + '…';
   };
   const glows = {};
-  K.glow = (color, r) => {                                                    // a soft round light, drawn with 'lighter'
+  // a soft round light, drawn with 'lighter'. Sizes go in 16 px steps, drawn scaled to the exact one, and only GLOWS are kept: a radius
+  // changing every frame (Sumo's shrinking floor) made a new ~800 px canvas each frame, kept forever, until the TV ran out of memory
+  const GLOWS = 24;
+  K.glow = (color, r) => {
+    r = Math.max(16, Math.ceil(r / 16) * 16);
     const k = color + r; if (glows[k]) return glows[k];
+    const ks = Object.keys(glows); if (ks.length >= GLOWS) delete glows[ks[0]];
     const g = document.createElement('canvas'); g.width = g.height = r * 2; const c = g.getContext('2d');
     const gr = c.createRadialGradient(r, r, 0, r, r, r); gr.addColorStop(0, color); gr.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = gr; c.fillRect(0, 0, r * 2, r * 2); return (glows[k] = g);
   };
-  K.light = (c, x, y, color, r, a) => { c.globalAlpha = a == null ? 1 : a; c.globalCompositeOperation = 'lighter'; c.drawImage(K.glow(color, r), x - r, y - r); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; };
+  K.light = (c, x, y, color, r, a) => { c.globalAlpha = a == null ? 1 : a; c.globalCompositeOperation = 'lighter'; c.drawImage(K.glow(color, r), x - r, y - r, r * 2, r * 2); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; };
 
   // particles: flat arrays, no allocation per frame
   const PN = 400, P = { x: new Float32Array(PN), y: new Float32Array(PN), vx: new Float32Array(PN), vy: new Float32Array(PN), life: new Float32Array(PN), max: new Float32Array(PN), sz: new Float32Array(PN), col: new Array(PN).fill('#fff') };

@@ -11,6 +11,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games: 15 game NES/homebrew có logo pixel-art riêng (chữ pixel, sprite 8-bit, nền tối có scanline, nhãn NES) thay cho logo bóng bẩy, khớp với hình ảnh trong game; game web giữ logo cũ.
 - TV Home: mọi thẻ widget và phần đầu trang (giờ, câu chào) đều chọn được bằng D-pad. Thẻ có màn riêng (thời tiết, tin, thị trường) thì OK mở màn đó; thẻ khác thì OK mở menu tuỳ chỉnh của thẻ.
 - TV Home: kiểu focus "Kính" giờ trượt tới mọi chỗ chọn được (thẻ widget, đầu trang, nút trên thanh trên cùng), không còn bốn kiểu focus khác nhau; sang hình khác (ô app → thẻ → câu chào → nút tròn) kính bay và biến hình, không chỉ mờ dần. Kính chỉ vẽ lại khi đổi hình (một lần mỗi hình, giữ sẵn 4), lúc trượt chỉ dịch và phóng trên GPU. Đổi hình không còn layout lại cả trang: trên box FPT kính chỉ tốn hơn viền ~4% CPU (trước ~14%).
+- Game web (Sumo húc, và mọi game có ánh sáng): không còn làm đầy RAM tới mức đứng TV; sàn Sumo co lại từng khung hình tạo một ảnh sáng mới mỗi khung và giữ mãi.
 - TV Games: game gửi từ điện thoại khi thẻ QR "Thêm game" đang mở giờ hiện ngay khi đóng thẻ (đã chọn sẵn), không phải mở lại app.
 - Remote (app máy tính, trang web): giữ phím Enter, mũi tên, Esc, Home 0,4 giây = giữ phím đó trên TV (menu nhấn giữ, cuộn nhanh), như giữ nút trên trang.
 - TV Home: khung chọn của đầu trang chỉ rộng vừa giờ và câu chào (trước kéo tới sát thanh trên cùng); đổi câu chào lúc đang chạy không còn bị cắt ngắn bằng dòng cũ.
@@ -34,6 +35,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Games: the 15 NES / homebrew games get their own pixel-art logos (pixel-font title, 8-bit sprite, dark scanline background, NES badge) instead of the glossy ones, matching how they look in play; web games keep theirs.
 - TV Home: every widget card and the header (clock, greeting) take the D-pad focus. Cards with a screen (weather, news, market) open it on OK; the others open their own settings menu.
 - TV Home: the "Glass" focus now glides to every stop (widget cards, the header, the top-bar buttons), not four different focus looks; to another shape (app tile → card → header → round button) it flies and morphs, not only fades. The glass is redrawn only when the shape changes (once per shape, 4 kept); gliding is a GPU move and scale. A new shape no longer lays out the whole page: on the FPT box the glass costs ~4% more CPU than the ring (was ~14%).
+- Web games (Sumo Bump, and every game with lights): no longer fill the memory until the TV freezes; Sumo's floor, shrinking each frame, made a new light picture each frame and kept them all.
 - TV Games: a game sent from a phone while the "Add game" QR card is open now shows (focused) as soon as the card closes, no reopening the app.
 - Remote (Computer app, web page): holding Enter, an arrow, Esc or Home 0.4 s holds that key on the TV (long-press menus, fast scrolling), as holding the page's keys does.
 - TV Home: the header's focus is only as wide as the clock and its words (it reached the top bar); a greeting changed live is no longer cut to the old line's width.
