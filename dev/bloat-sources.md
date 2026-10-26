@@ -5,7 +5,17 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-25 (evening)**, upstream at `67dc5bee16` (99 commits after `575d73f0f3`; 12 `debloat.txt`). Into bloat.json:
+Last read: **2026-10-26**, upstream at `f592b6d2db` (384 commits after `67dc5bee16`, mostly addons/; 67 `debloat.txt`, 16 new). Into bloat.json:
+SUGGEST Philips `tpv.asc.taadserver` (ads + telemetry), `funshion.publicity` (promo), `atmaca.atmretailmode` (retail demo); KEEP
+`tcl.providers.config` (upstream "never disable, load-bearing" in 4 TCL lists), `tpv.tvinput` (the only TvInputService on a 50PUF7099:
+off = no inputs), Realtek `dtv` / `tv.atv` (inputs), `realsil.ota` (the remote's updates); FACTORY NVIDIA `factory*` / `diagtools` /
+`developerwidget`, `mediatek.testpq`, `xgimi.minitvfactory`, `skyworthdigital.remotedebug`. Already kept by our patterns, so not
+suggested: `skyworthdigital.optimization`, `mediatek.tv.retaildemo`, `MtkDemo`. Held back: TCL `messagebox` / `guard` / `dashboard`
+(some owners keep them; `guard` is the only on-screen installer on an AK30A5), `tcl.waterfall.overseas` (a 55P635 boot-looped),
+`tpv.app.recommendation` (home rows stay a choice). kalley-r10g dropped `launcherx` + `setupwraith` (#1807: both off, system_server
+crashed every boot). Key facts: TCL BeyondTV2's mic is KEYCODE_SEARCH then a click on Home's voice button (#1869); a Netflix key
+(4062) on TCL UnionTV is a protected broadcast no key filter sees (#1967); a bound key filter eats a held volume key's repeat (#1878).
+Before that: **2026-10-25 (evening)**, upstream at `67dc5bee16` (99 commits after `575d73f0f3`; 12 `debloat.txt`). Into bloat.json:
 SUGGEST `jiumao.screen.systemadplayer` (ad player, hy320), Philips `customautologservice` (logging), `tpv.nftgallery`; KEEP Sony
 `scrums.action` (the Action Menu and its remote button: upstream un-disabled it on kd-43x8000g, it was mislabelled "usage metrics"),
 Philips `ipcontrol` (LAN control, kept by a 65PUS9206 owner); FACTORY (never touched, cleanyourtv #470): Skyworth `testtime`, Allwinner

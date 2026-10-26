@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-25",
+  "updated": "2026-10-26",
   "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign/sign_bloat.py, commit both files.",
   "suggest": {
     "android.autoinstalls.config.askey.tvbox": "Askey app installer",
@@ -81,7 +81,10 @@
     "com.google.android.tvtutorials": "Android TV tutorials",
     "com.jiumao.screen.systemadplayer": "Ad player",
     "org.droidtv.customautologservice": "Philips logging",
-    "com.tpv.nftgallery": "Philips NFT gallery"
+    "com.tpv.nftgallery": "Philips NFT gallery",
+    "com.tpv.asc.taadserver": "Philips ad and telemetry server",
+    "com.funshion.publicity": "Funshion promo",
+    "com.atmaca.atmretailmode": "Retail demo"
   },
   "drop": [
     "com.xm.webcontent"
@@ -113,13 +116,21 @@
     "com\\.oceanwing\\.(receiver|nebulalinker)",
     "com\\.zhixin\\.(nebulasmart|remoteautopair|apphelper|projector\\.settings|nebulasetupwizard)",
     "com\\.sony\\.dtv\\.scrums\\.action",
-    "org\\.droidtv\\.ipcontrol"
+    "org\\.droidtv\\.ipcontrol",
+    "com\\.tcl\\.providers\\.config",
+    "com\\.tpv\\.tvinput",
+    "com\\.realtek\\.(dtv|tv\\.atv)",
+    "com\\.realsil\\.ota"
   ],
   "factory": [
     "com\\.skyworth\\.testtime",
     "com\\.softwinner\\.(dragonbox|agingdragonbox|dragonatt)",
     "com\\.htc\\.hyk_test",
     "com\\.oem\\.qa",
-    "com\\.sdt\\.producttest"
+    "com\\.sdt\\.producttest",
+    "com\\.nvidia\\.(factory|factorybundling|factorysyschecker|diagtools|developerwidget)",
+    "com\\.mediatek\\.testpq",
+    "com\\.xgimi\\.minitvfactory",
+    "com\\.skyworthdigital\\.remotedebug"
   ]
 }
