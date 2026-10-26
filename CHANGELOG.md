@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.26.3 - 2026-10-26
+
+Web 0.26.3 · app điện thoại 0.26.3 · app TV 0.26.3 · TV Home 0.13.1 · TV Channels 0.9.0 · TV Games 0.9.0
 
 **Tiếng Việt**
 - TV Home: mỗi widget (cả đồng hồ) chọn được nền: Kính, Tông màu, Màu đặc hoặc Không nền (chữ nằm thẳng trên hình nền, có bóng cho dễ đọc). Chọn trong cài đặt của widget hoặc menu của nó trên TV (Kiểu thẻ).
