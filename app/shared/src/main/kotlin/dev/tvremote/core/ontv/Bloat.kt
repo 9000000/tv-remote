@@ -5,7 +5,7 @@ package dev.tvremote.core.ontv
  * and its forks, issues and pull requests (October 2026, read again up to PR #573). [SUGGEST] is ticked by default, so it holds only what sends data,
  * shows ads or demos, or installs apps by itself: nothing a remote button, an input, the sound or a store needs. Each is
  * skipped on a TV that lacks it, and Undo turns it back on ([Setup.OFF_LIST]). The sources, what was left out and why, and how
- * to read them again: dev/bloat-sources.md. What owners report later goes in docs/optimize/bloat.json, read from the site ([fresh]),
+ * to read them again: dev/sign/bloat-sources.md. What owners report later goes in docs/optimize/bloat.json, read from the site ([fresh]),
  * so a new TV's list needs no new app; these lists are the floor that a list from the site cannot lower.
  */
 object Bloat {

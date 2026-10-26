@@ -6,15 +6,15 @@ Run them from the repo root (`dev/test/emu.sh`, `python3 dev/gen/gen_icons.py`);
 | Folder | For |
 |---|---|
 | `test/` | emulators, checks of the page and the routes, the site served locally |
-| `gen/` | files made from a recipe: icons, wallpapers, IR codes. Edit the script, never its output |
+| `gen/` | files made from a recipe: icons, wallpapers, IR codes. Edit the script, never its output; `optimize_images.py`: every tracked PNG / JPEG / WebP made smaller (dry run; `--write` applies; needs Pillow, numpy for the lossy step), skips the hash-pinned `docs/home/` and `docs/launchers/` |
 | `shots/` | the site's screenshots and the pictures composed from them |
 | `sign/` | the signed lists on the site (`docs/**.json` + `.sig`) |
-| `optimize_images.py` | every tracked PNG / JPEG / WebP made smaller (dry run; `--write` applies; needs Pillow, numpy for the lossy step). Skips the hash-pinned `docs/home/` and `docs/launchers/` |
+| `admin/` | the owner's local admin page (themes waiting for review, crash reports): `admin.py`, below |
 | `themes/` | the community theme queue (Cloudflare Worker + D1 `tvr-themes`); reviewed with `sign/review_themes.py` |
 | `release/` | releases, update keys and their backup (only when the maintainer says so) |
 
 Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.md` (the TV apps' shared look),
-`bloat-sources.md` (where Optimize TV's lists come from). Playwright for the Node scripts: `npm install --prefix dev playwright`.
+`sign/bloat-sources.md` (where Optimize TV's lists come from). Playwright for the Node scripts: `npm install --prefix dev playwright`.
 
 ## test/
 
@@ -28,6 +28,8 @@ Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.m
 | `audit.js` | the whole page pressed through by a script (every tab, dialog, menu and chip, down to `--depth`), no TV: `/api` is the live demo's made-up TV. Each screen checked for layout, contrast, the UI rules, words, touch size, script errors; report with boxed screenshots in `/tmp/tvr-audit/index.html` (~20 min; `--only=apps`, `--budget=` s per tab) |
 | `contrast.py [URL]` | colour contrast on the rendered page, both themes × 1100 / 400 px × every tab; exit 1 under 4.5:1 (needs Chrome) |
 | `check_quiz.py` | the TV Games quiz bank (`docs/games/web/quiz/bank.json`) |
+| `home_smoke/home_smoke.sh` | TV Home and TV Setup's screens pressed through on the TV emulator by text (uiautomator), en or vi, screenshots |
+| `gamebots/run.js [game ...]` | bots play the web games of `docs/games/web` in headless Chrome, several players each |
 | `fakegh.sh <tv-home.apk> <version>` | a fake GitHub release on 127.0.0.1:8099 (signed with a throwaway key in `.cache/fakegh`) for trying updates and the launcher gallery end to end; prints how to start the computer app against it |
 | `faketv.py <ip> <ports> <cert> <key>` | a fake TV with only Wireless debugging (mDNS + adbd's TLS start, then "not paired"), for the pairing flow without such a TV |
 | `serve_docs.py [port]` | the site (`docs/`) on localhost:8000 as Cloudflare Pages serves it (`/guide` is `guide.html`), never cached |
@@ -62,15 +64,15 @@ release key; its public half is `Launchers.KEYS`). Run after every edit of the l
 | `sign_games.py` | `docs/games/games.json`: TV Games' cores, suggested web games, homebrew |
 | `sign_providers.py` | `docs/channels/providers.json`: TV Channels' extra sources, e.g. VieON |
 | `sign_bloat.py` | `docs/optimize/bloat.json`: Optimize TV's suggestions added from the site |
-| `review_themes.py` | agent flags `--list --json` / `--approve` / `--reject` / `--local DIR` (guide: `themes/REVIEW.md`); (also behind `dev/admin.py`) reviews the community themes sent from TV Home (HTML page, then approve / reject / skip each): saves the pictures, adds the theme to `docs/home/themes.json`, signs it; commits nothing |
+| `review_themes.py` | agent flags `--list --json` / `--approve` / `--reject` / `--local DIR` (guide: `themes/REVIEW.md`); (also behind `dev/admin/admin.py`) reviews the community themes sent from TV Home (HTML page, then approve / reject / skip each): saves the pictures, adds the theme to `docs/home/themes.json`, signs it; commits nothing |
 | `sign_themes.py` | `docs/home/themes.json`: TV Home's ready-made themes (names per language, looks; a theme may set `wurl`, so only a signed list may). Packed in the APK by `:home` `packThemes`; `HomeThemesTest` keeps the copy equal; stamps `rev` (the higher one wins, so an undeployed site never overwrites a newer APK). Web backgrounds go through `docs/home/loop.html` (host allow-list); each theme names its `src` + licence (photos: `dev/gen/wallpapers.py`, Unsplash or Wikimedia Commons; the two videos: Pexels, 1080p) |
 | `sign_downloader.py` | `docs/data/downloader.json`: the Downloader codes |
 
-## admin.py
+## admin/admin.py
 
 Agents use the scripts, not this page: `census/CRASHES.md` (`crashes.py --json --new --frames`) and `themes/REVIEW.md`.
 
-`python3 dev/admin.py [--port N]`: the owner's local admin page (Vietnamese), instead of terminal prompts. Opens `http://127.0.0.1:<port>/?k=<random key per run>`;
+`python3 dev/admin/admin.py [--port N]`: the owner's local admin page (Vietnamese), instead of terminal prompts. Opens `http://127.0.0.1:<port>/?k=<random key per run>`;
 127.0.0.1 only, every request (page, API, pictures) must carry the key and a local Host. The tokens (`~/.tv-remote-release/themes-admin-token`, `crash-token`) are read here, never sent to the browser.
 Tab **Chủ đề chờ duyệt**: a card per pending community theme (preview, wall photo, sender, settings, red flags, free slots of `READY_MAX`); Duyệt runs `review_themes.py`'s own `approve()` (pictures, `themes.json`, signature) and shows the files + the `git add` / `git commit` lines to copy; nothing is committed or pushed. Bỏ rejects (the reason is asked but the API has no field: not stored).
 Tab **Lỗi**: the census worker's crashes by count, filter by app / version, a click shows the stack and device, Xóa removes it (all versions).

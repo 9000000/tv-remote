@@ -33,7 +33,7 @@ for video, touch and keys; Phone and Computer also send keys without ADB (Androi
 Samsung through the same `Remote` interface. A feature that needs ADB: `needs: ["adb"]` / `data-needs="adb"`.
 
 `app/gradle/` is the Gradle build of everything Kotlin. `dev/`: test/, gen/ (icons, wallpapers), shots/, sign/ (the site's signed
-lists), release/; `optimize_images.py` never touches `docs/home/` and `docs/launchers/` (their SHA-256 is signed); dev/README.md.
+lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` and `docs/launchers/` (their SHA-256 is signed); dev/README.md.
 
 ## Rules that matter
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Shrink every image tracked by git without a visible change. Dry run by default; `--write` applies.
 
-    python3 dev/optimize_images.py [--write] [--min-gain 3] [--ssim 0.985] [paths...]
+    python3 dev/gen/optimize_images.py [--write] [--min-gain 3] [--ssim 0.985] [paths...]
 
 Per format (a file is only replaced when the result is >= --min-gain % smaller, so a second run changes nothing):
   PNG        lossless: Pillow optimize, and a palette when the picture has <= 256 colours; pixels are compared after.

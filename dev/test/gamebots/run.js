@@ -5,11 +5,11 @@
 // Records page/console errors, game-over reached, stuck (no canvas/DOM/layout change for 20 s while the bots press), fps (rAF/s)
 // in play and idle, JS heap across the rematch, screenshots lobby / play / over / rematch.
 //
-//   node dev/gamebots/run.js [game ...] [--players=2] [--cap=180] [--jobs=3] [--out=DIR]
+//   node dev/test/gamebots/run.js [game ...] [--players=2] [--cap=180] [--jobs=3] [--out=DIR]
 //   needs puppeteer-core: installed OUTSIDE the repo, GAMEBOTS_NODE=<dir with node_modules/puppeteer-core> (default below)
 //   Chrome: CHROME=<path> (default the macOS app). The page gets the REAL app/games/src/main/assets/tvpad.js on a fake bridge (page.js).
 const fs = require('fs'), path = require('path'), http = require('http');
-const REPO = path.resolve(__dirname, '../..'), WEB = path.join(REPO, 'docs/games/web');
+const REPO = path.resolve(__dirname, '../../..'), WEB = path.join(REPO, 'docs/games/web');
 const SCRATCH = '/private/tmp/claude-501/-Users-hoangtran-Desktop-Github/818eb7ba-5b31-444e-81f2-e599faff06df/scratchpad';
 const NODE_DIR = process.env.GAMEBOTS_NODE || path.join(SCRATCH, 'gamebots_node');
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';

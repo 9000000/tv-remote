@@ -2,7 +2,7 @@
 """dev/sign/sign_bloat.py: checks docs/optimize/bloat.json and signs it (bloat.json.sig, Ed25519, base64).
 
 Optimize TV's brand knowledge is Bloat.kt (built into every app) plus this list, read from the site when Optimize TV opens:
-a TV owners report on (dev/bloat-sources.md) gets its apps here with no new app. "suggest" adds packages ticked by default,
+a TV owners report on (dev/sign/bloat-sources.md) gets its apps here with no new app. "suggest" adds packages ticked by default,
 "drop" takes some off the suggestions, "keep" and "factory" add patterns (Java regexes) that are never turned off / never
 opened. The apps only add keep / factory patterns to Bloat.kt's, so a wrong list cannot free what the built-in ones hold.
 Signed with the launcher list's key (LAUNCHERS_KEY, default ~/.tv-remote-release/launchers.key). Commit both files; the site

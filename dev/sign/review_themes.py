@@ -167,7 +167,7 @@ def shrink_jpeg(src, out):
     strip_jpeg(out)
 
 
-def say(*a):   # where approve() reports; dev/admin.py swaps it to collect the lines for its page
+def say(*a):   # where approve() reports; dev/admin/admin.py swaps it to collect the lines for its page
     print(*a)
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """TV Home + TV Setup smoke test on ONE emulator, driven only by `uiautomator dump` and D-pad keys.
 
-Run through dev/smoke/home_smoke.sh (it picks the serial, builds/installs on request, runs this with `python3 -I`).
+Run through dev/test/home_smoke/home_smoke.sh (it picks the serial, builds/installs on request, runs this with `python3 -I`).
 
 Rules this file keeps (why it is written this way):
   - every move is "dump, look at the focused node, press one key": no blind key chains;
@@ -17,7 +17,7 @@ import json, os, re, subprocess, sys, time, argparse
 import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 RES = os.path.join(ROOT, "app", "home", "src", "main", "res")
 HOME_PKG, SETUP_PKG = "dev.tvremote.home", "dev.tvremote.setup"
 SCREEN = (1920, 1080)
@@ -41,7 +41,7 @@ def adb(*a, binary=False, timeout=60):
 
 # ---------------------------------------------------------------- strings (en / vi) from the app's own resources
 def load_strings(lang):
-    p = os.path.join(ROOT, "app", "shared", "web", "i18n", "apps", lang, "home.json")   # TV Home's words, one file per language
+    p = os.path.join(ROOT, "app", "shared", "i18n", "apps", lang, "home.json")   # TV Home's words, one file per language
     return {k: v for k, v in json.load(open(p, encoding="utf-8")).items() if isinstance(v, str)}
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""dev/admin.py: the owner's local admin page (themes waiting for review, crash reports) instead of terminal prompts.
+"""dev/admin/admin.py: the owner's local admin page (themes waiting for review, crash reports) instead of terminal prompts.
 
-  python3 dev/admin.py [--port N] [--no-open]
+  python3 dev/admin/admin.py [--port N] [--no-open]
 
 Serves on 127.0.0.1 only. A random key is made per run and sits in the link it opens (?k=, like the computer app's); every request
 (page, API, pictures) must carry it and a local Host, so another page in the browser cannot drive it. The tokens are read from their
@@ -13,7 +13,7 @@ import argparse, json, os, secrets, sys, tempfile, threading, urllib.error, urll
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "sign"))
+sys.path.insert(0, os.path.join(HERE, "..", "sign"))
 import review_themes as rt   # noqa: E402
 
 CENSUS = os.environ.get("CENSUS_URL", "https://tvr-census.99-hoangtran.workers.dev").rstrip("/")

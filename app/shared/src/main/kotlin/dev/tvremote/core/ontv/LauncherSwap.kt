@@ -5,7 +5,7 @@ import java.io.IOException
 
 /**
  * Giving a TV another home screen, and taking it back. Any launcher, not FLauncher only (Optimize TV and the launcher gallery
- * use this one code). What it does, in the order that kept TVs working (dev/bloat-sources.md):
+ * use this one code). What it does, in the order that kept TVs working (dev/sign/bloat-sources.md):
  *  1. the new launcher is opened once, so Home is never empty;
  *  2. the TV's own home screens that are on go off, the setup wizard's Home first (with launcherx off alone Home lands on the wizard's
  *     RecoveryActivity and Google TV restarts about every minute). That one screen where the shell may; where it may not (every Google
