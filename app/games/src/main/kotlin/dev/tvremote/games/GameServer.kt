@@ -78,6 +78,7 @@ class GameServer private constructor(private val ctx: Context) {
         slots.mapIndexedNotNull { i, s -> if (i >= lobbyMax) null else if (s.conn != null) LobbyRule.P(i + 1, true, s.ready) else if (s.dev >= 0) LobbyRule.P(i + 1, false, true) else null }
     }
     @Volatile var onAdded: () -> Unit = {}                 // a game or a web link was added
+    @Volatile var lastRom: String? = null                  // the file name of the last game sent from a phone
     @Volatile var onText: (player: Int, text: String) -> Unit = { _, _ -> }   // a phone's text field (web games), player 1..4
     private val layouts = arrayOfNulls<String>(MAX)        // per player: the pad layout a web game asked for (JSON), kept for a reconnect
     private var defaultLayout: String? = null
@@ -446,7 +447,7 @@ class GameServer private constructor(private val ctx: Context) {
             if (!tmp.renameTo(dst)) throw java.io.IOException("rename")
         } catch (e: Exception) { tmp.delete(); return reply(c, 500, "text/plain", "fail".toByteArray()) }
         reply(c, 200, "text/plain", "ok".toByteArray())
-        onAdded()
+        lastRom = name; onAdded()
     }
 
     /** The last path part, only plain characters, an extension a core exists for. null = refuse. */

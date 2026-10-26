@@ -180,7 +180,7 @@ class LibraryActivity : ComponentActivity() {
         server.inGame = false; server.webMode = false; server.clearLayouts(); server.setSystem("nes")
         server.onKey = { _, _, _ -> }
         server.onPlayers = { }
-        server.onAdded = { runOnUiThread { if (dl == null && overlay == null) reload() } }
+        server.onAdded = { runOnUiThread { if (dl == null && overlay == null) reload() else stale = true } }   // the QR card is open while a phone sends: drawn again when it closes
         if (overlay == null && searchBox?.hasFocus() != true) {
             // back from a game: the same list stays as it was (its scroll, the tile in focus); only a changed list is built again
             val was = shown(); if (scroller != null && was.isNotEmpty()) { buildItems(); if (shown() == was) return }
@@ -238,9 +238,14 @@ class LibraryActivity : ComponentActivity() {
 
     private var onOverlayClose: (() -> Unit)? = null                  // the download card: closing it cancels the download
 
+    private var stale = false                                         // a game came while a card was open
     private fun closeOverlay() {
         overlay?.let { root.removeView(it) }; overlay = null
         onOverlayClose?.let { onOverlayClose = null; it() }
+        if (stale && dl == null && overlay == null) {                  // on the game just sent, else the first tile: the card's focus is gone
+            stale = false; pendingFocus = server.lastRom?.let { "g:$it" }; reload()
+            if (currentFocus?.isShown != true) firstTile()?.requestFocus(); return
+        }
         scroller?.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         lastFocus?.takeIf { it.isAttachedToWindow }?.requestFocus()
     }
