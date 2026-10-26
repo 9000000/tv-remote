@@ -32,5 +32,12 @@ class WallpapersTest {
             assertEquals(w.sha, java.security.MessageDigest.getInstance("SHA-256").digest(f).joinToString("") { String.format("%02x", it) })
             assertTrue(f.size < 600_000)
         }
+        // the suggested videos and pages: each thumb is there and matches, each page a host TV Home draws natively or a known live page
+        val links = Wallpapers.parse(bytes, "b/").links
+        assertTrue(links.size >= 10)
+        for (l in links) {
+            if (l.thumb.isNotEmpty()) assertEquals(l.thumbSha, java.security.MessageDigest.getInstance("SHA-256").digest(File(dir, l.thumb).readBytes()).joinToString("") { String.format("%02x", it) })
+            if (l.kind != "page") assertTrue(l.url, l.url.startsWith("https://tvremote.pages.dev/home/loop.html?"))
+        }
     }
 }

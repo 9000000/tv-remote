@@ -93,6 +93,7 @@ the same classes.
 | A card's main buttons | `UI.actions(...btns)` → `.actions` (`.actions.end` to right-align) | buttons loose in the card |
 | One of a few choices | `UI.chips([{ label, on, fn }])` → `.places`, one line, scrolls sideways with fades (`js/ui.js:119`) | radio buttons, a wrapping row |
 | A filter/sort row above a list | `div.fchips` of buttons, current `.on` + `aria-pressed` | |
+| A colour to pick | `input[type=color]` in a `.ownstop` (`--ctl` tall, 44 wide, the colour fills it, `--line` edge; `.small.iconbtn` beside it to remove); several in `.ownstops`, which wraps | a hand-made palette; a hex field alone |
 | Key/value facts | `.kv` (dt muted, `.v` bold right) | |
 | A small tag | `.badge` (`.badge.ok`) | coloured spans; on a theme's tile (`.homewalls small.badge`): ▶ Video, 🖼 ×N, 🖼 Slideshow (`homeMediaBadges`) |
 

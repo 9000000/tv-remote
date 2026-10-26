@@ -12,6 +12,15 @@ const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '
   sunset: '#1f0d1c,#a14a4a', ember: '#190b08,#7a2e12', plum: '#150b22,#5a2f7a', midnight: '#050a1a,#14307a', teal: '#041a1a,#0e5f5f', slate: '#0f1218,#3a4558', graphite: '#1c1c1e,#1c1c1e', navy: '#0b1d3a,#0b1d3a', wine: '#3a0f1f,#3a0f1f', moss: '#14261b,#14261b' };
 const HOME_WALL_WORDS = { night: 'home.wall_night', ocean: 'home.wall_ocean', dusk: 'home.wall_dusk', forest: 'home.wall_forest', aurora: 'home.wall_aurora', black: 'home.wall_black',
   sunset: 'home.wall_sunset', ember: 'home.wall_ember', plum: 'home.wall_plum', midnight: 'home.wall_midnight', teal: 'home.wall_teal', slate: 'home.wall_slate', graphite: 'home.wall_graphite', navy: 'home.wall_navy', wine: 'home.wall_wine', moss: 'home.wall_moss' };
+// The person's own wall (HomeConfig "own", "wcol" 1..4 colours, "wdir"): the TV's directions as CSS, radial to the far corners as GradientDrawable
+const HOME_WDIRS = { tl_br: 'to bottom right', tb: 'to bottom', lr: 'to right', bl_tr: 'to top right', br_tl: 'to top left', bt: 'to top', rl: 'to left', tr_bl: 'to bottom left', radial: '' };
+const HOME_WDIR_WORDS = { tl_br: 'home.wdir_tl_br', tb: 'home.wdir_tb', lr: 'home.wdir_lr', bl_tr: 'home.wdir_bl_tr', br_tl: 'home.wdir_br_tl', bt: 'home.wdir_bt', rl: 'home.wdir_rl', tr_bl: 'home.wdir_tr_bl', radial: 'home.wdir_radial' };
+const homeOwnCols = (c) => (c.wcol || '0b1d3a,14307a,7a2e12').split(',');
+function homeOwnCss(c, dir) {
+  const cs = homeOwnCols(c).map((x) => '#' + x), d = dir || c.wdir || 'tl_br';
+  if (cs.length === 1) cs.push(cs[0]);
+  return d === 'radial' ? 'radial-gradient(circle,' + cs + ')' : 'linear-gradient(' + (HOME_WDIRS[d] || HOME_WDIRS.tl_br) + ',' + cs + ')';
+}
 // The scenes TV Home paints itself (HomeConfig.ART; recipes in home_walls.js), the day's Bing picture, the person's photos (photo, photo2..)
 Object.assign(HOME_WALL_WORDS, { dawn: 'home.wall_dawn', peaks: 'home.wall_peaks', dunes: 'home.wall_dunes', waves: 'home.wall_waves', candy: 'home.wall_candy', peach: 'home.wall_peach', meadow: 'home.wall_meadow', mist: 'home.wall_mist', bokeh: 'home.wall_bokeh', canyon: 'home.wall_canyon', bing: 'home.wall_bing' });
 const HOME_WEBMODE = { live: 'home.web_mode_live', snap: 'home.web_mode_snap' };   // HomeConfig.WMODES, with its words
@@ -280,6 +289,35 @@ async function homeOpen() {
   const wallBox = () => el('div', { className: 'fchips homewalls' }), wallHead = (id) => el('h3', { textContent: T(id) });
   const wOnline = wallBox(), wPhotos = wallBox(), wVideos = wallBox(), wScenes = wallBox();
   const hOnline = wallHead('home.wh_online'), hPhotos = wallHead('home.wh_photos'), hVideos = wallHead('home.wh_videos'), hScenes = wallHead('home.wh_scenes'), hColours = wallHead('home.wh_colours');
+  // the own wall's colours and direction: each colour the browser's own picker, the TV follows a moment after (as the veil's slider)
+  const ownHead = el('h3', { textContent: T('home.wall_own') }), ownStops = el('div', { className: 'ownstops' }), ownDir = el('div', { className: 'fchips htype owndirs' }), ownDirHead = el('h3', { textContent: T('home.own_dir') });
+  const ownNote = el('p', { className: 'note', textContent: T('home.own_note') });
+  let ownWait = 0;
+  const ownSend = (cs, dir) => {
+    const c = r.config, ch = { wcol: cs.join(','), wdir: dir || c.wdir || 'tl_br' };
+    if (c.wevery === 'off') ch.wall = 'own';                          // seen at once; in a set it is picked like any other
+    clearTimeout(ownWait); ownWait = setTimeout(() => send(ch), 150);
+  };
+  function drawOwn(c) {
+    const on = !!c.ownOk && !!c.wrotate;
+    for (const x of [ownHead, ownStops, ownDirHead, ownDir, ownNote]) x.hidden = !on;
+    if (!on) return;
+    const cs = homeOwnCols(c);
+    if (ownStops.contains(document.activeElement)) return;            // a picker open: redrawn under it, it would close
+    ownStops.replaceChildren(...cs.map((x, i) => {
+      const pick = el('input', { type: 'color', value: '#' + x, title: T('home.own_pick'), 'aria-label': T('home.own_pick'), oninput: () => { const n = homeOwnCols(r.config); n[i] = pick.value.slice(1); ownSend(n); } });
+      const del = el('button', { type: 'button', className: 'small iconbtn', title: T('home.own_del'), 'aria-label': T('home.own_del'), innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>',
+        onclick: () => ownSend(homeOwnCols(r.config).filter((_, j) => j !== i)) });
+      del.hidden = cs.length < 2;
+      return el('span', { className: 'ownstop' }, pick, del);
+    }), ...(cs.length < 4 ? [el('button', { type: 'button', className: 'small', onclick: () => ownSend([...cs, cs[cs.length - 1]]) },
+      UI.icon('plus'), T('home.own_add'))] : []));
+    ownDir.hidden = ownDirHead.hidden = cs.length < 2;
+    ownDir.replaceChildren(...Object.keys(HOME_WDIRS).map((k) => {
+      const on = (c.wdir || 'tl_br') === k, dot = el('i'); dot.style.background = homeOwnCss(c, k);
+      return el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), onclick: () => ownSend(cs, k) }, dot, T(HOME_WDIR_WORDS[k]));
+    }));
+  }
   const photoAct = el('div', { className: 'actions' }, upload), videoAct = el('div', { className: 'actions' }, vupload);
   const everyHead = el('h3', { textContent: T('home.rotate') }), every = el('div', { className: 'fchips homeevery' }), everyNote = el('p', { className: 'note' });
   const file = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => {
@@ -425,7 +463,11 @@ async function homeOpen() {
   const shadeNote = el('p', { className: 'note', textContent: T('home.shade_note') });
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
-  homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); });
+  // the site's moving backgrounds and pages (wallpapers.json "links"): each sets the web wall to its address, as TV Home's own "Suggested"
+  const sugHead = el('h3', { textContent: T('home.wh_suggest') }), sugBox = el('div', { className: 'homegal' }), sugNote = el('p', { className: 'note', textContent: T('home.sug_note') });
+  sugHead.hidden = sugBox.hidden = sugNote.hidden = true;
+  const markSug = (c) => { for (const b of sugBox.children) { const on = c.wall === 'web' && c.wurl === b.dataset.url; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); } };
+  homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); }, { box: sugBox, head: sugHead, note: sugNote, pick: (u) => send({ wall: 'web', wurl: u, wmode: 'live' }), mark: () => markSug(r.config) });
 
   // "Add to home screen": a picker of the apps (hidden ones too), their shortcuts and the live tiles; a press puts one on the grid or
   // takes it off and the list stays open. Shortcuts and live tiles are in config "tiles" (the order they have on the grid), an app is
@@ -467,6 +509,7 @@ async function homeOpen() {
       const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[w] + ')');
       return el('button', { type: 'button', className: c.wall === w ? 'on' : '', onclick: () => send({ wall: w }) }, dot, el('span', { textContent: T(HOME_WALL_WORDS[w]) }));
     }));
+    drawOwn(c); markSug(c);
     langHead.hidden = langs.hidden = c.lang === undefined;
     // each language by its own name (langs.json), as TV Home's Customize shows it: a new language needs no id and no code here
     langs.replaceChildren(...[['', T('home.lang_tv')], ...Object.entries(LANGS)].map(([k, name]) =>
@@ -629,6 +672,7 @@ async function homeOpen() {
       const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')');
       return tile(k, dot, T(HOME_WALL_WORDS[k]));
     });
+    if (c.ownOk) { const dot = el('i'); dot.style.setProperty('--c', homeOwnCss(c)); plain.unshift(tile('own', dot, T('home.wall_own'))); }   // first: the one the person made
     const bing = tile('bing', el('i', { className: 'add', textContent: '🌐' }), T('home.wall_bing'));
     const webTile = c.wweb ? [tile('web', el('i', { className: 'add', textContent: '🖥️' }), T('home.wall_web'))] : [];
     const photos = (r.photos || []).map((p, i) => {
@@ -881,10 +925,10 @@ async function homeOpen() {
   const GROUPS = [
     ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady, themeCommHead, themeComm]],
     ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote,
-      hOnline, wOnline, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote,
+      hOnline, wOnline, sugHead, sugBox, sugNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote,
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
-      hScenes, wScenes, hColours, walls]],
+      hScenes, wScenes, hColours, walls, ownHead, ownStops, ownDirHead, ownDir, ownNote]],
     ['look', 'sparkle', 180, 'home.g_look', [sect('home.sec_show', focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24')),
       sect('home.sec_head', check(greet, 'home.greet'), gstyleHead, gstyle, gnameLine, gtextLine, gtokens, gtype, hsplit, dstyleHead, dstyle, dtextLine, dtokens, dtype),
       sect(showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(shows.showGear, 'home.show_gear'),
@@ -1007,10 +1051,22 @@ function homeWebAsk(now) {
 
 // The wallpaper gallery (docs/home/wallpapers.json, signed): small pictures to choose from; the one chosen is downloaded here,
 // checked against the list and sent to the TV like a photo of the person's own. The credit shows under the pictures.
-async function homeGallery(box, credit, head, done) {
+async function homeGallery(box, credit, head, done, sug) {
   const g = await homeLink.walls(true);                              // none on TV Home's own page: the hosts download the gallery
-  if (!g || !g.walls || !g.walls.length) { box.hidden = credit.hidden = head.hidden = true; return; }   // no list (offline): no empty heading either
   const lang = (document.documentElement.lang || 'en').slice(0, 2);
+  const links = (g && g.links) || [];
+  if (sug && links.length) {
+    sug.box.replaceChildren(...links.map((l) => {
+      const face = l.thumb ? el('img', { src: l.thumb, alt: '', loading: 'lazy' }) : el('i', { className: 'mi', innerHTML: '<svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>' });
+      const tag = l.kind === 'video' ? T('home.sug_video') : l.kind === 'page' ? T('home.sug_page') : '';
+      const b = el('button', { type: 'button', title: [l.name[lang] || l.name.en, l.credit, l.license].filter(Boolean).join(' · '), onclick: () => sug.pick(l.url) },
+        face, el('span', { textContent: l.name[lang] || l.name.en }), ...(tag ? [el('small', { className: 'badge', textContent: tag })] : []));
+      b.dataset.url = l.url;
+      return b;
+    }));
+    sug.head.hidden = sug.box.hidden = sug.note.hidden = false; sug.mark();
+  }
+  if (!g || !g.walls || !g.walls.length) { box.hidden = credit.hidden = head.hidden = true; return; }   // no list (offline): no empty heading either
   const note = (w) => T('home.credit', { name: w.name[lang] || w.name.en, credit: w.credit, license: w.license, kb: w.kb });
   box.replaceChildren(...g.walls.map((w) => {
     const pic = el('img', { src: w.thumb, alt: '', loading: 'lazy' });

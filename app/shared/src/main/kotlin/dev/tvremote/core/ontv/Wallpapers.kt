@@ -19,7 +19,13 @@ object Wallpapers {
 
     class Wall(val id: String, val name: Map<String, String>, val file: String, val sha: String, val thumb: String, val thumbSha: String,
                val credit: String, val source: String, val license: String, val bytes: Int)
-    class Gallery(val walls: List<Wall>, val base: String) { operator fun get(id: String) = walls.firstOrNull { it.id == id } }
+    /** A suggested background that is a page, not a picture to send ("links": the slideshow, a video, a live page): the client sets "web" to [url]. */
+    class Link(val id: String, val kind: String, val name: Map<String, String>, val url: String, val thumb: String, val thumbSha: String,
+               val credit: String, val source: String, val license: String)
+    class Gallery(val walls: List<Wall>, val base: String, val links: List<Link> = emptyList()) {
+        operator fun get(id: String) = walls.firstOrNull { it.id == id }
+        fun link(id: String) = links.firstOrNull { it.id == id }
+    }
 
     @Volatile private var cache: Pair<Long, Gallery>? = null
 
@@ -35,8 +41,15 @@ object Wallpapers {
                 e.getString("thumb"), e.getString("thumb_sha256").lowercase(), e.optString("credit"), e.optString("source"), e.optString("license"), e.optInt("bytes"))
             if (!NAME.matches(w.file) || !NAME.matches(w.thumb) || w.sha.length != 64 || w.thumbSha.length != 64) throw IOException("wallpaper list: bad entry")
             w
-        }, base)
+        }, base, o.optJSONArray("links")?.let { l -> (0 until l.length()).mapNotNull { i ->
+            val e = l.optJSONObject(i) ?: return@mapNotNull null
+            val n = e.optJSONObject("name") ?: JSONObject()
+            Link(e.optString("id"), e.optString("kind"), n.keys().asSequence().associateWith { n.getString(it) }, e.optString("url"), e.optString("thumb"),
+                e.optString("thumb_sha256").lowercase(), e.optString("credit"), e.optString("source"), e.optString("license"))
+                .takeIf { it.id.isNotEmpty() && it.kind in KINDS && it.url.startsWith("https://") && (it.thumb.isEmpty() || NAME.matches(it.thumb)) }
+        } }.orEmpty())
     } catch (e: org.json.JSONException) { throw IOException("wallpaper list: " + e.message) }
+    private val KINDS = setOf("slides", "video", "page")
 
     /** The signed list from the first place that has one, kept a minute. */
     @Throws(IOException::class)
@@ -49,6 +62,9 @@ object Wallpapers {
     fun json(g: Gallery): JSONObject = JSONObject().put("walls", JSONArray(g.walls.map { w ->
         JSONObject().put("id", w.id).put("name", JSONObject(w.name)).put("credit", w.credit).put("source", w.source).put("license", w.license)
             .put("kb", (w.bytes + 512) / 1024).put("thumb", "/api/home/walls/thumb?id=" + w.id)
+    })).put("links", JSONArray(g.links.map { l ->
+        JSONObject().put("id", l.id).put("kind", l.kind).put("name", JSONObject(l.name)).put("url", l.url).put("credit", l.credit).put("source", l.source)
+            .put("license", l.license).put("thumb", if (l.thumb.isEmpty()) "" else "/api/home/walls/thumb?id=" + l.id)
     }))
 
     private fun checked(b: ByteArray, sha: String): ByteArray {
@@ -57,7 +73,10 @@ object Wallpapers {
     }
 
     @Throws(IOException::class)
-    fun thumb(id: String): ByteArray? = fetch().let { g -> g[id]?.let { checked(Launchers.get(g.base + it.thumb), it.thumbSha) } }
+    fun thumb(id: String): ByteArray? = fetch().let { g ->
+        g[id]?.let { checked(Launchers.get(g.base + it.thumb), it.thumbSha) }
+            ?: g.link(id)?.takeIf { it.thumb.isNotEmpty() && it.thumbSha.length == 64 }?.let { checked(Launchers.get(g.base + it.thumb), it.thumbSha) }
+    }
 
     /** The wallpaper [id], downloaded, checked against the signed list and put on the TV as its background. */
     @Throws(IOException::class)

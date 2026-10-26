@@ -189,6 +189,13 @@ The screensaver's StandBy styles are these same views, larger (`HomeDream`).
 
 A theme tile carries tags top left (the check is top right): `▶ Video`, `🖼 ×N` (a rotation of N backgrounds), `🖼 Slideshow`. A pill like the name scrim (`NAME_SCRIM`, radius 10 dp), 11 sp white, from `ThemePreview.badges`; the web page's `.badge` on a tile is its twin.
 
+### Live editors (TV Home's Customize)
+
+A value seen best on the real home screen (a size, a step, the own wall's colours) is edited in a **small glass card top left**, the
+Customize panel hidden, the change applied behind it as it is made (`Customize.stepper`, `ownColours`): one row per value, ◀ ▶ change
+it, ▲ ▼ move, OK closes; a colour row shows its chip (`SWATCH_EDGE`), walked through a fixed `PALETTE` (12 hues × deep / mid / soft +
+greys) instead of a free picker the D-pad cannot drive. The page's twin is `input[type=color]` (`app/shared/web/DESIGN.md`).
+
 ### Dialogs
 
 One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.TvSheet` from `tvui/res`; `:tv` and `:home` both include that res dir). Don't build another.

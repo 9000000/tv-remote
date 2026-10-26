@@ -44,6 +44,18 @@ class HomeConfigTest {
         assertEquals(HomeConfig.GTEXT_MAX, HomeConfig.clean(JSONObject().put("gtext", "a".repeat(500))).getString("gtext").length)
     }
 
+    @Test fun theOwnWallIsOneToFourColoursAndADirection() {
+        val d = HomeConfig.clean(JSONObject())
+        assertEquals(HomeConfig.WCOL_DEFAULT, d.getString("wcol")); assertEquals("tl_br", d.getString("wdir"))
+        val o = HomeConfig.clean(JSONObject().put("wall", "own").put("wcol", "#FF0000, 00ff00,zzz,0000ff,111111,222222").put("wdir", "radial"))
+        assertEquals("own", o.getString("wall"))
+        assertEquals("ff0000,00ff00,0000ff,111111", o.getString("wcol"))           // bad parts dropped, at most four
+        assertEquals("radial", o.getString("wdir"))
+        assertEquals(0xFFFF0000.toInt(), HomeConfig.ownColors(o)[0])
+        assertEquals("tl_br", HomeConfig.clean(JSONObject().put("wdir", "up")).getString("wdir"))
+        assertEquals(HomeConfig.WCOL_DEFAULT, HomeConfig.clean(JSONObject().put("wcol", "red")).getString("wcol"))
+    }
+
     @Test fun theHeadersTwoLinesAreTemplatesOrOwnWordsWithTheirOwnType() {
         val t = mapOf("greet" to "Good evening", "date" to "Monday, 26 October", "weekday" to "Monday", "day" to "26", "month" to "10", "lunar" to "17/9", "canchi" to "Bính Ngọ", "lunarLine" to "Lunar 17/9 · Bính Ngọ")
         fun d(o: JSONObject) = HomeConfig.headLine(HomeConfig.clean(o), "d", t)

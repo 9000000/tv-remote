@@ -180,6 +180,14 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .fchips.homewalls button { display:flex; flex-direction:column; gap:4px; padding:4px; border-radius:10px; font-size:12px; min-width:0; }
 .fchips.homewalls.themes { grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); }   /* a theme's name is a word or two: wider than a wall's tile */
 .homewalls i { display:grid; place-items:center; aspect-ratio:16/9; border-radius:6px; background:var(--c); border:1px solid var(--line); font-style:normal; font-size:18px; }
+.ownstops { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }   /* the own wall's colours, each the browser's own picker */
+.ownstop { display:inline-flex; align-items:center; gap:4px; }
+.ownstop input[type=color] { width:44px; height:var(--ctl); padding:3px; border:1px solid var(--line); border-radius:10px; background:var(--btn); cursor:pointer; }
+.ownstop input[type=color]::-webkit-color-swatch-wrapper { padding:0; }
+.ownstop input[type=color]::-webkit-color-swatch { border:none; border-radius:7px; }
+.ownstop input[type=color]::-moz-color-swatch { border:none; border-radius:7px; }
+.owndirs button { display:inline-flex; align-items:center; gap:6px; }
+.owndirs i { width:22px; height:14px; border-radius:4px; border:1px solid var(--line); flex:none; }
 .homewalls i.add { background:transparent; border-style:dashed; }
 .homewalls span { overflow:hidden; text-overflow:ellipsis; }
 .homewalls small.badge { margin:0; align-self:center; max-width:100%; overflow:hidden; white-space:nowrap; display:inline-flex; align-items:center; }   /* a theme's tags: Video, rotation of N, each a line icon + words */
@@ -199,6 +207,9 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .homegal img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:6px; display:block; }
 .homegal span { font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .homegal.busy { opacity:.6; pointer-events:none; }
+.homegal button { position:relative; }
+.homegal i.mi { display:grid; place-items:center; width:100%; aspect-ratio:16/9; border-radius:6px; border:1px dashed var(--line); color:var(--accent); }
+.homegal small.badge { position:absolute; top:8px; left:8px; }   /* it moves, or it is a live page: said on the picture, as the themes' badges */
 .homeask .laychips { flex-wrap:wrap; overflow:visible; }   /* five choices: they wrap rather than scroll */
 .homeask .laychips button { display:inline-flex; align-items:center; gap:7px; }
 .layglyph { display:flex; gap:2px; width:32px; height:18px; flex:none; }

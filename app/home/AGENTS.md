@@ -51,3 +51,9 @@ stays only as the fallback for older TV Homes and the page's preview. Its allowe
 `HOSTS` of NetPicture / WebVideo. Themes live in `docs/home/themes.json` (signed, `dev/sign/sign_themes.py`, bump `rev`), photos come
 from `dev/gen/wallpapers.py` (Unsplash or Wikimedia Commons, licence + author kept; calm, few details: the tiles sit on them), and a TV Home asks for the list again on Home (a day old) and
 on opening Themes (an hour), `Themes.refresh`.
+
+**Suggested** (Customize > Wallpaper, the page's "Suggested"): the same signed `wallpapers.json`, its `"links"` (the Việt Nam slideshow,
+Pexels videos, a live page; `dev/gen/wallpapers.py LINKS_ONLY=1`, small pictures pinned by SHA-256) and its pictures: each only sets
+`wall: web` + `wurl`, so the table above draws it (`Suggest.kt` here, `Wallpapers.links` + `/api/home/walls/thumb` for the page).
+**Custom** (`wall: own`): `wcol` 1-4 colours (one = plain), `wdir` one of `HomeConfig.WDIRS` (`radial` from the middle), drawn by
+`wallGradient` (Backdrop, the screensaver, the tiles); a change of either is part of `wall()`'s key.

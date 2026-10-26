@@ -89,7 +89,7 @@ class DreamBody(private val c: Context) {
         motion = Motion.on
         val dm = c.resources.displayMetrics
         val root = FrameLayout(c)
-        root.background = wallDrawable(wallColors(conf.optString("wall")))
+        root.background = conf.optString("wall").let { wallDrawable(wallColors(it, conf), wallDir(it, conf)) }
         val id = conf.optString("wall")
         if (Walls.isPicture(id) || WallArt.has(id)) {                 // a photo, Bing's picture or a drawn scene: all become one bitmap here
             val v = ImageView(c).apply { scaleType = ImageView.ScaleType.CENTER_CROP; alpha = 0f }

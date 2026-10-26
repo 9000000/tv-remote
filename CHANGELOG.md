@@ -7,6 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home, Hình nền có mục **Gợi ý**: slideshow Việt Nam, 11 video êm (lò sưởi, cực quang, bể cá, Dải Ngân Hà, biển mây, Hạ Long…), các ảnh của site và một trang web sống (gió toàn cầu). Danh sách nằm trên site (`docs/home/wallpapers.json`, có chữ ký), thêm mẫu mới không cần ra bản app. Có trên TV và trang cài đặt TV Home.
+- TV Home, màu nền **Tự chọn**: 1 màu (trơn) hoặc 2–4 màu chuyển dần, chọn từng màu và 9 hướng (chéo, dọc, ngang, toả từ giữa). Trên TV đổi bằng ◀ ▶ và thấy ngay trên màn hình chính; trên điện thoại / máy tính dùng bảng chọn màu.
 - TV Home, widget kiểu StandBy của iPhone: đồng hồ thêm mặt **Hiện đại** (vạch từng phút, thứ + ngày màu đỏ trong mặt) và **Số** (màn đen, dòng ngày đỏ trên giờ to); lịch thêm kiểu **Ngày** (thứ màu đỏ, ngày thật to, ngày âm bên dưới). Chọn trong Cài đặt thẻ trên TV, điện thoại hoặc máy tính. Vẫn vẽ lại mỗi phút một lần, không tốn CPU.
 - TV Home, đầu trang thành **2 dòng tự chọn**: mỗi dòng là lời chào, ngày, ngày âm, hoặc tự viết với chữ chèn `{weekday}` `{day}` `{month}` `{lunar}` `{canchi}`…; mỗi dòng có cỡ chữ, đậm, nghiêng, in hoa, màu riêng (vd. "THỨ BA, 27 THÁNG 10" / "18/9 ÂM LỊCH · BÍNH NGỌ").
 - Trang cài đặt TV Home gọn hơn: chia khối theo chủ đề, ô bật/tắt thành công tắc, nút Lưu chỉ hiện khi có sửa.
@@ -19,6 +21,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
+- TV Home, Wallpaper gets **Suggested**: the Việt Nam slideshow, 11 calm videos (fireplace, aurora, aquarium, Milky Way, sea of clouds, Ha Long…), the site's pictures and a live page (Earth winds). The list lives on the site (`docs/home/wallpapers.json`, signed): new ones need no app release. On the TV and in the page's TV Home settings.
+- TV Home, a **Custom** colour background: one colour (plain) or 2–4 blended, each colour and 9 directions (diagonal, down, across, from the middle). On the TV ◀ ▶ change it live on the home screen; the phone / computer use a colour picker.
 - TV Home, iPhone StandBy-style widgets: the clock adds a **Modern** face (every minute ticked, weekday + day in red in the dial) and **Digital** (a black screen, red date line over big digits); the calendar adds a **Date** layout (weekday in red, the day huge, the lunar date under it). Pick them in the card's settings on the TV, phone or computer. Still redrawn once a minute: no CPU cost.
 - TV Home, the header becomes **two lines of your own**: each the greeting, the date, the lunar date, or your own words with `{weekday}` `{day}` `{month}` `{lunar}` `{canchi}`…; each with its own size, bold, italic, capitals and colour (e.g. "TUESDAY, 27 OCTOBER" / "LUNAR 18/9 · BÍNH NGỌ").
 - TV Home settings page tidier: blocks by subject, on/off boxes become switches, Save shows only while something changed.

@@ -307,9 +307,9 @@
       "id": "vn",
       "kind": "slides",
       "name": {
-        "vi": "Việt Nam (trình chiếu)",
-        "en": "Việt Nam (slideshow)",
-        "ru": "Вьетнам (слайд-шоу)"
+        "vi": "Việt Nam",
+        "en": "Việt Nam",
+        "ru": "Вьетнам"
       },
       "url": "https://tvremote.pages.dev/home/loop.html?s=vn",
       "thumb": "vn-t.jpg",
@@ -337,8 +337,8 @@
       "id": "aurora-harbor",
       "kind": "video",
       "name": {
-        "vi": "Cực quang trên cảng",
-        "en": "Aurora over a harbour",
+        "vi": "Cực quang cảng",
+        "en": "Harbour aurora",
         "ru": "Сияние над гаванью"
       },
       "url": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fvideos.pexels.com%2Fvideo-files%2F5600929%2F5600929-hd_1920_1080_25fps.mp4&p=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fv-aurora-harbor-t.jpg",
@@ -352,8 +352,8 @@
       "id": "aurora-peaks",
       "kind": "video",
       "name": {
-        "vi": "Cực quang trên núi",
-        "en": "Aurora over peaks",
+        "vi": "Cực quang núi",
+        "en": "Aurora peaks",
         "ru": "Сияние над горами"
       },
       "url": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fvideos.pexels.com%2Fvideo-files%2F852435%2F852435-hd_1920_1080_30fps.mp4&p=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fv-aurora-peaks-t.jpg",
@@ -442,8 +442,8 @@
       "id": "city-timelapse",
       "kind": "video",
       "name": {
-        "vi": "Thành phố về đêm",
-        "en": "City by night",
+        "vi": "Phố đêm",
+        "en": "City night",
         "ru": "Ночной город"
       },
       "url": "https://tvremote.pages.dev/home/loop.html?v=https%3A%2F%2Fvideos.pexels.com%2Fvideo-files%2F1654216%2F1654216-hd_1920_1080_30fps.mp4&p=https%3A%2F%2Ftvremote.pages.dev%2Fhome%2Fv-city-timelapse-t.jpg",
@@ -487,8 +487,8 @@
       "id": "earth-wind",
       "kind": "page",
       "name": {
-        "vi": "Gió trên Trái Đất",
-        "en": "Earth's winds",
+        "vi": "Gió toàn cầu",
+        "en": "Earth winds",
         "ru": "Ветра Земли"
       },
       "url": "https://earth.nullschool.net/#current/wind/surface/level/orthographic=107,16,600",

@@ -11,6 +11,7 @@ import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
@@ -51,6 +52,8 @@ object Customize {
     private const val DIM = 0xA6FFFFFF.toInt()
     private const val DOOR_FOCUS = 0x2EFFFFFF                          // a settings row that opens a screen: fill under focus, at rest, its edge
     private const val DOOR_REST = 0x12FFFFFF
+    private const val OPAQUE = 0xFF000000L                             // "rrggbb" of the own wall made a colour
+    private const val SWATCH_EDGE = 0x40FFFFFF                         // the own wall's colour chips: seen on a black one too
     private const val DOOR_EDGE = 0x1FFFFFFF
     private const val NO_PIC = 0xFF2A2F3A.toInt()                      // a theme tile whose picture is not made yet
     private const val CHECK_INK = 0xFF0B1020.toInt()
@@ -175,6 +178,110 @@ object Customize {
         dialog.show()
     }
 
+    /**
+     * The person's own wall (HomeConfig "own", "wcol", "wdir") with the remote, as [stepper]: the panel steps aside and the wall itself
+     * changes behind the box. Rows: how many colours (one is a solid fill), each colour (◀ ▶ through [PALETTE]), the direction. OK or Back done.
+     */
+    private fun ownColours(a: Activity, panel: Dialog, done: () -> Unit) {
+        val d = a.resources.displayMetrics.density
+        fun dp(v: Number) = (v.toFloat() * d).toInt()
+        val c0 = Store.get(a)
+        val cols = HomeConfig.wcol(c0.optString("wcol")).toMutableList()
+        var dir = c0.optString("wdir").takeIf { it in HomeConfig.WDIRS } ?: HomeConfig.WDIRS[0]
+        val save = Runnable {
+            val ch = JSONObject().put("wcol", cols.joinToString(",")).put("wdir", dir)
+            if (Store.get(a).optString("wevery") == "off") ch.put("wall", HomeConfig.OWN)    // seen at once; in a set it is one of the set already, or picked there
+            Store.change(a, ch)
+        }
+        val dialog = Dialog(a, R.style.Menu)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val box = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(18), dp(16), dp(18), dp(14))
+            background = GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(STEP_FILL); setStroke(dp(1), ACCENT) }
+        }
+        box.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.wall_own); textSize = 15f; setTextColor(DIM); gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+        val rows = ArrayList<Pair<View, () -> Unit>>()
+        lateinit var paintAll: () -> Unit
+        // one line: its name, what it is now; ◀ ▶ steps it, ▲ ▼ to the next line (the system's own focus search)
+        fun line(name: () -> String, value: (TextView, View) -> Unit, step: (Int) -> Unit): View {
+            val word = Font.on(TextView(a)).apply { textSize = 15f; setTextColor(Color.WHITE) }
+            val now = Font.on(TextView(a)).apply { textSize = 14f; setTextColor(ACCENT); gravity = Gravity.END }
+            val chip = View(a)
+            val v = LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isFocusableInTouchMode = true
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(DOOR_FOCUS); setStroke(dp(1), Color.WHITE) })
+                    addState(intArrayOf(), GradientDrawable().apply { cornerRadius = dp(14).toFloat(); setColor(DOOR_REST) })
+                }
+                addView(word, LinearLayout.LayoutParams(0, -2, 1f))
+                addView(now, LinearLayout.LayoutParams(-2, -2))
+                addView(chip, LinearLayout.LayoutParams(dp(44), dp(24)).apply { leftMargin = dp(10) })
+            }
+            v.setOnKeyListener { _, code, e ->
+                if (e.action != android.view.KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+                when (code) {
+                    android.view.KeyEvent.KEYCODE_DPAD_LEFT -> step(-1); android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> step(1)
+                    android.view.KeyEvent.KEYCODE_DPAD_CENTER, android.view.KeyEvent.KEYCODE_ENTER -> { dialog.dismiss(); return@setOnKeyListener true }
+                    else -> return@setOnKeyListener false
+                }
+                paintAll(); box.removeCallbacks(save); box.postDelayed(save, 200); true
+            }
+            rows.add(v to { word.text = name(); value(now, chip) })
+            box.addView(v, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
+            return v
+        }
+        fun hex(s: String) = (s.toLong(16) or OPAQUE).toInt()
+        fun swatch(chip: View, fill: Drawable?) { chip.background = fill; chip.visibility = if (fill == null) View.GONE else View.VISIBLE }
+        line({ a.getString(R.string.own_n) }, { t, chip -> t.text = if (cols.size == 1) a.getString(R.string.own_solid) else "${cols.size}"; swatch(chip, null) }) { s ->
+            val n = (cols.size + s).coerceIn(1, HomeConfig.OWN_MAX)
+            while (cols.size < n) cols.add(PALETTE[(PALETTE.indexOf(cols.last()).coerceAtLeast(0) + 7) % PALETTE.size])   // a new colour a little along the palette from the last
+            while (cols.size > n) cols.removeAt(cols.size - 1)
+        }
+        val stops = (0 until HomeConfig.OWN_MAX).map { i ->
+            line({ a.getString(R.string.own_stop, i + 1) }, { t, chip ->
+                t.text = ""; swatch(chip, cols.getOrNull(i)?.let { GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(hex(it)); setStroke(dp(1), SWATCH_EDGE) } })
+            }) { s ->
+                val at = PALETTE.indexOf(cols[i]).let { if (it >= 0) it else nearest(hex(cols[i])) }   // a colour typed on a phone: the palette from the nearest of its own
+                cols[i] = PALETTE[(at + s + PALETTE.size) % PALETTE.size]
+            }
+        }
+        val dirLine = line({ a.getString(R.string.own_dir) }, { t, chip ->
+            t.text = a.getString(a.resources.getIdentifier("wdir_$dir", "string", a.packageName))
+            swatch(chip, wallGradient(cols.map { hex(it) }.toIntArray(), dir).apply { cornerRadius = dp(6).toFloat() })
+        }) { s -> dir = HomeConfig.WDIRS[(HomeConfig.WDIRS.indexOf(dir) + s + HomeConfig.WDIRS.size) % HomeConfig.WDIRS.size] }
+        box.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.own_keys); textSize = 12f; setTextColor(DIM); gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        paintAll = {
+            stops.forEachIndexed { i, v -> v.visibility = if (i < cols.size) View.VISIBLE else View.GONE }
+            dirLine.visibility = if (cols.size > 1) View.VISIBLE else View.GONE
+            rows.forEach { it.second() }
+        }
+        paintAll()
+        dialog.setContentView(box)
+        dialog.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)); setDimAmount(0f)
+            setLayout(dp(340), ViewGroup.LayoutParams.WRAP_CONTENT)
+            attributes = attributes.apply { gravity = Gravity.TOP or Gravity.START; x = dp(48); y = dp(40) }
+        }
+        dialog.setOnDismissListener { box.removeCallbacks(save); save.run(); panel.show(); done() }
+        dialog.setOnShowListener { rows[0].first.requestFocus(); panel.hide(); box.post { rows[0].first.requestFocus() } }
+        dialog.show()
+    }
+
+    /** The own wall's colours, walked with ◀ ▶: twelve hues each deep, mid and soft (deep first: a wall dark enough for white words), then greys. */
+    private val PALETTE: List<String> = (0 until 12).flatMap { h ->
+        listOf(floatArrayOf(0.85f, 0.32f), floatArrayOf(0.75f, 0.58f), floatArrayOf(0.45f, 0.85f)).map { (s, v) ->
+            "%06x".format(Color.HSVToColor(floatArrayOf(h * 30f, s, v)) and 0xFFFFFF)
+        }
+    } + listOf("000000", "1c1c1e", "3a3a3c", "636366", "aeaeb2", "ffffff")
+
+    private fun nearest(c: Int): Int = PALETTE.indices.minByOrNull { i ->
+        val p = (PALETTE[i].toLong(16) or OPAQUE).toInt()
+        listOf(16, 8, 0).sumOf { sh -> val x = (p shr sh and 0xFF) - (c shr sh and 0xFF); x * x }
+    } ?: 0
+
     private var ready: Pair<Dialog, () -> Unit>? = null
     private var readyFor: Activity? = null
 
@@ -235,6 +342,7 @@ object Customize {
             mine + Videos.list(a).map { it.wall } + all.drop(mine.size)
         }
         val tiles = ArrayList<Pair<String, View>>()
+        var ownFace: () -> Unit = {}                                  // the own wall's tile, painted again after its colours changed
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
         dialog.setOnDismissListener { shots.shutdownNow(); ThemePreview.forget(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
@@ -245,7 +353,8 @@ object Customize {
         val rotNote = label("", 12f, DIM)
         val nowNote = label("", 14f, ACCENT)                           // at the top of the page while it rotates: how many, how often, which is on screen
         fun wallOn(c: JSONObject, k: String) =
-            if (c.optString("wevery") == "off") c.optString("wall") == k
+            if (k.startsWith(Suggest.PREFIX)) c.optString("wall") == HomeConfig.WEB && Suggest.byKey(k)?.url == c.optString("wurl")   // a suggestion is the page it sets
+            else if (c.optString("wevery") == "off") c.optString("wall") == k
             else c.getJSONArray("walls").let { s -> (0 until s.length()).any { s.getString(it) == k } }
         fun markAll() {
             val c = Store.get(a)                                         // once: reading it per tile cost 18 ms on the FPT box
@@ -300,6 +409,7 @@ object Customize {
             t.onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
             t.setOnClickListener {
                 if (key == "stats") { if (!viaSetup) { on = !on; dev.tvremote.report.OwnReport.setOwn(a, on); paint() }; return@setOnClickListener }
+                if (key == "wcol") { ownColours(a, dialog) { ownFace(); markAll() }; return@setOnClickListener }
                 if (key == "rows" || key == "cols" || key == "shade") {
                     stepper(a, dialog, key) { pick = choices?.indexOfFirst { it.first == Store.get(a).optString(key) }?.coerceAtLeast(0) ?: 0; paint() }
                     return@setOnClickListener
@@ -510,10 +620,13 @@ object Customize {
                 val cell = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
                 val t = if (k == ADD) addTile() else FrameLayout(a).apply {
                     isFocusable = true; isClickable = true
-                    val c = if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k) || k == HomeConfig.BING || k == HomeConfig.WEB) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k)
-                    background = (if (c.all { it == c[0] }) GradientDrawable().apply { setColor(c[0]) } else GradientDrawable(GradientDrawable.Orientation.TL_BR, c))
-                        .apply { cornerRadius = dp(12).toFloat() }                // rounded, so not [wallDrawable]'s ColorDrawable
-                    if (WallArt.has(k) || Walls.isPicture(k)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
+                    fun face(cf: JSONObject): Drawable {
+                        val c = if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k) || k == HomeConfig.BING || k == HomeConfig.WEB) intArrayOf(0xFF2A2F3A.toInt()) else wallColors(k, cf)
+                        return wallGradient(c, wallDir(k, cf)).apply { cornerRadius = dp(12).toFloat() }   // rounded, so not [wallDrawable]'s ColorDrawable
+                    }
+                    background = face(conf)
+                    if (k == HomeConfig.OWN) ownFace = { background = face(Store.get(a)) }
+                    if (WallArt.has(k) || Walls.isPicture(k) || k.startsWith(Suggest.PREFIX)) {                   // the picture itself, in the tile's rounded corners: the same painter as the screen
                         val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }   // the picture is made at the tile's size with its corners: nothing scaled or clipped per frame
                         addView(pv, FrameLayout.LayoutParams(-1, -1))
                         val drawn = thumbs[thumbKey(a, k, w)]                    // made beforehand ([warm]) or on an earlier opening: there as it slides in
@@ -528,7 +641,11 @@ object Customize {
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
                         addState(intArrayOf(), ring(d, 1, RING_REST))
                     }
-                    if (k == HomeConfig.WEB) { val (iv, s) = icon(R.drawable.ic_globe, ACCENT, dp(26)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
+                    if (k == HomeConfig.WEB || Suggest.byKey(k)?.let { it.kind == "page" && it.thumb.isEmpty() } == true) { val (iv, s) = icon(R.drawable.ic_globe, ACCENT, dp(26)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
+                    Suggest.byKey(k)?.takeIf { it.kind == "video" || it.kind == "slides" }?.let {          // it moves: said on the tile, as the page's badge
+                        val (iv, s) = icon(if (it.kind == "video") R.drawable.ic_play else R.drawable.ic_image, Color.WHITE, dp(16))
+                        addView(iv, FrameLayout.LayoutParams(s, s, Gravity.TOP or Gravity.START).apply { setMargins(dp(8), dp(8), 0, 0) })
+                    }
                     if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
                     addView(FrameLayout(a).apply {                            // the ✓, shown on the chosen one (mark)
                         tag = "check"
@@ -542,6 +659,10 @@ object Customize {
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         val c = Store.get(a)
+                        Suggest.byKey(k)?.let { sg ->                               // the page it is: one choice, as the web page tile (clean() keeps "web" alone in a set)
+                            Store.change(a, JSONObject().put("wall", HomeConfig.WEB).put("wurl", sg.url).put("wmode", "live")); markAll()
+                            return@setOnClickListener
+                        }
                         if (k == HomeConfig.WEB) {                                // the link is pasted on a phone (a QR), how it updates is picked there with the D-pad
                             PhotoScreen.show(a, web = true) { dialog.dismiss() }
                             return@setOnClickListener
@@ -585,7 +706,7 @@ object Customize {
                 }
                 if (k != ADD) tiles.add(k to t)
                 cell.addView(t, LinearLayout.LayoutParams(w, w * 9 / 16))
-                cell.addView(label(if (k == ADD) a.getString(R.string.wall_add) else wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
+                cell.addView(label(if (k == ADD) a.getString(R.string.wall_add) else Suggest.byKey(k)?.name(a.resources.configuration.locales[0].language) ?: wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
                     LinearLayout.LayoutParams(w, -2).apply { topMargin = dp(5) })
                 row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
             }
@@ -600,6 +721,21 @@ object Customize {
                 section(a.getString(title)); wallRows(list); more()
             }
             part(R.string.wall_h_online, online)
+            // the site's suggestions (Suggest): drawn from the list kept, again when a newer one comes while the page is open
+            val sugBox = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false }
+            col.addView(sugBox, LinearLayout.LayoutParams(-1, -2))
+            fun sugFill() {
+                val list = Suggest.items.map { it.key }
+                tiles.removeAll { it.first.startsWith(Suggest.PREFIX) }; sugBox.removeAllViews()
+                if (list.isEmpty()) return
+                val was = col; col = sugBox
+                section(a.getString(R.string.wall_h_suggest)); wallRows(list)
+                col.addView(label(a.getString(R.string.sug_note), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
+                col = was; markAll()
+            }
+            Suggest.onChange = { a.runOnUiThread { if (a.isDestroyed) return@runOnUiThread; if (!dialog.isShowing || sugBox.findFocus() == null) sugFill() } }   // never under the person's focus
+            Suggest.load(a)                                                   // the kept list first: a fresh process has none in memory yet
+            sugFill()
             section(a.getString(R.string.wall_h_photos)); wallRows(listOf(ADD) + photos)         // always there: with no photo yet, the grid is the + cell alone
             part(R.string.wall_h_videos, videos) {
                 // a video or GIF background (HomeConfig vsound / vvol / vfps / vres): sound and volume now; frame rate and size for the NEXT upload, which is made on a phone through the QR above
@@ -610,7 +746,10 @@ object Customize {
                 tile(R.drawable.ic_image, a.getString(R.string.v_res), null, "vres", HomeConfig.VRES.map { it to if (it.isEmpty()) a.getString(R.string.v_res_screen) else "${it}p" })
             }
             part(R.string.wall_h_scenes, scenes)
-            part(R.string.wall_h_colours, colours)
+            part(R.string.wall_h_colours, colours) {
+                col.addView(View(a), LinearLayout.LayoutParams(1, dp(10)))
+                tile(R.drawable.ic_contrast, a.getString(R.string.own_edit), null, "wcol", listOf("" to a.getString(R.string.own_edit_sub)))
+            }
             markAll(); markEvery()
             conf.takeIf { it.optString("wevery") != "off" }?.optString("wall")?.let { now -> tiles.firstOrNull { it.first == now }?.let { t -> groups[1].start = { t.second } } }   // rotating: the page opens on the one on screen
             if (keys.any { HomeConfig.isPhoto(it) || HomeConfig.isVideo(it) }) col.addView(label(a.getString(R.string.photo_del_hint), 12f, DIM), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
@@ -1244,7 +1383,7 @@ object Customize {
     private fun thumb(a: Context, k: String, w: Int): Bitmap? {
         val key = thumbKey(a, k, w)
         thumbs[key]?.let { return it }
-        val b = Walls.small(a, k, w, w * 9 / 16)?.let { round(it, w, w * 9 / 16, 12 * a.resources.displayMetrics.density) } ?: return null
+        val b = (Suggest.byKey(k)?.let { Suggest.picture(a, it) } ?: if (k.startsWith(Suggest.PREFIX)) null else Walls.small(a, k, w, w * 9 / 16))?.let { round(it, w, w * 9 / 16, 12 * a.resources.displayMetrics.density) } ?: return null
         synchronized(thumbs) { thumbs.keys.removeAll { it.startsWith("$k:") }; thumbs[key] = b }
         return b
     }

@@ -168,14 +168,14 @@ def vn():
 # Pages: only ones that need no login, show no ads and stay silent (earth.nullschool.net; NASA Eyes, Stellarium, lofi.co were heavy and full of menus).
 PEXELS = [
     ("fireplace", 855381, 30, "free-video-855381.jpg", {"vi": "Lò sưởi", "en": "Fireplace", "ru": "Камин"}),
-    ("aurora-harbor", 5600929, 25, "pexels-photo-5600929.jpeg", {"vi": "Cực quang trên cảng", "en": "Aurora over a harbour", "ru": "Сияние над гаванью"}),
-    ("aurora-peaks", 852435, 30, "free-video-852435.jpg", {"vi": "Cực quang trên núi", "en": "Aurora over peaks", "ru": "Сияние над горами"}),
+    ("aurora-harbor", 5600929, 25, "pexels-photo-5600929.jpeg", {"vi": "Cực quang cảng", "en": "Harbour aurora", "ru": "Сияние над гаванью"}),
+    ("aurora-peaks", 852435, 30, "free-video-852435.jpg", {"vi": "Cực quang núi", "en": "Aurora peaks", "ru": "Сияние над горами"}),
     ("aquarium", 2556513, 25, "free-video-2556513.jpg", {"vi": "Bể cá", "en": "Aquarium", "ru": "Аквариум"}),
     ("milky-way-live", 1926295, 25, "free-video-1926295.jpg", {"vi": "Dải Ngân Hà", "en": "Milky Way", "ru": "Млечный Путь"}),
     ("night-sky", 1877846, 30, "free-video-1877846.jpg", {"vi": "Bầu trời đêm", "en": "Night sky", "ru": "Ночное небо"}),
     ("cloud-sea", 5721853, 30, "pexels-photo-5721853.jpeg", {"vi": "Biển mây", "en": "Sea of clouds", "ru": "Море облаков"}),
     ("mountain-mist", 2888383, 24, "free-video-2888383.jpg", {"vi": "Mây phủ núi", "en": "Mountain mist", "ru": "Туман в горах"}),
-    ("city-timelapse", 1654216, 30, "free-video-1654216.jpg", {"vi": "Thành phố về đêm", "en": "City by night", "ru": "Ночной город"}),
+    ("city-timelapse", 1654216, 30, "free-video-1654216.jpg", {"vi": "Phố đêm", "en": "City night", "ru": "Ночной город"}),
     ("beach-live", 18914444, 30, None, {"vi": "Hoàng hôn biển", "en": "Sunset beach", "ru": "Закат на пляже"}),
     ("halong-live", 3783927, 24, "pexels-photo-3783927.jpeg", {"vi": "Vịnh Hạ Long", "en": "Ha Long Bay", "ru": "Бухта Халонг"}),
 ]
@@ -195,10 +195,10 @@ def links():
                     "thumb": t, "thumb_sha256": tsha, "credit": "Pexels", "source": "https://www.pexels.com/video/%d/" % vid, "license": "Pexels License"})
         print("link", i)
     vt = open(os.path.join(OUT, "vn-t.jpg"), "rb").read()
-    out.insert(0, {"id": "vn", "kind": "slides", "name": {"vi": "Việt Nam (trình chiếu)", "en": "Việt Nam (slideshow)", "ru": "Вьетнам (слайд-шоу)"},
+    out.insert(0, {"id": "vn", "kind": "slides", "name": {"vi": "Việt Nam", "en": "Việt Nam", "ru": "Вьетнам"},
                    "url": SITE + "loop.html?s=vn", "thumb": "vn-t.jpg", "thumb_sha256": hashlib.sha256(vt).hexdigest(), "credit": "Unsplash, Wikimedia Commons",
                    "source": SITE + "vn.json", "license": "Unsplash License, CC BY-SA"})
-    out.append({"id": "earth-wind", "kind": "page", "name": {"vi": "Gió trên Trái Đất", "en": "Earth's winds", "ru": "Ветра Земли"},
+    out.append({"id": "earth-wind", "kind": "page", "name": {"vi": "Gió toàn cầu", "en": "Earth winds", "ru": "Ветра Земли"},
                 "url": "https://earth.nullschool.net/#current/wind/surface/level/orthographic=107,16,600", "credit": "Cameron Beccario",
                 "source": "https://earth.nullschool.net/about.html", "license": "", "heavy": True})
     return out

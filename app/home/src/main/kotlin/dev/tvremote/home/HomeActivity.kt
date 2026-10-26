@@ -576,8 +576,8 @@ class HomeActivity : Activity() {
         picture = null
         val id = conf.optString("wall")
         detachWeb()                                                   // a page costs the most memory of any wall: gone while away, made again by [untrim]
-        if (WallArt.has(id)) backdrop.show(wallColors(id), null, id)      // a drawn scene costs nothing to keep: only the picture is repainted
-        else backdrop.show(wallColors(id), soft)                          // the blurred copy stands in, so the return is not a blank
+        if (WallArt.has(id)) backdrop.show(wallColors(id, conf), null, id)      // a drawn scene costs nothing to keep: only the picture is repainted
+        else backdrop.show(wallColors(id, conf), soft)                          // the blurred copy stands in, so the return is not a blank
         val keep = firstRows()                                        // the logos seen first on return stay (~10 x 230 KB): a home without them is worse than the memory
         for (t in tileCache.values) if (t.app !in keep) t.release()
         for (a in apps) if (a !in keep) a.release()
@@ -1288,7 +1288,7 @@ class HomeActivity : Activity() {
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "")   // a photo put over the old file, another day's Bing picture: a new one
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "") + (if (id == HomeConfig.OWN) conf.optString("wcol") + conf.optString("wdir") else "")   // a photo put over the old file, another day's Bing picture: a new one
         if (key == wallShown) return
         wallShown = key
         if (trimmed) { picture = null; soft = null; return }          // away and short of memory: [untrim] brings it back
@@ -1302,7 +1302,8 @@ class HomeActivity : Activity() {
      */
     private fun loadWall(id: String) {
         val dm = resources.displayMetrics
-        val colors = wallColors(id)
+        val colors = wallColors(id, conf)
+        backdrop.dir = wallDir(id, conf)
         val key = wallShown
         val url = conf.optString("wurl")
         val snap = id == HomeConfig.WEB && conf.optString("wmode") == "snap"   // the page as a picture: read and painted like a photo
@@ -1450,7 +1451,7 @@ class HomeActivity : Activity() {
                 hideLoading()
                 if (big == null) { slideAt = -1; return@runOnUiThread }   // not read: the old picture stays, the next slot tries again
                 picture = big; soft = small
-                backdrop.show(Backdrop.Look(wallColors(conf.optString("wall")), big))
+                backdrop.show(Backdrop.Look(wallColors(conf.optString("wall"), conf), big))
                 Frost.show(small, dm.widthPixels, dm.heightPixels)
                 caption(s)
             }
@@ -2355,7 +2356,8 @@ class BadgeView(c: Context, dp0: (Number) -> Int, k: Float = 1f) : View(c) {
 fun Motion.read(c: Context, conf: JSONObject) = read(c, conf.optBoolean("anim", true), conf.optString("motion"), conf.optString("focus", "glass"))
 
 /** The colours of a built-in background (the page's small tiles copy them: js/home.js HOME_WALLS). */
-fun wallColors(wall: String): IntArray = when (wall) {
+fun wallColors(wall: String, conf: JSONObject? = null): IntArray = when (wall) {
+    HomeConfig.OWN -> HomeConfig.ownColors(conf)
     "ocean" -> intArrayOf(0xFF03192B.toInt(), 0xFF0A4A66.toInt(), 0xFF05233A.toInt())
     "dusk" -> intArrayOf(0xFF1A0F2E.toInt(), 0xFF4A2150.toInt(), 0xFF7A3B3B.toInt())
     "forest" -> intArrayOf(0xFF06140F.toInt(), 0xFF133B2D.toInt(), 0xFF0A1F18.toInt())
@@ -2374,6 +2376,22 @@ fun wallColors(wall: String): IntArray = when (wall) {
     else -> if (WallArt.has(wall)) WallArt.colors(wall) else intArrayOf(0xFF0B0F1A.toInt(), 0xFF18223F.toInt(), 0xFF0B0F1A.toInt())
 }
 
+/** Which way a wall's gradient runs ([HomeConfig.WDIRS]): the person's own wall's "wdir"; every built-in one top-left to bottom-right. */
+fun wallDir(wall: String, conf: JSONObject?) = if (wall == HomeConfig.OWN) conf?.optString("wdir")?.takeIf { it in HomeConfig.WDIRS } ?: "tl_br" else "tl_br"
+
+private val ORIENT = mapOf("tl_br" to GradientDrawable.Orientation.TL_BR, "tb" to GradientDrawable.Orientation.TOP_BOTTOM, "lr" to GradientDrawable.Orientation.LEFT_RIGHT,
+    "bl_tr" to GradientDrawable.Orientation.BL_TR, "br_tl" to GradientDrawable.Orientation.BR_TL, "bt" to GradientDrawable.Orientation.BOTTOM_TOP,
+    "rl" to GradientDrawable.Orientation.RIGHT_LEFT, "tr_bl" to GradientDrawable.Orientation.TR_BL)
+
+/** [colors] running [dir]: one colour is a solid fill; "radial" spreads from the middle to the corners (its radius follows the bounds). */
+fun wallGradient(colors: IntArray, dir: String = "tl_br"): GradientDrawable {
+    val cs = if (colors.size == 1) intArrayOf(colors[0], colors[0]) else colors
+    return if (dir == "radial") object : GradientDrawable(Orientation.TL_BR, cs) {
+        init { gradientType = RADIAL_GRADIENT; setDither(true) }
+        override fun onBoundsChange(r: Rect) { gradientRadius = maxOf(1f, Math.hypot(r.width().toDouble(), r.height().toDouble()).toFloat() / 2); super.onBoundsChange(r) }
+    } else GradientDrawable(ORIENT[dir] ?: GradientDrawable.Orientation.TL_BR, cs).apply { setDither(true) }
+}
+
 /** For the screensaver, whose screen rarely changes; the home screen paints its wallpaper once on a [Backdrop] instead. */
-fun wallDrawable(colors: IntArray): Drawable =
-    if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else GradientDrawable(GradientDrawable.Orientation.TL_BR, colors).apply { setDither(true) }
+fun wallDrawable(colors: IntArray, dir: String = "tl_br"): Drawable =
+    if (colors.all { it == colors[0] }) ColorDrawable(colors[0]) else wallGradient(colors, dir)

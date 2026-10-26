@@ -7,6 +7,7 @@ import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.GradientDrawable
 import android.view.View
+import dev.tvremote.home.wallGradient
 
 /**
  * The wallpaper, painted once at the screen's full size (dithered) into one picture that is [target]'s background (the window's).
@@ -22,6 +23,8 @@ class Backdrop(private val target: View) {
 
     /** The person's veil ([HomeConfig] "shade" / its default: 1 the usual one), for the next [show]. */
     var strength = 1f
+    /** Which way the next gradient runs ([wallDir]: only the person's own wall has a choice). */
+    var dir = "tl_br"
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     private var made: Bitmap? = null
 
@@ -45,7 +48,7 @@ class Backdrop(private val target: View) {
             gradient(GradientDrawable.Orientation.TOP_BOTTOM, shade(WallArt.shade(art), strength), w, h).draw(c)
         } else if (p == null) {
             if (l.colors.all { it == l.colors[0] }) c.drawColor(l.colors[0])
-            else gradient(GradientDrawable.Orientation.TL_BR, l.colors, w, h).draw(c)
+            else wallGradient(l.colors, dir).apply { setBounds(0, 0, w, h) }.draw(c)
         } else {
             val k = maxOf(w.toFloat() / p.width, h.toFloat() / p.height)
             val sw = (w / k).toInt(); val sh = (h / k).toInt()

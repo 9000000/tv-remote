@@ -13,6 +13,8 @@ import org.json.JSONObject
  *   wall    the background on now: a gradient ([PLAIN]), a drawn scene ([ART]), "bing" (the day's Bing picture, kept by TV Home), or one
  *           of the person's photos ([PHOTOS]: "photo" is wall.jpg, "photo2" wall2.jpg ... in TV Home's external files folder, sent by
  *           the client; at most [PHOTO_MAX])
+ *   wcol, wdir the person's own wall [OWN]: wcol 1..[OWN_MAX] colours "rrggbb,rrggbb" (one = a solid colour), wdir its direction
+ *           ([WDIRS]: "tl_br" top-left to bottom-right … "radial" from the middle). A TV Home that has this reports "ownOk": true
  *   wurl    the page the "web" wall shows (an Immich Kiosk, a dashboard): only http:// or https:// (LAN pages are mostly plain http),
  *           at most [WURL_MAX]; anything else is dropped. "web" with no good wurl is an unknown wall: the default gradient. "web" is
  *           never turned through: choosing it makes [walls] just that one, and a set sent with it elsewhere loses it
@@ -132,6 +134,17 @@ object HomeConfig {
     val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
     /** Scenes TV Home draws itself, no picture file (WallSpec; app/home wall/WallArt.kt). */
     val ART = listOf("dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon")
+    /** The person's own wall: a colour or a gradient they make ([wcol], [wdir]). */
+    const val OWN = "own"
+    const val OWN_MAX = 4
+    const val WCOL_DEFAULT = "0b1d3a,14307a,7a2e12"
+    val WDIRS = listOf("tl_br", "tb", "lr", "bl_tr", "br_tl", "bt", "rl", "tr_bl", "radial")
+    private val HEX6 = Regex("[0-9a-f]{6}")
+    /** [s] as the colours it names (at most [OWN_MAX]); bad parts dropped, none good: [WCOL_DEFAULT]. */
+    fun wcol(s: String): List<String> = s.lowercase().split(',').map { it.trim().removePrefix("#") }.filter { HEX6.matches(it) }.take(OWN_MAX)
+        .ifEmpty { WCOL_DEFAULT.split(',') }
+    /** The own wall's colours as ARGB ints. */
+    fun ownColors(o: JSONObject?): IntArray = wcol(o?.optString("wcol").orEmpty()).map { (0xFF000000 or it.toLong(16)).toInt() }.toIntArray()
     /** Bing's pictures, downloaded by TV Home: the last 8 days kept, newest first, turned through by the rotation before the next of the set. */
     const val BING = "bing"
     /** A web page as the background and the screensaver (TV Home shows it in a WebView; [wurl]). */
@@ -149,7 +162,7 @@ object HomeConfig {
     /** The person's photos, one file each: "photo" is the first and the only one older TV Homes know. */
     val PHOTOS = listOf("photo") + (2..PHOTO_MAX).map { "photo$it" }
     /** In the order the pickers list them: Bing, the web page and the person's photos first (the ones people come to change), then the scenes, the plain colours last. */
-    val WALLS = listOf(BING, WEB) + PHOTOS + ART + PLAIN
+    val WALLS = listOf(BING, WEB) + PHOTOS + ART + OWN + PLAIN
     /** A video or GIF of the media library: "vid:" + 8 hex (a theme refers to it by this id, and so does "wall"). */
     const val VIDEO_PREFIX = "vid:"
     private val VIDEO = Regex("vid:[0-9a-f]{8}")
@@ -411,7 +424,7 @@ object HomeConfig {
     const val THEMES_MAX = 12
     const val THEME_NAME_MAX = 24
     /** The settings a theme holds and an apply switches . */
-    val THEME_KEYS = listOf("wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol",
+    val THEME_KEYS = listOf("wall", "walls", "wurl", "wcol", "wdir", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol",
         "widgets", "wsize", "wopt", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
     private val THEME_ID = Regex("t[0-9]{1,4}")
     /** What the first screen draws that the person can take off (not in a theme: a look does not hide the way to the settings). */
@@ -596,6 +609,8 @@ object HomeConfig {
             .put("wall", if (wall in walls) wall else walls[0])           // what shows is always one of the set
             .put("walls", JSONArray(walls))
             .put("wurl", wurl)
+            .put("wcol", wcol(o.optString("wcol")).joinToString(","))
+            .put("wdir", o.optString("wdir").takeIf { it in WDIRS } ?: WDIRS[0])
             .put("wmode", o.optString("wmode").takeIf { it in WMODES } ?: "live")
             .put("wsnap", o.optInt("wsnap", WSNAP_DEFAULT).takeIf { it in WSNAPS } ?: WSNAP_DEFAULT)
             .put("wkeep", o.optBoolean("wkeep", false))
