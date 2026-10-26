@@ -50,7 +50,7 @@ object NoWebView {
         }, "webview").apply { isDaemon = true }.start()
     }
 
-    /** tvui/res/values(-vi)/webview.xml: compiled into each app under its own namespace, so there is no one R to name. */
+    /** tvui words (app/shared/web/i18n/apps/<lang>/tvui.json, made into res by i18n.gradle): compiled into each app under its own namespace, so there is no one R to name. */
     private fun w(a: Activity, id: String) = a.getString(a.resources.getIdentifier(id, "string", a.packageName))
 
     private fun store(a: Activity) {
