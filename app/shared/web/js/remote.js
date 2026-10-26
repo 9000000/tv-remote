@@ -218,12 +218,21 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.fullscreenElement) return;       // let Esc leave fullscreen
   const adb = ADB.state === 'ready' || NATIVE() && can('text');      // letters: ADB, or LG's / Samsung's keyboard link
   if (keymap[e.key]) { e.preventDefault(); api('/api/key', { key: keymap[e.key] }); }
-  else if (e.key === 'Enter') { e.preventDefault(); if (adb) queue('/api/type', { enter: true }); else api('/api/key', { key: 'OK' }); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat && !enterT) enterT = setTimeout(() => { enterLong = true; api('/api/key', { key: 'OK', dir: 'START_LONG' }); }, 400); }   // sent on keyup: held, it is a long OK
   else if (e.key === 'Backspace') { e.preventDefault(); if (adb) queue('/api/type', { del: 1 }); else api('/api/key', { key: 'DEL' }); }
   else if (!adb) return;                                              // letters need ADB
   else if (e.key === 'Delete') { e.preventDefault(); queue('/api/type', { fdel: 1 }); }
   else if (e.key.length === 1) { e.preventDefault(); queue('/api/type', { text: e.key }); }
 });
+// Enter held 0.4 s = OK held on the TV until it is let go (long-press menus), as the on-screen key; a short one is OK (or Enter in a field)
+let enterT = null, enterLong = false;
+const enterUp = (tap) => {
+  if (!enterT) return; clearTimeout(enterT); enterT = null;
+  if (enterLong) { enterLong = false; api('/api/key', { key: 'OK', dir: 'END_LONG' }); }
+  else if (tap) { if (ADB.state === 'ready' || NATIVE() && can('text')) queue('/api/type', { enter: true }); else api('/api/key', { key: 'OK' }); }
+};
+document.addEventListener('keyup', (e) => { if (e.key === 'Enter') enterUp(true); });
+window.addEventListener('blur', () => enterUp(false));               // let go elsewhere: no keyup here, the TV must not stay held
 document.addEventListener('paste', (e) => {                           // Cmd+V anywhere on the Remote tab pastes onto the TV
   if (window.ONTV || currentTab !== 'remote' || typingHere() || document.querySelector('dialog[open]') || !(ADB.state === 'ready' || NATIVE() && can('text'))) return;
   const t = (e.clipboardData || window.clipboardData).getData('text'); if (t) { e.preventDefault(); queue('/api/type', { text: t.slice(0, 500) }); }
