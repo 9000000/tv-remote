@@ -555,3 +555,10 @@ Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~
 - Left out on purpose: the apps (dock, hidden, order, tiles), QR cards (a Wi-Fi password), keys, language, screensaver, power button: they are not a look. Applying keeps the QR cards in `widgets` / `wsize`.
 - A saved theme keeps its photo or video: `Videos.refs` (set in `HomeApp`) makes the library's delete and the photos' delete refuse (409 `inuse`). The cost is that a photo must be freed by deleting the theme first; the other way round (copying the file into the theme) would double the TV's storage.
 - "Which theme is on" (`themeNow`) compares the look as sorted-key text, not JSON text: org.json keeps key order on Android and not on the JVM tests.
+
+## Usage events and a clock that ran ahead (`app/tv` `Usage.kt`, 2026-10-26)
+
+- An FPT Play box booted at 4/9/2027 and was set right by the network 38 s later. Android keeps its current stretch of usage events (`dumpsys usagestats`: "In-memory daily stats timeRange=8:16 4/9/2027") beginning in that future until the next reboot, so `queryEvents(begin, now)` came back empty: the app lock saw no app (unlocked once = never asked again, kids mode let YouTube open), the day's use stayed 0. Android's own `lastTimeUsed` totals still moved on.
+- Fix: every read goes through `Usage.events`, which asks 20 years past now and drops events after now. `tests/usage_events.test.js` fails on a direct `queryEvents` anywhere else. Cursors kept by time (`Guard.eventsTo`, `pinAt`, `lastStop`, `volSaidAt`) are reset when they lie ahead of the clock.
+- Self-healing is the update itself: TV Setup's `AutoUpdate` is on by default, so a release reaches such boxes with nobody connecting; a reboot also clears it on old versions.
+- Not reproduced on the emulator by moving its clock (it re-reads fine); only a boot with the wrong year does it.
