@@ -295,7 +295,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val up = link.state() == "ready" && try { kbdReader.ask { link.get().shell(it) } } catch (e: Exception) { false }
                     return HttpServer.Response.json(JSONObject().put("shown", up))
                 }
-                "adb/discover" -> if (canPair) return discoverPairing()     // the phone and computer only: the TV web page has its TV on localhost
+                "adb/discover" -> if (canPair) return discoverPairing()     // where Conscrypt is packed: the phone, the computer, TV Setup (its own TV)
                 "space" -> return HttpServer.Response.json(space(r.q("path"), r.q("size").toLongOrNull() ?: 0L, r.q("apk") == "1"))
                 "job" -> {
                     val j = jobs[r.q("id")]
@@ -423,7 +423,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun inputs(fresh: Boolean): List<Inputs.Input> = inputCache.get(fresh) { Inputs.parse(sh(Inputs.READ)) }
     /** The pairing and connect ports heard on the network (mDNS), for the page to prefill; empty lists when nothing answers. */
     private fun discoverPairing(): HttpServer.Response {
-        fun list(l: List<Mdns.Service>) = org.json.JSONArray().also { a -> l.forEach { a.put(JSONObject().put("ip", it.ip).put("port", it.port)) } }
+        fun list(l: List<Mdns.Service>) = org.json.JSONArray().also { a -> l.forEach { a.put(JSONObject().put("ip", it.ip).put("port", it.port).put("self", AdbTls.same(link.host, it.ip))) } }
         val (pairing, connect) = AdbTls.discover()
         return HttpServer.Response.json(JSONObject().put("host", link.host).put("pairing", list(pairing)).put("connect", list(connect)))
     }
@@ -443,6 +443,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val out = JSONObject().put("ok", true).put("paired", true)
         if (cp <= 0) return HttpServer.Response.json(out.put("needPort", true))   // paired, but the connect port is still to be typed
         AdbTls.save(link.keyDir, host, cp)
+        if (link.host != host && AdbTls.same(link.host, host)) AdbTls.save(link.keyDir, link.host, cp)   // TV Setup paired with its own TV: it dials 127.0.0.1
         return HttpServer.Response.json(out.put("port", cp).put("state", link.reconnect()))
     }
 

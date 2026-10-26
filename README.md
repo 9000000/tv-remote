@@ -229,7 +229,7 @@ Install `tv-remote.apk`, open it, tap **Scan Wi-Fi**, pick the TV or type its IP
 - **No phone or computer at hand?** On the TV choose **Manage on this TV** (Apps, Files, Health, Automation, Setup, driven by the TV's remote).
 - On the TV the app also has **Optimize TV / Undo**, **Tailscale**, **Update**, web remote on/off, **Unpair all**. It starts again by itself when the TV boots.
 - Plain HTTP: **never open port 8765 to the Internet**; away from home use Tailscale.
-- Needs the TV's ADB on port 5555. Some newer Google TVs that only offer pairing-code "Wireless debugging" may not work.
+- Needs the TV's ADB: port 5555, or on a TV with only "Wireless debugging" (Chromecast with Google TV) press **📡 Pair with Wireless debugging** on the TV web page and type the TV's IP:port and code, once.
 - Also installs on Android phones and tablets (one-column page), to control that device from another browser: ADB must be on port 5555 (phones usually only over a cable: `adb tcpip 5555` once, again after a restart). Optimize TV refuses non-TVs.
 </details>
 

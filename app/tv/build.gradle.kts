@@ -17,12 +17,14 @@ android {
         minSdk = 21
         targetSdk = 34
         versionName = appVersion
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }      // Conscrypt's native code (+2 MB): TVs are ARM; elsewhere pairing is just not offered
         resValue("string", "released", LocalDate.now().toString())   // shown next to the version
         // 100000 +: above every code of the numbers before the restart at 0.1.0 (2.24.x was 22400), so Android installs over them
         versionCode = appVersion.split(".").map { it.toInt() }.let { 100000 + it[0] * 10000 + it[1] * 100 + it[2] }
     }
     sourceSets["main"].java.srcDirs("../shared/src/tvui/kotlin", "../shared/src/marks/kotlin", "../shared/src/selfupdate/kotlin")           // the TV apps' one look (app/DESIGN-TV.md): tokens + components, TvField
     sourceSets["main"].res.srcDirs("../shared/src/tvui/res")                // tv_style.xml: ONE copy for the TV apps
+    sourceSets["main"].java.srcDirs("../shared/conscrypt")                  // ConscryptBackend: pairing with its own TV through Wireless debugging (a Chromecast with Google TV has no 5555)
     sourceSets["main"].java.srcDirs("../tvkeys/src/protocol/kotlin")        // KeysProtocol: what this app and its add-on agree on, ONE copy
     // the add-on's APK (same variant, same key) rides inside this one as assets/tvkeys.apk: see packKeys below
     for (v in listOf("debug", "release")) sourceSets[v].assets.srcDirs(layout.buildDirectory.dir("generated/keys/$v"))
@@ -69,6 +71,7 @@ tasks.matching { it.name == "testReleaseUnitTest" }.configureEach { dependsOn("p
 
 dependencies {
     implementation(project(":shared"))
+    implementation("org.conscrypt:conscrypt-android:2.7.0")           // TLS 1.3 + exported keying material for adb pairing, as the phone app
     testImplementation("junit:junit:4.13.2")                          // ./gradlew :tv:testDebugUnitTest
     testImplementation("org.json:json:20240303")
 }

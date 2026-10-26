@@ -494,8 +494,11 @@ function buildBanner() {
   if (CORE !== 'pc') {                                                // the TV's own page and the phone app: no computer to help, so the steps on the TV, and what the TV said
     const detail = ADB.detail ? el('p', { className: 'note', textContent: T('core.adb_detail', { d: ADB.detail }) }) : null;
     const how = el('button', { type: 'button', className: 'small primary', textContent: T('core.tvb_help_btn'), onclick: () => showAdbGuide() });
+    // TV Setup on a TV with Wireless debugging only (a Chromecast with Google TV): the 6-digit code is typed here, from a phone or computer
+    const pair = CORE === 'tv' && ADB.pair ? el('button', { type: 'button', className: 'small primary', textContent: T('setup.wireless_choice'), onclick: () => wirelessPair() }) : null;
+    if (pair) how.className = 'small';
     retry.className = 'small';
-    return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), detail, el('div', { className: 'actions' }, how, retry));
+    return el('div', { className: 'banner ' + cls }, el('b', { textContent: title }), el('p', { textContent: text }), detail, el('div', { className: 'actions' }, pair, how, retry));
   }
   const helpMe = ADB.state === 'closed' || ADB.state === 'error' ? el('button', { className: 'small primary', textContent: T('core.adb_help_me'), onclick: () => adbHelp() }) : null;
   if (helpMe) retry.className = 'small';

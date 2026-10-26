@@ -243,6 +243,7 @@ class Adb(private val dir: File) : Closeable {
      */
     private fun plainForSetup(host: String, port: Int): Boolean {
         val now = System.currentTimeMillis()
+        if (AdbTls.same(host, "127.0.0.1")) return false               // TV Setup itself, paired: it stays on the TLS port
         if (now - (PLAIN_ASKED[host] ?: 0L) < 600_000L || AdbTls.plainOpen(host)) return false
         try {
             Adb(dir).use { t ->

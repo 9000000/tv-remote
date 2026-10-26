@@ -694,7 +694,7 @@ class MainActivity : Activity() {
             try {
                 adb?.close()
                 val a = Adb(filesDir)
-                a.connect("127.0.0.1", 5555, Adb.Prompt {
+                a.connectTo("127.0.0.1", Adb.Prompt {                      // 5555, or the TLS port once paired through Wireless debugging
                     ui { setStatus(WARN, T("allow.the_tv_is_asking"),
                         T("tv_main.tick_always_allow_then"))
                         uncover() }
@@ -717,7 +717,8 @@ class MainActivity : Activity() {
                 ui {
                     ecoPaint()
                     setStatus(BAD, T("tv_main.no_adb_connection"), T("tv_main.turn_on_adb_debugging"))
-                    val refused = (e.message ?: "").contains("refused", ignoreCase = true)   // on this very TV a refused port is ADB off, never a slow network
+                    val notPaired = (e.message ?: "").contains("not paired")   // no 5555, Wireless debugging on: the code is what is missing
+                    val refused = notPaired || (e.message ?: "").contains("refused", ignoreCase = true)   // on this very TV a refused port is ADB off, never a slow network
                     // ...or ADB on over USB only: some boxes (an FPT Play box) open no port 5555, and "turn it on" would send the person in circles
                     val adbOn = try { android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0) == 1 } catch (x: Exception) { false }
                     if (refused && adbOn) {

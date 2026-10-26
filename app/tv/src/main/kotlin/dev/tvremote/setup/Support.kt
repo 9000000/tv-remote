@@ -15,7 +15,8 @@ import java.net.URL
  * worker (dev/census/src/support.js) on a press, and the TV shows the 8-digit code to read out. [open]: for [MINUTES] the owner
  * may GET a few of this app's own read-only routes (`dev/census/support.py CODE /api/state`); the TV asks the worker every 2 s,
  * runs them on its own server with a pass of its own, listed among the paired devices while it lasts, and stops when the time
- * is up, on Stop, or when TV Setup restarts. Nothing is ever pressed or changed: GET only, [ROUTES] only.
+ * is up, on Stop, or when TV Setup restarts. Nothing is ever pressed or changed: GET only, [ROUTES] only, plus [SupportDump]'s
+ * settings, own log and read-only commands (`support.py CODE sh "dumpsys package x"`), so a new feature needs no new field here.
  */
 object Support {
     const val MINUTES = 30
@@ -42,7 +43,9 @@ object Support {
     fun report(c: Context, version: String): String = Scrub.blank(buildString {
         append("TV Setup ").append(version).append(" · adb ").append(RemoteService.adbState()).append(' ').append(RemoteService.adbDetail()).append('\n')
         append(AdbReport.facts(c, RemoteService.adbState(), RemoteService.adbDetail())).append('\n')
-        append(WireLog.all.report().takeLast(48_000))
+        append(fit(SupportDump.prefs(c), 10_000, tail = false)).append('\n')
+        append(fit(SupportDump.logcat(), 14_000, tail = true)).append('\n')
+        append(WireLog.all.report().takeLast(24_000))
     })
 
     /** Sends the report; the code to read out, or null when the worker cannot be reached. Runs off the main thread. */
@@ -107,9 +110,9 @@ object Support {
                     val asks = r.optJSONArray("asks")
                     for (i in 0 until (asks?.length() ?: 0)) {
                         val a = asks!!.getJSONObject(i)
-                        val (status, text) = answer(a.optString("path"), token)
+                        val (status, text) = answer(c, a.optString("path"), token)
                         asked++
-                        WireLog.all.add("·", "support GET ${a.optString("path").take(80)} -> $status")
+                        WireLog.all.add("·", "support GET ${a.optString("path").take(120)} -> $status")
                         val sent = post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", status).put("body", text))
                         if (sent == null || sent.has("error"))           // refused or lost: say so, or the owner waits for nothing
                             post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", 0).put("body", "answer not delivered ($status, ${text.length} chars)"))
@@ -121,9 +124,14 @@ object Support {
         if (thread === me) { thread = null; until = 0; forgetPass(c) }
     }
 
-    /** One GET on this app's own server, as a paired browser would; only [ROUTES]. */
-    fun answer(path: String, token: String): Pair<Int, String> {
+    /** One GET on this app's own server, as a paired browser would, only [ROUTES]; or a [SupportDump] read. */
+    fun answer(c: Context, path: String, token: String): Pair<Int, String> {
         val route = path.substringBefore('?')
+        when (route) {                                                // no route of the server: read here (SupportDump)
+            "/api/support/sh" -> return SupportDump.shell(java.net.URLDecoder.decode(path.substringAfter("c=", "").substringBefore('&'), "UTF-8"))
+            "/api/support/prefs" -> return 200 to fit(SupportDump.prefs(c), 200_000, tail = false)
+            "/api/support/logcat" -> return 200 to fit(SupportDump.logcat(), 200_000, tail = true)
+        }
         if (route !in ROUTES || ".." in path) return 403 to "not allowed for support: $route"
         return try {
             val c = URL("http://127.0.0.1:${RemoteService.PORT}$path").openConnection() as HttpURLConnection

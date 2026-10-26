@@ -83,4 +83,13 @@ class WirelessOnlyTest {
         assertEquals(Diagnose.ADB_OFF, Diagnose.run(Fake(false), "192.168.1.40", Remote.Kind.ANDROID, "", "", "en").code)
         assertEquals(Diagnose.CLOSED, Diagnose.run(Fake(true), "192.168.1.40", Remote.Kind.ROKU, "", "", "en").code)   // not an Android TV: never asked about Wireless debugging
     }
+
+    @Test fun loopbackIsTheTvItself() {                                                 // TV Setup dials 127.0.0.1; mDNS names its Wi-Fi address
+        val own = java.net.NetworkInterface.getNetworkInterfaces().toList().flatMap { it.inetAddresses.toList() }
+            .mapNotNull { it.hostAddress?.substringBefore('%') }.firstOrNull { !it.startsWith("127.") && !it.contains(':') }
+        if (own != null) assertTrue(AdbTls.same("127.0.0.1", own))                     // a machine with no network has no own address
+        assertTrue(AdbTls.same("192.168.1.40", "192.168.1.40"))
+        assertFalse(AdbTls.same("192.168.1.40", "10.9.9.9"))   // another TV: only the same address
+        assertFalse(AdbTls.same("127.0.0.1", "203.0.113.7"))
+    }
 }

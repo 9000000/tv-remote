@@ -371,6 +371,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             private val caps by lazy { Caps.report(this@RemoteService) }   // the hardware does not change while TV Setup runs
             override fun caps(): String = caps
         }, getExternalFilesDir(null)) { assets.open("tvr-helper.jar").use { it.readBytes() } }
+        manage?.canPair = dev.tvremote.core.adb.AdbTls.available()    // a TV with Wireless debugging only: the code is typed on the web page, from a phone
         manage?.allowed = { fp ->                                      // whoever is at the TV sees that a device was let in
             ui.post { android.widget.Toast.makeText(this, T("tv_server.usb_allowed") + "\n" + fp, android.widget.Toast.LENGTH_LONG).show() }
         }
@@ -767,7 +768,8 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             .put("device", JSONObject().put("manufacturer", Build.MANUFACTURER).put("model", Build.MODEL).put("android", Build.VERSION.RELEASE))
             .put("version", version).put("app_name", "TV Setup")
             .put("released", try { getString(resources.getIdentifier("released", "string", packageName)).split("-").let { it[2] + "/" + it[1] + "/" + it[0] } } catch (e: Exception) { "" })
-            .put("adb", JSONObject().put("state", adbWord()).put("detail", adbDetail))
+            .put("adb", JSONObject().put("state", adbWord()).put("detail", adbDetail)
+                .put("pair", Build.VERSION.SDK_INT >= 30 && manage?.canPair == true))   // Wireless debugging (Android 11+): the page offers to type its code
             .put("app", front.get(link?.takeIf { adbState == "ready" }?.let { l -> { c: String -> l.get().shell(c) } }).ifEmpty { JSONObject.NULL })   // the remote screen's "now open" line
             .put("volume", JSONObject().put("level", am.getStreamVolume(AudioManager.STREAM_MUSIC)).put("max", am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
                 .put("muted", Build.VERSION.SDK_INT >= 23 && am.isStreamMute(AudioManager.STREAM_MUSIC)))

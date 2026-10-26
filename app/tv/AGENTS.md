@@ -17,7 +17,7 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          Rules + Guard + RulesReceiver + WarnActivity (sleep timer, bedtime, app limits, the full memory notice), DnsWatch (turns off a
                          DNS filter that cut the TV off), DrawLayer + DrawReceiver (the drawing over every app), NotifyLayer + NotifyReceiver (the message card in a corner; `Notify.kt` in the shared code is the one place its corner / seconds are clamped), Nightly (2-5 am in standby: caches, `cmd package compile` of the apps used, `stats/nightly.json` for Health), KeepAdb (ADB debugging
                          back on when switched off, with WRITE_SECURE_SETTINGS granted through ADB), Support (Connection → Send to support: the facts
-                         for an 8-digit code; Let support look: 30 min of GETs on a read-only list of its own routes, through the census worker), Eco (the More TV apps row: TV Home / Channels / Games from `Bundle.apps`,
+                         for an 8-digit code; Let support look: 30 min of GETs on a read-only list of its own routes, plus SupportDump: all prefs scrubbed, its own logcat, read-only shell commands; through the census worker), Eco (the More TV apps row: TV Home / Channels / Games from `Bundle.apps`,
                          their banners copied in as `res/drawable/eco_*.png`; installed over ADB, else through Android's installer)
 ```
 

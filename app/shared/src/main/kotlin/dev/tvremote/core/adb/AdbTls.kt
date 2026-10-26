@@ -78,9 +78,22 @@ object AdbTls {
 
     // ---------- finding the ports ----------
 
+    /**
+     * Whether a service heard at [ip] is [host]. TV Setup dials its own TV as 127.0.0.1, but the TV announces Wireless debugging
+     * under its network address: on a TV with no port 5555 (a Chromecast with Google TV) that is the only way TV Setup gets ADB.
+     */
+    fun same(host: String, ip: String): Boolean = ip == host || (isLoopback(host) && ip in ownIps())
+
+    private fun isLoopback(host: String) = host == "127.0.0.1" || host == "localhost" || host == "::1"
+
+    private fun ownIps(): Set<String> = try {
+        java.net.NetworkInterface.getNetworkInterfaces().toList().flatMap { it.inetAddresses.toList() }
+            .mapNotNull { it.hostAddress?.substringBefore('%') }.toSet()
+    } catch (e: Exception) { emptySet() }
+
     /** The connect port [host] announces, 0 when none was heard. */
     fun discoverConnect(host: String, ms: Int = 3000, bind: (java.net.DatagramSocket) -> Unit = {}): Int =
-        Mdns.find(Mdns.CONNECT, ms, bind).firstOrNull { it.ip == host }?.port ?: 0
+        Mdns.find(Mdns.CONNECT, ms, bind).firstOrNull { same(host, it.ip) }?.port ?: 0
 
     /** What a TV announces for Wireless debugging: the connect port and the pairing port (0: not heard). */
     class Wireless(val connect: Int, val pairing: Int) {
@@ -95,8 +108,8 @@ object AdbTls {
     fun wireless(host: String, ms: Int = 1800, bind: (java.net.DatagramSocket) -> Unit = dev.tvremote.core.Diagnose.bindUdp,
                  find: (String) -> List<Mdns.Service> = { Mdns.find(it, ms, bind) }): Wireless {
         var pairing = 0
-        val t = Thread { pairing = find(Mdns.PAIRING).firstOrNull { it.ip == host }?.port ?: 0 }.apply { isDaemon = true; start() }
-        val connect = find(Mdns.CONNECT).firstOrNull { it.ip == host }?.port ?: 0
+        val t = Thread { pairing = find(Mdns.PAIRING).firstOrNull { same(host, it.ip) }?.port ?: 0 }.apply { isDaemon = true; start() }
+        val connect = find(Mdns.CONNECT).firstOrNull { same(host, it.ip) }?.port ?: 0
         t.join(ms + 1000L)
         return Wireless(connect, pairing)
     }

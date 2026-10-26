@@ -233,7 +233,7 @@ Cài `tv-remote.apk`, mở app, bấm **Quét Wi-Fi** rồi chọn TV, hoặc g�
 - **Không có điện thoại hay máy tính?** Trên TV chọn **Quản lý trên TV**: các tab Ứng dụng, Tệp, Sức khỏe, Tự động, Thiết lập hiện ngay trên TV, dùng remote của TV để chọn (Back để thoát).
 - Trên TV, app còn có **Tối ưu TV** / **Hoàn tác**, **Tailscale**, **Cập nhật**, bật/tắt remote qua web, **Hủy ghép**. Trang tự chạy lại khi TV khởi động.
 - HTTP thường, không mã hóa: **đừng mở cổng 8765 ra Internet**; ở ngoài nhà hãy đi qua Tailscale.
-- Cần TV mở ADB ở cổng 5555. Một số Google TV đời mới chỉ có "Gỡ lỗi không dây" kiểu ghép mã có thể không dùng được.
+- Cần ADB của TV: cổng 5555, hoặc TV chỉ có "Gỡ lỗi không dây" (Chromecast with Google TV) thì bấm **📡 Ghép bằng Gỡ lỗi không dây** trên trang web của TV, gõ IP:cổng và mã TV hiện, một lần.
 - Cũng cài được trên điện thoại / máy tính bảng Android (giao diện một cột), để điều khiển chính máy đó từ trình duyệt khác: ADB phải mở cổng 5555 (điện thoại thường chỉ qua cáp: `adb tcpip 5555` một lần, khởi động lại thì làm lại). Tối ưu TV không chạy trên máy không phải TV.
 </details>
 

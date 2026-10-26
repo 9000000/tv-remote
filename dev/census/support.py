@@ -5,6 +5,8 @@
   support.py CODE                    what the TV sent (its facts and log)
   support.py CODE /api/state         while the TV lets support look: GET that route on the TV, print the answer
   support.py CODE --all              the usual reads in one go: about, state, diagnose, setup/version, wirelog
+  support.py CODE sh "dumpsys package dev.tvremote.setup.keys"   any read-only command (TV Setup newer than 0.26.2: settings, dumpsys,
+                                     getprop, pm list/dump, appops get, logcat -d); /api/support/prefs, /api/support/logcat
   support.py --delete CODE           forget it
   support.py --url http://127.0.0.1:8798   a local `wrangler dev`
 """
@@ -58,6 +60,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("code", nargs="?")
     ap.add_argument("path", nargs="?")
+    ap.add_argument("cmd", nargs="?")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--delete", action="store_true")
     ap.add_argument("--url", default=URL)
@@ -72,6 +75,8 @@ def main():
     if a.delete:
         print(call(base, "/v1/support", {"code": a.code}, method="DELETE"))
         return
+    if a.path == "sh":                                       # a read-only command on the TV, over TV Setup's own ADB
+        a.path = "/api/support/sh?c=" + urllib.parse.quote(a.cmd or "", safe="").replace("~", "%7E")
     if a.path or a.all:
         for p in ([a.path] if a.path else ALL):
             r = ask(base, a.code, p)

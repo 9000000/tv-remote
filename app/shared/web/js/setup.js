@@ -393,7 +393,7 @@ async function wirelessPair() {
   assistShow(T('setup.wireless_title'), say(WIRELESS_STEPS), UI.line(addr), UI.line(code), UI.line(port), status,
     row(act(T('setup.pair'), pair, 'primary'), act(T('setup.other_ways'), async () => adbHelp())));
   const f = await api('/api/adb/discover', null, true);              // prefilled when the TV announces itself on the network
-  const p = f && (f.pairing || []).find((s) => s.ip === f.host) || f && (f.pairing || [])[0];
+  const p = f && (f.pairing || []).find((s) => s.ip === f.host || s.self) || f && (f.pairing || [])[0];   // self: TV Setup's own TV (it dials 127.0.0.1)
   if (p && !addr.value) addr.value = p.ip + ':' + p.port;
 }
 function adbSteps() {

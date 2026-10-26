@@ -16,6 +16,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: hàng Xem tiếp vẽ lại: poster dọc (Stremio…) to, có nền mờ và tên phim bên cạnh; ảnh ngang phủ kín ô; có thanh tiến độ đã xem.
 - TV Home: đồng hồ trong thẻ hẹp không còn bị cắt thành "11:…".
 - TV Setup: TV chỉ có Gỡ lỗi không dây (Chromecast with Google TV) giờ chỉ từng bước: cài app điện thoại, đường dẫn tới Ghép nối bằng mã, kèm link hướng dẫn.
+- TV Setup: tự ghép với chính TV qua Gỡ lỗi không dây, từ trang web của TV trên bất kỳ máy nào (cả iPhone, máy tính): bấm 📡 Ghép bằng Gỡ lỗi không dây, gõ IP:cổng và mã. Sau đó tự kết nối, khởi động lại TV thì tự bật lại. App nặng hơn ~2 MB.
+- TV Setup: Gửi cho hỗ trợ kèm mọi cài đặt của app (bỏ PIN, token, tin nhắn) và log của chính nó; khi cho hỗ trợ xem, người hỗ trợ chạy được lệnh chỉ đọc (settings get, dumpsys, getprop…), không cần thêm trường mới cho mỗi tính năng.
 
 **English**
 - TV Home: each widget (the clock too) picks its background: Glass, Tonal, Solid or None (the words right on the wallpaper, with a shadow to stay readable). In the widget's settings, or its menu on the TV (Look).
@@ -27,6 +29,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: the Play Next row redrawn: tall posters (Stremio…) big on a blurred backdrop with the title beside; wide pictures fill the tile; a progress bar shows how far you watched.
 - TV Home: the clock in a narrow card no longer cuts to "11:…".
 - TV Setup: on a TV with Wireless debugging only (Chromecast with Google TV) it now gives the steps: install the phone app, the path to Pair with code, and a guide link.
+- TV Setup: pairs with its own TV through Wireless debugging, from the TV web page on any device (iPhone and computer too): press 📡 Pair with Wireless debugging, type the IP:port and code. It then connects by itself and turns it back on after a restart. The app is ~2 MB larger.
+- TV Setup: Send to support carries all the app's settings (PIN, tokens, messages left out) and its own log; while support looks, they can run read-only commands (settings get, dumpsys, getprop…), no new field per feature.
 
 ## 0.26.2 - 2026-10-26
 
