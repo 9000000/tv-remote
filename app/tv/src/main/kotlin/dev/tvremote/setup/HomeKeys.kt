@@ -130,22 +130,13 @@ internal object AutoOpen {
         c.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0).map { it.activityInfo.packageName }.toSet()
     } catch (e: Exception) { emptySet() }
 
-    /** The app on screen from the last quarter hour of usage events (usage access is TV Setup's, granted over ADB); "" when none or not known. */
-    private fun front(c: Context): String = try {
-        val now = System.currentTimeMillis()
-        var front = ""
-        Usage.events(c, now - 15 * 60_000L, now) { e ->
-            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) front = e.packageName ?: ""
-            else if (e.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND && front == e.packageName) front = ""
-        }
-        front
-    } catch (e: Exception) { "" }
+    private fun front(c: Context): String = Usage.front(c)
 }
 
 /** Hears the screen come on (from [RemoteService], as [WelcomeWatch] does: a manifest receiver cannot hear it). The boot is [BootReceiver]'s. */
 internal class AutoOpenWatch(private val c: Context) {
     private val screen = object : BroadcastReceiver() {
-        override fun onReceive(ctx: Context, i: Intent) { AutoOpen.trigger(c, "wake") }
+        override fun onReceive(ctx: Context, i: Intent) { AutoOpen.trigger(c, "wake"); HomeKey.trigger(c, "wake") }
     }
 
     fun start() { try { c.registerReceiver(screen, IntentFilter(Intent.ACTION_SCREEN_ON)) } catch (e: Exception) { } }

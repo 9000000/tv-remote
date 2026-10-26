@@ -22,4 +22,15 @@ internal object Usage {
     }
 
     fun ahead() = AHEAD
+
+    /** The app on screen from the last quarter hour of usage events (usage access is TV Setup's, granted over ADB); "" when none or not known. */
+    fun front(c: Context): String = try {
+        val now = System.currentTimeMillis()
+        var front = ""
+        events(c, now - 15 * 60_000L, now) { e ->
+            if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) front = e.packageName ?: ""
+            else if (e.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND && front == e.packageName) front = ""
+        }
+        front
+    } catch (e: Exception) { "" }
 }

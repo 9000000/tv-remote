@@ -8,7 +8,7 @@ import android.content.Intent
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, i: Intent) {
         // the TV started (not this app updated): the welcome screen, if it is set to come up then
-        if (i.action == Intent.ACTION_BOOT_COMPLETED || i.action == "android.intent.action.QUICKBOOT_POWERON") { WelcomeState.trigger(ctx, "boot"); AutoOpen.trigger(ctx, "boot") }
+        if (i.action == Intent.ACTION_BOOT_COMPLETED || i.action == "android.intent.action.QUICKBOOT_POWERON") { WelcomeState.trigger(ctx, "boot"); AutoOpen.trigger(ctx, "boot"); HomeKey.trigger(ctx, "boot") }
         // Android 12+ may refuse a foreground service at boot on some TVs: the next app open or TV Setup broadcast starts it
         if (RemoteService.wanted(ctx)) try { RemoteService.start(ctx, true) } catch (e: Exception) { }
     }

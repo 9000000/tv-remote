@@ -27,9 +27,10 @@ import org.xmlpull.v1.XmlPullParser
  */
 object KeyFix {
     /** What a key does when it is dead: [input] the TV's input picker, [app] the first of [pkgs] that is installed, [home], [settings]. */
-    class Rule(val act: String, val pkgs: List<String> = emptyList())
+    class Rule(val act: String, val pkgs: List<String> = emptyList(), val mine: Boolean = false)   // mine: the person gave this key its app (a toast says so)
 
-    const val INPUT = "input"; const val APP = "app"; const val HOME = "home"; const val SETTINGS = "settings"
+    /** [LAUNCHER]: the home screen of pkgs[0] ([HomeKey]: Home where the swap is not possible). */
+    const val INPUT = "input"; const val APP = "app"; const val HOME = "home"; const val SETTINGS = "settings"; const val LAUNCHER = "launcher"
 
     /** By key code, as the stock launcher would answer them (cleanyourtv's list, checked on Google TV and Xiaomi remotes). */
     val RULES: Map<Int, Rule> = mapOf(
@@ -64,8 +65,9 @@ object KeyFix {
      * Returns the rule with the package that will open.
      */
     fun plan(mapped: Map<Int, String>, alive: (String) -> Boolean, launchable: (String) -> Boolean, user: Map<Int, String> = emptyMap(),
-             device: Map<Int, Rule> = emptyMap()): Map<Int, Rule> {
+             device: Map<Int, Rule> = emptyMap(), home: String? = null): Map<Int, Rule> {
         val out = HashMap<Int, Rule>(device)
+        if (home != null) out[HomeKey.CODE] = Rule(LAUNCHER, listOf(home))
         for ((code, rule) in RULES) {
             val to = mapped[code] ?: continue                         // not a global key here: the focused app gets it, nothing to fix
             if (to != NOBODY && alive(to)) continue                   // still has its handler: not ours to take
@@ -76,7 +78,7 @@ object KeyFix {
         }
         // the person's own key → app (TV Home's "keyapps"): over a dead key's old job, never over a key that works
         val free = free(mapped, alive)
-        for ((code, pkg) in user) if (code in COLOUR || code in free) if (launchable(pkg)) out[code] = Rule(APP, listOf(pkg))
+        for ((code, pkg) in user) if (code in COLOUR || code in free) if (launchable(pkg)) out[code] = Rule(APP, listOf(pkg), mine = true)
         return out
     }
 
@@ -92,6 +94,7 @@ object KeyFix {
                 APP -> start(c.packageManager.getLeanbackLaunchIntentForPackage(r.pkgs[0]) ?: c.packageManager.getLaunchIntentForPackage(r.pkgs[0]))
                 HOME -> start(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
                 SETTINGS -> start(Intent(Settings.ACTION_SETTINGS))
+                LAUNCHER -> start(HomeKey.intent(c, r.pkgs[0]))
             }
         } catch (e: Exception) { }
     }
@@ -166,7 +169,10 @@ object KeyFix {
     fun launchable(c: Context, pkg: String): Boolean = c.packageManager.getLeanbackLaunchIntentForPackage(pkg) != null
         || c.packageManager.getLaunchIntentForPackage(pkg) != null
 
-    fun current(c: Context): Map<Int, Rule> = plan(keyMap(c), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE))
+    fun current(c: Context): Map<Int, Rule> = plan(keyMap(c), { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE), HomeKey.pkg(c))
+
+    /** The numbers the person gave an app (TV Home's map): outside TV Home a hold opens it ([HomeKey.DIGITS]). */
+    fun digits(c: Context): Map<Int, String> = HomeKeys.keys(c).filter { (k, p) -> k in HomeKey.DIGITS && launchable(c, p) }
 
     // ---- on or off -------------------------------------------------------------------------------------------------
 
@@ -206,8 +212,10 @@ object KeyFix {
      */
     fun prepare(c: Context, adb: dev.tvremote.core.adb.Adb) {
         // APP_AUTO_START: a TCL's firmware kept the service from being bound (TclAppBoot isAllow = 'false') though the setting
-        // named it; an op the TV does not know is an error that changes nothing
-        try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1; appops set ${c.packageName} APP_AUTO_START allow 2>&1"); prepared = true } catch (e: Exception) { }
+        // named it; an op the TV does not know is an error that changes nothing. SYSTEM_ALERT_WINDOW: Android 14 blocks an app in
+        // the background from starting an activity ("Background activity launch blocked"), and every key that opens an app or the
+        // launcher starts one from here; the overlay permission is what exempts it (measured on the emulator: Home did nothing without)
+        try { adb.shell("appops set ${c.packageName} ACCESS_RESTRICTED_SETTINGS allow 2>&1; appops set ${c.packageName} APP_AUTO_START allow 2>&1; appops set ${c.packageName} SYSTEM_ALERT_WINDOW allow 2>&1"); prepared = true } catch (e: Exception) { }
         KeysAddon.prepare(adb)                                        // the service is the add-on's: the same for its package, once it is installed
     }
 
@@ -222,9 +230,10 @@ object KeyFix {
             val has = has(was)
             val old = hasStale(was)                                   // updated from a TV Setup that had the services inside: move the entry
             val map = keyMap(c)
-            val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE))
+            val now0 = plan(map, { alive(c, it) }, { launchable(c, it) }, HomeKeys.keys(c), forDevice(Build.MODEL, Build.DEVICE), HomeKey.pkg(c)) + digits(c).mapValues { Rule(APP, listOf(it.value), true) }
             android.util.Log.i("KeyFix", "global keys ${map.size}, to bring back ${now0.keys}, service on=$has")   // adb logcat -s KeyFix
             val need = (wanted(c) && now0.isNotEmpty()) || HoldKeys.on(c) || MicVoice.on(c)   // a dead key to bring back, "hold to use Input" (HoldKeys), or the mic button (MicVoice)
+                || HomeKey.pkg(c) != null                             // Home to the launcher picked: asked for on the page, not by the dead-key switch
             if (need && !KeysAddon.current(c)) { KeysAddon.installThen(c) { sync(c) }; return }   // the service is in the add-on: put it on the TV first (it comes back here)
             if (need == has && !old) return
             val t = System.currentTimeMillis()

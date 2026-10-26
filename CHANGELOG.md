@@ -18,6 +18,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Setup: TV chỉ có Gỡ lỗi không dây (Chromecast with Google TV) giờ chỉ từng bước: cài app điện thoại, đường dẫn tới Ghép nối bằng mã, kèm link hướng dẫn.
 - TV Setup: tự ghép với chính TV qua Gỡ lỗi không dây, từ trang web của TV trên bất kỳ máy nào (cả iPhone, máy tính): bấm 📡 Ghép bằng Gỡ lỗi không dây, gõ IP:cổng và mã. Sau đó tự kết nối, khởi động lại TV thì tự bật lại. App nặng hơn ~2 MB.
 - TV Setup: Gửi cho hỗ trợ kèm mọi cài đặt của app (bỏ PIN, token, tin nhắn) và log của chính nó; khi cho hỗ trợ xem, người hỗ trợ chạy được lệnh chỉ đọc (settings get, dumpsys, getprop…), không cần thêm trường mới cho mỗi tính năng.
+- TV Setup: Chromecast, Google TV Streamer: chọn TV Home (hay launcher khác) làm màn hình chính giờ được, không cần Button Mapper: TV Setup cho phím Home mở launcher đó, giữ Home vẫn như cũ, cast vẫn chạy. Chọn lại launcher Google TV là bỏ.
+- TV Setup: phím số gán app giờ chạy cả trong app khác khi giữ 2 giây (bấm nhanh vẫn là của app đó, vd. đổi kênh). Phím gán mở app ngoài TV Home thì hiện "TV Setup đã mở YouTube (phím đỏ)" để biết không phải TV lỗi.
+- TV Setup: TV Android 14: phím gán app (phím màu, phím số) đôi khi bấm không mở gì vì Android chặn mở app từ nền. TV Setup giờ tự xin quyền qua ADB.
+- TV Home: giữ một app, mục "Trên màn hình chính" giờ có "Sửa màn hình chính".
 
 **English**
 - TV Home: each widget (the clock too) picks its background: Glass, Tonal, Solid or None (the words right on the wallpaper, with a shadow to stay readable). In the widget's settings, or its menu on the TV (Look).
@@ -31,6 +35,10 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Setup: on a TV with Wireless debugging only (Chromecast with Google TV) it now gives the steps: install the phone app, the path to Pair with code, and a guide link.
 - TV Setup: pairs with its own TV through Wireless debugging, from the TV web page on any device (iPhone and computer too): press 📡 Pair with Wireless debugging, type the IP:port and code. It then connects by itself and turns it back on after a restart. The app is ~2 MB larger.
 - TV Setup: Send to support carries all the app's settings (PIN, tokens, messages left out) and its own log; while support looks, they can run read-only commands (settings get, dumpsys, getprop…), no new field per feature.
+- TV Setup: on a Chromecast or Google TV Streamer, TV Home (or another launcher) can now be the home screen with no Button Mapper: TV Setup makes Home open it, holding Home works as before and casting still works. Pick Google TV's launcher again to undo.
+- TV Setup: number keys given an app now work in other apps too when held 2 s (a quick press stays the app's, e.g. a channel number). A key opening its app outside TV Home says "TV Setup opened YouTube (Red key)", so it is not a fault.
+- TV Setup: on Android 14 TVs a key given an app (colour or number keys) could open nothing, as Android blocks background app starts. TV Setup now grants itself the permission over ADB.
+- TV Home: hold an app: "On the home screen" now has "Edit home screen".
 
 ## 0.26.2 - 2026-10-26
 

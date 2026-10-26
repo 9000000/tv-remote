@@ -52,6 +52,7 @@ internal object Rules {
             || o.optBoolean("awake")                                   // KeepAwake lives in the service
             || o.optBoolean("mic")                                     // MicVoice: the key filter stays on for the remote's mic button
             || o.optBoolean("holdkeys")                                // HoldKeys: KeyFixWatch keeps the key filter on
+            || o.optString("homekey").isNotEmpty()                     // HomeKey: the filter sends Home to the launcher chosen
             || WelcomeState.active(c)                                  // so does hearing the TV turned on (WelcomeWatch)
             || HomeKeys.active(c)                                      // and TV Home's keys / app on power-on (KeyFixWatch, AutoOpenWatch)
     }
@@ -87,7 +88,7 @@ internal object Rules {
         }
         Guard.poke()
         KeepAwake.live?.check()
-        if (d.optString("do") == "holdkeys" || d.optString("do") == "mic") Thread({
+        if (d.optString("do") in setOf("holdkeys", "mic", "homekey")) Thread({
             if (d.optString("do") == "mic" && d.optBoolean("on")) RemoteService.adb()?.let { MicVoice.grant(c, it) }   // the microphone, allowed through ADB
             KeyFix.sync(c); KeysBridge.poke()
         }, "holdkeys").apply { isDaemon = true }.start()   // the key filter on or off
@@ -109,6 +110,7 @@ internal object Rules {
             "volume" -> o.put("volume", ranges(d.optJSONArray("ranges") ?: JSONArray(), true))
             "ram" -> o.put("ram", JSONObject().put("on", d.optBoolean("on")).put("pct", d.optInt("pct", ram(o).optInt("pct")).coerceIn(RAM_MIN, RAM_MAX)))
             "holdkeys" -> o.put("holdkeys", d.optBoolean("on"))             // HoldKeys: a short press of Input / Settings does nothing, 2 s does
+            "homekey" -> o.put("homekey", d.optString("pkg").takeIf { HomeKey.PKG.matches(it) } ?: "")   // HomeKey: Home opens this launcher ("" stops)
             "mic" -> o.put("mic", d.optBoolean("on"))                       // MicVoice: the remote's mic button opens TV Remote's voice, not the Assistant
             "awake" -> o.put("awake", d.optBoolean("on"))                   // KeepAwake: the chip kept up while the TV is "off"
             "pin" -> {
@@ -530,7 +532,7 @@ internal object Rules {
             .put("in_bedtime", inBedtime(o, now)).put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L })
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
-            .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake")).put("holdkeys", o.optBoolean("holdkeys")).put("mic", o.optBoolean("mic"))
+            .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake")).put("holdkeys", o.optBoolean("holdkeys")).put("mic", o.optBoolean("mic")).put("homekey", o.optString("homekey"))
             .put("sched", sched)
             .put("lock", JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true)
                 .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) }))

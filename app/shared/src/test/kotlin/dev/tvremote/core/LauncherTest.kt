@@ -3,7 +3,9 @@ package dev.tvremote.core
 import dev.tvremote.core.ontv.LauncherSwap
 import dev.tvremote.core.ontv.LauncherWatch
 import dev.tvremote.core.ontv.Launchers
+import dev.tvremote.core.ontv.RulesClient
 import dev.tvremote.core.ontv.Setup
+import dev.tvremote.core.ontv.SetupNeed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -21,6 +23,8 @@ class LauncherTest {
         var wizardLocked = false                                       // a TV that refuses to turn one screen of a system app off
         var wifi = "WifiConfigManager\nID: 0 SSID\ncname=android.uid.system:1000"   // WIFI_OWNERS' answer: the network re-joined in Settings
         var device = "sabrina_not"                                     // ro.product.device
+        var setup = "0.26.3"                                           // TV Setup's versionName
+        var homekey: String? = null                                    // its rule "homekey", set by RulesReceiver
         val enabledOrder = mutableListOf<String>()
         var chosen: String? = null
         var focus: String? = null                                      // what the Home key really opens, when not the home (a Google TV Streamer)
@@ -51,6 +55,12 @@ class LauncherTest {
                 cmd == "date +%s" -> (clock).toString()
                 cmd == LauncherSwap.WIFI_OWNERS -> wifi
                 cmd == "getprop ro.product.device" -> device
+                cmd.startsWith("dumpsys package ${RulesClient.SETUP}") -> "    versionName=$setup"
+                cmd.startsWith("am broadcast") && cmd.contains("RulesReceiver") -> {
+                    val d = org.json.JSONObject(String(java.util.Base64.getDecoder().decode(cmd.substringAfter("--es set ").substringBefore(' '))))
+                    if (d.optString("do") == "homekey") homekey = d.optString("pkg")
+                    "Broadcast completed: result=0, data=\"" + java.util.Base64.getEncoder().encodeToString(org.json.JSONObject().put("homekey", homekey ?: "").toString().toByteArray()) + "\""
+                }
                 cmd.startsWith("pm list packages -U ") -> "package:${cmd.substringAfterLast(' ')} uid:10039"
                 cmd == "pm list packages -e" -> (installed - disabled).joinToString("\n") { "package:$it" }
                 cmd.startsWith("pm list packages -d") -> disabled.joinToString("\n") { "package:$it" }
@@ -147,11 +157,20 @@ class LauncherTest {
         }
     }
 
-    @Test fun aChromecastKeepsItsWizardForCasting() {
+    @Test fun aChromecastKeepsItsWizardForCastingAndTvSetupTakesHome() {
         val tv = Tv().apply { wizardLocked = true; device = "sabrina" }; val s = LauncherSwap({ tv.sh(it) })
-        assertFalse(s.take("com.new.home", 30))
-        assertEquals("cast", s.state()!!.why)
-        assertTrue(tv.said.none { it.startsWith("pm disable-user") })
+        assertTrue(s.take("com.new.home", 30))                        // HomeKey in TV Setup sends Home there
+        assertEquals("com.new.home", tv.homekey)
+        assertTrue(tv.said.none { it.startsWith("pm disable") })      // nothing off: casting keeps working
+        assertNull(s.state())                                         // no swap record, no watchdog
+        s.dropKey(); assertEquals("", tv.homekey)
+    }
+
+    @Test fun aChromecastWithAnOlderTvSetupIsAskedToUpdateIt() {
+        val tv = Tv().apply { device = "sabrina"; setup = "0.26.2" }; val s = LauncherSwap({ tv.sh(it) })
+        val e = try { s.take("com.new.home"); null } catch (x: SetupNeed.Missing) { x }
+        assertEquals("homekey", e?.feature)
+        assertTrue(tv.said.none { it.startsWith("pm disable") || it.startsWith("am broadcast") })
     }
 
     @Test fun wifiOwners() {

@@ -19,7 +19,8 @@ object KeysProtocol {
     /**
      * The only keys the add-on asks about; any other passes with no call at all (every key of a filtering service waits for its
      * answer). A superset of what TV Setup may ever take: the stock launcher's keys (KeyFix.RULES), the colour keys the person may
-     * give an app (KeyFix.COLOUR) and the keys of "hold to use Input / Settings" (HoldKeys.KEYS) and the remote's mic button (MicVoice.KEYS: SEARCH, ASSIST, VOICE_ASSIST) and KeyFix.DEVICE_KEYS (130: a Xiaomi MOOQ0's Input button); a test in :tv keeps it so.
+     * give an app (KeyFix.COLOUR) and the keys of "hold to use Input / Settings" (HoldKeys.KEYS) and the remote's mic button (MicVoice.KEYS: SEARCH, ASSIST, VOICE_ASSIST) and KeyFix.DEVICE_KEYS (130: a Xiaomi MOOQ0's Input button), Home (3: HomeKey on a Chromecast) and the numbers (7..16:
+     * HomeKey.DIGITS, held in another app); a test in :tv keeps it so.
      */
-    val INTEREST: Set<Int> = setOf(170, 178, 176, 190, 191, 192, 195, 284, 183, 184, 185, 186, 84, 219, 231, 130) + (243..251)
+    val INTEREST: Set<Int> = setOf(3, 170, 178, 176, 190, 191, 192, 195, 284, 183, 184, 185, 186, 84, 219, 231, 130) + (243..251) + (7..16)
 }

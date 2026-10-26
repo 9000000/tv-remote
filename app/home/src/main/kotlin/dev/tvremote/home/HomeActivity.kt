@@ -428,7 +428,7 @@ class HomeActivity : Activity() {
         TvGlass.Item(icon, label, go = go).also { it.on = on; it.live = live }
 
     private fun editItem() = if (editing) gi(R.drawable.ic_check, getString(R.string.el_done)) { endEdit() }   // already in it: the way out
-        else gi(R.drawable.ic_pen, getString(R.string.el_edit)) { edit() }
+        else gi(R.drawable.ic_apps, getString(R.string.el_edit)) { edit() }   // the grid, not the pen: Rename above it has the pen
     private fun moreItem(at: String = "look") = gi(R.drawable.ic_sliders, getString(R.string.el_more)) { customize(at) }
     private fun hideItem(label: Int, key: String) = gi(R.drawable.ic_eye_off, getString(label)) { Store.change(this, JSONObject().put(key, false)) }
     /** A switch that stays in the menu: the home screen behind it changes at once. */
@@ -1729,6 +1729,7 @@ class HomeActivity : Activity() {
                 Store.change(this, JSONObject().put("tiles", org.json.JSONArray(Store.list(this, "tiles") - a.pkg)).put("dock", without("dock")).put("hidden", without("hidden")).put("order", without("order")))
             })
         }
+        home.add(editItem())                                          // the whole screen, as the menu of a card has it: found from an app too
         out.add(Sub("home", R.drawable.ic_home, R.string.am_g_home, "", home))
         // 2. what starts it: the power-on app, a remote key
         if (!dockedPin) {

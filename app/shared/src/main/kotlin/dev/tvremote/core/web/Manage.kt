@@ -726,6 +726,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val pkg = value.substringBefore('/')
         val swap = LauncherSwap({ sh(it) })
         val swapped = swap.state()?.active == true
+        if (pkg in Setup.LAUNCHER) swap.dropKey()                     // a Chromecast's Home back to Google TV (HomeKey), if it was sent elsewhere
         if (value != "$pkg/" || pkg !in Setup.LAUNCHER) TvShell.tvset("home", value)   // checks the name before it reaches a shell; "pkg/": a stock one turned off (tvsetRead)
         if (pkg in Setup.LAUNCHER && swapped) {
             swap.rollback("user")

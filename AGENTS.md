@@ -102,6 +102,10 @@ Unit tests alone do not count; report what was tested where and what could not b
 - Crashes and community themes: [dev/census/CRASHES.md](dev/census/CRASHES.md), [dev/themes/REVIEW.md](dev/themes/REVIEW.md).
 - Downloader codes (latest release): **2397346** tv-setup, **2973135** tv-remote, **4356026** tv-home, **8135635** tv-channels,
   **2294968** tv-games; the signed list and how the apps use it: app/shared/AGENTS.md.
+- **Android 14 blocks an app in the background from opening a screen** (logcat: `Background activity launch blocked`, no
+  exception): TV Setup's key filter, receivers and binder calls are all "background". TV Setup is exempt through
+  `appops set dev.tvremote.setup SYSTEM_ALERT_WINDOW allow` (`KeyFix.prepare`, on every ADB link); elsewhere the app in front
+  starts it (a `PendingIntent` handed to TV Home, or a link in the state). Test on the API 34 emulator with that appop at `default`.
 - Tell a TV from a phone by `android.software.leanback`, never the screen size (a 1080p TV is only `sw540dp`); TV Setup also runs
   on phones (ADB on 5555 there; Optimize TV refuses them, `Setup.tvOnly`). TV Setup's state on the TV: `/data/local/tmp/tvr-disabled.txt` (Undo),
   `/sdcard/Android/data/dev.tvremote.setup/files/stats/`.

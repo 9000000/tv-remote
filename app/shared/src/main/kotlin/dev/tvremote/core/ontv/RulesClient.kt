@@ -63,6 +63,13 @@ object RulesClient {
         acted(sh("am broadcast --include-stopped-packages -n $SETUP/.RulesReceiver$arg 2>&1"))
     } catch (e: Exception) { false }
 
+    /**
+     * Home on a TV whose home screen cannot be swapped (a Chromecast: LauncherSwap's "cast"), where TV Setup's filter may send it to the
+     * launcher the person picked (HomeKey in TV Setup): a client's injected Home skips that filter, so there it asks [key] first.
+     */
+    const val HOME = 3
+    fun castHost(sh: (String) -> String): Boolean = try { sh("getprop ro.product.device").trim().lowercase() in LauncherSwap.CAST_HOSTS } catch (e: Exception) { false }
+
     /** The app a remote's app button opens: when TV Setup did not take the key and the app is not on the TV, the button says so. */
     val APP_KEYS = mapOf(190 to "com.google.android.youtube.tv", 191 to "com.netflix.ninja", 195 to "com.amazon.amazonvideo.livingroom")
 

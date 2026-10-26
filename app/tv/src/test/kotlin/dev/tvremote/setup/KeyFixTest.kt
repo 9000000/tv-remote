@@ -66,6 +66,20 @@ class KeyFixTest {
     @Test fun theAddOnIsAskedAboutEveryKeyTheAppMayTake() {
         val asked = dev.tvremote.setup.keys.KeysProtocol.INTEREST
         assertTrue(asked.containsAll(KeyFix.RULES.keys)); assertTrue(asked.containsAll(KeyFix.COLOUR)); assertTrue(asked.containsAll(HoldKeys.KEYS)); assertTrue(asked.containsAll(MicVoice.KEYS)); assertTrue(asked.containsAll(KeyFix.DEVICE_KEYS.map { it.code }))
+        assertTrue(HomeKey.CODE in asked); assertTrue(asked.containsAll(HomeKey.DIGITS.toList()))
+    }
+
+    @Test fun homeGoesToThePickedLauncherOnlyWhenOneIsPicked() {
+        assertNull(KeyFix.plan(emptyMap(), { true }, { true })[HomeKey.CODE])   // every other TV: Home is never touched
+        val p = KeyFix.plan(emptyMap(), { true }, { true }, home = "dev.tvremote.home")
+        assertEquals(KeyFix.LAUNCHER, p[HomeKey.CODE]?.act); assertEquals(listOf("dev.tvremote.home"), p[HomeKey.CODE]?.pkgs)
+        assertFalse(p[HomeKey.CODE]!!.mine)                           // no toast: Home opening the home screen is no surprise
+    }
+
+    @Test fun onlyThePersonsOwnKeysSayWhatTheyOpened() {
+        val p = KeyFix.plan(mapped, { false }, { true }, user = mapOf(183 to "com.google.android.youtube.tv"))
+        assertTrue(p[183]!!.mine); assertFalse(p[190]!!.mine)          // red given an app: said; the dead YouTube button: not
+        assertFalse(HomeKey.say(HomeKey.TV_HOME)); assertTrue(HomeKey.say("vn.vtv.vtvgo")); assertTrue(HomeKey.say(""))
     }
 
     @Test fun xiaomiMooq0InputButtonIsMediaRecordAndOpensInputsOnlyThere() {

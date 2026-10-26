@@ -52,6 +52,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var managing: Managing                           // apps, files, installs, health and terminal, shown in a web view
 
     // ---- the session (this file)
+    @Volatile private var castOf: Pair<Tv, Boolean>? = null          // RulesClient.castHost of this tv, asked once per connection
     @Volatile internal var tv: Tv? = null                              // read by the session thread to tell its own messages from a replaced one's
     @Volatile internal var pic: Tv? = null                             // the picture: a session of its own, as on the computer, so that
                                                                       // switching it on or off leaves the keys' one (and what rides on it) alone
@@ -755,6 +756,11 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             Thread {
                 if (dev.tvremote.core.ontv.RulesClient.key({ tv.shell(it) }, code)) return@Thread
                 if (dev.tvremote.core.ontv.RulesClient.appMissing({ tv.shell(it) }, code)) runOnUiThread { Toast.makeText(this, T("remote.app_key_missing"), Toast.LENGTH_LONG).show() } else tv.press(code)
+            }.start()
+        else if (tv != null && code == dev.tvremote.core.ontv.RulesClient.HOME && tv.ready())   // a Chromecast: TV Setup may send Home to the launcher picked
+            Thread {
+                val cast = castOf?.takeIf { it.first === tv }?.second ?: dev.tvremote.core.ontv.RulesClient.castHost { tv.shell(it) }.also { castOf = tv to it }
+                if (!cast || !dev.tvremote.core.ontv.RulesClient.key({ tv.shell(it) }, code)) tv.press(code)
             }.start()
         else if (tv != null) { if (tv.ready()) tv.press(code) }
         else if (code in 19..23) basic?.pulse(code, 110)              // arrows and OK are held for a moment: see Atv.pulse

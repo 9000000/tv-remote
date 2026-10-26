@@ -135,6 +135,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         refused = ""
         val all = homes()
         val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
+        if (cast()) return byKey(pkg, ours)
         if (sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP }) {
             log("this TV brings its setup wizard back at every boot"); refused = "board"; return false
         }
@@ -186,6 +187,30 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         }
         rollback("home", gone)
         return false
+    }
+
+    private fun cast(): Boolean = sh("getprop ro.product.device").trim().lowercase() in CAST_HOSTS
+
+    /**
+     * A Chromecast or Google TV Streamer: the swap would need the first-run setup app off, which breaks casting from a phone ("cast"),
+     * and launcherx keeps Home whatever the role says. Nothing is turned off: the role is set and TV Setup's key filter sends Home
+     * to [pkg] (HomeKey there, rule "homekey"). An older TV Setup is asked to update ([SetupNeed.Missing]); [dropKey] undoes it.
+     */
+    @Throws(IOException::class)
+    private fun byKey(pkg: String, ours: String): Boolean {
+        val have = SetupNeed.have(sh)
+        if (!SetupNeed.ok(have, "homekey")) throw SetupNeed.Missing("homekey", have)
+        sh("cmd package set-home-activity $ours 2>/dev/null")
+        val st = RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", pkg))
+        if (st.optString("homekey") != pkg) { log("TV Setup did not take Home: $st"); refused = "cast"; return false }
+        sh("am start -n $ours")
+        log("Home by TV Setup's key filter")
+        return true
+    }
+
+    /** Home back to the TV's own launcher where [byKey] sent it elsewhere; nothing on other TVs or with no TV Setup that knows the rule. */
+    fun dropKey() {
+        try { if (cast() && SetupNeed.ok(SetupNeed.have(sh), "homekey")) RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", "")) } catch (e: Exception) { }
     }
 
     /** The person's Keep: the swap stays, and only the watch is left. */
