@@ -3,6 +3,7 @@
 and wallpapers.json (SHA-256 of both, credit, source, licence), then signs it like the launcher list (launchers.key, Ed25519).
 Pictures: NASA images (public domain; ESA / CSA credits kept) fetched from images-api.nasa.gov, photos from Unsplash and Wikimedia Commons (PHOTOS and VN below; a Commons file's author and licence are read from Commons itself;
 the ready-made themes of docs/home/themes.json show them through loop.html), and two renders made here (CC0).
+Also "links": the moving backgrounds and pages TV Home suggests (PEXELS, links(); LINKS_ONLY=1 makes only those again).
 Run again after changing WALLS; commit docs/home/ whole. Needs Pillow and a JDK."""
 import hashlib, io, json, os, subprocess, urllib.request
 from PIL import Image, ImageDraw, ImageFilter
@@ -161,10 +162,55 @@ def vn():
     json.dump({"v": 1, "slides": items}, open(os.path.join(OUT, "vn.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     open(os.path.join(OUT, "vn.json"), "a").write("\n")
 
+# Moving backgrounds and pages TV Home suggests beside the pictures (wallpapers.json "links": id, kind video | slides | page, names,
+# url = the "wurl" it sets, thumb on the site pinned by SHA-256). Videos: Pexels License, 1920x1080, calm and small (a weak box
+# plays them; the rain clip at 35 MB was left out); loop.html shows them with the thumb blurred until the first frame.
+# Pages: only ones that need no login, show no ads and stay silent (earth.nullschool.net; NASA Eyes, Stellarium, lofi.co were heavy and full of menus).
+PEXELS = [
+    ("fireplace", 855381, 30, "free-video-855381.jpg", {"vi": "Lò sưởi", "en": "Fireplace", "ru": "Камин"}),
+    ("aurora-harbor", 5600929, 25, "pexels-photo-5600929.jpeg", {"vi": "Cực quang trên cảng", "en": "Aurora over a harbour", "ru": "Сияние над гаванью"}),
+    ("aurora-peaks", 852435, 30, "free-video-852435.jpg", {"vi": "Cực quang trên núi", "en": "Aurora over peaks", "ru": "Сияние над горами"}),
+    ("aquarium", 2556513, 25, "free-video-2556513.jpg", {"vi": "Bể cá", "en": "Aquarium", "ru": "Аквариум"}),
+    ("milky-way-live", 1926295, 25, "free-video-1926295.jpg", {"vi": "Dải Ngân Hà", "en": "Milky Way", "ru": "Млечный Путь"}),
+    ("night-sky", 1877846, 30, "free-video-1877846.jpg", {"vi": "Bầu trời đêm", "en": "Night sky", "ru": "Ночное небо"}),
+    ("cloud-sea", 5721853, 30, "pexels-photo-5721853.jpeg", {"vi": "Biển mây", "en": "Sea of clouds", "ru": "Море облаков"}),
+    ("mountain-mist", 2888383, 24, "free-video-2888383.jpg", {"vi": "Mây phủ núi", "en": "Mountain mist", "ru": "Туман в горах"}),
+    ("city-timelapse", 1654216, 30, "free-video-1654216.jpg", {"vi": "Thành phố về đêm", "en": "City by night", "ru": "Ночной город"}),
+    ("beach-live", 18914444, 30, None, {"vi": "Hoàng hôn biển", "en": "Sunset beach", "ru": "Закат на пляже"}),
+    ("halong-live", 3783927, 24, "pexels-photo-3783927.jpeg", {"vi": "Vịnh Hạ Long", "en": "Ha Long Bay", "ru": "Бухта Халонг"}),
+]
+BEACH_POSTER = "https://images.pexels.com/videos/26310139/beach-background-beach-waves-beautiful-sunset-crashing-waves-26310139.jpeg?auto=compress&cs=tinysrgb&w=640"
+SITE = "https://tvremote.pages.dev/home/"
+
+
+def links():
+    from urllib.parse import quote
+    out = []
+    for i, vid, fps, poster, names in PEXELS:
+        src = BEACH_POSTER if poster is None else "https://images.pexels.com/videos/%d/%s?auto=compress&cs=tinysrgb&w=640" % (vid, poster)
+        t = "v-" + i + "-t.jpg"
+        tsha, _ = save(fit(Image.open(io.BytesIO(get(src))).convert("RGB"), .5).resize((320, 180), Image.LANCZOS), os.path.join(OUT, t), quality=72)
+        mp4 = "https://videos.pexels.com/video-files/%d/%d-hd_1920_1080_%dfps.mp4" % (vid, vid, fps)
+        out.append({"id": i, "kind": "video", "name": names, "url": SITE + "loop.html?v=" + quote(mp4, safe="") + "&p=" + quote(SITE + t, safe=""),
+                    "thumb": t, "thumb_sha256": tsha, "credit": "Pexels", "source": "https://www.pexels.com/video/%d/" % vid, "license": "Pexels License"})
+        print("link", i)
+    vt = open(os.path.join(OUT, "vn-t.jpg"), "rb").read()
+    out.insert(0, {"id": "vn", "kind": "slides", "name": {"vi": "Việt Nam (trình chiếu)", "en": "Việt Nam (slideshow)", "ru": "Вьетнам (слайд-шоу)"},
+                   "url": SITE + "loop.html?s=vn", "thumb": "vn-t.jpg", "thumb_sha256": hashlib.sha256(vt).hexdigest(), "credit": "Unsplash, Wikimedia Commons",
+                   "source": SITE + "vn.json", "license": "Unsplash License, CC BY-SA"})
+    out.append({"id": "earth-wind", "kind": "page", "name": {"vi": "Gió trên Trái Đất", "en": "Earth's winds", "ru": "Ветра Земли"},
+                "url": "https://earth.nullschool.net/#current/wind/surface/level/orthographic=107,16,600", "credit": "Cameron Beccario",
+                "source": "https://earth.nullschool.net/about.html", "license": "", "heavy": True})
+    return out
+
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     if os.environ.get("VN_ONLY"): return vn()          # only the Vietnam slideshow; the gallery list stays as signed
+    lst = os.path.join(OUT, "wallpapers.json")
+    if os.environ.get("LINKS_ONLY"):                   # only the suggested videos and pages: the pictures stay as they are
+        d = json.load(open(lst, encoding="utf-8")); d["links"] = links()
+        return write(lst, d)
     items = []
     for i, nid, name, credit, a in WALLS:
         im = render(a) if nid is None else fit(fetch(nid), a)
@@ -183,12 +229,15 @@ def main():
         items.append({"id": i, "name": words, "file": i + ".jpg", "sha256": sha, "bytes": n, "thumb": i + "-t.jpg", "thumb_sha256": tsha,
                       "credit": author, "source": page, "license": lic})
         print(i, n // 1024, "KB", author, lic)
-    lst = os.path.join(OUT, "wallpapers.json")
-    json.dump({"v": 1, "walls": items}, open(lst, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    write(lst, {"v": 1, "walls": items, "links": links()})
+    vn()
+
+
+def write(lst, d):
+    json.dump(d, open(lst, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     open(lst, "a").write("\n")
     subprocess.run(["java", os.path.join(ROOT, "dev", "release", "Sign.java"), "sign", KEY, lst], check=True)
     print("signed", lst)
-    vn()
 
 
 main()
