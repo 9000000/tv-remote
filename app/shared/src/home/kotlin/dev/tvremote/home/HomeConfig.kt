@@ -32,6 +32,9 @@ import org.json.JSONObject
  *           runs in between. A TV Home that does this reports "wrotate": true (the page keeps its one-choice list for one that
  *           does not)
  *   clock24 24-hour clock; greet: the greeting under the clock
+ *   gstyle  what the greeting says ([GSTYLES]): "time" the time of day ("Good evening"), "name" that and [gname] ("Good evening,
+ *           Hoang"), "own" [gtext] as written; one with nothing to show falls back to "time" ([greeting]). gname at most
+ *           [GNAME_MAX], gtext at most [GTEXT_MAX], one line. A TV Home that has this reports "greetOk": true
  *   show*   whether each thing TV Home draws on its first screen is there ([SHOWS], all true: nothing is forced on the person):
  *           showClock, showDate (the clock and the day beside it), showNet (the Wi-Fi button), showGear (the settings button; the
  *           Menu key and the clients still reach Customize), showAdd (the "+ Add" tile), showSuggest (the "Get TV Setup" tile),
@@ -344,6 +347,17 @@ object HomeConfig {
     const val NAME_MAX = 30
     const val NAMES_MAX = 100
     const val PLACE_MAX = 60
+    const val GNAME_MAX = 24
+    const val GTEXT_MAX = 60
+    val GSTYLES = listOf("time", "name", "own")
+
+    /** The greeting line: [timed] is the time of day's word in the TV's language ("Good evening"). */
+    fun greeting(o: JSONObject, timed: String): String = when (o.optString("gstyle")) {
+        "name" -> o.optString("gname").takeIf { it.isNotEmpty() }?.let { "$timed, $it" } ?: timed
+        "own" -> o.optString("gtext").ifEmpty { timed }
+        else -> timed
+    }
+    private fun line(s: String, max: Int) = s.replace(Regex("\\s+"), " ").trim().take(max)
     /** The person's own RSS links for the news card: at most [FEEDS_MAX], each an http(s) address of at most [FEED_URL_MAX]. */
     const val FEEDS_MAX = 5
     const val FEED_URL_MAX = 300
@@ -567,6 +581,9 @@ object HomeConfig {
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
+            .put("gstyle", o.optString("gstyle").takeIf { it in GSTYLES } ?: GSTYLES[0])
+            .put("gname", line(o.optString("gname"), GNAME_MAX))
+            .put("gtext", line(o.optString("gtext"), GTEXT_MAX))
             .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
             .put("watchAt", o.optString("watchAt").takeIf { it in WATCH_AT } ?: WATCH_AT[0])
             .put("anim", o.optBoolean("anim", true))

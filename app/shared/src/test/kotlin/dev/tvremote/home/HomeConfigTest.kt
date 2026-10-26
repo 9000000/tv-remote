@@ -33,6 +33,17 @@ class HomeConfigTest {
         assertEquals(true, c.getBoolean("anim"))
     }
 
+    @Test fun theGreetingSaysTheTimeTheNameOrTheOwnWords() {
+        fun g(o: JSONObject) = HomeConfig.greeting(HomeConfig.clean(o), "Good evening")
+        assertEquals("Good evening", g(JSONObject()))
+        assertEquals("Good evening, Hoang", g(JSONObject().put("gstyle", "name").put("gname", "  Hoang \n")))
+        assertEquals("Good evening", g(JSONObject().put("gstyle", "name")))             // no name yet: the time alone, not "Good evening, "
+        assertEquals("Hi family", g(JSONObject().put("gstyle", "own").put("gtext", "Hi   family")))
+        assertEquals("Good evening", g(JSONObject().put("gstyle", "own")))
+        assertEquals("Good evening", g(JSONObject().put("gstyle", "shout").put("gname", "x")))
+        assertEquals(HomeConfig.GTEXT_MAX, HomeConfig.clean(JSONObject().put("gtext", "a".repeat(500))).getString("gtext").length)
+    }
+
     @Test fun theDockKeepsRealPackagesOnceAndAtMostSix() {
         val c = HomeConfig.clean(JSONObject().put("dock", JSONArray(listOf("a.b", "a.b", "; rm -rf /", "x", "c.d", "e.f", "g.h", "i.j", "k.l", "m.n"))))
         assertEquals(listOf("a.b", "c.d", "e.f", "g.h", "i.j", "k.l"), dock(c))

@@ -39,6 +39,12 @@
     <string name="bg">Hình nền</string>
     <string name="clock24">Đồng hồ 24 giờ</string>
     <string name="greet">Lời chào</string>
+    <string name="gstyle">Câu chào</string>
+    <string name="gstyle_time">Theo giờ</string>
+    <string name="gstyle_name">Kèm tên</string>
+    <string name="gstyle_own">Tự viết</string>
+    <string name="gname_hint">Tên, vd. Hoàng</string>
+    <string name="gtext_hint">Câu bạn muốn hiện</string>
     <string name="motion">Hiệu ứng chuyển động</string>
     <string name="done">Xong</string>
     <string name="wall_night">Đêm</string>

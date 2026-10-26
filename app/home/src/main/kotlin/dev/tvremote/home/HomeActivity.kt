@@ -225,7 +225,7 @@ class HomeActivity : Activity() {
             textSize = 60f; setTextColor(Color.WHITE); typeface = Font.light
             includeFontPadding = false; shadow(this)
         }
-        greetLine = text(16f, HEAD_DIM).apply { setPadding(0, 0, 0, dp(2)) }
+        greetLine = text(16f, HEAD_DIM).apply { setPadding(0, 0, 0, dp(2)); maxLines = 1; ellipsize = TextUtils.TruncateAt.END }   // a person's own words can be long
         dateLine = text(22f, Color.WHITE).apply { typeface = Font.medium }
         val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(greetLine); addView(dateLine) }
         left.addView(clock)
@@ -1612,7 +1612,7 @@ class HomeActivity : Activity() {
         val hour = now.get(Calendar.HOUR_OF_DAY)
         val greet = getString(if (hour in 4..11) R.string.morning else if (hour in 12..17) R.string.afternoon else R.string.evening)
         dateLine.text = day
-        greetLine.text = greet
+        greetLine.text = HomeConfig.greeting(conf, greet)
         greetLine.visibility = if (conf.optBoolean("greet", true)) View.VISIBLE else View.GONE
         clock.visibility = if (conf.optBoolean("showClock", true)) View.VISIBLE else View.GONE
         dateLine.visibility = if (conf.optBoolean("showDate", true)) View.VISIBLE else View.GONE

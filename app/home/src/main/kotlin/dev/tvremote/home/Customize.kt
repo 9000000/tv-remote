@@ -268,7 +268,7 @@ object Customize {
         fun markEvery() { val e = Store.get(a).optString("wevery"); for ((k, v) in chips) v.isSelected = k == e }
         // switches as tiles, one to a row (two side by side were ~200 dp each: a name on two lines left its neighbour short): an icon, a name, a line under it; on = a blue tint with a blue edge, as everywhere in the app
         // with [choices] (value to its words) the tile steps through them on each press instead of switching on / off; on = not the first
-        fun tile(res: Int, text: String, sub: String?, key: String, choices: List<Pair<String, String>>? = null) {
+        fun tile(res: Int, text: String, sub: String?, key: String, choices: List<Pair<String, String>>? = null, then: () -> Unit = {}) {
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
             if (key == "vvol") pick = (conf.optInt(key, HomeConfig.VOL_DEFAULT) + 12) / 25    // set in steps of 5 from a phone: the nearest of 0..100 by 25, not 0%
             var viaSetup = false                                       // "stats": TV Setup is on the TV and holds the switch (OwnReport)
@@ -306,7 +306,7 @@ object Customize {
                 }
                 if (choices != null) {                                 // the next one in turn (motion, focus)
                     pick = (pick + 1) % choices.size; on = pick > 0 || key == "cols"; paint()
-                    Store.change(a, JSONObject().put(key, choices[pick].first)); return@setOnClickListener
+                    Store.change(a, JSONObject().put(key, choices[pick].first)); then(); return@setOnClickListener
                 }
                 on = !on
                 try { Store.change(a, JSONObject().put(key, on)) } catch (e: SecurityException) { on = !on; systemDream(a) }
@@ -619,6 +619,23 @@ object Customize {
             col.addView(label(a.getString(R.string.g_sec_show).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(2) })
             tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
             tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
+            // its words (HomeConfig "gstyle"): typed here with the TV's keyboard, or on a phone (Home settings)
+            fun field(key: String, max: Int, hint: Int) = dev.tvremote.tvui.TvField(a).apply {
+                Font.on(this); textSize = 15f; setTextColor(Color.WHITE); setHintTextColor(DIM); this.hint = a.getString(hint)
+                isSingleLine = true; filters = arrayOf(android.text.InputFilter.LengthFilter(max))
+                imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
+                setText(conf.optString(key)); setPadding(dp(14), dp(12), dp(14), dp(12))
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
+                }
+                done = { Store.change(a, JSONObject().put(key, text.toString().trim())) }
+            }
+            val gname = field("gname", HomeConfig.GNAME_MAX, R.string.gname_hint); val gtext = field("gtext", HomeConfig.GTEXT_MAX, R.string.gtext_hint)
+            fun words() { val st = Store.get(a).optString("gstyle"); gname.visibility = if (st == "name") View.VISIBLE else View.GONE; gtext.visibility = if (st == "own") View.VISIBLE else View.GONE }
+            tile(R.drawable.ic_pen, a.getString(R.string.gstyle), null, "gstyle", HomeConfig.GSTYLES.map { it to a.getString(when (it) { "name" -> R.string.gstyle_name; "own" -> R.string.gstyle_own; else -> R.string.gstyle_time }) }, ::words)
+            for (f in listOf(gname, gtext)) col.addView(f, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+            words()
             section(a.getString(R.string.g_sec_shown))                // nothing on the first screen is forced: each can go (HomeConfig.SHOWS)
             tile(R.drawable.ic_timer, a.getString(R.string.show_clock), null, "showClock")
             tile(R.drawable.ic_calendar, a.getString(R.string.show_date), null, "showDate")

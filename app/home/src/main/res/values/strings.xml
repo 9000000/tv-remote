@@ -41,6 +41,12 @@
     <string name="bg">Background</string>
     <string name="clock24">24-hour clock</string>
     <string name="greet">Greeting</string>
+    <string name="gstyle">Greeting words</string>
+    <string name="gstyle_time">Time of day</string>
+    <string name="gstyle_name">With a name</string>
+    <string name="gstyle_own">My own</string>
+    <string name="gname_hint">A name, e.g. Sam</string>
+    <string name="gtext_hint">The words to show</string>
     <string name="motion">Motion effects</string>
     <string name="done">Done</string>
     <string name="wall_night">Night</string>

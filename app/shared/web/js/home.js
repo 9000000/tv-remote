@@ -285,6 +285,15 @@ async function homeOpen() {
   } });
   const clock = el('input', { type: 'checkbox', onchange: () => send({ clock24: clock.checked }) });
   const greet = el('input', { type: 'checkbox', onchange: () => send({ greet: greet.checked }) });
+  // what the greeting says (HomeConfig "gstyle"): the time of day, that and a name, or the person's own words; only a TV Home that reports "greetOk"
+  const gstyleHead = el('h3', { textContent: T('home.gstyle') }), gstyle = el('div', { className: 'fchips' });
+  const greetField = (key, max, ph) => {
+    const box = el('input', { type: 'text', maxLength: max, placeholder: T(ph), 'aria-label': T(ph) });
+    const save = el('button', { type: 'button', className: 'primary', textContent: T('home.greet_save'), onclick: () => send({ [key]: box.value.trim() }) });
+    box.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });
+    return [box, UI.line(box, save)];
+  };
+  const [gname, gnameLine] = greetField('gname', 24, 'home.gname_ph'), [gtext, gtextLine] = greetField('gtext', 60, 'home.gtext_ph');   // HomeConfig.GNAME_MAX / GTEXT_MAX
   // what the first screen draws, each can go (HomeConfig.SHOWS); an older TV Home does not report them, so none is offered to it
   const SHOWS = ['showClock', 'showDate', 'showNet', 'showGear', 'showAdd', 'showSuggest', 'showWatch'];
   const shows = Object.fromEntries(SHOWS.map((k) => [k, el('input', { type: 'checkbox', onchange: () => send({ [k]: shows[k].checked }) })]));
@@ -459,6 +468,13 @@ async function homeOpen() {
     watchAt.replaceChildren(...[['bottom', 'home.watch_at_bottom'], ['top', 'home.watch_at_top'], ['under1', 'home.watch_at_under1'], ['tiles', 'home.watch_at_tiles']].map(([k, id]) =>
       el('button', { type: 'button', className: c.watchAt === k ? 'on' : '', 'aria-pressed': String(c.watchAt === k), onclick: () => send({ watchAt: k }) }, T(id))));
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
+    const gOk = !!c.greetOk && c.greet !== false;
+    gstyleHead.hidden = gstyle.hidden = !gOk;
+    gstyle.replaceChildren(...[['time', 'home.gstyle_time'], ['name', 'home.gstyle_name'], ['own', 'home.gstyle_own']].map(([k, id]) =>
+      el('button', { type: 'button', className: c.gstyle === k ? 'on' : '', 'aria-pressed': String(c.gstyle === k), onclick: () => send({ gstyle: k }) }, T(id))));
+    gnameLine.hidden = !gOk || c.gstyle !== 'name'; gtextLine.hidden = !gOk || c.gstyle !== 'own';
+    if (document.activeElement !== gname) gname.value = c.gname || '';
+    if (document.activeElement !== gtext) gtext.value = c.gtext || '';
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
@@ -818,7 +834,7 @@ async function homeOpen() {
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
       hScenes, wScenes, hColours, walls]],
-    ['look', 'sparkle', 180, 'home.g_look', [el('h3', { className: 'secthead', textContent: T('home.sec_show') }), focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet'),
+    ['look', 'sparkle', 180, 'home.g_look', [el('h3', { className: 'secthead', textContent: T('home.sec_show') }), focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet'), gstyleHead, gstyle, gnameLine, gtextLine,
       showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(shows.showGear, 'home.show_gear'),
       check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'), watchAtHead, watchAt,
       el('h3', { className: 'secthead', textContent: T('home.sec_grid') }), colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
