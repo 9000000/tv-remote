@@ -33,6 +33,7 @@ if [ -z "$GUIDE_OK" ] && [ -n "$(dev/release/guide_stale.py -q)" ]; then
   dev/release/guide_stale.py
   echo "update those topics in docs/guide.html (or check they are still right) and set their data-v=\"next\"; GUIDE_OK=1 releases anyway"; exit 1
 fi
+git fetch -q --tags origin || { echo "git fetch --tags failed: the last tag decides every number"; exit 1; }   # a tag made on another clone / by a past run: without it LAST is one release behind and that release is made again
 LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
 next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = {"major": 0, "minor": 1}.get(sys.argv[2], 2); a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
 # "changed": dev/release/code_changed.py, code beyond comments (a path renamed in comments is no update)
