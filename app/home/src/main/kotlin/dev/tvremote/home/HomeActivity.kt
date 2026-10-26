@@ -227,12 +227,16 @@ class HomeActivity : Activity() {
         }
         greetLine = text(16f, HEAD_DIM).apply { setPadding(0, 0, 0, dp(2)); maxLines = 1; ellipsize = TextUtils.TruncateAt.END }   // a person's own words can be long
         dateLine = text(22f, Color.WHITE).apply { typeface = Font.medium }
-        val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(greetLine); addView(dateLine) }
+        // each line as wide as its words: at the column's width (the default), new words were only re-wrapped in the old width, cut short
+        val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(greetLine, LinearLayout.LayoutParams(-2, -2)); addView(dateLine, LinearLayout.LayoutParams(-2, -2)) }
         left.addView(clock)
         rule = View(this).apply { setBackgroundColor(HEAD_RULE) }
         left.addView(rule, LinearLayout.LayoutParams(dp(1), dp(56)).apply { leftMargin = dp(28); rightMargin = dp(28) })
-        left.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
-        head.addView(left, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = -dp(14) })   // its padding is the ring's room: the clock stays where it was
+        left.addView(words, LinearLayout.LayoutParams(-2, -2))
+        // as wide as its words, in a slot that takes the rest of the row: stretched, its focus (the glass) reached the top bar (the user, 2026-10-27)
+        val slot = FrameLayout(this).apply { clipChildren = false; clipToPadding = false }
+        slot.addView(left, FrameLayout.LayoutParams(-2, -2, Gravity.START or Gravity.CENTER_VERTICAL))
+        head.addView(slot, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = -dp(14); rightMargin = dp(16) })   // its padding is the ring's room: the clock stays where it was
         bar = TopBar(this, ::dp)
         netPill = BarBtn(this, R.drawable.ic_wifi, getString(R.string.wifi), ::dp) { if (editing) barMenu(netPill) else open(Settings.ACTION_WIFI_SETTINGS) }
         // one button for the TV's settings, TV Home's and the everyday switches: the Control Center (ui/ControlCenter.kt); a second button beside it read as the same thing

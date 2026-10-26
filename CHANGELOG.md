@@ -9,6 +9,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Home: mọi thẻ widget và phần đầu trang (giờ, câu chào) đều chọn được bằng D-pad. Thẻ có màn riêng (thời tiết, tin, thị trường) thì OK mở màn đó; thẻ khác thì OK mở menu tuỳ chỉnh của thẻ.
 - TV Home: kiểu focus "Kính" giờ trượt tới mọi chỗ chọn được (thẻ widget, đầu trang, nút trên thanh trên cùng), không còn bốn kiểu focus khác nhau; sang hình khác (ô app → thẻ → câu chào → nút tròn) kính bay và biến hình, không chỉ mờ dần. Kính chỉ vẽ lại khi đổi hình (một lần mỗi hình, giữ sẵn 4), lúc trượt chỉ dịch và phóng trên GPU. Đổi hình không còn layout lại cả trang: trên box FPT kính chỉ tốn hơn viền ~4% CPU (trước ~14%).
+- TV Home: khung chọn của đầu trang chỉ rộng vừa giờ và câu chào (trước kéo tới sát thanh trên cùng); đổi câu chào lúc đang chạy không còn bị cắt ngắn bằng dòng cũ.
 - TV Home: ô trong hàng "Xem tiếp" khi được chọn không còn bị cắt vuông (mất viền, mất kính, ảnh bên trong tràn ra); giờ phóng to như ô app.
 - TV Home > Tùy chỉnh > Giao diện: "Câu chào" và "Dòng dưới" mỗi cái là một dòng, OK mở các tuỳ chọn của nó (nội dung, cỡ, màu, đậm, nghiêng, in hoa) ngay bên dưới.
 - TV Home, Hình nền có mục **Gợi ý**: slideshow Việt Nam, 11 video êm (lò sưởi, cực quang, bể cá, Dải Ngân Hà, biển mây, Hạ Long…), các ảnh của site và một trang web sống (gió toàn cầu). Danh sách nằm trên site (`docs/home/wallpapers.json`, có chữ ký), thêm mẫu mới không cần ra bản app. Có trên TV và trang cài đặt TV Home.
@@ -27,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **English**
 - TV Home: every widget card and the header (clock, greeting) take the D-pad focus. Cards with a screen (weather, news, market) open it on OK; the others open their own settings menu.
 - TV Home: the "Glass" focus now glides to every stop (widget cards, the header, the top-bar buttons), not four different focus looks; to another shape (app tile → card → header → round button) it flies and morphs, not only fades. The glass is redrawn only when the shape changes (once per shape, 4 kept); gliding is a GPU move and scale. A new shape no longer lays out the whole page: on the FPT box the glass costs ~4% more CPU than the ring (was ~14%).
+- TV Home: the header's focus is only as wide as the clock and its words (it reached the top bar); a greeting changed live is no longer cut to the old line's width.
 - TV Home: a focused Play Next tile is no longer cut square (no ring, no glass, its picture spilling); it grows like an app tile.
 - TV Home > Customize > Look: "Greeting" and "Second line" are one row each; OK opens its options (content, size, colour, bold, italic, capitals) under it.
 - TV Home, Wallpaper gets **Suggested**: the Việt Nam slideshow, 11 calm videos (fireplace, aurora, aquarium, Milky Way, sea of clouds, Ha Long…), the site's pictures and a live page (Earth winds). The list lives on the site (`docs/home/wallpapers.json`, signed): new ones need no app release. On the TV and in the page's TV Home settings.
