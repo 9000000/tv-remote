@@ -187,5 +187,14 @@
     B.running = on; clearInterval(B.iv);
     if (on) B.iv = setInterval(() => { try { brain().step(performance.now()); } catch (e) { console.error('bot step', e); } }, 50);
   };
+  // canvases the game drew on: made (all time) and alive now (after the GC run.js forces), in megapixels; a cache keyed by a
+  // float (Sumo's glow, one 800 px canvas per frame: the FPT box's TV Games reached 790 MB) shows as alive growing
+  const cv = { made: 0, mpx: 0, refs: [] }, gc0 = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (...a) {
+    if (!this.__bot) { this.__bot = 1; cv.made++; cv.mpx += this.width * this.height / 1e6; cv.refs.push(new WeakRef(this)); }
+    return gc0.apply(this, a);
+  };
+  B.canvas = () => { cv.refs = cv.refs.filter((r) => r.deref()); const px = cv.refs.reduce((n, r) => { const c = r.deref(); return n + (c ? c.width * c.height : 0); }, 0);
+    return { made: cv.made, madeMpx: +cv.mpx.toFixed(1), alive: cv.refs.length, aliveMB: +(px * 4 / 1048576).toFixed(1) }; };
   B.info = () => ({ raf: B.raf, sent: B.sent, vibes: B.vibes, layouts: B.layoutCount, players: live(), says: B.says.slice(-3), fps: window.__fps || null });
 })();

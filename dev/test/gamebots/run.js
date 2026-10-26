@@ -3,7 +3,7 @@
 // it fast-forwards timers and broke quiz's fetch timeout). Per game: load -> idle fps -> start -> play (random + simple
 // heuristics, one player drops and rejoins mid-round) -> game over (3 min cap) -> rematch once -> heap after.
 // Records page/console errors, game-over reached, stuck (no canvas/DOM/layout change for 20 s while the bots press), fps (rAF/s)
-// in play and idle, JS heap across the rematch, screenshots lobby / play / over / rematch.
+// in play and idle, JS heap across the rematch, canvases made / alive (a cache that keeps growing: Sumo's glow froze a TV box), screenshots lobby / play / over / rematch.
 //
 //   node dev/test/gamebots/run.js [game ...] [--players=2] [--cap=180] [--jobs=3] [--out=DIR]
 //   needs puppeteer-core: installed OUTSIDE the repo, GAMEBOTS_NODE=<dir with node_modules/puppeteer-core> (default below)
@@ -76,7 +76,7 @@ async function bot1(browser, port, game) {
   await page.goto(`http://127.0.0.1:${port}/${game}/`, { waitUntil: 'load', timeout: 30000 });
   await sleep(2500);
   R.fpsIdle = await rafRate(3000); await shot('1-lobby');
-  R.heap.start = await heap(cdp);
+  R.heap.start = await heap(cdp); R.canvas = { start: await ev(() => __bot.canvas()) };
 
   // start (retry: quiz waits for its bank, a Kit title needs a press)
   await ev(() => __bot.run(true));
@@ -107,17 +107,19 @@ async function bot1(browser, port, game) {
   if (!R.over) { R.notes.push('no game over in ' + R.playSecs + 's'); await shot('3-cap'); }
   else {
     await sleep(1800); await shot('3-over'); R.fpsOver = await rafRate(2000);
-    R.heap.over = await heap(cdp);
+    R.heap.over = await heap(cdp); R.canvas.over = await ev(() => __bot.canvas());
     await ev(() => __bot.rematch());
     const r0 = Date.now(); let s2 = 'over';
     while (Date.now() - r0 < 20000) { await sleep(500); s2 = await state(); if (s2 === 'play') break; if (s2 === 'over' && Date.now() - r0 > 3000 && (Date.now() - r0) % 3000 < 600) await ev(() => __bot.rematch()); }
     R.rematch = s2 === 'play';
     if (!R.rematch) { R.notes.push('rematch did not start'); await shot('4-rematch-fail'); }
     else { await sleep(9000); await shot('4-rematch-play'); }
-    R.heap.rematch = await heap(cdp);
+    R.heap.rematch = await heap(cdp); R.canvas.rematch = await ev(() => __bot.canvas());
   }
   // play fps: a window in a fresh stretch of play (rematch, or the capped game)
   if (await state() === 'play') R.fpsPlay = await rafRate(5000);
+  await heap(cdp); R.canvas.end = await ev(() => __bot.canvas()).catch(() => null);
+  if (R.canvas.end && (R.canvas.end.made > 300 || R.canvas.end.aliveMB > 64)) R.notes.push('CANVAS LEAK? ' + JSON.stringify(R.canvas.end));
   R.heap.growth = R.heap.rematch != null ? +(R.heap.rematch - R.heap.start).toFixed(2) : null;
   R.maxStall = +maxStall.toFixed(1); R.info = await ev(() => __bot.info()).catch(() => null);
   await page.close();
@@ -164,5 +166,5 @@ async function lobbyShots(port, game, tag) {
 
 function line(r) {
   if (r.fatal) return `${r.game}: FATAL ${r.fatal}`;
-  return `${r.game}: over=${r.over} rematch=${r.rematch} errors=${r.errors.length} stuck=${r.stuck.length}(max ${r.maxStall}s) fps play/idle/over=${r.fpsPlay}/${r.fpsIdle}/${r.fpsOver} heapMB ${r.heap.start}->${r.heap.over}->${r.heap.rematch} (+${r.heap.growth}) t=${r.playSecs}s${r.notes.length ? ' | ' + r.notes.filter((n) => !/^P2/.test(n)).join('; ') : ''}${r.errors.length ? ' | ' + r.errors.slice(0, 3).join(' || ') : ''}`;
+  return `${r.game}: over=${r.over} rematch=${r.rematch} errors=${r.errors.length} stuck=${r.stuck.length}(max ${r.maxStall}s) fps play/idle/over=${r.fpsPlay}/${r.fpsIdle}/${r.fpsOver} heapMB ${r.heap.start}->${r.heap.over}->${r.heap.rematch} (+${r.heap.growth}) canvas made/alive/MB ${r.canvas && r.canvas.end ? r.canvas.end.made + '/' + r.canvas.start.alive + '->' + r.canvas.end.alive + '/' + r.canvas.end.aliveMB : '-'} t=${r.playSecs}s${r.notes.length ? ' | ' + r.notes.filter((n) => !/^P2/.test(n)).join('; ') : ''}${r.errors.length ? ' | ' + r.errors.slice(0, 3).join(' || ') : ''}`;
 }
