@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV chỉ có "Gỡ lỗi không dây" (Chromecast with Google TV Android 14, một số TCL): TV Setup trước đây không có ADB nên gán phím, mở app khi bật TV, hẹn giờ không chạy. Giờ app điện thoại / máy tính đã ghép mã tự mở cổng cho TV Setup mỗi lần kết nối (TV khởi động lại thì mở lại), và TV Setup chỉ đúng cách khi thiếu.
+
+**English**
+- TVs with Wireless debugging only (Chromecast with Google TV on Android 14, some TCL): TV Setup had no ADB, so key mapping, the app on power-on and timers did nothing. A paired phone or computer app now opens the port for TV Setup on each connection (again after the TV restarts), and TV Setup says so when it is missing.
+
 ## 0.26.1 - 2026-10-26
 
 Web 0.26.1 · app điện thoại 0.26.1 · app TV 0.26.1 · TV Home 0.13.0 · TV Channels 0.9.0 · TV Games 0.9.0

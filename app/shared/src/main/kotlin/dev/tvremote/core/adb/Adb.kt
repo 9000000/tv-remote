@@ -204,6 +204,11 @@ class Adb(private val dir: File) : Closeable {
     @Throws(Exception::class)
     fun connectTo(host: String, prompt: Prompt) {
         val saved = AdbTls.saved(dir, host)
+        val opened = saved > 0 && plainForSetup(host, saved)
+        if (opened) Thread({                                          // TV Setup asks for its own key on 5555 now: answered by this app
+            Thread.sleep(4000)
+            try { if (!dead) AdbPrompt.helpSetup(this) } catch (ignored: Exception) { }
+        }, "adb-after-tcpip").apply { isDaemon = true }.start()
         if (saved > 0) {
             var failure: Exception? = null
             for (round in 0..1) {
@@ -227,6 +232,29 @@ class Adb(private val dir: File) : Closeable {
             wirelessOnly(host)?.let { throw it }                      // no 5555, but Wireless debugging: pairing is what is missing
             throw e
         }
+    }
+
+    /**
+     * A TV that offers only Wireless debugging (a Chromecast with Google TV on Android 14, the TCL China sets) has no port 5555, and
+     * TV Setup on it, which dials its own TV on 127.0.0.1:5555 and cannot pair with itself, had no ADB: no key mapping, no app on
+     * power-on, no timers. This app, paired, asks adbd to listen on 5555 too (the `tcpip:5555` service, as `adb tcpip 5555`), on
+     * a connection of its own: adbd restarts, so this one dials again after it (the TLS port may move: found again by mDNS). Lost
+     * at the TV's next restart, so done on each connection that finds 5555 closed with TV Setup installed; at most every 10 min.
+     */
+    private fun plainForSetup(host: String, port: Int): Boolean {
+        val now = System.currentTimeMillis()
+        if (now - (PLAIN_ASKED[host] ?: 0L) < 600_000L || AdbTls.plainOpen(host)) return false
+        try {
+            Adb(dir).use { t ->
+                t.connectTls(host, port)
+                if (!t.shell("pm path dev.tvremote.setup 2>/dev/null", 10000).contains("package:")) return false
+                PLAIN_ASKED[host] = now
+                val said = try { t.open("tcpip:5555").use { it.readAll(3000) } } catch (e: IOException) { e.toString() }
+                WireLog.all.add("·", "adb $host tcpip:5555 for TV Setup: " + said.trim().take(120))
+            }
+        } catch (e: Exception) { return false }                       // a stale TLS port: the normal way below finds the new one
+        Thread.sleep(3000)                                            // adbd restarting
+        return true
     }
 
     /**
@@ -577,6 +605,7 @@ class Adb(private val dir: File) : Closeable {
 
     companion object {
         private val ASKING = ConcurrentHashMap<String, Adb>()         // host:port -> the connection of this app whose question is on the TV
+        private val PLAIN_ASKED = ConcurrentHashMap<String, Long>()   // host -> when 5555 was opened there for TV Setup (plainForSetup)
         private val ASKED = ConcurrentHashMap<String, Long>()         // host -> when this app last put its question on that TV
         private val KEY_LOCK = Any()                                  // a file lock is per process: this keeps threads apart
         @Volatile private var holdMs = 0L
