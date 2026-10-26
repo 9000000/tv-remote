@@ -30,7 +30,6 @@
     <string name="rename_q">Rename this app</string>
     <string name="rename_orig">Original name</string>
     <string name="ok">OK</string>
-    <string name="dock_full">Favourites are full (%d)</string>
     <string name="no_inputs">No inputs found</string>
     <string name="no_open">This app could not be opened</string>
     <string name="morning">Good morning</string>
@@ -206,7 +205,7 @@
     <string name="c_focus_ring">Blue ring</string>
     <string name="c_lang_tv">Same as the TV</string>
     <string name="w_offline">offline</string>
-    <string name="pinned_here">Added to favourites: %s</string>
+    <string name="pinned_here">On the home screen: %s</string>
     <!-- its own update (SelfUpdate) -->
     <string name="upd_title">Version %1$s is out</string>
     <string name="upd_note">You have %1$s. Nothing you saved is lost.</string>

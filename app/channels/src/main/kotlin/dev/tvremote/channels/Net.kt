@@ -152,6 +152,16 @@ object Logos {
         for (f in fs.sortedBy { it.lastModified() }) { if (sum <= DISK_MAX * 3 / 4) break; sum -= f.length(); f.delete() }
     }
 
+    /**
+     * A logo for a pinned shortcut: the full picture from the net (sharper than the 240 px kept), else the one the cards already
+     * show (memory, then disk). Without that fallback a slow answer pinned the app's own icon (seen on a Chromecast: VTV3 HD).
+     */
+    fun forPin(c: Context, url: String, maxW: Int): Bitmap? {
+        if (url.isEmpty()) return null
+        init(c.applicationContext)
+        return (try { load(url, maxW) } catch (e: Throwable) { null }) ?: cache?.get(url) ?: try { fromDisk(url) } catch (e: Throwable) { null }
+    }
+
     /** The picture at [url], decoded no larger than needed for [maxW] (a power-of-two sample), not kept: for the one-off uses. */
     fun load(url: String, maxW: Int): Bitmap? {
         val bytes = fetch(url, 6000) ?: return null

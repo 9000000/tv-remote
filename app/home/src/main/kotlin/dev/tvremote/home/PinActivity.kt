@@ -20,7 +20,6 @@ class PinActivity : Activity() {
         val s = req?.takeIf { it.isValid && it.requestType == LauncherApps.PinItemRequest.REQUEST_TYPE_SHORTCUT }?.shortcutInfo
         when {
             s == null -> {}
-            !Pins.room(this) -> Toast.makeText(this, getString(R.string.dock_full, HomeConfig.DOCK_MAX), Toast.LENGTH_LONG).show()
             req.accept() -> {
                 Pins.order(this, Pins.order(this).filter { it != Pins.key(s) } + Pins.key(s))
                 Toast.makeText(this, getString(R.string.pinned_here, s.shortLabel ?: ""), Toast.LENGTH_SHORT).show()

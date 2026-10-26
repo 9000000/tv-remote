@@ -75,6 +75,7 @@ class BrowseActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         if (b == null) HomeRows.favourites(this)                       // the row Android's launchers show, from favourites saved before it existed
+        if (b == null) Thread { Pins.mend(applicationContext) }.start()   // pins made with no logo get it (not on io: the world index may download)
         val d = { v: Number -> TvUi.dp(this, v).toInt() }
         val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // app/DESIGN-TV.md
         val root = LinearLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }
@@ -492,7 +493,7 @@ class BrowseActivity : Activity() {
         if (Pins.can(this)) box.addView(TvUi.row(this, R.drawable.ic_home, getString(R.string.pin)) {
             dlg.dismiss()
             io.execute {
-                val logo = c.logo.takeIf { it.isNotEmpty() }?.let { try { Logos.load(it, 640) } catch (e: Throwable) { null } }
+                val logo = Logos.forPin(this, c.logo, 640)
                 val ok = Pins.pin(this, c, logo)
                 main.post { if (!ok) Toast.makeText(this, R.string.pin_refused, Toast.LENGTH_LONG).show() }
             }
@@ -678,7 +679,7 @@ class BrowseActivity : Activity() {
             dlg.dismiss()
             val logos = Store.channels(this, gid).byChannel().map { it.first().logo }.filter { it.isNotEmpty() }.take(4)
             io.execute {
-                val bits = logos.mapNotNull { try { Logos.load(it, 320) } catch (e: Throwable) { null } }
+                val bits = logos.mapNotNull { Logos.forPin(this, it, 320) }
                 val ok = Pins.pinGroup(this, gid, name, bits)
                 main.post { if (!ok) Toast.makeText(this, R.string.pin_refused, Toast.LENGTH_LONG).show() }
             }

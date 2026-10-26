@@ -46,7 +46,42 @@ object Pins {
             .setShortLabel(ch.name.take(24)).setLongLabel(ch.name).setIcon(icon)
             .setIntent(Intent(Intent.ACTION_VIEW, link(ch.id)).setClass(c, PlayActivity::class.java))
             .build()
+        prefs(c).edit().putString("logo:" + s.id, ch.logo).apply()
+        noLogo(c, s.id, logo == null)
         return try { sm.updateShortcuts(listOf(s)); sm.requestPinShortcut(s, null) } catch (e: Exception) { false }
+    }
+
+    private fun prefs(c: Context) = c.getSharedPreferences("pins", Context.MODE_PRIVATE)
+    private fun noLogo(c: Context, id: String, on: Boolean) {
+        val l = prefs(c).getStringSet("nologo", emptySet())!!.toMutableSet()
+        if (if (on) l.add(id) else l.remove(id)) prefs(c).edit().putStringSet("nologo", l).apply()
+    }
+
+    /**
+     * Channel pins made while the logo could not be fetched get it now (the launcher redraws the tile). Pins from before this was
+     * kept (0.26.3 and older) are all looked at once, their logo found in the world index. Blocking: off the main thread.
+     */
+    fun mend(c: Context) {
+        if (Build.VERSION.SDK_INT < 26) return
+        val sm = c.getSystemService(ShortcutManager::class.java) ?: return
+        val pinned = try { sm.pinnedShortcuts.map { it.id }.filter { it.startsWith("ch:") } } catch (e: Exception) { return }
+        val p = prefs(c)
+        if (!p.getBoolean("mended", false)) p.edit().putStringSet("nologo", p.getStringSet("nologo", emptySet())!! + pinned).putBoolean("mended", true).apply()
+        val want = p.getStringSet("nologo", emptySet())!!.filter { it in pinned }
+        if (want.isEmpty()) { p.edit().remove("nologo").apply(); return }
+        val unknown = want.filter { p.getString("logo:$it", null) == null }
+        val found = if (unknown.isEmpty()) emptyMap() else try {
+            GlobalIndex.get(c)?.byIds(unknown.map { it.removePrefix("ch:").substringBefore('@') }, 1)?.associate { it.id to it.logo }
+        } catch (e: Exception) { null }.orEmpty()
+        val left = HashSet<String>()
+        for (id in want) {
+            val url = p.getString("logo:$id", null) ?: found[id.removePrefix("ch:").substringBefore('@')].orEmpty().also { p.edit().putString("logo:$id", it).apply() }   // looked up once
+            if (url.isEmpty()) continue                               // the channel has no logo: the app's icon is right
+            val logo = Logos.forPin(c, url, 640)
+            val ok = logo != null && try { sm.updateShortcuts(listOf(ShortcutInfo.Builder(c, id).setIcon(Icon.createWithBitmap(tile(logo, size(sm)))).build())) } catch (e: Exception) { false }
+            if (!ok) left.add(id)
+        }
+        p.edit().putStringSet("nologo", left).apply()
     }
 
     /** A group on the home screen: its name, and up to four of its logos on the card. Opens the list on that group. */

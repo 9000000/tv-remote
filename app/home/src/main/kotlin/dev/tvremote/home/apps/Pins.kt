@@ -41,6 +41,10 @@ object Pins {
             .map { App(key(it), (it.shortLabel ?: it.longLabel ?: it.`package`).toString(), null, it) }
     }
 
+    /** When the app last changed [a] (its icon, its name): a pin given a new icon is drawn again. */
+    @TargetApi(26)
+    fun stamp(a: App) = (a.pin as? ShortcutInfo)?.lastChangedTimestamp ?: 0L
+
     @TargetApi(26)
     fun picture(c: Context, a: App) {
         val s = a.pin as ShortcutInfo
@@ -91,16 +95,15 @@ object Pins {
      * Turns an item of another app's Play Next row into a pin of ours: a shortcut TV Home itself owns ("pin:dev.tvremote.home/pn…"),
      * so it is the grid's ordinary pinned tile (moved, renamed, hidden, unpinned like any). [intent] is already the safe one of
      * Watch.intent (no selector, no URI grants). Android asks the default home to confirm ([PinActivity] takes it). [SAME]: pinned
-     * already; [FULL]: no room; [FAIL]: the system refused (or no shortcut host rights).
+     * already; [FAIL]: the system refused (or no shortcut host rights). No limit: a pin is one more tile of the grid.
      */
-    enum class Made { OK, SAME, FULL, FAIL }
+    enum class Made { OK, SAME, FAIL }
 
     @TargetApi(26)
     fun pinIntent(c: Context, source: String, label: String, intent: android.content.Intent, art: android.graphics.Bitmap?): Made {
         if (!can(c)) return Made.FAIL
         val id = "pn" + java.security.MessageDigest.getInstance("SHA-1").digest(intent.toUri(0).toByteArray()).joinToString("") { "%02x".format(it) }.take(14)
         if (list(c).any { it.pkg == Target.pin(c.packageName, id) }) return Made.SAME
-        if (!room(c)) return Made.FULL
         val sm = c.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return Made.FAIL
         val icon = art ?: try {                                      // no poster: the source app's own icon, not this home's
             val d = c.packageManager.getApplicationIcon(source)
@@ -160,10 +163,4 @@ object Pins {
     /** The config the clients read gains "pinsOk", "pinsAvail" [{key, title, app}] and "pinsCan" (only the home screen may start a shortcut). */
     fun report(c: Context, conf: JSONObject): JSONObject = conf.put("pinsOk", true).put("pinsCan", can(c))
         .put("pinsAvail", try { JSONArray(prefs(c).getString("avail", "[]")) } catch (e: Exception) { JSONArray() })
-
-    /** Room for one more in the dock: its apps (still installed) and the pins share [HomeConfig.DOCK_MAX]. */
-    fun room(c: Context): Boolean {
-        val apps = Store.list(c, "dock").count { Apps.one(c, it) != null }
-        return apps + list(c).size < HomeConfig.DOCK_MAX
-    }
 }

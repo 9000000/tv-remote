@@ -415,7 +415,6 @@ class HomeActivity : Activity() {
         val i = Watch.intent(it)
         when (if (i == null) Pins.Made.FAIL else Pins.pinIntent(this, it.pkg, it.title, i, pic)) {
             Pins.Made.SAME -> toast(R.string.watch_pin_same)
-            Pins.Made.FULL -> Toast.makeText(this, getString(R.string.dock_full, HomeConfig.DOCK_MAX), Toast.LENGTH_LONG).show()
             Pins.Made.FAIL -> toast(R.string.watch_pin_fail)
             Pins.Made.OK -> ui.postDelayed({ if (!isDestroyed) pinsRead() }, 600)          // the system confirms through PinActivity first
         }
@@ -857,7 +856,7 @@ class HomeActivity : Activity() {
     internal fun pinsRead() {
         bg.execute {
             val now = Pins.list(this)
-            if (now.map { it.pkg } == pins.map { it.pkg }) return@execute
+            if (now.map { it.pkg to Pins.stamp(it) } == pins.map { it.pkg to Pins.stamp(it) }) return@execute   // a new icon too (TV Channels mends a pin made with no logo)
             now.forEach { it.load(this) }
             runOnUiThread { if (!isDestroyed) { pins = now; shownKey = ""; show() } }
         }

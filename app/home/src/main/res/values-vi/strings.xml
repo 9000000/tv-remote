@@ -28,7 +28,6 @@
     <string name="rename_q">Đổi tên app này</string>
     <string name="rename_orig">Tên gốc</string>
     <string name="ok">OK</string>
-    <string name="dock_full">Yêu thích đã đủ %d mục</string>
     <string name="no_inputs">Không thấy nguồn vào nào</string>
     <string name="no_open">Không mở được app này</string>
     <string name="morning">Chào buổi sáng</string>
@@ -204,7 +203,7 @@
     <string name="c_focus_ring">Viền xanh</string>
     <string name="c_lang_tv">Theo TV</string>
     <string name="w_offline">mất mạng</string>
-    <string name="pinned_here">Đã thêm vào yêu thích: %s</string>
+    <string name="pinned_here">Đã thêm ra màn hình chính: %s</string>
     <!-- its own update (SelfUpdate) -->
     <string name="upd_title">Đã có phiên bản %1$s</string>
     <string name="upd_note">Bạn đang dùng %1$s. Không mất gì đã lưu.</string>
