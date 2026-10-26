@@ -2810,6 +2810,8 @@
  "home.sec_show": "Display",
  "home.sec_grid": "App grid",
  "home.sec_head": "Header",
+ "home.dface": "Screensaver look",
+ "home.dface_big": "Big clock",
  "home.g_widgets": "Widgets",
  "home.g_system": "System",
  "home.sum_on": "On",

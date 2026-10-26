@@ -56,7 +56,7 @@ internal fun Widgets.clock(mode: Int): View {
         date.text = if (fits(full)) full else if (fits(short)) short else (if (locale.language == "vi") viDay(now) + ", " else "") + tinyF.format(now)
     }
     if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown); fitTime() } }
-    val face = ClockFace(this@clock, a, face0, light0) { now -> time.text = timeF.format(now); fitTime(); put(now) }
+    val face = ClockFace(dp, a, face0, light0) { now -> time.text = timeF.format(now); fitTime(); put(now) }
     return LinearLayout(a).apply {
         Frost.on(this, dp(if (mode == 0) 18 else 22).toFloat(), dp(1))
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
@@ -75,7 +75,7 @@ internal fun Widgets.clock(mode: Int): View {
 }
 
 /** "T4" / "CN": the short Vietnamese weekday. */
-internal fun Widgets.viDay(d: Date) = Calendar.getInstance().apply { time = d }.get(Calendar.DAY_OF_WEEK).let { if (it == Calendar.SUNDAY) "CN" else "T$it" }
+internal fun viDay(d: Date) = Calendar.getInstance().apply { time = d }.get(Calendar.DAY_OF_WEEK).let { if (it == Calendar.SUNDAY) "CN" else "T$it" }
 
 /**
  * An analog face drawn by hand: ticks, numbers, hour and minute hands. It redraws itself once a minute while it is on screen (a
@@ -83,8 +83,8 @@ internal fun Widgets.viDay(d: Date) = Calendar.getInstance().apply { time = d }.
  * second redrew Home on the thread a panel over it shares, and held Customize's opening on the FPT box.
  * [onMinute] gets the time each time the minute changes (the digits beside it).
  */
-internal class ClockFace(private val host: Widgets, c: Context, val style: String, light: Boolean, val onMinute: (Date) -> Unit) : View(c) {
-    private fun dp(n: Number) = host.dp(n)
+/** One clock face, drawn once a minute; [dp] from its host, so the screensaver (no Widgets there) draws the same faces. */
+internal class ClockFace(private val dp: (Number) -> Int, c: Context, val style: String, light: Boolean, val onMinute: (Date) -> Unit) : View(c) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cal = Calendar.getInstance()
     private var minute = -1
@@ -114,7 +114,7 @@ internal class ClockFace(private val host: Widgets, c: Context, val style: Strin
         if (style == "digital" || style == "modern") {               // their words, once a minute: drawing allocates nothing else
             val d = Date(now)
             digits = digitsF.format(d); dateLine = dateF.format(d).replaceFirstChar { it.uppercase() }
-            dayLine = if (locale.language == "vi") host.viDay(d) + " " + dayF.format(d) else dayF.format(d).uppercase()
+            dayLine = if (locale.language == "vi") viDay(d) + " " + dayF.format(d) else dayF.format(d).uppercase()
         }
         if (style == "digital") { digital(cv, w, h); return next(now) }
         if (style == "modern") { modern(cv, cx, cy, r, hr, min); return next(now) }

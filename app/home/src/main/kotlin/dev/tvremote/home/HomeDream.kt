@@ -22,13 +22,15 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 import dev.tvremote.home.widgets.Lunar
+import dev.tvremote.home.widgets.ClockFace
+import dev.tvremote.home.widgets.Widgets
 import dev.tvremote.home.wall.Wall
 import dev.tvremote.home.wall.WallArt
 import dev.tvremote.home.wall.Walls
 import dev.tvremote.home.wall.WebWall
 
 /**
- * TV Home's screensaver: the big clock, the day and the lunar date over the wallpaper (the same one the home screen has). Made
+ * TV Home's screensaver: the big clock (or a StandBy face, HomeConfig "dface"), the day and the lunar date over the wallpaper (the same one the home screen has). Made
  * for weak boxes: views built once, the picture drifts with ONE slow property animation (no redraw in between, on the GPU), the
  * clock text changes once a minute, and it is not animated at all when motion is off. Against burn-in the clock moves to
  * another place every minute, fading while it goes, and everything is a little dim.
@@ -67,8 +69,11 @@ class DreamBody(private val c: Context) {
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     private val bg = Executors.newSingleThreadExecutor()
     private lateinit var block: LinearLayout
-    private lateinit var date: TextView
-    private lateinit var lunar: TextView
+    private var date: TextView? = null
+    private var lunar: TextView? = null
+    private var wday: TextView? = null                                 // StandBy "modern": the weekday, the day and the month beside the face
+    private var dayN: TextView? = null
+    private var mon: TextView? = null
     private var wall: ImageView? = null
     private var drift: ObjectAnimator? = null
     private var motion = true
@@ -102,15 +107,34 @@ class DreamBody(private val c: Context) {
         }
         root.addView(View(c).apply { setBackgroundColor(0x70000000) }, FrameLayout.LayoutParams(-1, -1))   // dim: night, and words stay readable over a photo
 
-        val clock = TextClock(c).apply {
-            textSize = 120f; setTextColor(0xE6FFFFFF.toInt()); typeface = Font.light
-            includeFontPadding = false; gravity = Gravity.CENTER
-            format24Hour = if (conf.optBoolean("clock24", true)) "HH:mm" else "h:mm"
-            format12Hour = format24Hour
-        }
-        date = line(26f, 0xCCFFFFFF.toInt()); lunar = line(20f, 0x99FFFFFF.toInt())
+        val face = conf.optString("dface")
         block = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(40), dp(20), dp(40), dp(20)) }
-        block.addView(clock); block.addView(date); block.addView(lunar)
+        when (face) {
+            // StandBy: the clock card's own faces (ClockFace, drawn once a minute), large; the block still moves every minute against burn-in
+            "digital" -> block.addView(ClockFace({ dp(it) }, c, "digital", false) { }, LinearLayout.LayoutParams((dm.widthPixels * 0.62f).toInt(), (dm.heightPixels * 0.5f).toInt()))
+            "modern" -> {
+                val side = (dm.heightPixels * 0.56f).toInt()
+                block.orientation = LinearLayout.HORIZONTAL; block.gravity = Gravity.CENTER_VERTICAL
+                block.addView(ClockFace({ dp(it) }, c, "modern", false) { }, LinearLayout.LayoutParams(side, side))
+                val col = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL }
+                wday = Font.on(TextView(c)).apply { textSize = 30f; setTextColor(Widgets.ACCENT); typeface = Font.bold }
+                dayN = Font.on(TextView(c)).apply { textSize = 150f; setTextColor(INK); typeface = Font.medium; includeFontPadding = false }
+                mon = Font.on(TextView(c)).apply { textSize = 26f; setTextColor(SOFT) }
+                lunar = Font.on(TextView(c)).apply { textSize = 20f; setTextColor(FAINT); setPadding(0, dp(6), 0, 0) }
+                listOf(wday, dayN, mon, lunar).forEach { col.addView(it) }
+                block.addView(col, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(56) })
+            }
+            else -> {
+                val clock = TextClock(c).apply {
+                    textSize = 120f; setTextColor(INK); typeface = Font.light
+                    includeFontPadding = false; gravity = Gravity.CENTER
+                    format24Hour = if (conf.optBoolean("clock24", true)) "HH:mm" else "h:mm"
+                    format12Hour = format24Hour
+                }
+                date = line(26f, SOFT); lunar = line(20f, FAINT)
+                block.addView(clock); block.addView(date); block.addView(lunar)
+            }
+        }
         root.addView(block, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         refresh()
         ui.postDelayed(minute, untilNextMinute())
@@ -131,14 +155,18 @@ class DreamBody(private val c: Context) {
 
     /** The day and the lunar date: once a minute, which is when the day can change at all. */
     private fun refresh() {
-        date.text = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), Date()).toString().replaceFirstChar { it.uppercase() }
+        val now = Date()
+        date?.text = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now).toString().replaceFirstChar { it.uppercase() }
+        wday?.text = DateFormat.format("EEEE", now).toString().replaceFirstChar { it.uppercase() }
+        dayN?.text = DateFormat.format("d", now)
+        mon?.text = c.resources.getStringArray(R.array.cal_month)[Calendar.getInstance().get(Calendar.MONTH)]
         val cal = Calendar.getInstance()
         val d = Lunar.of(cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.YEAR))
         val r = c.resources
         val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) c.getString(R.string.lunar_leap) else ""
         val dayWord = if (d.day <= 10) c.getString(R.string.lunar_day_early, d.day) else d.day.toString()
         val (can, chi) = Lunar.canChi(d.year)
-        lunar.text = c.getString(R.string.lunar_title, dayWord, month) + " · " +
+        lunar?.text = c.getString(R.string.lunar_title, dayWord, month) + " · " +
             c.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi])
     }
 
@@ -168,4 +196,8 @@ class DreamBody(private val c: Context) {
     }
 
     private fun untilNextMinute() = 60_000L - System.currentTimeMillis() % 60_000L + 50
+
+    private companion object {                                    // white at three strengths: the time, the day, the lunar line
+        const val INK = 0xE6FFFFFF.toInt(); const val SOFT = 0xCCFFFFFF.toInt(); const val FAINT = 0x99FFFFFF.toInt()
+    }
 }

@@ -700,6 +700,7 @@ object Customize {
         }
         groups[4].fill = {
             tile(R.drawable.ic_moon, a.getString(R.string.dream), a.getString(R.string.dream_sub), "dream")
+            tile(R.drawable.ic_clock, a.getString(R.string.dface), null, "dface", HomeConfig.DFACES.map { it to a.getString(when (it) { "modern" -> R.string.home_ov_modern; "digital" -> R.string.home_ov_digital; else -> R.string.dface_big }) })
             tile(R.drawable.ic_gauge, a.getString(R.string.stats), null, "stats")   // anonymous stats (OwnReport): TV Setup's switch when it is installed, else this one
             // another launcher as the home screen: TV Home has no ADB to turn the TV's own one off (without that Home goes on landing on it,
             // a BRAVIA on Android 9), so TV Setup's picker does it, opened on that screen; without TV Setup the row says how to get it

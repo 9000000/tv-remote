@@ -90,6 +90,8 @@ import org.json.JSONObject
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
+ *   dface   the screensaver's look ([DFACES]): "big" (the big clock and the day, as before), "modern" (StandBy: the Modern clock
+ *           face beside the day, the clock card's own drawing), "digital" (the Digital face, filling the screen)
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
  *   names   the person's own names for apps and shortcuts: {"<package or pin:...>": "name"}, at most [NAMES_MAX], each [NAME_MAX] characters;
  *           shown wherever TV Home shows the app's name, and always on a banner tile (two YouTubes look the same). Not a theme key
@@ -354,6 +356,7 @@ object HomeConfig {
     const val PLACE_MAX = 60
     const val GNAME_MAX = 24
     const val GTEXT_MAX = 60
+    val DFACES = listOf("big", "modern", "digital")
     val GSTYLES = listOf("time", "name", "date", "lunar", "own")
     /** What "own" text may ask for, written {date}: the clients offer them as chips; an unknown {word} stays as typed. */
     val TOKENS = listOf("greet", "date", "weekday", "day", "month", "year", "lunar", "canchi")
@@ -621,6 +624,7 @@ object HomeConfig {
             .put("cols", o.optInt("cols", COLS_DEFAULT).coerceIn(COLS_MIN, COLS_MAX))
             .put("rows", rows(o.optDouble("rows", 0.0)))
             .put("dream", o.optBoolean("dream", false))
+            .put("dface", o.optString("dface").takeIf { it in DFACES } ?: "big")
             .put("note", o.optString("note").replace(Regex("\\s+"), " ").trim().take(NOTE_MAX))
             .put("place", o.optString("place").replace(Regex("\\s+"), " ").trim().take(PLACE_MAX))
             .put("feeds", JSONArray(feeds(o.optJSONArray("feeds"))))

@@ -337,6 +337,7 @@ async function homeOpen() {
   const watchAtHead = el('h3', { textContent: T('home.watch_at') }), watchAt = el('div', { className: 'fchips' });   // where the Play Next items go (HomeConfig "watchAt"); only a TV Home that reports it
   const anim = el('input', { type: 'checkbox', onchange: () => send({ anim: anim.checked }) });
   const dream = el('input', { type: 'checkbox', onchange: () => send({ dream: dream.checked }) });
+  const dfaceHead = el('h3', { textContent: T('home.dface') }), dface = el('div', { className: 'fchips' });   // the screensaver's look (HomeConfig "dface"); only a TV Home that reports it
   // remote keys that open an app, and the app that opens each time the TV turns on (HomeConfig keyon / keyapps / autoon / autoapp).
   // Both default off. TV Home answers a key on its own screen; TV Setup does it everywhere and the power-on app: said under each
   const keyOn = el('input', { type: 'checkbox', onchange: () => send({ keyon: keyOn.checked }) });
@@ -522,6 +523,9 @@ async function homeOpen() {
     gname.sync(c.gname); gtext.sync(c.gtext); dtext.sync(c.dtext);
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
+    dfaceHead.hidden = dface.hidden = c.dface === undefined;
+    dface.replaceChildren(...[['big', 'home.dface_big'], ['modern', 'home.ov_modern'], ['digital', 'home.ov_digital']].map(([k, id]) =>
+      el('button', { type: 'button', className: c.dface === k ? 'on' : '', 'aria-pressed': String(c.dface === k), onclick: () => send({ dface: k }) }, T(id))));
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
     keyOn.checked = !!c.keyon;
     keyOn.disabled = !kOk; keysOld.hidden = kOk;
@@ -891,7 +895,7 @@ async function homeOpen() {
       sect(null, namesHead, names)]],
     ['widgets', 'chart', 210, 'home.g_widgets', [sect(null, wHead, wList, ...wLines), sect(null, packHead, packBox, packNote), sect(null, layHead, lay, layNote, placeHead, placeLine),
       sect(null, feedHead, feedLine, feedList, feedNote), sect(null, noteHead, noteLine), sect(null, qrHead, qrList, qrNote)]],
-    ['system', 'power', 260, 'home.g_system', [check(dream, 'home.dream')]],
+    ['system', 'power', 260, 'home.g_system', [sect(null, check(dream, 'home.dream'), dfaceHead, dface)]],
     ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote]],
     ['lang', 'globe', 200, 'home.lang', [langs]],
   ];
