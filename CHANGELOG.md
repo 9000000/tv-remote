@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Games: 15 game NES/homebrew có logo pixel-art riêng (chữ pixel, sprite 8-bit, nền tối có scanline, nhãn NES) thay cho logo bóng bẩy, khớp với hình ảnh trong game; game web giữ logo cũ.
 - TV Home: mọi thẻ widget và phần đầu trang (giờ, câu chào) đều chọn được bằng D-pad. Thẻ có màn riêng (thời tiết, tin, thị trường) thì OK mở màn đó; thẻ khác thì OK mở menu tuỳ chỉnh của thẻ.
 - TV Home: kiểu focus "Kính" giờ trượt tới mọi chỗ chọn được (thẻ widget, đầu trang, nút trên thanh trên cùng), không còn bốn kiểu focus khác nhau; sang hình khác (ô app → thẻ → câu chào → nút tròn) kính bay và biến hình, không chỉ mờ dần. Kính chỉ vẽ lại khi đổi hình (một lần mỗi hình, giữ sẵn 4), lúc trượt chỉ dịch và phóng trên GPU. Đổi hình không còn layout lại cả trang: trên box FPT kính chỉ tốn hơn viền ~4% CPU (trước ~14%).
 - Remote (app máy tính, trang web): giữ phím Enter 0,4 giây = giữ OK trên TV (mở menu nhấn giữ), như giữ nút OK trên trang.
@@ -27,6 +28,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
+- TV Games: the 15 NES / homebrew games get their own pixel-art logos (pixel-font title, 8-bit sprite, dark scanline background, NES badge) instead of the glossy ones, matching how they look in play; web games keep theirs.
 - TV Home: every widget card and the header (clock, greeting) take the D-pad focus. Cards with a screen (weather, news, market) open it on OK; the others open their own settings menu.
 - TV Home: the "Glass" focus now glides to every stop (widget cards, the header, the top-bar buttons), not four different focus looks; to another shape (app tile → card → header → round button) it flies and morphs, not only fades. The glass is redrawn only when the shape changes (once per shape, 4 kept); gliding is a GPU move and scale. A new shape no longer lays out the whole page: on the FPT box the glass costs ~4% more CPU than the ring (was ~14%).
 - Remote (Computer app, web page): holding Enter 0.4 s holds OK on the TV (long-press menus), as holding the page's OK key does.

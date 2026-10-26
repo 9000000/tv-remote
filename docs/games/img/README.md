@@ -8,6 +8,8 @@ flat sticker-style emblem in the middle, all from shapes. The bottom-left 22% x 
 there when a game is pinned. The `.v2` in the names is the drawing's version: the app keeps a picture under its path (`Thumbs.kt`), so
 a redraw gets a new name (`SUFFIX` in the script) and `img` in `games.json` follows, then `dev/sign/sign_games.py`.
 
+The 15 NES / homebrew games have their own pixel look (`.v3`, `RETRO` + `draw_retro` in the script): the game is 8-bit in play, so its card is too. 160x90 pixels shown at x4 with nearest-neighbour (no antialias), a 5x7 pixel-font name, a 16x16 sprite in a NES palette, dark background with stars, scanlines and a small NES badge bottom-right. A new NES game: add its sprite to `SPRITES` and a line to `RETRO` as well as `GAMES`.
+
 Emblems only suggest what a game is; they copy no game's art. The games themselves keep their own licences:
 
 | Game | Licence | Source |
@@ -24,4 +26,4 @@ Emblems only suggest what a game is; they copy no game's art. The games themselv
 | Ghosts and Graves (Anthony Bongers) | Unlicense | https://github.com/AnthonyBongers/GhostsAndGraves |
 | the 16 web games | same as the repo | `docs/games/web/` |
 
-A new catalog game: add a spec (name, two colours, emblem function) to `GAMES` in the script, run it, add `"img": "img/<id>.v2.jpg"` to its entry and re-sign.
+A new catalog game: add a spec (name, two colours, emblem function) to `GAMES` in the script, run it, add `"img": "img/<id>.v2.jpg"` (`.v3` for a NES game) to its entry and re-sign.

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""dev/gen/game_logos.py: draws the 640x360 logo card of every TV Games catalog game into docs/games/img/<id>.v2.jpg.
+"""dev/gen/game_logos.py: draws the 640x360 logo card of every TV Games catalog game into docs/games/img/<id>.v2.jpg
+(the web games; modern look) or <id>.v3.jpg (the NES / homebrew games: pixel look, `draw_retro`, RETRO below).
 
 One family look: a two-colour background with a soft glow, the game's name on top (Arial Bold, white, shadowed),
 a sticker-style emblem (flat shapes, dark outline) in the middle. The bottom-left 22% x 22% stays empty: TV Home draws
@@ -563,6 +564,148 @@ def draw(gid):
     return img.convert("RGB").resize((W, H), Image.LANCZOS)
 
 
+# ---- the retro look (NES / homebrew games) -----------------------------------------------------------------------------
+# These games are 8-bit in play, so their card is too: a 160x90 canvas shown at x4 with nearest-neighbour (no antialias),
+# a 5x7 pixel font, a 16x16 sprite from the game's theme in a NES-like palette (outlined automatically), a dark
+# background with a few stars, scanlines over the result and a small NES badge bottom-right (bottom-left stays empty).
+# Sprites suggest what the game is about; they copy no game's art.
+RSUFFIX = ".v3"                                    # the retro cards' version (the web cards keep SUFFIX)
+LW, LH, LS = 160, 90, 4
+
+PAL = {"K": "#101018", "W": "#fcfcfc", "E": "#bcbcbc", "D": "#6c6c7c", "R": "#d82800", "O": "#fc7424", "Y": "#fcc000",
+       "G": "#009800", "L": "#58d854", "B": "#0058f8", "C": "#3cbcfc", "P": "#6844fc", "M": "#d800cc", "N": "#8c4a14",
+       "S": "#fcc0a0", "T": "#00a090", "A": "#a4e4fc"}
+
+FONT = {  # 5x7 pixel font, rows joined by "/"
+    "A": "01110/10001/10001/11111/10001/10001/10001", "B": "11110/10001/10001/11110/10001/10001/11110",
+    "C": "01110/10001/10000/10000/10000/10001/01110", "D": "11110/10001/10001/10001/10001/10001/11110",
+    "E": "11111/10000/10000/11110/10000/10000/11111", "F": "11111/10000/10000/11110/10000/10000/10000",
+    "G": "01110/10001/10000/10111/10001/10001/01111", "H": "10001/10001/10001/11111/10001/10001/10001",
+    "I": "01110/00100/00100/00100/00100/00100/01110", "J": "00111/00010/00010/00010/00010/10010/01100",
+    "K": "10001/10010/10100/11000/10100/10010/10001", "L": "10000/10000/10000/10000/10000/10000/11111",
+    "M": "10001/11011/10101/10101/10001/10001/10001", "N": "10001/11001/10101/10011/10001/10001/10001",
+    "O": "01110/10001/10001/10001/10001/10001/01110", "P": "11110/10001/10001/11110/10000/10000/10000",
+    "Q": "01110/10001/10001/10001/10101/10010/01101", "R": "11110/10001/10001/11110/10100/10010/10001",
+    "S": "01111/10000/10000/01110/00001/00001/11110", "T": "11111/00100/00100/00100/00100/00100/00100",
+    "U": "10001/10001/10001/10001/10001/10001/01110", "V": "10001/10001/10001/10001/10001/01010/00100",
+    "W": "10001/10001/10001/10101/10101/11011/10001", "X": "10001/10001/01010/00100/01010/10001/10001",
+    "Y": "10001/10001/01010/00100/00100/00100/00100", "Z": "11111/00001/00010/00100/01000/10000/11111",
+    "&": "01100/10010/10100/01000/10101/10010/01101", "'": "00100/00100/01000/00000/00000/00000/00000",
+    "-": "00000/00000/00000/11111/00000/00000/00000", " ": "00000/00000/00000/00000/00000/00000/00000",
+}
+
+SPRITES = {
+    "croom": ["", ".PPPPPPP.WWWWWWW", ".PMPMPMP.WWWRWWW", ".PPMMMPP.WWRRRWW", ".PMPMPMP.WWWRWWW", ".PPPPPPP.WWWWWWW", "",
+              ".WWWWWWW.PPPPPPP", ".WYWWWYW.PMPMPMP", ".WWYYYWW.PPMMMPP", ".WYWWWYW.PMPMPMP", ".WWWWWWW.PPPPPPP"],
+    "rhde": ["..NN", "..NN", "..NN", "..NN", "..NN", "..NNNNNNNNNNN", "..NRRRRRRRRRN", "..NRRRRRRRRRN", "..NNNNNNNNNNN", "..NN.......NN",
+             "..NN.......NN", "..NN.......NN", "..NN.......NN"],
+    "coco": [".....RR", "....RRRR", "....WWWW", "...WWKWWOO", "...WWWWWOO", "....WWWW", "....WWWWR", "...WWWWWW", "..WWWWWWWW",
+             ".WWWWWWWWWW", ".WWWWWWWWWWW", "WWWWWWWWWWWW", ".WWWWWWWWWW", "..EWWWWWWW", "....YY..YY", "...YYY.YYY"],
+    "thwaite": [".......RR", "......RRRR", ".....RRRRRR", ".....EEEEEE", ".....EECCEE", ".....EECCEE", ".....EEEEEE", "....REEEEEER",
+                "...RR.EEEE.RR", "..RRR.EEEE.RRR", "......OYYO", ".......YY", "", "", ".DD..DD....DD.DD", "DDDDDDDD..DDDDDD"],
+    "runner": ["......SSSS", ".....SSSSSS", ".....SSSKSS", ".....SSSSSS", "......SSSS", "....RRRRRRR", "...RRRRRRRRR", "..SRRRRRRRR",
+               ".SS.RRRRRRR", "....BBBBBBB", "...BBB...BBB", "..BBB.....BBB", ".NNN.......NN"],
+    "ghostsgraves": [".....WWWWWW", "...WWWWWWWWWW", "..WWWWWWWWWWWW", ".WWWWWWWWWWWWWE", ".WWKKWWWWWKKWWE", ".WWKKWWWWWKKWWE",
+                     ".WWWWWWWWWWWWWE", ".WWWWWWKKWWWWWE", ".WWWWWWKKWWWWWE", ".WWWWWWWWWWWWWE", ".WWWWWWWWWWWWWE", ".WWWWWWWWWWWWWE",
+                     ".WWW.WWWW.WWWWE", ".WW...WW...WWE"],
+    "roborun": [".......R", ".......D", "....EEEEEEEE", "...EEEEEEEEEE", "...ECCEEEECCE", "...ECCEEEECCE", "...EEEEEEEEEE", "...EEKKKKKKEE",
+                "....EEEEEEEE", "..BBBBBBBBBBBB", ".BBBBBYBBBBBBBB", ".BBBBBBBBBBBBBB", "EE.BBBBBBBBBB.EE", "EE.BBBBBBBBBB.EE", "...DD......DD",
+                "..DDD......DDD"],
+    "nova": ["...OOO", "..OOOOO.....N.N", ".OOOOOOO....NNN", ".OOOOOOO...NNNN", ".OOOOOOOO.NNKNN", ".OOOOOOOOONNNNNNK", "..OOOOOONNNNNNWN",
+             "...OOOONNNNNNNN", "....OONNNNNNNN", "....NNNNWWWNN", "....NNNNWWWNN", "....NNNNNNNNN", ".....NN..NN", ".....NN..NN"],
+    "witchnwiz": [".......PP", "......PPP", "......PPP", ".....PPPPP", ".....PPPPP", "....PPPPPPP", "....PYYYYYP", "...PPYYYYYPP", "..PPPPPPPPPPP",
+                  ".PPPPPPPPPPPPP", "PPPPPPPPPPPPPPP"],
+    "stallar": [".......WW", "......WWWW", "......WCCW", ".....WWCCWW", ".....WWWWWW", "....EWWWWWWE", "....EWWWWWWE", "...REWWWWWWER",
+                "..RRE.WWWW.ERR", ".RRR..EEEE..RRR", ".RR...OYYO...RR", "......OYYO", ".......YY"],
+    "filefixers": ["..EEEEEEEEE", "..EWWWWWWWEE", "..EWWWWWWWEWE", "..EWBBBBWWEEEE", "..EWWWWWWWWWWE", "..EWBBBBBBBWWE", "..EWWWWWWWWWWE",
+                   "..EWBBBBBWWWWE", "..EWWWWWWWWWWE", "..EWBBBBBBBWWE", "..EWWWWWWWWWWE", "..EEEEEEEEEEEE"],
+    "tabletennis": ["....RRRRRR", "...RRRRRRRR", "..RRRRRRRRRR", "..RRRRRRRRRR", "..RRRRRRRRRR", "..RRRRRRRRRR", "...RRRRRRRR", "....RRRRRR",
+                    ".....NN", ".....NN.....WW", ".....NN....WWWW", ".....NN....WWWW", ".....NN.....WW"],
+    "opennes-snake": [".LLLLLLLLLLL", ".LGGGGGGGGGGL", ".LG", ".LG......RR", ".LGGGGGGGRRRR", ".LLLLLLLGRRRR", "........LG.RR", "...WK...LG",
+                      "..LGGGGGGG", "..LLLLLLLL"],
+    "opennes-breakout": ["RRR.RRR.RRR.RRR", "RRR.RRR.RRR.RRR", "OOO.OOO.OOO.OOO", "OOO.OOO.OOO.OOO", "YYY.YYY.YYY.YYY", "YYY.YYY.YYY.YYY",
+                         "LLL.LLL.LLL.LLL", "LLL.LLL.LLL.LLL", "", "", ".......WW", ".......WW", "", "", "..CCCCCCCCCC"],
+    "opennes-pong": ["", "", "WW", "WW", "WW", "WW............WW", "WW.....WW.....WW", "WW.....WW.....WW", "WW............WW", "WW............WW", "..............WW", "..............WW", "..............WW", "", "", ""],
+}
+# id: (background, title colour, frame colour)
+RETRO = {
+    "croom": ("#1a1040", "Y", "P"), "rhde": ("#401a0c", "O", "N"), "coco": ("#0c3020", "Y", "L"), "thwaite": ("#0c1440", "C", "B"),
+    "runner": ("#401018", "Y", "R"), "ghostsgraves": ("#150f38", "W", "P"), "roborun": ("#0c1c48", "C", "B"),
+    "nova": ("#0c3022", "Y", "L"), "witchnwiz": ("#1c0c40", "Y", "P"), "stallar": ("#080a30", "W", "C"),
+    "filefixers": ("#0c2048", "A", "B"), "tabletennis": ("#0c3030", "W", "T"), "opennes-snake": ("#0c2c14", "L", "G"),
+    "opennes-breakout": ("#240c48", "Y", "M"), "opennes-pong": ("#0c1034", "W", "B"),
+}
+RETRO_NAMES = {"croom": "CONCENTRATION", "ghostsgraves": "GHOSTS & GRAVES"}     # where the pixel title differs from the name
+
+
+def _px(im, x, y, c):
+    if 0 <= x < LW and 0 <= y < LH:
+        im.putpixel((x, y), hx(PAL[c]) if isinstance(c, str) and c in PAL else hx(c))
+
+
+def _text(im, s, cx, y, sc, c, shadow="K"):
+    w = len(s) * 6 * sc - sc
+    x0 = cx - w // 2
+    for ox, oy, col in ((sc, sc, shadow), (0, 0, c)):
+        for i, ch in enumerate(s):
+            for r, row in enumerate(FONT[ch].split("/")):
+                for q, v in enumerate(row):
+                    if v == "1":
+                        for a in range(sc):
+                            for b in range(sc):
+                                _px(im, x0 + i * 6 * sc + q * sc + a + ox, y + r * sc + b + oy, col)
+
+
+def _sprite(im, rows, cx, cy, sc):
+    h = [(r.ljust(16, "."))[:16] for r in rows]
+    h += ["." * 16] * (16 - len(h))
+    cells = {(x, y): ch for y, r in enumerate(h) for x, ch in enumerate(r) if ch != "."}
+    xs, ys = [x for x, _ in cells], [y for _, y in cells]
+    x0 = cx - (min(xs) + max(xs) + 1) * sc // 2                # centre what is drawn, not the 16x16 box
+    y0 = cy - (min(ys) + max(ys) + 1) * sc // 2
+    for (x, y) in cells:                                       # the dark outline: every empty cell touching a filled one
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if (x + dx, y + dy) not in cells:
+                for a in range(sc):
+                    for b in range(sc):
+                        _px(im, x0 + (x + dx) * sc + a, y0 + (y + dy) * sc + b, "K")
+    for (x, y), ch in cells.items():
+        for a in range(sc):
+            for b in range(sc):
+                _px(im, x0 + x * sc + a, y0 + y * sc + b, ch)
+
+
+def draw_retro(gid):
+    bg, tc, fc = RETRO[gid]
+    name = RETRO_NAMES.get(gid, GAMES[gid][0].upper())
+    im = Image.new("RGB", (LW, LH), hx(bg))
+    d = ImageDraw.Draw(im)
+    for y in range(LH):                                        # a two-step dither toward the bottom: darker, CRT-like
+        for x in range((y % 2), LW, 2):
+            if y > LH * 0.55:
+                im.putpixel((x, y), tuple(int(v * .82) for v in hx(bg)))
+    seed = sum(map(ord, gid))
+    for i in range(26):                                        # stars, same every run
+        x, y = (seed * 31 + i * 53) % LW, 24 + (seed * 17 + i * 37) % 52
+        if not (x < 36 and y > 68):
+            _px(im, x, y, "E" if i % 3 else "W")
+    d.rectangle([1, 1, LW - 2, LH - 2], outline=hx(PAL[fc]))   # frame, 1 pixel
+    sc = 2 if len(name) * 6 * 2 - 2 <= 140 else 1
+    _text(im, name, LW // 2, 7 if sc == 2 else 9, sc, tc)
+    ty = 7 + 7 * sc + sc + 3
+    d.rectangle([20, ty, LW - 21, ty], fill=hx(PAL[fc]))       # a rule under the name
+    _sprite(im, SPRITES[gid], LW // 2, 56, 3)
+    d.rectangle([128, 76, 155, 85], fill=hx(PAL["R"]), outline=hx(PAL["K"]))      # the NES badge
+    _text(im, "NES", 142, 78, 1, "W", "K")
+    big = im.resize((W, H), Image.NEAREST)
+    px = big.load()
+    for y in range(3, H, LS):                                  # scanlines: the last row of every pixel row, 22% darker
+        for x in range(W):
+            r, g, b = px[x, y]
+            px[x, y] = (int(r * .78), int(g * .78), int(b * .78))
+    return big
+
+
 def main():
     a = sys.argv[1:]
     sheet = None
@@ -573,8 +716,12 @@ def main():
     ids = a or list(GAMES)
     tiles = []
     for gid in ids:
-        im = draw(gid)
-        im.save(os.path.join(OUT, gid + SUFFIX + ".jpg"), quality=88, optimize=True)
+        if gid in RETRO:
+            im = draw_retro(gid)
+            im.save(os.path.join(OUT, gid + RSUFFIX + ".jpg"), quality=92, subsampling=0, optimize=True)
+        else:
+            im = draw(gid)
+            im.save(os.path.join(OUT, gid + SUFFIX + ".jpg"), quality=88, optimize=True)
         tiles.append(im)
     if sheet:
         cols = 4

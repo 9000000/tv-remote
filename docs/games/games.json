@@ -286,7 +286,7 @@
     {
       "id": "croom",
       "name": "Concentration Room",
-      "img": "img/croom.v2.jpg",
+      "img": "img/croom.v3.jpg",
       "system": "nes",
       "players": 2,
       "genre": "puzzle",
@@ -299,7 +299,7 @@
     {
       "id": "rhde",
       "name": "RHDE: Furniture Fight",
-      "img": "img/rhde.v2.jpg",
+      "img": "img/rhde.v3.jpg",
       "system": "nes",
       "players": 2,
       "genre": "party",
@@ -312,7 +312,7 @@
     {
       "id": "coco",
       "name": "Coco Battle Royale II",
-      "img": "img/coco.v2.jpg",
+      "img": "img/coco.v3.jpg",
       "system": "nes",
       "players": 2,
       "genre": "party",
@@ -325,7 +325,7 @@
     {
       "id": "thwaite",
       "name": "Thwaite",
-      "img": "img/thwaite.v2.jpg",
+      "img": "img/thwaite.v3.jpg",
       "system": "nes",
       "players": 2,
       "genre": "arcade",
@@ -338,7 +338,7 @@
     {
       "id": "runner",
       "name": "Runner",
-      "img": "img/runner.v2.jpg",
+      "img": "img/runner.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -351,7 +351,7 @@
     {
       "id": "ghostsgraves",
       "name": "Ghosts and Graves",
-      "img": "img/ghostsgraves.v2.jpg",
+      "img": "img/ghostsgraves.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "puzzle",
@@ -364,7 +364,7 @@
     {
       "id": "roborun",
       "name": "Robo Run",
-      "img": "img/roborun.v2.jpg",
+      "img": "img/roborun.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -377,7 +377,7 @@
     {
       "id": "nova",
       "name": "Nova the Squirrel",
-      "img": "img/nova.v2.jpg",
+      "img": "img/nova.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -390,7 +390,7 @@
     {
       "id": "witchnwiz",
       "name": "Witch n' Wiz",
-      "img": "img/witchnwiz.v2.jpg",
+      "img": "img/witchnwiz.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -403,7 +403,7 @@
     {
       "id": "stallar",
       "name": "Stallar",
-      "img": "img/stallar.v2.jpg",
+      "img": "img/stallar.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "shooter",
@@ -416,7 +416,7 @@
     {
       "id": "filefixers",
       "name": "File Fixers",
-      "img": "img/filefixers.v2.jpg",
+      "img": "img/filefixers.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "puzzle",
@@ -429,7 +429,7 @@
     {
       "id": "tabletennis",
       "name": "8-Bit Table Tennis",
-      "img": "img/tabletennis.v2.jpg",
+      "img": "img/tabletennis.v3.jpg",
       "system": "nes",
       "players": 2,
       "genre": "sports",
@@ -443,7 +443,7 @@
     {
       "id": "opennes-snake",
       "name": "Snake",
-      "img": "img/opennes-snake.v2.jpg",
+      "img": "img/opennes-snake.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "arcade",
@@ -456,7 +456,7 @@
     {
       "id": "opennes-breakout",
       "name": "Breakout",
-      "img": "img/opennes-breakout.v2.jpg",
+      "img": "img/opennes-breakout.v3.jpg",
       "system": "nes",
       "players": 1,
       "genre": "arcade",
@@ -469,7 +469,7 @@
     {
       "id": "opennes-pong",
       "name": "Pong",
-      "img": "img/opennes-pong.v2.jpg",
+      "img": "img/opennes-pong.v3.jpg",
       "system": "nes",
       "players": 2,
       "genre": "sports",
