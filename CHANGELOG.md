@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.28.0 - 2026-10-26
+
+Web 0.28.0 · app điện thoại 0.27.0 · app TV 0.28.0 · TV Home 0.15.0 · TV Channels 0.10.0 · TV Games 0.10.0
 
 **Tiếng Việt**
 - Sửa lỗi văng app từ báo cáo lỗi: TV Setup không chạy được trên Android 7 (Fire TV, Bravia 2015); TV Setup bị tắt khi mở lại trên một số TV TCL; menu của TV Setup / TV Home trên Android 7; TV Games và bản đồ thời tiết trên TV không có WebView (giờ báo một dòng thay vì văng).
