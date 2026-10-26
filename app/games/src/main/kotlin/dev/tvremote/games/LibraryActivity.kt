@@ -409,7 +409,7 @@ class LibraryActivity : ComponentActivity() {
     /** The 🌐 sheet: follow the TV / Tiếng Việt / English, the current one ticked; a change builds the screen again in it. */
     private fun languages() {
         val now = Lang.pref(this)
-        val names = mapOf("" to getString(R.string.lang_auto), "vi" to "Tiếng Việt", "en" to "English")
+        val names = mapOf("" to getString(R.string.lang_auto)) + dev.tvremote.i18n.Langs.NAMES
         popup(getString(R.string.lang_title), Lang.CHOICES.map { l ->
             names[l]!! to {
                 if (l != now) { Lang.set(this, l); refocusLang = true; recreate() } else closeOverlay()

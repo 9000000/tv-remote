@@ -1,0 +1,6 @@
+{
+  "app_name": "TV Setup Keys",
+  "keys_fix": "TV Setup Keys: remote buttons",
+  "keys_wake": "TV Setup Keys: wake only (on by itself while the screen is off)",
+  "keys_about": "Part of TV Setup: gives back the remote's buttons that nothing answers, and keeps the TV's remote from also opening an app when it only wakes the screen. Reads no screen content."
+}

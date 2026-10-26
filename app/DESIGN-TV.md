@@ -10,9 +10,9 @@ The shared values are copied into each app's `res/values/tv_style.xml` (this fil
 | App | Shared code | Words from | Tokens from |
 |---|---|---|---|
 | TV Setup | `:shared` (`tv/build.gradle.kts:50`) | `T("id")`: `app/shared/web/i18n/<lang>.json` (`core/Words.kt`); **no strings.xml** | `values/tv_style.xml` + constants in `MainActivity.kt:62-70` |
-| TV Home | none (only `shared/src/home` HomeConfig) | `res/values{,-vi}/strings.xml` | constants in `HomeActivity.kt` (**no tv_style.xml**) |
-| TV Channels | **`tvui`** (`shared/src/tvui`: `Tv.kt` + `res/`), `shared/src/sign` | `res/values{,-vi}/strings.xml`, own language picker (`Lang.kt`) | `tvui` `TvUi` constants (= `tv_style.xml`, built in from `tvui/res`) |
-| TV Games | **`tvui`**, `Qr.kt` copied, `shared/src/sign` | `res/values{,-vi}/strings.xml` | `tvui` (`TvUi`, `tv_style.xml` built in; no colors.xml) |
+| TV Home | none (only `shared/src/home` HomeConfig) | `i18n/apps/<lang>/<module>.json` (built to strings.xml) | constants in `HomeActivity.kt` (**no tv_style.xml**) |
+| TV Channels | **`tvui`** (`shared/src/tvui`: `Tv.kt` + `res/`), `shared/src/sign` | `i18n/apps/<lang>/<module>.json` (built to strings.xml), own language picker (`Lang.kt`) | `tvui` `TvUi` constants (= `tv_style.xml`, built in from `tvui/res`) |
+| TV Games | **`tvui`**, `Qr.kt` copied, `shared/src/sign` | `i18n/apps/<lang>/<module>.json` (built to strings.xml) | `tvui` (`TvUi`, `tv_style.xml` built in; no colors.xml) |
 
 - **`app/shared/src/tvui` is the reference** for what the apps have in common, and the one copy: `Tv.kt` (`TvUi`: tokens, `row`, `sheet`, `button`,
   `field` (TvField), `states`, `ring`, `initials`, `TvState`; Games-style `panel`, `scrim`, `menuButton`, `withIcon`, `pill`, `heading`) and
@@ -196,8 +196,8 @@ One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.
 
 ## 4. Words
 
-- **Home, Channels, Games:** every visible string in `res/values/strings.xml` (English) **and** `res/values-vi/strings.xml`
-  (Vietnamese), same ids. Today only `app_name` and `wifi` (Home) are values-only. No string literals in Kotlin.
+- **Home, Channels, Games:** every visible string in `app/shared/web/i18n/apps/<lang>/<module>.json` (every language of
+  `langs.json`, same ids; Gradle makes `res/values-<lang>/strings.xml` of them: there is no hand-written strings.xml). No string literals in Kotlin.
 - **TV Setup:** no strings.xml; `T("area.id", "n" to 3)` from `app/shared/web/i18n/vi.json` + `en.json` (the AGENTS.md rule:
   `vi.json` first, `en.json` complete). No new `t("vi", "en")` pairs.
 - Short labels: a verb or a noun, 1-3 words on a button, one line in a row; details go in the sub-line (`tv_dim`), not the label.

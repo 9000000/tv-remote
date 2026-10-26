@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="widget_name">Remote TV</string>
-    <string name="tile_power">Nguồn TV</string>
-    <string name="tile_scene">Cảnh TV</string>
-</resources>

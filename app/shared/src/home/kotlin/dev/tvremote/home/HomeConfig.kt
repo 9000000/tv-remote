@@ -368,7 +368,7 @@ object HomeConfig {
     const val TELEGRAM_SETUP = "0.21.1"
     /** The languages TV Home has words in (res/values-<lang>; English is res/values), "" = the TV's. */
     val MOTIONS = listOf("calm", "full")
-    val LANGS = listOf("", "vi", "en")
+    val LANGS = listOf("") + dev.tvremote.i18n.Langs.CODES
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
     private val TILE = Regex("tile:[A-Za-z][\\w]*(\\.[\\w]+)+/[a-z][a-z0-9_]{0,15}")
     const val TILES_MAX = 24                                          // live tiles and shortcuts together: the picker adds both

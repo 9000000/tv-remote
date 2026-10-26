@@ -9,15 +9,20 @@ const path = require('node:path');
 const web = path.join(__dirname, '../web');
 const read = (f) => fs.readFileSync(path.join(web, f), 'utf8');
 const i18n = read('js/i18n.js');
-const LANGS = Object.keys(eval('(' + i18n.match(/const LANGS = (\{[^}]*\})/)[1] + ')'));
+const LIST = JSON.parse(read('i18n/langs.json'));              // THE list of languages (the page, TV Home's web copy and every native app read it)
+const LANGS = Object.keys(LIST);
 const book = (l) => JSON.parse(read('i18n/' + l + '.json'));
 const vi = book('vi');
 const VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
 const holes = (s) => [...new Set([...(typeof s === 'object' ? Object.values(s).join(' ') : s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort().join(',');
 
 test('one file per language in LANGS, each with the ids of vi.json and the same {placeholders}', () => {
-  const files = fs.readdirSync(path.join(web, 'i18n')).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort();
-  assert.deepEqual(files, [...LANGS].sort(), 'i18n/<code>.json and its line in LANGS (js/i18n.js) come together');
+  const files = fs.readdirSync(path.join(web, 'i18n')).filter((f) => f.endsWith('.json') && f !== 'langs.json').map((f) => f.slice(0, -5)).sort();
+  assert.deepEqual(files, [...LANGS].sort(), 'i18n/<code>.json and its line in i18n/langs.json come together');
+  assert.deepEqual(LANGS.slice(0, 2).sort(), ['en', 'vi'], 'vi and en are in the list');
+  assert.equal(LANGS[0], 'vi', 'Vietnamese first');
+  for (const [c, n] of Object.entries(LIST)) assert.ok(/^[a-z]{2,3}$/.test(c) && typeof n === 'string' && n.trim(), 'langs.json: ' + c);
+  assert.ok(!/const LANGS = \{\s*vi/.test(i18n.replace(/return \{ vi[^}]*\};/, '')), 'js/i18n.js reads langs.json, it holds no list of its own');
   for (const l of LANGS) {
     const b = book(l), bad = [];
     for (const [id, s] of Object.entries(b)) {
@@ -118,4 +123,45 @@ test('scripts write no words of their own: every word is an id', () => {
   }
   assert.deepEqual(bad, [], 'give these words an id in i18n/*.json and write T(\'id\')');
   assert.ok(!/\bconst (EN|RULES) =|window\.tr\b/.test(i18n), 'no table of sentences in i18n.js');
+});
+
+// The native apps' words: i18n/apps/<lang>/<module>.json, built into res/values-<lang> by app/gradle/i18n.gradle
+const MODULES = ['android', 'channels', 'games', 'home', 'tvkeys', 'tvui'];
+const fmt = (s) => [...new Set([...(typeof s === 'object' ? Object.values(s).join(' ') : Array.isArray(s) ? s.join(' ') : s).matchAll(/%(?:\d+\$)?[sdf%]/g)].map((m) => m[0]))].sort().join(',');
+const FREE = new Set(['lunar_year']);                                  // numbered args: a language may use more of them (en leaves the zodiac out)
+const shape = (v) => (Array.isArray(v) ? 'array' : v && typeof v === 'object' ? 'plurals' : typeof v);
+
+test('apps/<lang>/<module>.json: every language of langs.json has every module with the keys and %s / %1$d of en', () => {
+  const apps = path.join(web, 'i18n/apps');
+  assert.deepEqual(fs.readdirSync(apps).filter((d) => fs.statSync(path.join(apps, d)).isDirectory()).sort(), [...LANGS].sort(), 'a folder per language of langs.json');
+  const bad = [];
+  for (const m of MODULES) {
+    const en = JSON.parse(read(`i18n/apps/en/${m}.json`));
+    for (const l of LANGS) {
+      const f = `i18n/apps/${l}/${m}.json`;
+      if (!fs.existsSync(path.join(web, f))) { bad.push(f + ' missing'); continue; }
+      const b = JSON.parse(read(f));
+      for (const k of Object.keys(en)) {
+        if (!(k in b)) { bad.push(`${f}: ${k} missing`); continue; }
+        if (shape(b[k]) !== shape(en[k])) bad.push(`${f}: ${k} is a ${shape(b[k])}, en a ${shape(en[k])}`);
+        else if (shape(en[k]) === 'array' && b[k].length !== en[k].length) bad.push(`${f}: ${k} has ${b[k].length} items, en ${en[k].length}`);
+        else if (shape(en[k]) === 'plurals' && !('other' in b[k])) bad.push(`${f}: ${k} has no "other"`);
+        else if (fmt(b[k]) !== fmt(en[k]) && !FREE.has(k)) bad.push(`${f}: ${k} has {${fmt(b[k])}}, en {${fmt(en[k])}}`);
+      }
+      for (const k of Object.keys(b)) if (!(k in en)) bad.push(`${f}: ${k} is not in en`);
+    }
+  }
+  assert.deepEqual(bad, []);
+  const tvui = Object.keys(JSON.parse(read('i18n/apps/en/tvui.json')));   // tvui.json is merged into home, games, channels and tv: no id of theirs may repeat
+  for (const m of ['channels', 'games', 'home']) assert.deepEqual(tvui.filter((k) => k in JSON.parse(read(`i18n/apps/en/${m}.json`))), [], 'tvui ids clash with ' + m);
+});
+
+test('no hand-written strings.xml: the words of the native apps come from i18n/apps (app/gradle/i18n.gradle)', () => {
+  const bad = [];
+  for (const a of ['android', 'channels', 'games', 'home', 'tvkeys']) {
+    const res = path.join(__dirname, '../..', a, 'src/main/res');
+    for (const d of fs.existsSync(res) ? fs.readdirSync(res) : []) if (d.startsWith('values')) for (const f of fs.readdirSync(path.join(res, d)))
+      if (/<(string|plurals|string-array)\b/.test(fs.readFileSync(path.join(res, d, f), 'utf8'))) bad.push(`app/${a}/src/main/res/${d}/${f}`);
+  }
+  assert.deepEqual(bad, [], 'move these words to i18n/apps/<lang>/<module>.json');
 });

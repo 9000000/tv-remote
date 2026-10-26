@@ -11,7 +11,7 @@ import java.util.Locale
  * and the category words ([BrowseActivity.groupName]) read.
  */
 object Lang {
-    val CHOICES = listOf("", "vi", "en")
+    val CHOICES = listOf("") + dev.tvremote.i18n.Langs.CODES
 
     fun pref(c: Context): String = c.getSharedPreferences("channels", Context.MODE_PRIVATE).getString("lang", "") ?: ""
     fun set(c: Context, l: String) = c.getSharedPreferences("channels", Context.MODE_PRIVATE).edit().putString("lang", l).apply()
@@ -29,7 +29,7 @@ object Lang {
     /** [base] with the chosen language, for an Activity's attachBaseContext. */
     fun wrap(base: Context): Context {
         val l = pref(base)
-        val loc = if (l.isEmpty()) system() else Locale(l)
+        val loc = if (l.isEmpty()) system() else dev.tvremote.i18n.Langs.locale(l)
         Locale.setDefault(loc); chosen = loc
         if (l.isEmpty()) return base
         return base.createConfigurationContext(Configuration(base.resources.configuration).apply { setLocale(loc) })

@@ -49,9 +49,13 @@ lists), release/; `optimize_images.py` never touches `docs/home/` and `docs/laun
   rules in app/shared/web/AGENTS.md.
 - **The apps map** lives once in `docs/data/apps-map.json`: `docs/apps.html` draws it; edit it, then `node dev/gen/apps_map.js` (the README mermaid blocks;
   `tests/apps_map.test.js` fails when they differ).
-- **Vietnamese is the source language; words go by id** in `app/shared/web/i18n/<lang>.json` (`vi.json` first, `en.json` complete),
-  for the page (`T('id')`) and Kotlin (`core/Words.kt`, `T("id")`); no new `t("vi", "en")` pairs. README.md / README.vi.md in
-  step; CHANGELOG and release notes in both languages.
+- **Vietnamese is the source language; words go by id**, all under `app/shared/web/i18n/` (one place for every app and language):
+  `langs.json` (THE list of languages), `<lang>.json` (the page and `core/Words.kt`: `T('id')`, `T("id")`; `vi.json` first, `en.json`
+  complete) and `apps/<lang>/<module>.json` (the native apps: home, games, channels, tvkeys, android, tvui; the Android ids; Gradle
+  builds `res/values-<lang>` from them, `app/gradle/i18n.gradle`). **A new language = its files in that folder + one line in
+  `langs.json`**, nothing else: no `strings.xml`, no language list in code (Kotlin reads `dev.tvremote.i18n.Langs`, generated from
+  `langs.json`). No new `t("vi", "en")` pairs. `tests/i18n.test.js` keeps the files in step. README.md / README.vi.md in step;
+  CHANGELOG and release notes in both languages. (`docs/`, the website, stays vi/en.)
 - **Users first:** automatic where possible; an error only after every fallback failed, in words a person can act on
   (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show progress and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet (away from home: Tailscale).

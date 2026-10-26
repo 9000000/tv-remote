@@ -1,0 +1,104 @@
+// The native apps' words, from ONE place for every language: app/shared/web/i18n/langs.json (the list) and
+// app/shared/web/i18n/apps/<lang>/<module>.json (the words: android id -> text | [array items] | { one, other } plurals).
+// A module applies this after its plugins:
+//     extra["i18nApps"] = listOf("home", "tvui")      // which <module>.json files its strings come from (res/values-<lang>/strings.xml)
+//     extra["i18nLangs"] = true                       // and/or the language list for Kotlin: dev.tvremote.i18n.Langs (generated source)
+//     apply(from = "../gradle/i18n.gradle")
+// English is the default (res/values), every other language of langs.json gets res/values-<code>. A language is a folder of
+// files there plus its line in langs.json: nothing in this build changes. app/shared/tests/i18n.test.js keeps the files in step.
+import groovy.json.JsonSlurper
+
+def i18nDir = new File(rootDir, '../shared/web/i18n')
+def isAndroid = project.plugins.hasPlugin('com.android.application') || project.plugins.hasPlugin('com.android.library')
+def apps = project.ext.has('i18nApps') ? project.ext.i18nApps : []
+def wantLangs = project.ext.has('i18nLangs') && project.ext.i18nLangs
+def watched = fileTree(i18nDir) { include 'langs.json', 'apps/**/*.json' }
+
+// langs.json as written, in its order (a parsed map would not promise it)
+def readLangs = {
+    def text = new File(i18nDir, 'langs.json').getText('UTF-8')
+    def out = new LinkedHashMap<String, String>()
+    (text =~ /"([^"\\]+)"\s*:\s*("(?:[^"\\]|\\.)*")/).each { m -> out[m[1]] = new JsonSlurper().parseText(m[2]) as String }
+    if (!out.containsKey('en')) throw new GradleException('i18n/langs.json must list "en": it is the default of every app')
+    return out
+}
+// the res folder of a language code: "en" is the default, "pt-BR" is values-pt-rBR
+def resDir = { String code -> code == 'en' ? 'values' : 'values-' + code.replaceFirst(/^([a-zA-Z]+)-([A-Za-z]+)$/, '$1-r$2') }
+
+// text as it must be written in a values XML so that aapt gives back exactly [s]
+def esc = { String s ->
+    def o = s.replace('\\', '\\\\').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+             .replace("'", "\\'").replace('"', '\\"').replace('\n', '\\n').replace('\t', '\\t')
+    if (o.startsWith('@') || o.startsWith('?')) o = '\\' + o
+    if (s != s.trim() || s.contains('  ')) o = '"' + o + '"'          // aapt trims and folds spaces unless quoted
+    return o
+}
+def entry = { String name, Object v ->
+    if (v instanceof List) return '    <string-array name="' + name + '">' + v.collect { '<item>' + esc(it as String) + '</item>' }.join('') + '</string-array>'
+    if (v instanceof Map) return '    <plurals name="' + name + '">' + v.collect { q, t -> '<item quantity="' + q + '">' + esc(t as String) + '</item>' }.join('') + '</plurals>'
+    return '    <string name="' + name + '">' + esc(v as String) + '</string>'
+}
+
+if (!apps.isEmpty()) {
+    def gen = tasks.register('genI18nRes') {
+        def out = layout.buildDirectory.dir('generated/res/i18n')
+        inputs.files(watched); inputs.property('apps', apps); outputs.dir(out)
+        doLast {
+            def root = out.get().asFile
+            root.deleteDir()
+            readLangs().each { code, name ->
+                def seen = new LinkedHashMap<String, String>()
+                def lines = []
+                apps.each { mod ->
+                    def f = new File(i18nDir, "apps/$code/${mod}.json")
+                    if (!f.isFile()) { if (code == 'en') throw new GradleException("missing ${f}"); return }   // a language may lack a module: English shows
+                    ((Map) new JsonSlurper().parse(f, 'UTF-8')).each { k, v ->
+                        if (seen.containsKey(k)) throw new GradleException("i18n: '$k' is in both ${seen[k]} and $mod (apps/$code)")
+                        seen[k] = mod; lines << entry(k as String, v)
+                    }
+                }
+                def d = new File(root, resDir(code)); d.mkdirs()
+                new File(d, 'strings.xml').write('<?xml version="1.0" encoding="utf-8"?>\n<!-- generated from app/shared/web/i18n/apps/' + code + '/*.json by app/gradle/i18n.gradle: do not edit -->\n<resources>\n' + lines.join('\n') + '\n</resources>\n', 'UTF-8')
+            }
+        }
+    }
+    if (isAndroid) {
+        android.sourceSets.main.res.srcDir(layout.buildDirectory.dir('generated/res/i18n'))
+        tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn(gen) }
+    }
+}
+
+if (wantLangs) {
+    def genLangs = tasks.register('genI18nLangs') {
+        def out = layout.buildDirectory.dir('generated/i18n/kotlin')
+        inputs.files(watched); outputs.dir(out)
+        doLast {
+            def q = { String s -> '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$') + '"' }
+            def langs = readLangs()
+            def f = new File(out.get().asFile, 'dev/tvremote/i18n/Langs.kt'); f.parentFile.mkdirs()
+            f.write('''package dev.tvremote.i18n
+
+/** The languages of app/shared/web/i18n/langs.json, in its order: generated by app/gradle/i18n.gradle, do not edit. */
+object Langs {
+    val CODES: List<String> = listOf(''' + langs.keySet().collect(q).join(', ') + ''')
+    /** Each language in its own words. */
+    val NAMES: Map<String, String> = mapOf(''' + langs.collect { c, n -> q(c) + ' to ' + q(n) }.join(', ') + ''')
+    /** The Locale of a code of the list ("pt-BR" too). */
+    fun locale(code: String): java.util.Locale = java.util.Locale.forLanguageTag(code)
+    /** [code] ("vi", "pt-BR", "" ...) as a language of the list, else null. */
+    fun of(code: String?): String? {
+        val c = (code ?: "").replace('_', '-').lowercase()
+        return CODES.firstOrNull { it.lowercase() == c } ?: CODES.firstOrNull { it.lowercase() == c.substringBefore('-') }
+    }
+}
+''', 'UTF-8')
+        }
+    }
+    if (isAndroid) {
+        android.sourceSets.main.java.srcDir(layout.buildDirectory.dir('generated/i18n/kotlin'))
+        tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn(genLangs) }
+    } else {
+        project.kotlin.sourceSets.getByName('main').kotlin.srcDir(layout.buildDirectory.dir('generated/i18n/kotlin'))
+        tasks.matching { it.name == 'compileKotlin' }.configureEach { dependsOn(genLangs) }
+    }
+}

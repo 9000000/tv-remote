@@ -13,7 +13,4 @@
         <item name="android:paddingStart">6dp</item>
         <item name="android:paddingEnd">6dp</item>
     </style>
-    <string name="widget_name">TV remote</string>
-    <string name="tile_power">TV power</string>
-    <string name="tile_scene">TV scene</string>
 </resources>

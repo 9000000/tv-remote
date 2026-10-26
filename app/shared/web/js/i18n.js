@@ -2,9 +2,18 @@
 // one, en.json and any other language the same ids (missing ones fall back to English, then Vietnamese). In index.html an
 // element names its id (data-i18n, data-i18n-html for words with <b> or <a> in them, data-i18n-title / -aria-label /
 // -placeholder / -alt) and keeps its Vietnamese words, so nothing flashes; the scripts ask T('id', { n: 3 }).
-// A new language: i18n/<code>.json and its line in LANGS. tests/i18n.test.js keeps the files and the page in step.
+// A new language: i18n/<code>.json and its line in i18n/langs.json (and the apps' words: i18n/apps/<code>/). tests/i18n.test.js keeps them in step.
 // Words that come from elsewhere (the server, the TV) arrive in this language already: the page's tvr-lang cookie (Words.kt).
-const LANGS = { vi: 'Tiếng Việt', en: 'English' };
+// The list of languages is ONE file, i18n/langs.json ({ "vi": "Tiếng Việt", "en": "English" }, in the order of the buttons), read at
+// once like the words below; if it cannot be read the page still has the two it began with.
+const LANGS = (() => {
+  try {
+    const x = new XMLHttpRequest(); x.open('GET', 'i18n/langs.json' + (() => { try { return new URL(document.currentScript.src).search; } catch { return ''; } })(), false); x.send();
+    const l = x.status === 200 ? JSON.parse(x.responseText) : null;
+    if (l && l.en) return l;
+  } catch {}
+  return { vi: 'Tiếng Việt', en: 'English' };
+})();
 (() => {
   let stored = null;
   try { stored = localStorage.getItem('lang'); } catch {}

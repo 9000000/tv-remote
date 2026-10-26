@@ -39,7 +39,7 @@ class HomeInfo : ContentProvider() {
 
     /** The words in TV Home's language (it passes "lang"), not this app's own choice: the grid is one screen, in one language. */
     private fun localized(c: Context, lang: String?): Context =
-        if (lang != "vi" && lang != "en") c else c.createConfigurationContext(android.content.res.Configuration(c.resources.configuration).apply { setLocale(java.util.Locale(lang)) })
+        if (lang == null || lang !in dev.tvremote.i18n.Langs.CODES) c else c.createConfigurationContext(android.content.res.Configuration(c.resources.configuration).apply { setLocale(dev.tvremote.i18n.Langs.locale(lang)) })
 
     private fun words(c: Context) = ChannelTile.Words(c.getString(R.string.tile_next_title), c.getString(R.string.tile_next_empty), c.getString(R.string.tile_next_empty_line),
         c.getString(R.string.tile_next_play)) { c.getString(R.string.guide_next, it) }

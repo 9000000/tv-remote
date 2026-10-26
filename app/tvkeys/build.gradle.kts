@@ -41,3 +41,6 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
+// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+extra["i18nApps"] = listOf("tvkeys")
+apply(from = "../gradle/i18n.gradle")

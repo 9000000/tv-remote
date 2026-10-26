@@ -25,11 +25,10 @@ test('the page and the TV hold the same recipes (python3 dev/gen/gen_wallspec.py
 test('every scene is in HomeConfig.ART, with its words in both languages and on the TV', () => {
   assert.deepEqual(Object.keys(art).sort(), [...ids].sort());
   const vi = JSON.parse(fs.readFileSync(path.join(web, 'i18n/vi.json'), 'utf8')), en = JSON.parse(fs.readFileSync(path.join(web, 'i18n/en.json'), 'utf8'));
-  const res = path.join(__dirname, '../../home/src/main/res');
-  const strings = ['values', 'values-vi'].map((d) => fs.readFileSync(path.join(res, d, 'strings.xml'), 'utf8'));
+  const strings = ['en', 'vi'].map((l) => fs.readFileSync(path.join(web, 'i18n/apps', l, 'home.json'), 'utf8'));
   for (const k of [...ids, 'bing']) {
     assert.ok(vi['home.wall_' + k] && en['home.wall_' + k], 'page words for ' + k);
-    for (const s of strings) assert.ok(s.includes(`name="wall_${k}"`), 'TV words for ' + k);
+    for (const s of strings) assert.ok(s.includes(`"wall_${k}":`), 'TV words for ' + k);
   }
 });
 

@@ -52,6 +52,9 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
+// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+extra["i18nApps"] = listOf("tvui")
+apply(from = "../gradle/i18n.gradle")
 
 // TV Setup Keys (app/tvkeys) holds the accessibility services, so this app declares none; its APK is built here and packed as an asset, never
 // downloaded, so the two always have the same version. KeysAddon.kt puts it on the TV over ADB. No version of its own: this app's.

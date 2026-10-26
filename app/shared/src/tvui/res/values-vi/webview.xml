@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="wv_fixing">Đang bật lại WebView của TV…</string>
-    <string name="wv_none">TV này không có WebView. Cài hoặc bật “Android System WebView” trên CH Play.</string>
-    <string name="wv_none_setup">TV này không có WebView. Cài “Android System WebView” trên CH Play, hoặc cài TV Setup: nó tự bật lại.</string>
-    <string name="wv_store">Mở CH Play</string>
-    <string name="wv_retry">Thử lại</string>
-    <string name="wv_back">Quay lại</string>
-</resources>

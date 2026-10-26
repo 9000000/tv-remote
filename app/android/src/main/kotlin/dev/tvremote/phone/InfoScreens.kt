@@ -30,7 +30,7 @@ internal fun MainActivity.buildSettings(): View {
 
     box.addView(head(T("info_screens.language")), gap(18))
     val now = pref("lang")
-    val langs = listOf("" to "@phone|" + T("info_screens.same_as_the_phone"), "vi" to "@globe|Tiếng Việt", "en" to "@globe|English")
+    val langs = listOf("" to "@phone|" + T("info_screens.same_as_the_phone")) + dev.tvremote.i18n.Langs.NAMES.map { (c, n) -> c to "@globe|$n" }
     for ((code, words) in langs) {
         val b = row(words + (if (code == now) "   ✓" else "")) {
             if (code == now) return@row

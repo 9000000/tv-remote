@@ -419,6 +419,17 @@ Gửi chủ đề cho TV Home: xem [THEMES.md](THEMES.md) (tiếng Anh).
 
 Tên gọi, bố cục, test và phát hành: [AGENTS.md](AGENTS.md). Công cụ: [dev/README.md](dev/README.md). Vì sao có đoạn code lạ: [dev/DECISIONS.md](dev/DECISIONS.md). Trang giới thiệu: [docs/README.md](docs/README.md).
 
+### Thêm một ngôn ngữ
+
+Một ngôn ngữ là **file dịch của nó trong một thư mục cộng một dòng trong một danh sách**; không sửa code.
+
+1. `app/shared/web/i18n/langs.json`: thêm `"xx": "Tên bằng chính ngôn ngữ đó"`.
+2. Chép `app/shared/web/i18n/en.json` thành `xx.json` rồi dịch (trang web, TV Setup, app máy tính).
+3. Chép thư mục `app/shared/web/i18n/apps/en/` thành `apps/xx/` rồi dịch sáu file trong đó (TV Home, Channels, Games, TV Setup Keys, app điện thoại, các màn TV dùng chung). Giữ nguyên `%1$s`, `%d` và `{name}`.
+4. `node --test app/shared/tests/` báo còn thiếu gì; khi build, chuỗi Android và mọi nút chọn ngôn ngữ đều lấy từ cùng danh sách.
+
+Chữ thiếu hiện bằng tiếng Anh. Trang web (`docs/`) vẫn chỉ có tiếng Việt và tiếng Anh.
+
 <details>
 <summary><b>Cách hoạt động</b></summary>
 

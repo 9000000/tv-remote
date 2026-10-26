@@ -45,6 +45,10 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
+// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+extra["i18nApps"] = listOf("home", "tvui")
+extra["i18nLangs"] = true
+apply(from = "../gradle/i18n.gradle")
 
 dependencies {
     testImplementation("junit:junit:4.13.2")                          // ./gradlew :home:testDebugUnitTest
@@ -70,7 +74,9 @@ val packHomeWeb = tasks.register("packHomeWeb") {
         dir.deleteRecursively(); File(dir, "js").mkdirs(); File(dir, "css").mkdirs(); File(dir, "i18n").mkdirs()
         homeWebJs.forEach { File(webDir, "js/$it.js").copyTo(File(dir, "js/$it.js")) }
         homeWebCss.forEach { File(webDir, "css/$it.css").copyTo(File(dir, "css/$it.css")) }
-        for (l in listOf("vi", "en")) {
+        File(webDir, "i18n/langs.json").copyTo(File(dir, "i18n/langs.json"))                     // the list: the page reads it (js/i18n.js)
+        @Suppress("UNCHECKED_CAST") val langs = (groovy.json.JsonSlurper().parse(File(webDir, "i18n/langs.json")) as Map<String, Any?>).keys
+        for (l in langs) {
             @Suppress("UNCHECKED_CAST") val all = groovy.json.JsonSlurper().parse(File(webDir, "i18n/$l.json")) as Map<String, Any?>
             File(dir, "i18n/$l.json").writeText(groovy.json.JsonOutput.toJson(all.filterKeys { k -> homeWebWords.any { k.startsWith(it) } }))
         }

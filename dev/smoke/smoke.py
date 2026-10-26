@@ -7,7 +7,7 @@ Rules this file keeps (why it is written this way):
   - every move is "dump, look at the focused node, press one key": no blind key chains;
   - DPAD_CENTER is pressed only right after a dump whose FOCUSED node is the one wanted (its bounds and its text / content-desc
     are checked), so a stray focus never opens or toggles something else;
-  - nodes are found by text / content-desc (the strings come from app/home/src/main/res/values{,-vi}/strings.xml, so the same
+  - nodes are found by text / content-desc (the strings come from app/shared/web/i18n/apps/{en,vi}/home.json, so the same
     steps run in English and Vietnamese), never by fixed coordinates.
 Per screen it records: the focused node on entry (and whether it is the first control of the page), a screenshot, new error /
 crash lines of dev.tvremote.* since the step began, frames / janky frames from `dumpsys gfxinfo`, and whether BACK returns to the
@@ -40,18 +40,12 @@ def adb(*a, binary=False, timeout=60):
 
 
 # ---------------------------------------------------------------- strings (en / vi) from the app's own resources
-def load_strings(folder):
-    out = {}
-    p = os.path.join(RES, folder, "strings.xml")
-    if not os.path.exists(p):
-        return out
-    for s in ET.parse(p).getroot().iter("string"):
-        t = "".join(s.itertext()).replace("\\'", "'").replace('\\"', '"').replace("\\n", "\n")
-        out[s.get("name")] = t
-    return out
+def load_strings(lang):
+    p = os.path.join(ROOT, "app", "shared", "web", "i18n", "apps", lang, "home.json")   # TV Home's words, one file per language
+    return {k: v for k, v in json.load(open(p, encoding="utf-8")).items() if isinstance(v, str)}
 
 
-EN, VI = load_strings("values"), load_strings("values-vi")
+EN, VI = load_strings("en"), load_strings("vi")
 STR = EN if ARGS.lang == "en" else {**EN, **VI}
 
 

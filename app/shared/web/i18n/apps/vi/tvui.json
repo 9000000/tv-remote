@@ -1,0 +1,8 @@
+{
+  "wv_fixing": "Đang bật lại WebView của TV…",
+  "wv_none": "TV này không có WebView. Cài hoặc bật “Android System WebView” trên CH Play.",
+  "wv_none_setup": "TV này không có WebView. Cài “Android System WebView” trên CH Play, hoặc cài TV Setup: nó tự bật lại.",
+  "wv_store": "Mở CH Play",
+  "wv_retry": "Thử lại",
+  "wv_back": "Quay lại"
+}

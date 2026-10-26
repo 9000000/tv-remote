@@ -17,6 +17,9 @@ android {
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }
+// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+extra["i18nLangs"] = true
+apply(from = "../gradle/i18n.gradle")
 
 // Unit tests of the plain logic (scenes, voice commands, the sound downmix, paths): ./gradlew :shared:testDebugUnitTest.
 // org.json is the real library here: Android's own is only a stub off a device.

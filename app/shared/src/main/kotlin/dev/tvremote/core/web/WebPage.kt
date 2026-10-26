@@ -44,7 +44,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
         LINK.replace(html.replaceFirst("<html ", "<html data-core=\"$core\" ")) { it.groupValues[1] + "?v=" + stamp + "\"" }
 
     private companion object {
-        val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|i18n/[a-z]{2,3}\\.json|icon-[a-z0-9]+\\.png|voice/phrases\\.json")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
+        val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|i18n/(?:[a-z]{2,3}|langs)\\.json|icon-[a-z0-9]+\\.png|voice/phrases\\.json")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
         val GZIP = Regex("(?i)(^|[\\s,])gzip\\s*(,|;(?!\\s*q=0(\\.0*)?\\s*(,|$))|$)")   // "gzip" as a token, not "gzip;q=0"
         val LINK = Regex("((?:src|href)=\"(?:css/[^\"?]+|stats\\.js|js/[^\"?]+))\"")
     }

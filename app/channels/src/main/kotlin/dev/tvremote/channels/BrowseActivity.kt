@@ -570,7 +570,7 @@ class BrowseActivity : Activity() {
         box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
     }
 
-    private fun langName(l: String) = when (l) { "vi" -> "Tiếng Việt"; "en" -> "English"; else -> getString(R.string.lang_auto) }
+    private fun langName(l: String) = dev.tvremote.i18n.Langs.NAMES[l] ?: getString(R.string.lang_auto)
 
     /** Three choices, the one in use marked; a new one is saved and the screen made again in it, on the same group. */
     private fun languages() {

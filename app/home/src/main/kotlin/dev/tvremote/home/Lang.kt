@@ -14,7 +14,7 @@ object Lang {
     fun wrap(base: Context): Context {
         shown = try { Store.get(base).optString("lang") } catch (e: Exception) { "" }
         // the default locale too: dates and numbers are formatted with it (DateFormat, String.format) all over the screen
-        val loc = if (shown.isEmpty()) Resources.getSystem().configuration.locales[0] else Locale(shown)
+        val loc = if (shown.isEmpty()) Resources.getSystem().configuration.locales[0] else dev.tvremote.i18n.Langs.locale(shown)
         Locale.setDefault(loc)
         if (shown.isEmpty()) return base
         val cfg = Configuration(base.resources.configuration).apply { setLocale(loc) }

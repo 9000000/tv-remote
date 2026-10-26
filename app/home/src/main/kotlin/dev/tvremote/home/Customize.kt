@@ -99,7 +99,7 @@ object Customize {
             "system" -> a.getString(R.string.g_dream) + ": " + on("dream")
             "keys" -> a.getString(R.string.g_keys_sum, HomeConfig.keyApps(c.optJSONObject("keyapps")).size.takeIf { c.optBoolean("keyon") } ?: 0,
                 a.getString(if (c.optBoolean("autoon")) R.string.w_on else R.string.w_off))
-            else -> when (c.optString("lang")) { "vi" -> "Tiếng Việt"; "en" -> "English"; else -> a.getString(R.string.c_lang_tv) }
+            else -> dev.tvremote.i18n.Langs.NAMES[c.optString("lang")] ?: a.getString(R.string.c_lang_tv)
         }
     }
 
@@ -715,7 +715,7 @@ object Customize {
             // there were, and each press built Home again before the next could be seen
             val sys = android.content.res.Resources.getSystem().configuration.locales[0]
             val now = Store.get(a).optString("lang")
-            for ((k, name) in listOf("" to a.getString(R.string.c_lang_tv), "vi" to "Tiếng Việt", "en" to "English")) {
+            for ((k, name) in (listOf("" to a.getString(R.string.c_lang_tv)) + dev.tvremote.i18n.Langs.NAMES.toList())) {
                 val row = LinearLayout(a).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
                     setPadding(dp(16), dp(13), dp(16), dp(13))

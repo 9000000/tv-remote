@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
     val http = HttpServer(server)
     val bound = try { http.start(port, true) } catch (e: java.io.IOException) {
         System.err.println("port $port is taken: is TV Remote already running? ($e)")
-        if (packaged) App.alert(listOf("vi", "en").joinToString("\n\n") { Words.get(it, "pc.port_taken", "port" to port) })   // no page to ask: both languages
+        if (packaged) App.alert(dev.tvremote.i18n.Langs.CODES.joinToString("\n\n") { Words.get(it, "pc.port_taken", "port" to port) })   // no page to ask: both languages
         return
     }
     pass.save()

@@ -1,0 +1,8 @@
+{
+  "wv_fixing": "Turning the TV's WebView back on…",
+  "wv_none": "This TV has no WebView. Install or turn on “Android System WebView” in Play Store.",
+  "wv_none_setup": "This TV has no WebView. Install “Android System WebView” from Play Store, or install TV Setup: it turns it back on by itself.",
+  "wv_store": "Open Play Store",
+  "wv_retry": "Try again",
+  "wv_back": "Back"
+}

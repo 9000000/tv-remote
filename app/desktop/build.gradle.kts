@@ -18,6 +18,9 @@ kotlin {
     sourceSets["main"].kotlin.srcDir("../shared/src/guard/kotlin")    // GuardLogic: the text of an error report (the Android part, Guard.kt, stays out)
     sourceSets["main"].kotlin.srcDir("../shared/conscrypt")           // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt)
 }
+// Words: app/shared/web/i18n (langs.json + apps/<lang>/<module>.json) -> res/values-<lang> and the language list: app/gradle/i18n.gradle
+extra["i18nLangs"] = true
+apply(from = "../gradle/i18n.gradle")
 // Android only: decoding the picture and sound (TvAndroid, AudioOut), the QR bitmap. Meta and Caps, started on the TV, are Java
 // (src/main/java) and reach the computer as assets/tvr-helper.jar, already dexed.
 sourceSets["main"].kotlin.exclude("**/core/picture/TvAndroid.kt", "**/core/picture/AudioOut.kt", "**/core/web/Qr.kt", "**/core/Upright.kt", "**/core/CensusAndroid.kt")

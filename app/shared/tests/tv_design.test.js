@@ -110,17 +110,7 @@ test('TV Home and TV Setup colour RAM and storage through ONE level function (Ho
   assert.ok(!/availMem/.test(w.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/it\.totalMem - it\.availMem/, '')), 'the card reads MemAvailable (/proc/meminfo); availMem counts cached apps as free (only as a fallback)');
 });
 
-test('every word of TV Home, TV Channels and TV Games is in English and Vietnamese', () => {
-  const SAME = new Set(['app_name', 'wifi']);                        // the same in both languages: kept in values only
-  const ids = (f) => new Set([...fs.readFileSync(f, 'utf8').matchAll(/<(?:string|plurals|string-array)[^>]*name="([^"]+)"[^>]*>/g)]
-    .filter((m) => !/translatable="false"/.test(m[0])).map((m) => m[1]));
-  for (const a of ['home', 'channels', 'games']) {
-    const en = ids(path.join(ROOT, 'app', a, 'src/main/res/values/strings.xml'));
-    const vi = ids(path.join(ROOT, 'app', a, 'src/main/res/values-vi/strings.xml'));
-    assert.deepStrictEqual([...en].filter((x) => !vi.has(x) && !SAME.has(x)), [], `app/${a}: missing in values-vi`);
-    assert.deepStrictEqual([...vi].filter((x) => !en.has(x)), [], `app/${a}: missing in values`);
-  }
-});
+// every word of TV Home, TV Channels and TV Games in every language: i18n.test.js (i18n/apps/<lang>/<module>.json)
 
 test('the TV apps\' line icons all come from dev/gen/gen_icons.py', () => {
   const bad = [];
