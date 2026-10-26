@@ -3904,6 +3904,8 @@
  "support.left": "{n} sends left today.",
  "support.none_left": "Today's 20 sends are used up. Try tomorrow, or read out the code you already have.",
  "eco.on": "Installed",
+ "eco.new": "Update",
+ "eco.update": "Update {name} {from} → {to}",
  "eco.off": "Not installed",
  "eco.open": "Open {name}",
  "eco.get": "Install {name}",

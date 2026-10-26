@@ -82,6 +82,7 @@ class MainActivity : Activity() {
     private val HOWTO = Color.rgb(138, 180, 248)                       // what to do next: a light blue, apart from white info and the three states
     private val PILL = Color.argb(153, 0, 0, 0)                        // the pill on an app's banner: TV Home's name scrim
     private val PILL_ON = Color.argb(230, 22, 128, 72)                // ...on a green that says it is on this TV
+    private val PILL_NEW = Color.argb(235, 196, 110, 12)              // ...on amber: a newer one is in the latest release
     private val ECO_W = 112                                           // an app's banner, dp: small, so the log below keeps its lines
 
     /**
@@ -95,6 +96,9 @@ class MainActivity : Activity() {
         val sub = when (key) { "home" -> T("eco.home_sub"); "channels" -> T("eco.channels_sub"); else -> T("eco.games_sub") }   // what it is, beside the banners while focused
         override val glassy get() = false                         // no gliding glass on this screen: the ring
         var on = false; private set
+        var version = ""; private set                               // on this TV ("" when not)
+        /** The latest release's number when newer than this TV's copy, else null. */
+        val newer get() = ecoLatest?.optString(app.key)?.takeIf { on && it.isNotEmpty() && dev.tvremote.home.HomeConfig.newer(it, version) }
         private val pill = TextView(context)
         init {
             faceColor(TvUi.CARD)                                      // the face's rounded outline, which clips the banner
@@ -105,14 +109,16 @@ class MainActivity : Activity() {
             setOnClickListener { if (!busy) ecoPress(this) else log(T("tv_main.busy")) }
         }
         fun paint() {
-            on = try { packageManager.getPackageInfo(app.pkg, 0); true } catch (e: Exception) { false }
-            pill.text = T(if (on) "eco.on" else "eco.off")
-            pill.background = box(if (on) PILL_ON else PILL, 10, 0)
+            version = try { packageManager.getPackageInfo(app.pkg, 0).versionName ?: "0" } catch (e: Exception) { "" }
+            on = version.isNotEmpty()
+            val up = newer != null
+            pill.text = T(if (up) "eco.new" else if (on) "eco.on" else "eco.off")
+            pill.background = box(if (up) PILL_NEW else if (on) PILL_ON else PILL, 10, 0)
             if (hasFocus()) ecoNote?.text = said()
         }
         /** Beside the banners, not under them (no gap to keep for a name: the log below keeps its lines): what OK does, what it is. */
         fun said(): CharSequence {
-            val act = T(if (on) "eco.open" else "eco.get", "name" to app.name)
+            val act = newer?.let { T("eco.update", "name" to app.name, "from" to version, "to" to it) } ?: T(if (on) "eco.open" else "eco.get", "name" to app.name)
             return android.text.SpannableString("$act\n$sub").apply { setSpan(android.text.style.ForegroundColorSpan(TvUi.TEXT), 0, act.length, 0) }
         }
     }
@@ -792,7 +798,25 @@ class MainActivity : Activity() {
     }
 
     // Support (Support.kt): a code to read out to whoever helps, and for a while their reading of this app's own state
-    private fun ecoPaint() { eco.forEach { it.paint() }; if (eco.none { it.hasFocus() }) ecoNote?.text = ecoText() }
+    private fun ecoPaint() { eco.forEach { it.paint() }; if (eco.none { it.hasFocus() }) ecoNote?.text = ecoText(); ecoCheck() }
+
+    // The release's versions.json ({"home": "0.13.0", ...}), asked at most every 6 h: only for the pills, the install itself
+    // checks the signed SHA256SUMS. A plain download link, not GitHub's API, whose 60 calls an hour TV Setup's own check shares.
+    @Volatile private var ecoLatest: org.json.JSONObject? = null
+    @Volatile private var ecoAsked = 0L
+    private fun ecoCheck() {
+        val now = System.currentTimeMillis()
+        if (eco.isEmpty() || now - ecoAsked in 0 until (if (ecoLatest != null) 6 * 3600_000L else 60_000L)) return
+        ecoAsked = now
+        Thread {
+            try {
+                val c = java.net.URL("https://github.com/HoangTran0410/tv-remote/releases/latest/download/versions.json").openConnection() as java.net.HttpURLConnection
+                c.connectTimeout = 8000; c.readTimeout = 8000; c.instanceFollowRedirects = true
+                val o = try { if (c.responseCode == 200) org.json.JSONObject(c.inputStream.bufferedReader().use { it.readText().take(4096) }) else null } finally { c.disconnect() }
+                if (o != null) { ecoLatest = o; ui { if (!isFinishing) { eco.forEach { it.paint() } } } }
+            } catch (e: Exception) { }                                // offline: the pills say installed / not, asked again in a minute
+        }.start()
+    }
 
     /** Beside the banners: TV Home first, and that it needs no ADB, on the TVs that have none (the user, 2026-10-25). */
     private fun ecoText(): String = when {
@@ -803,14 +827,22 @@ class MainActivity : Activity() {
 
     /** On this TV: opened. Not yet: install it (and for TV Home with ADB, make it the home screen too). */
     private fun ecoPress(e: Eco) {
-        if (e.on) {
-            val i = packageManager.getLeanbackLaunchIntentForPackage(e.app.pkg) ?: packageManager.getLaunchIntentForPackage(e.app.pkg)
-            if (i != null) try { startActivity(i); return } catch (x: Exception) { }
+        e.newer?.let { v ->                                           // a newer one: update it, or open the one there
+            menu(e.app.name, listOf(
+                TvUi.Item(R.drawable.ic_download, T("eco.update", "name" to e.app.name, "from" to e.version, "to" to v), e.sub) { ecoInstall(e) },
+                TvUi.Item(R.drawable.ic_play, T("eco.open", "name" to e.app.name), "") { ecoOpen(e) }))
+            return
         }
+        if (e.on && ecoOpen(e)) return
         val items = mutableListOf(TvUi.Item(R.drawable.ic_download, T("eco.get", "name" to e.app.name), e.sub) { ecoInstall(e) })
         if (e.app.pkg == dev.tvremote.home.HomeConfig.PKG && adb != null)
             items += TvUi.Item(R.drawable.ic_home, T("eco.home_set"), T("eco.home_set_sub")) { chooseLauncher(dev.tvremote.home.HomeConfig.PKG) }
         menu(e.app.name, items)
+    }
+
+    private fun ecoOpen(e: Eco): Boolean {
+        val i = packageManager.getLeanbackLaunchIntentForPackage(e.app.pkg) ?: packageManager.getLaunchIntentForPackage(e.app.pkg) ?: return false
+        return try { startActivity(i); true } catch (x: Exception) { false }
     }
 
     /** Over ADB as Bundle does, with no question; without it, Android's installer asks (once allowed to install apps, as [selfUpdate]). */

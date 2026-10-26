@@ -3802,6 +3802,8 @@
  "support.left": "Hôm nay còn gửi được {n} lần.",
  "support.none_left": "Hôm nay đã gửi đủ 20 lần. Mai thử lại, hoặc đọc mã đã có cho người hỗ trợ.",
  "eco.on": "Đã cài",
+ "eco.new": "Có bản mới",
+ "eco.update": "Cập nhật {name} {from} → {to}",
  "eco.off": "Chưa cài",
  "eco.open": "Mở {name}",
  "eco.get": "Cài {name}",

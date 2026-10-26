@@ -51,8 +51,10 @@ internal fun MainActivity.setupAgain() {
 
 internal class SetupNews(val installed: String, val latest: String, val state: String, val at: Long, val version: String, val from: String,
                          val home: String = "", val homeLatest: String = "") {
-    /** A new version broke on this TV in the last 3 days and was taken back: said once, until "Got it". */
-    fun undone(seen: String) = state == "rolledback" && System.currentTimeMillis() - at < 3 * 86400_000L && seen != at.toString()
+    /** A new version broke on this TV in the last 3 days and was taken back: said once, until "Got it". Not when that version
+     *  (or a later one) is on the TV now, put there another way since (Downloader): the old line was still read (a Chromecast, 0.24.0). */
+    fun undone(seen: String) = state == "rolledback" && System.currentTimeMillis() - at < 3 * 86400_000L && seen != at.toString() &&
+        dev.tvremote.home.HomeConfig.newer(version, installed)
 }
 
 private fun MainActivity.laterAll(): org.json.JSONObject = try { org.json.JSONObject(pref("updLater").ifEmpty { "{}" }) } catch (e: Exception) { org.json.JSONObject() }

@@ -327,10 +327,16 @@ async function checkSetup() {
 // what is on offer and not put off: [kind, name, version]
 const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) ? ['tv', 'TV Setup', r.latest] : null,
   homeLatest && !later('home:' + homeLatest) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
+// a is newer than b ("0.24.0" vs "0.22.0"); a missing part is 0
+const verNewer = (a, b) => {
+  const x = String(a || '').split('.').map((n) => parseInt(n, 10) || 0), y = String(b || '').split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  return false;
+};
 function showSetupUpd(r) {
   setupNow = r;
   const b = $('#setupupd');
-  const undone = r && r.state === 'rolledback' && Date.now() - r.at < 3 * 86400000 && seenUndo() !== String(r.at);
+  const undone = r && r.state === 'rolledback' && Date.now() - r.at < 3 * 86400000 && seenUndo() !== String(r.at) && verNewer(r.version, r.installed);
   const offers = updOffers(r);
   b.hidden = picking || !(undone || offers.length);
   if (b.hidden) return;
