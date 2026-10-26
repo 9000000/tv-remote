@@ -515,7 +515,7 @@
     <string name="map_rain">Mưa</string>
     <string name="map_wind">Gió</string>
     <string name="map_temp">Nhiệt độ</string>
-    <string name="map_clouds">Mây</string>
+    <string name="map_satellite">Vệ tinh</string>
     <string name="map_pm">PM2.5</string>
     <string name="map_none">Chưa có địa điểm: chọn thành phố ở thẻ thời tiết</string>
     <string name="map_loading">Đang tải bản đồ…</string>

@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - Ghim game (TV Games) hay kênh (TV Channels) ra TV Home: ảnh giờ nét (Android thu mọi icon lối tắt về ~127 px, nên ô 600 px bị mờ; app ghim giữ thêm một ảnh 640×360 chỉ TV Home đọc được), và góc dưới có logo app đã ghim. Ô đã ghim trước đây: ghim lại để nét.
+- Bản đồ thời tiết của TV Home: lớp Mây thay bằng Vệ tinh (ảnh vệ tinh thật, mới vài phút, thấy cả mây).
 
 **English**
 - Pinning a game (TV Games) or a channel (TV Channels) to TV Home: the picture is sharp now (Android shrinks every shortcut icon to ~127 px, so a 600 px tile was blurry; the pinning app keeps a 640×360 copy only TV Home can read), with the source app's logo in the corner. Older pins: pin again to make them sharp.
+- TV Home's weather map: the Clouds layer is now Satellite (real satellite pictures, minutes old, clouds included).
 
 ## 0.28.0 - 2026-10-26
 

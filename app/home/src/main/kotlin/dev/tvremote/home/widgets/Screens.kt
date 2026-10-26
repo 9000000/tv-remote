@@ -233,7 +233,7 @@ class MarketActivity : Activity() {
 
 /**
  * The weather map, from the weather card: Windy's own embedded map at the card's place, with the layer to look at (rain, wind,
- * temperature, clouds, PM2.5) and the next days beside it, in a glass panel with the card's own sky icons. Back closes. Needs the
+ * temperature, satellite (its clouds too), PM2.5) and the next days beside it, in a glass panel with the card's own sky icons. Back closes. Needs the
  * internet, and says so before it shows a blank page.
  */
 class WeatherMapActivity : Activity() {
@@ -241,7 +241,7 @@ class WeatherMapActivity : Activity() {
     private var web: WebView? = null
     private var lat = 0.0; private var lon = 0.0
     private val layers = listOf(Triple("rain", R.string.map_rain, R.drawable.ic_rain), Triple("wind", R.string.map_wind, R.drawable.ic_wind), Triple("temp", R.string.map_temp, R.drawable.ic_thermometer),
-        Triple("clouds", R.string.map_clouds, R.drawable.ic_cloud), Triple("pm2p5", R.string.map_pm, R.drawable.ic_gauge))
+        Triple("satellite", R.string.map_satellite, R.drawable.ic_satellite), Triple("pm2p5", R.string.map_pm, R.drawable.ic_gauge))
     private val chips = HashMap<String, TextView>()
     private var loading: View? = null
     private var layer = "rain"; private var ready = false; private var started = false

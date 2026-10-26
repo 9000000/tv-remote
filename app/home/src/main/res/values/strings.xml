@@ -517,7 +517,7 @@
     <string name="map_rain">Rain</string>
     <string name="map_wind">Wind</string>
     <string name="map_temp">Temperature</string>
-    <string name="map_clouds">Clouds</string>
+    <string name="map_satellite">Satellite</string>
     <string name="map_pm">PM2.5</string>
     <string name="map_none">No place yet: set the city in the weather card</string>
     <string name="map_loading">Loading the map…</string>
