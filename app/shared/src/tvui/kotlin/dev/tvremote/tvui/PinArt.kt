@@ -14,8 +14,8 @@ import java.security.MessageDigest
 
 /**
  * A pinned shortcut's picture, sharp. Android shrinks every shortcut icon to its max icon size (127 px on the FPT box, ~192 elsewhere),
- * so a game's 16:9 card reached TV Home as 127x71 and was stretched to a ~600 px tile: the blur. The app that pins also keeps the
- * card at the tile's size here, and TV Home reads it through this provider (`<package>.pinart`, read only, TV Home only);
+ * so a game's 16:9 card reached TV Home as 127x71 and was stretched to a ~370 px focused tile: the blur. The app that pins also keeps the
+ * card at the largest tile's size here (4 columns on a 1080p TV, focused; TV Home draws it at its own tile's size), and TV Home reads it through this provider (`<package>.pinart`, read only, TV Home only);
  * no file (an older app, a launcher that is not ours): the system's icon, as before.
  */
 object PinArt {
@@ -31,9 +31,11 @@ object PinArt {
 
     fun drop(c: Context, sid: String) { File(dir(c), name(sid)).delete() }
 
-    /** TV Home's side: [pkg]'s picture for its shortcut [sid], or null. Blocking (a binder call and a decode): off the main thread. */
-    fun read(c: Context, pkg: String, sid: String): Bitmap? = try {
-        c.contentResolver.openInputStream(Uri.parse("content://$pkg.pinart/" + Uri.encode(sid)))?.use { BitmapFactory.decodeStream(it) }
+    /** TV Home's side: [pkg]'s picture for its shortcut [sid], at least [width] px wide (halved while that holds), or null. Blocking (a binder call and a decode): off the main thread. */
+    fun read(c: Context, pkg: String, sid: String, width: Int = W): Bitmap? = try {
+        var n = 1; while (W / (n * 2) >= width) n *= 2
+        val o = BitmapFactory.Options().apply { inSampleSize = n }
+        c.contentResolver.openInputStream(Uri.parse("content://$pkg.pinart/" + Uri.encode(sid)))?.use { BitmapFactory.decodeStream(it, null, o) }
     } catch (e: Exception) { null }
 
     /** Declared by each app that pins (authority `${applicationId}.pinart`, exported): opens one card, read only, for TV Home. */

@@ -45,10 +45,20 @@ object Pins {
     @TargetApi(26)
     fun stamp(a: App) = (a.pin as? ShortcutInfo)?.lastChangedTimestamp ?: 0L
 
+    /** A focused tile's width in px ([resize]): a pin's picture is drawn at it, not at [PinArt.W]: ~370 px at 5 columns on a 1080p TV, a third of the memory. */
+    @Volatile var fit = dev.tvremote.tvui.PinArt.W; private set
+
+    /** The grid's tiles changed size: pins are drawn again at [px] when next asked (true: there were some to redraw). */
+    fun resize(px: Int): Boolean {
+        val n = px.coerceIn(64, dev.tvremote.tvui.PinArt.W)
+        if (n == fit) return false
+        fit = n; made.clear(); return true
+    }
+
     @TargetApi(26)
     fun picture(c: Context, a: App) {
         val s = a.pin as ShortcutInfo
-        val sharp = if (s.`package` in OURS) dev.tvremote.tvui.PinArt.read(c, s.`package`, s.id) else null   // the system's copy is ~127 px: ours keep the tile-sized one
+        val sharp = if (s.`package` in OURS) dev.tvremote.tvui.PinArt.read(c, s.`package`, s.id, fit) else null   // the system's copy is ~127 px: ours keep a larger one
         val d = sharp?.let { android.graphics.drawable.BitmapDrawable(c.resources, it) }
             ?: try { la(c)!!.getShortcutIconDrawable(s, c.resources.displayMetrics.densityDpi) } catch (e: Exception) { null }
             ?: try { c.packageManager.getApplicationIcon(s.`package`) } catch (e: Exception) { null }   // the system lost its bitmap ("Icon file not found"): the app's own icon, not the hidden apps' eye
@@ -59,14 +69,14 @@ object Pins {
 
     /**
      * A wide pin with its app's icon in a corner, as on the system's own launchers: a game's or a channel's picture alone did not
-     * say which app it opens. Drawn at [PinArt.W] so the icon stays sharp over a small card too.
+     * say which app it opens. Drawn at [fit], the focused tile's size, so the icon stays sharp over a small card too.
      */
     private const val BADGE_BG = 0x66000000                        // under the icon: a see-through one still reads on a white card
     private const val BADGE_SHADOW = 0x99000000.toInt()
 
     private fun badged(c: Context, card: android.graphics.drawable.Drawable, source: String?): android.graphics.drawable.Drawable {
         val icon = source?.let { try { c.packageManager.getApplicationIcon(it) } catch (e: Exception) { null } } ?: return card
-        val w = dev.tvremote.tvui.PinArt.W; val h = dev.tvremote.tvui.PinArt.H
+        val w = fit; val h = fit * dev.tvremote.tvui.PinArt.H / dev.tvremote.tvui.PinArt.W
         val b = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
         val cv = android.graphics.Canvas(b)
         card.setBounds(0, 0, w, h); card.draw(cv)

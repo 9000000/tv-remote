@@ -188,7 +188,7 @@ class HomeActivity : Activity() {
             return
         }
         Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
-        conf = Store.get(this); readNames()
+        conf = Store.get(this); readNames(); Pins.resize(pinW())
         val root = FrameLayout(this)
         backdrop = Backdrop(window.decorView)
 
@@ -269,7 +269,7 @@ class HomeActivity : Activity() {
 
         setContentView(root)
         ThemeShots.live = { webShot() }                                // a theme saved on a web wall: the page as it is drawn now
-        Store.onChange = { conf = Store.get(this); readNames(); if (conf.optString("lang") != Lang.shown) relang() else { show(); watchRead(); wallTimer(); bingCheck(); peek() } }
+        Store.onChange = { conf = Store.get(this); readNames(); if (Pins.resize(pinW())) pinsRedraw(); if (conf.optString("lang") != Lang.shown) relang() else { show(); watchRead(); wallTimer(); bingCheck(); peek() } }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -954,6 +954,15 @@ class HomeActivity : Activity() {
         val again = (keep ?: lastOpened.takeIf { currentFocus == null })?.let { p -> tiles().firstOrNull { it.app?.pkg == p } }
         val near = if (again == null && keepAt >= 0) tiles().let { t -> t.getOrNull(minOf(keepAt, t.size - 1)) } else null   // the one now in its place (the last, if it was last): not the top of Home, a scroll away
         if (again != null) again.requestFocus() else if (near != null) near.requestFocus() else if (currentFocus == null || currentFocus !is Tile && currentFocus !is BarBtn) toTop()
+    }
+
+    /** A focused tile's width: what a pin's picture is drawn at ([Pins.fit]). */
+    private fun pinW() = (tileW() * TvTile.GROW).toInt()
+
+    /** The columns changed: the pins' pictures again at the new size (the grid's own pins come again through [Pins.app]). */
+    private fun pinsRedraw() {
+        val now = pins
+        bg.execute { now.forEach { it.load(this) }; runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }
     }
 
     private fun tileW(): Int { val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT); return (resources.displayMetrics.widthPixels - dp(96) - (cols - 1) * dp(GRID_GAP)) / cols }

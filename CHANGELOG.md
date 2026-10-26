@@ -7,12 +7,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
-- Ghim game (TV Games) hay kênh (TV Channels) ra TV Home: ảnh giờ nét (Android thu mọi icon lối tắt về ~127 px, nên ô 600 px bị mờ; app ghim giữ thêm một ảnh 640×360 chỉ TV Home đọc được), và góc dưới có logo app đã ghim. Ô đã ghim trước đây: ghim lại để nét.
+- Ghim game (TV Games) hay kênh (TV Channels) ra TV Home: ảnh giờ nét (Android thu mọi icon lối tắt về ~127 px, nên ô ~330 px bị mờ; app ghim giữ thêm một ảnh 640×360 chỉ TV Home đọc được, TV Home vẽ nó đúng cỡ ô theo số cột: ~0,25 MB mỗi ô), và góc dưới có logo app đã ghim. Ô đã ghim trước đây: ghim lại để nét.
 - Bản đồ thời tiết của TV Home: lớp Mây thay bằng Vệ tinh (ảnh vệ tinh thật, mới vài phút, thấy cả mây).
 - Lời chào của TV Home tự chọn được: Theo giờ ("Chào buổi tối"), Kèm tên ("Chào buổi tối, Hoàng") hay Tự viết; chỉnh trên TV Home (Giao diện) hoặc trong cài đặt TV Home ở app điện thoại, app máy tính, web của TV.
 
 **English**
-- Pinning a game (TV Games) or a channel (TV Channels) to TV Home: the picture is sharp now (Android shrinks every shortcut icon to ~127 px, so a 600 px tile was blurry; the pinning app keeps a 640×360 copy only TV Home can read), with the source app's logo in the corner. Older pins: pin again to make them sharp.
+- Pinning a game (TV Games) or a channel (TV Channels) to TV Home: the picture is sharp now (Android shrinks every shortcut icon to ~127 px, so a ~330 px tile was blurry; the pinning app keeps a 640×360 copy only TV Home can read, and TV Home draws it at the tile's size for its column count: ~0.25 MB a tile), with the source app's logo in the corner. Older pins: pin again to make them sharp.
 - TV Home's weather map: the Clouds layer is now Satellite (real satellite pictures, minutes old, clouds included).
 - TV Home's greeting can be chosen: Time of day ("Good evening"), With a name ("Good evening, Sam") or My own words; set on TV Home (Look) or in TV Home settings on the phone app, computer app and TV web page.
 
