@@ -66,6 +66,13 @@ for (v in listOf("Debug", "Release")) {
 tasks.withType<Test>().configureEach {                            // KeysAddonTest: the add-on is really in the APK, and signed alike
     systemProperty("tvkeys.dir", layout.buildDirectory.dir("generated/keys").get().asFile.path)
 }
+// one TV model's odd remote buttons (KeyList): the signed list is the copy used until the site's is read
+val packKeyList = tasks.register<Copy>("packKeyList") {
+    from("../../docs/setup") { include("keys.json", "keys.json.sig") }
+    into(layout.buildDirectory.dir("generated/keylist"))
+}
+android.sourceSets["main"].assets.srcDirs(layout.buildDirectory.dir("generated/keylist"))
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(packKeyList) }
 tasks.matching { it.name == "testDebugUnitTest" }.configureEach { dependsOn("packKeysDebug") }
 tasks.matching { it.name == "testReleaseUnitTest" }.configureEach { dependsOn("packKeysRelease") }
 

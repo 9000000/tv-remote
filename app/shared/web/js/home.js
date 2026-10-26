@@ -17,7 +17,7 @@ Object.assign(HOME_WALL_WORDS, { dawn: 'home.wall_dawn', peaks: 'home.wall_peaks
 const HOME_WEBMODE = { live: 'home.web_mode_live', snap: 'home.web_mode_snap' };   // HomeConfig.WMODES, with its words
 const HOME_EVERY = { 'off': 'home.every_off', '30m': 'home.every_30m', '1h': 'home.every_1h', '6h': 'home.every_6h', 'day': 'home.every_day', 'show': 'home.every_show' };   // HomeConfig.EVERY, with its words
 // Remote keys that can open an app (HomeConfig.KEY_COLOURS / KEY_DEAD / KEY_NUMBERS), with their words; a dead key is listed only
-// when TV Setup found it dead on this TV (config.keysDead)
+// when TV Setup offers it on this TV (config.keysDead: the dead keys, and the YouTube / Netflix / Prime buttons even while they work)
 const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.key_yellow', 186: 'home.key_blue', 170: 'home.key_tv', 178: 'home.key_input',
   190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7

@@ -13,8 +13,10 @@ object KeysProtocol {
     const val PERMISSION = "dev.tvremote.setup.permission.KEYS"
     const val DESCRIPTOR = "dev.tvremote.setup.keys.Bridge"
 
-    /** In: key code, action, repeat count, down time, event time. Out: 1 = the key is taken (eat it), 0 = pass it on. */
+    /** In: key code, action, repeat count, down time, event time. Out: 1 = the key is taken (eat it), 0 = pass it on; then the [TX_CODES] rev (an older TV Setup: none, read as 0). */
     const val TX_KEY = 1
+    /** Out: a rev (0: none), a count, the codes: the keys beyond [INTEREST] the site's list gives THIS TV (KeyList), asked again when TX_KEY's rev differs. */
+    const val TX_CODES = 2
 
     /**
      * The only keys the add-on asks about; any other passes with no call at all (every key of a filtering service waits for its

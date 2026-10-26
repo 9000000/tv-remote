@@ -1,0 +1,7 @@
+{
+  "v": 1,
+  "rev": 2,
+  "keys": [
+    {"model": "MiTV-MOOQ0", "device": "croods", "code": 130, "act": "input", "why": "Xiaomi MiTV-MOOQ0: its Input button sends MEDIA_RECORD (cleanyourtv #1368)"}
+  ]
+}

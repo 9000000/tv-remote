@@ -327,7 +327,7 @@ object HomeConfig {
     /** Remote keys a person may give an app. Colour keys: no app answers them in general. Numbers: only on TV Home's own screen. */
     val KEY_COLOURS = listOf(183, 184, 185, 186)                        // PROG_RED, GREEN, YELLOW, BLUE
     val KEY_NUMBERS = (7..16).toList()                                  // KEYCODE_0 .. KEYCODE_9
-    /** The keys the stock launcher answered (app/tv KeyFix.RULES; a test there holds the two lists equal): free only once their handler is gone. */
+    /** The keys the stock launcher answered (app/tv KeyFix.RULES; a test there holds the two lists equal): free once their handler is gone; the app buttons (190, 191, 195: KeyFix.APP_KEYS) even while it works. */
     val KEY_DEAD = listOf(170, 178, 190, 191, 195, 192, 284, 176)
     fun keyAllowed(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || code in KEY_DEAD
     /** "keyapps" as code to package, the codes allowed and the packages real names. */

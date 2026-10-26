@@ -121,7 +121,7 @@ class KeyFixTest {
     @Test fun colourKeysAreAlwaysFreeAndDeadOnesOnlyWhileDead() {
         assertEquals(setOf(183, 184, 185, 186), KeyFix.allowed(emptyMap(), { true }))
         assertEquals(setOf(183, 184, 185, 186, 170, 178, 190), KeyFix.allowed(mapped, { false }))   // the three dead ones join
-        assertEquals(KeyFix.COLOUR, KeyFix.allowed(mapped, { true }))                                  // a key that works is never offered
+        assertEquals(KeyFix.COLOUR + 190, KeyFix.allowed(mapped, { true }))                            // a key that works is never offered, but for an app button
         assertFalse((7..16).any { it in KeyFix.allowed(mapped, { false }) })                           // numbers are TV Home's alone
     }
 
@@ -134,6 +134,13 @@ class KeyFixTest {
         // 170 still has its handler, 7 is a number: both named by the person, neither taken
         val p = KeyFix.plan(mapped, { true }, { true }, mapOf(170 to "a.b", 7 to "a.b", 999 to "a.b"))
         assertTrue(p.isEmpty())
+    }
+
+    @Test fun anAppButtonThatWorksGoesToThePersonsApp() {             // a Chromecast: YouTube still answers its button, the person wants VLC there
+        val p = KeyFix.plan(mapped, { true }, { true }, mapOf(190 to "org.videolan.vlc", 170 to "a.b"))
+        assertEquals(setOf(190), p.keys); assertEquals(listOf("org.videolan.vlc"), p[190]?.pkgs)   // TV (170) still works: not taken
+        assertTrue(KeyFix.plan(mapped, { true }, { true }).isEmpty())                              // nothing given: YouTube keeps it
+        assertFalse(191 in KeyFix.offered(mapped, { true }))                                       // Netflix is no global key here: not offered
     }
 
     @Test fun aDeadKeyGivesWayToThePersonsApp() {

@@ -142,7 +142,7 @@ class HomeInfo : ContentProvider() {
 
     /**
      * TV Home's keys and power-on app ([HomeKeys]): `arg` is its config (HomeConfig, cleaned again here); empty only asks. The answer
-     * {free: the dead keys TV Home may offer, can: this app may run its key filter, wanted: it is not switched off here}.
+     * {free: the keys TV Home may offer (dead ones, app buttons), can: this app may run its key filter, wanted: it is not switched off here}.
      * The work runs on a thread: switching the filter on writes secure settings and a binder call must not wait on that.
      */
     private fun keys(c: Context, arg: String?): Bundle {
@@ -152,7 +152,7 @@ class HomeInfo : ContentProvider() {
                 if (HomeKeys.active(c) && !RemoteService.isRunning()) try { RemoteService.start(c, true) } catch (e: Exception) { }   // the wake-up hearing lives there
             }, "home-keys").apply { isDaemon = true }.start()
         }
-        val free = KeyFix.free(KeyFix.keyMap(c)) { KeyFix.alive(c, it) }
+        val free = KeyFix.offered(KeyFix.keyMap(c)) { KeyFix.alive(c, it) }   // the dead keys and the app buttons
         return Bundle().apply { putString("json", JSONObject().put("free", JSONArray(free.sorted())).put("can", KeyFix.can(c)).put("wanted", KeyFix.wanted(c)).toString()) }
     }
 

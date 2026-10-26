@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Binder
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -38,6 +39,20 @@ class KeysBridge : Service() {
     private var watching = false
     private val gate = HoldKeys.Gate()
     @Volatile private var mic = false                                 // the rule "mic" and a recognizer on this TV (MicVoice), read in refresh(): no disk in the key path
+    @Volatile private var extraOf: KeyList.All? = null                // KeysProtocol.TX_CODES: worked out again only when the site's list changed
+    @Volatile private var extra: Set<Int> = emptySet()
+    @Volatile private var extraRev = 0
+
+    /** The keys the site's list gives this TV that the add-on does not ask about; in memory, so cheap on the key path. */
+    private fun extras(): Int {
+        val l = KeyList.now
+        if (l !== extraOf) {
+            extra = KeyFix.forDevice(Build.MODEL, Build.DEVICE, l.keys).keys - KeysProtocol.INTEREST - KeyList.NEVER
+            extraRev = if (extra.isEmpty()) 0 else extra.hashCode() or 1
+            extraOf = l
+        }
+        return extraRev
+    }
     @Volatile private var hold = false                                // the rule "holdkeys", read in refresh(): no disk in the key path
     private var armed = -1
     private var hint: Toast? = null
@@ -56,6 +71,12 @@ class KeysBridge : Service() {
     /** The add-on's side of [KeysProtocol.TX_KEY], on a binder thread: answered in microseconds, the toast and the action go to the main thread. */
     private val binder = object : Binder() {
         override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
+            if (code == KeysProtocol.TX_CODES) {
+                data.enforceInterface(KeysProtocol.DESCRIPTOR)
+                val r = extras(); val x = extra
+                reply?.writeNoException(); reply?.writeInt(r); reply?.writeInt(x.size); x.forEach { reply?.writeInt(it) }
+                return true
+            }
             if (code != KeysProtocol.TX_KEY) return super.onTransact(code, data, reply, flags)
             data.enforceInterface(KeysProtocol.DESCRIPTOR)
             val key = data.readInt(); val action = data.readInt(); val repeat = data.readInt()
@@ -63,6 +84,7 @@ class KeysBridge : Service() {
             val eat = try { handle(key, action, repeat, down, at) } catch (t: Throwable) { false }
             reply?.writeNoException()
             reply?.writeInt(if (eat) 1 else 0)
+            reply?.writeInt(extras())
             return true
         }
     }

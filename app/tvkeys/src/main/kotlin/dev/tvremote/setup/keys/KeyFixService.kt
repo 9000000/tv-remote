@@ -24,11 +24,13 @@ import android.view.accessibility.AccessibilityEvent
 class KeyFixService : AccessibilityService() {
     private var power: PowerManager? = null
     @Volatile private var bridge: IBinder? = null
+    @Volatile private var extra: Set<Int> = emptySet()                // KeysProtocol.TX_CODES: this TV's odd buttons from the site's list
+    @Volatile private var rev = 0
     private var bound = false
     private val ui = Handler(Looper.getMainLooper())
 
     private val conn = object : ServiceConnection {
-        override fun onServiceConnected(n: ComponentName, b: IBinder) { bridge = b }
+        override fun onServiceConnected(n: ComponentName, b: IBinder) { bridge = b; codes(b) }
         override fun onServiceDisconnected(n: ComponentName) { bridge = null }   // TV Setup's process went: the system brings the binding back with it
         override fun onBindingDied(n: ComponentName) { bridge = null; rebind() }   // TV Setup was updated: the binding is dead, make a new one
         override fun onNullBinding(n: ComponentName) { bridge = null }
@@ -56,7 +58,7 @@ class KeyFixService : AccessibilityService() {
     private fun rebind() { unbind(); ui.postDelayed({ bind() }, 1000) }
 
     override fun onKeyEvent(e: KeyEvent): Boolean {
-        if (e.keyCode !in KeysProtocol.INTEREST) return false
+        if (e.keyCode !in KeysProtocol.INTEREST && e.keyCode !in extra) return false
         if (KeyCatch.live || power?.isInteractive != true) return false   // the key that wakes the screen is KeyCatch's
         val b = bridge ?: return false
         val data = Parcel.obtain()
@@ -67,10 +69,30 @@ class KeyFixService : AccessibilityService() {
             data.writeLong(e.downTime); data.writeLong(e.eventTime)
             b.transact(KeysProtocol.TX_KEY, data, reply, 0)
             reply.readException()
-            reply.readInt() == 1
+            val eat = reply.readInt() == 1
+            val r = if (reply.dataAvail() >= 4) reply.readInt() else 0
+            if (r != rev) ui.post { codes(b) }                         // the list changed since: ask off the key path
+            eat
         } catch (t: Throwable) { false } finally {
             data.recycle(); reply.recycle()
         }
+    }
+
+    /** The extra codes and their rev; an older TV Setup does not know the call: none. */
+    private fun codes(b: IBinder) {
+        Thread({
+            val data = Parcel.obtain()
+            val reply = Parcel.obtain()
+            try {
+                data.writeInterfaceToken(KeysProtocol.DESCRIPTOR)
+                if (b.transact(KeysProtocol.TX_CODES, data, reply, 0)) {
+                    reply.readException()
+                    val r = reply.readInt()
+                    extra = (0 until reply.readInt().coerceIn(0, 64)).map { reply.readInt() }.toSet()
+                    rev = r
+                }
+            } catch (t: Throwable) { } finally { data.recycle(); reply.recycle() }
+        }, "codes").apply { isDaemon = true }.start()
     }
 
     override fun onUnbind(i: Intent?): Boolean { ui.removeCallbacksAndMessages(null); unbind(); return super.onUnbind(i) }

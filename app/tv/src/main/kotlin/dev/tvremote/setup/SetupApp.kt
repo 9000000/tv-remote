@@ -12,6 +12,7 @@ class SetupApp : Application() {
         Words.open = { name -> try { assets.open(name) } catch (e: java.io.IOException) { null } }
         Words.lang = Words.pick(speak(resources.configuration))
         dev.tvremote.guard.Guard.install(this, { dev.tvremote.core.guardWords() })
+        KeyList.start(this) { KeyFix.sync(this); KeysBridge.poke() }   // one TV's odd buttons, from the site's signed list
     }
 
     override fun onConfigurationChanged(c: Configuration) {

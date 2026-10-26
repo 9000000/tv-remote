@@ -50,9 +50,10 @@ object KeyFix {
     class DeviceKey(val model: String, val device: String, val code: Int, val rule: Rule)
     val DEVICE_KEYS = listOf(DeviceKey("MiTV-MOOQ0", "croods", 130, Rule(INPUT)))
 
-    /** [DEVICE_KEYS] of this [model] / [device]: code → rule. */
-    fun forDevice(model: String?, device: String?): Map<Int, Rule> =
-        DEVICE_KEYS.filter { it.model.equals(model, true) || it.device.equals(device, true) }.associate { it.code to it.rule }
+    /** [DEVICE_KEYS] and the site's list ([KeyList], fixed with no new APK; it wins on the same key) of this [model] / [device]: code → rule. */
+    fun forDevice(model: String?, device: String?, listed: List<DeviceKey> = KeyList.now.keys): Map<Int, Rule> =
+        (DEVICE_KEYS + listed).filter { (it.model.isNotEmpty() && it.model.equals(model, true)) || (it.device.isNotEmpty() && it.device.equals(device, true)) }
+            .associate { it.code to it.rule }
 
     /** The key names global_keys.xml uses, for the codes of [RULES] (the file is written with names, not numbers). */
     val NAMES: Map<String, Int> = mapOf(
@@ -76,8 +77,8 @@ object KeyFix {
                 out[code] = Rule(APP, listOf(pkg))
             } else out[code] = rule
         }
-        // the person's own key → app (TV Home's "keyapps"): over a dead key's old job, never over a key that works
-        val free = free(mapped, alive)
+        // the person's own key → app (TV Home's "keyapps"): over a dead key's old job or an app button's, never over another key that works
+        val free = offered(mapped, alive)
         for ((code, pkg) in user) if (code in COLOUR || code in free) if (launchable(pkg)) out[code] = Rule(APP, listOf(pkg), mine = true)
         return out
     }
@@ -113,8 +114,17 @@ object KeyFix {
     fun free(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> =
         RULES.keys.filter { c -> mapped[c]?.let { it == NOBODY || !alive(it) } == true }.toSet()
 
-    /** What a person may give an app through TV Setup: the colour keys and the dead ones; every other key keeps its own way. */
-    fun allowed(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> = COLOUR + free(mapped, alive)
+    /**
+     * A remote's button for one app (YouTube, Netflix, Prime Video): the person may give it another app even while it works (a
+     * Chromecast's remote has no colour keys, these are all it has); left alone, it keeps opening its own app.
+     */
+    val APP_KEYS = setOf(190, 191, 195)
+
+    /** The keys of [RULES] TV Home may offer: the dead ones and the app buttons this TV knows (a global key here). */
+    fun offered(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> = free(mapped, alive) + APP_KEYS.filter { it in mapped }
+
+    /** What a person may give an app through TV Setup: the colour keys, the dead ones and the app buttons; every other key keeps its own way. */
+    fun allowed(mapped: Map<Int, String>, alive: (String) -> Boolean): Set<Int> = COLOUR + offered(mapped, alive)
 
     /** global_keys.xml's `<key keyCode="KEYCODE_X" component="pkg/cls" />` lines → code to component, for the names of [NAMES] (and plain numbers). */
     fun parse(p: XmlPullParser): Map<Int, String> {
