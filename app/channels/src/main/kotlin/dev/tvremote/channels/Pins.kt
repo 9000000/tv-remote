@@ -47,6 +47,7 @@ object Pins {
             .setIntent(Intent(Intent.ACTION_VIEW, link(ch.id)).setClass(c, PlayActivity::class.java))
             .build()
         prefs(c).edit().putString("logo:" + s.id, ch.logo).apply()
+        if (logo != null) dev.tvremote.tvui.PinArt.save(c, s.id, tile(logo, dev.tvremote.tvui.PinArt.W to dev.tvremote.tvui.PinArt.H))   // TV Home's sharp copy: the icon above is shrunk to ~127 px
         noLogo(c, s.id, logo == null)
         return try { sm.updateShortcuts(listOf(s)); sm.requestPinShortcut(s, null) } catch (e: Exception) { false }
     }
@@ -79,7 +80,7 @@ object Pins {
             if (url.isEmpty()) continue                               // the channel has no logo: the app's icon is right
             val logo = Logos.forPin(c, url, 640)
             val ok = logo != null && try { sm.updateShortcuts(listOf(ShortcutInfo.Builder(c, id).setIcon(Icon.createWithBitmap(tile(logo, size(sm)))).build())) } catch (e: Exception) { false }
-            if (!ok) left.add(id)
+            if (!ok) left.add(id) else dev.tvremote.tvui.PinArt.save(c, id, tile(logo!!, dev.tvremote.tvui.PinArt.W to dev.tvremote.tvui.PinArt.H))
         }
         p.edit().putStringSet("nologo", left).apply()
     }
@@ -93,6 +94,7 @@ object Pins {
             .setShortLabel(name.take(24)).setLongLabel(name).setIcon(icon)
             .setIntent(Intent(Intent.ACTION_VIEW, groupLink(id)).setClass(c, BrowseActivity::class.java))
             .build()
+        if (logos.isNotEmpty()) dev.tvremote.tvui.PinArt.save(c, s.id, mosaic(logos, dev.tvremote.tvui.PinArt.W to dev.tvremote.tvui.PinArt.H))
         return try { sm.updateShortcuts(listOf(s)); sm.requestPinShortcut(s, null) } catch (e: Exception) { false }
     }
 
@@ -106,6 +108,7 @@ object Pins {
     fun deleted(c: Context, id: String) {
         if (Build.VERSION.SDK_INT < 26) return
         try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("grp:$id")) } catch (e: Exception) {}
+        dev.tvremote.tvui.PinArt.drop(c, "grp:$id")
     }
 
     /** Up to four logos, two by two, on the light card. */

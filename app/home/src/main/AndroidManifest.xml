@@ -13,6 +13,7 @@
     <queries>                                                         <!-- the apps it lists, and TV Setup for the usage card -->
         <package android:name="dev.tvremote.setup" />
         <package android:name="dev.tvremote.channels" />           <!-- its "Keep watching" tile: its key is checked (Tiles) -->
+        <package android:name="dev.tvremote.games" />              <!-- its pins' sharp pictures (tvui PinArt), with Channels' -->
         <package android:name="com.esaba.downloader" />           <!-- the power button opens it to get TV Setup -->
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>

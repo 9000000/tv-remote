@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Ghim game (TV Games) hay kênh (TV Channels) ra TV Home: ảnh giờ nét (Android thu mọi icon lối tắt về ~127 px, nên ô 600 px bị mờ; app ghim giữ thêm một ảnh 640×360 chỉ TV Home đọc được), và góc dưới có logo app đã ghim. Ô đã ghim trước đây: ghim lại để nét.
+
+**English**
+- Pinning a game (TV Games) or a channel (TV Channels) to TV Home: the picture is sharp now (Android shrinks every shortcut icon to ~127 px, so a 600 px tile was blurry; the pinning app keeps a 640×360 copy only TV Home can read), with the source app's logo in the corner. Older pins: pin again to make them sharp.
+
 ## 0.28.0 - 2026-10-26
 
 Web 0.28.0 · app điện thoại 0.27.0 · app TV 0.28.0 · TV Home 0.15.0 · TV Channels 0.10.0 · TV Games 0.10.0

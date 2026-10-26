@@ -57,5 +57,7 @@
         <!-- the live tile for TV Home: open to every app, answered only for TV Home with its key (HomeInfo checks) -->
         <provider android:name=".HomeInfo" android:authorities="dev.tvremote.channels.home" android:exported="true" />
         <receiver android:name="dev.tvremote.update.SelfUpdate$Installed" android:exported="false" />
+        <!-- a pinned card at the tile's size, for TV Home only: the system shrinks shortcut icons to ~127 px (tvui PinArt) -->
+        <provider android:name="dev.tvremote.tvui.PinArt$Provider" android:authorities="dev.tvremote.channels.pinart" android:exported="true" />
     </application>
 </manifest>

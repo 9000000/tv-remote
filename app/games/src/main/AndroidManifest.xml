@@ -37,5 +37,7 @@
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Keeps the phone-pad server running while TV Games is in the background" />
         </service>
         <receiver android:name="dev.tvremote.update.SelfUpdate$Installed" android:exported="false" />
+        <!-- a pinned card at the tile's size, for TV Home only: the system shrinks shortcut icons to ~127 px (tvui PinArt) -->
+        <provider android:name="dev.tvremote.tvui.PinArt$Provider" android:authorities="dev.tvremote.games.pinart" android:exported="true" />
     </application>
 </manifest>
