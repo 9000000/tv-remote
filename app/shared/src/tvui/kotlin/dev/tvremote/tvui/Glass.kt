@@ -38,7 +38,7 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     private var halo: Bitmap? = null                                 // the glow, blurred once in software for this size
-    private val halos = LinkedHashMap<Long, Bitmap>()                // the last few shapes' glows: tiles, a card, the header and back costs no blur
+    private val halos = LinkedHashMap<Long, Bitmap>()                // the last few shapes' glows: tiles, two card widths, the header, a button and back cost no blur
     private val sheen = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
     private val at = Rect()
@@ -102,7 +102,14 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
         if (!same || face.width > baseW) {                            // a larger tile than any so far, or another shape: a new texture, drawn once
             jump = !same && shown                                     // scaled out of shape on the way the rim and corners smeared: there at once
             baseW = face.width; baseH = Math.round(baseW.toFloat() * face.height / face.width); radius = r; halo = null
-            layoutParams = FrameLayout.LayoutParams(baseW + 2 * pad, baseH + 2 * pad)
+            val w = baseW + 2 * pad; val h = baseH + 2 * pad
+            val lp = layoutParams as? FrameLayout.LayoutParams
+            if (lp == null || !isLaidOut) layoutParams = FrameLayout.LayoutParams(w, h)
+            else {                                                    // resized on its own: a requestLayout laid out the whole page again on every new shape
+                lp.width = w; lp.height = h
+                measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY))
+                layout(left, top, left + w, top + h)
+            }
             invalidate()
         }
         val k = tw / baseW
@@ -140,5 +147,5 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
 
     val placed get() = shown
 
-    private companion object { const val HALOS = 4; val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
+    private companion object { const val HALOS = 6; val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
 }

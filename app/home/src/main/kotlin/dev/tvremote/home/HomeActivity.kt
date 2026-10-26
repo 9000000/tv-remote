@@ -1011,7 +1011,12 @@ class HomeActivity : Activity() {
      * [pad] wider than the grid each side, its first tile still on the grid's first column.
      */
     private inner class Strip(c: Context, private val pad: Int, padV: Int) : LinearLayout(c) {
-        init { orientation = HORIZONTAL; clipToPadding = false; setPadding(pad, padV, pad, padV) }
+        // clipChildren cut each tile to its own resting bounds: a focused one grew square-cornered, its ring and glass edge gone
+        // (the user, 2026-10-27). Only the sides are cut, to the row's width (clipBounds, not scrolled): the tiles past it stay hidden
+        init {
+            orientation = HORIZONTAL; clipToPadding = false; clipChildren = false; setPadding(pad, padV, pad, padV)
+            addOnLayoutChangeListener { v, _, _, r, b, _, _, or, ob -> if (r != or || b != ob) v.clipBounds = android.graphics.Rect(0, -v.height, v.width, 2 * v.height) }
+        }
         override fun hasOverlappingRendering() = false
 
         /** Measured as wide as its tiles want (a LinearLayout gives the ones past its own width none), then cut to the room it has. */
