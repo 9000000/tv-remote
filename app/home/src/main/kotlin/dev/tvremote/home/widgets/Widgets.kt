@@ -134,7 +134,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** The cards the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
     val hot = ArrayList<View>()
     var onOpen: ((String) -> Unit)? = null
-    /** Edit mode: every card takes the focus (an outline each), not only the three that open a screen. Set before [show]. */
+    /** Edit mode: every card at rest wears an outline ("you can change this"). Set before [show]. */
     var editing = false
     /** Long OK or Menu on any card: its small menu (size, look, hide...), live on the card itself. */
     var onMenu: ((String, View) -> Unit)? = null
@@ -147,8 +147,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         return hot.filter { it.isShown }.minByOrNull { h -> h.getLocationOnScreen(at); Math.abs(at[0] + h.width / 2 - x) }
     }
 
-    /** The card straight above or below [x] that takes focus, else null: a card with nothing to press (the lunar calendar) is
-     *  passed by, and Down from the gear at the right no longer crossed the screen to the weather at the left. */
+    /** The card straight above or below [x], else null: Down from the gear at the right no longer crossed the screen to the weather at the left. */
     fun hotAt(x: Int): View? = nearestHot(x)?.takeIf { h -> val at = IntArray(2); h.getLocationOnScreen(at); x in at[0]..at[0] + h.width }
 
     private fun hotify(v: View, k: String) {
@@ -301,7 +300,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                     }
                 } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
                 bare(v, k)
-                if (editing || k == "weather" || k == "news" || k == "market") hotify(v, k)   // the others take no focus but in edit mode: the D-pad stays as it was
+                hotify(v, k)                                               // every card a stop (the user, 2026-10-27): OK opens its screen, or its menu where it has none
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })

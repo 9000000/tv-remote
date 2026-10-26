@@ -211,7 +211,7 @@ class HomeActivity : Activity() {
         head = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false; clipToPadding = false }  // a focused button grows past its row
         val left = LinearLayout(this).apply {                       // focusable: long OK / Menu on the clock, the day or the greeting is their menu
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; clipChildren = false
-            isFocusable = false; isClickable = true; id = View.generateViewId()   // a stop only in edit mode
+            isFocusable = false; isClickable = true; id = View.generateViewId()   // a stop while something in it is shown (clockAndDay)
             setPadding(dp(14), dp(6), dp(14), dp(6));             setOnLongClickListener { headMenu(); true }
             setOnKeyListener { v, code, e ->
                 if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) headMenu(); true }
@@ -255,7 +255,7 @@ class HomeActivity : Activity() {
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onMenu = ::widgetMenu
         widgets.onOpen = { k -> if (editing || k !in OPENS) widgets.hot.firstOrNull { it.tag == k }?.let { widgetMenu(k, it) } else startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
-        widgets.onUp = { v -> bar.buttons.filter { it.isShown }.minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
+        widgets.onUp = { v -> (bar.buttons.filter { it.isShown } + listOfNotNull(headLeft.takeIf { it.isShown && it.isFocusable })).minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
         widgets.onDown = { v -> below(v)?.let { go(it) } }
         col.addView(widgets, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(28) })
 
@@ -457,9 +457,9 @@ class HomeActivity : Activity() {
         }
     }
     private fun paintHead() {
-        headLeft.background = if (!editing) null else android.graphics.drawable.StateListDrawable().apply {
+        headLeft.background = android.graphics.drawable.StateListDrawable().apply {
             addState(intArrayOf(android.R.attr.state_focused), TvUi.ring(this@HomeActivity, TvUi.FOCUS_FILL, dp(18).toFloat()))
-            addState(intArrayOf(), TvUi.round(Color.TRANSPARENT, dp(18).toFloat(), dp(2), EDIT_EDGE))
+            if (editing) addState(intArrayOf(), TvUi.round(Color.TRANSPARENT, dp(18).toFloat(), dp(2), EDIT_EDGE))   // at rest: the outline says "you can change this"
         }
     }
     internal fun edit() {
@@ -1654,7 +1654,7 @@ class HomeActivity : Activity() {
         rule.visibility = if (clock.isShown && (dateLine.isShown || greetLine.isShown)) View.VISIBLE else View.GONE   // the line between them only while there are two sides
         netPill.visibility = if (conf.optBoolean("showNet", true)) View.VISIBLE else View.GONE
         settingsPill.visibility = if (conf.optBoolean("showGear", true)) View.VISIBLE else View.GONE
-        headLeft.isFocusable = editing && (clock.isShown || dateLine.isShown || greetLine.isShown)   // a stop in edit mode only
+        headLeft.isFocusable = clock.isShown || dateLine.isShown || greetLine.isShown   // a stop (the user, 2026-10-27): OK is its menu
         val ends = bar.buttons.filter { it.visibility == View.VISIBLE }
         for (b in ends.drop(1)) b.nextFocusLeftId = View.NO_ID
         ends.firstOrNull()?.nextFocusLeftId = if (headLeft.isFocusable) headLeft.id else ends.first().id   // the row's end stays put, or goes to the clock
