@@ -126,7 +126,7 @@ Use the steps already in use: **4 · 6 · 8 · 10 · 12 · 14 · 16 · 20 · 24 
 |---|---|---|
 | Tile focus in / out | 520 / 300 | `Motion.spring` (damped spring, 0.62) / `Motion.glide` (`HomeActivity.kt:1075-1080`) |
 | Ring fade in / out | 200 / 160 | glide |
-| Glass glide | 460; first show fade 180; hide 140 | spring (`Glass.kt:80-101`) |
+| Glass glide | 460 (to another shape too: two panes cross, one fading in, one out); first show fade 180; hide 140 | spring (`Glass.kt` `to`, `slide`) |
 | Edge nudge (nothing that way) | 80 out + 460 back | glide, then `Motion.bounce` |
 | Small card / tile scale | 120 (Channels, Setup), 200 (Games pill), 420 / 220 (`Motion.pop`) | default / spring |
 | Overlay / hint fade | 150 | glide (`HomeActivity.kt:478-485`) |

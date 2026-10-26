@@ -21,8 +21,8 @@ import android.widget.FrameLayout
  * rim, a faint glow round it and a sheen on the top part only, no fill, so a banner keeps its colours under it. It is drawn ONCE
  * into a texture the size of the largest tile, and a move only changes its translation and scale: no redraw while it glides (a
  * pane redrawn every frame crawled on a MediaTek MT5895). All tiles are 16:9, so a uniform scale fits it to any of them; another
- * shape (a widget card, the header, a round button) is drawn once for that shape (its glow kept, [HALOS]) and the pane is there at
- * once, faded in, instead of gliding out of shape. In a FrameLayout over the tiles inside the scrolled content, so a scroll carries
+ * shape (a widget card, the header, a round button) is drawn once for that shape (its glow kept, [HALOS]) and reached by two
+ * panes crossing ([to]). In a FrameLayout over the tiles inside the scrolled content, so a scroll carries
  * it along with its tile.
  */
 class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
@@ -38,7 +38,6 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     private var halo: Bitmap? = null                                 // the glow, blurred once in software for this size
-    private val halos = LinkedHashMap<Long, Bitmap>()                // the last few shapes' glows: tiles, two card widths, the header, a button and back cost no blur
     private val sheen = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
     private val at = Rect()
@@ -76,7 +75,7 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
         val h = halo?.takeIf { it.width == width && it.height == height } ?: (halos[key] ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also {
             Canvas(it).apply { drawRoundRect(box, radius, radius, glow); drawRoundRect(box, radius, radius, CUT) }   // outward only: inside, it hazed the banner's edge
             halos[key] = it
-            if (halos.size > HALOS) halos.remove(halos.keys.first())?.recycle()
+            if (halos.size > HALOS) halos.remove(halos.keys.first())  // not recycled: the twin may still be drawing it
         }).also { halo = it }
         canvas.drawBitmap(h, 0f, 0f, pic)
         canvas.save()
@@ -90,34 +89,74 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
 
     /**
      * Onto [face] (a tile's picture) grown by [grow] round its centre, as the tile is when focused; [r] its corner radius.
-     * [glide] false: there at once (the first showing, motion off, a layout that moved the tiles).
+     * [glide] false: there at once (the first showing, motion off, a layout that moved the tiles). To another shape it glides
+     * too: the pane it was flies there and fades, a second pane drawn in the new shape flies from here and comes in ([twin]);
+     * either one stretched on the way is half seen, so neither rim reads as bent. Still no redraw while they move.
      */
     fun to(content: ViewGroup, face: View, grow: Float, r: Float, glide: Boolean) {
         if (face.width == 0) { face.post { if (face.isAttachedToWindow) to(content, face, grow, r, false) }; return }
-        at.set(0, 0, face.width, face.height)
-        content.offsetDescendantRectToMyCoords(face, at)
-        val tw = face.width * grow
-        val same = baseH > 0 && Math.abs(face.width.toFloat() / face.height - baseW.toFloat() / baseH) < 0.02f && r == radius
-        var jump = false
-        if (!same || face.width > baseW) {                            // a larger tile than any so far, or another shape: a new texture, drawn once
-            jump = !same && shown                                     // scaled out of shape on the way the rim and corners smeared: there at once
-            baseW = face.width; baseH = Math.round(baseW.toFloat() * face.height / face.width); radius = r; halo = null
-            val w = baseW + 2 * pad; val h = baseH + 2 * pad
-            val lp = layoutParams as? FrameLayout.LayoutParams
-            if (lp == null || !isLaidOut) layoutParams = FrameLayout.LayoutParams(w, h)
-            else {                                                    // resized on its own: a requestLayout laid out the whole page again on every new shape
-                lp.width = w; lp.height = h
-                measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY))
-                layout(left, top, left + w, top + h)
-            }
-            invalidate()
+        val a = cur
+        if (!glide || !a.shown || a.fits(face, r)) { (if (a === this) twin else this)?.drop(); a.go(content, face, grow, r, glide); return }
+        val b = (if (a === this) twin ?: Glass(context, dp).also { twin = it; content.addView(it, content.indexOfChild(this) + 1, FrameLayout.LayoutParams(0, 0)) } else this)
+        val fx = a.translationX + a.pad * a.scaleX; val fy = a.translationY + a.pad * a.scaleY   // where a's face is now, mid-glide or not
+        val fw = a.baseW * a.scaleX; val fh = a.baseH * a.scaleY
+        b.shape(face, r)
+        a.target(content, face, grow)
+        val tx = a.at.exactCenterX() - face.width * grow / 2f; val ty = a.at.exactCenterY() - face.height * grow / 2f
+        b.animate().cancel(); b.cover(fx, fy, fw, fh); b.alpha = 0f; b.shown = true
+        b.slide(tx, ty, face.width * grow, face.height * grow, 1f)
+        a.shown = false; a.slide(tx, ty, face.width * grow, face.height * grow, 0f)
+        cur = b
+    }
+
+    private var cur: Glass = this                                    // the pane in front: this, or the twin after a change of shape
+    private var twin: Glass? = null                                  // the second pane, made at the first change of shape, next to this one
+
+    private fun fits(face: View, r: Float) = baseH > 0 && r == radius && Math.abs(face.width.toFloat() / face.height - baseW.toFloat() / baseH) < 0.02f
+
+    /** [face]'s place in content, in [at]. */
+    private fun target(content: ViewGroup, face: View, grow: Float) { at.set(0, 0, face.width, face.height); content.offsetDescendantRectToMyCoords(face, at) }
+
+    /** A texture for [face]'s shape, drawn once: sized on its own, as a requestLayout laid out the whole page again on every new shape. */
+    private fun shape(face: View, r: Float) {
+        if (fits(face, r) && face.width <= baseW) return
+        baseW = face.width; baseH = face.height; radius = r; halo = null
+        val w = baseW + 2 * pad; val h = baseH + 2 * pad
+        val lp = layoutParams as? FrameLayout.LayoutParams
+        if (lp == null) layoutParams = FrameLayout.LayoutParams(w, h)
+        else {
+            lp.width = w; lp.height = h
+            measure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY))
+            layout(left, top, left + w, top + h)
         }
-        val k = tw / baseW
+        invalidate()
+    }
+
+    /** Scaled (unevenly, for a moment) so the face part covers [w] x [h] at [x], [y]. */
+    private fun cover(x: Float, y: Float, w: Float, h: Float) {
+        scaleX = w / baseW; scaleY = h / baseH
+        translationX = x - pad * scaleX; translationY = y - pad * scaleY
+        atX = translationX; atY = translationY
+    }
+
+    private fun slide(x: Float, y: Float, w: Float, h: Float, to: Float) {
+        val sx = w / baseW; val sy = h / baseH
+        atX = x - pad * sx; atY = y - pad * sy
+        animate().cancel()
+        animate().translationX(atX).translationY(atY).scaleX(sx).scaleY(sy).alpha(to).setDuration(Motion.ms(460)).setInterpolator(Motion.spring).start()
+    }
+
+    /** The other pane, gone at once: the focus left the change of shape mid-way, or a re-place. */
+    private fun drop() { if (shown || alpha > 0f) { shown = false; animate().cancel(); alpha = 0f } }
+
+    private fun go(content: ViewGroup, face: View, grow: Float, r: Float, glide: Boolean) {
+        target(content, face, grow)
+        shape(face, r)
+        val k = face.width * grow / baseW
         val x = at.exactCenterX() - (baseW + 2 * pad) * k / 2f
         val y = at.exactCenterY() - (baseH + 2 * pad) * k / 2f
         atX = x; atY = y
         animate().cancel()
-        if (jump) { shown = false; alpha = 0f }
         if (!glide || !shown) {
             translationX = x; translationY = y; scaleX = k; scaleY = k
             if (!shown) { shown = true; if (glide) animate().alpha(1f).setDuration(180).start() else alpha = 1f }
@@ -130,22 +169,28 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
 
     /** With its tile, leaning [px], [py] at an edge and wobbling back ([Tile.nudge]). */
     fun nudge(px: Float, py: Float) {
-        if (!shown) return
-        animate().cancel()
-        animate().translationX(atX + px).translationY(atY + py).setDuration(80).setInterpolator(Motion.glide).withEndAction {
-            animate().translationX(atX).translationY(atY).setDuration(460).setInterpolator(Motion.bounce).start()
+        val g = cur
+        if (!g.shown) return
+        g.animate().cancel()
+        g.animate().translationX(g.atX + px).translationY(g.atY + py).setDuration(80).setInterpolator(Motion.glide).withEndAction {
+            g.animate().translationX(g.atX).translationY(g.atY).setDuration(460).setInterpolator(Motion.bounce).start()
         }.start()
     }
 
     /** Focus left the tiles (the buttons, a panel): the pane fades and the next tile it lands on gets it at once. */
     fun hide() {
-        if (!shown) return
-        shown = false
-        animate().cancel()
-        animate().alpha(0f).setDuration(140).start()
+        for (g in listOfNotNull(this, twin)) {
+            if (!g.shown) continue
+            g.shown = false
+            g.animate().cancel()
+            g.animate().alpha(0f).setDuration(140).start()
+        }
     }
 
-    val placed get() = shown
+    val placed get() = cur.shown
 
-    private companion object { const val HALOS = 6; val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
+    private companion object {
+        const val HALOS = 6
+        val halos = LinkedHashMap<Long, Bitmap>()                    // the last few shapes' glows, both panes': tiles, two card widths, the header, a button and back cost no blur
+        val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
 }
