@@ -8,6 +8,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Home: mọi thẻ widget và phần đầu trang (giờ, câu chào) đều chọn được bằng D-pad. Thẻ có màn riêng (thời tiết, tin, thị trường) thì OK mở màn đó; thẻ khác thì OK mở menu tuỳ chỉnh của thẻ.
+- TV Home: kiểu focus "Kính" giờ trượt tới mọi chỗ chọn được (thẻ widget, đầu trang, nút trên thanh trên cùng), không còn bốn kiểu focus khác nhau. Kính chỉ vẽ lại khi đổi hình (một lần mỗi hình, giữ sẵn 4), lúc trượt chỉ dịch và phóng trên GPU.
+- TV Home > Tùy chỉnh > Giao diện: "Câu chào" và "Dòng dưới" mỗi cái là một dòng, OK mở các tuỳ chọn của nó (nội dung, cỡ, màu, đậm, nghiêng, in hoa) ngay bên dưới.
 - TV Home, Hình nền có mục **Gợi ý**: slideshow Việt Nam, 11 video êm (lò sưởi, cực quang, bể cá, Dải Ngân Hà, biển mây, Hạ Long…), các ảnh của site và một trang web sống (gió toàn cầu). Danh sách nằm trên site (`docs/home/wallpapers.json`, có chữ ký), thêm mẫu mới không cần ra bản app. Có trên TV và trang cài đặt TV Home.
 - TV Home, màu nền **Tự chọn**: 1 màu (trơn) hoặc 2–4 màu chuyển dần, chọn từng màu và 9 hướng (chéo, dọc, ngang, toả từ giữa). Trên TV đổi bằng ◀ ▶ và thấy ngay trên màn hình chính; trên điện thoại / máy tính dùng bảng chọn màu.
 - TV Home, widget kiểu StandBy của iPhone: đồng hồ thêm mặt **Hiện đại** (vạch từng phút, thứ + ngày màu đỏ trong mặt) và **Số** (màn đen, dòng ngày đỏ trên giờ to); lịch thêm kiểu **Ngày** (thứ màu đỏ, ngày thật to, ngày âm bên dưới). Chọn trong Cài đặt thẻ trên TV, điện thoại hoặc máy tính. Vẫn vẽ lại mỗi phút một lần, không tốn CPU.
@@ -23,6 +25,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **English**
 - TV Home: every widget card and the header (clock, greeting) take the D-pad focus. Cards with a screen (weather, news, market) open it on OK; the others open their own settings menu.
+- TV Home: the "Glass" focus now glides to every stop (widget cards, the header, the top-bar buttons), not four different focus looks. The glass is redrawn only when the shape changes (once per shape, 4 kept); gliding is a GPU move and scale.
+- TV Home > Customize > Look: "Greeting" and "Second line" are one row each; OK opens its options (content, size, colour, bold, italic, capitals) under it.
 - TV Home, Wallpaper gets **Suggested**: the Việt Nam slideshow, 11 calm videos (fireplace, aurora, aquarium, Milky Way, sea of clouds, Ha Long…), the site's pictures and a live page (Earth winds). The list lives on the site (`docs/home/wallpapers.json`, signed): new ones need no app release. On the TV and in the page's TV Home settings.
 - TV Home, a **Custom** colour background: one colour (plain) or 2–4 blended, each colour and 9 directions (diagonal, down, across, from the middle). On the TV ◀ ▶ change it live on the home screen; the phone / computer use a colour picker.
 - TV Home, iPhone StandBy-style widgets: the clock adds a **Modern** face (every minute ticked, weekday + day in red in the dial) and **Digital** (a black screen, red date line over big digits); the calendar adds a **Date** layout (weekday in red, the day huge, the lunar date under it). Pick them in the card's settings on the TV, phone or computer. Still redrawn once a minute: no CPU cost.

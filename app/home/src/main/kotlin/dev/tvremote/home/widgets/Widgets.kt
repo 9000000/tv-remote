@@ -139,6 +139,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** Long OK or Menu on any card: its small menu (size, look, hide...), live on the card itself. */
     var onMenu: ((String, View) -> Unit)? = null
     var onUp: ((View) -> Unit)? = null
+    /** A card took or lost the focus: the screen's glass pane follows it. */
+    var onFocus: ((View, Boolean) -> Unit)? = null
     var onDown: ((View) -> Unit)? = null
 
     /** The hot card nearest above-or-below the x of a tile, for Up from the first row of the grid. */
@@ -153,10 +155,10 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     private fun hotify(v: View, k: String) {
         v.isFocusable = true; v.tag = k; hot.add(v)
         if (Build.VERSION.SDK_INT >= 23) v.foreground = android.graphics.drawable.StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(3), Color.WHITE); setColor(HOT_FILL) })
+            if (!dev.tvremote.tvui.Motion.glass) addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(3), Color.WHITE); setColor(HOT_FILL) })   // glass: the screen's pane comes here instead
             if (editing) addState(intArrayOf(), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(2), HOT_FILL_EDGE) })   // at rest: the outline says "you can change this"
         }
-        if (k == "news") v.setOnFocusChangeListener { _, f -> newsFocused = f }
+        v.setOnFocusChangeListener { _, f -> if (k == "news") newsFocused = f; onFocus?.invoke(v, f) }
         v.setOnClickListener { onOpen?.invoke(k) }
         v.setOnLongClickListener { onMenu?.invoke(k, v); true }
         v.setOnKeyListener { _, code, e ->

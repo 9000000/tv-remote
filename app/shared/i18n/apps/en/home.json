@@ -51,6 +51,7 @@
   "gstyle_lunar": "Lunar date",
   "dstyle": "Second line",
   "dtext_hint": "E.g. {weekday} {day}/{month}",
+  "h_what": "Shows",
   "h_size": "Text size",
   "h_s": "Small",
   "h_m": "Medium",

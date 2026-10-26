@@ -20,8 +20,10 @@ import android.widget.FrameLayout
  * The focus as one pane of glass that glides from tile to tile (the idea of cleanyourtv's launcher, drawn our own way): a bright
  * rim, a faint glow round it and a sheen on the top part only, no fill, so a banner keeps its colours under it. It is drawn ONCE
  * into a texture the size of the largest tile, and a move only changes its translation and scale: no redraw while it glides (a
- * pane redrawn every frame crawled on a MediaTek MT5895). All tiles are 16:9, so a uniform scale fits it to any of them.
- * In a FrameLayout over the tiles inside the scrolled content, so a scroll carries it along with its tile.
+ * pane redrawn every frame crawled on a MediaTek MT5895). All tiles are 16:9, so a uniform scale fits it to any of them; another
+ * shape (a widget card, the header, a round button) is drawn once for that shape (its glow kept, [HALOS]) and the pane is there at
+ * once, faded in, instead of gliding out of shape. In a FrameLayout over the tiles inside the scrolled content, so a scroll carries
+ * it along with its tile.
  */
 class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
     // the pane is white light only; what changes is how much of it shows
@@ -36,10 +38,12 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
     }
     private val pic = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     private var halo: Bitmap? = null                                 // the glow, blurred once in software for this size
+    private val halos = LinkedHashMap<Long, Bitmap>()                // the last few shapes' glows: tiles, a card, the header and back costs no blur
     private val sheen = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
     private val at = Rect()
-    private var baseW = 0                                            // the pane's width at scale 1 (the largest tile seen)
+    private var baseW = 0                                            // the pane's size at scale 1 (the largest of this shape seen)
+    private var baseH = 0
     private var radius = 0f
     private var shown = false
     private var atX = 0f; private var atY = 0f                      // where it rests, for [nudge]
@@ -68,10 +72,12 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
         box.set(pad.toFloat(), pad.toFloat(), (width - pad).toFloat(), (height - pad).toFloat())
         // the glow: one ring blurred (a real Gaussian), not three fading rings, whose steps showed as separate bands. Blurred
         // on a software canvas once per size (BlurMaskFilter is not drawn by the GPU before Android 9), then only pasted
-        val h = halo?.takeIf { it.width == width && it.height == height } ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also {
-            halo?.recycle(); halo = it
+        val key = (width.toLong() shl 32) or (height.toLong() shl 12) or radius.toLong().coerceIn(0, 4095)
+        val h = halo?.takeIf { it.width == width && it.height == height } ?: (halos[key] ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also {
             Canvas(it).apply { drawRoundRect(box, radius, radius, glow); drawRoundRect(box, radius, radius, CUT) }   // outward only: inside, it hazed the banner's edge
-        }
+            halos[key] = it
+            if (halos.size > HALOS) halos.remove(halos.keys.first())?.recycle()
+        }).also { halo = it }
         canvas.drawBitmap(h, 0f, 0f, pic)
         canvas.save()
         canvas.clipRect(box.left, box.top, box.right, box.top + box.height() * 0.5f)   // clipRect stays on the GPU; clipPath did not
@@ -91,19 +97,24 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
         at.set(0, 0, face.width, face.height)
         content.offsetDescendantRectToMyCoords(face, at)
         val tw = face.width * grow
-        if (face.width > baseW || r != radius) {                      // a larger tile than any so far: a new texture, drawn once
-            baseW = maxOf(baseW, face.width); radius = r; halo = null
-            layoutParams = FrameLayout.LayoutParams(baseW + 2 * pad, baseW * 9 / 16 + 2 * pad)
+        val same = baseH > 0 && Math.abs(face.width.toFloat() / face.height - baseW.toFloat() / baseH) < 0.02f && r == radius
+        var jump = false
+        if (!same || face.width > baseW) {                            // a larger tile than any so far, or another shape: a new texture, drawn once
+            jump = !same && shown                                     // scaled out of shape on the way the rim and corners smeared: there at once
+            baseW = face.width; baseH = Math.round(baseW.toFloat() * face.height / face.width); radius = r; halo = null
+            layoutParams = FrameLayout.LayoutParams(baseW + 2 * pad, baseH + 2 * pad)
             invalidate()
         }
         val k = tw / baseW
         val x = at.exactCenterX() - (baseW + 2 * pad) * k / 2f
-        val y = at.exactCenterY() - (baseW * 9 / 16 + 2 * pad) * k / 2f
+        val y = at.exactCenterY() - (baseH + 2 * pad) * k / 2f
         atX = x; atY = y
         animate().cancel()
+        if (jump) { shown = false; alpha = 0f }
         if (!glide || !shown) {
             translationX = x; translationY = y; scaleX = k; scaleY = k
             if (!shown) { shown = true; if (glide) animate().alpha(1f).setDuration(180).start() else alpha = 1f }
+            else alpha = 1f                                           // a re-place (a layout, a scroll) cancelled the fade in: it stayed see-through
             return
         }
         alpha = 1f
@@ -129,5 +140,5 @@ class Glass(c: Context, private val dp: (Number) -> Int) : View(c) {
 
     val placed get() = shown
 
-    private companion object { val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
+    private companion object { const val HALOS = 4; val CUT = Paint(Paint.ANTI_ALIAS_FLAG).apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR) } }
 }

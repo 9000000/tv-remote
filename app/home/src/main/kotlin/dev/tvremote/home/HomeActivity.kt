@@ -218,7 +218,7 @@ class HomeActivity : Activity() {
                 else code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && (widgets.hotAt(centre(v)) ?: below(v))?.let { go(it); true } == true
             }
             setOnClickListener { headMenu() }
-            setOnFocusChangeListener { _, f -> if (f) scrollToY(0) }
+            setOnFocusChangeListener { v, f -> if (f) { scrollToY(0); glassTo(v) } else glassOff() }
         }
         headLeft = left; paintHead()
         clock = TextClock(this).apply {
@@ -249,11 +249,13 @@ class HomeActivity : Activity() {
         // the row's two ends stay put: Android's own search went from the left pill down-left onto a tile, and OK then opened its app
         netPill.nextFocusLeftId = View.generateViewId().also { netPill.id = it }
         settingsPill.id = View.generateViewId(); settingsPill.nextFocusRightId = settingsPill.id
-        bar.focusIn = { scrollToY(0) }
+        bar.focusIn = { scrollToY(0); glassTo(it) }
+        for (b in bar.buttons) b.onFocusChangeListener.let { l -> b.setOnFocusChangeListener { v, f -> l?.onFocusChange(v, f); if (!f) glassOff() } }
         head.addView(bar)
         col.addView(head)
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onMenu = ::widgetMenu
+        widgets.onFocus = { v, f -> if (f) glassTo(v) else glassOff() }
         widgets.onOpen = { k -> if (editing || k !in OPENS) widgets.hot.firstOrNull { it.tag == k }?.let { widgetMenu(k, it) } else startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> (bar.buttons.filter { it.isShown } + listOfNotNull(headLeft.takeIf { it.isShown && it.isFocusable })).minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
         widgets.onDown = { v -> below(v)?.let { go(it) } }
@@ -458,7 +460,7 @@ class HomeActivity : Activity() {
     }
     private fun paintHead() {
         headLeft.background = android.graphics.drawable.StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_focused), TvUi.ring(this@HomeActivity, TvUi.FOCUS_FILL, dp(18).toFloat()))
+            if (!Motion.glass) addState(intArrayOf(android.R.attr.state_focused), TvUi.ring(this@HomeActivity, TvUi.FOCUS_FILL, dp(18).toFloat()))   // glass: the pane comes here
             if (editing) addState(intArrayOf(), TvUi.round(Color.TRANSPARENT, dp(18).toFloat(), dp(2), EDIT_EDGE))   // at rest: the outline says "you can change this"
         }
     }
@@ -688,6 +690,20 @@ class HomeActivity : Activity() {
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
     /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. A tile being moved has the ring alone. */
+    /** The pane onto a stop that is not a tile (a widget card, the header, a top-bar button), in its own shape and corners. */
+    private fun glassTo(v: View, glide: Boolean = true) {
+        glassAt?.removeOnLayoutChangeListener(glassFollow)
+        if (!Motion.glass || moving != null) { glass.hide(); glassAt = null; return }
+        glassAt = v; v.addOnLayoutChangeListener(glassFollow)        // a card that grows (the weather came) takes the pane with it
+        val r = when (v) { is BarBtn -> v.height / 2f; headLeft -> dp(18).toFloat(); else -> dp(22).toFloat() }
+        glass.to(content, v, 1f, r, glide && Motion.on)
+    }
+    private var glassAt: View? = null
+    private val glassFollow = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> if (v.hasFocus() && glass.placed) v.post { if (v.isFocused) glassTo(v, false) } }
+    /** Focus left a stop: the pane goes unless the next one is a stop too (it is placed there by its own listener). */
+    private fun glassOff() { glassAt?.removeOnLayoutChangeListener(glassFollow); glassAt = null; content.post { if (!glassy(currentFocus)) glass.hide() } }
+    private fun glassy(v: View?) = v is Tile || v is BarBtn || v === headLeft || (v != null && v in widgets.hot)
+
     private fun Tile.glassOn(glide: Boolean) { if (Motion.glass && moving == null) glass.to(content, pane, TvTile.GROW, corner, glide && Motion.on) else glass.hide() }
 
     private fun scrollToY(y: Int) {
@@ -1264,7 +1280,7 @@ class HomeActivity : Activity() {
         onFocusChangeListener = View.OnFocusChangeListener { v, f ->
             val slide = if (f) (v.parent as? Strip)?.reveal(v) else null   // before the pane is placed: it goes to where the row will be
             (v as Tile).focus(f)
-            if (f) v.glassOn(true) else v.post { if (currentFocus !is Tile) glass.hide() }   // to the buttons or a panel: the pane goes
+            if (f) v.glassOn(true) else glassOff()                    // to a panel: the pane goes; to a card or a button it follows
             slide?.invoke()
             if (f) {
                 if (!stepping) wantCol = -1                           // focus came another way: the column to keep starts over here

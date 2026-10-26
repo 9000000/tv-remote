@@ -51,6 +51,7 @@
   "gstyle_lunar": "Лунная дата",
   "dstyle": "Вторая строка",
   "dtext_hint": "Напр. {weekday} {day}.{month}",
+  "h_what": "Что показать",
   "h_size": "Размер",
   "h_s": "Мелкий",
   "h_m": "Средний",

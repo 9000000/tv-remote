@@ -784,13 +784,44 @@ object Customize {
             val dtext = field("dtext", HomeConfig.GTEXT_MAX, R.string.dtext_hint)
             fun words() { val st = Store.get(a).optString("gstyle"); gname.visibility = if (st == "name") View.VISIBLE else View.GONE; gtext.visibility = if (st == "own") View.VISIBLE else View.GONE
                 dtext.visibility = if (Store.get(a).optString("dstyle") == "own") View.VISIBLE else View.GONE }
-            tile(R.drawable.ic_pen, a.getString(R.string.gstyle), null, "gstyle", HomeConfig.GSTYLES.map { it to says(it) }, ::words)
-            for (f in listOf(gname, gtext)) col.addView(f, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
-            type("g")
-            section(a.getString(R.string.dstyle))
-            tile(R.drawable.ic_calendar, a.getString(R.string.dstyle), null, "dstyle", HomeConfig.GSTYLES.filter { it != "name" }.map { it to says(it) }, ::words)
-            col.addView(dtext, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
-            type("d")
+            // each line a row that opens its own rows under it (the user, 2026-10-27: twelve rows in a column read as one long list)
+            fun fold(icon: Int, title: Int, w: String, fill: () -> Unit) {
+                val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE; setPadding(dp(18), 0, 0, 0) }
+                val line = label("", 12f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
+                val arrow = ImageView(a).apply { setImageResource(R.drawable.ic_down); imageTintList = ColorStateList.valueOf(DIM) }
+                fun say() { val c = Store.get(a); line.text = listOf(says(c.optString(w + "style").ifEmpty { if (w == "d") "date" else HomeConfig.GSTYLES[0] }),
+                    a.getString(when (c.optString(w + "size")) { "s" -> R.string.h_s; "l" -> R.string.h_l; else -> R.string.h_m })).joinToString(" · ") }
+                col.addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = StateListDrawable().apply {
+                        addState(intArrayOf(android.R.attr.state_focused), glass(16, DOOR_FOCUS, Color.WHITE))
+                        addState(intArrayOf(), glass(16, DOOR_REST, DOOR_EDGE))
+                    }
+                    addView(ImageView(a).apply { setImageResource(icon); imageTintList = ColorStateList.valueOf(ACCENT) }, LinearLayout.LayoutParams(dp(26), dp(26)))
+                    addView(LinearLayout(a).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(label(a.getString(title), 15f, Color.WHITE))
+                        addView(line)
+                    }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
+                    addView(arrow, LinearLayout.LayoutParams(dp(22), dp(22)))
+                    setOnClickListener { val open = box.visibility != View.VISIBLE; box.visibility = if (open) View.VISIBLE else View.GONE; arrow.rotation = if (open) 180f else 0f; say()
+                        if (open) box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, minOf(box.height, dp(240)))) } }   // its first rows in sight
+                }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+                col.addView(box, LinearLayout.LayoutParams(-1, -2))
+                val was = col; col = box; fill(); col = was
+                say()
+            }
+            fold(R.drawable.ic_pen, R.string.gstyle, "g") {
+                tile(R.drawable.ic_pen, a.getString(R.string.h_what), null, "gstyle", HomeConfig.GSTYLES.map { it to says(it) }, ::words)
+                for (f in listOf(gname, gtext)) col.addView(f, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+                type("g")
+            }
+            fold(R.drawable.ic_calendar, R.string.dstyle, "d") {
+                tile(R.drawable.ic_calendar, a.getString(R.string.h_what), null, "dstyle", HomeConfig.GSTYLES.filter { it != "name" }.map { it to says(it) }, ::words)
+                col.addView(dtext, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+                type("d")
+            }
             words()
             section(a.getString(R.string.g_sec_shown))                // nothing on the first screen is forced: each can go (HomeConfig.SHOWS)
             tile(R.drawable.ic_timer, a.getString(R.string.show_clock), null, "showClock")

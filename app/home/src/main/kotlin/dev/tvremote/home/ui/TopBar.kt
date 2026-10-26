@@ -13,16 +13,18 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import dev.tvremote.home.Font
 
-/** One round icon button of the [TopBar]: white on the glass, dark while the bright disc is under it. */
+/** One round icon button of the [TopBar]: white on the glass, dark while the bright disc is under it (white under the glass pane). */
 class BarBtn(c: Context, icon: Int, var label: String, dp: (Number) -> Int, onClick: () -> Unit) : ImageView(c) {
     init {
         isFocusable = true; isClickable = true
         setImageResource(icon)
         setPadding(dp(10), dp(10), dp(10), dp(10))
-        imageTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
+        ink()
         contentDescription = label
         setOnClickListener { onClick() }
     }
+    fun ink() { imageTintList = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(if (Motion.glass) Color.WHITE else INK, Color.WHITE)) }
+    companion object { const val INK = 0xFF111318.toInt() }   // dark on the bright disc
 }
 
 /**
@@ -76,6 +78,12 @@ class TopBar(c: Context, private val dp: (Number) -> Int) : LinearLayout(c) {
     private fun glideTo(b: BarBtn) {
         word.text = b.label
         disc.animate().cancel()
+        if (b.imageTintList?.getColorForState(intArrayOf(android.R.attr.state_focused), 0) != (if (Motion.glass) Color.WHITE else BarBtn.INK)) for (x in buttons) x.ink()
+        if (Motion.glass) {                                           // the glass pane comes here as on every other stop ([Glass]): no second look
+            disc.alpha = 0f
+            word.animate().cancel(); if (Motion.on) word.animate().alpha(1f).setDuration(200).start() else word.alpha = 1f
+            return
+        }
         val hidden = disc.alpha < 0.05f
         if (!Motion.on || hidden) {                                   // first arrival: no glide from a stale place
             disc.translationX = b.left.toFloat()
