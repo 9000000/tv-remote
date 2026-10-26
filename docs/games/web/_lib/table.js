@@ -96,13 +96,13 @@
       changed();
     }
     // ---- the remote seat (see the header)
-    const R = { sel: new Set(), zone: 'hand', i: 0, hand: [], acts: [], turn: false, flash: '', fk: 0, fT: 0, el: null, key: '' };
+    const R = { sel: new Set(), zone: 'hand', i: 0, hand: [], acts: [], turn: false, flash: '', fk: 0, fT: 0, el: null, key: '', els: new Map(), prev: [], hk: '' };
     const RM = typeof g.remote === 'object' ? g.remote : {};
     const mk = (tag, c, x) => { const e = document.createElement(tag); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
     const ICON = { play: '🃏', pass: '⏭️', skip: '⏭️', hint: '💡', draw: '📥', roll: '🎲', buy: '🛒', build: '🏠', sell: '💸', mort: '🏦', end: '🏁', ok: '✅', nope: '🚫', give: '🎁', jailpay: '💰', jailcard: '🎫' };   // as the pad's
     const SU = { s: '♠', c: '♣', d: '♦', h: '♥' };
     function rcard(c) {
-      const id = String(c.id), e = mk('div', 'cd' + (R.sel.has(id) ? ' sel' : '') + (c.off ? ' off' : ''));
+      const id = String(c.id), e = mk('div', 'cd' + (R.sel.has(id) ? ' sel' : '') + (c.off ? ' off' : '')); e.__id = id;
       if (c.t == null) {                                           // a plain playing card: rank + suit letter ('10h')
         const su = id.slice(-1), rk = id.slice(0, -1);
         if (su === 'h' || su === 'd') e.classList.add('red');
@@ -121,14 +121,15 @@
       if (typeof document !== 'object' || !document.body) return;
       const l = t.remote && !t.done ? g.view(t, 0) : null, c = l && l.cards;
       document.body.classList.toggle('rmt-on', !!c);
-      if (!c) { if (R.el) R.el.hidden = true; R.turn = false; return; }
+      if (!c) { if (R.el) R.el.hidden = true; R.turn = false; R.prev = []; R.hk = ''; R.els = new Map(); if (R.hd) R.hd.replaceChildren(); return; }
       if (!R.el) {
         R.el = mk('div'); R.el.id = 'rmt'; (RM.mount ? document.querySelector(RM.mount) : document.body).append(R.el);
         const css = mk('style');
         css.textContent = `:root{--rmu:1vh;--rmt-h:calc(var(--rmu)*29.5)}   /* --rmt-h: the band the dock owns; a game lays its table out above it (bottom:var(--rmt-h)) */
 @media (max-aspect-ratio:16/9){:root{--rmu:.5625vw}}   /* narrower than 16:9: size by the width, or the 165-unit fan would run off the sides */
 @media (min-aspect-ratio:17/9){body.rmt-on .seat{min-width:0;padding:1.2vh 1.4vh;border-radius:1.4vh}body.rmt-on .seat .name{font-size:3.4vh;max-width:40vh}body.rmt-on .seat .info{font-size:2.8vh}body.rmt-on .seat .info .n{font-size:3.4vh}}   /* wider than 16:9 (21:9): seats sized in vw would swell over the table */
-#rmt{--u:var(--rmu);position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;gap:calc(var(--u)*.8);padding:calc(var(--u)*1) 2vw calc(var(--u)*1.2);overflow:hidden;
+#rmt{--u:var(--rmu);position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;gap:calc(var(--u)*.8);padding:calc(var(--u)*1) 2vw calc(var(--u)*1.2);overflow:visible;   /* visible: a dealt or drawn card flies in from outside the panel */
+  
   background:#0b0f1ac4;border-top:calc(var(--u)*.3) solid var(--pc);font:700 calc(var(--u)*2.6)/1.2 system-ui,sans-serif;color:#f1f4fb;cursor:none}
 #rmt[hidden]{display:none}
 #rmt .top{display:flex;align-items:center;gap:calc(var(--u)*1.6);min-height:calc(var(--u)*3.6)}
@@ -139,7 +140,7 @@
 #rmt .hand{display:flex;flex-wrap:nowrap;justify-content:center;padding-top:calc(var(--u)*3.2);min-height:calc(var(--u)*16.1)}   /* one row: cards overlap more, never wrap */
 #rmt .hand:empty{display:none}
 #rmt .cd{position:relative;flex:0 0 calc(var(--u)*9.2);height:calc(var(--u)*12.9);border-radius:calc(var(--u)*.9);background:#f7f7f2;color:#1b1e27;overflow:hidden;
-  box-shadow:0 .3vh .8vh #0008;transition:transform .12s,filter .12s}
+  box-shadow:0 .3vh .8vh #0008;transition:transform .18s cubic-bezier(.2,.8,.25,1)}   /* a picked card slides up and back down; the cards are kept between redraws so this can run */
 #rmt .cd.red{color:#d7263d}
 #rmt .cd b{position:absolute;left:calc(var(--u)*.8);top:calc(var(--u)*.5);font:800 calc(var(--u)*3.8)/1 system-ui}
 #rmt .cd i{position:absolute;left:calc(var(--u)*.9);top:calc(var(--u)*4.4);font:calc(var(--u)*2.9)/1 system-ui;font-style:normal}
@@ -164,11 +165,12 @@
 #rmt .ac.off{opacity:.4}
 #rmt .ac.focus{border-color:#fff;box-shadow:0 0 calc(var(--u)*2.4) #fff9;transform:scale(1.07)}`;
         document.head.append(css);
+        R.top = mk('div', 'top'); R.hd = mk('div', 'hand'); R.bar = mk('div', 'acts'); R.el.append(R.top, R.hd, R.bar);   // kept for good: a card that stays in the DOM can transition
       }
       const cs = (Array.isArray(c.hand) ? c.hand : []).slice(0, 40).map((x) => (x && typeof x === 'object' ? x : { id: String(x) }));
       const ids = cs.map((x) => String(x.id)), acts = Array.isArray(c.acts) ? c.acts : [], isTurn = !!c.turn;
       R.sel = new Set(Array.isArray(c.sel) ? c.sel.map(String) : [...R.sel].filter((x) => ids.includes(x)));
-      const key = ids.join() + '|' + acts.map((a) => a.id).join();
+      const hk = ids.join(), key = hk + '|' + acts.map((a) => a.id).join();
       if ((isTurn && !R.turn) || key !== R.key) {                  // my turn began or the choices changed: the cursor starts where a move is likely
         R.zone = cs.length ? 'hand' : 'acts';
         R.i = R.zone === 'acts' ? Math.max(0, acts.findIndex((a) => a.main && !a.off)) : 0;
@@ -182,25 +184,47 @@
       const top = mk('div', 'top'), tm = mk('div', 'tm'), note = mk('div', 'note' + (R.flash ? ' bad' : isTurn ? ' turn' : ''), R.flash || (foc && foc.t != null && foc.look !== 'deed' ? foc.t + (foc.sub ? ' · ' + foc.sub : '') : foc && foc.sub) || c.note || '');
       tm.append(mk('i')); tm.hidden = !isTurn || !g.turnSecs;
       top.append(mk('span', 'dot'), mk('b', 'nm', t.name(0)), mk('span', 'tt', W.total + ' ' + (t.scores[0] > 0 ? '+' : '') + t.scores[0]), note, tm);
-      const hand = mk('div', 'hand'), bar = mk('div', 'acts');
+      const hand = R.hd, bar = mk('div', 'acts');
       if (cs.length && cs[0].look !== 'deed') {                    // a fanned hand: each card shows about half of itself (more when few), never wider than the screen
         const w = cs[0].t == null ? 9.2 : 10.1, n = cs.length, full = n <= 4 ? .85 : n <= 7 ? .65 : .5, room = (RM.width || 165) - w;
         hand.style.setProperty('--ov', String(-(w - Math.max(w * .25, Math.min(w * full, n > 1 ? room / (n - 1) : w)))));
       }
-      cs.forEach((x, k) => { const e = rcard(x); if (R.zone === 'hand' && k === R.i) e.classList.add('focus'); hand.append(e); });
+      const Cd = root.Cards, moved = hk !== R.hk, was = new Map(), fresh = [], next = new Map();
+      if (Cd && moved) R.els.forEach((e) => was.set(e, Cd.rect(e)));
+      cs.forEach((x, k) => {                                       // a card keeps its element while it stays in the hand: classes change, so its lift is a transition
+        const id = ids[k], sig = [x.t, x.sub, x.bg, x.k, x.i, x.look].join('\u0001'), had = R.els.get(id);
+        let e = had;
+        if (!e || e.__sig !== sig) { e = rcard(x); e.__sig = sig; if (!had) fresh.push(e); }
+        e.classList.toggle('sel', R.sel.has(id)); e.classList.toggle('off', !!x.off); e.classList.toggle('focus', R.zone === 'hand' && k === R.i);
+        next.set(id, e);
+      });
+      R.els.forEach((e, id) => { if (next.get(id) !== e) e.remove(); });
+      cs.forEach((x, k) => { const e = next.get(ids[k]); if (hand.children[k] !== e) hand.insertBefore(e, hand.children[k] || null); });
+      R.els = next;
       acts.forEach((a, k) => {
         const w = String(a.s || a.t), ic = a.i != null ? a.i : /^[^\x00-\x7f]/.test(w) ? '' : ICON[a.id] || '';   // a short word (s) and an icon: the panel's buttons are small
         const e = mk('div', 'ac' + (a.main ? ' main' : '') + (a.off ? ' off' : '') + (R.zone === 'acts' && k === R.i ? ' focus' : ''), (ic ? ic + ' ' : '') + w);
         bar.append(e);
       });
-      R.el.replaceChildren(top, hand, bar); rtimer();
+      R.top.replaceChildren(...top.childNodes); R.bar.replaceChildren(...bar.childNodes); rtimer();
+      if (Cd && moved) {                                           // the hand changed: the cards left close up, new ones fly in (a deal from the middle, a draw from the deck, turned over)
+        const keep = new Map(); was.forEach((r, e) => { if (r && next.get(e.__id) === e) keep.set(e, r); });
+        Cd.slide(keep);
+        if (fresh.length) {
+          const dk = Cd.rect(RM.deck || '#deck, #stock'), fe = Cd.rect('#felt'), dealt = !R.prev.length;
+          const src = !dk ? (fe ? { x: fe.x + fe.w / 2 - 20, y: fe.y + fe.h / 2 - 28, w: 40, h: 56 } : null) : dk;
+          if (src) Cd.flyIn(fresh, [src], dealt ? { gap: 35, dur: 380 } : { gap: 110, back: true });
+        }
+      }
+      R.prev = ids; R.hk = hk;
     }
     function rtimer() { const k = R.el && R.el.querySelector('.tm i'); if (k && g.turnSecs) k.style.width = Math.max(0, t.left / g.turnSecs * 100) + '%'; }
     function rflash(w) { R.flash = w; clearTimeout(R.fT); R.fT = setTimeout(() => { R.flash = ''; rdraw(); }, 2500); }
     function rpress(a, only) {
       const cards = only ? [only] : R.hand.map((x) => String(x.id)).filter((x) => R.sel.has(x));
+      if (root.Cards) Cards.hold(cards.map((id) => Cards.rect(R.els.get(id))).filter(Boolean));   // the game's draw() flies the played cards from here
       const why = g.act(t, 0, { act: a, cards });
-      if (why) { rflash(why); Sfx.play('bad'); } else { R.flash = ''; R.sel = new Set(); }
+      if (why) { if (root.Cards) Cards.hold(null); rflash(why); Sfx.play('bad'); } else { R.flash = ''; if (a !== 'hint') R.sel = new Set(); }   // a hint keeps the cards it picked
       rdraw();
     }
     function rkey(e) {

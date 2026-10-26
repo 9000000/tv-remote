@@ -150,8 +150,10 @@ body.cards #cardsui{position:absolute;inset:0;display:flex;flex-direction:column
 #hand{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:34px;padding-top:26px;--ov:.38;--cw:min(calc((100vw - 40px) / (var(--n) * (1 - var(--ov)) + var(--ov))),24vh,110px)}
 .hrow{display:flex;justify-content:center}
 @media (orientation:portrait){#hand{justify-content:center;--cw:min(calc((100vw - 40px) / (var(--n) * (1 - var(--ov)) + var(--ov))),20vh,110px)}}
-.cd{position:relative;flex:none;width:var(--cw);aspect-ratio:5/7;margin-left:calc(var(--cw) * var(--ov) * -1);border-radius:calc(var(--cw) * .1);background:linear-gradient(160deg,#fff,#f3f1e8 60%,#e6e3d6);color:#1b1e27;box-shadow:inset 0 0 0 1px #0002,-2px 0 6px #0006;transition:transform .12s;touch-action:none}
+.cd{position:relative;flex:none;width:var(--cw);aspect-ratio:5/7;margin-left:calc(var(--cw) * var(--ov) * -1);border-radius:calc(var(--cw) * .1);background:linear-gradient(160deg,#fff,#f3f1e8 60%,#e6e3d6);color:#1b1e27;box-shadow:inset 0 0 0 1px #0002,-2px 0 6px #0006;transition:transform .18s cubic-bezier(.2,.8,.25,1);touch-action:none}
 .hrow .cd:first-child{margin-left:0}
+cflip{display:block;position:absolute;inset:0;border-radius:inherit;border:2px solid #dfe4f1;background:repeating-linear-gradient(45deg,#3348a8 0 5px,#2a3b8c 5px 10px);pointer-events:none}   /* a drawn card's back, until it turns over */
+@media (prefers-reduced-motion:reduce){.cd{transition:none}}
 .cd.red{color:#d7263d}
 .cd.sel{transform:translateY(-24px);box-shadow:0 0 0 3px var(--c),0 6px 16px #000a}
 .cd b{position:absolute;left:8%;top:4%;font:800 calc(var(--cw) * .3)/1 system-ui}

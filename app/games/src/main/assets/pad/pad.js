@@ -456,8 +456,38 @@ const SUIT = { s: '♠', c: '♣', d: '♦', h: '♥' };
 const ACT_ICON = { play: '🃏', pass: '⏭️', skip: '⏭️', hint: '💡', draw: '📥', again: '🔄', roll: '🎲', buy: '🛒', build: '🏠', sell: '💸',
   mort: '🏦', end: '🏁', ok: '✅', nope: '🚫', give: '🎁', jailpay: '💰', jailcard: '🎫' };
 let cHand = [], cSel = new Set(), cPaint = null, cId = null, cLast = null, cLay = null;
-window.addEventListener('resize', () => setTimeout(() => { if (cLay && document.body.classList.contains('cards')) renderCards(Object.assign({}, cLay, { sel: [...cSel] })); }, 60));
-function renderCards(cd) {
+// the cards keep their elements between layouts, so a pick slides (CSS transition on .cd) and a hand that changes moves by FLIP: the cards
+// left close up, a card played flies up toward the TV and goes, a new one rises (a drawn one turned over). transform + opacity only.
+const cEls = new Map(), CEASE = 'cubic-bezier(.2,.8,.25,1)';
+const calm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+function cMotion(old, els, ids) {
+  if (calm() || !els.length || !els[0].animate) return;
+  const first = !old.size, fresh = [];
+  els.forEach((e, k) => {                                                             // one read of every place after the DOM was written
+    const id = ids[k], r0 = old.get(id), r1 = e.getBoundingClientRect(), tf = getComputedStyle(e).transform, end = tf === 'none' ? 'none' : tf, e0 = end === 'none' ? '' : ' ' + end;
+    if (r0 && old.els.get(id) === e) {                                                // stayed: slide from where it was
+      const dx = r0.left - r1.left, dy = r0.top - r1.top;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) e.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' + e0 }, { transform: end }], { duration: 220, easing: CEASE });
+    } else fresh.push([e, e0, end]);
+  });
+  fresh.forEach((f, i) => {                                                           // new: dealt (all of them, one after another) or drawn (turned over)
+    const e = f[0], up = first ? 70 : 120, from = 'translate(0,' + up + 'px) rotate(' + (i % 2 ? 5 : -5) + 'deg) scale(.8)' + f[1];
+    if (first) { e.animate([{ transform: from, opacity: 0, easing: CEASE }, { transform: f[2], opacity: 1 }], { duration: 320, delay: i * 30, fill: 'backwards' }); return; }
+    const b = document.createElement('cflip'); e.append(b);
+    const t = e.animate([{ transform: from, opacity: .6, offset: 0, easing: CEASE }, { transform: f[2], opacity: 1, offset: .62 }, { transform: (f[1] + ' scaleX(.04)').trim(), offset: .8 }, { transform: f[2], offset: 1 }], { duration: 520, delay: i * 90, fill: 'backwards' });
+    const u = b.animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: .79 }, { opacity: 0, offset: .8 }, { opacity: 0, offset: 1 }], { duration: 520, delay: i * 90, fill: 'both' });
+    u.onfinish = u.oncancel = () => b.remove(); t.oncancel = () => b.remove();
+  });
+  let n = 0;
+  old.forEach((r, id) => {                                                            // played: up toward the TV and gone
+    const e = old.els.get(id); if (cEls.get(id) === e || n >= 8) return;
+    e.style.cssText = 'position:fixed;margin:0;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;--cw:' + r.width + 'px;z-index:30;pointer-events:none;will-change:transform,opacity';
+    document.body.append(e);
+    const x = e.animate([{ transform: 'none', opacity: 1, easing: CEASE }, { transform: 'translate(0,-' + Math.round(innerHeight * .3) + 'px) rotate(' + (n % 2 ? 8 : -8) + 'deg) scale(.7)', opacity: 0 }], { duration: 300, delay: n++ * 40, fill: 'both' });
+    x.onfinish = x.oncancel = () => e.remove(); setTimeout(() => e.remove(), 900);
+  });
+}
+function renderCards(cd, quiet) {
   const same = cHand.join() === cd.hand.join();
   const items = cd.hand.slice(0, 40).map((c) => (c && typeof c === 'object' ? c : { id: String(c) }));   // {id, t, sub, bg}: a card of the game's own (Uno, ...)
   cHand = items.map((c) => String(c.id));
@@ -466,8 +496,14 @@ function renderCards(cd) {
   const hand = $('#hand'), two = portrait() && cHand.length > 7, cut = two ? Math.ceil(cHand.length / 2) : cHand.length;
   hand.style.setProperty('--n', Math.max(cut, 1)); cLay = cd;          // upright: two rows, so the cards stay big enough to read
   hand.style.setProperty('--ov', items.some((it) => it.t != null) && cut <= 8 && !portrait() ? .04 : .3);   // a few of a game's own cards side by side; more overlap, read by their corners
+  const old = new Map(); old.els = new Map();
+  if (!quiet) cEls.forEach((e, id) => { if (e.isConnected) { const r = e.getBoundingClientRect(); if (r.width) { old.set(id, r); old.els.set(id, e); } } });
   const els = items.map((it) => {
-    const c = String(it.id), e = document.createElement('div');
+    const c = String(it.id), sig = JSON.stringify([it.t, it.sub, it.bg, it.k, it.i, it.look]), had = cEls.get(c);
+    if (had && had.__sig === sig) {                                       // the same card: keep its element, change its state
+      had.classList.toggle('sel', cSel.has(c)); had.classList.toggle('off', !!it.off); return had;
+    }
+    const e = document.createElement('div'); e.__sig = sig;
     e.dataset.c = c;
     if (it.t != null) {                                                  // the game's own card: big words, a line under, a colour
       e.className = 'cd own' + (cSel.has(c) ? ' sel' : '') + (it.off ? ' off' : '');   // off: cannot be played now (still pickable)
@@ -486,6 +522,9 @@ function renderCards(cd) {
     return e;
   });
   hand.replaceChildren(...[els.slice(0, cut), els.slice(cut)].filter((r) => r.length).map((r) => { const e = document.createElement('div'); e.className = 'hrow'; e.append(...r); return e; }));
+  const ids = items.map((it) => String(it.id));
+  cEls.clear(); ids.forEach((id, k) => cEls.set(id, els[k]));
+  if (!quiet) cMotion(old, els, ids);
   $('#cacts').replaceChildren(...(Array.isArray(cd.acts) ? cd.acts : []).slice(0, 6).map((a) => {
     const b = document.createElement('button'); b.className = 'ca' + (a.main ? ' main' : ''); b.disabled = !!a.off; b.dataset.ca = a.id;
     const ic = a.i != null ? String(a.i).slice(0, 4) : ACT_ICON[a.id];

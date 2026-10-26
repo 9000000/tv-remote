@@ -66,7 +66,14 @@ modal `0 2vh 6vh #000a` (`credit.js:22`), whose turn `0 0 3vh var(--pc)` + borde
 **Focus (TV remote).** White ring, raised and enlarged: card `outline .7vh #fff; translateY(-3.6vh) scale(1.08)`,
 button `border #fff + 0 0 2.4vh #fff9; scale(1.07)` (`table.js:154,161`). Picked (not focused): `#38bdf8` ring + raised (`table.js:153`).
 
-**Motion.** Turn change `.2s` (`tienlen.css:21`); a card flies in `.28s ease-out` from its seat (`tienlen.css:8-11`);
+**Motion.** Turn change `.2s` (`tienlen.css:21`); a card moves by `_lib/cards.js` (FLIP + WAAPI, `transform`/`opacity` only, `cubic-bezier(.2,.8,.25,1)`): played = flies from the hand (the
+remote panel's card, else the seat's backs) to the pile, `.34s`, a few degrees of turn, `.05s` between cards; drawn = from the deck to the hand
+turned face-down to face-up (`back:true`, `.48s`), others' draws and steals = one small back from the deck / the seat to the seat's backs;
+new game = hand dealt one by one from the deck (`.035s` apart) and a few backs to each seat; the hand closing up after a play slides `.22s`.
+A picked card slides up and back down with a `.18s` transition (`table.js` `.cd`, `pad.css` `.cd`); the elements are kept between
+redraws so the transition can run (a rebuilt card jumps). Never animate `box-shadow`/layout; `will-change` only while a card moves;
+`prefers-reduced-motion` = no flight (`Cards.reduced()`). A card game loads `_lib/cards.js` before `table.js`, and uses `Cards.flyIn` / `flow` / `deal`.
+The phone pad has its own copy of the idea (`pad.js` `cMotion`): the pad bundle cannot load the site's `_lib`.
 focus `.12s` (`table.js:138`); clocks `width 1s linear` (`tienlen.css:37`); refusal note 2.5 s (`table.js:195`);
 QR modal closes itself after 30 s (`credit.js:41`); bots think 0.9-1.5 s (`table.js:68`); arcade step fixed 60 Hz (`kit.js:11`).
 

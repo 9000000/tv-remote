@@ -8,9 +8,6 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 #stock i{position:absolute;inset:0;border-radius:calc(var(--cw) * .09);background:repeating-linear-gradient(45deg,#3348a8 0 .5vh,#2a3b8c .5vh 1vh);border:.3vh solid #dfe4f1;box-shadow:.3vw .3vw 0 #0006}
 #stock span{position:relative;font-size:2.4vw;background:#000a;border-radius:99px;padding:.2vh 1vw}
 #dir{font-size:4vw;color:#ffffffaa;width:5vw;text-align:center}
-#pile.in{animation:fly .28s ease-out}
-#pile.from-s{--fx:0;--fy:30vh}#pile.from-n{--fx:0;--fy:-30vh}#pile.from-e{--fx:40vw;--fy:0}#pile.from-w{--fx:-40vw;--fy:0}
-@keyframes fly{from{transform:translate(var(--fx,0),var(--fy,0)) scale(.6);opacity:.2}}
 #pile .card{box-shadow:0 0 0 .5vw var(--cc),0 0 4vh var(--cc)}
 #what{position:absolute;left:0;right:0;bottom:7%;text-align:center;color:#fff;font-size:2vw}
 #msg{position:absolute;left:0;right:0;top:9%;text-align:center;display:flex;flex-direction:column;gap:1vh;align-items:center}
@@ -52,7 +49,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 
 body.rmt-on{--cw:15vh}body.rmt-on #table{bottom:calc(var(--rmt-h,29.5vh) + 1vh)}body.rmt-on .seat.w,body.rmt-on .seat.e{top:calc((100% - var(--rmt-h,29.5vh)) / 2)}body.rmt-on .seat.s{display:none}body.rmt-on #mid{top:55%}body.rmt-on #what{bottom:2%}   /* the TV remote's panel (_lib/table.js) takes the bottom */
 /* motion: transform / opacity only. The played card lands with a small overshoot, the stock pops when a card leaves it */
-#pile.in .card{animation:land .4s ease-out}
+#pile.in .card{animation:land .4s ease-out .3s}   /* after it has flown in */
 #stock.take{animation:land .4s ease-out}
 @keyframes land{0%,55%{transform:none}78%{transform:scale(1.1)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){#pile.in .card,#stock.take{animation:none}}

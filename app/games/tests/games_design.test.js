@@ -58,6 +58,14 @@ test('every game page loads qr.js, then nopad.js', () => {
   assert.deepStrictEqual(bad, []);
 });
 
+test('a card game page loads cards.js before table.js (its motion)', () => {
+  const bad = fs.readdirSync(WEB, { withFileTypes: true }).filter((d) => d.isDirectory() && d.name !== '_lib').map((d) => d.name).filter((g) => {
+    const h = read(path.join(g, 'index.html')), c = h.indexOf('_lib/cards.js'), t = h.indexOf('_lib/table.js');
+    return t >= 0 && /cards: true/.test(read(path.join(g, g + '.js'))) && (c < 0 || c > t);
+  });
+  assert.deepStrictEqual(bad, []);
+});
+
 test('one set of seat colours: the pad\'s, Table\'s and Kit\'s', () => {
   const list = (s, name) => (s.match(new RegExp(`const ${name} = (\\[[^\\]]*\\])`)) || [])[1];
   const pad = list(fs.readFileSync(path.join(ROOT, 'app/games/src/main/assets/pad/pad.js'), 'utf8'), 'COLORS');

@@ -23,7 +23,7 @@ const near = (s) => g.hands.some((hd, o) => o !== s && active(o) && hd.length > 
 const table = Table({
   seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true, remote: true,
   deal(t) {
-    g.hands = TL.deal(4); g.last = null; g.passed = new Set(); g.out = [];
+    g.fresh = true; g.hands = TL.deal(4); g.last = null; g.passed = new Set(); g.out = [];
     g.persona = t.seats.map(() => PERSONA[Math.floor(Math.random() * PERSONA.length)]);
     if (t.lastWinner >= 0) { t.turn = t.lastWinner; g.msg = W.leads(t.name(t.turn)); }     // the last winner leads the next game
     else { t.turn = g.hands.findIndex((hd) => hd.includes(30)); g.msg = W.first(t.name(t.turn)); }
@@ -120,10 +120,15 @@ function draw(t) {
     e.append(head, backs, info);
     return e;
   }));
+  if (g.fresh) { g.fresh = false; if (window.Cards) Cards.deal(POS, '#felt', document.querySelector('.backs i')); }
   const pile = $('#pile');
   if (g.last) {
     const k = g.last.cards.join();
-    if (pile.dataset.shown !== k) { pile.dataset.shown = k; pile.className = 'from-' + POS[g.last.by] + (g.last.chop ? ' chop' : ''); pile.replaceChildren(...g.last.cards.map(cardEl)); void pile.offsetWidth; pile.classList.add('in'); }
+    if (pile.dataset.shown !== k) {                               // the cards fly from the player's hand (the remote panel's, the seat's backs)
+      const els = g.last.cards.map(cardEl);
+      pile.dataset.shown = k; pile.className = g.last.chop ? 'chop' : ''; pile.replaceChildren(...els); void pile.offsetWidth; pile.classList.add('in');
+      if (window.Cards) Cards.flyIn(els, (g.last.by === 0 && Cards.held()) || [Cards.at(POS[g.last.by])], { gap: 55 });
+    }
     $('#what').textContent = t.name(g.last.by) + ' · ' + W.T[g.last.c.type] + (g.last.c.type === 'straight' ? ' ' + g.last.c.n : '');
   } else { pile.replaceChildren(); pile.dataset.shown = ''; $('#what').textContent = ''; }
   $('#msg').replaceChildren(h('b', g.last && g.last.chop ? 'boom' : '', t.done ? '' : g.msg));

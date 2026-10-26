@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Game bài trên TV Games (Tiến lên, Mèo nổ, Colors): bài bay thật. Đánh bài thì bay từ tay (hoặc từ ghế) ra bàn, rút bài thì bay từ chồng bài về tay và lật mặt, chia bài ở đầu ván có từng lá một. Chọn / bỏ chọn một lá thì lá trượt lên xuống mượt (cả trên điện thoại lẫn bảng remote trên TV) thay vì nhảy ngay. Chỉ dùng transform/opacity nên TV box yếu vẫn mượt; tắt khi máy bật "giảm chuyển động".
 - TV Games: 15 game NES/homebrew có logo pixel-art riêng (chữ pixel, sprite 8-bit, nền tối có scanline, nhãn NES) thay cho logo bóng bẩy, khớp với hình ảnh trong game; game web giữ logo cũ.
 - TV Home: mọi thẻ widget và phần đầu trang (giờ, câu chào) đều chọn được bằng D-pad. Thẻ có màn riêng (thời tiết, tin, thị trường) thì OK mở màn đó; thẻ khác thì OK mở menu tuỳ chỉnh của thẻ.
 - TV Home: kiểu focus "Kính" giờ trượt tới mọi chỗ chọn được (thẻ widget, đầu trang, nút trên thanh trên cùng), không còn bốn kiểu focus khác nhau; sang hình khác (ô app → thẻ → câu chào → nút tròn) kính bay và biến hình, không chỉ mờ dần. Kính chỉ vẽ lại khi đổi hình (một lần mỗi hình, giữ sẵn 4), lúc trượt chỉ dịch và phóng trên GPU. Đổi hình không còn layout lại cả trang: trên box FPT kính chỉ tốn hơn viền ~4% CPU (trước ~14%).
@@ -29,6 +30,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
+- Card games in TV Games (Tiến lên, Boom Cats, Colors): cards really fly. A played card flies from the hand (or the seat) to the table, a drawn one from the deck to the hand and turns over, a new game deals one card at a time. Picking and un-picking a card slides it up and down smoothly (on the phone and in the TV remote panel) instead of jumping. transform/opacity only, so weak TV boxes stay smooth; off under "reduce motion".
 - TV Games: the 15 NES / homebrew games get their own pixel-art logos (pixel-font title, 8-bit sprite, dark scanline background, NES badge) instead of the glossy ones, matching how they look in play; web games keep theirs.
 - TV Home: every widget card and the header (clock, greeting) take the D-pad focus. Cards with a screen (weather, news, market) open it on OK; the others open their own settings menu.
 - TV Home: the "Glass" focus now glides to every stop (widget cards, the header, the top-bar buttons), not four different focus looks; to another shape (app tile → card → header → round button) it flies and morphs, not only fades. The glass is redrawn only when the shape changes (once per shape, 4 kept); gliding is a GPU move and scale. A new shape no longer lays out the whole page: on the FPT box the glass costs ~4% more CPU than the ring (was ~14%).

@@ -1,4 +1,4 @@
-:root{--bg:#0d0a18;--felt:#4c1d95;--felt2:#2a1060;--ink:#f5f3ff;--dim:#a99fcb;--card:#1a1530}
+:root{--back-a:#6d28d9;--back-b:#5b21b6;--bg:#0d0a18;--felt:#4c1d95;--felt2:#2a1060;--ink:#f5f3ff;--dim:#a99fcb;--card:#1a1530}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.8vw/1.25 system-ui,sans-serif;overflow:hidden;cursor:none}
 #table{position:absolute;left:16vw;right:16vw;top:17vh;bottom:22vh}
@@ -13,9 +13,6 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 .stack i:nth-child(1){transform:translate(-.5vw,.5vw)}.stack i:nth-child(2){transform:translate(-.25vw,.25vw)}
 #disc{position:absolute;left:58%;top:57%;transform:translate(-50%,-52%);display:flex;justify-content:center}
 #disc .kc{margin-left:-6vw}#disc .kc:first-child{margin-left:0}
-#disc.in{animation:fly .3s ease-out}
-#disc.from-s{--fx:0;--fy:30vh}#disc.from-n{--fx:0;--fy:-30vh}#disc.from-e{--fx:40vw;--fy:0}#disc.from-w{--fx:-40vw;--fy:0}
-@keyframes fly{from{transform:translate(calc(-50% + var(--fx)),calc(-52% + var(--fy))) scale(.6);opacity:.2}}
 #disc.noped .kc{filter:grayscale(.85) brightness(.7)}
 .stamp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-12deg);padding:.4vh 1.2vw;border:.4vw solid #f87171;border-radius:.8vw;color:#f87171;background:#000a;font-size:3vw;font-weight:900;white-space:nowrap}
 #what{position:absolute;left:0;right:0;top:15%;text-align:center;color:#ddd6fe;font-size:1.8vw}
@@ -68,7 +65,6 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 body.rmt-on #table{bottom:calc(var(--rmt-h,29.5vh) + 1vh)}body.rmt-on .seat.w,body.rmt-on .seat.e{top:calc((100% - var(--rmt-h,29.5vh)) / 2)}body.rmt-on .seat.s{display:none}   /* the TV remote's panel (_lib/table.js) takes the bottom */
 body.rmt-on #msg{top:9%}body.rmt-on #what{top:19%}body.rmt-on #disc{top:58%;transform:scale(.8) translate(-50%,-52%)}body.rmt-on #deck{transform:scale(.85) translateY(-52%)}body.rmt-on #nope{top:12%}
 /* motion: transform / opacity only. A played card lands with a small overshoot, the deck pops when a card leaves it */
-#disc.in .kc{animation:land .42s ease-out}
 .stack.take{animation:land .4s ease-out}
 @keyframes land{0%,55%{transform:none}78%{transform:scale(1.1)}100%{transform:none}}
-@media (prefers-reduced-motion:reduce){#disc.in .kc,.stack.take{animation:none}}
+@media (prefers-reduced-motion:reduce){.stack.take{animation:none}}

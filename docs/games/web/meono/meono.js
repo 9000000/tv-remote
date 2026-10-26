@@ -59,6 +59,7 @@ const lastName = (L) => W.cardN(W.kn[L.base], L.kind === 'pair' ? 2 : L.kind ===
 const table = Table({
   seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true, remote: true,
   deal(t) {
+    g.fresh = true;
     g.G = MK.create(4); g.hold = false; g.seen = 0; g.evt = ''; g.shown = null; clearTimers();
     if (t.lastWinner >= 0) g.G.turn = t.lastWinner;               // the last winner starts the next game
     t.turn = g.G.turn; g.evt = W.first(nm(t, t.turn));
@@ -208,14 +209,16 @@ function draw(t) {
   // the draw pile: a stack of backs, how many cards, how many bombs are in it (public: one fewer than players alive)
   const dk = $('#deck'), stack = h('div', 'stack'); for (let i = 0; i < 3; i++) stack.append(h('i'));
   if (lastDraw > G.draw.length && lastDraw - G.draw.length < 20) stack.classList.add('take');   // a card left the deck (a new game refills it: no pop)
-  lastDraw = G.draw.length;
+  const dropN = lastDraw - G.draw.length; lastDraw = G.draw.length;
   dk.replaceChildren(stack, h('b', '', String(G.draw.length)), h('span', '', W.bombs(MK.aliveList(G).length - 1)));
+  if (window.Cards) { Cards.flow({ lens: G.hands.map((x) => x.length), dropN, deck: '#deck .stack', like: '#deck .stack i', pos: POS, fresh: g.fresh }); g.fresh = false; }
   // the discard: the cards just played, large
   const L = G.last, pile = $('#disc'), what = $('#what');
   if (L) {
     if (g.shown !== L) {
-      g.shown = L; pile.className = 'from-' + POS[L.by];
-      pile.replaceChildren(...Array.from({ length: L.n }, () => cardEl(L.base, true))); void pile.offsetWidth; pile.classList.add('in');
+      const els = Array.from({ length: L.n }, () => cardEl(L.base, true));      // they fly from the player's hand to the pile
+      g.shown = L; pile.className = ''; pile.replaceChildren(...els); void pile.offsetWidth; pile.classList.add('in');
+      if (window.Cards) Cards.flyIn(els, (L.by === 0 && Cards.held()) || [Cards.at(POS[L.by])], { gap: 70 });
     }
     pile.classList.toggle('noped', L.noped);
     let stamp = pile.querySelector('.stamp');

@@ -21,6 +21,7 @@ const table = Table({
   seats: 4, turnSecs: TURN, botMs: [900, 1500], cards: true, remote: { quick: true },   // OK on a card plays it (one card per move)
  
   deal(t) {
+    g.fresh = true;
     g.st = UL.newGame(4);
     const l = g.st.last;
     g.msg = l ? W.ev[l.ev](t.name(0), t.name(l.victim), l.n) : '';
@@ -105,12 +106,14 @@ function draw(t) {
   tb.style.setProperty('--cc', HEX[st.color]);
   const pile = $('#pile'), k = String(top.id);
   if (pile.dataset.shown !== k) {
-    pile.dataset.shown = k; pile.className = st.last && st.last.seat >= 0 ? 'from-' + POS[st.last.seat] : '';
-    pile.replaceChildren(cardEl(top, 'big')); void pile.offsetWidth; pile.classList.add('in');
+    const by = st.last ? st.last.seat : -1, el = cardEl(top, 'big');    // it flies from the player's hand (the first card from the stock)
+    pile.dataset.shown = k; pile.className = ''; pile.replaceChildren(el); void pile.offsetWidth; pile.classList.add('in');
+    if (window.Cards) Cards.flyIn([el], (by === 0 && Cards.held()) || [by >= 0 ? Cards.at(POS[by]) : Cards.rect('#stock')]);
   }
   const stock = $('#stock'); stock.replaceChildren(h('i'), h('span', '', String(st.draw.length)));
   if (lastDraw > st.draw.length && lastDraw - st.draw.length < 20) { stock.classList.remove('take'); void stock.offsetWidth; stock.classList.add('take'); }   // a card left the stock (a new game refills it: no pop)
-  lastDraw = st.draw.length;
+  const dropN = lastDraw - st.draw.length; lastDraw = st.draw.length;
+  if (window.Cards) { Cards.flow({ lens: st.hands.map((x) => x.length), dropN, deck: '#stock', like: '#stock i', pos: POS, fresh: g.fresh }); g.fresh = false; }
   const dir = $('#dir'); dir.textContent = st.dir === 1 ? '↺' : '↻';
   $('#what').textContent = W.color[st.color];
   $('#msg').replaceChildren(h('b', '', t.done ? '' : g.msg));

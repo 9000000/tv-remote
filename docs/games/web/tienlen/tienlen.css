@@ -5,10 +5,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 #felt{position:absolute;inset:0;border-radius:40vh;background:radial-gradient(ellipse at center,var(--felt),var(--felt2));box-shadow:inset 0 0 0 .5vw #0004,0 1vh 4vh #0008}
 #pile{position:absolute;left:0;right:0;top:50%;display:flex;justify-content:center;transform:translateY(-55%)}
 #pile .card{margin-left:calc(var(--cw) * -.42)}#pile .card:first-child{margin-left:0}
-#pile.in{animation:fly .28s ease-out}
-#pile.from-s{--fx:0;--fy:30vh}#pile.from-n{--fx:0;--fy:-30vh}#pile.from-e{--fx:40vw;--fy:0}#pile.from-w{--fx:-40vw;--fy:0}
 #pile.chop .card{box-shadow:0 0 0 .3vw #f97316,0 0 3vh #f97316aa}
-@keyframes fly{from{transform:translate(var(--fx),var(--fy)) translateY(-55%) scale(.6);opacity:.2}}
 #what{position:absolute;left:0;right:0;bottom:12%;text-align:center;color:#d1fae5;font-size:2vw}
 #msg{position:absolute;left:0;right:0;top:9%;text-align:center;display:flex;flex-direction:column;gap:1vh;align-items:center}
 #msg b{font-size:2.3vw;color:#fff}#msg b.boom{color:#fdba74;font-size:3.4vw;text-shadow:0 0 2vh #f97316}
@@ -46,7 +43,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 
 body.rmt-on{--cw:10.5vh}body.rmt-on #table{bottom:calc(var(--rmt-h,29.5vh) + 1vh)}body.rmt-on .seat.w,body.rmt-on .seat.e{top:calc((100% - var(--rmt-h,29.5vh)) / 2)}body.rmt-on .seat.s{display:none}   /* the TV remote's panel (_lib/table.js) takes the bottom */
 /* motion: transform / opacity only. A chop slams the pile once it has landed; the result card drops in, rows follow one by one */
-#pile.chop.in .card{animation:slam .38s ease-out .28s}
+#pile.chop.in .card{animation:slam .38s ease-out .5s}
 #msg b.boom{animation:slam .5s ease-out}
 @keyframes slam{0%{transform:none}35%{transform:scale(1.35) rotate(-5deg)}100%{transform:none}}
 #over.fresh h1{animation:drop .6s cubic-bezier(.3,1.6,.5,1)}
