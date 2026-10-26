@@ -37,7 +37,11 @@ object Marks {
 
     /** One square icon as wide as the line's text height, centred on it. */
     private class IconSpan(val d: android.graphics.drawable.Drawable) : ReplacementSpan() {
-        override fun getSize(p: Paint, t: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int = side(p)
+        override fun getSize(p: Paint, t: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+            // the font's own line height: left empty, a label that is ONLY a mark (the PIN pad's ⌫ ✕) had a line 0 high, never drawn
+            if (fm != null) p.fontMetricsInt.let { m -> fm.ascent = m.ascent; fm.descent = m.descent; fm.top = m.top; fm.bottom = m.bottom; fm.leading = m.leading }
+            return side(p)
+        }
         override fun draw(cv: Canvas, t: CharSequence?, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, p: Paint) {
             val s = side(p); val mid = (y + p.fontMetrics.ascent / 2 + p.fontMetrics.descent / 2).toInt()   // the middle of the letters
             d.setBounds(0, 0, s, s); d.setTint(p.color)
