@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>   <!-- NoWebView: Vietnamese in values-vi -->
+    <string name="wv_fixing">Turning the TV\'s WebView back on…</string>
+    <string name="wv_none">This TV has no WebView. Install or turn on “Android System WebView” in Play Store.</string>
+    <string name="wv_none_setup">This TV has no WebView. Install “Android System WebView” from Play Store, or install TV Setup: it turns it back on by itself.</string>
+    <string name="wv_store">Open Play Store</string>
+    <string name="wv_retry">Try again</string>
+    <string name="wv_back">Back</string>
+</resources>

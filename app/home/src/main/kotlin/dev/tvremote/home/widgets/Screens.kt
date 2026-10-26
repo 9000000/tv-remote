@@ -244,6 +244,12 @@ class WeatherMapActivity : Activity() {
         Triple("clouds", R.string.map_clouds, R.drawable.ic_cloud), Triple("pm2p5", R.string.map_pm, R.drawable.ic_gauge))
     private val chips = HashMap<String, TextView>()
     private var loading: View? = null
+    private var layer = "rain"; private var ready = false; private var started = false
+
+    /** Windy keeps its state in `W.store`: wind particles off (a canvas redrawn every frame is what makes a weak box lag). */
+    private fun applyLight() { web?.evaluateJavascript("try{W.store.set('particlesAnim','off')}catch(e){}", null) }
+    /** A layer is a store value of the open page: no second page load (Windy's ~300 KB of scripts + tiles again). */
+    private fun setLayer(l: String) { web?.evaluateJavascript("try{W.store.set('overlay','$l')}catch(e){}", null) }
 
     private fun url(layer: String) = "https://embed.windy.com/embed2.html?lat=$lat&lon=$lon&detailLat=$lat&detailLon=$lon&width=900&height=700&zoom=7&level=surface" +
         "&overlay=$layer&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
@@ -253,10 +259,10 @@ class WeatherMapActivity : Activity() {
         val root = LinearLayout(this).apply { setBackgroundColor(INK); setPadding(dpx(48), dpx(32), dpx(48), dpx(32)) }
         setContentView(root)
         val place = try { JSONObject(getSharedPreferences("weather", MODE_PRIVATE).getString("place", "") ?: "") } catch (e: Exception) { null }
-        val noWeb = try { android.webkit.WebSettings.getDefaultUserAgent(this); false } catch (e: Exception) { true }   // a box without WebView threw in WebView() (80296222)
-        if (noWeb || place == null || !place.has("lat")) {
+        if (!dev.tvremote.tvui.NoWebView.ok(this)) { dev.tvremote.tvui.NoWebView.show(this) { recreate() }; return }   // switched off on this TV (80296222): TV Setup turns it back on
+        if (place == null || !place.has("lat")) {
             root.gravity = Gravity.CENTER
-            root.addView(label(getString(if (noWeb) R.string.no_webview else R.string.map_none), 22f, DIMC).apply { gravity = Gravity.CENTER })
+            root.addView(label(getString(R.string.map_none), 22f, DIMC).apply { gravity = Gravity.CENTER })
             return
         }
         lat = place.optDouble("lat"); lon = place.optDouble("lon")
@@ -264,7 +270,20 @@ class WeatherMapActivity : Activity() {
             settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             isFocusable = false; isFocusableInTouchMode = false                        // the D-pad stays on the chips: a map would swallow it
             setBackgroundColor(INK)
-            webViewClient = object : WebViewClient() { override fun onPageFinished(v: WebView?, u: String?) { loading?.visibility = View.GONE } }
+            settings.mediaPlaybackRequiresUserGesture = true
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(v: WebView?, u: String?) {
+                    ready = true; applyLight(); if (layer != "rain") setLayer(layer)           // a layer chosen before the page was up
+                    loading?.postDelayed({ loading?.visibility = View.GONE }, 2500)            // the map data comes ~1-2 s after the page
+                }
+                override fun onLoadResource(v: WebView?, u: String?) {
+                    if (u != null && u.contains("/im/v3.0/forecast/")) loading?.visibility = View.GONE      // first weather picture: the map is real now
+                }
+                override fun shouldInterceptRequest(v: WebView?, r: android.webkit.WebResourceRequest?): android.webkit.WebResourceResponse? {
+                    val u = r?.url?.toString() ?: return null                                  // Windy's analytics and favicon: requests that show nothing
+                    return if (u.contains("/sedlina/ga/") || u.endsWith("/favicon.ico")) android.webkit.WebResourceResponse("text/plain", "utf-8", java.io.ByteArrayInputStream(ByteArray(0))) else null
+                }
+            }
             clipToOutline = true
             outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, dpx(16).toFloat()) } }
         }
@@ -314,10 +333,10 @@ class WeatherMapActivity : Activity() {
         chips["rain"]?.requestFocus()
     }
 
-    private fun show(layer: String) {
-        for ((k, c) in chips) setPillOn(c, k == layer)
-        loading?.visibility = View.VISIBLE
-        web?.loadUrl(url(layer))
+    private fun show(l: String) {
+        for ((k, c) in chips) setPillOn(c, k == l)
+        layer = l
+        if (ready) setLayer(l) else if (!started) { started = true; web?.loadUrl(url(l)) }   // before the page is up onPageFinished applies `layer`
     }
 
     override fun onDestroy() { web?.destroy(); super.onDestroy() }

@@ -152,5 +152,4 @@
     <plurals name="need_more">
         <item quantity="other">Cần thêm %1$d người</item>
     </plurals>
-    <string name="no_webview">TV này không có WebView: không mở được trang này</string>
 </resources>

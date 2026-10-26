@@ -1537,7 +1537,8 @@ class HomeActivity : Activity() {
         if (web != null && webOf == url) return
         detachWeb()
         val root = scroll.parent as? ViewGroup ?: return
-        val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) }) ?: return
+        val v = WebWall.make(this, url, { detachWeb(); ui.postDelayed(webRetry, 120_000) })
+            ?: return dev.tvremote.tvui.NoWebView.fix(this) { if (it) webRetry.run() }   // WebView switched off on this TV: TV Setup turns it back on
         val dim = WebWall.dim(this, shadeK())
         root.addView(v, 0, FrameLayout.LayoutParams(-1, -1))
         root.addView(dim, 1, FrameLayout.LayoutParams(-1, -1))

@@ -9,10 +9,16 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - Sửa lỗi văng app từ báo cáo lỗi: TV Setup không chạy được trên Android 7 (Fire TV, Bravia 2015); TV Setup bị tắt khi mở lại trên một số TV TCL; menu của TV Setup / TV Home trên Android 7; TV Games và bản đồ thời tiết trên TV không có WebView (giờ báo một dòng thay vì văng).
 - Trang quản lý trên trình duyệt cũ (Chrome 80–85) không còn trống; app máy tính không còn lỗi khi danh sách TV vẽ xong quá nhanh.
+- TV có WebView bị tắt (bởi app dọn rác, hay tắt tay): TV Setup tự bật lại khi khởi động; TV Games, bản đồ thời tiết và hình nền web của TV Home cũng nhờ TV Setup bật lại rồi mở tiếp. Không có gì để bật: nút mở CH Play. Bật WebView không làm TV chậm: nó chỉ tốn RAM khi đang mở trang.
+- Bản đồ thời tiết của TV Home nhẹ hơn trên box yếu: tắt hạt gió chạy liên tục (từ ~20 khung/giây vẽ lại còn 0 khi đứng yên), đổi lớp mưa / gió / nhiệt độ ngay trong trang thay vì tải lại, bỏ các request phân tích của Windy.
+- TV Games, Cờ tỷ phú: xúc xắc lăn thật rồi dừng đúng mặt, quân cờ nhảy từng ô tới chỗ đến (tiền, thẻ, nút trên điện thoại chờ quân cờ đáp xong); ô vừa được mua / xây / thế chấp nảy lên một nhịp. Tôn trọng chế độ giảm chuyển động.
 
 **English**
 - Crash fixes from the crash reports: TV Setup could not run on Android 7 (Fire TV, Bravia 2015); TV Setup was closed when opened again on some TCL TVs; TV Setup / TV Home menus on Android 7; TV Games and the weather map on TVs without a WebView (now one line instead of a crash).
 - The manage page no longer goes blank on older browsers (Chrome 80–85); the computer app no longer errors when the TV list is drawn very fast.
+- A TV whose WebView was switched off (by a cleaner app or by hand): TV Setup turns it back on when it starts; TV Games, the weather map and TV Home's web wallpaper also ask TV Setup to turn it on, then carry on. Nothing to turn on: a button opens Play Store. An enabled WebView does not slow the TV: it only uses memory while a page is open.
+- TV Home's weather map is lighter on weak boxes: the always-running wind particles are off (from ~20 redrawn frames/s to 0 when still), rain / wind / temperature switch inside the open page instead of reloading it, and Windy's analytics requests are dropped.
+- TV Games, Tycoon: the dice now tumble and settle on the rolled faces and the token hops square by square (cash, cards and the phones' buttons wait until it lands); a square pops when it is bought / built on / mortgaged. Honours reduced motion.
 
 ## 0.27.0 - 2026-10-26
 

@@ -31,6 +31,7 @@ import java.util.Locale
  * and "capture" (`arg` "1" / "0": while "1", the remote keys of the map go to TV Home's screen unopened, for its assign-a-key page),
  * and "power" (HomePower: screen off, standby, restart, power off; `arg` the action, "result" ok / noadb / failed),
  * and "control" (HomeControl: the Control Center's sleep timer and kids mode on; `arg` "" | "sleep:<min>" | "kids:on"; {sleep_at, kids, pin, error?}).
+ * and "webview" (to TV Home, Channels and Games by their key: no WebView on the TV, switch it back on; "result" fine / fixed / none / noadb / failed),
  * and "updates" (to TV Home, Channels and Games by their key, like "census": {silent} = auto-update is on and ADB is ready, so TV Setup installs their updates itself),
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
  * a build signed with one key for both), gets an answer.
@@ -42,6 +43,11 @@ class HomeInfo : ContentProvider() {
             return if (censusCaller(c, Binder.getCallingUid())) Bundle().apply { putString("json", RemoteService.censusState(c).toString()) } else null
         if (method == "updates")                                       // read-only: will TV Setup install their updates by itself? (SelfUpdate waits for it, UpdatePlan.quiet)
             return if (censusCaller(c, Binder.getCallingUid())) Bundle().apply { putString("json", RemoteService.updatesState(c).toString()) } else null
+        if (method == "webview") {                                     // TV Home / Channels / Games found no WebView: turn it back on (WebViewFix), may wait on ADB
+            if (!censusCaller(c, Binder.getCallingUid())) return null
+            val token = Binder.clearCallingIdentity()
+            try { return Bundle().apply { putString("result", WebViewFix.run(c)) } } finally { Binder.restoreCallingIdentity(token) }
+        }
         if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do", "telegram", "app", "capture", "control")) return null
         // TV Home's package name signed by another key (built elsewhere, a fork): said as such, nothing else given, so the
         // button tells the person to install both from one place instead of "update TV Setup", which would not help
