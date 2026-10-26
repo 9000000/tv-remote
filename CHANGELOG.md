@@ -15,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: bấm widget "Đã xem" mở tab Sức khỏe (sau PIN) thay vì báo "cần TV Setup mới hơn"; khi thật sự cần bản mới, hiện hộp chọn Cập nhật / Mở TV Setup thay vì toast.
 - TV Home: hàng Xem tiếp vẽ lại: poster dọc (Stremio…) to, có nền mờ và tên phim bên cạnh; ảnh ngang phủ kín ô; có thanh tiến độ đã xem.
 - TV Home: đồng hồ trong thẻ hẹp không còn bị cắt thành "11:…".
+- TV Setup: TV chỉ có Gỡ lỗi không dây (Chromecast with Google TV) giờ chỉ từng bước: cài app điện thoại, đường dẫn tới Ghép nối bằng mã, kèm link hướng dẫn.
 
 **English**
 - TV Home: each widget (the clock too) picks its background: Glass, Tonal, Solid or None (the words right on the wallpaper, with a shadow to stay readable). In the widget's settings, or its menu on the TV (Look).
@@ -25,6 +26,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: the "Watched" widget opens Health (behind the PIN) instead of "needs a newer TV Setup"; when a newer one is really needed, a choice of Update / Open TV Setup replaces the toast.
 - TV Home: the Play Next row redrawn: tall posters (Stremio…) big on a blurred backdrop with the title beside; wide pictures fill the tile; a progress bar shows how far you watched.
 - TV Home: the clock in a narrow card no longer cuts to "11:…".
+- TV Setup: on a TV with Wireless debugging only (Chromecast with Google TV) it now gives the steps: install the phone app, the path to Pair with code, and a guide link.
 
 ## 0.26.2 - 2026-10-26
 

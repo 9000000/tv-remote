@@ -725,7 +725,8 @@ class MainActivity : Activity() {
                         log("✗ " + T("tv_main.adb_no_port"))
                         // only Wireless debugging (a Chromecast with Google TV): a paired phone or computer opens 5555 for TV Setup
                         val wifiOnly = try { android.provider.Settings.Global.getInt(contentResolver, "adb_wifi_enabled", 0) == 1 } catch (x: Exception) { false }
-                        howto(T(if (wifiOnly) "tv_main.adb_wifi_only_howto" else "tv_main.adb_no_port_howto"))
+                        if (wifiOnly) listOf("tv_main.adb_wifi_only_howto", "tv_main.adb_wifi_only_pair", "tv_main.adb_wifi_only_again").forEach { howto(T(it)) }
+                        else howto(T("tv_main.adb_no_port_howto"))
                         tiles[1].enable(true)
                         tiles[1].view.requestFocus()
                         return@ui
