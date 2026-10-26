@@ -431,7 +431,9 @@ async function homeOpen() {
       return el('button', { type: 'button', className: c.wall === w ? 'on' : '', onclick: () => send({ wall: w }) }, dot, el('span', { textContent: T(HOME_WALL_WORDS[w]) }));
     }));
     langHead.hidden = langs.hidden = c.lang === undefined;
-    langs.replaceChildren(...[['', 'home.lang_tv'], ['vi', 'home.lang_vi'], ['en', 'home.lang_en']].map(([k, id]) =>
+    // ids named here so i18n.test.js sees every home.lang_<code>; LANGS is the live list from langs.json
+    const langIds = { vi: 'home.lang_vi', en: 'home.lang_en', ru: 'home.lang_ru' };
+    langs.replaceChildren(...[['', 'home.lang_tv'], ...Object.keys(LANGS).map((k) => [k, langIds[k] || ('home.lang_' + k)])].map(([k, id]) =>
       el('button', { type: 'button', className: (c.lang || '') === k ? 'on' : '', onclick: () => send({ lang: k }) }, T(id))));
     focusHead.hidden = focus.hidden = c.focus === undefined;
     focus.replaceChildren(...[['glass', 'home.focus_glass'], ['ring', 'home.focus_ring']].map(([k, id]) =>
@@ -883,7 +885,7 @@ async function homeOpen() {
     put(subs.widgets, 'textContent', c.widgets ? T('home.sum_widgets', { n: c.widgets.length }) : '');
     put(subs.system, 'textContent', T('home.sum_system', { dream: onOff(!!c.dream) }));
     put(subs.keys, 'textContent', T('home.sum_keys', { keys: onOff(!!c.keyon), auto: onOff(!!c.autoon) }));
-    put(subs.lang, 'textContent', T(c.lang === 'vi' ? 'home.lang_vi' : c.lang === 'en' ? 'home.lang_en' : 'home.lang_tv'));
+    put(subs.lang, 'textContent', T(c.lang === 'vi' ? 'home.lang_vi' : c.lang === 'en' ? 'home.lang_en' : c.lang === 'ru' ? 'home.lang_ru' : 'home.lang_tv'));
     rows.lang.hidden = c.lang === undefined;                        // a TV Home older than the choice
     rows.widgets.hidden = !c.widgets;
   }

@@ -1,0 +1,8 @@
+{
+  "wv_fixing": "Включаем WebView на ТВ…",
+  "wv_none": "На этом ТВ нет WebView. Установите или включите «Android System WebView» в Play Store.",
+  "wv_none_setup": "На этом ТВ нет WebView. Установите «Android System WebView» из Play Store или поставьте TV Setup — она включит его сама.",
+  "wv_store": "Открыть Play Store",
+  "wv_retry": "Повторить",
+  "wv_back": "Назад"
+}
