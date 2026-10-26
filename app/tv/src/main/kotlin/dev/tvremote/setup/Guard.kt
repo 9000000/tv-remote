@@ -108,7 +108,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         if (audio.getStreamVolume(AudioManager.STREAM_MUSIC) <= most) return
         try { audio.setStreamVolume(AudioManager.STREAM_MUSIC, most, 0) } catch (e: Exception) { return }
         val now = System.currentTimeMillis()
-        if (now - volSaidAt < 3_000) return
+        if (now - volSaidAt in 0 until 3_000) return                   // a clock set back leaves no mark in the future
         volSaidAt = now
         say(T("guard.volume_cap", "max" to cap.optInt("max"), "from" to cap.optString("from"), "to" to cap.optString("to")))
     }
@@ -222,6 +222,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val code = Rules.hasCode(o)
         if (apps.isEmpty() && !kids && sched.isEmpty() && !code) { eventsTo = 0; return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
+        if (pinAt > now) pinAt = 0L                                   // the clock went back (a box that booted in the wrong year): marks ahead of it held every check off
+        lastStop.entries.removeAll { it.value > now }
         if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
             unlocked = ""
             return 2_000
@@ -246,15 +248,14 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
     /** The app on screen, from the usage events since the last look (the day's, the first time). */
     private fun frontApp(now: Long): String {
-        val events = usage.queryEvents(if (eventsTo == 0L) now - 86_400_000L else eventsTo, now)
-        val e = android.app.usage.UsageEvents.Event()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(e)
+        if (eventsTo > now) eventsTo = 0L                             // the clock went back: the day's again, else nothing came until that hour
+        Usage.events(c, if (eventsTo == 0L) now - 86_400_000L else eventsTo, now) { e ->
             when (e.eventType) {
                 android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> { front = e.packageName ?: ""; frontClass = e.className ?: "" }
                 android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> if (front == e.packageName) front = ""
             }
-            eventsTo = maxOf(eventsTo, e.timeStamp)                   // asked again from that moment: the same events come twice, to the same end
+            // asked again from that moment: the same events come twice, to the same end
+            eventsTo = maxOf(eventsTo, e.timeStamp)
         }
         if (eventsTo == 0L) eventsTo = now
         return front

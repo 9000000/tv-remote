@@ -128,12 +128,9 @@ internal class Stats(private val ctx: Context) {
     /** The app last brought to the screen over the past days: what is on screen when nothing moved since midnight, or since the
      *  TV woke up (standby keeps the app it was showing). Without it a TV left on one app (an operator's launcher) has no name. */
     private fun lastFront(now: Long): String {
-        val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 3 * 86400000L, now)
-        val e = UsageEvents.Event()
         var cur = ""
         var any = false
-        while (events.hasNextEvent()) {
-            events.getNextEvent(e)
+        Usage.events(ctx, now - 3 * 86400000L, now) { e ->
             any = true
             when (e.eventType) {
                 UsageEvents.Event.MOVE_TO_FOREGROUND -> cur = e.packageName
@@ -152,10 +149,8 @@ internal class Stats(private val ctx: Context) {
     /** Seconds on screen per app since midnight, and the app on screen now ("" when unknown). */
     fun today(now: Long, on: Boolean): Pair<JSONObject, String> {
         val start = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
-        val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(start, now)
         val list = ArrayList<Ev>()
-        val e = UsageEvents.Event()
-        while (events.hasNextEvent()) { events.getNextEvent(e); list.add(Ev(e.eventType, e.packageName ?: "", e.timeStamp)) }
+        Usage.events(ctx, start, now) { e -> list.add(Ev(e.eventType, e.packageName ?: "", e.timeStamp)) }
         val (total, open) = count(list, start, now, on)
         val front = open ?: if (on) lastFront(now) else ""
         if (open == null && on && front.isNotEmpty()) total[front] = (total[front] ?: 0L) + maxOf(0L, now - maxOf(start, lastWake(list)))
@@ -240,11 +235,8 @@ internal class Stats(private val ctx: Context) {
     /** The first power.jsonl: the screen going on and off over the last week, as Android's usage events remember it. */
     private fun backfill() {
         val now = System.currentTimeMillis()
-        val events = (ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 7 * 86400000L, now)
-        val e = UsageEvents.Event()
         val out = StringBuilder()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(e)
+        Usage.events(ctx, now - 7 * 86400000L, now) { e ->
             if (e.eventType == SCREEN_INTERACTIVE || e.eventType == SCREEN_NON_INTERACTIVE)
                 out.append(JSONArray().put(e.timeStamp / 1000).put(if (e.eventType == SCREEN_INTERACTIVE) "on" else "off")).append('\n')
         }

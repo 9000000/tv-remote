@@ -131,12 +131,10 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
 
     /** The last time [pkg] came to or left the front within a day, or null when the usage log is empty (no usage access: nothing to go by). Events only; cheap. */
     private fun lastUsed(pkg: String, now: Long): Long? = try {
-        val ev = (c.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 86_400_000L, now)
-        val e = UsageEvents.Event()
         var any = false
         var last = 0L
-        while (ev.hasNextEvent()) {
-            ev.getNextEvent(e); any = true
+        Usage.events(c, now - 86_400_000L, now) { e ->
+            any = true
             if (e.packageName == pkg && (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND || e.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND)) last = e.timeStamp
         }
         if (any) last else null                                       // 0: not seen today, long ago enough

@@ -133,11 +133,8 @@ internal object AutoOpen {
     /** The app on screen from the last quarter hour of usage events (usage access is TV Setup's, granted over ADB); "" when none or not known. */
     private fun front(c: Context): String = try {
         val now = System.currentTimeMillis()
-        val ev = (c.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager).queryEvents(now - 15 * 60_000L, now)
-        val e = UsageEvents.Event()
         var front = ""
-        while (ev.hasNextEvent()) {
-            ev.getNextEvent(e)
+        Usage.events(c, now - 15 * 60_000L, now) { e ->
             if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) front = e.packageName ?: ""
             else if (e.eventType == UsageEvents.Event.MOVE_TO_BACKGROUND && front == e.packageName) front = ""
         }

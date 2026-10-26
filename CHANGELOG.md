@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Setup: màn nhập PIN hiện lại icon Xóa và Thoát (2 nút dưới cùng trống từ bản 0.23); cùng lỗi với mọi nút chỉ có một icon trong app.
+- TV Setup: khóa app và chế độ trẻ em không còn bị "tắt ngầm" trên TV từng khởi động với đồng hồ sai (box FPT tưởng là năm 2027 lúc mới bật): trước đó TV Setup không thấy app nào được mở, nên mở khóa một lần là không hỏi PIN lại, và mọi app đều mở được ở chế độ trẻ em; thống kê dùng trong ngày cũng đứng ở 0.
 
 **English**
 - TV Setup: the PIN pad shows its Delete and Close icons again (the two bottom keys were blank since 0.23); the same fix for every icon-only label in the apps.
+- TV Setup: the app lock and kids mode no longer go quietly off on a TV that once booted with a wrong clock (an FPT box that thought it was 2027 at power-on): TV Setup saw no app being opened, so once unlocked it never asked the PIN again and kids mode let every app open; the day's usage stayed at 0 too.
 
 ## 0.26.0 - 2026-10-26
 
