@@ -116,7 +116,7 @@ Xem kênh truyền hình miễn phí trên TV.
 - Danh sách công khai của iptv-org theo nước, thể loại, cộng các kênh miễn phí của VieON, có lịch phát sóng (kênh VN). Kênh hỏng thì tự sang nguồn khác.
 - Kênh yêu thích, nhóm tự tạo, ghim kênh ra màn hình chính; quản lý từ điện thoại, máy tính hoặc trang web của TV (*Quản lý kênh*).
 - Tìm kênh theo tên ở mọi nước; mở kênh theo tên từ điện thoại: gõ hoặc nói "mở kênh VTV1".
-- Nhắc chương trình: OK trên chương trình sắp chiếu thì có 🔔; trước giờ chiếu 2 phút hiện thẻ nhắc (OK = xem, Back = bỏ qua), cả khi đang ở app khác. Ngôn ngữ: theo TV, Tiếng Việt hoặc English.
+- Nhắc chương trình: OK trên chương trình sắp chiếu thì có 🔔; trước giờ chiếu 2 phút hiện thẻ nhắc (OK = xem, Back = bỏ qua), cả khi đang ở app khác. Ngôn ngữ: theo TV, hoặc một trong `langs.json` (Tiếng Việt, English, Русский).
 - Cài: tab TV → 📺 *Kênh TV* → Cài.
 
 ### 🎮 TV Games

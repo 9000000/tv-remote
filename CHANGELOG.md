@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Tiếng Nga (Русский) cho mọi app và trang web, nhờ @DygDyg (PR #7). Nút chọn ngôn ngữ hiện tên bằng chính ngôn ngữ đó, lấy từ `langs.json`.
 - Ghim game (TV Games) hay kênh (TV Channels) ra TV Home: ảnh giờ nét (Android thu mọi icon lối tắt về ~127 px, nên ô ~330 px bị mờ; app ghim giữ thêm một ảnh 640×360 chỉ TV Home đọc được, TV Home vẽ nó đúng cỡ ô theo số cột: ~0,25 MB mỗi ô), và góc dưới có logo app đã ghim. Ô đã ghim trước đây: ghim lại để nét.
 - TV Games: mỗi game có logo riêng (hình vẽ + tên) thay cho ảnh chụp màn hình, nhìn là biết game gì; cả trên TV Home khi ghim.
 - Bản đồ thời tiết của TV Home: lớp Mây thay bằng Vệ tinh (ảnh vệ tinh thật, mới vài phút, thấy cả mây).
@@ -14,6 +15,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
+- Russian (Русский) in every app and the web page, by @DygDyg (PR #7). The language picker shows each language by its own name, from `langs.json`.
 - Pinning a game (TV Games) or a channel (TV Channels) to TV Home: the picture is sharp now (Android shrinks every shortcut icon to ~127 px, so a ~330 px tile was blurry; the pinning app keeps a 640×360 copy only TV Home can read, and TV Home draws it at the tile's size for its column count: ~0.25 MB a tile), with the source app's logo in the corner. Older pins: pin again to make them sharp.
 - TV Games: every game has its own logo (a drawing + its name) instead of a screenshot, so you know the game at a glance; pinned to TV Home too.
 - TV Home's weather map: the Clouds layer is now Satellite (real satellite pictures, minutes old, clouds included).

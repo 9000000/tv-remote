@@ -112,7 +112,7 @@ Plays free TV channels on the TV.
 - iptv-org's public lists by country and category, plus VieON's free channels with the programme guide (Vietnam). A dead stream falls to the next one.
 - Favourites, your own groups, channels pinned to the home screen; managed from the phone, computer or the TV's web page (*Manage channels*).
 - Search by name in every country; open by name from the phone: type or say "open channel VTV1".
-- Reminders: OK on a coming programme sets a 🔔; 2 minutes before, a card (OK = watch, Back = dismiss) shows, also over other apps. Language: follow the TV, Tiếng Việt or English.
+- Reminders: OK on a coming programme sets a 🔔; 2 minutes before, a card (OK = watch, Back = dismiss) shows, also over other apps. Language: follow the TV, or one in `langs.json` (Tiếng Việt, English, Русский).
 - Install: TV tab → 📺 card → *Install TV Channels*.
 
 ### 🎮 TV Games
