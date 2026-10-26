@@ -87,7 +87,7 @@
       <div class="shade" id="shade" hidden></div>
       <div id="toast" hidden></div>
     </div></div>
-    <p class="tvcap"><span class="vi">Một chiếc TV giả. Chọn app, giữ OK (hoặc nút Menu) để ghim, ẩn hay sắp xếp lại.</span><span class="en">A made-up TV. Pick an app, hold OK (or press Menu) to pin, hide or reorder.</span></p>
+    <p class="tvcap"><span class="vi">Một chiếc TV giả. Chọn app, giữ OK (hoặc nút Menu) để di chuyển hoặc ẩn.</span><span class="en">A made-up TV. Pick an app, hold OK (or press Menu) to move or hide it.</span></p>
   </div>
   <aside class="side">
     <div class="panel">
@@ -142,7 +142,7 @@
   function defaults() { S.dock = ['youtube', 'channels', 'play', 'settings']; S.hidden = []; S.wall = 0; S.widgets = false; S.h24 = true; S.greet = true; S.before = false; S.f = { z: 'grid', i: 0 }; S.over = null; }
   // one grid: the favourites first (in their order), then the other apps
   function grid() { return S.dock.concat(APPS.filter(function (a) { return S.dock.indexOf(a.id) < 0 && S.hidden.indexOf(a.id) < 0; }).map(function (a) { return a.id; })); }
-  var TOP = ['inputs', 'net', 'settings'], COLS = 5, DOCK_MAX = 6;
+  var TOP = ['inputs', 'net', 'settings'], COLS = 5;
 
   // ---- drawing
   function art(a) { return a.img ? '<img src="' + a.img + '" alt="" draggable="false">' : a.h; }
@@ -225,24 +225,17 @@
     if (a.go) { toast(T('Mở ' + a.n + '…', 'Opening ' + a.n + '…')); setTimeout(function () { TVKit.go(a.go); }, 250); return; }
     toast(T('Mở ' + a.n + ': app này không có trong bản dùng thử', a.n + ' would open here (not in this demo)'));
   }
-  // long-press menu: the real one offers pin / unpin, move left / right, hide (HomeActivity)
+  // long-press menu: the real one offers Move (anywhere on the grid: the favourites are only its first places) and Hide (HomeActivity)
   function openMenu(i) {
-    var id = grid()[i], a = BY[id], items = [], d = S.dock.indexOf(id);
+    var g = grid(), id = g[i], a = BY[id], items = [];
     items.push({ t: T('Tùy chỉnh TV Home', 'Customize TV Home'), f: function () { openCustomize(); } });
-    if (d >= 0) {
-      if (d > 0) items.push({ t: T('Sang trái', 'Move left'), f: function () { swap(d, d - 1); S.f.i = i - 1; } });
-      if (d < S.dock.length - 1) items.push({ t: T('Sang phải', 'Move right'), f: function () { swap(d, d + 1); S.f.i = i + 1; } });
-      items.push({ t: T('Bỏ khỏi yêu thích', 'Remove from favourites'), f: function () { S.dock.splice(d, 1); S.f.i = Math.min(S.f.i, grid().length - 1); } });
-    } else {
-      items.push({ t: T('Ghim vào yêu thích', 'Pin to favourites'), f: function () {
-        if (S.dock.length >= DOCK_MAX) { toast(T('Yêu thích đã đủ ' + DOCK_MAX + ' mục', 'Favourites are full (' + DOCK_MAX + ')')); return; }
-        S.dock.push(id); S.f = { z: 'grid', i: S.dock.length - 1 }; } });
-      items.push({ t: T('Ẩn', 'Hide'), f: function () { S.hidden.push(id); toast(T('Đã ẩn ' + a.n + ' · Cài đặt → App đã ẩn', a.n + ' hidden · Settings → Hidden apps')); fixF(); } });
-    }
+    if (i > 0) items.push({ t: T('Sang trái', 'Move left'), f: function () { swap(i, i - 1); S.f.i = i - 1; } });
+    if (i < g.length - 1) items.push({ t: T('Sang phải', 'Move right'), f: function () { swap(i, i + 1); S.f.i = i + 1; } });
+    items.push({ t: T('Ẩn', 'Hide'), f: function () { S.hidden.push(id); S.dock = S.dock.filter(function (x) { return x !== id; }); toast(T('Đã ẩn ' + a.n + ' · Cài đặt → App đã ẩn', a.n + ' hidden · Settings → Hidden apps')); fixF(); } });
     items.push({ t: T('Thông tin app', 'App info'), f: function () { toast(T('Trên TV thật mở màn thông tin của Android', 'On a real TV this opens Android\'s app info')); } });
     S.over = { kind: 'menu', title: a.n, items: items, i: 0 }; overlay();
   }
-  function swap(a, b) { if (b < 0 || b >= S.dock.length) return; var t = S.dock[a]; S.dock[a] = S.dock[b]; S.dock[b] = t; }
+  function swap(a, b) { var g = grid(); if (b < 0 || b >= g.length) return; var t = g[a]; g[a] = g[b]; g[b] = t; S.dock = g; }   // the whole grid's order is kept
   function fixF() { var n = grid().length; S.f = n ? { z: 'grid', i: Math.min(S.f.i, n - 1) } : { z: 'top', i: 2 }; }
   function openCustomize() {
     S.over = { kind: 'cz', i: 0 }; overlay();
