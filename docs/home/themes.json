@@ -249,14 +249,68 @@
     "wsize": {
      "clock": "small"
     },
-    "wstyle": {
-     "clock": "light"
-    },
     "cols": 6,
     "rows": 1,
     "focus": "ring",
     "motion": "calm",
-    "greet": false
+    "greet": false,
+    "wopt": {
+     "clock": {
+      "theme": "light",
+      "look": "none"
+     }
+    },
+    "wstyle": {
+     "clock": "light"
+    }
+   },
+   "look": "peaks"
+  },
+  {
+   "id": "clear",
+   "names": {
+    "vi": "Trong veo",
+    "en": "See-through"
+   },
+   "for": {
+    "vi": "Ảnh Bing mỗi ngày, chữ nằm thẳng trên ảnh, không khung thẻ",
+    "en": "The day's Bing picture, the words right on it, no card frames"
+   },
+   "tags": [
+    "photo",
+    "nature"
+   ],
+   "since": "0.13.1",
+   "conf": {
+    "wall": "bing",
+    "walls": [
+     "bing",
+     "peaks",
+     "waves",
+     "meadow"
+    ],
+    "wevery": "6h",
+    "shade": 30,
+    "widgets": [
+     "weather",
+     "lunar"
+    ],
+    "wsize": {
+     "weather": "big",
+     "lunar": "small"
+    },
+    "wopt": {
+     "weather": {
+      "look": "none"
+     },
+     "lunar": {
+      "look": "none"
+     }
+    },
+    "cols": 5,
+    "focus": "ring",
+    "motion": "calm",
+    "greet": true
    },
    "look": "peaks"
   },
@@ -290,7 +344,15 @@
     "cols": 5,
     "focus": "glass",
     "motion": "calm",
-    "greet": true
+    "greet": true,
+    "wopt": {
+     "weather": {
+      "look": "none"
+     },
+     "lunar": {
+      "look": "none"
+     }
+    }
    },
    "look": "meadow",
    "src": "Unsplash License: Vu Thang / Unsplash, unsplash.com/photos/0CaHnK7PVCo",
@@ -360,13 +422,22 @@
      "clock": "small",
      "weather": "big"
     },
-    "wstyle": {
-     "clock": "light"
-    },
     "cols": 5,
     "focus": "glass",
     "motion": "calm",
-    "greet": true
+    "greet": true,
+    "wopt": {
+     "clock": {
+      "theme": "light",
+      "look": "none"
+     },
+     "weather": {
+      "look": "none"
+     }
+    },
+    "wstyle": {
+     "clock": "light"
+    }
    },
    "look": "sunset",
    "src": "Pexels License: Manoo Media / Pexels, pexels.com/video/the-sun-sets-over-the-ocean-with-waves-26310139",
@@ -399,13 +470,22 @@
      "clock": "small",
      "weather": "big"
     },
-    "wstyle": {
-     "clock": "light"
-    },
     "cols": 5,
     "focus": "glass",
     "motion": "calm",
-    "greet": true
+    "greet": true,
+    "wopt": {
+     "clock": {
+      "theme": "light",
+      "look": "none"
+     },
+     "weather": {
+      "look": "none"
+     }
+    },
+    "wstyle": {
+     "clock": "light"
+    }
    },
    "look": "ocean",
    "src": "Pexels License: Taryn Elliott / Pexels, pexels.com/video/aerial-footage-of-the-islands-3783927",
@@ -779,5 +859,5 @@
    }
   }
  ],
- "rev": 1792948971
+ "rev": 1793011245
 }
