@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -19,6 +18,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import dev.tvremote.tvui.WebEnd
 import java.io.File
 import java.util.concurrent.Executor
 
@@ -40,7 +40,7 @@ object WebWall {
      */
     @SuppressLint("SetJavaScriptEnabled")
     fun make(c: Context, url: String, failed: () -> Unit, finished: (() -> Unit)? = null): WebView? = try {
-        WebView(c.applicationContext).apply {
+        WebEnd.made(WebView(c.applicationContext)).apply {
             fun later(f: () -> Unit) { val v = this; main.post { if (v.tag != DEAD) f() } }
             setBackgroundColor(Color.TRANSPARENT)                       // the gradient behind shows through until the page paints
             isFocusable = false; isFocusableInTouchMode = false; isClickable = false; isLongClickable = false
@@ -88,31 +88,13 @@ object WebWall {
     }
     fun wake(v: WebView?) { v?.apply { asleep.remove(this); onResume(); resumeTimers() } }
 
-    /**
-     * The WebView gone for good: off the screen, nothing loading, no client (its lambdas reach the screen), no children, then
-     * destroyed. Each step on its own, so one that throws does not leave the rest (and the renderer process) alive.
-     */
+    /** The WebView gone for good: queued callbacks do nothing, then [WebEnd.end] (its renderer too when it was the last page). */
     fun stop(v: WebView?) {
         if (v == null) return
         v.tag = DEAD
         alive.remove(v); asleep.remove(v)
-        fun step(f: () -> Unit) { try { f() } catch (e: Throwable) { } }
-        step { (v.parent as? ViewGroup)?.removeView(v) }
-        step { v.webViewClient = Quiet }
-        step { v.stopLoading() }
-        step { v.loadUrl("about:blank") }
-        step { v.clearHistory() }
-        step { v.onPause() }
-        step { v.removeAllViews() }
-        // destroy() frees the view but Chromium keeps its renderer process (~90 MB) alive for as long as the app lives (measured on the FPT
-        // box: still there minutes after the wall changed); asking it to end is the only way to get that memory back (Android 10+)
-        step { if (Build.VERSION.SDK_INT >= 29) v.webViewRenderProcess?.terminate() }
-        step { v.destroy() }
-    }
-
-    /** What a WebView that is going away is told: its renderer's end is not a crash (the default answer would take the launcher down with it). */
-    private object Quiet : WebViewClient() {
-        override fun onRenderProcessGone(v: WebView, d: RenderProcessGoneDetail) = true
+        try { v.loadUrl("about:blank") } catch (e: Throwable) { }    // a video or sound stops at once, not when the view is collected
+        WebEnd.end(v)
     }
 }
 

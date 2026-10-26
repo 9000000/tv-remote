@@ -81,7 +81,7 @@ class WebGameActivity : ComponentActivity() {
         origin = originOf(url)
         val shim = assets.open("tvpad.js").use { String(it.readBytes()) }
 
-        web = WebView(this).apply {
+        web = dev.tvremote.tvui.WebEnd.made(WebView(this)).apply {
             setBackgroundColor(0xFF000000.toInt())
             settings.apply {
                 javaScriptEnabled = true; domStorageEnabled = true; mediaPlaybackRequiresUserGesture = false
@@ -102,7 +102,7 @@ class WebGameActivity : ComponentActivity() {
                 override fun onRenderProcessGone(v: WebView, d: android.webkit.RenderProcessGoneDetail): Boolean {   // low memory killed it: a card, not the app closing
                     Log.w(TAG, "renderer gone, crash=${d.didCrash()}")
                     failCard(R.string.web_fail_gone); gone = true
-                    root.removeView(web); web.destroy()
+                    dev.tvremote.tvui.WebEnd.end(web)
                     return true
                 }
                 override fun onReceivedError(v: WebView, r: WebResourceRequest, e: WebResourceError) { if (r.isForMainFrame) { Log.w(TAG, "page error ${e.errorCode} ${e.description} ${r.url}"); failCard(R.string.web_fail_net) } }
@@ -216,7 +216,7 @@ class WebGameActivity : ComponentActivity() {
 
     override fun onDestroy() {
         if (::cards.isInitialized) cards.close()
-        if (::web.isInitialized && !gone) { web.removeJavascriptInterface("TVPadNative"); web.destroy() }
+        if (::web.isInitialized && !gone) { web.removeJavascriptInterface("TVPadNative"); dev.tvremote.tvui.WebEnd.end(web) }   // its renderer too: ~100 MB kept after the game otherwise
         if (::server.isInitialized) { server.webMode = false; server.clearLayouts(); GameServer.release() }
         super.onDestroy()
     }

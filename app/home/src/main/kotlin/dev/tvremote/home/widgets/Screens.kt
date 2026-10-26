@@ -266,7 +266,7 @@ class WeatherMapActivity : Activity() {
             return
         }
         lat = place.optDouble("lat"); lon = place.optDouble("lon")
-        val wv = WebView(this).apply {
+        val wv = dev.tvremote.tvui.WebEnd.made(WebView(this)).apply {
             settings.javaScriptEnabled = true; settings.domStorageEnabled = true
             isFocusable = false; isFocusableInTouchMode = false                        // the D-pad stays on the chips: a map would swallow it
             setBackgroundColor(INK)
@@ -339,5 +339,5 @@ class WeatherMapActivity : Activity() {
         if (ready) setLayer(l) else if (!started) { started = true; web?.loadUrl(url(l)) }   // before the page is up onPageFinished applies `layer`
     }
 
-    override fun onDestroy() { web?.destroy(); super.onDestroy() }
+    override fun onDestroy() { dev.tvremote.tvui.WebEnd.end(web); super.onDestroy() }   // the renderer too, unless the wall still uses it
 }
