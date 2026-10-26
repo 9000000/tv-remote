@@ -79,7 +79,7 @@
         "vi": "Air Hockey",
         "en": "Air Hockey"
       },
-      "img": "img/hockey.jpg",
+      "img": "img/hockey.v2.jpg",
       "pad": "web",
       "players": 2,
       "genre": "sports",
@@ -92,7 +92,7 @@
         "vi": "Đại chiến xe tăng",
         "en": "Tank Arena"
       },
-      "img": "img/tanks.jpg",
+      "img": "img/tanks.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "shooter",
@@ -105,7 +105,7 @@
         "vi": "Đua xe ánh sáng",
         "en": "Light Cycles"
       },
-      "img": "img/cycles.jpg",
+      "img": "img/cycles.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "racing",
@@ -118,7 +118,7 @@
         "vi": "Sumo húc",
         "en": "Sumo Bump"
       },
-      "img": "img/sumo.jpg",
+      "img": "img/sumo.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -131,7 +131,7 @@
         "vi": "Đố vui",
         "en": "Quiz"
       },
-      "img": "img/quiz2.jpg",
+      "img": "img/quiz.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "quiz",
@@ -144,7 +144,7 @@
         "vi": "Balloon Pop",
         "en": "Balloon Pop"
       },
-      "img": "img/balloons.jpg",
+      "img": "img/balloons.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "shooter",
@@ -157,7 +157,7 @@
         "vi": "Fruit Slice",
         "en": "Fruit Slice"
       },
-      "img": "img/slice.jpg",
+      "img": "img/slice.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "arcade",
@@ -170,7 +170,7 @@
         "vi": "Whack-a-Mole",
         "en": "Whack-a-Mole"
       },
-      "img": "img/moles.jpg",
+      "img": "img/moles.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "arcade",
@@ -183,7 +183,7 @@
         "vi": "Tiến lên",
         "en": "Tiến lên"
       },
-      "img": "img/tienlen.jpg",
+      "img": "img/tienlen.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -196,7 +196,7 @@
         "vi": "Cờ caro",
         "en": "Gomoku"
       },
-      "img": "img/caro.jpg",
+      "img": "img/caro.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "puzzle",
@@ -209,7 +209,7 @@
         "vi": "Đặt bom",
         "en": "Bombers"
       },
-      "img": "img/bombers.jpg",
+      "img": "img/bombers.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -222,7 +222,7 @@
         "vi": "Bài màu",
         "en": "Color Cards"
       },
-      "img": "img/colors.jpg",
+      "img": "img/colors.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -235,7 +235,7 @@
         "vi": "Cờ cá ngựa",
         "en": "Ludo"
       },
-      "img": "img/cangua.jpg",
+      "img": "img/cangua.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -248,7 +248,7 @@
         "vi": "Cờ tỷ phú",
         "en": "Tycoon"
       },
-      "img": "img/typhu.jpg",
+      "img": "img/typhu.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -261,7 +261,7 @@
         "vi": "Bi-da",
         "en": "Pool"
       },
-      "img": "img/bida.jpg",
+      "img": "img/bida.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "sports",
@@ -274,7 +274,7 @@
         "vi": "Mèo nổ",
         "en": "Boom Cats"
       },
-      "img": "img/meono2.jpg",
+      "img": "img/meono.v2.jpg",
       "pad": "web",
       "players": 4,
       "genre": "party",
@@ -286,7 +286,7 @@
     {
       "id": "croom",
       "name": "Concentration Room",
-      "img": "img/croom.jpg",
+      "img": "img/croom.v2.jpg",
       "system": "nes",
       "players": 2,
       "genre": "puzzle",
@@ -299,7 +299,7 @@
     {
       "id": "rhde",
       "name": "RHDE: Furniture Fight",
-      "img": "img/rhde.jpg",
+      "img": "img/rhde.v2.jpg",
       "system": "nes",
       "players": 2,
       "genre": "party",
@@ -312,7 +312,7 @@
     {
       "id": "coco",
       "name": "Coco Battle Royale II",
-      "img": "img/coco.jpg",
+      "img": "img/coco.v2.jpg",
       "system": "nes",
       "players": 2,
       "genre": "party",
@@ -325,7 +325,7 @@
     {
       "id": "thwaite",
       "name": "Thwaite",
-      "img": "img/thwaite.jpg",
+      "img": "img/thwaite.v2.jpg",
       "system": "nes",
       "players": 2,
       "genre": "arcade",
@@ -338,7 +338,7 @@
     {
       "id": "runner",
       "name": "Runner",
-      "img": "img/runner.jpg",
+      "img": "img/runner.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -351,7 +351,7 @@
     {
       "id": "ghostsgraves",
       "name": "Ghosts and Graves",
-      "img": "img/ghostsgraves.jpg",
+      "img": "img/ghostsgraves.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "puzzle",
@@ -364,7 +364,7 @@
     {
       "id": "roborun",
       "name": "Robo Run",
-      "img": "img/roborun.jpg",
+      "img": "img/roborun.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -377,7 +377,7 @@
     {
       "id": "nova",
       "name": "Nova the Squirrel",
-      "img": "img/nova.jpg",
+      "img": "img/nova.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -390,7 +390,7 @@
     {
       "id": "witchnwiz",
       "name": "Witch n' Wiz",
-      "img": "img/witchnwiz.jpg",
+      "img": "img/witchnwiz.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "platformer",
@@ -403,7 +403,7 @@
     {
       "id": "stallar",
       "name": "Stallar",
-      "img": "img/stallar.jpg",
+      "img": "img/stallar.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "shooter",
@@ -416,7 +416,7 @@
     {
       "id": "filefixers",
       "name": "File Fixers",
-      "img": "img/filefixers.jpg",
+      "img": "img/filefixers.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "puzzle",
@@ -429,7 +429,7 @@
     {
       "id": "tabletennis",
       "name": "8-Bit Table Tennis",
-      "img": "img/tabletennis.jpg",
+      "img": "img/tabletennis.v2.jpg",
       "system": "nes",
       "players": 2,
       "genre": "sports",
@@ -443,7 +443,7 @@
     {
       "id": "opennes-snake",
       "name": "Snake",
-      "img": "img/opennes-snake.jpg",
+      "img": "img/opennes-snake.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "arcade",
@@ -456,7 +456,7 @@
     {
       "id": "opennes-breakout",
       "name": "Breakout",
-      "img": "img/opennes-breakout.jpg",
+      "img": "img/opennes-breakout.v2.jpg",
       "system": "nes",
       "players": 1,
       "genre": "arcade",
@@ -469,7 +469,7 @@
     {
       "id": "opennes-pong",
       "name": "Pong",
-      "img": "img/opennes-pong.jpg",
+      "img": "img/opennes-pong.v2.jpg",
       "system": "nes",
       "players": 2,
       "genre": "sports",

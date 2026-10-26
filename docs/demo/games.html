@@ -77,16 +77,16 @@
   var LIB = [
     { id: 'tabletennis', n: ['8-Bit Table Tennis'], b: 'NES', pl: 2 },
     { id: 'padtest', n: ['Thử tay cầm', 'Pad test'], b: 'WEB', img: 'img/padtest.jpg', pad: 1 },
-    { id: 'quiz', n: ['Đố vui', 'Quiz'], b: 'WEB', img: '../games/img/quiz2.jpg', web: 1, pl: 4 },   // games.json's picture (there is no quiz.jpg)
+    { id: 'quiz', n: ['Đố vui', 'Quiz'], b: 'WEB', img: '../games/img/quiz.v2.jpg', web: 1, pl: 4 },   // games.json's picture (there is no quiz.jpg)
     { id: 'roborun', n: ['Robo Run'], b: 'NES', pl: 1 },
     { id: 'stallar', n: ['Stallar'], b: 'NES', pl: 1 },
     { plus: 1, n: ['Thêm game', 'Add game'] }
   ];
   var SUG = ['breakout:opennes-breakout:Breakout', 'filefixers:filefixers:File Fixers', 'nova:nova:Nova the Squirrel', 'pong:opennes-pong:Pong', 'snake:opennes-snake:Snake', 'witchnwiz:witchnwiz:Witch n\' Wiz'].map(function (x) {
-    var a = x.split(':'); return { id: a[0], img: '../games/img/' + a[1] + '.jpg', n: [a[2]], b: 'NES', pl: a[0] === 'pong' ? 2 : 1, sug: 1 };
+    var a = x.split(':'); return { id: a[0], img: '../games/img/' + a[1] + '.v2.jpg', n: [a[2]], b: 'NES', pl: a[0] === 'pong' ? 2 : 1, sug: 1 };
   });
   var G = LIB.concat(SUG);
-  G.forEach(function (g, i) { if (!g.img && !g.plus) g.img = '../games/img/' + (g.id === 'tabletennis' ? 'tabletennis' : g.id) + '.jpg'; g.i = i; g.r = g.sug ? Math.ceil(LIB.length / 4) + Math.floor((i - LIB.length) / 4) : Math.floor(i / 4); g.c = (g.sug ? i - LIB.length : i) % 4; });
+  G.forEach(function (g, i) { if (!g.img && !g.plus) g.img = '../games/img/' + (g.id === 'tabletennis' ? 'tabletennis' : g.id) + '.v2.jpg'; g.i = i; g.r = g.sug ? Math.ceil(LIB.length / 4) + Math.floor((i - LIB.length) / 4) : Math.floor(i / 4); g.c = (g.sug ? i - LIB.length : i) % 4; });
   var name = function (g) { return g.n[VI ? 0 : 1] || g.n[0]; };
   var S = { mode: 'lib', i: 0, over: null };
   var COLOR = { NES: '#e11d48', WEB: '#0891b2' };
