@@ -9,6 +9,7 @@
 Needs: python3 with Pillow, Google Chrome, cwebp, the computer app built (./gradlew :desktop:installDist) and, for tv / phone /
 tvapp, the two emulators running with the apps installed (dev/test/emu.sh). The picture on the TV is the real TV Home of the TV
 emulator, captured before (docs/img/tvhome-widgets-<lang>.webp): no real TV, no one's address in the pictures.
+TV_PIN=<the emulator TV Setup PIN> when TV Setup there is locked (tvapp types it on its pad).
 The page's pictures are taken in the dark theme, like the site (THEME=light for the old look).
 Only the standard library besides Pillow: Chrome is driven through its DevTools protocol over a small WebSocket client below.
 """
@@ -394,10 +395,10 @@ def screencap(serial):
     return img.convert("RGB")
 
 
-def tap(serial, text):
+def tap(serial, text, exact=False):
     for n in re.findall(r"<node [^>]*>", screen_texts(serial)):
         g = lambda k: (re.search(k + r'="([^"]*)"', n) or [None, ""])[1]
-        if text in g("text") + " " + g("content-desc"):
+        if (g("text") == text) if exact else (text in g("text") + " " + g("content-desc")):
             a, b, c, d = map(int, re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n).groups())
             adb(serial, "shell", "input", "tap", str((a + c) // 2), str((b + d) // 2)); return True
     return False
@@ -433,6 +434,9 @@ def shot_tvapp():
             adb(TV, "shell", "cmd", "locale", "set-app-locales", app, "--locales", loc)
             adb(TV, "shell", "am", "force-stop", app)
             adb(TV, "shell", "am", "start", "-n", app + "/.MainActivity"); time.sleep(4)
+            if os.environ.get("TV_PIN") and 'text="○' in screen_texts(TV):   # the emulator's TV Setup behind its PIN (a shuffled pad)
+                for d in os.environ["TV_PIN"]: tap(TV, d, exact=True)
+                time.sleep(2)
             img = screencap(TV)
             if img.size != (1920, 1080): sys.exit(f"The TV emulator's screen is {img.size}, the edit below wants 1920×1080")
             n = re.search(r'text="[^"]*sdk_[^"]*?(&#10;[^"]*)?" [^>]*bounds="\[(\d+),(\d+)\]\[\d+,(\d+)\]"', screen_texts(TV))
