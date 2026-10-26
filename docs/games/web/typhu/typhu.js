@@ -49,25 +49,73 @@ const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className
 const m = (n) => { const s = String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, Table.VI ? '.' : ','); return Table.VI ? s + 'đ' : '$' + s; };
 const B = TY.BOARD, tname = (id) => (Table.VI ? B[id].vi : B[id].en);
 const k = (n) => (n < 1000 ? String(n) : (n % 1000 === 0 ? n / 1000 : Math.round(n / 100) / 10) + 'k');
-const DIE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 let G = null; const afk = [];
+const SAFE = () => ({ act: G.phase === 'buy' ? 'skip' : G.phase === 'roll' ? 'roll' : 'end' });
+
+// ---- motion. A roll is worked out on a copy of the game; the TV rolls the dice, hops the token square by square, and only
+// then does the copy become the game (money, deed, log, the phones' buttons all wait for the token to land).
+const REDUCE = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FACE = [[], [4], [0, 8], [0, 4, 8], [0, 2, 6, 8], [0, 2, 4, 6, 8], [0, 2, 3, 5, 6, 8]];   // pips on the 3x3 grid
+const DICE_MS = 900, HOP_MS = 150;
+let busy = false; const vp = [];                                // vp[p] = -1: that token is the floating mover, not on a tile
+const after = (ms, f) => { let t0 = 0; const q = (ts) => { if (!t0) t0 = ts; if (ts - t0 >= ms) f(); else requestAnimationFrame(q); }; requestAnimationFrame(q); };   // rAF, so a frozen page really stops
+const die = () => { const d = h('div', 'die'); for (let i = 0; i < 9; i++) d.append(h('i')); return d; };
+const face = (d, n) => { [...d.children].forEach((e, i) => e.classList.toggle('on', FACE[n].includes(i))); };
+function move(t, msg) {                                         // '' = done, else the refusal; only a roll is animated
+  if (msg.act !== 'roll') return TY.apply(G, msg);
+  const C = JSON.parse(JSON.stringify(G)); C.rnd = G.rnd;
+  const why = TY.apply(C, msg); if (why) return why;
+  const p = G.p, old = G.pos[p], fin = C.pos[p], sum = C.dice[0] + C.dice[1];
+  const ev = C.log.filter((e) => e.seq > G.seq).map((e) => e.k);
+  const walks = TY.alive(C, p) && !ev.some((k) => k === 'dbl3' || k === 'stay' || k === 'broke');   // else jail / staying put: no walk
+  const legEnd = walks ? (old + sum) % 40 : old, path = [];
+  for (let i = 1; walks && i <= sum; i++) path.push((old + i) % 40);
+  busy = true; Sfx.play('dice');
+  const dc = $('#dice'), ds = [...dc.children];
+  const done = () => { busy = false; vp[p] = undefined; G = C; post(t); };
+  const walk = () => {                                          // hop square by square, then glide if a card / jail sent it elsewhere
+    const sq = (id) => tiles[id].e, mv = h('b', 'mover'), tk = h('b', 'token', String(p + 1)); tk.style.background = t.COLORS[p]; mv.append(tk);
+    const at = (id, ms) => { const e = sq(id), s = tk.offsetWidth || 20; mv.style.transitionDuration = ms + 'ms'; mv.style.transform = `translate3d(${e.offsetLeft + (e.offsetWidth - s) / 2}px,${e.offsetTop + e.offsetHeight - s - 4}px,0)`; };
+    $('#board').append(mv); mv.style.transitionDuration = '0ms'; at(old, 0); vp[p] = -1; draw(t);
+    let i = 0;
+    const hop = () => {
+      if (i < path.length) {
+        at(path[i++], HOP_MS); tk.style.animation = 'none'; void tk.offsetWidth; tk.style.animation = ''; after(HOP_MS, hop);
+      } else if (fin !== legEnd) { at(fin, 380); after(400, end); } else after(120, end);
+    };
+    const end = () => { mv.remove(); done(); };
+    after(60, hop);
+  };
+  const land = () => {
+    face(ds[0], C.dice[0]); face(ds[1], C.dice[1]);
+    ds.forEach((d) => { d.classList.remove('roll'); d.classList.add('land'); });
+    after(REDUCE ? 150 : 350, () => { ds.forEach((d) => d.classList.remove('land')); if (REDUCE || (!path.length && fin === old)) done(); else walk(); });
+  };
+  if (REDUCE) { land(); return ''; }
+  let n = 0; ds.forEach((d) => { d.classList.remove('land'); void d.offsetWidth; d.classList.add('roll'); });
+  const spin = () => { if (++n * 80 >= DICE_MS) { land(); return; } ds.forEach((d) => face(d, 1 + Math.floor(Math.random() * 6))); after(80, spin); };
+  spin();
+  return '';
+}
 
 const table = Table({
   seats: 4, turnSecs: TURN, botMs: [800, 1300], cards: true, remote: true,
   deal(t) { G = TY.newGame(4); t.turn = 0; afk.length = 0; },
   bot(t, s) {
-    let why = TY.apply(G, TY.bot(G));
-    if (why) why = TY.apply(G, { act: G.phase === 'buy' ? 'skip' : G.phase === 'roll' ? 'roll' : 'end' });
-    post(t);
+    if (busy) return;
+    if (move(t, TY.bot(G))) move(t, SAFE());
+    if (!busy) post(t);
   },
   timeUp(t, s) {                                                // a player away from the phone: the game goes on, one quick step at a time
+    if (busy) return;                                           // the clock keeps ticking: next second asks again
     afk[s] = true;
-    TY.apply(G, { act: G.phase === 'buy' ? 'skip' : G.phase === 'roll' ? 'roll' : 'end' });
-    post(t);
+    move(t, SAFE());
+    if (!busy) post(t);
   },
   tick: clock,
   act(t, s, msg) {
     if (s !== G.p) return W.notyet;
+    if (busy) return '';                                        // the dice are still rolling: a second tap is ignored, not told off
     const acts = ['roll', 'buy', 'skip', 'build', 'sell', 'mort', 'jailpay', 'jailcard', 'end'];
     if (!acts.includes(msg.act)) return W.err.act;
     if (msg.act === 'build' || msg.act === 'sell' || msg.act === 'mort') {       // every picked tile gets the move; the first refusal is told
@@ -77,10 +125,10 @@ const table = Table({
       for (const id of ids) { const w = TY.apply(G, { act: msg.act, id }); if (w) why = why || (W.err[w] || W.err.phase); else done++; }
       if (!done) return why;
     } else {
-      const why = TY.apply(G, { act: msg.act });
+      const why = move(t, { act: msg.act });
       if (why) return W.err[why] || W.err.phase;
     }
-    afk[s] = false; t.say(s, ''); post(t); return '';
+    afk[s] = false; t.say(s, ''); if (!busy) post(t); return '';
   },
   view, draw,
 });
@@ -133,7 +181,7 @@ function view(t, s) {
 // ---- the TV: the board is built once, then only what changed is touched
 const POS = (id) => (id <= 10 ? [11, 11 - id] : id <= 20 ? [21 - id, 1] : id <= 30 ? [1, id - 19] : [id - 29, 11]);
 const ICON = { go: '➡', jail: '🔒', park: '🅿', gojail: '👮', chance: '❓', chest: '🎁', tax: '💸', rail: '🚆', util: '💡' };
-const tiles = [], tcache = [];
+const tiles = [], tcache = [], tfl = [];
 const SND = { roll: 'dice', buy: 'score', build: 'pickup', salary: 'pickup', freecard: 'pickup', rent: 'hit', tax: 'bad', fine: 'bad', jail: 'bad', dbl3: 'bad', card: 'card', sell: 'ui', mort: 'ui', redeem: 'ui', broke: 'boom' };
 const PRIO = ['ui', 'card', 'dice', 'pickup', 'score', 'hit', 'bad', 'boom'];      // later = louder news
 function build() {
@@ -153,7 +201,7 @@ function build() {
   }
 }
 function clock(t) { const bar = document.querySelector('.pl.turn .timer i'); if (bar) bar.style.width = Math.max(0, t.left / TURN * 100) + '%'; }
-let lastRolls = -1, lastSeq = -1;
+let lastSeq = -1;
 function draw(t) {
   if (!t.ok) { $('#msg').replaceChildren(h('b', '', t.pad ? W.old : W.nopad), h('span', '', t.pad ? W.oldh : '')); return; }
   if (!tiles.length) build();
@@ -162,10 +210,13 @@ function draw(t) {
   // tiles: owner outline, houses, mortgage, tokens
   for (let id = 0; id < 40; id++) {
     const ti = tiles[id], o = G.owner[id], here = [];
-    for (let p = 0; p < G.n; p++) if (TY.alive(G, p) && G.pos[p] === id) here.push(p);
+    for (let p = 0; p < G.n; p++) if (TY.alive(G, p) && (vp[p] != null ? vp[p] : G.pos[p]) === id) here.push(p);
     const key = o + '|' + G.h[id] + '|' + G.m[id] + '|' + here.join() + '|' + (G.jail[here[0]] >= 0 ? 'j' : '');
     if (tcache[id] === key) continue;
     tcache[id] = key;
+    const fl = o + '|' + G.h[id] + '|' + G.m[id];                // bought / built / mortgaged: the square pops once
+    if (tfl[id] != null && tfl[id] !== fl && !REDUCE) { ti.e.classList.remove('flash'); void ti.e.offsetWidth; ti.e.classList.add('flash'); }
+    tfl[id] = fl;
     ti.e.style.setProperty('--oc', o >= 0 ? t.COLORS[o] : 'transparent');
     ti.e.classList.toggle('owned', o >= 0); ti.e.classList.toggle('mort', G.m[id]);
     if (ti.band) ti.band.textContent = G.h[id] === 5 ? '🏨' : G.h[id] ? '🏠'.repeat(G.h[id]) : '';
@@ -189,9 +240,8 @@ function draw(t) {
   // the middle
   $('#hdr').replaceChildren(h('b', '', W.title), h('span', '', W.round(Math.min(G.round, TY.ROUNDS), TY.ROUNDS)));
   const dc = $('#dice');
-  if (!dc.firstChild) dc.append(h('span'), h('span'));
-  dc.children[0].textContent = DIE[G.dice[0]] || ''; dc.children[1].textContent = DIE[G.dice[1]] || '';
-  if (G.rolls !== lastRolls) { lastRolls = G.rolls; dc.classList.remove('roll'); void dc.offsetWidth; dc.classList.add('roll'); }
+  if (!dc.firstChild) dc.append(die(), die());
+  if (!busy) { face(dc.children[0], G.dice[0]); face(dc.children[1], G.dice[1]); }
   const deed = $('#deed'), id = G.pend >= 0 ? G.pend : G.pos[G.p], D = B[id], buyable = D.price;
   if (t.done) deed.replaceChildren();
   else if (buyable) {
@@ -204,7 +254,7 @@ function draw(t) {
   const last = G.log.slice(-5).reverse();
   $('#say').textContent = t.done ? '' : last.length ? W.ev[last[0].k](last[0], nm, T) : '';
   $('#log').replaceChildren(...last.slice(1).map((e, i) => h('div', 'l' + i, W.ev[e.k](e, nm, T))));
-  const fresh = G.log.filter((e) => e.seq > lastSeq).map((e) => SND[e.k]).filter(Boolean);   // one sound per redraw: the most important new event
+  const fresh = G.log.filter((e) => e.seq > lastSeq && e.k !== 'roll').map((e) => SND[e.k]).filter(Boolean);   // one sound per redraw: the most important new event
   if (fresh.length && !t.done) Sfx.play(fresh.sort((x, y) => PRIO.indexOf(y) - PRIO.indexOf(x))[0]);
   lastSeq = G.seq;
   $('#msg').replaceChildren();

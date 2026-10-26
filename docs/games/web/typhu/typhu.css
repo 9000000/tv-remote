@@ -4,10 +4,19 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 1.
 #board{position:absolute;left:calc(50% - var(--B) / 2);top:2vh;width:var(--B);height:var(--B);display:grid;grid-template:1.5fr repeat(9,1fr) 1.5fr / 1.5fr repeat(9,1fr) 1.5fr;background:#0f3a24;border:.3vh solid #0f3a24;border-radius:1vh;overflow:hidden}
 #mid{grid-area:2 / 2 / 11 / 11;display:flex;flex-direction:column;align-items:center;gap:1.2vh;padding:1.6vh 1.4vh;background:radial-gradient(ellipse at center,#14532d,#0c3b20)}
 #hdr{display:flex;gap:2vh;align-items:baseline}#hdr b{font-size:3.6vh;letter-spacing:.3vh;color:#fde68a}#hdr span{font-size:2vh;color:#bbf7d0}
-#dice{display:flex;gap:1.4vh;font-size:9vh;line-height:1;color:#fff;text-shadow:0 .4vh 1vh #0008}
-#dice.roll span{animation:tumble .45s ease-out}
-#dice span:last-child{animation-delay:.06s}
-@keyframes tumble{0%{transform:rotate(-200deg) scale(.4);opacity:.2}70%{transform:rotate(12deg) scale(1.1)}100%{transform:none}}
+#dice{display:flex;gap:2vh;height:10vh;align-items:center}
+.die{width:9vh;height:9vh;padding:1.1vh;display:grid;grid:repeat(3,1fr) / repeat(3,1fr);background:#fff;border-radius:1.6vh;box-shadow:0 .5vh 1.2vh #0009,inset 0 -.5vh 0 #0002}
+.die i{border-radius:50%;margin:10%}.die i.on{background:#1b1e27}
+.die.roll{animation:tumble .9s ease-out}.die:last-child{--s:-1}.die.roll:last-child{animation-delay:.05s}
+.die.land{animation:settle .2s ease-out}
+@keyframes tumble{0%{transform:translateY(-14vh) rotate(0) scale(.7);opacity:.3}30%{transform:translateY(0) rotate(calc(var(--s,1) * 300deg)) scale(1);opacity:1}48%{transform:translateY(-5vh) rotate(calc(var(--s,1) * 430deg))}66%{transform:translateY(0) rotate(calc(var(--s,1) * 600deg))}80%{transform:translateY(-1.6vh) rotate(calc(var(--s,1) * 680deg))}100%{transform:translateY(0) rotate(calc(var(--s,1) * 720deg))}}
+@keyframes settle{0%{transform:scale(1.14)}100%{transform:none}}
+.mover{position:absolute;left:0;top:0;z-index:3;transition:transform .15s linear;pointer-events:none}
+.mover .token{animation:hop .15s ease-out}
+@keyframes hop{0%{transform:none}50%{transform:translateY(-2.2vh) scale(1.2)}100%{transform:none}}
+.tile.flash .in{animation:pop .6s ease-out}
+@keyframes pop{0%{transform:none}35%{transform:scale(1.22)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.die.roll,.die.land,.mover .token,.tile.flash .in{animation:none}.mover{transition:none}}
 #deed{width:84%;background:#f7f7f2;color:#1b1e27;border-radius:1vh;overflow:hidden;box-shadow:0 .6vh 2vh #0008}
 #deed .bar{height:2.4vh}#deed .bar.flat{background:#64748b}
 #deed .ln{display:flex;justify-content:space-between;align-items:baseline;padding:.8vh 1.6vh 0;font-size:3.2vh}#deed .ln b{font-weight:800}#deed .ln span{font-weight:800}
