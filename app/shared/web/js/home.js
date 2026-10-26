@@ -300,11 +300,36 @@ async function homeOpen() {
   const gstyleHead = el('h3', { textContent: T('home.gstyle') }), gstyle = el('div', { className: 'fchips' });
   const greetField = (key, max, ph) => {
     const box = el('input', { type: 'text', maxLength: max, placeholder: T(ph), 'aria-label': T(ph) });
-    const save = el('button', { type: 'button', className: 'primary', textContent: T('home.greet_save'), onclick: () => send({ [key]: box.value.trim() }) });
-    box.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });
+    // Save only while the words differ from the TV's: a field that is already saved has no button beside it
+    const save = el('button', { type: 'button', className: 'primary', textContent: T('home.greet_save'), hidden: true, onclick: () => { box.dataset.saved = box.value.trim(); save.hidden = true; send({ [key]: box.value.trim() }); } });
+    const dirty = () => { save.hidden = box.value.trim() === (box.dataset.saved || ''); };
+    box.addEventListener('input', dirty);
+    box.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !save.hidden) save.click(); });
+    box.sync = (v) => { box.dataset.saved = v || ''; if (document.activeElement !== box) box.value = v || ''; dirty(); };
     return [box, UI.line(box, save)];
   };
   const [gname, gnameLine] = greetField('gname', 24, 'home.gname_ph'), [gtext, gtextLine] = greetField('gtext', 60, 'home.gtext_ph');   // HomeConfig.GNAME_MAX / GTEXT_MAX
+  // the header's second line (HomeConfig "dstyle" / "dtext") and each line's type (HEAD_TYPE / HEAD_FLAGS); only a TV Home that reports "headOk"
+  const hsplit = el('hr', { className: 'hsplit' });
+  const dstyleHead = el('h3', { textContent: T('home.dstyle') }), dstyle = el('div', { className: 'fchips' });
+  const [dtext, dtextLine] = greetField('dtext', 60, 'home.dtext_ph');
+  const HEAD_SAYS = { time: 'home.gstyle_time', name: 'home.gstyle_name', date: 'home.gstyle_date', lunar: 'home.gstyle_lunar', own: 'home.gstyle_own' };
+  // {date} {lunar} …: a press puts the word where the cursor is (HomeConfig.TOKENS; TV Home fills them in)
+  const tokens = (box) => el('div', { className: 'fchips htokens' }, el('span', { className: 'muted', textContent: T('home.h_tokens') }),
+    ...['greet', 'date', 'weekday', 'day', 'month', 'year', 'lunar', 'canchi'].map((k) => el('button', { type: 'button', className: 'small', textContent: '{' + k + '}', onclick: () => {
+      const a = box.selectionStart ?? box.value.length, b = box.selectionEnd ?? a, w = '{' + k + '}';
+      box.value = (box.value.slice(0, a) + w + box.value.slice(b)).slice(0, 60); box.focus(); box.setSelectionRange(a + w.length, a + w.length); box.dispatchEvent(new Event('input'));
+    } })));
+  const gtokens = tokens(gtext), dtokens = tokens(dtext);
+  const gtype = el('div', { className: 'fchips htype' }), dtype = el('div', { className: 'fchips htype' });
+  const paintType = (box, w, c) => {
+    const chip = (k, v, id) => el('button', { type: 'button', className: c[w + k] === v ? 'on' : '', 'aria-pressed': String(c[w + k] === v), onclick: () => send({ [w + k]: v }) }, T(id));
+    const flag = (k, id) => el('button', { type: 'button', className: c[w + k] ? 'on' : '', 'aria-pressed': String(!!c[w + k]), onclick: () => send({ [w + k]: !c[w + k] }) }, T(id));
+    const grp = (...b) => el('span', { className: 'hgrp' }, ...b);   // size, style, colour: each wraps as a whole, never split across lines
+    box.replaceChildren(grp(chip('size', 's', 'home.h_s'), chip('size', 'm', 'home.h_m'), chip('size', 'l', 'home.h_l')),
+      grp(flag('bold', 'home.h_bold'), flag('italic', 'home.h_italic'), flag('caps', 'home.h_caps')),
+      grp(chip('color', 'white', 'home.h_white'), chip('color', 'dim', 'home.h_dim'), chip('color', 'red', 'home.h_red')));
+  };
   // what the first screen draws, each can go (HomeConfig.SHOWS); an older TV Home does not report them, so none is offered to it
   const SHOWS = ['showClock', 'showDate', 'showNet', 'showGear', 'showAdd', 'showSuggest', 'showWatch'];
   const shows = Object.fromEntries(SHOWS.map((k) => [k, el('input', { type: 'checkbox', onchange: () => send({ [k]: shows[k].checked }) })]));
@@ -482,11 +507,19 @@ async function homeOpen() {
     clock.checked = c.clock24; greet.checked = c.greet; anim.checked = c.anim !== false;
     const gOk = !!c.greetOk && c.greet !== false;
     gstyleHead.hidden = gstyle.hidden = !gOk;
-    gstyle.replaceChildren(...[['time', 'home.gstyle_time'], ['name', 'home.gstyle_name'], ['own', 'home.gstyle_own']].map(([k, id]) =>
-      el('button', { type: 'button', className: c.gstyle === k ? 'on' : '', 'aria-pressed': String(c.gstyle === k), onclick: () => send({ gstyle: k }) }, T(id))));
+    const hOk = !!c.headOk, says = (k) => k !== 'date' && k !== 'lunar' || hOk;
+    gstyle.replaceChildren(...['time', 'name', 'date', 'lunar', 'own'].filter(says).map((k) =>
+      el('button', { type: 'button', className: c.gstyle === k ? 'on' : '', 'aria-pressed': String(c.gstyle === k), onclick: () => send({ gstyle: k }) }, T(HEAD_SAYS[k]))));
     gnameLine.hidden = !gOk || c.gstyle !== 'name'; gtextLine.hidden = !gOk || c.gstyle !== 'own';
-    if (document.activeElement !== gname) gname.value = c.gname || '';
-    if (document.activeElement !== gtext) gtext.value = c.gtext || '';
+    gtokens.hidden = gtextLine.hidden || !hOk; gtype.hidden = !gOk || !hOk;
+    if (hOk) paintType(gtype, 'g', c);
+    const dOk = hOk && c.showDate !== false;
+    hsplit.hidden = dstyleHead.hidden = dstyle.hidden = dtype.hidden = !dOk;
+    dstyle.replaceChildren(...['time', 'date', 'lunar', 'own'].map((k) =>
+      el('button', { type: 'button', className: c.dstyle === k ? 'on' : '', 'aria-pressed': String(c.dstyle === k), onclick: () => send({ dstyle: k }) }, T(HEAD_SAYS[k]))));
+    dtextLine.hidden = dtokens.hidden = !dOk || c.dstyle !== 'own';
+    if (dOk) paintType(dtype, 'd', c);
+    gname.sync(c.gname); gtext.sync(c.gtext); dtext.sync(c.dtext);
     dream.checked = !!c.dream;
     dream.closest('label').hidden = c.dream === undefined;           // a TV Home older than the screensaver
     const ka = c.keyapps || {}, kOk = !!c.keysOk;                     // an older TV Home has neither: shown, with its update
@@ -837,6 +870,8 @@ async function homeOpen() {
   }
 
   const page = homeLink.direct;
+  // one block of a page (.hsect): its head, if any, is a small-capitals title; a block with nothing shown hides itself (CSS :has)
+  const sect = (head, ...kids) => el('div', { className: 'hsect' }, ...(head ? [typeof head === 'string' ? el('h3', { className: 'secthead', textContent: T(head) }) : head] : []), ...kids);
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
   const vFold = UI.card(T('home.v_head'), { fold: true }, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
   const GROUPS = [
@@ -846,12 +881,16 @@ async function homeOpen() {
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
       hScenes, wScenes, hColours, walls]],
-    ['look', 'sparkle', 180, 'home.g_look', [el('h3', { className: 'secthead', textContent: T('home.sec_show') }), focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24'), check(greet, 'home.greet'), gstyleHead, gstyle, gnameLine, gtextLine,
-      showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(shows.showGear, 'home.show_gear'),
-      check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'), watchAtHead, watchAt,
-      el('h3', { className: 'secthead', textContent: T('home.sec_grid') }), colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox, tilesHead, tilesNote, addHome, tilesList,
-      el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden, namesHead, names]],
-    ['widgets', 'chart', 210, 'home.g_widgets', [wHead, wList, ...wLines, packHead, packBox, packNote, layHead, lay, layNote, placeHead, placeLine, feedHead, feedLine, feedList, feedNote, noteHead, noteLine, qrHead, qrList, qrNote]],
+    ['look', 'sparkle', 180, 'home.g_look', [sect('home.sec_show', focusHead, focus, motionHead, motion, check(anim, 'home.anim'), check(clock, 'home.clock24')),
+      sect('home.sec_head', check(greet, 'home.greet'), gstyleHead, gstyle, gnameLine, gtextLine, gtokens, gtype, hsplit, dstyleHead, dstyle, dtextLine, dtokens, dtype),
+      sect(showHead, check(shows.showClock, 'home.show_clock'), check(shows.showDate, 'home.show_date'), check(shows.showNet, 'home.show_net'), check(shows.showGear, 'home.show_gear'),
+        check(shows.showAdd, 'home.show_add'), check(shows.showSuggest, 'home.show_suggest'), check(shows.showWatch, 'home.show_watch'), watchAtHead, watchAt),
+      sect('home.sec_grid', colsHead, cols, rowsHead, rowsLine, rowsNote, orderHead, orderBox),
+      sect(null, tilesHead, tilesNote, addHome, tilesList),
+      sect(null, el('div', { className: 'card-head' }, el('h3', { textContent: T('home.hidden') }), addHidden), hidden),
+      sect(null, namesHead, names)]],
+    ['widgets', 'chart', 210, 'home.g_widgets', [sect(null, wHead, wList, ...wLines), sect(null, packHead, packBox, packNote), sect(null, layHead, lay, layNote, placeHead, placeLine),
+      sect(null, feedHead, feedLine, feedList, feedNote), sect(null, noteHead, noteLine), sect(null, qrHead, qrList, qrNote)]],
     ['system', 'power', 260, 'home.g_system', [check(dream, 'home.dream')]],
     ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote]],
     ['lang', 'globe', 200, 'home.lang', [langs]],

@@ -35,6 +35,10 @@ import org.json.JSONObject
  *   gstyle  what the greeting says ([GSTYLES]): "time" the time of day ("Good evening"), "name" that and [gname] ("Good evening,
  *           Hoang"), "own" [gtext] as written; one with nothing to show falls back to "time" ([greeting]). gname at most
  *           [GNAME_MAX], gtext at most [GTEXT_MAX], one line. A TV Home that has this reports "greetOk": true
+ *   dstyle  the header's second line, "date" by default; gstyle and dstyle take the same [GSTYLES]: also "date" ("Tuesday,
+ *           27 October") and "lunar" ("18/9 lunar · Bính Ngọ"); "own" text ([gtext] / [dtext]) has [TOKENS] filled in ([headLine]).
+ *           Each line's type ([HEAD_TYPE]): g|d + size (s, m, l), bold, italic, caps, color (white, dim, red). A TV Home that has
+ *           these reports "headOk": true
  *   show*   whether each thing TV Home draws on its first screen is there ([SHOWS], all true: nothing is forced on the person):
  *           showClock, showDate (the clock and the day beside it), showNet (the Wi-Fi button), showGear (the settings button; the
  *           Menu key and the clients still reach Customize), showAdd (the "+ Add" tile), showSuggest (the "Get TV Setup" tile),
@@ -350,14 +354,34 @@ object HomeConfig {
     const val PLACE_MAX = 60
     const val GNAME_MAX = 24
     const val GTEXT_MAX = 60
-    val GSTYLES = listOf("time", "name", "own")
+    val GSTYLES = listOf("time", "name", "date", "lunar", "own")
+    /** What "own" text may ask for, written {date}: the clients offer them as chips; an unknown {word} stays as typed. */
+    val TOKENS = listOf("greet", "date", "weekday", "day", "month", "year", "lunar", "canchi")
+    val HEAD_SIZES = listOf("s", "m", "l")
+    val HEAD_COLORS = listOf("white", "dim", "red")
+    /** The type of each header line: the keys and their defaults (the first line small and dim, the second larger and white, as before). */
+    val HEAD_TYPE = mapOf("gsize" to "s", "gcolor" to "dim", "dsize" to "m", "dcolor" to "white")
+    val HEAD_FLAGS = listOf("gbold", "gitalic", "gcaps", "dbold", "ditalic", "dcaps")
 
     /** The greeting line: [timed] is the time of day's word in the TV's language ("Good evening"). */
-    fun greeting(o: JSONObject, timed: String): String = when (o.optString("gstyle")) {
-        "name" -> o.optString("gname").takeIf { it.isNotEmpty() }?.let { "$timed, $it" } ?: timed
-        "own" -> o.optString("gtext").ifEmpty { timed }
-        else -> timed
+    fun greeting(o: JSONObject, timed: String): String = headLine(o, "g", mapOf("greet" to timed))
+
+    /**
+     * One header line, [which] "g" (the greeting, first) or "d" (the date, second), from [t]: the [TOKENS]' values now, plus
+     * "lunarLine" (the lunar date as a phrase). A style with nothing to show falls back to the line's own default.
+     */
+    fun headLine(o: JSONObject, which: String, t: Map<String, String>): String {
+        val base = if (which == "g") t["greet"].orEmpty() else t["date"].orEmpty()
+        return when (o.optString(which + "style").ifEmpty { if (which == "g") "time" else "date" }) {
+            "time" -> t["greet"].orEmpty()
+            "name" -> o.optString("gname").takeIf { it.isNotEmpty() }?.let { t["greet"].orEmpty() + ", " + it } ?: t["greet"].orEmpty()
+            "date" -> t["date"].orEmpty()
+            "lunar" -> t["lunarLine"] ?: base
+            "own" -> fill(o.optString(which + "text"), t).ifEmpty { base }
+            else -> base
+        }
     }
+    fun fill(s: String, t: Map<String, String>) = Regex("\\{([a-z]+)\\}").replace(s) { m -> t[m.groupValues[1]] ?: m.value }
     private fun line(s: String, max: Int) = s.replace(Regex("\\s+"), " ").trim().take(max)
     /** The person's own RSS links for the news card: at most [FEEDS_MAX], each an http(s) address of at most [FEED_URL_MAX]. */
     const val FEEDS_MAX = 5
@@ -585,6 +609,10 @@ object HomeConfig {
             .put("gstyle", o.optString("gstyle").takeIf { it in GSTYLES } ?: GSTYLES[0])
             .put("gname", line(o.optString("gname"), GNAME_MAX))
             .put("gtext", line(o.optString("gtext"), GTEXT_MAX))
+            .put("dstyle", o.optString("dstyle").takeIf { it in GSTYLES && it != "name" } ?: "date")
+            .put("dtext", line(o.optString("dtext"), GTEXT_MAX))
+            .also { n -> for ((k, d) in HEAD_TYPE) n.put(k, o.optString(k).takeIf { it in (if (k.endsWith("size")) HEAD_SIZES else HEAD_COLORS) } ?: d) }
+            .also { n -> for (k in HEAD_FLAGS) n.put(k, o.optBoolean(k, false)) }
             .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
             .put("watchAt", o.optString("watchAt").takeIf { it in WATCH_AT } ?: WATCH_AT[0])
             .put("anim", o.optBoolean("anim", true))

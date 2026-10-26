@@ -44,6 +44,7 @@ object Store {
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
             .put("greetOk", true)                                 // the greeting's words: with a name, or the person's own (HomeConfig "gstyle")
+            .put("headOk", true)                                  // the header's two lines: what each says and its type (HomeConfig "dstyle", HEAD_TYPE)
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .put("infoOk", true)                                  // the market and news cards, own RSS links ("feeds"), the weather map
             .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now

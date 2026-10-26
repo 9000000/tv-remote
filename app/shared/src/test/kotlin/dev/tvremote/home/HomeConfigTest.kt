@@ -44,6 +44,21 @@ class HomeConfigTest {
         assertEquals(HomeConfig.GTEXT_MAX, HomeConfig.clean(JSONObject().put("gtext", "a".repeat(500))).getString("gtext").length)
     }
 
+    @Test fun theHeadersTwoLinesAreTemplatesOrOwnWordsWithTheirOwnType() {
+        val t = mapOf("greet" to "Good evening", "date" to "Monday, 26 October", "weekday" to "Monday", "day" to "26", "month" to "10", "lunar" to "17/9", "canchi" to "Bính Ngọ", "lunarLine" to "Lunar 17/9 · Bính Ngọ")
+        fun d(o: JSONObject) = HomeConfig.headLine(HomeConfig.clean(o), "d", t)
+        fun g(o: JSONObject) = HomeConfig.headLine(HomeConfig.clean(o), "g", t)
+        assertEquals("Monday, 26 October", d(JSONObject()))                               // as before the two lines could change
+        assertEquals("Good evening", g(JSONObject()))
+        assertEquals("Lunar 17/9 · Bính Ngọ", d(JSONObject().put("dstyle", "lunar")))
+        assertEquals("Monday, 26 October", g(JSONObject().put("gstyle", "date")))
+        assertEquals("26/10 · 17/9 · {nope}", d(JSONObject().put("dstyle", "own").put("dtext", "{day}/{month} · {lunar} · {nope}")))   // an unknown word stays as typed
+        assertEquals("Monday, 26 October", d(JSONObject().put("dstyle", "own")))          // nothing typed yet: the date, not an empty line
+        assertEquals("date", HomeConfig.clean(JSONObject().put("dstyle", "name")).getString("dstyle"))   // a name is the greeting's
+        val c = HomeConfig.clean(JSONObject().put("gsize", "huge").put("dcolor", "red").put("dcaps", true))
+        assertEquals("s", c.getString("gsize")); assertEquals("red", c.getString("dcolor")); assertTrue(c.getBoolean("dcaps")); assertFalse(c.getBoolean("gbold"))
+    }
+
     @Test fun theDockKeepsRealPackagesOnceAndAtMostSix() {
         val c = HomeConfig.clean(JSONObject().put("dock", JSONArray(listOf("a.b", "a.b", "; rm -rf /", "x", "c.d", "e.f", "g.h", "i.j", "k.l", "m.n"))))
         assertEquals(listOf("a.b", "c.d", "e.f", "g.h", "i.j", "k.l"), dock(c))

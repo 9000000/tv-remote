@@ -250,6 +250,10 @@ dialog.wset .card { width:min(520px, 94vw); }
 .wclock .hand { stroke:#fff; stroke-width:3.6; stroke-linecap:round; }
 .wclock .hand.thin { stroke-width:2; }
 .wclock .pin { fill:#ff9500; }
+.fchips.htokens button { font-family:ui-monospace,Menlo,monospace; }
+.fchips.htype, .fchips.htokens { flex-wrap:wrap; overflow:visible; align-items:center; row-gap:6px; }   /* every choice in view: a scrolled-away colour is a missing one */
+.fchips.htype { column-gap:14px; }
+.fchips.htype .hgrp { display:inline-flex; gap:6px; }
 .wclock.modern .num { font-size:9px; }
 .wclock .tick.min { stroke-width:.7; opacity:.45; }
 .wclock .date { fill:#ff453a; font-size:9px; font-weight:600; text-anchor:middle; dominant-baseline:central; }
@@ -308,4 +312,10 @@ dialog.ask.homeweb .card { width:min(560px, 94vw); }
 .vidprev video, .vidprev img { width:100%; height:100%; display:block; object-fit:cover; }
 .homeask .secthead { margin:8px 0 0; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 .homeask .homepage > .secthead:first-child { margin-top:0; }
+.homeask .hsect { display:flex; flex-direction:column; gap:10px; min-width:0; padding:14px; border-radius:var(--radius); background:var(--bg); border:1px solid var(--line); }   /* one block per subject: the page reads as parts, not one long run */
+.homeask .hsect > .secthead { margin:0; }
+.homeask .hsect h3 { margin:0; }
+.homeask .hsect:not(:has(> :not([hidden]):not(.secthead))) { display:none; }
+.homeask .hsect .hsplit { border:0; border-top:1px dashed var(--line); margin:4px 0; width:100%; }
 .homewalls .nowtag { align-self:center; padding:0 8px; border-radius:8px; background:var(--accent); color:var(--accent-ink); font-size:11px; font-weight:700; }   /* the wall on screen now, apart from the lit tiles = in the rotation */
+.homeask .hsect > h3:not(:first-child), .homeask .hsect > .card-head:not(:first-child) { margin-top:6px; }   /* a group title sits closer to its own chips than to the row above */

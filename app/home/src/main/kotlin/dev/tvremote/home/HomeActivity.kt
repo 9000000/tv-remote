@@ -1611,6 +1611,29 @@ class HomeActivity : Activity() {
             ?.removeSurrounding("\"")?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
     } catch (e: Exception) { null }
 
+    /** What a header line can say now (HomeConfig.TOKENS + "lunarLine"): the day's words in the TV's language, the lunar date. */
+    private fun headWords(day: String, greet: String): Map<String, String> {
+        val now = Date(); val loc = Locale.getDefault()
+        val c = Calendar.getInstance()
+        val moon = dev.tvremote.home.widgets.Lunar.of(c.get(Calendar.DAY_OF_MONTH), c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR))
+        val (can, chi) = dev.tvremote.home.widgets.Lunar.canChi(moon.year)
+        val canchi = getString(R.string.lunar_year, resources.getStringArray(R.array.lunar_can)[can], resources.getStringArray(R.array.lunar_chi)[chi]).trim()
+        val lunar = "${moon.day}/${moon.month}"
+        fun f(p: String) = DateFormat.format(p, now).toString()
+        return mapOf("greet" to greet, "date" to day, "weekday" to f("EEEE").replaceFirstChar { it.uppercase(loc) }, "day" to f("d"),
+            "month" to f("M"), "year" to f("yyyy"), "lunar" to lunar, "canchi" to canchi, "lunarLine" to getString(R.string.head_lunar, lunar, canchi))
+    }
+
+    /** A header line's type, chosen per line (HomeConfig.HEAD_TYPE / HEAD_FLAGS): size, weight, slant, capitals, colour. */
+    private fun headType(v: TextView, w: String, plain: android.graphics.Typeface) {
+        v.textSize = when (conf.optString(w + "size")) { "s" -> 16f; "l" -> 30f; else -> 22f }
+        val tf = if (conf.optBoolean(w + "bold")) Font.bold else plain
+        v.setTypeface(tf, if (conf.optBoolean(w + "italic")) android.graphics.Typeface.ITALIC else android.graphics.Typeface.NORMAL)
+        val caps = conf.optBoolean(w + "caps")
+        v.isAllCaps = caps; v.letterSpacing = if (caps) 0.08f else 0f
+        v.setTextColor(when (conf.optString(w + "color")) { "dim" -> HEAD_DIM; "red" -> Widgets.ACCENT; else -> Color.WHITE })
+    }
+
     private fun clockAndDay() {
         val h24 = conf.optBoolean("clock24", true)
         clock.format24Hour = if (h24) "HH:mm" else "h:mm"
@@ -1620,8 +1643,10 @@ class HomeActivity : Activity() {
             .replaceFirstChar { it.uppercase() }
         val hour = now.get(Calendar.HOUR_OF_DAY)
         val greet = getString(if (hour in 4..11) R.string.morning else if (hour in 12..17) R.string.afternoon else R.string.evening)
-        dateLine.text = day
-        greetLine.text = HomeConfig.greeting(conf, greet)
+        val t = headWords(day, greet)
+        dateLine.text = HomeConfig.headLine(conf, "d", t)
+        greetLine.text = HomeConfig.headLine(conf, "g", t)
+        headType(greetLine, "g", Font.regular); headType(dateLine, "d", Font.medium)
         greetLine.visibility = if (conf.optBoolean("greet", true)) View.VISIBLE else View.GONE
         clock.visibility = if (conf.optBoolean("showClock", true)) View.VISIBLE else View.GONE
         dateLine.visibility = if (conf.optBoolean("showDate", true)) View.VISIBLE else View.GONE

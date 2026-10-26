@@ -618,6 +618,7 @@ object Customize {
         groups[2].fill = {
             col.addView(label(a.getString(R.string.g_sec_show).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(2) })
             tile(R.drawable.ic_timer, a.getString(R.string.clock24), null, "clock24")
+            section(a.getString(R.string.sec_head))                     // the two header lines, each with its own type: blocks, or the two sets of tiles read as one
             tile(R.drawable.ic_message, a.getString(R.string.greet), null, "greet")
             // its words (HomeConfig "gstyle"): typed here with the TV's keyboard, or on a phone (Home settings)
             fun field(key: String, max: Int, hint: Int) = dev.tvremote.tvui.TvField(a).apply {
@@ -632,9 +633,25 @@ object Customize {
                 done = { Store.change(a, JSONObject().put(key, text.toString().trim())) }
             }
             val gname = field("gname", HomeConfig.GNAME_MAX, R.string.gname_hint); val gtext = field("gtext", HomeConfig.GTEXT_MAX, R.string.gtext_hint)
-            fun words() { val st = Store.get(a).optString("gstyle"); gname.visibility = if (st == "name") View.VISIBLE else View.GONE; gtext.visibility = if (st == "own") View.VISIBLE else View.GONE }
-            tile(R.drawable.ic_pen, a.getString(R.string.gstyle), null, "gstyle", HomeConfig.GSTYLES.map { it to a.getString(when (it) { "name" -> R.string.gstyle_name; "own" -> R.string.gstyle_own; else -> R.string.gstyle_time }) }, ::words)
+            fun says(k: String) = a.getString(when (k) { "name" -> R.string.gstyle_name; "own" -> R.string.gstyle_own; "date" -> R.string.gstyle_date; "lunar" -> R.string.gstyle_lunar; else -> R.string.gstyle_time })
+            // each header line's type (HomeConfig.HEAD_TYPE / HEAD_FLAGS): own text with {date} {lunar} … is easier typed on a phone
+            fun type(w: String) {
+                tile(R.drawable.ic_type, a.getString(R.string.h_size), null, w + "size", HomeConfig.HEAD_SIZES.map { it to a.getString(when (it) { "s" -> R.string.h_s; "l" -> R.string.h_l; else -> R.string.h_m }) })
+                tile(R.drawable.ic_contrast, a.getString(R.string.h_color), null, w + "color", HomeConfig.HEAD_COLORS.map { it to a.getString(when (it) { "dim" -> R.string.h_dim; "red" -> R.string.h_red; else -> R.string.h_white }) })
+                tile(R.drawable.ic_type, a.getString(R.string.h_bold), null, w + "bold")
+                tile(R.drawable.ic_type, a.getString(R.string.h_italic), null, w + "italic")
+                tile(R.drawable.ic_type, a.getString(R.string.h_caps), null, w + "caps")
+            }
+            val dtext = field("dtext", HomeConfig.GTEXT_MAX, R.string.dtext_hint)
+            fun words() { val st = Store.get(a).optString("gstyle"); gname.visibility = if (st == "name") View.VISIBLE else View.GONE; gtext.visibility = if (st == "own") View.VISIBLE else View.GONE
+                dtext.visibility = if (Store.get(a).optString("dstyle") == "own") View.VISIBLE else View.GONE }
+            tile(R.drawable.ic_pen, a.getString(R.string.gstyle), null, "gstyle", HomeConfig.GSTYLES.map { it to says(it) }, ::words)
             for (f in listOf(gname, gtext)) col.addView(f, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+            type("g")
+            section(a.getString(R.string.dstyle))
+            tile(R.drawable.ic_calendar, a.getString(R.string.dstyle), null, "dstyle", HomeConfig.GSTYLES.filter { it != "name" }.map { it to says(it) }, ::words)
+            col.addView(dtext, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
+            type("d")
             words()
             section(a.getString(R.string.g_sec_shown))                // nothing on the first screen is forced: each can go (HomeConfig.SHOWS)
             tile(R.drawable.ic_timer, a.getString(R.string.show_clock), null, "showClock")
