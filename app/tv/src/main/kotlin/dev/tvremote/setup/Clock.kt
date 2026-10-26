@@ -47,7 +47,7 @@ internal object Clock {
 
     /** "Sat, 24 Oct 2026 10:15:30 GMT" to ms; null when it is not one. */
     fun parseDate(h: String?): Long? = try {
-        if (h.isNullOrBlank()) null else java.time.ZonedDateTime.parse(h.trim(), java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME).toInstant().toEpochMilli()
+        if (h.isNullOrBlank()) null else java.text.SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss zzz", java.util.Locale.US).parse(h.trim())?.time   // not java.time: API 26, an Error on Android 7
     } catch (e: Exception) { null }
 
     private fun load(c: Context): Obs? {

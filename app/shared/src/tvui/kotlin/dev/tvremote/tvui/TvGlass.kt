@@ -186,7 +186,7 @@ object TvGlass {
         }
 
         /** [r] is focused when the page is first laid out (before its first draw), so no frame shows the ring on another row. */
-        private fun first(r: View) { r.isFocusedByDefault = true; r.post { if (!r.hasFocus()) r.requestFocus() } }
+        private fun first(r: View) { if (android.os.Build.VERSION.SDK_INT >= 26) r.isFocusedByDefault = true; r.post { if (!r.hasFocus()) r.requestFocus() } }
 
         fun show() = dialog.show()
     }

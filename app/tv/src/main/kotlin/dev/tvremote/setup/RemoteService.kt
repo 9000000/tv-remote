@@ -338,16 +338,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }, "census-adb").apply { isDaemon = true }.start()
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the page asks for the same words (voice/phrases.json)
-        dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
-        prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        running = this
-        DimLayer.restore(this)
-        if (!Support.open()) Support.clean(this)                         // a support pass left by a TV Setup that was killed while open
-        dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
-            " (TV web page, Android " + Build.VERSION.RELEASE + ")"
+    /** Asked at once in onCreate and again in each onStartCommand: a service already running (or once refused) got no new
+     *  startForeground() for a later startForegroundService(), and the system killed TV Setup 10 s on (TCL, Android 11: c2ce1b14). */
+    private fun foreground() {
         if (Build.VERSION.SDK_INT >= 26) {
             val ch = NotificationChannel("remote", "TV Remote", NotificationManager.IMPORTANCE_LOW)
             (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(ch)
@@ -356,6 +349,19 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         val n = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, "remote") else Notification.Builder(this)
         try { startForeground(1, n.setSmallIcon(R.drawable.ic_power).setContentTitle("TV Remote").setContentText("Web remote: port $PORT").setOngoing(true).build()) }
         catch (e: Exception) { }                                   // refused (vendor block, Android 12+ background): it still serves as a plain service
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        foreground()                                                  // first: the 10 s count runs from startForegroundService(), slow TVs used most of it below
+        dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the page asks for the same words (voice/phrases.json)
+        dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
+        prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        running = this
+        DimLayer.restore(this)
+        if (!Support.open()) Support.clean(this)                         // a support pass left by a TV Setup that was killed while open
+        dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
+            " (TV web page, Android " + Build.VERSION.RELEASE + ")"
         val server = HttpServer(this)
         http = server
         dev.tvremote.core.Downloader.dir = filesDir                   // the signed Downloader codes are kept here
@@ -412,6 +418,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     }
 
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int {
+        foreground()                                                  // every startForegroundService() wants its own answer, not only the first
         if (saidAlive) afterUpdate()                                  // started again by an update's script that missed the first word
         return START_STICKY
     }

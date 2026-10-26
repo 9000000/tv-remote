@@ -152,7 +152,7 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
         if (on) { v.setImageDrawable(root.rootView.background); v.visibility = View.VISIBLE } else { v.visibility = View.GONE; v.setImageDrawable(null) }
     }
 
-    private fun frames(p: MediaPlayer): Pair<Int, Int>? = try {
+    private fun frames(p: MediaPlayer): Pair<Int, Int>? = if (android.os.Build.VERSION.SDK_INT < 26) null else try {   // getMetrics is API 26: no measure before
         p.metrics?.let { m -> (m.get(FRAMES) as? Number)?.let { it.toInt() to ((m.get(DROPPED) as? Number)?.toInt() ?: 0) } }   // numbers of any width: it is a Long here
     } catch (e: Throwable) { null }
 

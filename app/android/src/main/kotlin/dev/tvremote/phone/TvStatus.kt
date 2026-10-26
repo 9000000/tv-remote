@@ -244,7 +244,7 @@ internal fun MainActivity.screensButton(): android.widget.Button {
     b.setPadding(0, 0, 0, 0)
     b.compoundDrawablePadding = 0
     b.contentDescription = T("tvstat.show_screens").removePrefix("👁️").trim() + ". " + T("tvstat.show_screens_tip")
-    b.tooltipText = T("tvstat.show_screens_tip")
+    if (android.os.Build.VERSION.SDK_INT >= 26) b.tooltipText = T("tvstat.show_screens_tip")
     b.setOn(TvStatus.shots)
     b.setOnClickListener {
         TvStatus.shots = !TvStatus.shots

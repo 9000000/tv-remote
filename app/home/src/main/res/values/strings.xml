@@ -608,4 +608,5 @@
     <string name="el_done">Done editing</string>
     <string name="el_edit_sub">Every element takes the focus: OK changes it, Back is done.</string>
     <string name="el_edit_hint">OK: change  ·  Back: done</string>
+    <string name="no_webview">This TV has no WebView: this page cannot open</string>
 </resources>

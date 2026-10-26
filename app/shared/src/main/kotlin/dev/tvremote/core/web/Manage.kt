@@ -280,7 +280,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val s = Setup(link.get(), dir, r.lang) { }
                     if (!s.optimized()) throw IOException("setup:nothing_to_restore")
                     val model = sh("getprop ro.product.model").trim()
-                    val script = s.restore(model, java.time.LocalDateTime.now().withNano(0).toString().replace('T', ' '), link.host)
+                    val script = s.restore(model, java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()), link.host)
                     val out = HttpServer.Response.of("text/x-shellscript; charset=utf-8", script.toByteArray())
                     val name = Setup.restoreName(model)
                     out.headers["Content-Disposition"] = "attachment; filename=\"$name\"; filename*=UTF-8''$name"

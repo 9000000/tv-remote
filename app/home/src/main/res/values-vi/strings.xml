@@ -606,4 +606,5 @@
     <string name="el_done">Xong, thoát sửa</string>
     <string name="el_edit_sub">Mọi thứ đều chọn được: OK để chỉnh, Back là xong.</string>
     <string name="el_edit_hint">OK: chỉnh  ·  Back: xong</string>
+    <string name="no_webview">TV này không có WebView: không mở được trang này</string>
 </resources>

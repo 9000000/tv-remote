@@ -73,6 +73,7 @@ val packKeyList = tasks.register<Copy>("packKeyList") {
 }
 android.sourceSets["main"].assets.srcDirs(layout.buildDirectory.dir("generated/keylist"))
 tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(packKeyList) }
+tasks.matching { it.name.startsWith("lint") && it.name.endsWith("Debug") }.configureEach { dependsOn("packKeysDebug") }   // lint reads the generated assets too
 tasks.matching { it.name == "testDebugUnitTest" }.configureEach { dependsOn("packKeysDebug") }
 tasks.matching { it.name == "testReleaseUnitTest" }.configureEach { dependsOn("packKeysRelease") }
 

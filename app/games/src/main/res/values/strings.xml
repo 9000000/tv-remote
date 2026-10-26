@@ -153,4 +153,5 @@
         <item quantity="one">Needs %1$d more player</item>
         <item quantity="other">Needs %1$d more players</item>
     </plurals>
+    <string name="no_webview">This TV has no WebView: this page cannot open</string>
 </resources>

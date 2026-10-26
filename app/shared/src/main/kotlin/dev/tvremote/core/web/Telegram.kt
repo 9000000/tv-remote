@@ -759,7 +759,7 @@ class Telegram(
     private fun get(c: Chat, path: String, query: Map<String, String> = emptyMap()): HttpServer.Response = hook.send({ route(it, c.scope) }, path, JSONObject(), "GET", query).also { judge(it) }
 
     /** What the command being answered came to, for the history: the worst answer it got from the core (one command at a time per thread). */
-    private val outcome = ThreadLocal.withInitial { "ok" }
+    private val outcome = object : ThreadLocal<String>() { override fun initialValue() = "ok" }   // withInitial is API 26: Android 7 TVs died here
     private fun judge(r: HttpServer.Response) { if (r.status == 403) outcome.set("scope") else if (r.status !in 200..299 && outcome.get() == "ok") outcome.set("error") }
     private fun body(out: HttpServer.Response): JSONObject? = if (out.status !in 200..299) null else try { JSONObject(String(out.body)) } catch (e: Exception) { null }
 

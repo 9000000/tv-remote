@@ -81,3 +81,4 @@ $('#tvshots').addEventListener('click', () => {
   tvstatShow(); tvstatGo();
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) tvstatStop(); else tvstatGo(); });
+if ($('#tvlist')?.children.length === savedTvs.length && savedTvs.length) tvstatMount(savedTvs, [...$('#tvlist').children]);   // the list was drawn before this file loaded (1b64c0fd)

@@ -253,9 +253,10 @@ class WeatherMapActivity : Activity() {
         val root = LinearLayout(this).apply { setBackgroundColor(INK); setPadding(dpx(48), dpx(32), dpx(48), dpx(32)) }
         setContentView(root)
         val place = try { JSONObject(getSharedPreferences("weather", MODE_PRIVATE).getString("place", "") ?: "") } catch (e: Exception) { null }
-        if (place == null || !place.has("lat")) {
+        val noWeb = try { android.webkit.WebSettings.getDefaultUserAgent(this); false } catch (e: Exception) { true }   // a box without WebView threw in WebView() (80296222)
+        if (noWeb || place == null || !place.has("lat")) {
             root.gravity = Gravity.CENTER
-            root.addView(label(getString(R.string.map_none), 22f, DIMC).apply { gravity = Gravity.CENTER })
+            root.addView(label(getString(if (noWeb) R.string.no_webview else R.string.map_none), 22f, DIMC).apply { gravity = Gravity.CENTER })
             return
         }
         lat = place.optDouble("lat"); lon = place.optDouble("lon")

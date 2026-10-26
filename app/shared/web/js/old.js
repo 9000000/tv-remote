@@ -1,6 +1,11 @@
 // A browser too old for the page's scripts (Chrome before 80: ?. ?? catch {} {...a}) runs none of them and shows empty tabs.
 // Seen on an Android 8 phone and old TVs whose "Android System WebView" was never updated. Written in ES5 on purpose: it
 // must run where the rest cannot, and says in both languages (i18n.js cannot run either) what to update.
+// Chrome 80-85 pass that test but lack replaceChildren (86), which every tab uses: an old TV WebView died on it (0f0bf561).
+[Element, DocumentFragment, Document].forEach(function (C) {
+  if (C.prototype.replaceChildren) return;
+  C.prototype.replaceChildren = function () { while (this.lastChild) this.removeChild(this.lastChild); this.append.apply(this, arguments); };
+});
 (function () {
   try { new Function('var a = { ...{} }; try { a?.b ?? 0 } catch { }'); return; } catch (e) { }
   var vi = /[?&]lang=vi(&|$)/.test(location.search) || (!/[?&]lang=/.test(location.search) && /^vi/i.test(navigator.language || ''));

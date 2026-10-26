@@ -74,6 +74,7 @@ class WebGameActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val name = intent.getStringExtra("name") ?: "Web"
         val link = intent.getStringExtra("url") ?: return finish()
+        if (!webViewOk()) { android.widget.Toast.makeText(this, R.string.no_webview, android.widget.Toast.LENGTH_LONG).show(); return finish() }   // some boxes ship none (2da5cf8b)
         server = GameServer.acquire(this)
         val builtin = link.startsWith("builtin:")
         val url = if (builtin) "${server.base()}/webgames/${link.removePrefix("builtin:")}/?k=${server.token}" else link
@@ -140,6 +141,8 @@ class WebGameActivity : ComponentActivity() {
     }
 
     private var url = ""
+    /** Loads the TV's WebView provider: a box without one throws here, where it can be caught, not in WebView(). */
+    private fun webViewOk() = try { android.webkit.WebSettings.getDefaultUserAgent(this); true } catch (e: Exception) { false }
     private lateinit var root: FrameLayout
 
     /** The page cannot be had: a card with the reason, Retry and Back (D-pad focus), instead of the WebView's own error page. */

@@ -35,7 +35,7 @@ class PadService : Service() {
     companion object {
         private const val CH = "pad"
         private const val ID = 8780
-        fun start(ctx: Context) { try { ctx.startForegroundService(Intent(ctx, PadService::class.java)) } catch (e: Exception) { } }
+        fun start(ctx: Context) { try { Intent(ctx, PadService::class.java).let { if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(it) else ctx.startService(it) } } catch (e: Exception) { } }   // API 26 call: a NoSuchMethodError is not an Exception
         fun stop(ctx: Context) { try { ctx.stopService(Intent(ctx, PadService::class.java)) } catch (e: Exception) { } }
     }
 }
