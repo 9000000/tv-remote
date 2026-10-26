@@ -72,7 +72,7 @@ object Customize {
         var start: (() -> View?)? = null                                 // where a first visit lands, else the first control (Background: its first control, not the photo in use further down)
         var fill: (() -> Unit)? = null                                 // puts the controls in [col]; dropped once it ran
         var made: (() -> Unit)? = null                                 // the fill that ran, for a page made again
-        var seen = ""                                                  // the settings as this page last showed them
+        var seen: String? = ""                                         // the settings as this page last showed them ([Store.stamp])
     }
 
     private val EVERY_WORDS = mapOf("off" to R.string.rot_off, "30m" to R.string.rot_30m, "1h" to R.string.rot_1h, "6h" to R.string.rot_6h, "day" to R.string.rot_day, "show" to R.string.rot_show)
@@ -164,7 +164,8 @@ object Customize {
             setLayout(dp(300), ViewGroup.LayoutParams.WRAP_CONTENT)
             attributes = attributes.apply { gravity = Gravity.TOP or Gravity.START; x = dp(48); y = dp(40) }
         }
-        dialog.setOnDismissListener { box.removeCallbacks(save); save.run(); panel.show(); done() }
+        if (shade) dev.tvremote.home.wall.Backdrop.hold = true
+        dialog.setOnDismissListener { box.removeCallbacks(save); save.run(); dev.tvremote.home.wall.Backdrop.hold = false; panel.show(); done() }
         // the panel out of sight only once the number has the window focus: hidden first, the focus fell to the home screen behind
         dialog.setOnShowListener { box.requestFocus(); panel.hide(); box.post { box.requestFocus() } }
         dialog.show()
@@ -337,7 +338,7 @@ object Customize {
         var ownFace: () -> Unit = {}                                  // the own wall's tile, painted again after its colours changed
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
-        dialog.setOnDismissListener { shots.shutdownNow(); ThemePreview.forget(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
+        dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
         val waiting = ArrayList<Pair<ImageView, Bitmap>>()
         var slid = !Motion.on
@@ -348,14 +349,30 @@ object Customize {
             if (k.startsWith(Suggest.PREFIX)) c.optString("wall") == HomeConfig.WEB && Suggest.byKey(k)?.url == c.optString("wurl")   // a suggestion is the page it sets
             else if (c.optString("wevery") == "off") c.optString("wall") == k
             else c.getJSONArray("walls").let { s -> (0 until s.length()).any { s.getString(it) == k } }
+        // a tile's ✓ (in the set) and "showing now" (filled, only while it rotates): made the first time one is shown, not on all
+        // ~90 tiles of the backgrounds page (3 of a tile's 8 views)
+        fun badge(v: View, tag: String, show: Boolean) {
+            val b = v.findViewWithTag<View>(tag)
+            if (b != null) { b.visibility = if (show) View.VISIBLE else View.GONE; return }
+            if (!show) return
+            (v as FrameLayout).addView(if (tag == "check") FrameLayout(a).apply {
+                this.tag = tag
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
+                val (iv, s) = icon(R.drawable.ic_check, CHECK_INK, dp(14)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
+            } else Font.on(TextView(a)).apply {
+                this.tag = tag; text = a.getString(R.string.wall_now); textSize = 10f; setTextColor(CHECK_INK); maxLines = 1
+                setPadding(dp(7), dp(2), dp(7), dp(2)); background = GradientDrawable().apply { setColor(ACCENT); cornerRadius = dp(8).toFloat() }
+            }, if (tag == "check") FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) }
+               else FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(6), 0, 0, dp(6)) })
+        }
         fun markAll() {
             val c = Store.get(a)                                         // once: reading it per tile cost 18 ms on the FPT box
             val rotating = c.optString("wevery") != "off"
             val shown = c.optString("wall")
             // two marks when it rotates: a ✓ on each wall in the set, and "showing now" on the one on screen; one wall only: just the ✓
             for ((k, v) in tiles) {
-                val on = wallOn(c, k); v.isSelected = on; v.findViewWithTag<View>("check")?.visibility = if (on) View.VISIBLE else View.GONE
-                v.findViewWithTag<View>("now")?.visibility = if (rotating && k == shown) View.VISIBLE else View.GONE
+                val on = wallOn(c, k); v.isSelected = on
+                badge(v, "check", on); badge(v, "now", rotating && k == shown)
             }
             rotNote.visibility = if (rotating) View.VISIBLE else View.GONE
             rotNote.text = a.getString(if (c.getJSONArray("walls").length() < 2) R.string.rot_pick else R.string.rot_set)
@@ -639,15 +656,6 @@ object Customize {
                         addView(iv, FrameLayout.LayoutParams(s, s, Gravity.TOP or Gravity.START).apply { setMargins(dp(8), dp(8), 0, 0) })
                     }
                     if (k == HomeConfig.BING && !Online.file(a).isFile) { val (iv, s) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }   // not fetched yet
-                    addView(FrameLayout(a).apply {                            // the ✓, shown on the chosen one (mark)
-                        tag = "check"
-                        background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(ACCENT) }
-                        val (iv, s) = icon(R.drawable.ic_check, CHECK_INK, dp(14)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER))
-                    }, FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP or Gravity.END).apply { setMargins(0, dp(6), dp(6), 0) })
-                    addView(Font.on(TextView(a)).apply {                      // "showing now": filled, unlike the ✓ (in the set); only while it rotates
-                        tag = "now"; text = a.getString(R.string.wall_now); textSize = 10f; setTextColor(CHECK_INK); maxLines = 1; visibility = View.GONE
-                        setPadding(dp(7), dp(2), dp(7), dp(2)); background = GradientDrawable().apply { setColor(ACCENT); cornerRadius = dp(8).toFloat() }
-                    }, FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.START).apply { setMargins(dp(6), 0, 0, dp(6)) })
                     onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                     setOnClickListener {
                         val c = Store.get(a)
@@ -917,21 +925,25 @@ object Customize {
             val f = g.fill ?: return
             g.fill = null; g.made = f; conf = Store.get(a); col = g.col   // as it is now: another page may have changed it
             f()
-            g.seen = conf.toString()
+            g.seen = Store.stamp(a)
+            // laid out now, hidden, not in the slide's first frame: the backgrounds page's ~1100 views made it a 117 ms frame on the FPT box
+            if (g.page.visibility == View.GONE) g.page.visibility = View.INVISIBLE
         }
-        // every page is made when the panel opens: one changed by another page since (a theme applied: the widgets page still
+        // a page made earlier and changed by another page since (a theme applied: the widgets page still
         // listed the cards before it while its preview, read live, was empty) is made again as it is now
         fun fresh(g: Group) {
             val f = g.made ?: return
+            if (Store.stamp(a) == g.seen) return
             val now = Store.get(a)
-            if (now.toString() == g.seen) return
             g.col.removeAllViews(); g.last = null; g.start = null
             conf = now; col = g.col
             f()
-            g.seen = Store.get(a).toString()
+            g.seen = Store.stamp(a)
         }
-        // the rest, one page a message once the panel is in place, so a key pressed meanwhile waits for one page at most
-        fun buildRest(i: Int = 0) { if (i < groups.size && dialog.isShowing) top.post { build(groups[i]); buildRest(i + 1) } }
+        // a page is made when its row has held the focus a moment (the one about to be opened), not all seven when the panel opens:
+        // those were ~1300 views and +16 MB on the FPT box, and their making took the CPU from the first keys
+        var moved = false                                             // the first row's focus at opening is not a choice: Themes' pictures cost ~0.4 s of CPU
+        fun soon(g: Group, row: View) { if (g.fill != null && moved) row.postDelayed({ if (row.isFocused && dialog.isShowing) build(g) }, 250) }
 
         // the first level: a row per group (its icon in a tinted chip, the name, what it is set to now) and the way out
         top.addView(LinearLayout(a).apply {
@@ -970,7 +982,7 @@ object Customize {
             cur = null; val n = ++gen
             dialog.window?.setDimAmount(Drop.MENU_DIM)
             g.last = g.page.findFocus()
-            g.seen = Store.get(a).toString()                           // its own changes are already on it
+            g.seen = Store.stamp(a)                                    // its own changes are already on it
             topScroll.animate().cancel(); g.page.animate().cancel()
             topScroll.visibility = View.VISIBLE; topScroll.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
             refresh()
@@ -979,8 +991,8 @@ object Customize {
                 topScroll.translationX = -shift / 2; topScroll.alpha = 0f
                 topScroll.animate().translationX(0f).alpha(1f).setDuration(Motion.ms(120)).setInterpolator(Motion.glide).withLayer().start()
                 g.page.animate().translationX(shift).alpha(0f).setDuration(Motion.ms(120)).setInterpolator(Motion.glide).withLayer()
-                    .withEndAction { if (n == gen) g.page.visibility = View.GONE }.start()
-            } else { topScroll.translationX = 0f; topScroll.alpha = 1f; g.page.visibility = View.GONE }
+                    .withEndAction { if (n == gen) g.page.visibility = View.INVISIBLE }.start()
+            } else { topScroll.translationX = 0f; topScroll.alpha = 1f; g.page.visibility = View.INVISIBLE }
             return true
         }
         stepBack = ::leave
@@ -998,7 +1010,7 @@ object Customize {
                     addView(g.sum!!)
                 }, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
                 addView(chevron, LinearLayout.LayoutParams(dp(22), dp(22)))
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f); chevron.imageTintList = ColorStateList.valueOf(if (f) Color.WHITE else DIM) }
+                onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f); chevron.imageTintList = ColorStateList.valueOf(if (f) Color.WHITE else DIM); if (f) soon(g, v) }
                 setOnClickListener { enter(g) }
                 setOnKeyListener { _, code, e -> if (code == android.view.KeyEvent.KEYCODE_DPAD_RIGHT && e.action == android.view.KeyEvent.ACTION_DOWN) { enter(g); true } else false }
             }
@@ -1102,16 +1114,16 @@ object Customize {
             if (has) keepDim = false
         }
         dialog.setOnShowListener {
-            groups.firstOrNull { it.key == at }?.let { enter(it); still = false; slid = true; buildRest(); return@setOnShowListener }
+            groups.firstOrNull { it.key == at }?.let { enter(it); still = false; slid = true; return@setOnShowListener }
             groups[0].row?.let {
                 it.requestFocus()
             }
+            moved = true
             if (Motion.on) {                                           // on a layer: drawn once, then only moved and faded (drawn each frame it took 40-57 ms on the FPT box)
                 panel.animate().translationX(0f).alpha(1f).setDuration(130).setInterpolator(Motion.glide).withLayer().withEndAction {
                     slid = true; for ((v, b) in waiting) v.setImageBitmap(b); waiting.clear()
-                    buildRest()
                 }.start()
-            } else buildRest()
+            }
         }
         return dialog to {
             refresh()                                                  // what changed since it was built (a phone, another panel)
@@ -1385,7 +1397,7 @@ object Customize {
     private fun thumb(a: Context, k: String, w: Int): Bitmap? {
         val key = thumbKey(a, k, w)
         thumbs[key]?.let { return it }
-        val b = (Suggest.byKey(k)?.let { Suggest.picture(a, it) } ?: if (k.startsWith(Suggest.PREFIX)) null else Walls.small(a, k, w, w * 9 / 16))?.let { round(it, w, w * 9 / 16, 12 * a.resources.displayMetrics.density) } ?: return null
+        val b = (Suggest.byKey(k)?.let { Suggest.picture(a, it, w) } ?: if (k.startsWith(Suggest.PREFIX)) null else Walls.small(a, k, w, w * 9 / 16))?.let { round(it, w, w * 9 / 16, 12 * a.resources.displayMetrics.density) } ?: return null
         synchronized(thumbs) { thumbs.keys.removeAll { it.startsWith("$k:") }; thumbs[key] = b }
         return b
     }

@@ -73,8 +73,11 @@ object Suggest {
     } catch (e: Exception) { emptyList() }
     private val KINDS = listOf("slides", "video", "photo", "page")
 
-    /** [it]'s small picture: kept, else fetched and checked against its SHA-256; null (none, offline, altered). Blocking: off the main thread. */
-    fun picture(c: Context, it: Item): Bitmap? {
+    /**
+     * [it]'s small picture, read at about [w] px wide (whole when 0): kept, else fetched and checked against its SHA-256; null (none,
+     * offline, altered). Blocking: off the main thread.
+     */
+    fun picture(c: Context, it: Item, w: Int = 0): Bitmap? {
         if (it.thumb.isEmpty() || it.sha.length != 64) return null
         val dir = File(c.applicationContext.filesDir, "suggest").apply { mkdirs() }
         val f = File(dir, it.thumb)
@@ -82,7 +85,12 @@ object Suggest {
             BASES.firstNotNullOfOrNull { base -> try { SignedList.get(base + it.thumb, 256 * 1024, 6000, 8000).takeIf { x -> hex(x) == it.sha } } catch (e: Exception) { null } }
                 ?.also { x -> File(dir, it.thumb + ".tmp").apply { writeBytes(x); renameTo(f) } }
         } catch (e: Exception) { null }
-        return b?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+        if (b == null) return null
+        val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(b, 0, b.size, o)
+        // the tile is ~1/3 of it: read whole, each one took ~25 ms of the FPT box to decode, then was scaled down anyway
+        val s = if (w > 0 && o.outWidth > 0) dev.tvremote.home.wall.Wall.sample(o.outWidth, o.outHeight, w, w * o.outHeight / o.outWidth) else 1
+        return BitmapFactory.decodeByteArray(b, 0, b.size, BitmapFactory.Options().apply { inSampleSize = s })
     }
 
     private fun hex(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }

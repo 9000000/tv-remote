@@ -32,6 +32,12 @@ class Backdrop(private val target: View) {
     private val work = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "backdrop").apply { isDaemon = true } }
     @Volatile private var gen = 0
 
+    /** The last look again with veil [k], when it was kept ([hold]); false: there is none, load it. */
+    fun reshade(k: Float): Boolean {
+        val l = kept?.takeIf { hold } ?: return false
+        strength = k; show(l); return true
+    }
+
     fun show(colors: IntArray, photo: Bitmap?, art: String? = null) = show(Look(colors, photo, art))
 
     /**
@@ -42,6 +48,7 @@ class Backdrop(private val target: View) {
         val dm = target.resources.displayMetrics
         val w = dm.widthPixels; val h = dm.heightPixels
         val g = ++gen; val k = strength; val d = dir
+        kept = if (hold) l else null
         work.execute {
             if (g != gen) return@execute
             val b = try { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) } catch (e: OutOfMemoryError) { return@execute }   // 565 would band every gradient
@@ -79,6 +86,10 @@ class Backdrop(private val target: View) {
         GradientDrawable(o, cs).apply { setBounds(0, 0, w, h); setDither(true) }
 
     companion object {
+        /** A stepper for the veil is open: the last picture is kept (8 MB at 1080p) so each step only paints it again ([reshade]). */
+        var hold = false
+            set(v) { field = v; if (!v) kept = null }                 // closed: the picture goes at once, not with the next wall
+        private var kept: Look? = null                                // while [hold]: the last look, to paint again with another veil
         val SHADE = intArrayOf(0xB0000000.toInt(), 0x40000000, 0x90000000.toInt())
         /**
          * [SHADE] at [k] of its strength (a drawn scene is made dark enough already, a photo is not), then the person's [user]

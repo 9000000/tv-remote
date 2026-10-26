@@ -56,6 +56,7 @@ object Motion {
         v.animate().cancel()
         val s = if (focused) 1.06f else 1f
         if (!on) { v.scaleX = 1f; v.scaleY = 1f }
+        else if (calm) { v.scaleX = s; v.scaleY = s }                   // calm (a weak box): grown at once, one frame instead of ~25
         else v.animate().scaleX(s).scaleY(s).setDuration(ms(if (focused) 420L else 220L)).setInterpolator(if (focused) spring else glide).withLayer().start()   // on a layer: without it each frame drew the whole panel again (16 ms + 36 ms GPU on the FPT box)
     }
 }

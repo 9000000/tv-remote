@@ -9,7 +9,7 @@ Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). This file holds t
 | `app/shared/web/` | the page's rules: `remote.json`, the tab shapes, icons, the page's state, i18n |
 | `app/shared/` | the Kotlin core's packages, other brands (LG, Samsung), the Downloader codes list |
 | `app/android/` `app/tv/` `app/tvkeys/` `app/home/` `app/channels/` `app/games/` `app/desktop/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
-| `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast |
+| `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast, profiling a weak TV box (`tvperf/`) |
 | `dev/release/` | the six version numbers, the user guide's `data-v`, release.sh, SHA256SUMS |
 
 ## What this is

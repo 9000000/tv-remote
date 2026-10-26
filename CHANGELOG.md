@@ -7,6 +7,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- TV Home: các bảng (menu ô app, Tùy chỉnh, Trung tâm điều khiển) nhẹ và mượt hơn trên máy yếu. Đo trên FPT Play (bản release):
+  - Menu ô app: CPU 1,3 → 0,5 s; mỗi lần di chuyển vẽ ~1 khung thay vì ~22.
+  - Mở Tùy chỉnh: CPU 2,9 → 1,4 s, ít hơn ~950 view (+16 MB → +5 MB).
+  - Trang Hình nền: CPU 3,5 → 1,8 s, khung chậm nhất 121 → 89 ms.
+  - "Phủ tối hình nền": 6 nấc vẽ 53 khung thay vì 230, không còn đọc lại ảnh nền mỗi nấc.
 - TV Home > Tùy chỉnh trông giống Trung tâm điều khiển: icon trắng thay ô màu, cùng cỡ chữ và bo góc.
 - TV Home mượt hơn trên máy yếu: ảnh nền (cả lúc slideshow đổi ảnh) được vẽ và đưa lên GPU ở luồng riêng, không còn khựng focus. Trên FPT Play: khung chậm nhất 550 → ~100 ms, lúc slideshow đổi ảnh còn ~40-70 ms (giật 4,1% → 2,8%); lớp mờ của thẻ đổi cùng lúc với ảnh nền; ít RAM hơn (bỏ một bản ảnh nền 8 MB giữ thừa; 188 → ~70-100 MB). Máy RAM 2 GB trở xuống tự dùng hiệu ứng "nhẹ" (hiệu ứng đầy đủ tốn gấp đôi CPU ở đó).
 - App điện thoại và app máy tính: TV trả lời chậm một lần (đang đứng máy) không còn làm app chuyển hẳn sang cách đọc bàn phím TV nặng (~0,8 s CPU của Gboard mỗi giây trên FPT Play); cách nhẹ được thử lại.
@@ -34,6 +39,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Thêm một ngôn ngữ chỉ cần thêm file dịch vào MỘT thư mục (`app/shared/i18n/`: trang web, và `apps/<mã>/` cho TV Home, Channels, Games, TV Setup Keys, app điện thoại) cùng một dòng trong `langs.json`; các `strings.xml` viết tay không còn, danh sách ngôn ngữ trong app là một (nút chọn ngôn ngữ của trang, của TV Home, Channels, Games và app điện thoại đọc từ đó).
 
 **English**
+- TV Home: the panels (the tile menu, Customize, the Control Center) are lighter and smoother on weak boxes. Measured on an FPT Play box (release build):
+  - The tile menu: CPU 1.3 → 0.5 s; a focus move draws ~1 frame instead of ~22.
+  - Opening Customize: CPU 2.9 → 1.4 s, ~950 fewer views (+16 MB → +5 MB).
+  - The Background page: CPU 3.5 → 1.8 s, worst frame 121 → 89 ms.
+  - "Dim the background": 6 steps draw 53 frames instead of 230, and the wallpaper is no longer read again on each step.
 - TV Home > Customize looks like the Control Center: white icons instead of coloured chips, the same text sizes and corners.
 - TV Home is smoother on weak TVs: the wallpaper (also each slideshow change) is painted and sent to the GPU on its own thread, the focus no longer stalls. FPT Play: slowest frame 550 → ~100 ms, ~40-70 ms on a slideshow change (janky frames 4.1% → 2.8%); the cards' frost changes together with the wallpaper; less memory (an unused 8 MB copy of the wallpaper dropped; 188 → ~70-100 MB). TVs with 2 GB of RAM or less get "calm" motion by default (full motion took twice the CPU there).
 - Phone and Computer apps: one slow answer from the TV (a frozen box) no longer switches them for good to the heavy way of reading the TV keyboard (~0.8 s of Gboard's CPU every second on the FPT Play); the light way is tried again.

@@ -38,6 +38,7 @@
     <application android:name=".HomeApp" android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false"
         android:theme="@style/Home" android:supportsRtl="false"
         android:usesCleartextTraffic="true">   <!-- the web wall: a page on the LAN (an Immich Kiosk) is plain http -->
+        <profileable android:shell="true" />   <!-- simpleperf on the release build, the one people run (a debug build runs interpreted: 2x the CPU) -->
         <activity android:name=".HomeActivity" android:exported="true" android:launchMode="singleTask" android:stateNotNeeded="true"
             android:excludeFromRecents="true" android:clearTaskOnLaunch="true" android:resumeWhilePausing="true" android:directBootAware="true"
             android:screenOrientation="landscape" android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">

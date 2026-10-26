@@ -31,7 +31,7 @@ object HomeApi {
         if (drop != null && HomeConfig.isPhoto(drop)) drop(c, drop)
         else if (drop != null && HomeConfig.isVideo(drop) && !Videos.delete(c, drop, Store.get(c))) throw IllegalStateException("inuse")   // the setting (or a theme) still shows it
         if (set == null) { Tiles.refresh(c); Pins.refresh(c) }         // a client reading: what the providers and the apps offer is as true as this moment
-        val config = if (set == null) Store.get(c) else Store.change(c, set)
+        val config = Store.forClients(c, if (set == null) Store.get(c) else Store.change(c, set))
         val apps = JSONArray()
         for (a in Apps.list(c)) apps.put(JSONObject().put("pkg", a.pkg).put("label", a.label))
         val photos = JSONArray()

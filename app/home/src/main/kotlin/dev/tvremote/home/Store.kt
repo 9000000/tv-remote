@@ -35,10 +35,32 @@ object Store {
         return clean
     }
 
+    /** The saved settings' text: changes with every change, cheap to compare (a JSONObject.toString of [get] was ~5% of Customize's CPU). */
+    fun stamp(c: Context): String? = prefs(c).getString("conf", null)
+
     private fun effective(c: Context, conf: JSONObject): JSONObject {
         // on until someone turns it off: older builds saved "off" for 2 GB boxes nobody had asked (it costs no memory, only frames)
         if (!prefs(c).getBoolean("anim_chosen", false)) conf.put("anim", true)
-        return conf.put("dream", Dream.isOn(c)).put("wsizes", true).put("colsOk", true).put("rowsOk", true).put("rowsMax", rowsFit)   // an older TV Home has none: the page offers it the old layout chips
+        conf.put("dream", Dream.isOn(c))
+        return conf.put("theme", themeNow(conf))
+    }
+
+    // which theme is on, again only when the settings or the ready-made list change: canon() of every theme on each read was ~12% of
+    // the main thread's CPU while Customize was walked on the FPT box (its pages read the settings a few dozen times)
+    private var themeKey: Any? = null
+    private var themeId = ""
+    @Synchronized private fun themeNow(conf: JSONObject): String {
+        val key = listOf(raw, conf.optBoolean("anim"), conf.optBoolean("dream"), HomeConfig.ready)
+        if (key != themeKey) { themeId = HomeConfig.themeNow(conf); themeKey = key }
+        return themeId
+    }
+
+    /**
+     * [conf] ([get] or [change]) as the clients read it (the phone's broadcast, the page served by ManageServer): what this TV Home
+     * can do and what it offers. Built only for them: TV Home's own screens never read it and paid ~6 ms a read on the FPT box.
+     */
+    fun forClients(c: Context, conf: JSONObject): JSONObject {
+        return conf.put("wsizes", true).put("colsOk", true).put("rowsOk", true).put("rowsMax", rowsFit)   // an older TV Home has none: the page offers it the old layout chips
             .put("wschema", HomeConfig.schema())                  // what each card offers in its settings (an older one has none: its looks were "wstyles")
             .put("wweb", true)                                    // the background can be a web page (an older one would clean it away)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
@@ -48,7 +70,7 @@ object Store {
             .put("ownOk", true)                                   // the own wall: its colours and direction (HomeConfig "wcol", "wdir")
             .put("qrOk", true)                                    // QR cards (an older one would clean them away)
             .put("infoOk", true)                                  // the market and news cards, own RSS links ("feeds"), the weather map
-            .put("themesOk", true).put("theme", HomeConfig.themeNow(conf))   // themes (HomeConfig "theme"): the ready-made ones and which look is on now
+            .put("themesOk", true)                                // themes (HomeConfig "theme"): the ready-made ones ([get] has which look is on now)
             .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.tiles)).also { o -> if (r.community) o.put("community", true).put("by", r.by) } }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
             .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
@@ -104,6 +126,7 @@ object Store {
         if (change.has("wall") || change.has("walls") || change.has("wevery") || applied) e.putLong("wlast", System.currentTimeMillis())   // a new choice gets its whole turn
         e.apply()
         if (listOf("keyon", "keyapps", "autoon", "autoapp").any { change.has(it) }) Keys.push(c)   // TV Setup does the keys everywhere and the power-on app
+        synchronized(this) { themeKey = null }                    // [raw] is still the text before this change
         val out = effective(c, JSONObject(n.toString()))
         change.optJSONObject("theme")?.let { ThemeShots.after(c, it, n) }   // the previews' pictures: taken when a theme is saved, dropped when it goes
         onChange?.invoke()

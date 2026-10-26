@@ -46,3 +46,32 @@ What it takes care of, for doing it by hand:
 - Contrast: `node --test app/shared/tests/` includes `contrast.test.js` (WCAG ratios of the `css/base.css` tokens in both themes); `dev/test/contrast.py [URL]` (Chrome, default the test server on 8772) scans the rendered page, both themes x 1100/400 px x every tab + Settings, exit 1 under 4.5:1 (3:1 icons, large text). Run it after colour changes.
 - The TV's sound: the Google TV emulator cannot run YouTube; press D-pad keys on the TV during a capture to get click sounds.
 - The intro site's screenshots: `dev/shots/shots.py` (`docs/README.md`).
+
+## Speed on a weak box (TV Home and the other TV apps)
+
+Lessons from the FPT Play box (1.8 GB, Mali, Android 14), 2026-10-27:
+
+- **Measure the release build, never a debug one.** A debuggable APK runs interpreted (`ExecuteSwitchImplCpp` in the
+  profile, about 2x the CPU) and its numbers mislead. Home's release build is signed with the same key as debug, so
+  `adb install -r` keeps the person's settings. It is `<profileable android:shell="true">`, so simpleperf works on it.
+- `dev/test/tvperf/`: `panels.sh <serial> <label>` walks the panels from Home (the tile menu, Customize and two of its pages,
+  the Control Center) and prints frames, jank, worst frame, CPU ms and PSS before / open / after. `keys.sh` measures one key
+  set after an opening set. `idle.sh` measures frames and CPU per thread while Home is left alone. `prof.sh` runs simpleperf
+  while keys are pressed and then `agg.py` (inclusive ms per method, names from the R8 map). The key paths assume Home's
+  default layout (the first tile; the gear at the top right).
+- simpleperf on the box: `-e cpu-clock` (the FPT box has no `cpu-cycles`). The host's `simpleperf report` cannot read an R8
+  map, so use `report_sample.py --proguard-mapping-file app/<x>/build/outputs/mapping/release/mapping.txt`.
+- **Read the frame counts, not only jank %.** A focus move should draw a handful of frames. 22 a move meant an animation
+  nobody needed (the menu rows' 1.06 pop). Fewer frames can raise the jank % while the panel got smoother.
+- **Usual costs found:**
+  - Building views nobody looks at: all seven Customize pages were built on open (~1300 views, +16 MB). Each page is now
+    built when its row holds the focus.
+  - Laying out a big page in the first frame of its slide: lay it out hidden (`INVISIBLE`) when it is built.
+  - Per-tile views that are rarely shown: make badges on first use.
+  - Recomputing settings on every `Store.get`.
+  - Rebuilding the whole screen for a change that touches one thing (the veil).
+  - Re-decoding a picture already held.
+  - Decoding a picture whole, then scaling it down (`inSampleSize`).
+  - Software round rects redrawn on every opening: keep the previews in a small LRU.
+- RenderThread time is mostly the GPU path (`prepareTree`, Skia flush) and drops with the number of frames. Look at
+  `Glass.onDraw` and `VectorDrawable` draw only if they lead.

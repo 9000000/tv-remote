@@ -1,0 +1,12 @@
+#!/bin/bash
+# idle.sh <serial> [secs] [keys before...]: TV Home left alone (after the keys): frames drawn and CPU ms per thread
+D=$1; T=${2:-15}; shift 2
+A="adb -s $D shell"
+$A input keyevent HOME; sleep 4
+for x in "$@"; do $A input keyevent $x; sleep 0.5; done; sleep 2
+pid=$($A pidof dev.tvremote.home | tr -d '\r')
+$A dumpsys gfxinfo dev.tvremote.home reset >/dev/null
+snap() { $A "for f in /proc/$pid/task/*/stat; do cat \$f; done" | sed 's/^[0-9]* (\(.*\)) /\1 /' | awk '{n=$1; gsub(/ /,"_",n); print n, $13+$14}' | sort | awk '{a[$1]+=$2} END{for(k in a) print k, a[k]}' | sort; }
+t0=$(snap); sleep $T; t1=$(snap)
+$A dumpsys gfxinfo dev.tvremote.home | grep -E "Total frames|Janky" | tr -s ' '
+join <(echo "$t0") <(echo "$t1") | awk '{d=$3-$2; if(d>0) print "  " $1, d*10 "ms"}' | sort -k2 -t' ' -rn

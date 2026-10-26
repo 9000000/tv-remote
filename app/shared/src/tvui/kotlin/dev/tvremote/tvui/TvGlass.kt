@@ -166,7 +166,8 @@ object TvGlass {
                     ring.getChildAt(0)?.visibility = if (on) View.VISIBLE else View.INVISIBLE
                 }
                 if (item.on != null) { addView(ring, LinearLayout.LayoutParams(dp(24), dp(24)).apply { leftMargin = dp(12) }); paint() }
-                onFocusChangeListener = View.OnFocusChangeListener { v, f -> Motion.pop(v, f) }
+                // the focus is the row's brighter fill alone, as Customize's rows: the 1.06 growth drew the menu ~22 frames a move
+                // (135 frames for 6 moves on the FPT box)
                 val stays = item.stay || item.on != null || item.live != null
                 setOnClickListener { if (!stays) dialog.dismiss(); item.go(); if (stays) paint() }
             }, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(if (tight) 6 else 8) })

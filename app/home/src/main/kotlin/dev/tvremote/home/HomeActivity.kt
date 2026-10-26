@@ -115,6 +115,7 @@ class HomeActivity : Activity() {
     @Volatile private var pins: List<App> = emptyList()                // shortcuts other apps pinned here ([Pins])
     private var conf = JSONObject()
     private var wallShown = ""
+    private var wallShade = -1                                       // the "shade" shown with [wallShown]
     private val CAP_X = 48; private val CAP_Y = 6                     // the slideshow caption's place (dp): top right, above the buttons' pill, where no card or tile reaches
     private val CAP_INK = 0xE6FFFFFF.toInt(); private val CAP_DIM = 0x59FFFFFF.toInt()   // the credit: there to be found, not read (at 60% it drew the eye: the user, 2026-10-26)
     private var lastWall = ""
@@ -274,7 +275,12 @@ class HomeActivity : Activity() {
 
         setContentView(root)
         ThemeShots.live = { webShot() }                                // a theme saved on a web wall: the page as it is drawn now
-        Store.onChange = { conf = Store.get(this); readNames(); if (Pins.resize(pinW())) pinsRedraw(); if (conf.optString("lang") != Lang.shown) relang() else { show(); watchRead(); wallTimer(); bingCheck(); peek() } }
+        Store.onChange = {
+            val was = conf; conf = Store.get(this)
+            // the veil alone (its stepper, a step every press): the picture painted again, nothing else rebuilt; the whole screen
+            // made again took ~60 ms of the FPT box's main thread a step (the cards, the tiles)
+            if (veilOnly(was, conf)) wall() else onConf()
+        }
         val pkgs = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
@@ -923,6 +929,19 @@ class HomeActivity : Activity() {
 
     // ---- what is shown ----
 
+    /** A change of the settings ([Store.onChange]): everything that reads them, drawn again. */
+    private fun onConf() {
+        readNames(); if (Pins.resize(pinW())) pinsRedraw()
+        if (conf.optString("lang") != Lang.shown) relang() else { show(); watchRead(); wallTimer(); bingCheck(); peek() }
+    }
+
+    /** [b] is [a] with another "shade" and nothing else. */
+    private fun veilOnly(a: JSONObject, b: JSONObject): Boolean {
+        if (a === b || a.optInt("shade", -1) == b.optInt("shade", -1) || a.length() != b.length()) return false
+        for (k in b.keys()) if (k != "shade" && a.opt(k)?.toString() != b.opt(k)?.toString()) return false
+        return true
+    }
+
     private fun show() {
         moving?.let { it.carry(false); hint(false); for (o in tiles()) { o.animate().cancel(); o.alpha = 1f } }; moving = null                           // anything that rebuilds the tiles ends a move that was not confirmed: the saved order wins
         val keep = focusNext ?: (currentFocus as? Tile)?.app?.pkg
@@ -1311,10 +1330,15 @@ class HomeActivity : Activity() {
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optInt("shade") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "") + (if (id == HomeConfig.OWN) conf.optString("wcol") + conf.optString("wdir") else "")   // a photo put over the old file, another day's Bing picture: a new one
-        if (key == wallShown) return
-        wallShown = key
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "") + (if (id == HomeConfig.OWN) conf.optString("wcol") + conf.optString("wdir") else "")   // a photo put over the old file, another day's Bing picture: a new one
+        val shade = conf.optInt("shade")
+        if (key == wallShown && shade == wallShade) return
+        // the veil alone moved (the stepper): the picture kept is painted again; read and decoded again, each step took ~0.4 s of the
+        // FPT box's CPU (a slideshow's list and slide too) and the steps behind the number lagged
+        val veilOnly = key == wallShown
+        wallShown = key; wallShade = shade
         if (trimmed) { soft = null; return }          // away and short of memory: [untrim] brings it back
+        if (veilOnly && web == null && video == null && backdrop.reshade(shadeK())) return
         loadWall(id)
     }
 
