@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.31.0 - 2026-10-28
+
+Web 0.31.0 · app điện thoại 0.30.0 · app TV 0.31.0 · TV Home 0.18.0 · TV Channels 0.12.0 · TV Games 0.12.0
 
 **Tiếng Việt**
 - TV Home: bảng "+ Thêm" gom theo nhóm: Ghim kênh, video (VTVgo, TV360, FPT Play, YouTube, TV Channels), Live widget, Lối tắt của app, Hàng Xem tiếp đã tắt mở trang riêng (chỉ 1 mục thì vẫn hiện thẳng, Back về đúng dòng); logo app ở góc ô ghim cách mép như hàng Xem tiếp (trước sát mép); app ẩn vào "Chọn app…" thay vì mỗi app một dòng (sau lần chạy đầu ẩn gần hết app, danh sách dài quá màn hình).
