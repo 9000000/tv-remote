@@ -5,7 +5,13 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-26**, upstream at `f592b6d2db` (384 commits after `67dc5bee16`, mostly addons/; 67 `debloat.txt`, 16 new). Into bloat.json:
+Last read: **2026-10-27**, upstream at `6ffa7fa5` (388 commits after `f592b6d2db`). Into bloat.json: SUGGEST PPTV `newtvad` (ads) /
+`push.service`, `inspur.adservice` (operator ads), `smartdevice.demonow` (shop demo); FACTORY `arcelik.tv.rctest` (the other new factory
+apps match FACTORY already). Not suggested: TCL `interactive` / `ttvs` (upstream calls them analytics; we keep them: the Source key,
+728595ce). Into Setup.PROTECTED: the bare AOSP `android.ext.services` / `android.ext.shared` (#1711). Checked, ours had it: setupwraith
+answering HOME before launcherx (#1573, `LauncherSwap.badHome`), its Wi-Fi network (`Setup.kt`). New brand lists not taken yet: Sber,
+Grundig, Panasonic, Strong, Dyon, PPTV, Home+.
+Before that: **2026-10-26**, upstream at `f592b6d2db` (384 commits after `67dc5bee16`, mostly addons/; 67 `debloat.txt`, 16 new). Into bloat.json:
 SUGGEST Philips `tpv.asc.taadserver` (ads + telemetry), `funshion.publicity` (promo), `atmaca.atmretailmode` (retail demo); KEEP
 `tcl.providers.config` (upstream "never disable, load-bearing" in 4 TCL lists), `tpv.tvinput` (the only TvInputService on a 50PUF7099:
 off = no inputs), Realtek `dtv` / `tv.atv` (inputs), `realsil.ota` (the remote's updates); FACTORY NVIDIA `factory*` / `diagtools` /

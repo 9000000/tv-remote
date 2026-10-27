@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-26",
+  "updated": "2026-10-27",
   "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign/sign_bloat.py, commit both files.",
   "suggest": {
     "android.autoinstalls.config.askey.tvbox": "Askey app installer",
@@ -84,7 +84,11 @@
     "com.tpv.nftgallery": "Philips NFT gallery",
     "com.tpv.asc.taadserver": "Philips ad and telemetry server",
     "com.funshion.publicity": "Funshion promo",
-    "com.atmaca.atmretailmode": "Retail demo"
+    "com.atmaca.atmretailmode": "Retail demo",
+    "com.pptv.newtvad": "PPTV ads",
+    "com.pptv.push.service": "PPTV push",
+    "com.inspur.adservice": "Inspur ad service",
+    "com.smartdevice.demonow": "Shop demo"
   },
   "drop": [
     "com.xm.webcontent"
@@ -131,6 +135,7 @@
     "com\\.nvidia\\.(factory|factorybundling|factorysyschecker|diagtools|developerwidget)",
     "com\\.mediatek\\.testpq",
     "com\\.xgimi\\.minitvfactory",
-    "com\\.skyworthdigital\\.remotedebug"
+    "com\\.skyworthdigital\\.remotedebug",
+    "com\\.arcelik\\.tv\\.rctest"
   ]
 }
