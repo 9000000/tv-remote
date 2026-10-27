@@ -1,0 +1,415 @@
+{
+ "v": 1,
+ "rev": 1,
+ "apps": [
+  {
+   "pkg": "vn.vtv.vtvgotv",
+   "name": "VTVgo",
+   "uri": "vtvgo://play?mediaType=CHANNEL&contentId={id}",
+   "items": [
+    {
+     "id": "1",
+     "name": "VTV1",
+     "logo": "vtv1"
+    },
+    {
+     "id": "2",
+     "name": "VTV2",
+     "logo": "vtv2"
+    },
+    {
+     "id": "3",
+     "name": "VTV3",
+     "logo": "vtv3"
+    },
+    {
+     "id": "4",
+     "name": "VTV4",
+     "logo": "vtv4"
+    },
+    {
+     "id": "5",
+     "name": "VTV5",
+     "logo": "vtv5"
+    },
+    {
+     "id": "13",
+     "name": "VTV6",
+     "logo": "vtv6"
+    },
+    {
+     "id": "27",
+     "name": "VTV7",
+     "logo": "vtv7"
+    },
+    {
+     "id": "36",
+     "name": "VTV8",
+     "logo": "vtv8"
+    },
+    {
+     "id": "39",
+     "name": "VTV9",
+     "logo": "vtv9"
+    },
+    {
+     "id": "6",
+     "name": "VTV10",
+     "logo": "vtv10"
+    },
+    {
+     "id": "7",
+     "name": "VTV5 Tây Nam Bộ",
+     "logo": "vtv5-tay-nam-bo"
+    },
+    {
+     "id": "163",
+     "name": "VTV5 Tây Nguyên",
+     "logo": "vtv5-tay-nguyen"
+    },
+    {
+     "id": "103",
+     "name": "Quốc phòng Việt Nam",
+     "logo": "quoc-phong-viet-nam"
+    },
+    {
+     "id": "89",
+     "name": "Công an Nhân dân",
+     "logo": "cong-an-nhan-dan"
+    },
+    {
+     "id": "111",
+     "name": "Hà Nội 1",
+     "logo": "ha-noi-1"
+    },
+    {
+     "id": "17",
+     "name": "Hà Nội 2",
+     "logo": "ha-noi-2"
+    },
+    {
+     "id": "175",
+     "name": "Đà Nẵng 1",
+     "logo": "da-nang-1"
+    },
+    {
+     "id": "119",
+     "name": "Quảng Ninh 1",
+     "logo": "quang-ninh-1"
+    },
+    {
+     "id": "120",
+     "name": "Quảng Ninh 3",
+     "logo": "quang-ninh-3"
+    },
+    {
+     "id": "121",
+     "name": "Nghệ An",
+     "logo": "nghe-an"
+    },
+    {
+     "id": "125",
+     "name": "Khánh Hòa",
+     "logo": "khanh-hoa"
+    },
+    {
+     "id": "127",
+     "name": "Thừa Thiên Huế",
+     "logo": "thua-thien-hue"
+    },
+    {
+     "id": "133",
+     "name": "Đồng Tháp 1",
+     "logo": "dong-thap-1"
+    },
+    {
+     "id": "145",
+     "name": "Đồng Nai 2",
+     "logo": "dong-nai-2"
+    },
+    {
+     "id": "181",
+     "name": "Thanh Hóa",
+     "logo": "thanh-hoa"
+    },
+    {
+     "id": "183",
+     "name": "Ninh Bình",
+     "logo": "ninh-binh"
+    },
+    {
+     "id": "185",
+     "name": "Hưng Yên",
+     "logo": "hung-yen"
+    },
+    {
+     "id": "218",
+     "name": "Cà Mau",
+     "logo": "ca-mau"
+    },
+    {
+     "id": "219",
+     "name": "Bắc Ninh",
+     "logo": "bac-ninh"
+    },
+    {
+     "id": "221",
+     "name": "Đắk Lắk",
+     "logo": "dak-lak"
+    },
+    {
+     "id": "223",
+     "name": "Gia Lai",
+     "logo": "gia-lai"
+    },
+    {
+     "id": "224",
+     "name": "Lâm Đồng",
+     "logo": "lam-dong"
+    },
+    {
+     "id": "228",
+     "name": "Lai Châu",
+     "logo": "lai-chau"
+    },
+    {
+     "id": "229",
+     "name": "Phú Thọ",
+     "logo": "phu-tho"
+    },
+    {
+     "id": "230",
+     "name": "Điện Biên",
+     "logo": "dien-bien"
+    },
+    {
+     "id": "231",
+     "name": "An Giang",
+     "logo": "an-giang"
+    },
+    {
+     "id": "234",
+     "name": "Đồng Nai 1",
+     "logo": "dong-nai-1"
+    },
+    {
+     "id": "235",
+     "name": "Tuyên Quang",
+     "logo": "tuyen-quang"
+    },
+    {
+     "id": "236",
+     "name": "Quảng Trị",
+     "logo": "quang-tri"
+    },
+    {
+     "id": "238",
+     "name": "Thái Nguyên",
+     "logo": "thai-nguyen"
+    },
+    {
+     "id": "243",
+     "name": "Cần Thơ 1",
+     "logo": "can-tho-1"
+    },
+    {
+     "id": "248",
+     "name": "Quảng Nam",
+     "logo": "quang-nam"
+    },
+    {
+     "id": "255",
+     "name": "Tây Ninh 1",
+     "logo": "tay-ninh-1"
+    }
+   ]
+  },
+  {
+   "pkg": "com.viettel.tv360.tv",
+   "name": "TV360",
+   "uri": "tv360://recommendation?type=LIVE&id={id}",
+   "items": [
+    {
+     "id": "2",
+     "name": "VTV1",
+     "logo": "vtv1"
+    },
+    {
+     "id": "3",
+     "name": "VTV2",
+     "logo": "vtv2"
+    },
+    {
+     "id": "4",
+     "name": "VTV3",
+     "logo": "vtv3"
+    },
+    {
+     "id": "108",
+     "name": "VTV4",
+     "logo": "vtv4"
+    },
+    {
+     "id": "110",
+     "name": "VTV5",
+     "logo": "vtv5"
+    },
+    {
+     "id": "10043",
+     "name": "VTV6",
+     "logo": "vtv6"
+    },
+    {
+     "id": "6",
+     "name": "VTV7",
+     "logo": "vtv7"
+    },
+    {
+     "id": "115",
+     "name": "VTV8",
+     "logo": "vtv8"
+    },
+    {
+     "id": "8",
+     "name": "VTV9",
+     "logo": "vtv9"
+    },
+    {
+     "id": "98",
+     "name": "VTV10",
+     "logo": "vtv10"
+    },
+    {
+     "id": "157",
+     "name": "VTV5 Tây Nam Bộ",
+     "logo": "vtv5-tay-nam-bo"
+    },
+    {
+     "id": "207",
+     "name": "VTV5 Tây Nguyên",
+     "logo": "vtv5-tay-nguyen"
+    },
+    {
+     "id": "33",
+     "name": "Hà Nội 1",
+     "logo": "ha-noi-1"
+    },
+    {
+     "id": "34",
+     "name": "Hà Nội 2",
+     "logo": "ha-noi-2"
+    },
+    {
+     "id": "49",
+     "name": "Đà Nẵng 1",
+     "logo": "da-nang-1"
+    },
+    {
+     "id": "82",
+     "name": "Quảng Ninh 1",
+     "logo": "quang-ninh-1"
+    },
+    {
+     "id": "134",
+     "name": "Quảng Ninh 3",
+     "logo": "quang-ninh-3"
+    },
+    {
+     "id": "74",
+     "name": "Nghệ An",
+     "logo": "nghe-an"
+    },
+    {
+     "id": "65",
+     "name": "Khánh Hòa",
+     "logo": "khanh-hoa"
+    },
+    {
+     "id": "54",
+     "name": "Đồng Tháp 1",
+     "logo": "dong-thap-1"
+    },
+    {
+     "id": "89",
+     "name": "Thanh Hóa",
+     "logo": "thanh-hoa"
+    },
+    {
+     "id": "75",
+     "name": "Ninh Bình",
+     "logo": "ninh-binh"
+    },
+    {
+     "id": "64",
+     "name": "Hưng Yên",
+     "logo": "hung-yen"
+    },
+    {
+     "id": "46",
+     "name": "Cà Mau",
+     "logo": "ca-mau"
+    },
+    {
+     "id": "39",
+     "name": "Bắc Ninh",
+     "logo": "bac-ninh"
+    },
+    {
+     "id": "51",
+     "name": "Đắk Lắk",
+     "logo": "dak-lak"
+    },
+    {
+     "id": "55",
+     "name": "Gia Lai",
+     "logo": "gia-lai"
+    },
+    {
+     "id": "68",
+     "name": "Lai Châu",
+     "logo": "lai-chau"
+    },
+    {
+     "id": "77",
+     "name": "Phú Thọ",
+     "logo": "phu-tho"
+    },
+    {
+     "id": "52",
+     "name": "Điện Biên",
+     "logo": "dien-bien"
+    },
+    {
+     "id": "53",
+     "name": "Đồng Nai 1",
+     "logo": "dong-nai-1"
+    },
+    {
+     "id": "92",
+     "name": "Tuyên Quang",
+     "logo": "tuyen-quang"
+    },
+    {
+     "id": "83",
+     "name": "Quảng Trị",
+     "logo": "quang-tri"
+    },
+    {
+     "id": "88",
+     "name": "Thái Nguyên",
+     "logo": "thai-nguyen"
+    },
+    {
+     "id": "47",
+     "name": "Cần Thơ 1",
+     "logo": "can-tho-1"
+    },
+    {
+     "id": "72",
+     "name": "Tây Ninh 1",
+     "logo": "tay-ninh-1"
+    }
+   ]
+  }
+ ]
+}
