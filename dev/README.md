@@ -98,3 +98,82 @@ Tests: `THEMES_URL`, `THEMES_TOKEN_FILE`, `CENSUS_URL`, `CRASH_TOKEN` point it a
 - `dev/release/keys.sh backup` packs the keys, the admin tokens (`crash-token`, `themes-admin-token`) and every `signing.jks` (the APKs' signatures) into one password-locked file
   (`dev/release/Keys.java`, AES-GCM, `*.tvrkeys`, never committed) to keep off this computer. `dev/release/keys.sh list <file>` checks a
   copy opens; `restore <file>` puts the keys back.
+
+## How it works
+
+No server in between: everything goes straight to the TV.
+
+```mermaid
+flowchart LR
+    subgraph U["Controlling device"]
+        PH["📱 Phone app"]
+        PC["💻 Computer app"]
+        BR["🌐 Any browser<br/>iPhone, computer..."]
+    end
+    subgraph TV["📺 Android TV"]
+        RP["Google's remote service<br/>ports 6466/6467"]
+        ADB["ADB<br/>port 5555"]
+        SC["scrcpy-server<br/>picture, sound, touch, keys"]
+        APP["TV app (TV Setup)<br/>sleep timer, app limits, drawing layer, stats"]
+        WEB["TV web page<br/>port 8765"]
+        ADB --> SC
+        ADB -- "commands, broadcasts" --> APP
+        APP --- WEB
+        WEB -- "127.0.0.1:5555" --> ADB
+    end
+    PH & PC -- "keys, before ADB" --> RP
+    PH & PC -- "everything else" --> ADB
+    BR -- "HTTP + 6-digit pairing" --> WEB
+```
+
+In the code the three apps share one Kotlin core and one web UI. Only the Phone app's remote screen is its own Kotlin (for smoothness), so a change to the remote screen goes in two places: `app/shared/web` and `app/android`.
+
+```mermaid
+flowchart TB
+    UI["app/shared/web<br/>ONE web UI"]
+    CORE["app/shared/src<br/>Kotlin core: Adb, Tv, Atv, Manage, Draw..."]
+    PH["📱 Phone app · app/android<br/>remote screen: its own Kotlin<br/>Manage screen: the web UI (phone)"]
+    PC["💻 Computer app · app/desktop<br/>window: the web UI (pc)"]
+    TVA["📺 TV app · app/tv<br/>TV web page: the web UI (tv)"]
+    CORE --> PH & PC & TVA
+    UI --> PH & PC & TVA
+```
+
+- **Phone app and TV Setup** speak ADB themselves and push `scrcpy-server` to the TV for H.264 video, touch and keys. TV Setup connects to the TV's own ADB (`127.0.0.1:5555`). On the TV web page the video goes through `/api/video` and plays with JMuxer (MSE).
+- **Computer app** (`app/desktop`) shares the Kotlin core (ADB, scrcpy, remote protocol), runs on its own bundled Java; the window is the system's web view ([webview](https://github.com/webview/webview) via JNA). Before ADB: Android TV Remote v2 protocol, ports 6466/6467.
+- **Accented text** goes into the TV's clipboard and is pasted. **Volume** calls `AudioService.setStreamVolume` (Android 9), else `media volume`, with no ADB it presses steps. **Power** uses SLEEP (223) / WAKEUP (224), not POWER, so repeated presses don't flip state.
+- **App names and logos:** asked from the TV's system; TV Setup directly, the Phone and Computer apps copy the phone app's APK to `/data/local/tmp` and run its `Meta` class with `app_process` (the Computer app caches in `.cache/apps`).
+- **History:** TV Setup writes to `/sdcard/Android/data/dev.tvremote.setup/files/stats/` (`usage.json` 90 days, `samples.jsonl` about 30); the remotes read it over ADB. Usage access is granted over ADB.
+- **One-button Tailscale** (`Tailscale.kt`): downloads the APK from `pkgs.tailscale.com` and checks SHA-256, installs over ADB, `appops set com.tailscale.ipn ACTIVATE_VPN allow`, starts with the `CONNECT_VPN` broadcast; if not signed in it opens the app, presses "Log in" and reads the code under the QR with `uiautomator dump` (link `https://login.tailscale.com/a/<code>`).
+
+## Build, run, test
+
+Needs JDK 17, the Android SDK (with Emulator and Command-line Tools), Node.js and Python 3. Mac and Linux run directly; Windows uses Git Bash.
+
+```
+app/shared/web/  THE web UI (Computer app, TV web page, the Phone app's Manage screen)
+app/shared/src/  Kotlin core: ADB, picture and sound (scrcpy), each brand's remote, /api
+app/desktop/     Computer app (Kotlin JVM; window = the system's web view)
+app/android/     Phone app (remote screen in Kotlin, Manage screen = the web UI)
+app/tv/          TV app (TV Setup) + TV web page
+app/gradle/      Gradle build of all Kotlin (open it in Android Studio)
+dev/  docs/      dev tools · the site
+tvs.json, cert.pem, key.pem, *.jks, .cache/      your own data, never in git
+```
+
+| Task | Command |
+|---|---|
+| Web tests | `node --test app/shared/tests/ app/games/tests/` |
+| Kotlin tests | `cd app/gradle && ./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest :tv:testDebugUnitTest` |
+| Build the Computer app | `cd app/gradle && ./gradlew :desktop:installDist` |
+| Run it (window / browser) | `app/desktop/build/install/desktop/bin/desktop --window` · without `--window` it prints a link with the `?k=` key |
+| Run a test copy (real TVs untouched) | `TVS_FILE=/tmp/x.json TVR_KEYS=/tmp/keys TVR_PASS=testtest app/desktop/build/install/desktop/bin/desktop --port 8769`, open `http://127.0.0.1:8769/?k=testtest` (curl: header `x-tvr-pass`) |
+| Package for people | `./gradlew :desktop:packageApp` → `app/desktop/build/package/` |
+| Android APKs | `app/android/build.sh`, `app/tv/build.sh` → `app/*/build/*.apk` |
+| Emulators: create / start + build + install / install only / reset / stop | `dev/test/emu.sh create` · `emu.sh` · `emu.sh install` · `emu.sh reset` · `emu.sh stop` |
+
+Editing `app/shared/web` needs only a page reload; Kotlin needs a rebuild. Inside the repo the app uses the repo's `tvs.json` and ADB keys in `.cache/keys`, apart from an installed copy. In the emulators the TV is `10.0.2.2` from the phone emulator and `127.0.0.1` from the Computer app (`10.0.2.15` on the virtual TV means nothing outside it); accept "Allow USB debugging?" in the TV emulator's window. They open only the ADB port, so the Android TV Remote pairing can't be tried there. Other checks: `dev/test/contrast.py`, `dev/shots/shots.py`.
+
+**Versions:** six numbers, each bumped only when its part changes; `dev/release/release.sh` does it, builds and makes the GitHub release; notes go under `## Unreleased` in `CHANGELOG.md`. **Keep the three places in step:** a change to the controls goes in the Phone app, the TV web page and the Computer app; the remote's keys live once in `app/shared/web/remote.json`.
+
+Credits: [scrcpy](https://github.com/Genymobile/scrcpy) (Apache-2.0), [JMuxer](https://github.com/samirkumardas/jmuxer) (MIT), [webview](https://github.com/webview/webview) (MIT), [JNA](https://github.com/java-native-access/jna) (Apache-2.0); the table games follow [gamehub24](https://gamehub24.pages.dev).
