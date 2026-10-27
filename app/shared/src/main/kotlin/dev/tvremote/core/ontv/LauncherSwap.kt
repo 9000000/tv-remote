@@ -96,6 +96,9 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     /** Why the last [take] never started ("board": the maker's wizard returns every boot; "boot": no launcher can start before the unlock). No record is saved then. */
     var refused = ""
         private set
+    /** What the Home button opened when [take] gave up because Home did not land on the new launcher: the app holding it. */
+    var opened = ""
+        private set
 
     fun tvNow(): Long = sh("date +%s").trim().toLongOrNull() ?: (System.currentTimeMillis() / 1000)
 
@@ -132,7 +135,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     @Throws(IOException::class)
     fun take(pkg: String, confirmSec: Int = 0, before: String = ""): Boolean {
         if (!PKG.matches(pkg)) throw IOException("bad package name")
-        refused = ""
+        refused = ""; opened = ""
         val all = homes()
         val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
         if (cast()) return byKey(pkg, ours)
@@ -171,7 +174,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
             val off = stuck + gone.filter { it.substringBefore('/') !in stuck }   // its screens stayed on: nothing of theirs to turn back on
             save(Rec(pkg, ours, prev, off, now, "swapping", 0, ""))
             for (p in stuck) turnOff(p)
-            if (homes().any { it.substringBefore('/') in stuck }) { log("wizard home stays"); rollback("home", off); return false }
+            if (homes().any { it.substringBefore('/') in stuck }) { log("wizard home stays"); opened = stuck[0]; rollback("home", off); return false }
         }
         for (p in gone - wizard) turnOff(p)
         sh("cmd package set-home-activity $ours 2>/dev/null")
@@ -185,6 +188,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
             save(r)
             return true
         }
+        opened = (if (shown == "-") homeNow() else shown).substringBefore('/')
         rollback("home", gone)
         return false
     }

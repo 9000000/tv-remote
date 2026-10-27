@@ -1106,7 +1106,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun setup(undo: Boolean, lang: String, c: Setup.Choice): JSONObject =
         job(if (undo) "undo" else "optimize") { j ->
             val lines = StringBuilder()
-            val s = Setup(link.get(), dir, lang) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
+            // the link, not one connection: Optimize waits out a TV that restarts midway
+            val s = Setup(link, dir, lang) { line -> lines.append(line).append('\n'); try { j.put("log", lines.toString().trim()) } catch (ignored: Exception) { } }
             if (undo) s.undo() else { s.apply(c); dev.tvremote.core.Census.optimize(link.host) }
             "ok"
         }

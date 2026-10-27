@@ -13,9 +13,13 @@ import dev.tvremote.core.adb.PmInstall
  * "Optimize TV": the steps, run over an ADB connection. The TV app runs them on itself,
  * the phone app on the TV it is connected to. [dir] is where this device may keep a download for a moment.
  */
-class Setup internal constructor(private val adb: Adb?, private val dir: File?, private val lang: String,
-                                 private val sh: (String) -> String, private val log: Log) {   // sh: a test's TV in place of ADB (SetupTest)
-    constructor(adb: Adb, dir: File?, lang: String, log: Log) : this(adb, dir, lang, { adb.shell(it) }, log)
+class Setup internal constructor(private val adb0: Adb?, private val dir: File?, private val lang: String,
+                                 private val sh: (String) -> String,   // sh: a test's TV in place of ADB (SetupTest)
+                                 private val fresh: (() -> Adb)? = null, private val log: Log) {
+    constructor(adb: Adb, dir: File?, lang: String, log: Log) : this(adb, dir, lang, { adb.shell(it) }, null, log)
+    /** Through [link]: a link that drops midway (a TV restarting) is dialled again, so Optimize can wait for the TV and say what happened. */
+    constructor(link: dev.tvremote.core.adb.AdbLink, dir: File?, lang: String, log: Log) : this(null, dir, lang, { link.get().shell(it) }, { link.get() }, log)
+    private val adb: Adb? get() = fresh?.invoke() ?: adb0
     private fun t(id: String, vararg a: Pair<String, Any?>) = Words.get(lang, id, *a)
 
     companion object {
@@ -118,6 +122,23 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
             return b.toString()
         }
 
+        internal const val ABOUT = "getprop ro.product.manufacturer; getprop ro.product.model; getprop ro.product.device; getprop ro.build.version.release"
+        /** The package service gone: the TV is shutting down or restarting (a pm that answers "Failure calling service package: Broken pipe"). */
+        private val DEAD = Regex("Failure calling service|Can't find service|DeadObjectException|DeadSystemException")
+
+        /**
+         * What went wrong on which TV, to the census with the crashes (the same stats switch, off: nothing): which app a TV restarts
+         * over, will not turn off, or keeps Home with, is how the lists learn (vgs-cleantv sends the same). [about]: the [ABOUT]
+         * lines, read while the link was up. [kind]: lost, restarted, failed, home:<why>, launcher:<why>.
+         */
+        fun report(kind: String, about: String, pkg: String, apps: Map<String, String> = emptyMap()) {
+            if (!dev.tvremote.core.Census.enabled) return
+            val tv = about.split("\n").map { it.trim() }
+            val facts = "tv: " + tv.take(3).joinToString(" / ") + ", Android " + tv.getOrElse(3) { "?" } + "\n" +
+                (if (pkg.isNotEmpty()) "pkg: $pkg\n" else "") + apps.entries.joinToString("\n") { "  " + it.key + ": " + it.value.take(160) }
+            dev.tvremote.core.Census.crash("kotlin", "Optimize $kind " + tv.getOrElse(1) { "" }, "Optimize TV $kind" + (if (pkg.isNotEmpty()) ": $pkg" else ""), facts)
+        }
+
         private fun last(out: String): String = out.split("\n").dropLastWhile { it.isEmpty() }.lastOrNull() ?: ""
     }
 
@@ -201,6 +222,7 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     @Throws(Exception::class)
     fun apply(c: Choice = Choice()) {
         tvOnly()
+        readAbout()
         sh(RulesClient.KEEP_ALIVE)                                    // TV Setup and TV Home stay alive on a low-RAM TV
         if (has(TS_PKG)) {                                            // the Tailscale button does this too; here for a Tailscale installed by hand
             Tailscale(adb!!, dir).keepAlive()
@@ -216,13 +238,28 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         Bloat.fresh()
         val pick = c.disable ?: suggested()
         val keep = setOf(homeNow(), keyboardNow().substringBefore('/'), if (c.home) HOME_PKG else "") + handlers()   // whatever the list says, the TV keeps a home, a keyboard, its inputs and Settings
-        var off = 0
+        val said = LinkedHashMap<String, String>()                    // each app tried, and pm's last line about it
+        val sys = systemPid()
         for (p in pick.distinct()) {
             if (!p.matches(Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")) || kept(p) || p in keep || !has(p) || inUse(sh, p)) continue
-            turnOff(p)
-            off++
+            val out = try { turnOff(p) } catch (e: IOException) { null }
+            if (out != null && !DEAD.containsMatchIn(out)) { said[p] = last(out.trim()); continue }
+            // the link dropped, or the TV is going down, right after p: it may be what the TV cannot live without (a Sony KD-55X8500D
+            // restarted at one, vgs-cleantv 2026-10-22). Wait for the TV, then tell a restart (system_server's pid) from a lost link
+            if (!back(p)) { report("lost", p, said); throw Stopped(t("errors.optimize_lost", "pkg" to p, "n" to said.keys.count { it != p }), p) }
+            val isOff = p in off()
+            if (isOff) said[p] = "" else said[p] = try { last(turnOff(p).trim()) } catch (e: IOException) { "" }
+            val now = systemPid()
+            if (sys != null && now != null && now != sys) { report("restarted", p, said); throw Stopped(t("errors.optimize_restarted", "pkg" to p, "n" to said.keys.count { it != p }), p) }
         }
-        if (off > 0) log.line(t("optimize.turned_off_apps", "n" to off))
+        // pm's words differ by version ("new state: disabled-user", nothing at all): the TV's own list says what is off
+        val nowOff = if (said.isEmpty()) emptySet() else off()
+        val failed = said.filterKeys { it !in nowOff }
+        if (said.size > failed.size) log.line(t("optimize.turned_off_apps", "n" to said.size - failed.size))
+        if (failed.isNotEmpty()) {
+            log.line(t("optimize.not_off", "apps" to failed.keys.joinToString(", ")))
+            report("failed", "", failed)
+        }
         keyboard()
 
         if (!c.home) { log.line(t("optimize.done")); return }
@@ -252,6 +289,9 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
         } else {
             log.line(t("optimize.home_kept", "home" to homeNow()))
             if (refused.isNotEmpty()) log.line(t(LauncherSwap.whyId(refused)))   // the reason, when it is one the person can know
+            if (refused == "home" && opened.isNotEmpty()) log.line(t("launcher.home_opens", "pkg" to opened))
+            // the known refusals (a Chromecast, a MOKA board) say nothing new; these are the TVs the swap does not know yet
+            if (refused in setOf("home", "interrupted", "wifi_unknown", "")) report("home:" + refused.ifEmpty { "?" }, opened, emptyMap())
             log.line(t("optimize.done"))
         }
     }
@@ -275,12 +315,37 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
     /** The app the Home button opens now ("android" when Android asks which one). */
     private fun homeNow(): String = last(sh(RESOLVE_HOME)).substringBefore('/')
 
-    /** Turned off one command per shell call: chained, some TVs' pm stopped after the first (cleanyourtv). Kept for Undo. */
-    private fun turnOff(p: String) {
-        sh("pm disable-user --user 0 $p")
-        sh("am force-stop $p")
+    /**
+     * Turned off one command per shell call: chained, some TVs' pm stopped after the first (cleanyourtv). Kept for Undo before pm is
+     * asked, so a TV that goes down with it still has it on the record. Gives what pm said.
+     */
+    private fun turnOff(p: String): String {
         sh("grep -qx '$p' $OFF_LIST 2>/dev/null || echo '$p' >> $OFF_LIST")
+        val out = sh("pm disable-user --user 0 $p")
+        if (!DEAD.containsMatchIn(out)) sh("am force-stop $p")
+        return out
     }
+
+    /** system_server's pid: another one after a pause = the TV restarted, even the quick kind where only Android's runtime does. */
+    private fun systemPid(): String? = try { sh("pidof system_server").trim().takeIf { it.matches(Regex("\\d+")) } } catch (e: IOException) { null }
+
+    /** Waits up to ~1.5 min (a TV's restart) for the TV to answer with its package service up again. */
+    private fun back(p: String): Boolean {
+        log.line(t("optimize.waiting_tv", "pkg" to p))
+        repeat(12) {
+            pause(8000)
+            try { if (sh("pm path android").contains("package:")) return true } catch (e: IOException) { }
+        }
+        return false
+    }
+    internal var pause: (Long) -> Unit = { Thread.sleep(it) }        // SetupTest: no real wait
+
+    /** Optimize stopped midway at [pkg] (the TV restarted or was lost right after it); the message is the person's. */
+    class Stopped(msg: String, val pkg: String) : IOException(msg)
+
+    private fun report(kind: String, pkg: String, apps: Map<String, String>) = report(kind, about, pkg, apps)
+    private var about = ""                                            // the TV's model, read before anything happens: a report may come after the link is gone
+    private fun readAbout() { if (dev.tvremote.core.Census.enabled) about = try { sh(ABOUT) } catch (e: IOException) { "" } }
 
     /**
      * TV Home takes Home, by the same steps as any launcher of the gallery ([LauncherSwap]: the TV's own home screens off with the
@@ -288,8 +353,12 @@ class Setup internal constructor(private val adb: Adb?, private val dir: File?, 
      * not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home button that lands on a setup wizard
      * or a picker is worse than the old home screen. Recorded on the TV, so the watchdog of TV Setup guards it too.
      */
-    private fun takeHome(): Boolean { val s = LauncherSwap(sh); return s.take(HOME_PKG).also { refused = s.refused } }
+    private fun takeHome(): Boolean {
+        val s = LauncherSwap(sh)
+        return s.take(HOME_PKG).also { ok -> refused = if (ok) "" else s.refused.ifEmpty { s.state()?.takeIf { it.state == "rolledback" }?.why ?: "" }; opened = s.opened }
+    }
     private var refused = ""
+    private var opened = ""                                           // what the Home button opened instead of TV Home
 
     private fun keyboardNow(): String = sh("settings get secure default_input_method").trim()
 

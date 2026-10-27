@@ -8,9 +8,13 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - App TV: chọn launcher chưa có trên TV (mở trang Google Play) không còn làm app tắt ngang trên một số TV (Sony BRAVIA, TCL).
+- Tối ưu TV báo lỗi rõ hơn: TV tự khởi động lại hay mất kết nối giữa chừng thì chờ TV tối đa 1,5 phút, dừng lại và nói app nào vừa tắt gây ra, bấm Hoàn tác để bật lại. App mà TV không cho tắt được liệt kê riêng, không còn đếm là đã tắt.
+- Launcher mới không giữ được nút Home: nói rõ nút Home đang mở app nào và nên làm gì tiếp.
 
 **English**
 - TV app: picking a launcher that is not on the TV yet (opens its Google Play page) no longer closes the app on some TVs (Sony BRAVIA, TCL).
+- Optimize TV explains errors better: if the TV restarts or drops the link midway, it waits up to 1.5 minutes, stops, names the app just turned off and points to Undo. Apps the TV refuses to turn off are listed, not counted as off.
+- A new launcher that cannot keep the Home button: says which app Home opens and what to do next.
 
 ## 0.29.0 - 2026-10-27
 

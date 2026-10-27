@@ -28,10 +28,25 @@ class SetupTest {
         val offList = mutableListOf<String>()
         val said = mutableListOf<String>()
         var anim = "1.0"
+        var pid = "100"                                               // system_server's: another one = the TV restarted
+        val refuse = mutableSetOf<String>()                           // pm says no (a protected package of the brand's)
+        var downAt = ""                                               // turning this one off takes the TV down (and the link with it)
+        var stayDown = false                                          // ...and it never comes back
+        var restarts = true                                           // false: only the link dropped
+        var lost = false
         fun sh(cmd: String): String {
+            if (lost) throw IOException("adb connection lost")
             said += cmd
+            if (cmd == "pm path android") return "package:/system/framework/framework-res.apk"   // the package service is up
             Regex("^pm path (\\S+)$").find(cmd)?.let { return if (it.groupValues[1] in installed) "package:/data/app/x.apk" else "" }
-            Regex("^pm disable-user --user 0 (\\S+)$").find(cmd)?.let { disabled += it.groupValues[1]; return "" }
+            if (cmd == "pidof system_server") return pid
+            Regex("^pm disable-user --user 0 (\\S+)$").find(cmd)?.let {
+                val p = it.groupValues[1]
+                if (p in refuse) return "Error: java.lang.SecurityException: Cannot disable a protected package: $p"
+                disabled += p
+                if (p == downAt) { if (restarts) pid = "200"; lost = stayDown; throw IOException("adb connection lost") }
+                return "Package $p new state: disabled-user"
+            }
             Regex("^pm disable --user 0 (\\S+) 2>&1$").find(cmd)?.let { disabled += it.groupValues[1]; return "" }
             Regex("^ime set (\\S+)$").find(cmd)?.let { keyboard = it.groupValues[1]; return "" }
             Regex("^pm enable --user 0 (\\S+)$").find(cmd)?.let { disabled -= it.groupValues[1]; return "" }
@@ -111,6 +126,48 @@ class SetupTest {
         tv.setup().apply(Setup.Choice(anim = false, home = false, disable = bad))
         assertTrue(tv.disabled.isEmpty())
         assertFalse(tv.said.any { "reboot" in it || "rm -rf" in it })
+    }
+
+    /** A TV that says what went wrong: pm's refusals are not counted as off, a restart or a lost link midway names the app. */
+    private fun run(tv: FakeTv, apps: List<String>, lines: MutableList<String> = mutableListOf()) =
+        Setup(null, null, "en", { tv.sh(it) }) { lines += it }.also { it.pause = { } }.apply(Setup.Choice(anim = false, home = false, disable = apps))
+
+    @Test fun anAppTheTvRefusesIsNotCountedAsOff() {
+        val tv = FakeTv(true, "com.foo.game", "com.brand.locked")
+        tv.refuse += "com.brand.locked"
+        val lines = mutableListOf<String>()
+        run(tv, listOf("com.foo.game", "com.brand.locked"), lines)
+        assertEquals(setOf("com.foo.game"), tv.disabled)
+        assertTrue(lines.toString(), "✓ Turned off 1 app" in lines)
+        assertTrue(lines.toString(), lines.any { "would not turn off" in it && "com.brand.locked" in it })
+    }
+
+    @Test fun aTvThatRestartsMidwayStopsAndNamesTheApp() {
+        val tv = FakeTv(true, "com.foo.game", "com.brand.core", "com.foo.shop")
+        tv.downAt = "com.brand.core"
+        try { run(tv, listOf("com.foo.game", "com.brand.core", "com.foo.shop")); fail("went on after a restart") }
+        catch (e: Setup.Stopped) { assertEquals("com.brand.core", e.pkg); assertTrue(e.message!!, "restarted" in e.message!! && "all 1 before it" in e.message!!) }
+        assertFalse("com.foo.shop" in tv.disabled)                    // nothing more after it
+        assertTrue("com.brand.core" in tv.offList)                    // on record before pm was asked: Undo has it
+    }
+
+    @Test fun aTvThatNeverComesBackStopsAndSaysSo() {
+        val tv = FakeTv(true, "com.foo.game", "com.brand.core")
+        tv.downAt = "com.brand.core"; tv.stayDown = true
+        val lines = mutableListOf<String>()
+        try { run(tv, listOf("com.foo.game", "com.brand.core"), lines); fail() }
+        catch (e: Setup.Stopped) { assertTrue(e.message!!, "not back in" in e.message!!) }
+        assertEquals(1, lines.count { "waiting for it" in it })
+        assertEquals(listOf("com.foo.game", "com.brand.core"), tv.offList)
+    }
+
+    @Test fun aBriefDropWithoutARestartGoesOn() {
+        val tv = FakeTv(true, "com.foo.game", "com.brand.core", "com.foo.shop")
+        tv.downAt = "com.brand.core"; tv.restarts = false
+        val lines = mutableListOf<String>()
+        run(tv, listOf("com.foo.game", "com.brand.core", "com.foo.shop"), lines)
+        assertEquals(setOf("com.foo.game", "com.brand.core", "com.foo.shop"), tv.disabled)
+        assertTrue(lines.toString(), "✓ Turned off 3 apps" in lines)
     }
 
     @Test fun notInstalledIsNotCounted() {

@@ -68,6 +68,8 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
         if (cancelled()) throw IOException("stopped")
         if (!swap.take(e.pkg, confirmSec, before)) {                  // not the home screen: already put back
             val why = swap.refused.ifEmpty { swap.state()?.why ?: "" }
+            if (why in setOf("home", "interrupted", "wifi_unknown", ""))   // the TVs the swap does not know yet, to the census (Setup.report)
+                try { Setup.report("launcher:" + why.ifEmpty { "?" }, adb.shell(Setup.ABOUT), e.pkg + (if (swap.opened.isNotEmpty()) " (Home opens ${swap.opened})" else "")) } catch (x: IOException) { }
             throw IOException(if (why in setOf("wifi", "wifi_unknown", "cast", "board", "boot")) "launcher:rolledback:$why" else "launcher:home")   // what the person can act on
         }
         return swap.state()?.state ?: "kept"

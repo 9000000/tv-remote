@@ -20,6 +20,7 @@ object Errors {
             all.contains(dev.tvremote.update.Release.MISMATCH) || all.contains(dev.tvremote.update.Release.UNSIGNED) ->
                 t("errors.downloaded_update_does_not")
             all.contains("launcher:play") -> t("errors.launcher_play")
+            all.contains("launcher:home") -> t("core.fr_launcher_home")    // TV Setup's gallery showed the code itself
             all.contains(dev.tvremote.core.ontv.Launchers.UNSIGNED) -> t("errors.launcher_list_bad")
             all.contains(dev.tvremote.core.ontv.Launchers.MISMATCH) -> t("errors.launcher_file_bad")
             all.contains("adb pair: wrong code") -> t("errors.pairing_code_wrong_has")
