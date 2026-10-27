@@ -145,10 +145,26 @@ object Watch {
         try {                                                         // whose it is: the app's icon small in a corner, as Android TV's launcher does (a name there hid the logos)
             val d = c.packageManager.getApplicationIcon(i.pkg)
             val by = if (i.done >= 0f) h - m - sz - h * .04f else (h - m - sz).toFloat()   // above the bar
-            d.setBounds(w - m - sz, by.toInt(), w - m, by.toInt() + sz); d.draw(cv)
+            roundIcon(cv, d, RectF((w - m - sz).toFloat(), by, (w - m).toFloat(), by + sz))
         } catch (e: Exception) { }
         synchronized(cache) { cache[key] = out }
         return out
+    }
+
+    /**
+     * [d] in [r] with round corners (radius [k] of the side), as the launcher draws app tiles: some apps give a square icon
+     * (VTVgo), others one already round. Through a shader, its edge smooth (a clipPath on a bitmap's canvas is jagged); drawn
+     * once into a card that is kept, nothing per frame.
+     */
+    fun roundIcon(cv: Canvas, d: android.graphics.drawable.Drawable, r: RectF, k: Float = .24f) {
+        val s = maxOf(1, r.width().toInt())
+        val b = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888)
+        d.setBounds(0, 0, s, s); d.draw(Canvas(b))
+        val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            shader = android.graphics.BitmapShader(b, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { setLocalMatrix(android.graphics.Matrix().apply { setTranslate(r.left, r.top) }) }
+        }
+        cv.drawRoundRect(r, s * k, s * k, p)
+        b.recycle()
     }
 
     private const val INK = 0xFFFFFFFF.toInt()                      // the title and the bar

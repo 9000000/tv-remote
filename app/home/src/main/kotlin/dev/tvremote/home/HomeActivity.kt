@@ -1783,6 +1783,7 @@ class HomeActivity : Activity() {
         Keys.capture(this, on)
     }
     private var capturing = false
+    private var rowToggled = ""                                     // the app whose Play Next items were just hidden or shown from its menu
 
     /** What opening the app by its tile does, without the zoom. */
     private fun launch(a: App) {
@@ -1802,6 +1803,15 @@ class HomeActivity : Activity() {
         home.add(item(R.drawable.ic_expand, R.string.move) { ui.post { startMove(a.pkg) } })
         if (dockedPin) home.add(item(R.drawable.ic_close, R.string.unpin) { Pins.remove(this, a); pins = pins.filter { it !== a }; shownKey = ""; show() })
         if (!a.live) home.add(item(R.drawable.ic_pen, R.string.rename) { ui.post { rename(a) } })
+        val rowOff = a.pkg in Store.rowsOff(this)
+        if (!a.live && a.pin == null && conf.optBoolean("showWatch", true) && (rowOff || a.pkg == rowToggled || watch.any { it.first.pkg == a.pkg })) {   // its Play Next items, hidden or brought back where people look for them (found only under + Add, the user, 2026-10-27)
+            val me = home.size
+            home.add(stays(if (rowOff) R.drawable.ic_eye else R.drawable.ic_eye_off, if (rowOff) R.string.am_watch_show else R.string.am_watch_hide) {
+                if (rowOff) Store.rowsOn(this, a.pkg) else Store.rowsOff(this, a.pkg)
+                rowToggled = a.pkg                                   // the row is read again in the background: the item stays meanwhile, to undo
+                watchRead(); sub(a, st, 0, me)
+            })
+        }
         if (!dockedPin) {
             home.add(item(R.drawable.ic_eye_off, R.string.hide) { Store.change(this, JSONObject().put("hidden", org.json.JSONArray(Store.list(this, "hidden") + a.pkg))
                 .put("dock", org.json.JSONArray(Store.list(this, "dock") - a.pkg))) })

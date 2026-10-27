@@ -84,8 +84,7 @@ object Pins {
         val z = h * 22 / 100; val m = h * 6 / 100                    // ~1/5 of the height, bottom-right as on the Play Next row (Watch.art; its titles take the left)
         val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = BADGE_BG; setShadowLayer(z * 0.12f, 0f, z * 0.04f, BADGE_SHADOW) }
         cv.drawRoundRect(android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, p)
-        cv.save(); cv.clipPath(android.graphics.Path().apply { addRoundRect(android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, android.graphics.Path.Direction.CW) })
-        icon.setBounds(w - m - z, h - m - z, w - m, h - m); icon.draw(cv); cv.restore()
+        Watch.roundIcon(cv, icon, android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()))
         return android.graphics.drawable.BitmapDrawable(c.resources, b)
     }
 
