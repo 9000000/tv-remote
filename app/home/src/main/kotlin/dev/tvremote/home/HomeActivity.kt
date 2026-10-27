@@ -2218,32 +2218,47 @@ class HomeActivity : Activity() {
         Store.change(this, c)
     }
 
-    /** "+ Add": what is not on the grid, in one list: hidden apps (OK shows them again), live tiles, shortcuts, and a way to pin a channel. */
+    /**
+     * "+ Add": what is not on the grid, a row per kind, each kind of more than one a page of its own (Back comes up to its row): after
+     * the first run hid every app but the well-known ones, a row per hidden app pushed the rest of the list off the screen. The hidden
+     * apps are the choice grid (many ticked at once), not rows here.
+     */
     private fun addPanel() {
         val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles") + Pins.list(this).map { it.pkg }   // a pinned shortcut is on the grid already
-        val rows = ArrayList<TvGlass.Item>()
         fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
-        rows.add(TvGlass.Item(R.drawable.ic_apps, getString(R.string.add_choose), getString(R.string.add_choose_hint, hidden.count { h -> apps.any { it.pkg == h } }), false, false) { open?.dismiss(); open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) })
-        for (h in apps.filter { it.pkg in hidden }) rows.add(TvGlass.Item(0, h.label, getString(R.string.add_hidden), false, false) { addToGrid(h.pkg, false) }.also { it.picture = icon(h.pkg) })
+        val live = ArrayList<TvGlass.Item>(); val pins = ArrayList<TvGlass.Item>(); val rowsOff = ArrayList<TvGlass.Item>()
         if (Tiles.status(this) == Tiles.OK) for (t in Tiles.available(this).filter { it.key !in onGrid })
-            rows.add(TvGlass.Item(Tiles.iconRes(this, t), t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
+            live.add(TvGlass.Item(Tiles.iconRes(this, t), t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
                 .also { it.picture = icon(HomeConfig.tileProvider(t.key)) })
         for (p in Store.rowsOff(this)) { val l = try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(p, 0)).toString() } catch (e: Exception) { continue }
-            rows.add(TvGlass.Item(0, l, getString(R.string.add_row), false, false) { Store.rowsOn(this, p); open?.dismiss(); watchRead() }.also { it.picture = icon(p) }) }   // a row hidden from its menu comes back here
+            rowsOff.add(TvGlass.Item(0, l, getString(R.string.add_row), false, false) { Store.rowsOn(this, p); open?.dismiss(); watchRead() }.also { it.picture = icon(p) }) }   // a row hidden from its menu comes back here
         if (Pins.can(this)) {
             val l = Pins.report(this, JSONObject()).optJSONArray("pinsAvail")
-            var n = 0
             for (i in 0 until (l?.length() ?: 0)) { val o = l!!.getJSONObject(i); val k = o.getString("key")
-                if (k in onGrid || n >= 40) continue; n++
-                rows.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = icon(o.optString("app")) }) }
+                if (k in onGrid || pins.size >= 40) continue
+                pins.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = icon(o.optString("app")) }) }
         }
-        if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.group })   // another app's channels (VTVgo, TV360): the picker with those alone
-            rows.add(TvGlass.Item(0, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), getString(if (l[0].any) R.string.add_from_hint else R.string.add_app_channel_hint, l.size), false, false) {
-                open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), only = pkg, paste = l[0].any)
-            }.also { it.picture = icon(if (l[0].any) Links.source(this, l[0]) ?: "" else pkg) })
-        if (Apps.one(this, "dev.tvremote.channels") != null)
-            rows.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
-        open = TvGlass.menu(this, R.style.Menu, getString(R.string.add_title), rows) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+        val p = TvGlass.Panel(this, R.style.Menu, R.drawable.ic_left) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
+        fun top(at: Int) {
+            val rows = ArrayList<TvGlass.Item>()
+            rows.add(TvGlass.Item(R.drawable.ic_apps, getString(R.string.add_choose), getString(R.string.add_choose_hint, hidden.count { h -> apps.any { it.pkg == h } }), false, false) { open?.dismiss(); open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) })
+            if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.group })   // another app's channels (VTVgo, TV360): the picker with those alone
+                rows.add(TvGlass.Item(0, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), getString(if (l[0].any) R.string.add_from_hint else R.string.add_app_channel_hint, l.size), false, false) {
+                    open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), only = pkg, paste = l[0].any)
+                }.also { it.picture = icon(if (l[0].any) Links.source(this, l[0]) ?: "" else pkg) })
+            for ((name, kind, items) in listOf(Triple(R.string.add_g_live, R.drawable.ic_zap, live), Triple(R.string.add_g_pins, R.drawable.ic_star, pins), Triple(R.string.add_g_rows, R.drawable.ic_play, rowsOff))) {
+                if (items.size == 1) { rows.add(items[0]); continue }  // one alone: no page to open first
+                if (items.isEmpty()) continue
+                val i = rows.size
+                rows.add(TvGlass.Item(kind, getString(name), items.size.toString(), true, true) { p.page(getString(name), items, back = { top(i) }) })
+            }
+            if (Apps.one(this, "dev.tvremote.channels") != null)
+                rows.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
+            p.page(getString(R.string.add_title), rows, at)
+        }
+        top(0)
+        open = p.dialog
+        p.show()
     }
 
     /** The inputs' menu under the top bar (the list is [Inputs.rows], the Control Center counts the same): the TV's own settings when it lists none. */
