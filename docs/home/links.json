@@ -1,6 +1,6 @@
 {
  "v": 1,
- "rev": 1,
+ "rev": 3,
  "apps": [
   {
    "pkg": "vn.vtv.vtvgotv",
@@ -123,11 +123,6 @@
      "logo": "dong-thap-1"
     },
     {
-     "id": "145",
-     "name": "Đồng Nai 2",
-     "logo": "dong-nai-2"
-    },
-    {
      "id": "181",
      "name": "Thanh Hóa",
      "logo": "thanh-hoa"
@@ -213,14 +208,39 @@
      "logo": "can-tho-1"
     },
     {
-     "id": "248",
-     "name": "Quảng Nam",
-     "logo": "quang-nam"
-    },
-    {
      "id": "255",
      "name": "Tây Ninh 1",
      "logo": "tay-ninh-1"
+    },
+    {
+     "id": "247",
+     "name": "Lào Cai",
+     "logo": "lao-cai"
+    },
+    {
+     "id": "254",
+     "name": "Sơn La",
+     "logo": "son-la"
+    },
+    {
+     "id": "321",
+     "name": "Lạng Sơn",
+     "logo": "lang-son"
+    },
+    {
+     "id": "333",
+     "name": "Hà Tĩnh",
+     "logo": "ha-tinh"
+    },
+    {
+     "id": "444",
+     "name": "Hải Phòng",
+     "logo": "hai-phong"
+    },
+    {
+     "id": "555",
+     "name": "Cao Bằng",
+     "logo": "cao-bang"
     }
    ]
   },
@@ -232,182 +252,797 @@
     {
      "id": "2",
      "name": "VTV1",
-     "logo": "vtv1"
+     "logo": "t-vtv1"
     },
     {
-     "id": "3",
-     "name": "VTV2",
-     "logo": "vtv2"
+     "id": "20",
+     "name": "ANTV",
+     "logo": "t-antv"
     },
     {
-     "id": "4",
-     "name": "VTV3",
-     "logo": "vtv3"
-    },
-    {
-     "id": "108",
-     "name": "VTV4",
-     "logo": "vtv4"
+     "id": "19",
+     "name": "QPVN HD",
+     "logo": "t-qpvn-hd"
     },
     {
      "id": "110",
      "name": "VTV5",
-     "logo": "vtv5"
+     "logo": "t-vtv5"
     },
     {
-     "id": "10043",
-     "name": "VTV6",
-     "logo": "vtv6"
+     "id": "9951",
+     "name": "VIETNAM TODAY HD",
+     "logo": "t-vietnam-today-hd"
     },
     {
-     "id": "6",
-     "name": "VTV7",
-     "logo": "vtv7"
+     "id": "3",
+     "name": "VTV2",
+     "logo": "t-vtv2"
     },
     {
-     "id": "115",
-     "name": "VTV8",
-     "logo": "vtv8"
+     "id": "4",
+     "name": "VTV3",
+     "logo": "t-vtv3"
     },
     {
-     "id": "8",
-     "name": "VTV9",
-     "logo": "vtv9"
-    },
-    {
-     "id": "98",
-     "name": "VTV10",
-     "logo": "vtv10"
-    },
-    {
-     "id": "157",
-     "name": "VTV5 Tây Nam Bộ",
-     "logo": "vtv5-tay-nam-bo"
+     "id": "108",
+     "name": "VTV4",
+     "logo": "t-vtv4"
     },
     {
      "id": "207",
      "name": "VTV5 Tây Nguyên",
-     "logo": "vtv5-tay-nguyen"
+     "logo": "t-vtv5-tay-nguyen"
     },
     {
-     "id": "33",
-     "name": "Hà Nội 1",
-     "logo": "ha-noi-1"
+     "id": "157",
+     "name": "VTV5 Tây Nam Bộ",
+     "logo": "t-vtv5-tay-nam-bo"
     },
     {
-     "id": "34",
-     "name": "Hà Nội 2",
-     "logo": "ha-noi-2"
+     "id": "10043",
+     "name": "VTV6",
+     "logo": "t-vtv6"
     },
     {
-     "id": "49",
-     "name": "Đà Nẵng 1",
-     "logo": "da-nang-1"
+     "id": "6",
+     "name": "VTV7",
+     "logo": "t-vtv7"
     },
     {
-     "id": "82",
-     "name": "Quảng Ninh 1",
-     "logo": "quang-ninh-1"
+     "id": "115",
+     "name": "VTV8",
+     "logo": "t-vtv8"
+    },
+    {
+     "id": "8",
+     "name": "VTV9",
+     "logo": "t-vtv9"
+    },
+    {
+     "id": "98",
+     "name": "VTV10",
+     "logo": "t-vtv10"
+    },
+    {
+     "id": "9902",
+     "name": "Phim Việt",
+     "logo": "t-phim-viet"
+    },
+    {
+     "id": "9903",
+     "name": "Phim Âu Mỹ",
+     "logo": "t-phim-au-my"
+    },
+    {
+     "id": "9934",
+     "name": "Hoạt hình",
+     "logo": "t-hoat-hinh"
+    },
+    {
+     "id": "10008",
+     "name": "360 Hoa Ngữ",
+     "logo": "t-360-hoa-ngu"
+    },
+    {
+     "id": "10009",
+     "name": "360 Hành động Châu Á",
+     "logo": "t-360-hanh-dong-chau-a"
+    },
+    {
+     "id": "10010",
+     "name": "360 K-Drama",
+     "logo": "t-360-k-drama"
+    },
+    {
+     "id": "10011",
+     "name": "360 Hài -Tình cảm",
+     "logo": "t-360-hai-tinh-cam"
+    },
+    {
+     "id": "10012",
+     "name": "360 Phim Kinh điển",
+     "logo": "t-360-phim-kinh-dien"
+    },
+    {
+     "id": "10013",
+     "name": "360 Anime",
+     "logo": "t-360-anime"
+    },
+    {
+     "id": "10045",
+     "name": "360 Thiếu Nhi",
+     "logo": "t-360-thieu-nhi"
+    },
+    {
+     "id": "10055",
+     "name": "360 Phim 4K",
+     "logo": "t-360-phim-4k"
+    },
+    {
+     "id": "10064",
+     "name": "360 Mr. Bean",
+     "logo": "t-360-mr-bean"
+    },
+    {
+     "id": "10065",
+     "name": "360 Doraemon",
+     "logo": "t-360-doraemon"
+    },
+    {
+     "id": "10066",
+     "name": "360 Thám tử Conan",
+     "logo": "t-360-tham-tu-conan"
+    },
+    {
+     "id": "10067",
+     "name": "360 Châu Tinh Trì",
+     "logo": "t-360-chau-tinh-tri"
+    },
+    {
+     "id": "10068",
+     "name": "360 Sống khỏe",
+     "logo": "t-360-song-khoe"
+    },
+    {
+     "id": "10014",
+     "name": "360 C1 Châu Âu",
+     "logo": "t-360-c1-chau-au"
+    },
+    {
+     "id": "10015",
+     "name": "360 C2 Châu Âu",
+     "logo": "t-360-c2-chau-au"
+    },
+    {
+     "id": "10016",
+     "name": "360 C3 Châu Âu",
+     "logo": "t-360-c3-chau-au"
+    },
+    {
+     "id": "10017",
+     "name": "360 Thể Thao Châu Á",
+     "logo": "t-360-the-thao-chau-a"
+    },
+    {
+     "id": "10018",
+     "name": "360 Công Thức 1",
+     "logo": "t-360-cong-thuc-1"
+    },
+    {
+     "id": "10019",
+     "name": "360 Bundesliga",
+     "logo": "t-360-bundesliga"
+    },
+    {
+     "id": "10020",
+     "name": "360 Golf",
+     "logo": "t-360-golf"
+    },
+    {
+     "id": "10021",
+     "name": "360 Tennis",
+     "logo": "t-360-tennis"
+    },
+    {
+     "id": "271",
+     "name": "HBO",
+     "logo": "t-hbo"
+    },
+    {
+     "id": "239",
+     "name": "Cinemax",
+     "logo": "t-cinemax"
+    },
+    {
+     "id": "273",
+     "name": "Warner TV",
+     "logo": "t-warner-tv"
+    },
+    {
+     "id": "281",
+     "name": "AXN",
+     "logo": "t-axn"
+    },
+    {
+     "id": "159",
+     "name": "Cinema World",
+     "logo": "t-cinema-world"
+    },
+    {
+     "id": "235",
+     "name": "DreamWorks",
+     "logo": "t-dreamworks"
+    },
+    {
+     "id": "277",
+     "name": "Cartoon",
+     "logo": "t-cartoon"
+    },
+    {
+     "id": "163",
+     "name": "FashionTV",
+     "logo": "t-fashiontv"
+    },
+    {
+     "id": "237",
+     "name": "Bloomberg",
+     "logo": "t-bloomberg"
+    },
+    {
+     "id": "279",
+     "name": "Discovery Channel",
+     "logo": "t-discovery-channel"
+    },
+    {
+     "id": "275",
+     "name": "CNN",
+     "logo": "t-cnn"
+    },
+    {
+     "id": "283",
+     "name": "ABC Australia",
+     "logo": "t-abc-australia"
+    },
+    {
+     "id": "216",
+     "name": "Outdoor HD",
+     "logo": "t-outdoor-hd"
+    },
+    {
+     "id": "112",
+     "name": "Channel News Asia",
+     "logo": "t-channel-news-asia"
+    },
+    {
+     "id": "215",
+     "name": "AFN HD",
+     "logo": "t-afn-hd"
+    },
+    {
+     "id": "99",
+     "name": "HGTV",
+     "logo": "t-hgtv"
+    },
+    {
+     "id": "213",
+     "name": "KBS World",
+     "logo": "t-kbs-world"
+    },
+    {
+     "id": "109",
+     "name": "DW",
+     "logo": "t-dw"
+    },
+    {
+     "id": "106",
+     "name": "NHK",
+     "logo": "t-nhk"
+    },
+    {
+     "id": "96",
+     "name": "France 24",
+     "logo": "t-france-24"
+    },
+    {
+     "id": "9852",
+     "name": "TV5",
+     "logo": "t-tv5"
+    },
+    {
+     "id": "9855",
+     "name": "CNBC",
+     "logo": "t-cnbc"
+    },
+    {
+     "id": "9856",
+     "name": "History HD",
+     "logo": "t-history-hd"
+    },
+    {
+     "id": "9901",
+     "name": "Kix",
+     "logo": "t-kix"
+    },
+    {
+     "id": "10007",
+     "name": "France 24 SD",
+     "logo": "t-france-24-sd"
+    },
+    {
+     "id": "111",
+     "name": "Arirang",
+     "logo": "t-arirang"
+    },
+    {
+     "id": "214",
+     "name": "DaVinci HD",
+     "logo": "t-davinci-hd"
+    },
+    {
+     "id": "25",
+     "name": "Vĩnh Long 1",
+     "logo": "t-vinh-long-1"
+    },
+    {
+     "id": "26",
+     "name": "Vĩnh Long 2",
+     "logo": "t-vinh-long-2"
+    },
+    {
+     "id": "219",
+     "name": "Vĩnh Long 3",
+     "logo": "t-vinh-long-3"
+    },
+    {
+     "id": "220",
+     "name": "Vĩnh Long 4",
+     "logo": "t-vinh-long-4"
+    },
+    {
+     "id": "91",
+     "name": "Vĩnh Long 5",
+     "logo": "t-vinh-long-5"
+    },
+    {
+     "id": "190",
+     "name": "HTV1",
+     "logo": "t-htv1"
+    },
+    {
+     "id": "191",
+     "name": "HTV2",
+     "logo": "t-htv2"
+    },
+    {
+     "id": "192",
+     "name": "HTV3",
+     "logo": "t-htv3"
+    },
+    {
+     "id": "9",
+     "name": "HTV4",
+     "logo": "t-htv4"
+    },
+    {
+     "id": "193",
+     "name": "HTV7 HD",
+     "logo": "t-htv7-hd"
+    },
+    {
+     "id": "194",
+     "name": "HTV9 HD",
+     "logo": "t-htv9-hd"
+    },
+    {
+     "id": "195",
+     "name": "HTV Thể Thao",
+     "logo": "t-htv-the-thao"
+    },
+    {
+     "id": "11",
+     "name": "HTVC gia đình",
+     "logo": "t-htvc-gia-dinh"
+    },
+    {
+     "id": "12",
+     "name": "HTVC phụ Nữ",
+     "logo": "t-htvc-phu-nu"
+    },
+    {
+     "id": "13",
+     "name": "HTVC thuần việt",
+     "logo": "t-htvc-thuan-viet"
+    },
+    {
+     "id": "15",
+     "name": "HTVC phim truyện HD",
+     "logo": "t-htvc-phim-truyen-hd"
+    },
+    {
+     "id": "132",
+     "name": "HTVC+ Channel B",
+     "logo": "t-htvc"
+    },
+    {
+     "id": "133",
+     "name": "HTVC du lịch & cuộc sống",
+     "logo": "t-htvc-du-lich-cuoc-song"
+    },
+    {
+     "id": "151",
+     "name": "An Viên HD",
+     "logo": "t-an-vien-hd"
+    },
+    {
+     "id": "9906",
+     "name": "FM96",
+     "logo": "t-fm96"
+    },
+    {
+     "id": "10036",
+     "name": "VOH AM610",
+     "logo": "t-voh-am610"
+    },
+    {
+     "id": "10037",
+     "name": "VOH FM99",
+     "logo": "t-voh-fm99"
+    },
+    {
+     "id": "10038",
+     "name": "VOH FM87",
+     "logo": "t-voh-fm87"
+    },
+    {
+     "id": "10039",
+     "name": "VOH FM95",
+     "logo": "t-voh-fm95"
+    },
+    {
+     "id": "10040",
+     "name": "VOH FM92 Radio",
+     "logo": "t-voh-fm92-radio"
+    },
+    {
+     "id": "232",
+     "name": "SCTV6",
+     "logo": "t-sctv6"
+    },
+    {
+     "id": "201",
+     "name": "SCTV2 - Today TV",
+     "logo": "t-sctv2-today-tv"
+    },
+    {
+     "id": "174",
+     "name": "VTVcab 16 - On Football HD",
+     "logo": "t-vtvcab-16-hd"
+    },
+    {
+     "id": "173",
+     "name": "VTVcab 3 - On Sports",
+     "logo": "t-vtvcab-3-on-sports"
+    },
+    {
+     "id": "170",
+     "name": "VTVcab 18 - On Sports News",
+     "logo": "t-vtvcab-18-on-sports-news"
+    },
+    {
+     "id": "169",
+     "name": "VTVcab 23 - Golf Channel",
+     "logo": "t-vtvcab-23-golf-channel"
+    },
+    {
+     "id": "183",
+     "name": "VTVcab 6 - On Sports +",
+     "logo": "t-vtvcab-6-on-sports"
+    },
+    {
+     "id": "180",
+     "name": "VTVcab 1 - Vie Giải Trí HD",
+     "logo": "t-vtvcab-1-vie-giai-tri-hd"
+    },
+    {
+     "id": "175",
+     "name": "VTVcab 2 - Phim Việt HD",
+     "logo": "t-vtvcab-2-phim-viet-hd"
+    },
+    {
+     "id": "176",
+     "name": "VTVcab10 - On Cine HD",
+     "logo": "t-vtvcab10-on-cine-hd"
+    },
+    {
+     "id": "177",
+     "name": "VTVcab19 – Vie Dramas",
+     "logo": "t-vtvcab19-vie-dramas"
+    },
+    {
+     "id": "178",
+     "name": "VTVcab 8 Bibi SD",
+     "logo": "t-vtvcab-8-bi-bi-sd"
+    },
+    {
+     "id": "179",
+     "name": "VTVcab 21- Cartoon Kids HD",
+     "logo": "t-vtvcab-21-cartoon-kids-hd"
+    },
+    {
+     "id": "181",
+     "name": "Vtvcab 4 – On Movies",
+     "logo": "t-vtvcab-4-on-movies"
+    },
+    {
+     "id": "182",
+     "name": "VTVcab 5 - E Channel HD",
+     "logo": "t-vtvcab-5-e-channel-hd"
+    },
+    {
+     "id": "184",
+     "name": "VTVcab 12 - StyleTV HD",
+     "logo": "t-vtvcab-12-styletv-hd"
+    },
+    {
+     "id": "185",
+     "name": "VTVcab15 – On Music",
+     "logo": "t-vtvcab15-on-music"
+    },
+    {
+     "id": "186",
+     "name": "Vtvcab17 – Trending TV",
+     "logo": "t-vtvcab17-trending-tv"
+    },
+    {
+     "id": "187",
+     "name": "VTVcab 20 - V Family HD",
+     "logo": "t-vtvcab-20-v-family-hd"
+    },
+    {
+     "id": "188",
+     "name": "VTVcab 22 - Life TV HD",
+     "logo": "t-vtvcab-22-life-tv-hd"
+    },
+    {
+     "id": "189",
+     "name": "VTVcab 9 - InfoTV HD",
+     "logo": "t-vtvcab-9-infotv-hd"
+    },
+    {
+     "id": "136",
+     "name": "O2TV",
+     "logo": "t-o2tv"
     },
     {
      "id": "134",
      "name": "Quảng Ninh 3",
-     "logo": "quang-ninh-3"
+     "logo": "t-quang-ninh-3"
     },
     {
-     "id": "74",
-     "name": "Nghệ An",
-     "logo": "nghe-an"
+     "id": "33",
+     "name": "Hà Nội 1",
+     "logo": "t-ha-noi-1"
     },
     {
-     "id": "65",
-     "name": "Khánh Hòa",
-     "logo": "khanh-hoa"
+     "id": "34",
+     "name": "Hà Nội 2",
+     "logo": "t-ha-noi-2"
     },
     {
-     "id": "54",
-     "name": "Đồng Tháp 1",
-     "logo": "dong-thap-1"
+     "id": "35",
+     "name": "An Giang 2",
+     "logo": "t-an-giang-2"
     },
     {
-     "id": "89",
-     "name": "Thanh Hóa",
-     "logo": "thanh-hoa"
+     "id": "9838",
+     "name": "BTV6",
+     "logo": "t-btv6"
     },
     {
-     "id": "75",
-     "name": "Ninh Bình",
-     "logo": "ninh-binh"
+     "id": "31",
+     "name": "YouTV",
+     "logo": "t-youtv"
     },
     {
-     "id": "64",
-     "name": "Hưng Yên",
-     "logo": "hung-yen"
-    },
-    {
-     "id": "46",
-     "name": "Cà Mau",
-     "logo": "ca-mau"
+     "id": "32",
+     "name": "HITV",
+     "logo": "t-hitv"
     },
     {
      "id": "39",
      "name": "Bắc Ninh",
-     "logo": "bac-ninh"
+     "logo": "t-bac-ninh"
     },
     {
-     "id": "51",
-     "name": "Đắk Lắk",
-     "logo": "dak-lak"
+     "id": "45",
+     "name": "Lâm Đồng 2",
+     "logo": "t-lam-dong-2"
     },
     {
-     "id": "55",
-     "name": "Gia Lai",
-     "logo": "gia-lai"
-    },
-    {
-     "id": "68",
-     "name": "Lai Châu",
-     "logo": "lai-chau"
-    },
-    {
-     "id": "77",
-     "name": "Phú Thọ",
-     "logo": "phu-tho"
-    },
-    {
-     "id": "52",
-     "name": "Điện Biên",
-     "logo": "dien-bien"
-    },
-    {
-     "id": "53",
-     "name": "Đồng Nai 1",
-     "logo": "dong-nai-1"
-    },
-    {
-     "id": "92",
-     "name": "Tuyên Quang",
-     "logo": "tuyen-quang"
-    },
-    {
-     "id": "83",
-     "name": "Quảng Trị",
-     "logo": "quang-tri"
-    },
-    {
-     "id": "88",
-     "name": "Thái Nguyên",
-     "logo": "thai-nguyen"
+     "id": "46",
+     "name": "Cà Mau",
+     "logo": "t-ca-mau"
     },
     {
      "id": "47",
      "name": "Cần Thơ 1",
-     "logo": "can-tho-1"
+     "logo": "t-can-tho-1"
+    },
+    {
+     "id": "48",
+     "name": "Cao Bằng",
+     "logo": "t-cao-bang"
+    },
+    {
+     "id": "49",
+     "name": "Đà Nẵng 1",
+     "logo": "t-da-nang-1"
+    },
+    {
+     "id": "51",
+     "name": "Đắk Lắk",
+     "logo": "t-dak-lak"
+    },
+    {
+     "id": "52",
+     "name": "Điện Biên",
+     "logo": "t-dien-bien"
+    },
+    {
+     "id": "53",
+     "name": "Đồng Nai 1",
+     "logo": "t-dong-nai-1"
+    },
+    {
+     "id": "54",
+     "name": "Đồng Tháp 1",
+     "logo": "t-dong-thap-1"
+    },
+    {
+     "id": "55",
+     "name": "Gia Lai",
+     "logo": "t-gia-lai"
+    },
+    {
+     "id": "58",
+     "name": "Hà Tĩnh",
+     "logo": "t-ha-tinh"
+    },
+    {
+     "id": "59",
+     "name": "Hải Phòng 3",
+     "logo": "t-hai-phong-3"
+    },
+    {
+     "id": "60",
+     "name": "Hải Phòng",
+     "logo": "t-hai-phong"
+    },
+    {
+     "id": "61",
+     "name": "Cần Thơ 2",
+     "logo": "t-can-tho-2"
+    },
+    {
+     "id": "63",
+     "name": "Huế",
+     "logo": "t-hue"
+    },
+    {
+     "id": "64",
+     "name": "Hưng Yên",
+     "logo": "t-hung-yen"
+    },
+    {
+     "id": "65",
+     "name": "Khánh Hòa",
+     "logo": "t-khanh-hoa"
+    },
+    {
+     "id": "66",
+     "name": "An Giang 1",
+     "logo": "t-an-giang-1"
+    },
+    {
+     "id": "68",
+     "name": "Lai Châu",
+     "logo": "t-lai-chau"
+    },
+    {
+     "id": "69",
+     "name": "Lâm Đồng 1",
+     "logo": "t-lam-dong-1"
+    },
+    {
+     "id": "70",
+     "name": "Lạng Sơn",
+     "logo": "t-lang-son"
+    },
+    {
+     "id": "71",
+     "name": "Lào Cai",
+     "logo": "t-lao-cai"
     },
     {
      "id": "72",
      "name": "Tây Ninh 1",
-     "logo": "tay-ninh-1"
+     "logo": "t-tay-ninh-1"
+    },
+    {
+     "id": "74",
+     "name": "Nghệ An",
+     "logo": "t-nghe-an"
+    },
+    {
+     "id": "75",
+     "name": "Ninh Bình",
+     "logo": "t-ninh-binh"
+    },
+    {
+     "id": "76",
+     "name": "Khánh Hòa 1",
+     "logo": "t-khanh-hoa-1"
+    },
+    {
+     "id": "77",
+     "name": "Phú Thọ",
+     "logo": "t-phu-tho"
+    },
+    {
+     "id": "80",
+     "name": "Đà Nẵng 2",
+     "logo": "t-da-nang-2"
+    },
+    {
+     "id": "81",
+     "name": "Quảng Ngãi",
+     "logo": "t-quang-ngai"
+    },
+    {
+     "id": "82",
+     "name": "Quảng Ninh 1",
+     "logo": "t-quang-ninh-1"
+    },
+    {
+     "id": "83",
+     "name": "Quảng Trị",
+     "logo": "t-quang-tri"
+    },
+    {
+     "id": "84",
+     "name": "Cần Thơ 3",
+     "logo": "t-can-tho-3"
+    },
+    {
+     "id": "85",
+     "name": "Sơn La",
+     "logo": "t-son-la"
+    },
+    {
+     "id": "88",
+     "name": "Thái Nguyên",
+     "logo": "t-thai-nguyen"
+    },
+    {
+     "id": "89",
+     "name": "Thanh Hóa",
+     "logo": "t-thanh-hoa"
+    },
+    {
+     "id": "90",
+     "name": "Đồng Tháp 2",
+     "logo": "t-dong-thap-2"
+    },
+    {
+     "id": "92",
+     "name": "Tuyên Quang",
+     "logo": "t-tuyen-quang"
+    },
+    {
+     "id": "255",
+     "name": "Đồng Nai",
+     "logo": "t-dong-nai"
     }
    ]
   }

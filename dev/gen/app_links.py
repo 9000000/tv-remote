@@ -2,10 +2,12 @@
 """dev/gen/app_links.py: remakes the VTVgo and TV360 entries of docs/home/links.json (the channels TV Home can pin, each opening
 that app at that channel) and their logos in docs/home/logos/, then signs the list (dev/sign/sign_links.py).
 
-The channel ids are the ones TV Channels already uses (docs/channels/providers.json: VTVgo's "ids", TV360's "channels"); names and
-logos come from VTVgo's own channel list (the same call TV Channels makes), trimmed of their empty edges and kept as PNG at most
-LOGO_W wide. A TV360 channel is listed when VTVgo has its logo (same name). The deep links were read from the apps (VTVgo 12.10,
-TV360 6.4) and tried on the FPT box, 2026-10-27. Other apps in links.json are kept as they are. Raises "rev". Needs Pillow and a JDK.
+Every channel each app shows, not only the ones TV Channels plays: VTVgo's ids 1..MAX_ID asked of its channel API (the call TV
+Channels makes, docs/channels/providers.json) and kept when the app shows them (a 2025 merged province stays in the API, hidden);
+TV360's from the channel list its own web page carries (tv360.vn/tv/vtv1, __NEXT_DATA__), less its "live events" (gone in a day),
+paid ones too (a user of the app may have the package; without it TV360 asks). Logos are the apps' own, trimmed of their empty
+edges and kept as PNG at most LOGO_W wide (TV360's as "t-<slug>"). The deep links were read from the apps (VTVgo 12.10, TV360 6.4)
+and tried on the FPT box, 2026-10-27. Other apps in links.json are kept as they are. Raises "rev". Needs Pillow and a JDK.
 """
 import io, json, os, re, subprocess, sys, urllib.request
 from PIL import Image
@@ -15,6 +17,10 @@ LIST = os.path.join(ROOT, "docs", "home", "links.json")
 LOGOS = os.path.join(ROOT, "docs", "home", "logos")
 PROVIDERS = os.path.join(ROOT, "docs", "channels", "providers.json")
 LOGO_W = 320
+MAX_ID = 600                                                         # VTVgo's ids reach 555; one call per 20 (more is a 400)
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"}
+TV360_PAGE = "https://tv360.vn/tv/vtv1"
+TV360_SKIP = {"Sự kiện trực tiếp"}
 VTVGO = {"pkg": "vn.vtv.vtvgotv", "name": "VTVgo", "uri": "vtvgo://play?mediaType=CHANNEL&contentId={id}"}
 TV360 = {"pkg": "com.viettel.tv360.tv", "name": "TV360", "uri": "tv360://recommendation?type=LIVE&id={id}"}
 
@@ -53,29 +59,56 @@ def logo(url, name, headers):
     if im.width > LOGO_W:
         im = im.resize((LOGO_W, round(im.height * LOGO_W / im.width)), Image.LANCZOS)
     os.makedirs(LOGOS, exist_ok=True)
-    im.save(os.path.join(LOGOS, name + ".png"), optimize=True)
+    im.quantize(256, method=Image.Quantize.FASTOCTREE).save(os.path.join(LOGOS, name + ".png"), optimize=True)   # 256 colours: 4.3 MB of logos to 1 MB, alike on a TV
     return name
 
 
-def main():
+def vtvgo_items():
     p = provider("vtvgo")
     strip = re.compile(p.get("strip") or "^$")
     data = {}
-    ids = [i.strip() for i in p["ids"].split(",") if i.strip()]
-    for k in range(0, len(ids), 20):
-        data.update(json.loads(get(p["list"].replace("{ids}", ",".join(ids[k:k + 20])), p.get("headers")))["data"])
-    vtvgo, logos = [], {}
+    for k in range(1, MAX_ID + 1, 20):
+        try:
+            data.update(json.loads(get(p["list"].replace("{ids}", ",".join(str(i) for i in range(k, k + 20))), p.get("headers")))["data"])
+        except Exception:
+            pass                                                     # a 404 when none of the 20 is a channel
+    known = [i.strip() for i in p["ids"].split(",") if i.strip()]
+    ids = known + sorted((i for i in data if i not in known), key=int)  # TV Channels' order (VTV first), then the rest
+    items = []
     for i in ids:
         o = data.get(i)
-        if not o or o.get("mustLogin") or not o.get("name"):
+        shown = ((o or {}).get("condition") or {}).get("visibility", {}).get("enabled", True)
+        if not o or not o.get("enabled", True) or not shown or not o.get("name"):
             continue
         name = strip.sub("", o["name"]).strip() or o["name"].strip()
-        lg = logo(o["logo"], slug(name), p.get("headers")) if o.get("logo") else ""
-        logos[name.lower()] = lg
-        vtvgo.append({"id": i, "name": name, "logo": lg})
-    order = [v["name"].lower() for v in vtvgo]                       # VTV first, as VTVgo lists them (TV360's map is by name)
-    tv360 = sorted(({"id": cid, "name": n, "logo": logos[n.lower()]} for n, cid in provider("tv360")["channels"].items() if logos.get(n.lower())),
-                   key=lambda x: order.index(x["name"].lower()))
+        items.append({"id": i, "name": name, "logo": logo(o["logo"], slug(name), p.get("headers")) if o.get("logo") else ""})
+    return items
+
+
+def tv360_items():
+    page = get(TV360_PAGE, UA).decode("utf-8")
+    cats = json.loads(re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', page, re.S).group(1))["props"]["pageProps"]["detailCat"]
+    items, seen = [], set()
+    for cat in cats:                                                 # TV360's own groups and order: VTV, entertainment, sport, abroad, HTV, VTVcab, provinces
+        if cat.get("name") in TV360_SKIP:
+            continue
+        for c in cat.get("content") or []:
+            cid = str(c.get("id", ""))
+            if c.get("type") != "LIVE" or not c.get("name") or cid in seen:
+                continue
+            seen.add(cid)
+            lg = ""
+            if c.get("coverImage"):
+                try:
+                    lg = logo(c["coverImage"], "t-" + (slug(c.get("slug") or c["name"]) or cid), UA)
+                except Exception:
+                    pass
+            items.append({"id": cid, "name": c["name"].strip(), "logo": lg})
+    return items
+
+
+def main():
+    vtvgo, tv360 = vtvgo_items(), tv360_items()
     d = json.load(open(LIST, encoding="utf-8")) if os.path.exists(LIST) else {"v": 1, "rev": 0, "apps": []}
     mine = {VTVGO["pkg"]: dict(VTVGO, items=vtvgo), TV360["pkg"]: dict(TV360, items=tv360)}
     d["apps"] = [mine.pop(a["pkg"]) if a["pkg"] in mine else a for a in d["apps"]] + list(mine.values())
@@ -83,6 +116,10 @@ def main():
     with open(LIST, "w", encoding="utf-8") as f:
         json.dump(d, f, ensure_ascii=False, indent=1)
         f.write("\n")
+    used = {i.get("logo") for x in d["apps"] for i in x["items"]}
+    for f in os.listdir(LOGOS):                                      # a channel gone takes its logo with it
+        if f.endswith(".png") and f[:-4] not in used:
+            os.remove(os.path.join(LOGOS, f))
     print("VTVgo %d, TV360 %d channels" % (len(vtvgo), len(tv360)))
     subprocess.run([sys.executable, os.path.join(ROOT, "dev", "sign", "sign_links.py")], check=True)
 
