@@ -67,7 +67,7 @@ object ThemeShots {
     }
 
     /** [b] cropped from its middle to W x H and written as a small JPEG beside the file's name, renamed in one step. */
-    private fun save(b: Bitmap, f: File): Boolean {
+    private fun save(b: Bitmap, f: File, W: Int = ThemeShots.W, H: Int = ThemeShots.H): Boolean {
         val k = maxOf(W.toFloat() / b.width, H.toFloat() / b.height)
         val s = Bitmap.createScaledBitmap(b, maxOf(W, (b.width * k).toInt()), maxOf(H, (b.height * k).toInt()), true)
         val o = Bitmap.createBitmap(s, (s.width - W) / 2, (s.height - H) / 2, W, H)
@@ -87,6 +87,31 @@ object ThemeShots {
                 ?: onMain { live?.invoke() }
         } else Walls.small(c, wall, W, H, false)
         return b != null && save(b, mine(c, id))
+    }
+
+    /** The background in use now, for the Customize page's live preview (the web UI's homeprev), as [wall key, file]: twice a theme
+     *  picture's size (it fills a phone's width). Taken off the main thread once per wall (a web wall's every 10 min, its shots move
+     *  on), so the read after a change has it. Null for a drawn wall. */
+    @Volatile private var nowKey = ""
+    @Volatile private var nowBusy = false
+    fun current(c: Context, conf: JSONObject): Pair<String, File?>? {
+        if (!needs(conf)) return null
+        val key = conf.optString("wall") + "|" + conf.optString("wurl")
+        val f = File(dir(c), "now.jpg")
+        val fresh = nowKey == key && f.isFile && (conf.optString("wall") != HomeConfig.WEB || System.currentTimeMillis() - f.lastModified() < 600_000)
+        if (!fresh && !nowBusy) {
+            nowBusy = true
+            val app = c.applicationContext
+            Thread({
+                try {
+                    val wall = conf.optString("wall")
+                    val b: Bitmap? = if (wall == HomeConfig.WEB) WebSnap.file(app, conf.optString("wurl")).takeIf { it.isFile }?.let { BitmapFactory.decodeFile(it.path, BitmapFactory.Options().apply { inSampleSize = 2 }) }
+                        ?: onMain { live?.invoke() } else Walls.small(app, wall, W * 2, H * 2, false)
+                    if (b != null && save(b, f, W * 2, H * 2)) nowKey = key
+                } finally { nowBusy = false }
+            }, "themeshot").apply { isDaemon = true }.start()
+        }
+        return key to f.takeIf { nowKey == key && it.isFile }           // no file yet: the page asks again; a web wall's older shot shows while the next is taken
     }
 
     private fun <T> onMain(f: () -> T?): T? {

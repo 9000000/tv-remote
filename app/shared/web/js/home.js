@@ -5,7 +5,7 @@ let homeNow = null;
 // Where the settings are read and written (js/home_link.js): through the app that serves this page, over ADB, or straight to TV Home's own
 // page (home.html sets HOME_DIRECT). Everything below asks homeLink, so both ways are the same page.
 const homeLink = homeLinkFor(!!window.HOME_DIRECT, (path, data, quiet) => api(path, data, quiet), homeSend);
-onTvChange(() => { homeNow = null; homeShots = { mine: {}, ready: {} }; homeFaces.clear(); homeCard(); });
+onTvChange(() => { homeNow = null; homeShots = { mine: {}, ready: {}, now: null }; homeFaces.clear(); homeCard(); });
 
 // the gradients TV Home draws (HomeActivity.wallColors), small enough to tell them apart
 const HOME_WALLS = { night: '#0b0f1a,#18223f', ocean: '#03192b,#0a4a66', dusk: '#1a0f2e,#7a3b3b', forest: '#06140f,#133b2d', aurora: '#071a1f,#2b2a6b', black: '#000,#000',
@@ -36,7 +36,7 @@ const HOME_THEME_FILE_MAX = 32768;                                 // a theme fi
 const homeOwnWall = (k) => /^(photo\d*|vid:.*)$/.test(String(k));    // the person's own picture or video: it stays on the TV, a file cannot carry it
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
-let homeShots = { mine: {}, ready: {} };                             // the theme previews' backgrounds (TV Home's themeshots), by theme id
+let homeShots = { mine: {}, ready: {}, now: null };                  // the theme previews' backgrounds (TV Home's themeshots), by theme id; now: {key, jpg} the wall in use
 const homeFaces = new Map();                                         // a theme's drawn preview, by what it is made of: drawn once, put back on every redraw
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'clock', 'market', 'news'];          // HomeConfig.WIDGETS, in the order drawn
@@ -203,7 +203,7 @@ async function homeUpdate() {
 async function homeOpen() {
   if (!homeLink.direct && await needAdbSoon()) return;                // TV Home's own page has no ADB to wait for
   let r = await homeLink.read(true); if (!r) return;
-  const keepThumbs = (n) => { if (n.shots) homeShots = { mine: n.shots.mine || {}, ready: n.shots.ready || {} };
+  const keepThumbs = (n) => { if (n.shots) homeShots = { mine: n.shots.mine || {}, ready: n.shots.ready || {}, now: n.shots.now || null };
     for (const [id, b] of Object.entries(n.thumbs || {})) { const p = (n.photos || []).find((x) => x.id === id) || ((n.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === id); if (p) homeThumbs[id + ':' + p.v] = b; } };
   keepThumbs(r);
   if (!r.installed) { homeCard(); toast(T('home.missing')); goTo('tv', 'launchcard'); return; }   // from the remote's More: where to get it
@@ -488,8 +488,29 @@ async function homeOpen() {
     tilesNote.textContent = T(c.tilesState === 'untrusted' ? 'home.tiles_untrusted' : offer.length || have.length || c.pinsOk ? 'home.tiles_note' : 'home.tiles_missing');
     tilesList.replaceChildren(...have.map((k) => row(k, [tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))])));   // a tile whose provider is away stays, to take off
   }
+  // the home screen as the settings now make it, at the TV's shape, over every group (CleanTV's idea, 2026-10-27): each change shows
+  // here at once, no look over at the TV. The same painter as the themes' pictures; the wall's own picture when the page has one
+  const prevCv = el('canvas', { width: 640, height: 360, role: 'img', 'aria-label': T('home.preview') }), prev = el('div', { className: 'homeprev' }, prevCv);
+  let prevAt = 0, prevAsked = '';
+  function drawPrev(c) {
+    const [W, H] = homeShape(), h = Math.round(640 * H / W), at = ++prevAt;
+    if (prevCv.height !== h) prevCv.height = h;
+    const built = (c.themesBuiltin || []).find((t) => t.id === c.theme), look = built && built.look, tiles = c.tiles || [];
+    // the wall's picture: TV Home's shot of the wall in use (a TV Home that sends one), else a photo's small picture, else the theme's
+    const key = c.wall + '|' + (c.wurl || ''), now = (homeShots.now && homeShots.now.key === key && homeShots.now.jpg) || '';
+    const p = (r.photos || []).find((x) => x.id === c.wall), thumb = now || (p && homeThumbs[p.id + ':' + p.v]) || (c.theme && homeShots[built ? 'ready' : 'mine'][c.theme]) || '';
+    // a new wall, or the first read: TV Home takes its shot then; one read a moment later brings it (only a TV Home that sends `now`)
+    if (!now && homeShots.now && prevAsked !== key && !HOME_ART[c.wall] && !HOME_WALLS[c.wall]) {
+      prevAsked = key;
+      setTimeout(async () => { const t = await homeLink.read(true, true); if (t && t.installed && d.isConnected) { keepThumbs(t); r = t; homeNow = t; drawPrev(r.config); } }, 2000);
+    }
+    const paint = (img) => { if (at === prevAt) homeThemePaint(prevCv, c, tiles, img, look, new Date()); };
+    paint(null);
+    if (thumb) { const img = new Image(); img.onload = () => paint(img); img.src = 'data:image/jpeg;base64,' + thumb; }
+  }
   function draw() {
     const c = r.config;
+    drawPrev(c);
     drawTiles(c);
     drawThemes(c);
     orderHead.hidden = orderBox.hidden = c.order === undefined;      // a TV Home older than its own order
@@ -956,7 +977,8 @@ async function homeOpen() {
   let at = null;
   function go(k, push = true) {
     const from = at; at = k;
-    menu.hidden = !!k; for (const [g, v] of Object.entries(pages)) v.hidden = g !== k;
+    menu.hidden = !!k; prev.hidden = ['keys', 'lang', 'system'].includes(k);   // nothing there the home screen shows
+    for (const [g, v] of Object.entries(pages)) v.hidden = g !== k;
     put(title, 'textContent', k ? T(GROUPS.find((g) => g[0] === k)[3]) : T('home.title'));
     backBtn.hidden = !k;
     if (page && push && k) history.pushState({ homeGroup: k }, '');
@@ -989,9 +1011,10 @@ async function homeOpen() {
   const d = el('dialog', { className: 'ask homeask' + (page ? ' page' : '') }, el('div', { className: 'card' },
     el('div', { className: 'card-head' }, title, el('div', { className: 'tools' }, backBtn,
       page ? null : el('button', { type: 'button', className: 'small iconbtn', textContent: '✕', title: T('common.close'), 'aria-label': T('common.close'), onclick: () => d.close() }))),
-    body));
+    prev, body));
   d.addEventListener('cancel', (e) => { if (at && !page) { e.preventDefault(); go(null); } });   // Esc, or the TV's Back: to the list first
-  d.addEventListener('close', () => { d.remove(); if (page) { put('main', 'hidden', false); removeEventListener('popstate', onPop); } homeCard(); });
+  const prevTick = setInterval(() => { if (!prev.hidden) drawPrev(r.config); }, 60000);   // its clock goes on with the TV's
+  d.addEventListener('close', () => { clearInterval(prevTick); d.remove(); if (page) { put('main', 'hidden', false); removeEventListener('popstate', onPop); } homeCard(); });
   draw();
   document.body.append(d);
   if (page) { put('main', 'hidden', true); d.show(); } else d.showModal();

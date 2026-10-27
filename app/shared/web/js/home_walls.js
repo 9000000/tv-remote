@@ -175,7 +175,7 @@ function homeThemeMoving(conf) {
   const u = String(conf.wurl || '').toLowerCase();
   return u.includes('/home/loop.html?v=') || /\.(mp4|webm|m3u8|mkv|mov)(\?|#|$)/.test(u);
 }
-function homeThemePaint(cv, conf, tiles, img, look) {
+function homeThemePaint(cv, conf, tiles, img, look, now) {   // now: a Date, for the live preview of the config being edited (its real time)
   const ctx = cv.getContext('2d'), w = cv.width, h = cv.height, wall = conf.wall, user = (conf.shade ?? 50) / 50;
   const bar = (x, y, bw, bh, a) => { ctx.fillStyle = `rgba(${HOME_PREV.ink},${a})`; ctx.beginPath(); ctx.roundRect(x, y, bw, bh, bh / 2); ctx.fill(); };
   const box = (x, y, bw, bh, r) => { ctx.beginPath(); ctx.roundRect(x, y, bw, bh, r); ctx.fill(); };
@@ -187,7 +187,12 @@ function homeThemePaint(cv, conf, tiles, img, look) {
     homeVeil(ctx, w, h, 1, user);
   }
   const m = w * 0.06;
-  bar(m, h * 0.075, w * 0.30, h * 0.07, 0.8);                           // the time, greeting and date: one row on TV Home, one bar here
+  if (now) {                                                            // the clock as the TV writes it, the greeting and date a bar beside it
+    const hh = conf.clock24 === false ? (now.getHours() % 12 || 12) : String(now.getHours()).padStart(2, '0'), t = hh + ':' + String(now.getMinutes()).padStart(2, '0');
+    ctx.font = `300 ${Math.round(h * 0.11)}px system-ui, sans-serif`; ctx.textBaseline = 'middle'; ctx.fillStyle = `rgba(${HOME_PREV.ink},0.95)`;
+    ctx.fillText(t, m, h * 0.11); const tw = ctx.measureText(t).width;
+    bar(m + tw + w * 0.025, h * 0.08, w * 0.16, h * 0.026, 0.45); bar(m + tw + w * 0.025, h * 0.122, w * 0.22, h * 0.034, 0.75);
+  } else bar(m, h * 0.075, w * 0.30, h * 0.07, 0.8);                    // the time, greeting and date: one row on TV Home, one bar here
   bar(w - m - w * 0.16, h * 0.085, w * 0.16, h * 0.05, 0.25);           // the buttons as one bar: where things are, not each one
   let y = h * 0.21;
   const big = HOME_WIDGETS.concat(['qr1', 'qr2', 'qr3', 'qr4']).filter((k) => homeSize(conf, k) === 'big'), packed = homePack((conf.widgets || []).filter((k) => HOME_WIDGETS.includes(k)), big);

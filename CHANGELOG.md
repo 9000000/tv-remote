@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Tùy chỉnh TV Home có khung xem trước màn hình TV ở trên cùng, vẽ lại theo từng thay đổi (nền thật đang chiếu, đồng hồ, widget, số cột).
 - TV Setup ghi số bản của TV Home, TV Channels, TV Games trên từng ô (thay chữ “Đã cài”).
 - App TV: chọn launcher chưa có trên TV (mở trang Google Play) không còn làm app tắt ngang trên một số TV (Sony BRAVIA, TCL).
 - Tối ưu TV báo lỗi rõ hơn: TV tự khởi động lại hay mất kết nối giữa chừng thì chờ TV tối đa 1,5 phút, dừng lại và nói app nào vừa tắt gây ra, bấm Hoàn tác để bật lại. App mà TV không cho tắt được liệt kê riêng, không còn đếm là đã tắt.
@@ -15,6 +16,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Trang web không còn hiện "Có bản mới" cho TV Setup và TV Home khi TV Setup tự cập nhật được; chỉ hiện nếu sau 3 ngày TV vẫn chưa lên bản mới.
 
 **English**
+- Customize TV Home has a preview of the TV screen pinned at the top, redrawn with each change (the real background on screen, clock, widgets, columns).
 - TV Setup shows the version of TV Home, TV Channels and TV Games on each tile (instead of “Installed”).
 - TV app: picking a launcher that is not on the TV yet (opens its Google Play page) no longer closes the app on some TVs (Sony BRAVIA, TCL).
 - Optimize TV explains errors better: if the TV restarts or drops the link midway, it waits up to 1.5 minutes, stops, names the app just turned off and points to Undo. Apps the TV refuses to turn off are listed, not counted as off.

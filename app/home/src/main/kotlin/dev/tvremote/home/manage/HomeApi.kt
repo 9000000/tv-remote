@@ -53,6 +53,7 @@ object HomeApi {
             fun add(kind: String, id: String, f: File?) { if (f != null && f.isFile) shots.optJSONObject(kind).let { o -> (o ?: JSONObject().also { shots.put(kind, it) }).put(id, Base64.encodeToString(f.readBytes(), Base64.NO_WRAP)) } }
             for (t in config.optJSONArray("themes").let { a -> (0 until (a?.length() ?: 0)).map { a!!.getJSONObject(it) } }) add("mine", t.optString("id"), ThemeShots.mine(c, t.optString("id")))
             for (r in HomeConfig.ready) add("ready", r.id, ThemeShots.ready(c, r))
+            ThemeShots.current(c, Store.get(c))?.let { (k, f) -> shots.put("now", JSONObject().put("key", k).apply { if (f != null) put("jpg", Base64.encodeToString(f.readBytes(), Base64.NO_WRAP)) }) }   // the live preview's background
         }
         return JSONObject().put("version", c.packageManager.getPackageInfo(c.packageName, 0).versionName)
             .put("config", config).put("apps", apps)

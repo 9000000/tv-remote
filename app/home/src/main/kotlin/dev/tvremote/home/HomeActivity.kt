@@ -274,7 +274,7 @@ class HomeActivity : Activity() {
         scroll.addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (b - t != ob - ot) peek() }
 
         setContentView(root)
-        ThemeShots.live = { webShot() }                                // a theme saved on a web wall: the page as it is drawn now
+        ThemeShots.live = { webShot() ?: backdrop.small }              // a web wall: the page as it is drawn now, or the site's picture / slide TV Home draws itself
         Store.onChange = {
             val was = conf; conf = Store.get(this)
             // the veil alone (its stepper, a step every press): the picture painted again, nothing else rebuilt; the whole screen
