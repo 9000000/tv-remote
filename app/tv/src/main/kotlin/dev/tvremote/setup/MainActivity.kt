@@ -1344,8 +1344,10 @@ class MainActivity : Activity() {
             r.setOnClickListener {
                 if (running || using || !fit.ok) return@setOnClickListener
                 if (e.kind == "play" && e.pkg !in have) {             // once it is on the TV it goes through the same safe swap as the others
-                    a.shell("am start -a android.intent.action.VIEW -d '" + e.playUrl + "'")
-                    status.text = T("launcher.play_opened")
+                    Thread {                                              // ADB is a socket: on the click's thread it is NetworkOnMainThread (41dd31f7, d789ac92)
+                        try { a.shell("am start -a android.intent.action.VIEW -d '" + e.playUrl + "'"); ui { status.text = T("launcher.play_opened") } }
+                        catch (x: Exception) { ui { status.text = marked("✗ " + reason(x)) } }
+                    }.start()
                 } else install(e)
             }
             return r

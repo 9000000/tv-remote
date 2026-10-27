@@ -4,6 +4,11 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "05a960b8701c5d39240e4c3e|0.27.0": {
+  "at": "2026-10-27T09:37:01+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "0831a9cc1968dedff68abcc5|0.26.3": {
   "at": "2026-10-26T21:47:39+07:00",
   "n": 1,
@@ -24,50 +29,105 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "10beb007bf91c5ebda6acc25|0.25.0": {
+  "at": "2026-10-27T09:37:02+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "10d226c42e6185c27fb45f11|0.24.1": {
+  "at": "2026-10-27T09:37:02+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "11e6a1d8790c4769373b5dbb|0.27.0": {
+  "at": "2026-10-27T09:37:28+07:00",
+  "n": 1,
+  "note": "zaloJSV2: injected by the Zalo in-app browser, not ours"
+ },
+ "13ebb1a66fdaf61270829f5a|0.26.3": {
+  "at": "2026-10-27T09:37:03+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "18d5207d7465e70cbd3ae5b1|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
- "1b64c0fdb7081f015b2765c2|0.22.1": {
-  "at": "2026-10-26T21:47:39+07:00",
+ "19ab29b73537bfcabcb1d13a|0.26.2": {
+  "at": "2026-10-27T09:37:03+07:00",
   "n": 1,
-  "note": "fixed in 5d4096ec"
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "1b64c0fdb7081f015b2765c2|0.22.1": {
+  "at": "2026-10-27T09:37:28+07:00",
+  "n": 1,
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.23.0": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
   "n": 2,
-  "note": "fixed in 5d4096ec"
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.24.0": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
   "n": 5,
-  "note": "fixed in 5d4096ec"
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.24.1": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
   "n": 2,
-  "note": "fixed in 5d4096ec"
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.25.0": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
   "n": 3,
-  "note": "fixed in 5d4096ec"
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.0": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
   "n": 1,
-  "note": "fixed in 5d4096ec"
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.1": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
   "n": 6,
-  "note": "fixed in 5d4096ec"
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.3": {
-  "at": "2026-10-26T21:47:39+07:00",
+  "at": "2026-10-27T09:37:28+07:00",
+  "n": 4,
+  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+ },
+ "295939b8f46236dcdb43011b|0.29.0": {
+  "at": "2026-10-27T09:37:03+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "2a125baae45135ddf67b1231|0.26.2": {
+  "at": "2026-10-27T09:37:04+07:00",
   "n": 2,
-  "note": "fixed in 5d4096ec"
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "2a125baae45135ddf67b1231|0.26.3": {
+  "at": "2026-10-27T09:37:04+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "2c1ad75d9d4e80f1f1768d8c|0.25.0": {
+  "at": "2026-10-27T09:37:04+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "2c21539a7c14d00d27e83676|0.26.3": {
+  "at": "2026-10-27T09:37:05+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "2d53af8d8fdff4f9d3765d22|0.26.3": {
+  "at": "2026-10-27T09:37:05+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "2da5cf8b449263057bedadf1|0.9.0": {
   "at": "2026-10-26T21:47:36+07:00",
@@ -94,20 +154,145 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "39112b90c5ee2dd78e4de160|0.25.0": {
+  "at": "2026-10-27T09:37:06+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "39af9333f7eea45d78f8bf79|0.8.0": {
   "at": "2026-10-26T21:47:48+07:00",
   "n": 3,
   "note": "games 0.8.0 TLS handshake to a site with an unknown cert; watch"
+ },
+ "3a1bf82f27788cf110a94668|0.24.1": {
+  "at": "2026-10-27T09:37:06+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "3de729f6815ae508958555a8|0.28.0": {
+  "at": "2026-10-27T09:37:07+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "3f0b18abfabe8ffc7e286e46|0.25.0": {
+  "at": "2026-10-27T09:37:07+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "3f685f9c7cdca8d898486836|0.26.2": {
+  "at": "2026-10-27T09:37:08+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "3f685f9c7cdca8d898486836|0.26.3": {
+  "at": "2026-10-27T09:37:08+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "3f685f9c7cdca8d898486836|0.28.0": {
+  "at": "2026-10-27T09:37:08+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "41dd31f77cb49ce98c2242e0|0.28.0": {
+  "at": "2026-10-27T09:37:26+07:00",
+  "n": 1,
+  "note": "launcher picker: Play link opened with adb.shell on the click thread; moved to a Thread (next release)"
+ },
+ "49414a3dd12a8a0d4a59e726|0.26.2": {
+  "at": "2026-10-27T09:37:08+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "4a246e0d976dd69f7dab894c|0.26.3": {
+  "at": "2026-10-27T09:37:09+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "4ccd741c906da1f4d5e07f1b|0.26.2": {
+  "at": "2026-10-27T09:37:09+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "4ee82f50c03f8f890107b774|0.26.2": {
+  "at": "2026-10-27T09:37:10+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "535993e358ec33bffb4a2ab7|0.27.0": {
+  "at": "2026-10-27T09:37:10+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "53c851be292645defe2ebe29|0.25.0": {
+  "at": "2026-10-27T09:37:10+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "54cd95b51847ecef54bdeeb7|0.26.2": {
+  "at": "2026-10-27T09:37:11+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "58e80942ee619021d01ddea4|0.29.0": {
+  "at": "2026-10-27T09:37:11+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "5b47665e5391015e7bcf0337|0.23.0": {
   "at": "2026-10-26T21:47:41+07:00",
   "n": 1,
   "note": "old version (<=0.24): gone in current page"
  },
+ "5df1b3d619bed9fd987a0aad|0.26.3": {
+  "at": "2026-10-27T09:37:12+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "5e49fc275903f2d19df2cf96|0.26.3": {
+  "at": "2026-10-27T09:37:12+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "6076a712c811fc64dfce0d8a|0.26.2": {
+  "at": "2026-10-27T09:37:13+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "64978197464de830da805923|0.25.0": {
+  "at": "2026-10-27T09:37:13+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "6643ac5ba371539b73349499|0.26.3": {
   "at": "2026-10-26T21:47:45+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.24.1": {
+  "at": "2026-10-27T09:37:14+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.26.2": {
+  "at": "2026-10-27T09:37:14+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.26.3": {
+  "at": "2026-10-27T09:37:14+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "6ab3cb0c2d5cd811a0c51b91|0.24.1": {
+  "at": "2026-10-27T09:37:14+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "6b3b0f3f48f49ae1022d0fdf|0.26.3": {
+  "at": "2026-10-27T09:37:15+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "6ca924d6b3c5ee9382ca8aee|0.23.0": {
   "at": "2026-10-26T21:47:40+07:00",
@@ -134,6 +319,31 @@
   "n": 2,
   "note": "old version (<=0.24): gone in current page"
  },
+ "6ee3614a8b9bcabc17846802|0.29.0": {
+  "at": "2026-10-27T09:37:15+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "70ce0f419f77afe2a702668d|0.25.0": {
+  "at": "2026-10-27T09:37:16+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "72197a51e589326b53120179|0.28.0": {
+  "at": "2026-10-27T09:37:16+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "72f479fc5e46b710d40d7e11|0.28.0": {
+  "at": "2026-10-27T09:37:27+07:00",
+  "n": 3,
+  "note": "dev test instance (port 8769) reloaded while index.html was being edited (71526b75); not users"
+ },
+ "74e9dd24769f68fce154098f|0.26.3": {
+  "at": "2026-10-27T09:37:17+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "79d301739f47300b62afcc99|0.24.0": {
   "at": "2026-10-26T21:47:42+07:00",
   "n": 1,
@@ -148,6 +358,11 @@
   "at": "2026-10-26T21:47:36+07:00",
   "n": 1,
   "note": "fixed in 5d4096ec"
+ },
+ "86af8cb18d7c1247988aba2e|0.26.3": {
+  "at": "2026-10-27T09:37:17+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "93c1d74822c7d6a4439c956b|0.23.0": {
   "at": "2026-10-26T21:47:40+07:00",
@@ -184,6 +399,41 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "9696ea1b86da0f777e461096|0.26.0": {
+  "at": "2026-10-27T09:37:17+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "9696ea1b86da0f777e461096|0.28.0": {
+  "at": "2026-10-27T09:37:17+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "a11df287c4b27a276b8f644e|0.27.0": {
+  "at": "2026-10-27T09:37:18+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "a468264ed0a50f4f2ddd7dce|0.26.3": {
+  "at": "2026-10-27T09:37:18+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "b2bad9122a9b4f430c6f151b|0.25.0": {
+  "at": "2026-10-27T09:37:19+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "b3dbb5ec6f1c76a39a24c383|0.29.0": {
+  "at": "2026-10-27T09:37:19+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "b5217008041ee98e6efd9bc7|0.28.0": {
+  "at": "2026-10-27T09:37:27+07:00",
+  "n": 3,
+  "note": "dev test instance (port 8769) reloaded while index.html was being edited (71526b75); not users"
+ },
  "b6a3b10f364db6b1b1f97649|0.23.0": {
   "at": "2026-10-26T21:47:35+07:00",
   "n": 1,
@@ -198,6 +448,21 @@
   "at": "2026-10-26T21:47:46+07:00",
   "n": 1,
   "note": "zaloJSV2: injected by the Zalo in-app browser, not ours"
+ },
+ "bb6aa51a71dd220857d39503|0.24.1": {
+  "at": "2026-10-27T09:37:20+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "bb6aa51a71dd220857d39503|0.25.0": {
+  "at": "2026-10-27T09:37:20+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "bfab67fedfb3a98f63f639d0|0.25.0": {
+  "at": "2026-10-27T09:37:20+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "c05b84ecf31e01fbc030366e|0.26.3": {
   "at": "2026-10-26T21:47:47+07:00",
@@ -219,25 +484,75 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "c373576682d59c3aa492f81e|0.26.3": {
+  "at": "2026-10-27T09:37:21+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "c76047145558da719bf26343|0.27.0": {
+  "at": "2026-10-27T09:37:21+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "c9ed129e030fd9374b14cfd4|0.26.3": {
   "at": "2026-10-26T21:47:46+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "cb86f676dfffbcf108630018|0.28.0": {
+  "at": "2026-10-27T09:37:27+07:00",
+  "n": 3,
+  "note": "dev test instance (port 8769) reloaded while index.html was being edited (71526b75); not users"
  },
  "cdd3314554f5edfde8ff4338|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
+ "ce7844be7c0993855de522da|0.26.2": {
+  "at": "2026-10-27T09:37:21+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "cf87cae60c0cbbe263db681e|0.25.0": {
+  "at": "2026-10-27T09:37:22+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "d789ac9288fd162e56189f10|0.28.0": {
+  "at": "2026-10-27T09:37:26+07:00",
+  "n": 1,
+  "note": "launcher picker: Play link opened with adb.shell on the click thread; moved to a Thread (next release)"
+ },
+ "d8b23f67ace7d1ad4be28a63|0.25.0": {
+  "at": "2026-10-27T09:37:22+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "d8b23f67ace7d1ad4be28a63|0.26.0": {
+  "at": "2026-10-27T09:37:22+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "da6214721e9abe7601758e7a|0.26.3": {
   "at": "2026-10-26T21:47:45+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
+ "db2385a9ad7d17873c13d349|0.26.3": {
+  "at": "2026-10-27T09:37:23+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "db46a10a0f1b67c78ae13f5f|0.23.0": {
   "at": "2026-10-26T21:47:38+07:00",
   "n": 1,
   "note": "fixed in 5d4096ec"
+ },
+ "decee121efc0fe71ad60b7df|0.26.3": {
+  "at": "2026-10-27T09:37:23+07:00",
+  "n": 2,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "defef3515cb89aabff4263f5|0.26.2": {
   "at": "2026-10-26T21:47:34+07:00",
@@ -254,9 +569,34 @@
   "n": 1,
   "note": "old version (<=0.24): gone in current page"
  },
+ "ee57e878f33619a603accc6d|0.25.0": {
+  "at": "2026-10-27T09:37:24+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
  "f3043f31e9ac948bffe2425a|0.26.3": {
   "at": "2026-10-26T21:47:43+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "f577d1fc6dd6c2b3c4b8c4fe|0.26.2": {
+  "at": "2026-10-27T09:37:24+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "f577d1fc6dd6c2b3c4b8c4fe|0.26.3": {
+  "at": "2026-10-27T09:37:24+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "fad2a14ed1bb2056883cbfb5|0.28.0": {
+  "at": "2026-10-27T09:37:25+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "fbceab7d03188e5e17141936|0.28.0": {
+  "at": "2026-10-27T09:37:25+07:00",
+  "n": 1,
+  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  }
 }

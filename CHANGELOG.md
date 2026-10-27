@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- App TV: chọn launcher chưa có trên TV (mở trang Google Play) không còn làm app tắt ngang trên một số TV (Sony BRAVIA, TCL).
+
+**English**
+- TV app: picking a launcher that is not on the TV yet (opens its Google Play page) no longer closes the app on some TVs (Sony BRAVIA, TCL).
+
 ## 0.29.0 - 2026-10-27
 
 Web 0.29.0 · app điện thoại 0.28.0 · app TV 0.29.0 · TV Home 0.16.0 · TV Channels 0.11.0 · TV Games 0.11.0
