@@ -265,9 +265,9 @@ object Picker {
             }
             for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 3, Tiles.iconRes(a, t)))
             }
-            if (mode == Mode.GRID && Pins.can(a)) for (l in Links.installed(a).filter { only == null || it.pkg == only }) {   // kept logos only, small cards: the full-size ones for ~80 channels were ~70 MB
+            if (mode == Mode.GRID && only != null && Pins.can(a)) for (l in Links.installed(a).filter { it.pkg == only }) {   // one app's channels, from + Add (~200 of all apps' here were too many); kept logos only, small cards: full-size ones for ~80 were ~70 MB
                 val art = App(l.pkg, l.name, null).apply { banner = android.graphics.drawable.BitmapDrawable(a.resources, Links.card(Links.logo(a, l, fetch = false), l.name, tileW.coerceAtMost(320), android.graphics.Bitmap.Config.RGB_565)) }
-                got.add(Item(Target.pin(a.packageName, Pins.ownId(Links.intent(l))), l.name, art, if (only == null) l.app else "", 2, link = l))
+                got.add(Item(Target.pin(a.packageName, Pins.ownId(Links.intent(l))), l.name, art, "", 2, link = l))
             }
             // the tiles made here too, not yet on a window (as AsyncLayoutInflater does): ~10 ms each on the FPT box's UI thread
             for (it in got.take(cols * 3)) tileFor(it)                    // the first screen only: all of them took ~180 ms there, longer than the wait they saved
