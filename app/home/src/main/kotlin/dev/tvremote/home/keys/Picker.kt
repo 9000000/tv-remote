@@ -157,7 +157,7 @@ object Picker {
         list.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pk_loading); textSize = 15f; setTextColor(PK_DIM); setPadding(0, dp(24), 0, 0) })   // until the first redraw: an empty page read as stuck
 
         val items = ArrayList<Item>()
-        val tiles = HashMap<String, PickTile>()
+        val tiles = java.util.concurrent.ConcurrentHashMap<String, PickTile>()   // the rest are made off the main thread while the first rows show
         val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_links, R.string.pk_tiles)
 
         // read once, kept as presses change them: read per tile (~15 ms each on the FPT box) it was ~250 ms before the list showed
@@ -275,15 +275,17 @@ object Picker {
                 if (!dialog.isShowing) return@runOnUiThread
                 // three rows first: built and drawn whole (~30 tiles) it was ~400 ms on the FPT box before anything showed
                 items.addAll(got); redraw(cols * 3)
-                list.post { if (dialog.isShowing && search.text.isEmpty()) {
-                    val f = list.findFocus(); val was = tiles[now]?.parent != null; redraw()
-                    (tiles[now]?.takeIf { mode == Mode.TARGET && !was && f is PickTile && it.isFocusable } ?: f)?.requestFocus()   // the key's own choice, if it was further down
-                } }
                 search.isFocusable = true
                 val inOrder = (0 until list.childCount).mapNotNull { (list.getChildAt(it) as? LinearLayout)?.getChildAt(0) as? PickTile }.firstOrNull { it.isFocusable }   // the first on the screen, not a map's first
                 val first = (if (mode == Mode.TARGET) tiles[now]?.takeIf { it.isFocusable && it.parent != null } else null) ?: inOrder
                 (first ?: search).requestFocus()
             }
+            // the rest made here too, then put on in one go: made on the main thread a frame later, TV360's 159 channels held it ~1.5 s
+            for (it in got.drop(cols * 3)) { if (!dialog.isShowing) break; tileFor(it) }
+            a.runOnUiThread { if (dialog.isShowing && search.text.isEmpty()) {
+                val f = list.findFocus(); val was = tiles[now]?.parent != null; redraw()
+                (tiles[now]?.takeIf { mode == Mode.TARGET && !was && f is PickTile && it.isFocusable } ?: f)?.requestFocus()   // the key's own choice, if it was further down
+            } }
         }
         dialog.show()
         return dialog
