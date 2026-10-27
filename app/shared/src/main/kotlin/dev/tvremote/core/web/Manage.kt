@@ -1186,6 +1186,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "TV Setup " + o.optString("from") + " -> " + o.optString("version") + ": " + o.optString("state") + " " + o.optString("detail"), rep)
         } catch (e: Exception) { }
         if (installed.isEmpty()) return o
+        // TV Setup installs its own and TV Home's updates by itself (AutoUpdate): the page then keeps quiet (UpdatePlan.GRACE).
+        // An older TV Setup answers "Result: null": not silent, offered as before
+        o.put("silent", try { adb.shell("content call --uri content://${RulesClient.SETUP}.home --method updates 2>/dev/null").contains("\"silent\":true") } catch (e: IOException) { false })
         val r = try { latestSetup(installed) } catch (e: Exception) { o.put("error", e.message ?: e.javaClass.simpleName); null }
         if (r != null && !SetupUpdate.bad(o, r.version)) o.put("latest", r.version).put("notes", r.notes)
         return o

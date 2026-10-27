@@ -44,6 +44,10 @@ internal fun MainActivity.checkUpdate(manual: Boolean) {
             }
             if (manual && r != null) askUpdate()                  // asked for it: offer the update right here
         }
+        if (r != null && !manual) {                                   // installed quietly once the app is away, where Android allows
+            QuietUpdate.fetch(this, r)
+            ui.post { if (!foreground) QuietUpdate.install(this, r) }    // left while it downloaded
+        }
     }.start()
 }
 

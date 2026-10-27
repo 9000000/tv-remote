@@ -198,6 +198,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     internal lateinit var updateNote: TextView
     internal var update: Release? = null                               // a newer release found on GitHub, or null
     internal var updating = false
+    private val quietUpdate = Runnable { QuietUpdate.install(this, update) }
     internal var updateAfterAllow: Release? = null                     // sent to allow installs from this app: goes on when back
 
     internal fun pref(key: String): String = prefs.getString(key, "") ?: ""
@@ -278,6 +279,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         super.onStart()
         foreground = true
         wasPip = false
+        ui.removeCallbacks(quietUpdate)
         ui.removeCallbacks(idleStop); ui.removeCallbacks(picAway)
         refreshSaved()
         bgListen = false                                              // back on screen: the picture again (the sound plays on: its own session)
@@ -295,6 +297,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     override fun onStop() {
         super.onStop()
         foreground = false
+        if (!isChangingConfigurations) ui.postDelayed(quietUpdate, 3000) // before Android 14 freezes a cached app (~10 s)
         if (wasPip) stopPicture()                                     // the PiP window was dismissed: no one watches, the TV stops encoding
         ui.removeCallbacks(retry)                                     // tried again on return instead
         ui.removeCallbacks(picRetry)

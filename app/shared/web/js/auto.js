@@ -324,9 +324,16 @@ async function checkSetup() {
   if (!setupBusy) showSetupUpd(r);
   return r;
 }
+// TV Setup updates itself and TV Home quietly (r.silent): no banner for 3 days after this page first saw the version (UpdatePlan.GRACE)
+function waitSetup(r, k) {
+  if (!r || !r.silent) return false;
+  let o = {}; try { o = JSON.parse(localStorage.getItem('updSeen') || '{}') || {}; } catch (e) { }
+  if (!o[k]) { o[k] = Date.now(); try { localStorage.setItem('updSeen', JSON.stringify(o)); } catch (e) { } }
+  return Date.now() - o[k] < 3 * 86400000;
+}
 // what is on offer and not put off: [kind, name, version]
-const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) ? ['tv', 'TV Setup', r.latest] : null,
-  homeLatest && !later('home:' + homeLatest) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
+const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) && !waitSetup(r, 'tv:' + r.latest) ? ['tv', 'TV Setup', r.latest] : null,
+  homeLatest && !later('home:' + homeLatest) && !waitSetup(r, 'home:' + homeLatest) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
 // a is newer than b ("0.24.0" vs "0.22.0"); a missing part is 0
 const verNewer = (a, b) => {
   const x = String(a || '').split('.').map((n) => parseInt(n, 10) || 0), y = String(b || '').split('.').map((n) => parseInt(n, 10) || 0);

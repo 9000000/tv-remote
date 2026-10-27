@@ -136,15 +136,22 @@ class SelfUpdate(private val a: Activity, private val app: String, private val a
             val apk = File(c.cacheDir, "update.apk")
             try {
                 r.download(apk, progress)
-                val pi = c.packageManager.packageInstaller
-                val id = pi.createSession(PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL))
-                pi.openSession(id).use { s ->
-                    s.openWrite("apk", 0, apk.length()).use { out -> FileInputStream(apk).use { it.copyTo(out, 65536) }; s.fsync(out) }
-                    val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) 0x02000000 /* FLAG_MUTABLE */ else 0)
-                    s.commit((if (toActivity) PendingIntent.getActivity(c, id, back, flags) else PendingIntent.getBroadcast(c, id, back, flags)).intentSender)
-                }
+                commit(c, apk, back, toActivity, false)
             } finally {
                 apk.delete()                                          // the session holds its own copy
+            }
+        }
+
+        /** Commits [apk] (checked already) to a PackageInstaller session; [quiet]: no question where Android allows (12+, see the phone's QuietUpdate). */
+        fun commit(c: Context, apk: File, back: Intent, toActivity: Boolean, quiet: Boolean) {
+            val pi = c.packageManager.packageInstaller
+            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+            if (quiet && Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+            val id = pi.createSession(params)
+            pi.openSession(id).use { s ->
+                s.openWrite("apk", 0, apk.length()).use { out -> FileInputStream(apk).use { it.copyTo(out, 65536) }; s.fsync(out) }
+                val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) 0x02000000 /* FLAG_MUTABLE */ else 0)
+                s.commit((if (toActivity) PendingIntent.getActivity(c, id, back, flags) else PendingIntent.getBroadcast(c, id, back, flags)).intentSender)
             }
         }
 

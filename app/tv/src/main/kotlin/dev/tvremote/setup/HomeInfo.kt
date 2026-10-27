@@ -42,7 +42,8 @@ class HomeInfo : ContentProvider() {
         if (method == "census")                                        // read-only: the stats switch + install id, for TV Home, Channels and Games (own keys)
             return if (censusCaller(c, Binder.getCallingUid())) Bundle().apply { putString("json", RemoteService.censusState(c).toString()) } else null
         if (method == "updates")                                       // read-only: will TV Setup install their updates by itself? (SelfUpdate waits for it, UpdatePlan.quiet)
-            return if (censusCaller(c, Binder.getCallingUid())) Bundle().apply { putString("json", RemoteService.updatesState(c).toString()) } else null
+            return if (censusCaller(c, Binder.getCallingUid()) || Binder.getCallingUid() == android.os.Process.SHELL_UID)   // shell: the phone / computer page asks over ADB (Manage)
+                Bundle().apply { putString("json", RemoteService.updatesState(c).toString()) } else null
         if (method == "webview") {                                     // TV Home / Channels / Games found no WebView: turn it back on (WebViewFix), may wait on ADB
             if (!censusCaller(c, Binder.getCallingUid())) return null
             val token = Binder.clearCallingIdentity()
