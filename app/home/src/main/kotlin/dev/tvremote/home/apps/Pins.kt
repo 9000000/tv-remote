@@ -72,8 +72,6 @@ object Pins {
      * A wide pin with its app's icon in a corner, as on the system's own launchers: a game's or a channel's picture alone did not
      * say which app it opens. Drawn at [fit], the focused tile's size, so the icon stays sharp over a small card too.
      */
-    private const val BADGE_BG = 0x66000000                        // under the icon: a see-through one still reads on a white card
-    private const val BADGE_SHADOW = 0x99000000.toInt()
 
     private fun badged(c: Context, card: android.graphics.drawable.Drawable, source: String?): android.graphics.drawable.Drawable {
         val icon = source?.let { try { c.packageManager.getApplicationIcon(it) } catch (e: Exception) { null } } ?: return card
@@ -81,10 +79,7 @@ object Pins {
         val b = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
         val cv = android.graphics.Canvas(b)
         card.setBounds(0, 0, w, h); card.draw(cv)
-        val z = h * 22 / 100; val m = h * 6 / 100                    // ~1/5 of the height, bottom-right as on the Play Next row (Watch.art; its titles take the left)
-        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = BADGE_BG; setShadowLayer(z * 0.12f, 0f, z * 0.04f, BADGE_SHADOW) }
-        cv.drawRoundRect(android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, p)
-        Watch.roundIcon(cv, icon, android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()))
+        Watch.corner(cv, icon, w, h)                                   // the same place and size as on the Play Next row
         return android.graphics.drawable.BitmapDrawable(c.resources, b)
     }
 

@@ -142,13 +142,21 @@ object Watch {
             cv.drawRoundRect(bar, bh / 2, bh / 2, bp)
             bp.color = INK; cv.drawRoundRect(RectF(bar.left, bar.top, bar.left + bar.width() * maxOf(i.done, .04f), bar.bottom), bh / 2, bh / 2, bp)
         }
-        try {                                                         // whose it is: the app's icon small in a corner, as Android TV's launcher does (a name there hid the logos)
-            val d = c.packageManager.getApplicationIcon(i.pkg)
-            val by = if (i.done >= 0f) h - m - sz - h * .04f else (h - m - sz).toFloat()   // above the bar
-            roundIcon(cv, d, RectF((w - m - sz).toFloat(), by, (w - m).toFloat(), by + sz))
-        } catch (e: Exception) { }
+        try { corner(cv, c.packageManager.getApplicationIcon(i.pkg), w, h, if (i.done >= 0f) h * .04f else 0f) } catch (e: Exception) { }   // above the bar
         synchronized(cache) { cache[key] = out }
         return out
+    }
+
+    /**
+     * Whose it is: the app's icon small in the bottom-right corner, as Android TV's launcher does (a name there hid the logos). One
+     * place for its size and margin, for the Play Next row and the pinned shortcuts (Pins.badged): a pin's at 6 % touched the edge
+     * of a focused tile; 11 % is past the 5 % the picture grows by inside it (TvTile). [lift] raises it (above a progress bar).
+     */
+    fun corner(cv: Canvas, d: android.graphics.drawable.Drawable, w: Int, h: Int, lift: Float = 0f) {
+        val sz = h * 24 / 100; val m = h * 11 / 100
+        val r = RectF((w - m - sz).toFloat(), h - m - sz - lift, (w - m).toFloat(), h - m - lift)
+        cv.drawRoundRect(r, sz * .24f, sz * .24f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66000000; setShadowLayer(sz * .12f, 0f, sz * .04f, SHADOW) })   // a white icon still reads on a white card
+        roundIcon(cv, d, r)
     }
 
     /**
