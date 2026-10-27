@@ -86,10 +86,13 @@ private fun MainActivity.askYoutube(url: String) {
 private fun MainActivity.pinYoutube(url: String) {
     val tv = tv
     if (basic != null || tv == null || !tv.ready()) { say(T("media.pin_needs_adb"), true); return }
+    val ip = host ?: return
     Thread {
+        // its own ADB link (as castFile): the picture session's may be reconnecting just then and answers ""
+        val link = AdbLink(filesDir, ip)
         val err = try {
-            Home.pin({ tv.shell(it) }, Home.youtubeInfo(url).put("url", url)); null
-        } catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) }
+            Home.pin({ link.get().shell(it) }, Home.youtubeInfo(url).put("url", url)); null
+        } catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) } finally { link.close() }
         ui.post { if (!isFinishing) say(err ?: T("media.pinned"), err != null) }
     }.start()
 }
@@ -97,9 +100,11 @@ private fun MainActivity.pinYoutube(url: String) {
 private fun MainActivity.openYoutube(url: String) {
     val tv = tv
     if (basic != null || tv == null || !tv.ready()) { openLink(url); return }     // keys only: no ADB to ask the TV which app has YouTube
+    val ip = host ?: return
     Thread {
-        val err = try { Home.openYoutube({ tv.shell(it) }, url); null }
-        catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) }
+        val link = AdbLink(filesDir, ip)
+        val err = try { Home.openYoutube({ link.get().shell(it) }, url); null }
+        catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) } finally { link.close() }
         ui.post { if (!isFinishing) say(err ?: T("notify.sent"), err != null) }
     }.start()
 }

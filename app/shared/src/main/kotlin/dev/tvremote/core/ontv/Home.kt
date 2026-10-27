@@ -186,6 +186,7 @@ object Home {
         val u = youtubeUrl(url) ?: throw IOException("pin_bad_link")
         val q = "cmd package query-activities --brief -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "
         val out = sh(q + Adb.q(u) + " 2>&1; echo '#~#'; " + q + "https://example.com/ 2>&1")
+        if (out.isBlank()) throw IOException("not connected")            // no ADB link just then: not "no YouTube app"
         val pkg = youtubeApp(queryPackages(out.substringBefore("#~#")), queryPackages(out.substringAfter("#~#", "")), prefer)
             ?: throw IOException("pin_no_app")
         val r = sh("am start -a android.intent.action.VIEW -d " + Adb.q(u) + " -p " + pkg + " 2>&1")
