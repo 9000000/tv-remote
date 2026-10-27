@@ -322,7 +322,7 @@ class SetupTest {
 
     @Test fun brandListsNeverMeetWhatATvNeeds() {                       // a suggestion is ticked by default: it may not be a kept one
         for (p in Bloat.SUGGEST.keys) assertFalse(p, Setup.PROTECTED.matches(p) || Bloat.KEEP.matches(p))
-        for (p in listOf("com.android.ext.services", "com.google.android.ext.shared", "com.google.android.modulemetadata", "com.google.android.overlay.modulesconfig"))
+        for (p in listOf("com.android.ext.services", "android.ext.services", "android.ext.shared", "com.google.android.ext.shared", "com.google.android.modulemetadata", "com.google.android.overlay.modulesconfig"))
             assertTrue(p, Setup.PROTECTED.matches(p))                  // a Mi TV Stick never booted without them (cleanyourtv #884)
         val tv = FakeTv(true, "com.tcl.suspension", "com.mitv.livetv", "com.amazon.venezia", "com.mediatek.tv.agent", "com.tcl.bi")
         tv.setup().apply(Setup.Choice(anim = false, home = false, disable = tv.installed.toList()))

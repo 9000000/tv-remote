@@ -62,9 +62,9 @@ class Setup internal constructor(private val adb0: Adb?, private val dir: File?,
          * Never offered or turned off: the TV would stop working, or this project would. A launcher (FLauncher, TV Home) is not here:
          * the one Home opens now is kept wherever an app is removed ([homeNow], Manage's home check), the others may go.
          * `ext.services` / `ext.shared` / `modulemetadata` / `overlay.modules`: a Mi TV Stick with them off never booted again
-         * (cleanyourtv #884); no brand list turns them off, only a pick in "Turn off other apps" could.
+         * (cleanyourtv #884; the bare AOSP `android.ext.*` names too, #1711); no brand list turns them off, only a pick in "Turn off other apps" could.
          */
-        val PROTECTED = Regex("android|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata" +
+        val PROTECTED = Regex("android|android\\.ext\\.(services|shared)|com\\.android\\.(systemui|settings|tv\\.settings|shell|phone|bluetooth|providers\\..*|packageinstaller|permissioncontroller|inputmethod.*|networkstack.*|vending|ext\\.services|ext\\.shared|modulemetadata" +
             "|provision|tv\\.provision|managedprovisioning|inputdevices|location\\.fused|externalstorage|keychain|se)" +   // setup, keyboards' layouts, storage: tv-detox's never list
             "|com\\.dolby\\.android\\.audio\\.service" +                       // no sound without it on some TVs (tv-detox)
             "|com\\.google\\.android\\.(gms|gsf|packageinstaller|permissioncontroller|tvlauncher|tvrecommendations|leanbacklauncher.*|inputmethod.*|tv\\.remote\\.service|katniss|apps\\.tv\\.launcherx|tungsten\\.setupwraith|leanback\\.ime|onetimeinitializer|partnersetup|ext\\.services|ext\\.shared|modulemetadata|overlay\\.modules.*)" +
