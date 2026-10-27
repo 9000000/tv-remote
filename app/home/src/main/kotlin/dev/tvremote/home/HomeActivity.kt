@@ -1330,7 +1330,7 @@ class HomeActivity : Activity() {
     /** The background of [conf], when it is not the one on screen: a new choice, the rotation, a new photo, a new Bing picture. */
     private fun wall() {
         val id = conf.optString("wall")
-        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + (if (HomeConfig.isVideo(id)) "${conf.optBoolean("vsound")}${conf.optInt("vvol")}" else "") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "") + (if (id == HomeConfig.OWN) conf.optString("wcol") + conf.optString("wdir") else "")   // a photo put over the old file, another day's Bing picture: a new one
+        val key = id + (Walls.file(this, id)?.let { it.name + it.lastModified() } ?: "") + conf.optLong("photo") + conf.optString("wfit") + (if (id == HomeConfig.WEB) conf.optString("wurl") + conf.optString("wmode") + conf.optInt("wsnap") + conf.optBoolean("wkeep") else "") + (if (id == HomeConfig.OWN) conf.optString("wcol") + conf.optString("wdir") else "")   // a photo put over the old file, another day's Bing picture: a new one
         val shade = conf.optInt("shade")
         if (key == wallShown && shade == wallShade) return
         // the veil alone moved (the stepper): the picture kept is painted again; read and decoded again, each step took ~0.4 s of the
@@ -1357,6 +1357,7 @@ class HomeActivity : Activity() {
         val again = snap && lastWall == HomeConfig.WEB                // the next picture of the page: the one on screen stays until it is read (no flash of the gradient every few minutes)
         lastWall = id
         backdrop.strength = shadeK()
+        backdrop.fit = conf.optString("wfit", "cover")
         val netPic = if (id == HomeConfig.WEB && !snap) NetPicture.direct(url) else null   // the site's picture theme: a native picture wall, no WebView
         val show = if (id == HomeConfig.WEB && !snap && netPic == null) Slideshow.ref(url) else null   // the site's slideshow theme (Việt Nam): native too
         if (show == null) endSlides()
@@ -1534,7 +1535,7 @@ class HomeActivity : Activity() {
         if (Videos.off(this, id)) return detachVideo()                // too slow for this TV twice: the poster stays until the video is chosen again
         val root = scroll.parent as? ViewGroup ?: return
         val v = video ?: videoWall(root)
-        v.show(f, shadeK(), conf.optBoolean("vsound", false), conf.optInt("vvol", HomeConfig.VOL_DEFAULT))
+        v.show(f, shadeK())
         if (away) v.stop()                                            // made while away (a rotation, a phone): [onStart] plays it
     }
 

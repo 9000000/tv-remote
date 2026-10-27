@@ -30,6 +30,11 @@ import java.io.File
  * It measures itself: [Verdict.WINDOW_MS] after the first frame it reports [Measure] (frames shown against the clip's rate, its CPU)
  * and HomeActivity keeps the verdict ([Videos.measured]); too slow twice and Home shows the poster alone.
  *
+ * The loop: `isLooping` stood still ~0.45 s a turn on the emulator and seconds on the FPT box, mostly the audio clock (the player
+ * waits for the audio to start again, even muted): so the picture alone is played ([Silent]), and a second player made ready
+ * [LEAD_MS] before the end (parsed, no surface) takes the surface when the first ends (completion -> first frame ~60 ms). A net video
+ * plays from [NetVideo]'s file once it is there, so the turns after the first read no network (dev/DECISIONS.md "TV Home: video").
+ *
  * It plays only while Home is on screen: [stop] (Home stopped: another app in front, screen off, memory short) releases the player and
  * with it the hardware decoder, which the app in front may need; [start] makes it again. No timer, no polling.
  */
@@ -42,14 +47,18 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
     private var poster: ImageView? = null
     private var veil: View? = null
     private var player: MediaPlayer? = null
+    private var next: MediaPlayer? = null                           // the next turn, prepared and waiting for the surface
+    private var nextReady = false
+    private var ended = 0L                                          // when the last turn ended: the gap to the next first frame is logged
+    private val arm = Runnable { armNext() }
     private var surface: Surface? = null
     private var file: File? = null
     private var url: String? = null                                 // a video from the net ([showUrl]): streamed, not in the library, so not measured
     private var vw = 0; private var vh = 0
-    private var level = 0f
     private var begun = 0L
     private var errors = 0
     private var t0 = 0L; private var cpu0 = 0L; private var f0 = 0; private var d0 = 0; private var want = 30f
+    private var accF = 0; private var accD = 0                     // the counters of the turns' players let go, so the measure spans the turns
     private val measure = Runnable { measureNow() }
 
     init {
@@ -62,10 +71,8 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
         root.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> cover() }
     }
 
-    /** Puts [f] behind the grid (the same file again changes nothing but the veil [user] and the sound). */
-    fun show(f: File, user: Float, sound: Boolean, volume: Int) {
-        level = if (sound) volume / 100f else 0f
-        player?.setVolume(level, level)
+    /** Puts [f] behind the grid (the same file again changes nothing but the veil [user]). */
+    fun show(f: File, user: Float) {
         veil(user)
         if (file != f || url != null) { release(); file = f; url = null; play() }
     }
@@ -87,7 +94,6 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
      * verdict: when the player cannot play it, [failed] runs and the caller falls back to the page in a WebView.
      */
     fun showUrl(u: String, user: Float) {
-        level = 0f
         veil(user)
         if (url != u) { release(); file = null; url = u; play() }
     }
@@ -108,42 +114,107 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
     }
 
     private fun play() {
-        val f = file
-        val u = url
         val s = surface ?: return                                       // the view is not ready: its listener calls again
-        if (player != null || (u == null && (f == null || !f.isFile))) return
-        begun = SystemClock.elapsedRealtime(); errors = 0
+        if (player != null) return
+        val src = source() ?: return
+        begun = SystemClock.elapsedRealtime(); errors = 0; t0 = 0L; accF = 0; accD = 0; ended = 0L
         covered(true)
         try {
             player = MediaPlayer().also { p ->
                 p.setSurface(s)
-                p.setDataSource(u ?: f!!.path)
-                p.isLooping = true
-                p.setVolume(level, level)
-                p.setOnVideoSizeChangedListener { _, w, h -> vw = w; vh = h; cover() }
-                p.setOnInfoListener { _, what, _ ->
-                    if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
-                        Log.i(TAG, "first frame ${SystemClock.elapsedRealtime() - begun} ms")
-                        covered(false)
-                        if (f != null && u == null) beginMeasure(p, f)
-                    }
-                    false
-                }
-                p.setOnErrorListener { _, w, e -> Log.w(TAG, "error $w/$e"); errors++; ui.post { release(); failed() }; true }   // a file the codec cannot play: the poster stays
-                p.setOnPreparedListener { it.start() }
+                p.setDataSource(src)
+                wire(p)
+                p.setOnPreparedListener { it.start(); armLater(it) }
                 p.prepareAsync()
             }
         } catch (e: Throwable) { release(); ui.post { failed() } }
     }
 
-    private fun release() {
-        ui.removeCallbacks(measure)                                     // nothing is measured (or kept running) once it does not play
-        covered(true)
-        val p = player ?: return
-        player = null
-        try { p.setOnErrorListener(null); p.setOnPreparedListener(null); p.stop() } catch (e: Throwable) { }
+    /** What to play, its picture alone: the library file, a net video's kept file, else its address (and the file is fetched for the next turns). */
+    private fun source(): String? {
+        file?.let { return if (it.isFile) Silent.of(app, it).path else null }   // a wall has no sound (the user, 2026-10-27): the copy without audio, [Silent]
+        val u = url ?: return null
+        NetVideo.kept(app, u)?.let { return Silent.of(app, it).path }
+        NetVideo.fetch(app, u) { }
+        return u
+    }
+
+    private fun wire(p: MediaPlayer) {
+        val f = file
+        p.setVolume(0f, 0f)
+        p.setOnVideoSizeChangedListener { _, w, h -> vw = w; vh = h; cover() }
+        p.setOnInfoListener { _, what, _ ->
+            if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                if (ended > 0) Log.i(TAG, "loop gap ${SystemClock.elapsedRealtime() - ended} ms") else Log.i(TAG, "first frame ${SystemClock.elapsedRealtime() - begun} ms")
+                ended = 0L
+                covered(false)
+                if (f != null && t0 == 0L) beginMeasure(p, f)
+            }
+            false
+        }
+        p.setOnErrorListener { _, w, e -> Log.w(TAG, "error $w/$e"); errors++; ui.post { release(); failed() }; true }   // a file the codec cannot play: the poster stays
+        p.setOnCompletionListener { turn(it) }
+    }
+
+    /** The next turn is made ready [LEAD_MS] before this one ends: soon enough to be parsed, late enough not to fetch a streamed video twice for long. */
+    private fun armLater(p: MediaPlayer) {
+        ui.removeCallbacks(arm)
+        val left = try { p.duration - p.currentPosition } catch (e: Throwable) { -1 }
+        if (left > 0) ui.postDelayed(arm, (left - LEAD_MS).coerceAtLeast(0).toLong())
+    }
+
+    private fun armNext() {
+        if (player == null || next != null) return
+        val src = source() ?: return
+        nextReady = false
+        try {
+            next = MediaPlayer().also { n ->
+                n.setDataSource(src)
+                n.setOnPreparedListener { if (next === it) nextReady = true }
+                n.setOnErrorListener { m, _, _ -> if (next === m) dropNext(); true }
+                n.prepareAsync()
+            }
+        } catch (e: Throwable) { dropNext() }
+    }
+
+    private fun dropNext() {
+        val n = next ?: return
+        next = null; nextReady = false
+        try { n.release() } catch (e: Throwable) { }
+    }
+
+    /** A turn ended: the ready player takes the surface; none ready (a slow network, an error), the same one goes back to the start. */
+    private fun turn(p: MediaPlayer) {
+        if (p !== player) return
+        ended = SystemClock.elapsedRealtime()
+        val n = next.takeIf { nextReady }
+        val s = surface
+        if (n == null || s == null) {
+            dropNext()
+            try { p.seekTo(0); p.start(); armLater(p) } catch (e: Throwable) { release(); ui.post { failed() } }
+            return
+        }
+        next = null; nextReady = false
+        frames(p)?.let { accF += it.first; accD += it.second }
+        player = n
+        quit(p)                                                         // the surface is free for the next one (the last frame stays on it)
+        try { n.setSurface(s); wire(n); n.start(); armLater(n) } catch (e: Throwable) { release(); ui.post { failed() } }
+    }
+
+    private fun quit(p: MediaPlayer) {
+        try { p.setOnErrorListener(null); p.setOnPreparedListener(null); p.setOnCompletionListener(null); p.stop() } catch (e: Throwable) { }
         try { p.reset() } catch (e: Throwable) { }
         try { p.release() } catch (e: Throwable) { }
+    }
+
+    private fun release() {
+        ui.removeCallbacks(measure)                                     // nothing is measured (or kept running) once it does not play
+        ui.removeCallbacks(arm)
+        covered(true)
+        dropNext()
+        val p = player ?: return
+        player = null
+        quit(p)
     }
 
     /** The poster over the hole: the very picture Home has as its window's background (shared, no second bitmap in memory). */
@@ -159,14 +230,14 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
     /** The first frame is on screen: note the counters and look again after [Verdict.WINDOW_MS]; the one timer, taken away by [release]. */
     private fun beginMeasure(p: MediaPlayer, f: File) {
         val n = frames(p) ?: return
-        t0 = SystemClock.elapsedRealtime(); cpu0 = Process.getElapsedCpuTime(); f0 = n.first; d0 = n.second
+        t0 = SystemClock.elapsedRealtime().coerceAtLeast(1); cpu0 = Process.getElapsedCpuTime(); f0 = n.first; d0 = n.second
         want = clipFps(f)
         ui.removeCallbacks(measure); ui.postDelayed(measure, Verdict.WINDOW_MS)
     }
 
     private fun measureNow() {
         val p = player ?: return
-        val n = frames(p) ?: return
+        val n = frames(p)?.let { (it.first + accF) to (it.second + accD) } ?: return
         val dt = (SystemClock.elapsedRealtime() - t0).coerceAtLeast(1)
         val shown = ((n.first - f0) - (n.second - d0)).coerceAtLeast(0) * 1000f / dt
         val cpu = ((Process.getElapsedCpuTime() - cpu0) * 100f / dt).toInt()
@@ -198,6 +269,7 @@ class VideoWall(private val app: Context, private val root: ViewGroup, private v
 
     companion object {
         const val TAG = "TvHomeVideo"
+        private const val LEAD_MS = 4_000
         private const val FRAMES = "android.media.mediaplayer.frames"
         private const val DROPPED = "android.media.mediaplayer.dropped"
     }

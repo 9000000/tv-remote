@@ -31,7 +31,7 @@ const HOME_KEY_WORDS = { 183: 'home.key_red', 184: 'home.key_green', 185: 'home.
   190: 'home.key_btn3', 191: 'home.key_btn4', 195: 'home.key_btn8', 192: 'home.key_btn5', 284: 'home.key_allapps', 176: 'home.key_settings' };
 const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : String(code - 7);   // KEYCODE_0 is 7
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
-const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'vsound', 'vvol', 'widgets', 'wsize', 'wopt', 'cols', 'rows', 'focus', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS
+const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'wfit', 'widgets', 'wsize', 'wopt', 'cols', 'rows', 'focus', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS
 const HOME_THEME_FILE_MAX = 32768;                                 // a theme file is a few KB; more is not one
 const homeOwnWall = (k) => /^(photo\d*|vid:.*)$/.test(String(k));    // the person's own picture or video: it stays on the TV, a file cannot carry it
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
@@ -265,7 +265,7 @@ async function homeOpen() {
   // right over the pictures, filled: a tile among thirty went unseen, and in the head over "Change automatically" nobody
   // looked back up for it (eyes go down to the pictures)
   const upload = el('button', { type: 'button', className: 'primary', textContent: T('home.upload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : file.click() });   // on the TV: TV Home's QR, a photo comes from a phone
-  // a video or GIF as the background (HomeConfig vid:..., vsound / vvol / vfps / vres; app/home wall/Videos.kt): the media library
+  // a video or GIF as the background (HomeConfig vid:..., vfps / vres; no sound: a wall is a picture; app/home wall/Videos.kt): the media library
   const vfile = el('input', { type: 'file', accept: 'video/mp4,video/webm,image/gif,.mp4,.webm,.gif', hidden: true, onchange: async () => {
     const f = vfile.files[0]; vfile.value = ''; if (!f) return;
     const mx = (r.video || {}).max || 0;
@@ -275,13 +275,6 @@ async function homeOpen() {
   } });
   const vupload = el('button', { type: 'button', className: 'primary', textContent: T('home.vupload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : vfile.click() });
   const vstate = el('p', { className: 'state', role: 'status' }), vperf = el('p', { className: 'state', role: 'status' }), vnote = el('p', { className: 'note', textContent: T('home.v_note') });
-  const vsound = el('input', { type: 'checkbox', onchange: () => send({ vsound: vsound.checked }) });
-  const vvolOut = el('output'); let vvolWait = 0;
-  const vvolIn = el('input', { type: 'range', min: 0, max: 100, step: 5, ariaLabel: T('home.v_vol'), oninput: () => {
-    vvolOut.textContent = vvolIn.value + '%';
-    clearTimeout(vvolWait); vvolWait = setTimeout(() => send({ vvol: +vvolIn.value }), 150);
-  } });
-  const vvol = el('div', { className: 'vol boost' }, vvolIn, vvolOut);
   const vfpsHead = el('h3', { textContent: T('home.v_fps') }), vfps = el('div', { className: 'fchips' });
   const vresHead = el('h3', { textContent: T('home.v_res') }), vres = el('div', { className: 'fchips' });
   // the backgrounds by where they come from, each under its own title with the settings that belong to it (a video's sound only
@@ -461,6 +454,9 @@ async function homeOpen() {
   } });
   const shadeHead = el('h3', { textContent: T('home.shade') }), shade = el('div', { className: 'vol boost' }, shadeIn, shadeOut);
   const shadeNote = el('p', { className: 'note', textContent: T('home.shade_note') });
+  // how a photo fills the screen (HomeConfig "wfit"): cropped, or whole over itself blurred (a portrait photo)
+  const fitHead = el('h3', { textContent: T('home.fit') }), fit = el('div', { className: 'fchips' });
+  const fitNote = el('p', { className: 'note', textContent: T('home.fit_note') });
   const gal = el('div', { className: 'homegal' }), credit = el('p', { className: 'note', textContent: T('home.gal_note') });
   const galHead = el('h3', { textContent: T('home.gallery') });
   // the site's moving backgrounds and pages (wallpapers.json "links"): each sets the web wall to its address, as TV Home's own "Suggested"
@@ -491,17 +487,18 @@ async function homeOpen() {
   // the home screen as the settings now make it, at the TV's shape, over every group (CleanTV's idea, 2026-10-27): each change shows
   // here at once, no look over at the TV. The same painter as the themes' pictures; the wall's own picture when the page has one
   const prevCv = el('canvas', { width: 640, height: 360, role: 'img', 'aria-label': T('home.preview') }), prev = el('div', { className: 'homeprev' }, prevCv);
-  let prevAt = 0, prevAsked = '';
+  let prevAt = 0, prevAsked = '', prevTries = 0;
   function drawPrev(c) {
     const [W, H] = homeShape(), h = Math.round(640 * H / W), at = ++prevAt;
     if (prevCv.height !== h) prevCv.height = h;
     const built = (c.themesBuiltin || []).find((t) => t.id === c.theme), look = built && built.look, tiles = c.tiles || [];
     // the wall's picture: TV Home's shot of the wall in use (a TV Home that sends one), else a photo's small picture, else the theme's
-    const key = c.wall + '|' + (c.wurl || ''), now = (homeShots.now && homeShots.now.key === key && homeShots.now.jpg) || '';
+    const key = c.wall + '|' + (c.wurl || '') + (c.fitOk ? '|' + (c.wfit || '') : ''), now = (homeShots.now && homeShots.now.key === key && homeShots.now.jpg) || '';
     const p = (r.photos || []).find((x) => x.id === c.wall), thumb = now || (p && homeThumbs[p.id + ':' + p.v]) || (c.theme && homeShots[built ? 'ready' : 'mine'][c.theme]) || '';
-    // a new wall, or the first read: TV Home takes its shot then; one read a moment later brings it (only a TV Home that sends `now`)
-    if (!now && homeShots.now && prevAsked !== key && !HOME_ART[c.wall] && !HOME_WALLS[c.wall]) {
-      prevAsked = key;
+    // a new wall, or the first read: TV Home takes its shot then; a read a moment later brings it (only a TV Home that sends `now`),
+    // up to 3 (a whole photo's blur, a page's snap: a weak box may need more than the first 2 s)
+    if (!now && homeShots.now && (prevAsked !== key || prevTries < 3) && !HOME_ART[c.wall] && !HOME_WALLS[c.wall]) {
+      prevTries = prevAsked === key ? prevTries + 1 : 1; prevAsked = key;
       setTimeout(async () => { const t = await homeLink.read(true, true); if (t && t.installed && d.isConnected) { keepThumbs(t); r = t; homeNow = t; drawPrev(r.config); } }, 2000);
     }
     const paint = (img) => { if (at === prevAt) homeThemePaint(prevCv, c, tiles, img, look, new Date()); };
@@ -549,6 +546,11 @@ async function homeOpen() {
     motion.replaceChildren(...[['', 'home.motion_auto'], ['calm', 'home.motion_calm'], ['full', 'home.motion_full']].map(([k, id]) =>
       el('button', { type: 'button', className: (c.motion || '') === k ? 'on' : '', onclick: () => send({ motion: k }) }, T(id))));
     shadeHead.hidden = shade.hidden = shadeNote.hidden = !c.shadeOk;
+    fitHead.hidden = fit.hidden = fitNote.hidden = !c.fitOk;
+    fit.replaceChildren(...[['cover', 'home.fit_cover'], ['contain', 'home.fit_contain']].map(([k, id]) => {
+      const on = (c.wfit || 'cover') === k;
+      return el('button', { type: 'button', className: on ? 'on' : '', 'aria-pressed': String(on), onclick: () => send({ wfit: k }) }, T(id));
+    }));
     if (document.activeElement !== shadeIn) { shadeIn.value = String(c.shade ?? 50); shadeOut.textContent = (c.shade ?? 50) + '%'; }
     const vOk = !!r.video;                                        // a TV Home from before video has no library
     vupload.hidden = vstate.hidden = videoAct.hidden = hVideos.hidden = !vOk;
@@ -557,9 +559,6 @@ async function homeOpen() {
     const hasVideo = vOk && ((r.video || {}).items || []).length > 0;
     for (const x of [vFold, vnote]) x.hidden = !vOk;
     if (hasVideo !== vFold.hadVideo) { vFold.hadVideo = hasVideo; vFold.open = hasVideo; }   // open with a video; folded without (for the next upload)
-    vsound.checked = !!c.vsound;
-    if (document.activeElement !== vvolIn) { vvolIn.value = String(c.vvol ?? 50); vvolOut.textContent = (c.vvol ?? 50) + '%'; }
-    vvol.hidden = !vOk || !c.vsound;
     const chips = (box, key, list, word) => box.replaceChildren(...list.map((k) => el('button', { type: 'button', className: (c[key] || '') === k ? 'on' : '', 'aria-pressed': String((c[key] || '') === k), textContent: word(k), onclick: () => send({ [key]: k }) })));
     chips(vfps, 'vfps', ['', '60', '30', '24', '15'], (k) => k ? T('home.v_fps_n', { n: k }) : T('home.v_orig'));
     chips(vres, 'vres', ['', '1080', '720', '480'], (k) => k ? T('home.v_res_n', { n: k }) : T('home.v_res_screen'));
@@ -942,10 +941,10 @@ async function homeOpen() {
   // one block of a page (.hsect): its head, if any, is a small-capitals title; a block with nothing shown hides itself (CSS :has)
   const sect = (head, ...kids) => el('div', { className: 'hsect' }, ...(head ? [typeof head === 'string' ? el('h3', { className: 'secthead', textContent: T(head) }) : head] : []), ...kids);
   const check = (box, words) => el('label', { className: 'check' }, box, el('span', { textContent: T(words) }));
-  const vFold = UI.card(T('home.v_head'), { fold: true }, check(vsound, 'home.v_sound'), vvol, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
+  const vFold = UI.card(T('home.v_head'), { fold: true }, vfpsHead, vfps, vresHead, vres);   // the video's own settings, in the videos' part
   const GROUPS = [
     ['themes', 'star', 45, 'home.themes', [themeHint, themeMineHead, themeMine, themeLine, themeNote, themeReadyHead, themeReady, themeCommHead, themeComm]],
-    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote,
+    ['bg', 'image', 330, 'home.wall', [everyHead, every, everyNote, shadeHead, shade, shadeNote, fitHead, fit, fitNote,
       hOnline, wOnline, sugHead, sugBox, sugNote, webHead, webLine, webModeHead, webMode, webEveryHead, webEvery, webKeep, webModeNote,
       hPhotos, photoAct, wPhotos, holdNote, galHead, gal, credit,
       hVideos, videoAct, vstate, vperf, wVideos, vFold, vnote, file, vfile,
@@ -1169,11 +1168,13 @@ async function homePhoto(f, done) {
   try {
     const img = await photoOpen(f);
     const [W, H] = homeShape();
-    const view = await homeCropAsk(img, W, H);
+    const c = (homeNow && homeNow.config) || {};
+    const view = await homeCropAsk(img, W, H, c.fitOk ? c.wfit === 'contain' || img.height > img.width : null);
     if (!view) return false;                                          // cancelled: nothing sent, nothing said
     toast(T('home.sending_photo'));
     const blob = await photoBlob(img, W, H, view, 0.85);
-    const n = await homeLink.photo(blob);
+    let n = await homeLink.photo(blob);
+    if (view.whole && c.wfit !== 'contain') n = (await homeLink.write({ wfit: 'contain' })) || n;   // whole: shown whole (all photos: wfit is one setting)
     done(n); toast(T('home.photo_done'));
     return true;
   } catch (e) { toast(T('common.error_msg', { msg: friendly(e.message) })); return false; }
@@ -1207,19 +1208,31 @@ function homeSendProgress(path, blob, onPct) {
   });
 }
 
-// The photo in the TV's shape, to move and widen before it is sent; resolves with the crop's view, or null when cancelled.
-function homeCropAsk(img, W, H) {
+// The photo in the TV's shape, to move and widen before it is sent; resolves with the crop's view, or null when cancelled. [whole]
+// (a TV Home with "fitOk"; null: none) starts on "whole photo" instead of the crop: the two are chips over the frame.
+function homeCropAsk(img, W, H, whole) {
   return new Promise((ok) => {
     let view = null;
     const cv = el('canvas', { className: 'photocrop', width: 640, height: Math.round(640 * H / W) });
+    const hint = el('p', { className: 'note' });
+    const bCover = el('button', { type: 'button', onclick: () => pick(false) }, T('home.fit_cover'));
+    const bWhole = el('button', { type: 'button', onclick: () => pick(true) }, T('home.fit_contain'));
+    const modes = el('div', { className: 'fchips', hidden: whole == null }, bCover, bWhole);
     const d = el('dialog', { className: 'ask' }, el('div', { className: 'card' },
-      el('h2', { textContent: T('home.crop_title') }), cv, el('p', { className: 'note', textContent: T('home.crop_hint') }),
+      el('h2', { textContent: T('home.crop_title') }), modes, cv, hint,
       el('div', { className: 'actions' },
         el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() }),
         el('button', { type: 'button', className: 'primary', textContent: '🖼️ ' + T('home.crop_send'), onclick: () => { view = pv; d.close(); } }))));
     d.addEventListener('close', () => { d.remove(); ok(view); });
     document.body.append(d); d.showModal();
     const pv = photoCrop(cv, img);
+    const pick = (w) => {
+      pv.whole = !!w; pv.redraw();
+      for (const [b, on] of [[bCover, !w], [bWhole, !!w]]) { b.className = on ? 'on' : ''; b.setAttribute('aria-pressed', String(on)); }
+      hint.textContent = T(w ? 'home.fit_note' : 'home.crop_hint');
+    };
+    pick(whole);
+    if (whole != null) (whole ? bWhole : bCover).focus();             // the dialog's own first focus would ring the other chip
   });
 }
 

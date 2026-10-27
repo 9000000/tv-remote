@@ -548,7 +548,16 @@ Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~
   rate at that size; what comes out must be near the bitrate asked (2x + 1 Mbps) and decode its first 60 frames, else it is made
   once more at 30 fps / 720p, else the upload fails. On the BRAVIA 1080p30 was refused too, 720p30 was kept. Backdrop's
   45 ms/frame did not show on this BRAVIA with a SurfaceView video: 30 of 30.
-- **Still open:** seamless loop gap.
+- **The loop (2026-10-27): no sound, a second player.** The FPT box stood still for seconds at each turn of `isLooping`. Measured on
+  emulator-5554 (screenrecord, gaps between frame timestamps; Pexels fireplace 1080p30 with an AAC track): `isLooping` muted 0.45 s a
+  turn (one frame, then 184 + 273 ms of nothing); the same file without its audio track 0.05 s (one frame). The platform player paces
+  the picture by the audio clock even at volume 0 and waits for the audio to start again at each turn. So: a wall has no sound at all
+  (the user: "wallpaper chỉ cần hình", `vsound` / `vvol` removed) and plays a copy without the audio track (`wall/Silent.kt`:
+  MediaExtractor -> MediaMuxer, seconds, no codec, cache keyed by path + size; the first turn plays the file as it is). Then a second
+  MediaPlayer is prepared 4 s before the end (`VideoWall.LEAD_MS`) and takes the surface on completion: completion -> first frame 57-73 ms.
+  After: a site video (`NetVideo`) 0.05 s a turn, a library video (720p, B-frames) 0.13-0.14 s. A web wall's video is kept as a file
+  after its first play (`wall/NetVideo.kt`, 80 MB max, 3 kept): streamed again on each return to Home, a weak box waited on the
+  network at each start. Not measured on the FPT box yet.
 
 ## TV Home themes (2026-10-24)
 

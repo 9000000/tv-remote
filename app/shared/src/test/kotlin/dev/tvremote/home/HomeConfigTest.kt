@@ -471,9 +471,9 @@ class HomeConfigTest {
             .put("vsound", true).put("vvol", 77).put("vfps", "24").put("vres", "999"))
         assertEquals("vid:0a1b2c3d", c.getString("wall"))
         assertEquals(listOf("vid:0a1b2c3d", "night"), c.getJSONArray("walls").let { a -> List(a.length()) { a.getString(it) } })
-        assertTrue(c.getBoolean("vsound")); assertEquals(75, c.getInt("vvol")); assertEquals("24", c.getString("vfps")); assertEquals("", c.getString("vres"))
+        assertFalse(c.has("vsound")); assertFalse(c.has("vvol")); assertEquals("24", c.getString("vfps")); assertEquals("", c.getString("vres"))
         val d = HomeConfig.clean(JSONObject())
-        assertFalse(d.getBoolean("vsound")); assertEquals(HomeConfig.VOL_DEFAULT, d.getInt("vvol")); assertEquals("", d.getString("vfps"))
+        assertEquals("", d.getString("vfps"))
         assertEquals("night", HomeConfig.clean(JSONObject().put("wall", "vid:nothex!!")).getString("wall"))
     }
 

@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import dev.tvremote.home.wall.WallArt
 import dev.tvremote.home.wall.WebSnap
+import dev.tvremote.home.wall.Backdrop
 import dev.tvremote.home.wall.Walls
 import org.json.JSONObject
 import java.io.File
@@ -96,7 +97,7 @@ object ThemeShots {
     @Volatile private var nowBusy = false
     fun current(c: Context, conf: JSONObject): Pair<String, File?>? {
         if (!needs(conf)) return null
-        val key = conf.optString("wall") + "|" + conf.optString("wurl")
+        val key = conf.optString("wall") + "|" + conf.optString("wurl") + "|" + conf.optString("wfit")   // wfit: the page's key has it when "fitOk"
         val f = File(dir(c), "now.jpg")
         val fresh = nowKey == key && f.isFile && (conf.optString("wall") != HomeConfig.WEB || System.currentTimeMillis() - f.lastModified() < 600_000)
         if (!fresh && !nowBusy) {
@@ -106,7 +107,7 @@ object ThemeShots {
                 try {
                     val wall = conf.optString("wall")
                     val b: Bitmap? = if (wall == HomeConfig.WEB) WebSnap.file(app, conf.optString("wurl")).takeIf { it.isFile }?.let { BitmapFactory.decodeFile(it.path, BitmapFactory.Options().apply { inSampleSize = 2 }) }
-                        ?: onMain { live?.invoke() } else Walls.small(app, wall, W * 2, H * 2, false)
+                        ?: onMain { live?.invoke() } else Walls.small(app, wall, W * 2, H * 2, false)?.let { Backdrop.fitted(it, W * 2, H * 2, conf.optString("wfit")) }
                     if (b != null && save(b, f, W * 2, H * 2)) nowKey = key
                 } finally { nowBusy = false }
             }, "themeshot").apply { isDaemon = true }.start()

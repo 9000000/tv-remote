@@ -14,6 +14,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Launcher mới không giữ được nút Home: nói rõ nút Home đang mở app nào và nên làm gì tiếp.
 - App điện thoại tự cập nhật ngầm trên Android 12+: tải bản mới qua Wi-Fi, cài lúc không dùng app, không hỏi. Lần đầu sau khi tải từ trình duyệt vẫn hỏi một lần.
 - Trang web không còn hiện "Có bản mới" cho TV Setup và TV Home khi TV Setup tự cập nhật được; chỉ hiện nếu sau 3 ngày TV vẫn chưa lên bản mới.
+- Video làm hình nền TV Home: hết đứng hình ở mỗi lần lặp (trước ~0,5 s đến vài giây, nay ~0,05–0,15 s); video từ web được giữ lại trên TV sau lần chiếu đầu, không tải lại mỗi lần về Home. Hình nền không còn tiếng (bỏ mục Âm thanh / Âm lượng video).
+- Ảnh nền có thêm cách hiện "Hiện trọn ảnh": ảnh dọc không bị cắt, hai bên là chính ảnh đó làm mờ. Chọn khi gửi ảnh, trong Tùy chỉnh > Hình nền trên TV hoặc trên trang web.
 
 **English**
 - Customize TV Home has a preview of the TV screen pinned at the top, redrawn with each change (the real background on screen, clock, widgets, columns).
@@ -23,6 +25,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - A new launcher that cannot keep the Home button: says which app Home opens and what to do next.
 - The phone app updates itself quietly on Android 12+: downloads over Wi-Fi, installs while the app is not in use, no question. After a browser install it still asks once.
 - The web page no longer shows "New version" for TV Setup and TV Home when TV Setup updates them itself; only if the TV is still behind after 3 days.
+- TV Home video backgrounds: no more freeze at each loop (was ~0.5 s to seconds, now ~0.05-0.15 s); a web video is kept on the TV after its first play instead of downloaded again on each return to Home. Backgrounds have no sound now (Video sound / volume removed).
+- Photo backgrounds can be shown whole ("Whole photo"): a portrait photo is not cut, its sides show the same photo blurred. Chosen when sending a photo, or in Customize > Background on the TV or the web page.
 
 ## 0.29.0 - 2026-10-27
 

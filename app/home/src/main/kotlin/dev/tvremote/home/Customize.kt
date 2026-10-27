@@ -388,7 +388,6 @@ object Customize {
         // with [choices] (value to its words) the tile steps through them on each press instead of switching on / off; on = not the first
         fun tile(res: Int, text: String, sub: String?, key: String, choices: List<Pair<String, String>>? = null, then: () -> Unit = {}) {
             var pick = choices?.indexOfFirst { it.first == conf.optString(key) }?.coerceAtLeast(0) ?: 0
-            if (key == "vvol") pick = (conf.optInt(key, HomeConfig.VOL_DEFAULT) + 12) / 25    // set in steps of 5 from a phone: the nearest of 0..100 by 25, not 0%
             var viaSetup = false                                       // "stats": TV Setup is on the TV and holds the switch (OwnReport)
             var on = if (key == "stats") dev.tvremote.report.OwnReport.own(a) else if (choices != null || key == "rows" || key == "shade") pick > 0 || key == "cols" || key == "watchAt" || key == "rows" || key == "shade" else conf.optBoolean(key, true)
             val ic = ImageView(a).apply { setImageResource(res) }
@@ -410,7 +409,7 @@ object Customize {
                 }
                 ic.imageTintList = ColorStateList.valueOf(if (on) ACCENT else DIM)
                 val word = a.getString(if (on) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                state.text = if (key == "stats" && viaSetup) a.getString(R.string.stats_setup) else if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else if (key == "shade") "${Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT)}%" else if (key == "vvol" && pick == (Store.get(a).optInt("vvol", HomeConfig.VOL_DEFAULT) + 12) / 25) "${Store.get(a).optInt("vvol", HomeConfig.VOL_DEFAULT)}%" else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
+                state.text = if (key == "stats" && viaSetup) a.getString(R.string.stats_setup) else if (key == "rows") rowsWord(a, Store.get(a).optDouble("rows", 0.0)) else if (key == "shade") "${Store.get(a).optInt("shade", HomeConfig.SHADE_DEFAULT)}%" else choices?.get(pick)?.second ?: if (sub != null) "$word · $sub" else word
                 state.setTextColor(if (on) ACCENT else DIM)
             }
             paint()
@@ -590,6 +589,8 @@ object Customize {
             col.addView(nowNote, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
             // the veil over a photo, a scene or the page: a busy one fights the clock and the names (HomeConfig "shade")
             tile(R.drawable.ic_contrast, a.getString(R.string.c_shade), null, "shade")
+            // a photo cropped to fill the screen, or whole over itself blurred (HomeConfig "wfit": a portrait photo)
+            tile(R.drawable.ic_image, a.getString(R.string.c_fit), null, "wfit", listOf("cover" to a.getString(R.string.fit_cover), "contain" to a.getString(R.string.fit_contain)))
             col.addView(label(a.getString(R.string.rot), 13f, Color.WHITE), LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(18); bottomMargin = dp(8) })
             var chipRow: LinearLayout? = null
             HomeConfig.EVERY.forEachIndexed { i, k ->
@@ -738,10 +739,8 @@ object Customize {
             sugFill()
             section(a.getString(R.string.wall_h_photos)); wallRows(listOf(ADD) + photos)         // always there: with no photo yet, the grid is the + cell alone
             part(R.string.wall_h_videos, videos) {
-                // a video or GIF background (HomeConfig vsound / vvol / vfps / vres): sound and volume now; frame rate and size for the NEXT upload, which is made on a phone through the QR above
+                // a video or GIF background (HomeConfig vfps / vres; no sound: a wall is a picture, the user 2026-10-27): frame rate and size for the NEXT upload, which is made on a phone through the QR above
                 col.addView(View(a), LinearLayout.LayoutParams(1, dp(10)))
-                tile(R.drawable.ic_vol_up, a.getString(R.string.v_sound), null, "vsound")
-                tile(R.drawable.ic_vol_up, a.getString(R.string.v_vol), null, "vvol", listOf(0, 25, 50, 75, 100).map { "$it" to "$it%" })
                 tile(R.drawable.ic_play, a.getString(R.string.v_fps), null, "vfps", HomeConfig.VFPS.map { it to if (it.isEmpty()) a.getString(R.string.v_orig) else a.getString(R.string.v_fps_n, it.toInt()) })
                 tile(R.drawable.ic_image, a.getString(R.string.v_res), null, "vres", HomeConfig.VRES.map { it to if (it.isEmpty()) a.getString(R.string.v_res_screen) else "${it}p" })
             }

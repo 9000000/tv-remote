@@ -65,6 +65,7 @@ object Store {
             .put("wweb", true)                                    // the background can be a web page (an older one would clean it away)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
+            .put("fitOk", true)                                   // a photo can be shown whole (HomeConfig "wfit"; an older one crops it)
             .put("greetOk", true)                                 // the greeting's words: with a name, or the person's own (HomeConfig "gstyle")
             .put("headOk", true)                                  // the header's two lines: what each says and its type (HomeConfig "dstyle", HEAD_TYPE)
             .put("ownOk", true)                                   // the own wall: its colours and direction (HomeConfig "wcol", "wdir")

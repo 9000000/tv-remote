@@ -21,9 +21,10 @@ import org.json.JSONObject
  *   vid:<8 hex> a wall too: a looping video or animated GIF from TV Home's media library (app/home wall/Videos.kt: the file is
  *           `videos/<id>.mp4` there, GIFs are turned into mp4 on arrival). Any such id is accepted here; whether its file is there is the
  *           launcher's to know ([Walls.usable]), so a deleted one is skipped by the rotation and falls to Night when shown
- *   vsound  the video's own sound on (default off: a home screen that talks is a surprise); vvol 0..100 its volume
  *   vfps, vres  how a GIF or a heavy video is made light at upload ([VFPS], [VRES]); "" = the source's own / the screen's own size. Applies to the next uploads
  *   photo   when a photo last changed, so the launcher reads it again
+ *   wfit    how a photo (yours, Bing, a picture theme) fills the screen ([WFITS]): "cover" cropped to fill it, "contain" whole over
+ *           itself blurred (a portrait photo). A TV Home that has this reports "fitOk": true
  *   shade   how dark the veil over a photo, a drawn scene or the web page is, 0..100 % in steps of [SHADE_STEP]: 0 none,
  *           [SHADE_DEFAULT] the usual one (darker at the top and the bottom, where the clock and the names are), 100 an even veil
  *           nearly black. A busy page or photo fights the words of the home screen at the usual one. A TV Home that has this
@@ -151,6 +152,7 @@ object HomeConfig {
     const val WEB = "web"
     const val WURL_MAX = 500
     val WMODES = listOf("live", "snap")
+    val WFITS = listOf("cover", "contain")
     const val SHADE_DEFAULT = 50
     const val SHADE_STEP = 5
     val WSNAPS = listOf(1, 5, 15, 30, 60)
@@ -171,7 +173,6 @@ object HomeConfig {
     const val VIDEO_MAX_BYTES = 200L * 1024 * 1024
     const val VIDEO_LIB_MAX = 12
     val VIDEO_EXT = listOf("mp4", "webm", "gif")
-    const val VOL_DEFAULT = 50
     /** How a GIF or a heavy video is made light, for the NEXT uploads (originals are not kept: see DECISIONS.md): "" the source's own frame rate / the screen's own size, else frames a second / the short side in px. */
     val VFPS = listOf("", "60", "30", "24", "15")
     val VRES = listOf("", "1080", "720", "480")
@@ -424,7 +425,7 @@ object HomeConfig {
     const val THEMES_MAX = 12
     const val THEME_NAME_MAX = 24
     /** The settings a theme holds and an apply switches . */
-    val THEME_KEYS = listOf("wall", "walls", "wurl", "wcol", "wdir", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol",
+    val THEME_KEYS = listOf("wall", "walls", "wurl", "wcol", "wdir", "wmode", "wsnap", "wkeep", "wevery", "shade", "wfit",
         "widgets", "wsize", "wopt", "cols", "rows", "focus", "motion", "anim", "clock24", "greet")
     private val THEME_ID = Regex("t[0-9]{1,4}")
     /** What the first screen draws that the person can take off (not in a theme: a look does not hide the way to the settings). */
@@ -616,11 +617,10 @@ object HomeConfig {
             .put("wkeep", o.optBoolean("wkeep", false))
             .put("wevery", o.optString("wevery").takeIf { it in EVERY } ?: "off")
             .put("photo", o.optLong("photo", 0).coerceAtLeast(0))
+            .put("wfit", o.optString("wfit").takeIf { it in WFITS } ?: "cover")
             .put("shade", o.optInt("shade", SHADE_DEFAULT).coerceIn(0, 100) / SHADE_STEP * SHADE_STEP)
             .put("vfps", o.optString("vfps").takeIf { it in VFPS } ?: "")
             .put("vres", o.optString("vres").takeIf { it in VRES } ?: "")
-            .put("vsound", o.optBoolean("vsound", false))
-            .put("vvol", o.optInt("vvol", VOL_DEFAULT).coerceIn(0, 100) / 5 * 5)
             .put("clock24", o.optBoolean("clock24", true))
             .put("lang", o.optString("lang").takeIf { it in LANGS } ?: "")
             .put("greet", o.optBoolean("greet", true))
