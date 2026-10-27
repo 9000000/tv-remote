@@ -37,6 +37,7 @@ object SetupNeed {
         "telegram" to dev.tvremote.home.HomeConfig.TELEGRAM_SETUP,      // 💬 the Telegram bot on the TV (Telegram.kt; the release after 0.21.0)
         "kids" to "0.21.1",                                            // 🧒 kids mode: every app asks a code, Authenticator, a parent over Telegram, a total of minutes a day (Rules "kids" / "totp" / "total"; the release after 0.21.0)
         "homekey" to "0.26.3",                                         // 🏠 Home to the launcher picked on a Chromecast (HomeKey; the release after 0.26.2)
+        "keytest" to "0.30.1",                                         // ⌨️ the remote key tester (KeyTestActivity; the release after 0.30.0)
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )
 
@@ -73,6 +74,7 @@ object SetupNeed {
             "telegram" -> t("core.need_telegram")
             "kids" -> t("kids.need_name")
             "homekey" -> t("core.need_homekey")
+            "keytest" -> t("core.need_keytest")
             else -> feature
         }
     }

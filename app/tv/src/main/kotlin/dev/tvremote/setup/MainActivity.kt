@@ -939,7 +939,8 @@ class MainActivity : Activity() {
                 val on = !MicVoice.on(this)
                 Rules.change(this, org.json.JSONObject().put("do", "mic").put("on", on))
                 log(T("mic.tile") + " · " + T(if (on) "mic.on" else "mic.off") + (if (on && !KeyFix.can(this)) " · " + T("keyfix.need_adb") else ""))
-            }))
+            },
+            TvUi.Item(R.drawable.ic_keyboard, T("keytest.tile"), T("keytest.sub")) { startActivity(android.content.Intent(this, KeyTestActivity::class.java)) }))   // the key tester
     }
 
     /** A box from an Internet provider (FPT Play, Viettel; names as the census sees them): Build's 7 presses ask the ISP's password. */

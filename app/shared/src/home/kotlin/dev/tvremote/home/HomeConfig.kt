@@ -119,6 +119,7 @@ import org.json.JSONObject
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
     const val RECEIVER = "$PKG/.HomeReceiver"
+    const val QUICK_KEYS = "$PKG.QUICK_KEYS"                           // HomeActivity's action: its Quick keys screen (TV Setup's key tester: "assign this key")
     const val PHOTO_QR = "$PKG.PHOTO"                                  // HomeActivity's action: its QR screen for a photo from a phone (TV Setup's page on the TV has no photos)
     const val DREAM = "$PKG/.HomeDream"                               // the screensaver's component, as `screensaver_components` writes it
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"

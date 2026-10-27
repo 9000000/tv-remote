@@ -70,6 +70,7 @@ Chưa có ADB? App điện thoại và app máy tính vẫn bấm phím được
 | 🔒 **Cho trẻ em** | Hẹn giờ tắt, giờ đi ngủ, giới hạn app, giới hạn âm lượng, khóa app bằng PIN: chạy ngay trên TV | [→](https://tvremote.pages.dev/guide#limits) |
 | 📱 **Quản lý TV** | Ứng dụng, tệp, sức khỏe (RAM, tốc độ mạng của chính TV), nhiều TV cùng lúc | [→](https://tvremote.pages.dev/guide#apps) |
 | ⚡ **Tối ưu TV** | Nhanh, nhẹ hơn: tắt hiệu ứng, tạm dừng màn hình chính đầy quảng cáo và app không dùng; **Hoàn tác** trả lại hết | [→](https://tvremote.pages.dev/guide#optimize) |
+| ⌨️ **Thử phím remote** | Mọi phím TV nhận được, trực tiếp: tên, mã, remote nào, nhấn hay giữ, có bị đổi không | [→](https://tvremote.pages.dev/guide#keyfix) |
 | 🎬 **Cảnh và liên kết** | Nhiều bước một chạm, widget, ô Cài đặt nhanh, Home Assistant, Phím tắt Siri, bot Telegram của bạn | [→](https://tvremote.pages.dev/guide#scenes) |
 | 🌍 **Khi khác mạng** | Qua Tailscale, cài bằng một nút, không gõ gì trên TV | [→](https://tvremote.pages.dev/guide#away) |
 | 📡 **Hãng khác** | LG, Samsung, Roku, VIDAA (thử nghiệm): phím, gõ chữ, mở app, bật TV, cảnh | [→](https://tvremote.pages.dev/guide#brands) |
