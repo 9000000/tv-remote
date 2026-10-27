@@ -34,7 +34,11 @@ internal fun Widgets.recentRow(f: Facts, label: (String) -> String, avail: Int, 
     val size = dp(if (labels) 44 else 38)
     recentApps.forEachIndexed { i, p ->
         val c = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(3), dp(5), dp(3), dp(5)); tag = ring }
-        c.addView(ImageView(a).apply { setImageDrawable(f.icons[p]); scaleType = ImageView.ScaleType.FIT_CENTER }, LayoutParams(size, size))
+        c.addView(ImageView(a).apply {
+            setImageDrawable(f.icons[p]); scaleType = ImageView.ScaleType.FIT_CENTER
+            clipToOutline = true                                       // rounded as the grid's tiles: a square icon (YouTube's white one) read as a hole in the glass
+            outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, v.width * .22f) } }
+        }, LayoutParams(size, size))
         if (labels) c.addView((if (col == Color.WHITE) text(label(p), 11f, col) else ink(label(p), 11f, col)).apply { gravity = Gravity.CENTER; maxLines = 1 }, LayoutParams(-1, -2).apply { topMargin = dp(3) })
         recentCells.add(c)
         row.addView(c, LayoutParams(cell, -2))
@@ -43,10 +47,12 @@ internal fun Widgets.recentRow(f: Facts, label: (String) -> String, avail: Int, 
     return row
 }
 
-/** The mark on the icon the focus is on (only while the card has it), drawn in place: no card is read or built again. */
+/** The mark on the icon the focus is on (only while the card has it): the glass pane ([Widgets.onMark]) or a veil drawn in place; no card is read or built again. */
 internal fun Widgets.recentMark() {
+    val pane = onMark.takeIf { dev.tvremote.tvui.Motion.glass }       // the glass look: the pane itself glides from icon to icon, as between tiles
+    if (pane != null && recentFocused) recentCells.getOrNull(recentAt)?.let { pane(it) }
     recentCells.forEachIndexed { i, c ->
-        c.background = if (recentFocused && i == recentAt) GradientDrawable().apply {
+        c.background = if (pane == null && recentFocused && i == recentAt) GradientDrawable().apply {
             cornerRadius = dp(12).toFloat(); setColor(Widgets.MARK); setStroke(dp(2), (c.tag as? Int) ?: Color.WHITE)
         } else null
     }

@@ -264,6 +264,7 @@ class HomeActivity : Activity() {
         widgets = Widgets(this, ::dp).apply { visibility = View.GONE; onWeather = { runOnUiThread { if (!isDestroyed) widgetsRead() } } }
         widgets.onMenu = ::widgetMenu
         widgets.onFocus = { v, f -> if (f) glassTo(v) else glassOff() }
+        widgets.onMark = { glassTo(it, r = dp(12).toFloat()) }
         widgets.onOpen = { k -> if (editing || k !in OPENS) widgets.hot.firstOrNull { it.tag == k }?.let { widgetMenu(k, it) } else startActivity(Intent(this, when (k) { "news" -> dev.tvremote.home.widgets.NewsActivity::class.java; "market" -> dev.tvremote.home.widgets.MarketActivity::class.java; else -> dev.tvremote.home.widgets.WeatherMapActivity::class.java }).putExtra("i", widgets.newsShown)) }
         widgets.onUp = { v -> (bar.buttons.filter { it.isShown } + listOfNotNull(headLeft.takeIf { it.isShown && it.isFocusable })).minByOrNull { p -> val q = IntArray(2); val r = IntArray(2); p.getLocationOnScreen(q); v.getLocationOnScreen(r); Math.abs(q[0] + p.width / 2 - r[0] - v.width / 2) }?.requestFocus() }
         widgets.onDown = { v -> below(v)?.let { go(it) } }
@@ -705,12 +706,11 @@ class HomeActivity : Activity() {
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
     /** The glass onto this tile, when the focus is glass ([Motion.glass]); [glide] false: there at once. A tile being moved has the ring alone. */
     /** The pane onto a stop that is not a tile (a widget card, the header, a top-bar button), in its own shape and corners. */
-    private fun glassTo(v: View, glide: Boolean = true) {
+    private fun glassTo(v: View, glide: Boolean = true, r: Float? = null) {
         glassAt?.removeOnLayoutChangeListener(glassFollow)
         if (!Motion.glass || moving != null) { glass.hide(); glassAt = null; return }
         glassAt = v; v.addOnLayoutChangeListener(glassFollow)        // a card that grows (the weather came) takes the pane with it
-        val r = when (v) { is BarBtn -> v.height / 2f; headLeft -> dp(18).toFloat(); else -> dp(22).toFloat() }
-        glass.to(content, v, 1f, r, glide && Motion.on)
+        glass.to(content, v, 1f, r ?: when (v) { is BarBtn -> v.height / 2f; headLeft -> dp(18).toFloat(); else -> dp(22).toFloat() }, glide && Motion.on)
     }
     private var glassAt: View? = null
     private val glassFollow = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> if (v.hasFocus() && glass.placed) v.post { if (v.isFocused) glassTo(v, false) } }

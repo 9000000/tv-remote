@@ -133,6 +133,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** The news card: the headline chosen (D-pad up / down while it is focused), the one drawn, and whether the card has the focus. */
     internal var newsAt = 0; internal var newsShown = 0; internal var newsFocused = false; internal var newsCount = 0
     /** The recent-apps card: the icon the mark is on, whether the card has the focus, the apps drawn and their cells (Left / Right move the mark inside it). */
+    /** Where the glass pane goes inside a card (the recent-apps card's marked icon); null: the card draws its own mark. */
+    var onMark: ((View) -> Unit)? = null
     internal var recentAt = 0; internal var recentFocused = false; internal var recentApps: List<String> = emptyList(); internal val recentCells = ArrayList<View>()
 
     /** The cards the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
@@ -176,7 +178,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             if (!dev.tvremote.tvui.Motion.glass) addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(3), Color.WHITE); setColor(HOT_FILL) })   // glass: the screen's pane comes here instead
             if (editing) addState(intArrayOf(), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(2), HOT_FILL_EDGE) })   // at rest: the outline says "you can change this"
         }
-        v.setOnFocusChangeListener { _, f -> if (k == "news") newsFocused = f; if (k == "recent") { recentFocused = f; recentMark() }; onFocus?.invoke(v, f) }
+        v.setOnFocusChangeListener { _, f -> if (k == "news") newsFocused = f; onFocus?.invoke(v, f); if (k == "recent") { recentFocused = f; recentMark() } }   // after onFocus: the pane goes on to the marked icon
         v.setOnClickListener { if (editing) onOpen?.invoke(k) else when (k) { "recent" -> recentOpen(); "adblock" -> adblockToggle(); else -> onOpen?.invoke(k) } }   // these two act on OK; the others open their screen or their menu
         v.setOnLongClickListener { onMenu?.invoke(k, v); true }
         v.setOnKeyListener { _, code, e ->
