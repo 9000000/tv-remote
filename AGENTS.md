@@ -114,3 +114,5 @@ Unit tests alone do not count; report what was tested where and what could not b
   `/sdcard/Android/data/dev.tvremote.setup/files/stats/`.
 - The site https://tvremote.pages.dev is `docs/` (Cloudflare Pages, on every push to main): `docs/README.md`; keep `docs/llms.txt` true.
 - Downloads: `https://github.com/HoangTran0410/tv-remote/releases/latest/download/<tv-setup|tv-remote>.apk`.
+- **Each app has its own version number**; the release tag is the Computer app's / web's. Whether an installed app is the latest:
+  `gh release download -p versions.json -O -` (one number per app), never its number against the tag (TV Games 0.11.0 was the latest under v0.29.0).
