@@ -31,7 +31,7 @@
     block: [2, 6, 80, 165, 70, 160, 20, 4, -20, -6, 4],
     cblock: [16, 8, 80, 165, 70, 160, 75, 0, -65, 5, 22],
     hurt: [-25, -20, -30, -10, -50, -30, 10, 0, -25, -10, 4],
-    down: [-80, -10, -110, -100, -130, -120, 10, 20, -10, 0, 0],
+    down: [0, 6, -20, -30, -40, -20, 10, 6, -8, 0, 0],                       // straight: the whole figure is turned onto the floor
     win: [2, -8, 170, 180, 35, 140, 18, 4, -18, -6, 0],
   };
   // a move: startup / active / recovery seconds, damage, push (kx, ky), hit stun; box [x0, x1, y0, y1] from the feet, forward +;
@@ -315,7 +315,7 @@
     if (blink) c.globalAlpha = 0.5;
     const lying = p.st === 'down' || (p.ko && p.ground);
     c.save(); c.translate(p.x, p.y);
-    if (lying) { c.translate(-f * 10, -14); c.rotate(-f * 80 * deg); c.translate(0, 70); }
+    if (lying) { c.translate(f * 70, -14); c.rotate(-f * 86 * deg); }          // on its back along the floor, head away from the hitter
     else if (p.st === 'hurt' && !p.ground) c.rotate(-f * Math.max(-40, Math.min(60, -p.vy / 14)) * deg);
     const hip = [0, -66 + P[10]], dir = (a, l) => [Math.sin(a * deg) * f * l, Math.cos(a * deg) * l];
     const up = (a, l) => [Math.sin(a * deg) * f * l, -Math.cos(a * deg) * l];
