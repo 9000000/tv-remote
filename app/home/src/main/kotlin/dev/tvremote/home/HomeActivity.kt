@@ -2242,18 +2242,19 @@ class HomeActivity : Activity() {
         fun top(at: Int) {
             val rows = ArrayList<TvGlass.Item>()
             rows.add(TvGlass.Item(R.drawable.ic_apps, getString(R.string.add_choose), getString(R.string.add_choose_hint, hidden.count { h -> apps.any { it.pkg == h } }), false, false) { open?.dismiss(); open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) })
+            val chans = ArrayList<TvGlass.Item>()                  // pins inside other apps (VTVgo, TV360, YouTube) and TV Channels: one group
             if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.group })   // another app's channels (VTVgo, TV360): the picker with those alone
-                rows.add(TvGlass.Item(0, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), getString(if (l[0].any) R.string.add_from_hint else R.string.add_app_channel_hint, l.size), false, false) {
+                chans.add(TvGlass.Item(0, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), getString(if (l[0].any) R.string.add_from_hint else R.string.add_app_channel_hint, l.size), false, false) {
                     open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), only = pkg, paste = l[0].any)
                 }.also { it.picture = icon(if (l[0].any) Links.source(this, l[0]) ?: "" else pkg) })
-            for ((name, kind, items) in listOf(Triple(R.string.add_g_live, R.drawable.ic_zap, live), Triple(R.string.add_g_pins, R.drawable.ic_star, pins), Triple(R.string.add_g_rows, R.drawable.ic_play, rowsOff))) {
+            if (Apps.one(this, "dev.tvremote.channels") != null)
+                chans.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
+            for ((name, kind, items) in listOf(Triple(R.string.add_g_chans, R.drawable.ic_play, chans), Triple(R.string.add_g_live, R.drawable.ic_zap, live), Triple(R.string.add_g_pins, R.drawable.ic_star, pins), Triple(R.string.add_g_rows, R.drawable.ic_eye, rowsOff))) {
                 if (items.size == 1) { rows.add(items[0]); continue }  // one alone: no page to open first
                 if (items.isEmpty()) continue
                 val i = rows.size
                 rows.add(TvGlass.Item(kind, getString(name), items.size.toString(), true, true) { p.page(getString(name), items, back = { top(i) }) })
             }
-            if (Apps.one(this, "dev.tvremote.channels") != null)
-                rows.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
             p.page(getString(R.string.add_title), rows, at)
         }
         top(0)
