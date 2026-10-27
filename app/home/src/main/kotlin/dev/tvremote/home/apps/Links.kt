@@ -66,10 +66,15 @@ object Links {
     /** The intent a pin of [i] opens: VIEW, held to its own app, no grants; a new task as Home's every start. */
     fun intent(i: Item): Intent = Intent(Intent.ACTION_VIEW, Uri.parse(link(i))).setPackage(i.pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-    /** The items of the apps installed here, in the list's order. */
+    /**
+     * The items of the apps installed and turned on here, in the list's order. One app under two packages (FPT Play: the
+     * Android TV app and FPT boxes' launcher) is offered once, by the first of them there.
+     */
     fun installed(c: Context): List<Item> {
         val pm = c.packageManager
-        val there = now.items.map { it.pkg }.distinct().filter { p -> try { pm.getApplicationInfo(p, 0); true } catch (e: Exception) { false } }.toSet()
+        val there = now.items.map { it.pkg }.distinct()
+            .filter { p -> try { pm.getApplicationInfo(p, 0).enabled } catch (e: Exception) { false } }   // Optimize TV turns an FPT box's own launcher off
+            .distinctBy { p -> now.items.first { it.pkg == p }.app }.toSet()
         return now.items.filter { it.pkg in there }
     }
 

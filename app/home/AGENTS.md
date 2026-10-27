@@ -36,8 +36,8 @@ Kotlin. TV Channels writes its own (`HomeRows.kt` there) and is the test subject
 
 **Other apps' channels** (`apps/Links.kt`): Android lets no launcher list the deep links an app takes, and VTVgo / TV360 publish no
 shortcuts, so the site's signed `docs/home/links.json` names them: per app its package, its own link with `{id}` (read from the app,
-tried on a TV) and the items (id, name, logo in `docs/home/logos/`). `dev/gen/app_links.py` remakes VTVgo / TV360 with every channel
-the apps show (206, their own logos at 256 colours); a hand edit is signed with `dev/sign/sign_links.py`. "+ Add" shows "Pin a <app>
+tried on a TV) and the items (id, name, logo in `docs/home/logos/`). `dev/gen/app_links.py` remakes VTVgo / TV360 / FPT Play (its two packages, the TV app and FPT boxes' launcher, one entry each; `Links.installed` offers one, and none turned off) with every channel
+the apps show (VTVgo 47, TV360 159, FPT Play 93; their own logos at 256 colours); a hand edit is signed with `dev/sign/sign_links.py`. "+ Add" shows "Pin a <app>
 channel" for each installed app (not in Customize's full picker: ~200 tiles more); the picker (`Picker.show(only = pkg)`, search for one) pins an item as TV Home's own shortcut (`Pins.pinIntent`, VIEW held to that package, the
 logo on a card kept sharp by `PinArt.own`). A new app = an entry in the list, no APK. Phones and the web page cannot pin (only the
 home screen may ask for a pin).

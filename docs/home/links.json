@@ -1,6 +1,6 @@
 {
  "v": 1,
- "rev": 3,
+ "rev": 4,
  "apps": [
   {
    "pkg": "vn.vtv.vtvgotv",
@@ -1043,6 +1043,950 @@
      "id": "255",
      "name": "Đồng Nai",
      "logo": "t-dong-nai"
+    }
+   ]
+  },
+  {
+   "pkg": "net.fptplay.ottbox",
+   "name": "FPT Play",
+   "uri": "https://fptplay.vn/xem-truyen-hinh/{id}",
+   "items": [
+    {
+     "id": "fpt-play",
+     "name": "Chuỗi Thể thao & Giải trí",
+     "logo": "f-fpt-play"
+    },
+    {
+     "id": "vtv1-hd",
+     "name": "VTV1 HD",
+     "logo": "f-vtv1-hd"
+    },
+    {
+     "id": "vtv2-hd",
+     "name": "VTV2 HD",
+     "logo": "f-vtv2-hd"
+    },
+    {
+     "id": "vtv3-hd",
+     "name": "VTV3 HD",
+     "logo": "f-vtv3-hd"
+    },
+    {
+     "id": "vtv4-hd",
+     "name": "VTV4 HD",
+     "logo": "f-vtv4-hd"
+    },
+    {
+     "id": "vtv5-hd",
+     "name": "VTV5 HD",
+     "logo": "f-vtv5-hd"
+    },
+    {
+     "id": "vtv6-hd",
+     "name": "VTV6 HD",
+     "logo": "f-vtv6-hd"
+    },
+    {
+     "id": "vtv7-hd",
+     "name": "VTV7 HD",
+     "logo": "f-vtv7-hd"
+    },
+    {
+     "id": "vtv8-hd",
+     "name": "VTV8 HD",
+     "logo": "f-vtv8-hd"
+    },
+    {
+     "id": "vtv9-hd",
+     "name": "VTV9 HD",
+     "logo": "f-vtv9-hd"
+    },
+    {
+     "id": "vtv10",
+     "name": "VTV10",
+     "logo": "f-vtv10"
+    },
+    {
+     "id": "vtv5-tay-nam-bo",
+     "name": "VTV5 Tây Nam Bộ",
+     "logo": "f-vtv5-tay-nam-bo"
+    },
+    {
+     "id": "htv7-hd",
+     "name": "HTV7 HD",
+     "logo": "f-htv7-hd"
+    },
+    {
+     "id": "htv9-hd",
+     "name": "HTV9 HD",
+     "logo": "f-htv9-hd"
+    },
+    {
+     "id": "thvl1",
+     "name": "Vĩnh Long 1 HD",
+     "logo": "f-thvl1"
+    },
+    {
+     "id": "vtv5-tay-nguyen",
+     "name": "VTV5 Tây Nguyên",
+     "logo": "f-vtv5-tay-nguyen"
+    },
+    {
+     "id": "hanoitv-1",
+     "name": "HaNoiTV 1",
+     "logo": "f-hanoitv-1"
+    },
+    {
+     "id": "hanoitv-2",
+     "name": "HaNoiTV 2",
+     "logo": "f-hanoitv-2"
+    },
+    {
+     "id": "asian-food-channel",
+     "name": "Asian Food Network HD",
+     "logo": "f-asian-food-channel"
+    },
+    {
+     "id": "outdoor-channel",
+     "name": "Outdoor Channel HD",
+     "logo": "f-outdoor-channel"
+    },
+    {
+     "id": "da-vinci-learning",
+     "name": "Da Vinci HD",
+     "logo": "f-da-vinci-learning"
+    },
+    {
+     "id": "fim360",
+     "name": "SCTV6",
+     "logo": "f-fim360"
+    },
+    {
+     "id": "htvc-the-thao",
+     "name": "HTV Thể Thao",
+     "logo": "f-htvc-the-thao"
+    },
+    {
+     "id": "france-24",
+     "name": "France 24",
+     "logo": "f-france-24"
+    },
+    {
+     "id": "arirang",
+     "name": "Arirang",
+     "logo": "f-arirang"
+    },
+    {
+     "id": "nhk-world-hd",
+     "name": "NHK World HD",
+     "logo": "f-nhk-world-hd"
+    },
+    {
+     "id": "channel-newsasia",
+     "name": "CNA",
+     "logo": "f-channel-newsasia"
+    },
+    {
+     "id": "tv5-monde",
+     "name": "TV5MONDE",
+     "logo": "f-tv5-monde"
+    },
+    {
+     "id": "dw",
+     "name": "DW HD",
+     "logo": "f-dw"
+    },
+    {
+     "id": "kbs-world",
+     "name": "KBS World",
+     "logo": "f-kbs-world"
+    },
+    {
+     "id": "cnbc",
+     "name": "CNBC",
+     "logo": "f-cnbc"
+    },
+    {
+     "id": "kix",
+     "name": "KIX HD",
+     "logo": "f-kix"
+    },
+    {
+     "id": "vietnam-today",
+     "name": "Vietnam Today",
+     "logo": "f-vietnam-today"
+    },
+    {
+     "id": "vinh-long-2",
+     "name": "Vĩnh Long 2 HD",
+     "logo": "f-vinh-long-2"
+    },
+    {
+     "id": "vinh-long-3",
+     "name": "Vĩnh Long 3 HD",
+     "logo": "f-vinh-long-3"
+    },
+    {
+     "id": "vinh-long-4-hd",
+     "name": "Vĩnh Long 4 HD",
+     "logo": "f-vinh-long-4-hd"
+    },
+    {
+     "id": "quoc-phong-vn",
+     "name": "Quốc Phòng VN HD",
+     "logo": "f-quoc-phong-vn"
+    },
+    {
+     "id": "antv",
+     "name": "ANTV HD",
+     "logo": "f-antv"
+    },
+    {
+     "id": "htv5-bchannel",
+     "name": "HTV5 Bchannel",
+     "logo": "f-htv5-bchannel"
+    },
+    {
+     "id": "mien-tay-thdt2",
+     "name": "Miền Tây THĐT2",
+     "logo": "f-mien-tay-thdt2"
+    },
+    {
+     "id": "htv1",
+     "name": "HTV1",
+     "logo": "f-htv1"
+    },
+    {
+     "id": "htv2",
+     "name": "HTV2 HD",
+     "logo": "f-htv2"
+    },
+    {
+     "id": "htv3",
+     "name": "HTV3",
+     "logo": "f-htv3"
+    },
+    {
+     "id": "htvc-plus",
+     "name": "HTVC Plus",
+     "logo": "f-htvc-plus"
+    },
+    {
+     "id": "htvc-du-lich",
+     "name": "HTVC Du Lịch",
+     "logo": "f-htvc-du-lich"
+    },
+    {
+     "id": "htvc-phu-nu",
+     "name": "HTVC Phụ Nữ",
+     "logo": "f-htvc-phu-nu"
+    },
+    {
+     "id": "htvc-gia-dinh",
+     "name": "HTVC Gia Đình",
+     "logo": "f-htvc-gia-dinh"
+    },
+    {
+     "id": "htv4",
+     "name": "HTV4",
+     "logo": "f-htv4"
+    },
+    {
+     "id": "htvc-thuan-viet-hd",
+     "name": "HTVC Thuần Việt HD",
+     "logo": "f-htvc-thuan-viet-hd"
+    },
+    {
+     "id": "htvc-phim",
+     "name": "HTVC Phim HD",
+     "logo": "f-htvc-phim"
+    },
+    {
+     "id": "an-giang",
+     "name": "An Giang 2 HD",
+     "logo": "f-an-giang"
+    },
+    {
+     "id": "an-giang-3",
+     "name": "An Giang 3 HD",
+     "logo": "f-an-giang-3"
+    },
+    {
+     "id": "bac-ninh-1",
+     "name": "Bắc Ninh HD",
+     "logo": "f-bac-ninh-1"
+    },
+    {
+     "id": "gia-lai-1",
+     "name": "Gia Lai",
+     "logo": "f-gia-lai-1"
+    },
+    {
+     "id": "lam-dong-2",
+     "name": "Lâm Đồng 2",
+     "logo": "f-lam-dong-2"
+    },
+    {
+     "id": "ca-mau",
+     "name": "Cà Mau HD",
+     "logo": "f-ca-mau"
+    },
+    {
+     "id": "can-tho",
+     "name": "Cần Thơ 1",
+     "logo": "f-can-tho"
+    },
+    {
+     "id": "cao-bang",
+     "name": "Cao Bằng",
+     "logo": "f-cao-bang"
+    },
+    {
+     "id": "da-nang-1",
+     "name": "Đà Nẵng 1 HD",
+     "logo": "f-da-nang-1"
+    },
+    {
+     "id": "da-nang-2",
+     "name": "Đà Nẵng 2 HD",
+     "logo": "f-da-nang-2"
+    },
+    {
+     "id": "dak-lak",
+     "name": "Đăk Lăk",
+     "logo": "f-dak-lak"
+    },
+    {
+     "id": "dien-bien",
+     "name": "Điện Biên",
+     "logo": "f-dien-bien"
+    },
+    {
+     "id": "dong-nai-1",
+     "name": "Đồng Nai 1 HD",
+     "logo": "f-dong-nai-1"
+    },
+    {
+     "id": "dong-nai-2",
+     "name": "Đồng Nai 2 HD",
+     "logo": "f-dong-nai-2"
+    },
+    {
+     "id": "dong-thap",
+     "name": "Đồng Tháp 1",
+     "logo": "f-dong-thap"
+    },
+    {
+     "id": "ha-tinh",
+     "name": "Hà Tĩnh HD",
+     "logo": "f-ha-tinh"
+    },
+    {
+     "id": "hai-phong",
+     "name": "Hải Phòng HD",
+     "logo": "f-hai-phong"
+    },
+    {
+     "id": "hai-phong-3",
+     "name": "Hải Phòng 3",
+     "logo": "f-hai-phong-3"
+    },
+    {
+     "id": "can-tho-2",
+     "name": "Cần Thơ 2",
+     "logo": "f-can-tho-2"
+    },
+    {
+     "id": "thua-thien-hue",
+     "name": "Thừa Thiên Huế",
+     "logo": "f-thua-thien-hue"
+    },
+    {
+     "id": "hung-yen",
+     "name": "Hưng Yên",
+     "logo": "f-hung-yen"
+    },
+    {
+     "id": "khanh-hoa",
+     "name": "Khánh Hòa HD",
+     "logo": "f-khanh-hoa"
+    },
+    {
+     "id": "an-giang-1",
+     "name": "An Giang 1 HD",
+     "logo": "f-an-giang-1"
+    },
+    {
+     "id": "quang-ngai-2",
+     "name": "Quảng Ngãi TV2",
+     "logo": "f-quang-ngai-2"
+    },
+    {
+     "id": "lai-chau",
+     "name": "Lai Châu HD",
+     "logo": "f-lai-chau"
+    },
+    {
+     "id": "lam-dong",
+     "name": "Lâm Đồng 1",
+     "logo": "f-lam-dong"
+    },
+    {
+     "id": "lang-son",
+     "name": "Lạng Sơn",
+     "logo": "f-lang-son"
+    },
+    {
+     "id": "lao-cai",
+     "name": "Lào Cai",
+     "logo": "f-lao-cai"
+    },
+    {
+     "id": "tay-ninh",
+     "name": "Tây Ninh",
+     "logo": "f-tay-ninh"
+    },
+    {
+     "id": "nghe-an",
+     "name": "Nghệ An",
+     "logo": "f-nghe-an"
+    },
+    {
+     "id": "ninh-binh",
+     "name": "Ninh Bình",
+     "logo": "f-ninh-binh"
+    },
+    {
+     "id": "khanh-hoa-1",
+     "name": "Khánh Hòa 1",
+     "logo": "f-khanh-hoa-1"
+    },
+    {
+     "id": "phu-tho",
+     "name": "Phú Thọ HD",
+     "logo": "f-phu-tho"
+    },
+    {
+     "id": "quang-ngai-1",
+     "name": "Quảng Ngãi TV1",
+     "logo": "f-quang-ngai-1"
+    },
+    {
+     "id": "quang-ninh-1",
+     "name": "Quảng Ninh 1",
+     "logo": "f-quang-ninh-1"
+    },
+    {
+     "id": "quang-ninh-3",
+     "name": "Quảng Ninh 3",
+     "logo": "f-quang-ninh-3"
+    },
+    {
+     "id": "quang-tri",
+     "name": "Quảng Trị",
+     "logo": "f-quang-tri"
+    },
+    {
+     "id": "can-tho-3",
+     "name": "Cần Thơ 3",
+     "logo": "f-can-tho-3"
+    },
+    {
+     "id": "son-la",
+     "name": "Sơn La",
+     "logo": "f-son-la"
+    },
+    {
+     "id": "thai-nguyen",
+     "name": "Thái Nguyên HD",
+     "logo": "f-thai-nguyen"
+    },
+    {
+     "id": "thanh-hoa",
+     "name": "Thanh Hóa",
+     "logo": "f-thanh-hoa"
+    },
+    {
+     "id": "vinh-long-5",
+     "name": "Vĩnh Long 5 HD",
+     "logo": "f-vinh-long-5"
+    },
+    {
+     "id": "tuyen-quang",
+     "name": "Tuyên Quang HD",
+     "logo": "f-tuyen-quang"
+    }
+   ]
+  },
+  {
+   "pkg": "com.fptplay.launcher",
+   "name": "FPT Play",
+   "uri": "https://fptplay.vn/xem-truyen-hinh/{id}",
+   "items": [
+    {
+     "id": "fpt-play",
+     "name": "Chuỗi Thể thao & Giải trí",
+     "logo": "f-fpt-play"
+    },
+    {
+     "id": "vtv1-hd",
+     "name": "VTV1 HD",
+     "logo": "f-vtv1-hd"
+    },
+    {
+     "id": "vtv2-hd",
+     "name": "VTV2 HD",
+     "logo": "f-vtv2-hd"
+    },
+    {
+     "id": "vtv3-hd",
+     "name": "VTV3 HD",
+     "logo": "f-vtv3-hd"
+    },
+    {
+     "id": "vtv4-hd",
+     "name": "VTV4 HD",
+     "logo": "f-vtv4-hd"
+    },
+    {
+     "id": "vtv5-hd",
+     "name": "VTV5 HD",
+     "logo": "f-vtv5-hd"
+    },
+    {
+     "id": "vtv6-hd",
+     "name": "VTV6 HD",
+     "logo": "f-vtv6-hd"
+    },
+    {
+     "id": "vtv7-hd",
+     "name": "VTV7 HD",
+     "logo": "f-vtv7-hd"
+    },
+    {
+     "id": "vtv8-hd",
+     "name": "VTV8 HD",
+     "logo": "f-vtv8-hd"
+    },
+    {
+     "id": "vtv9-hd",
+     "name": "VTV9 HD",
+     "logo": "f-vtv9-hd"
+    },
+    {
+     "id": "vtv10",
+     "name": "VTV10",
+     "logo": "f-vtv10"
+    },
+    {
+     "id": "vtv5-tay-nam-bo",
+     "name": "VTV5 Tây Nam Bộ",
+     "logo": "f-vtv5-tay-nam-bo"
+    },
+    {
+     "id": "htv7-hd",
+     "name": "HTV7 HD",
+     "logo": "f-htv7-hd"
+    },
+    {
+     "id": "htv9-hd",
+     "name": "HTV9 HD",
+     "logo": "f-htv9-hd"
+    },
+    {
+     "id": "thvl1",
+     "name": "Vĩnh Long 1 HD",
+     "logo": "f-thvl1"
+    },
+    {
+     "id": "vtv5-tay-nguyen",
+     "name": "VTV5 Tây Nguyên",
+     "logo": "f-vtv5-tay-nguyen"
+    },
+    {
+     "id": "hanoitv-1",
+     "name": "HaNoiTV 1",
+     "logo": "f-hanoitv-1"
+    },
+    {
+     "id": "hanoitv-2",
+     "name": "HaNoiTV 2",
+     "logo": "f-hanoitv-2"
+    },
+    {
+     "id": "asian-food-channel",
+     "name": "Asian Food Network HD",
+     "logo": "f-asian-food-channel"
+    },
+    {
+     "id": "outdoor-channel",
+     "name": "Outdoor Channel HD",
+     "logo": "f-outdoor-channel"
+    },
+    {
+     "id": "da-vinci-learning",
+     "name": "Da Vinci HD",
+     "logo": "f-da-vinci-learning"
+    },
+    {
+     "id": "fim360",
+     "name": "SCTV6",
+     "logo": "f-fim360"
+    },
+    {
+     "id": "htvc-the-thao",
+     "name": "HTV Thể Thao",
+     "logo": "f-htvc-the-thao"
+    },
+    {
+     "id": "france-24",
+     "name": "France 24",
+     "logo": "f-france-24"
+    },
+    {
+     "id": "arirang",
+     "name": "Arirang",
+     "logo": "f-arirang"
+    },
+    {
+     "id": "nhk-world-hd",
+     "name": "NHK World HD",
+     "logo": "f-nhk-world-hd"
+    },
+    {
+     "id": "channel-newsasia",
+     "name": "CNA",
+     "logo": "f-channel-newsasia"
+    },
+    {
+     "id": "tv5-monde",
+     "name": "TV5MONDE",
+     "logo": "f-tv5-monde"
+    },
+    {
+     "id": "dw",
+     "name": "DW HD",
+     "logo": "f-dw"
+    },
+    {
+     "id": "kbs-world",
+     "name": "KBS World",
+     "logo": "f-kbs-world"
+    },
+    {
+     "id": "cnbc",
+     "name": "CNBC",
+     "logo": "f-cnbc"
+    },
+    {
+     "id": "kix",
+     "name": "KIX HD",
+     "logo": "f-kix"
+    },
+    {
+     "id": "vietnam-today",
+     "name": "Vietnam Today",
+     "logo": "f-vietnam-today"
+    },
+    {
+     "id": "vinh-long-2",
+     "name": "Vĩnh Long 2 HD",
+     "logo": "f-vinh-long-2"
+    },
+    {
+     "id": "vinh-long-3",
+     "name": "Vĩnh Long 3 HD",
+     "logo": "f-vinh-long-3"
+    },
+    {
+     "id": "vinh-long-4-hd",
+     "name": "Vĩnh Long 4 HD",
+     "logo": "f-vinh-long-4-hd"
+    },
+    {
+     "id": "quoc-phong-vn",
+     "name": "Quốc Phòng VN HD",
+     "logo": "f-quoc-phong-vn"
+    },
+    {
+     "id": "antv",
+     "name": "ANTV HD",
+     "logo": "f-antv"
+    },
+    {
+     "id": "htv5-bchannel",
+     "name": "HTV5 Bchannel",
+     "logo": "f-htv5-bchannel"
+    },
+    {
+     "id": "mien-tay-thdt2",
+     "name": "Miền Tây THĐT2",
+     "logo": "f-mien-tay-thdt2"
+    },
+    {
+     "id": "htv1",
+     "name": "HTV1",
+     "logo": "f-htv1"
+    },
+    {
+     "id": "htv2",
+     "name": "HTV2 HD",
+     "logo": "f-htv2"
+    },
+    {
+     "id": "htv3",
+     "name": "HTV3",
+     "logo": "f-htv3"
+    },
+    {
+     "id": "htvc-plus",
+     "name": "HTVC Plus",
+     "logo": "f-htvc-plus"
+    },
+    {
+     "id": "htvc-du-lich",
+     "name": "HTVC Du Lịch",
+     "logo": "f-htvc-du-lich"
+    },
+    {
+     "id": "htvc-phu-nu",
+     "name": "HTVC Phụ Nữ",
+     "logo": "f-htvc-phu-nu"
+    },
+    {
+     "id": "htvc-gia-dinh",
+     "name": "HTVC Gia Đình",
+     "logo": "f-htvc-gia-dinh"
+    },
+    {
+     "id": "htv4",
+     "name": "HTV4",
+     "logo": "f-htv4"
+    },
+    {
+     "id": "htvc-thuan-viet-hd",
+     "name": "HTVC Thuần Việt HD",
+     "logo": "f-htvc-thuan-viet-hd"
+    },
+    {
+     "id": "htvc-phim",
+     "name": "HTVC Phim HD",
+     "logo": "f-htvc-phim"
+    },
+    {
+     "id": "an-giang",
+     "name": "An Giang 2 HD",
+     "logo": "f-an-giang"
+    },
+    {
+     "id": "an-giang-3",
+     "name": "An Giang 3 HD",
+     "logo": "f-an-giang-3"
+    },
+    {
+     "id": "bac-ninh-1",
+     "name": "Bắc Ninh HD",
+     "logo": "f-bac-ninh-1"
+    },
+    {
+     "id": "gia-lai-1",
+     "name": "Gia Lai",
+     "logo": "f-gia-lai-1"
+    },
+    {
+     "id": "lam-dong-2",
+     "name": "Lâm Đồng 2",
+     "logo": "f-lam-dong-2"
+    },
+    {
+     "id": "ca-mau",
+     "name": "Cà Mau HD",
+     "logo": "f-ca-mau"
+    },
+    {
+     "id": "can-tho",
+     "name": "Cần Thơ 1",
+     "logo": "f-can-tho"
+    },
+    {
+     "id": "cao-bang",
+     "name": "Cao Bằng",
+     "logo": "f-cao-bang"
+    },
+    {
+     "id": "da-nang-1",
+     "name": "Đà Nẵng 1 HD",
+     "logo": "f-da-nang-1"
+    },
+    {
+     "id": "da-nang-2",
+     "name": "Đà Nẵng 2 HD",
+     "logo": "f-da-nang-2"
+    },
+    {
+     "id": "dak-lak",
+     "name": "Đăk Lăk",
+     "logo": "f-dak-lak"
+    },
+    {
+     "id": "dien-bien",
+     "name": "Điện Biên",
+     "logo": "f-dien-bien"
+    },
+    {
+     "id": "dong-nai-1",
+     "name": "Đồng Nai 1 HD",
+     "logo": "f-dong-nai-1"
+    },
+    {
+     "id": "dong-nai-2",
+     "name": "Đồng Nai 2 HD",
+     "logo": "f-dong-nai-2"
+    },
+    {
+     "id": "dong-thap",
+     "name": "Đồng Tháp 1",
+     "logo": "f-dong-thap"
+    },
+    {
+     "id": "ha-tinh",
+     "name": "Hà Tĩnh HD",
+     "logo": "f-ha-tinh"
+    },
+    {
+     "id": "hai-phong",
+     "name": "Hải Phòng HD",
+     "logo": "f-hai-phong"
+    },
+    {
+     "id": "hai-phong-3",
+     "name": "Hải Phòng 3",
+     "logo": "f-hai-phong-3"
+    },
+    {
+     "id": "can-tho-2",
+     "name": "Cần Thơ 2",
+     "logo": "f-can-tho-2"
+    },
+    {
+     "id": "thua-thien-hue",
+     "name": "Thừa Thiên Huế",
+     "logo": "f-thua-thien-hue"
+    },
+    {
+     "id": "hung-yen",
+     "name": "Hưng Yên",
+     "logo": "f-hung-yen"
+    },
+    {
+     "id": "khanh-hoa",
+     "name": "Khánh Hòa HD",
+     "logo": "f-khanh-hoa"
+    },
+    {
+     "id": "an-giang-1",
+     "name": "An Giang 1 HD",
+     "logo": "f-an-giang-1"
+    },
+    {
+     "id": "quang-ngai-2",
+     "name": "Quảng Ngãi TV2",
+     "logo": "f-quang-ngai-2"
+    },
+    {
+     "id": "lai-chau",
+     "name": "Lai Châu HD",
+     "logo": "f-lai-chau"
+    },
+    {
+     "id": "lam-dong",
+     "name": "Lâm Đồng 1",
+     "logo": "f-lam-dong"
+    },
+    {
+     "id": "lang-son",
+     "name": "Lạng Sơn",
+     "logo": "f-lang-son"
+    },
+    {
+     "id": "lao-cai",
+     "name": "Lào Cai",
+     "logo": "f-lao-cai"
+    },
+    {
+     "id": "tay-ninh",
+     "name": "Tây Ninh",
+     "logo": "f-tay-ninh"
+    },
+    {
+     "id": "nghe-an",
+     "name": "Nghệ An",
+     "logo": "f-nghe-an"
+    },
+    {
+     "id": "ninh-binh",
+     "name": "Ninh Bình",
+     "logo": "f-ninh-binh"
+    },
+    {
+     "id": "khanh-hoa-1",
+     "name": "Khánh Hòa 1",
+     "logo": "f-khanh-hoa-1"
+    },
+    {
+     "id": "phu-tho",
+     "name": "Phú Thọ HD",
+     "logo": "f-phu-tho"
+    },
+    {
+     "id": "quang-ngai-1",
+     "name": "Quảng Ngãi TV1",
+     "logo": "f-quang-ngai-1"
+    },
+    {
+     "id": "quang-ninh-1",
+     "name": "Quảng Ninh 1",
+     "logo": "f-quang-ninh-1"
+    },
+    {
+     "id": "quang-ninh-3",
+     "name": "Quảng Ninh 3",
+     "logo": "f-quang-ninh-3"
+    },
+    {
+     "id": "quang-tri",
+     "name": "Quảng Trị",
+     "logo": "f-quang-tri"
+    },
+    {
+     "id": "can-tho-3",
+     "name": "Cần Thơ 3",
+     "logo": "f-can-tho-3"
+    },
+    {
+     "id": "son-la",
+     "name": "Sơn La",
+     "logo": "f-son-la"
+    },
+    {
+     "id": "thai-nguyen",
+     "name": "Thái Nguyên HD",
+     "logo": "f-thai-nguyen"
+    },
+    {
+     "id": "thanh-hoa",
+     "name": "Thanh Hóa",
+     "logo": "f-thanh-hoa"
+    },
+    {
+     "id": "vinh-long-5",
+     "name": "Vĩnh Long 5 HD",
+     "logo": "f-vinh-long-5"
+    },
+    {
+     "id": "tuyen-quang",
+     "name": "Tuyên Quang HD",
+     "logo": "f-tuyen-quang"
     }
    ]
   }
