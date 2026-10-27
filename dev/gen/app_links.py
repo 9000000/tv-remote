@@ -6,8 +6,8 @@ Every channel each app shows, not only the ones TV Channels plays: VTVgo's ids 1
 Channels makes, docs/channels/providers.json) and kept when the app shows them (a 2025 merged province stays in the API, hidden);
 TV360's from the channel list its own web page carries (tv360.vn/tv/vtv1, __NEXT_DATA__), less its "live events" (gone in a day),
 paid ones too (a user of the app may have the package; without it TV360 asks). FPT Play's from the API its web page calls
-(fptplay.vn), signed as that page signs; twice in the list, one entry per package: the Android TV app on Google Play and the one
-FPT's own boxes carry as their launcher (same code, same share links: fptplay.vn/xem-truyen-hinh/<id>). Logos are the apps' own, trimmed of their empty
+(fptplay.vn), signed as that page signs; twice in the list, one entry per package: the one FPT's own boxes carry as their launcher
+(first: the box's account is signed in there, not in a copy of the Google Play app) and the Android TV app (same code, same share links: fptplay.vn/xem-truyen-hinh/<id>). Logos are the apps' own, trimmed of their empty
 edges and kept as PNG at most LOGO_W wide (TV360's as "t-<slug>"). The deep links were read from the apps (VTVgo 12.10, TV360 6.4)
 and tried on the FPT box, 2026-10-27 (FPT Play 7.34 both packages, the same day). Other apps in links.json are kept as they are. Raises "rev". Needs Pillow and a JDK.
 """
@@ -25,7 +25,7 @@ TV360_PAGE = "https://tv360.vn/tv/vtv1"
 TV360_SKIP = {"Sự kiện trực tiếp"}
 VTVGO = {"pkg": "vn.vtv.vtvgotv", "name": "VTVgo", "uri": "vtvgo://play?mediaType=CHANNEL&contentId={id}"}
 FPT_URI = "https://fptplay.vn/xem-truyen-hinh/{id}"                    # the app's own share link, taken by both packages
-FPT = [{"pkg": "net.fptplay.ottbox", "name": "FPT Play", "uri": FPT_URI}, {"pkg": "com.fptplay.launcher", "name": "FPT Play", "uri": FPT_URI}]
+FPT = [{"pkg": "com.fptplay.launcher", "name": "FPT Play", "uri": FPT_URI}, {"pkg": "net.fptplay.ottbox", "name": "FPT Play", "uri": FPT_URI}]   # the box's own first: signed in there
 FPT_API = "https://api.fptplay.net/api/v7.1_w/"
 FPT_KEY = "6ea6d2a4e2d3a4bd5e275401aa086d"                           # in fptplay.vn's own script: what its page signs with
 TV360 = {"pkg": "com.viettel.tv360.tv", "name": "TV360", "uri": "tv360://recommendation?type=LIVE&id={id}"}

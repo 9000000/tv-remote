@@ -1,6 +1,6 @@
 {
  "v": 1,
- "rev": 4,
+ "rev": 5,
  "apps": [
   {
    "pkg": "vn.vtv.vtvgotv",
@@ -1047,7 +1047,7 @@
    ]
   },
   {
-   "pkg": "net.fptplay.ottbox",
+   "pkg": "com.fptplay.launcher",
    "name": "FPT Play",
    "uri": "https://fptplay.vn/xem-truyen-hinh/{id}",
    "items": [
@@ -1519,7 +1519,7 @@
    ]
   },
   {
-   "pkg": "com.fptplay.launcher",
+   "pkg": "net.fptplay.ottbox",
    "name": "FPT Play",
    "uri": "https://fptplay.vn/xem-truyen-hinh/{id}",
    "items": [
