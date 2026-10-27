@@ -49,7 +49,7 @@ internal object Adblock {
             Settings.Global.putString(cr, MODE, "hostname")
             p.edit().putString("last", target).apply()
             Thread({ // a resolver that does not answer leaves the TV without Internet: names must resolve within a few seconds, else back
-                val ok = resolves()
+                val ok = resolves(c, target)
                 if (!ok) restore(c)
                 done(ok)
             }, "adblock-check").apply { isDaemon = true }.start()
@@ -64,17 +64,39 @@ internal object Adblock {
         val mode = p.getString("prev_mode", null)?.takeIf { it.isNotEmpty() && (it != "hostname" || host != null) } ?: "opportunistic"
         try {
             Settings.Global.putString(cr, MODE, mode)
-            if (mode == "hostname" && host != null) Settings.Global.putString(cr, HOST, host)
+            Settings.Global.putString(cr, HOST, host)                       // null when there was none: no ad-block name left behind in Settings
         } catch (e: SecurityException) { }
     }
 
-    private fun resolves(): Boolean {
-        val until = System.currentTimeMillis() + 7000
-        while (System.currentTimeMillis() < until) {
-            for (n in listOf("example.com", "one.one.one.one", "dns.google")) if (try { InetAddress.getByName(n); true } catch (e: Exception) { false }) return true
-            try { Thread.sleep(800) } catch (e: InterruptedException) { return false }
+    /**
+     * Whether names resolve through [target]. The system takes the new setting a moment later, and a lookup before that went the
+     * old way and passed (FPT box: every Private DNS fails there, yet the card stayed on and the TV lost the Internet): first wait
+     * until the network says it uses [target], then past InetAddress's own 2 s cache, then ask.
+     */
+    @Suppress("DEPRECATION")
+    private fun resolves(c: Context, target: String): Boolean {
+        val cm = c.getSystemService(android.net.ConnectivityManager::class.java)
+        val taken = System.currentTimeMillis() + 6000
+        while (System.currentTimeMillis() < taken) {
+            val lp = cm?.activeNetwork?.let { cm.getLinkProperties(it) }
+            if (lp == null || lp.privateDnsServerName.equals(target, true)) break
+            try { Thread.sleep(300) } catch (e: InterruptedException) { return false }
         }
-        return false
+        try { Thread.sleep(2500) } catch (e: InterruptedException) { return false }
+        // a lookup through a resolver that does not answer blocks well past any deadline (FPT box: 10 s+ on one name), so the
+        // names are asked on their own thread and this one waits 7 s at most
+        val ok = java.util.concurrent.atomic.AtomicBoolean(false)
+        val done = java.util.concurrent.CountDownLatch(1)
+        val until = System.currentTimeMillis() + 7000
+        Thread({
+            while (!ok.get() && System.currentTimeMillis() < until) {
+                for (n in listOf("example.com", "one.one.one.one", "dns.google")) if (try { InetAddress.getByName(n); true } catch (e: Exception) { false }) { ok.set(true); break }
+                if (!ok.get()) try { Thread.sleep(800) } catch (e: InterruptedException) { break }
+            }
+            done.countDown()
+        }, "adblock-ask").apply { isDaemon = true }.start()
+        try { done.await(7, java.util.concurrent.TimeUnit.SECONDS) } catch (e: InterruptedException) { }
+        return ok.get()
     }
 }
 
@@ -105,8 +127,11 @@ internal fun Widgets.adblockGlass(card: LinearLayout, f: Facts, full: Boolean) {
     val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     row.addView(tile(if (host != null) GREEN else Widgets.GREY, R.drawable.ic_shield_ok), LayoutParams(dp(if (full) 56 else 44), dp(if (full) 56 else 44)))
     val words = LinearLayout(a).apply { orientation = VERTICAL }
-    words.addView(text(stateLine(host, f.dns), if (full) 22f else 18f, Color.WHITE).apply { typeface = Font.medium })
-    words.addView(text(hintLine(host, f.dns), 12f, DIM))
+    // small: "On · AdGuard" was cut after "Ad": the name goes to the second line there
+    val state = if (full || host == null) stateLine(host, f.dns) else a.getString(R.string.home_ov_on)
+    val hint = if (full || host == null) hintLine(host, f.dns) else dnsName(host)   // "AdGuard · OK to turn off" was cut too
+    words.addView(text(state, if (full) 22f else 18f, Color.WHITE).apply { typeface = Font.medium })
+    words.addView(text(hint, 12f, DIM))
     row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
     card.addView(row, if (full) LayoutParams(-1, 0, 1f) else LayoutParams(-1, -2))
 }
