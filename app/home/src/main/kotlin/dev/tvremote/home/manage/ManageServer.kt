@@ -36,6 +36,8 @@ import dev.tvremote.home.HomeConfig
  */
 object ManageServer {
     private const val PORT = 8790
+    /** Added to the QR's address: the page opens on its "paste a YouTube link" box (the web page reads location.hash === "#pin"; the redirect to "/" keeps it). */
+    const val PASTE_HASH = "#pin"
     private const val MAX_JSON = 64 * 1024
     private const val MAX_PHOTO = 6_000_000                              // as Manage.kt's /api/home/photo: a 1920x1080 JPEG is 0.3-1.2 MB
     private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
@@ -153,6 +155,11 @@ object ManageServer {
                         // the screensaver is a system setting only ADB can grant: without it the rest still applies and the switch stays as it was
                         try { HomeApi.snapshot(c, set, null, false) } catch (e: SecurityException) { HomeApi.snapshot(c, set.apply { remove("dream") }, null, false) }
                     }, true)
+                }
+                post && req.path == "/h/pin" -> {                         // a YouTube link from the phone's page: same as HomeReceiver's "pin"
+                    val code = HomeApi.pin(c, JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8)))
+                    if (code == "ok") { Thread.sleep(800); json(out, onMain { HomeApi.snapshot(c, null, null, false) }, true) }   // the system confirms the pin through PinActivity first
+                    else reply(out, if (code == "pin_bad_link") 400 else if (code == "pin_no_app") 409 else 502, "application/json", err(code))
                 }
                 post && req.path == "/h/photo/drop" -> {
                     val id = JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8)).optString("id")

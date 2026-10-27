@@ -656,5 +656,13 @@
   "el_edit": "Edit home screen",
   "el_done": "Done editing",
   "el_edit_sub": "Every element takes the focus: OK changes it, Back is done.",
-  "el_edit_hint": "OK: change · Back: done"
+  "el_edit_hint": "OK: change · Back: done",
+  "add_from_app": "Pin from %1$s",
+  "add_from_hint": "%1$d ideas · paste a link",
+  "yt_paste": "Paste a link from your phone",
+  "yt_paste_step": "Scan the code, then paste a YouTube link on that page.",
+  "yt_pinned": "Pinned from the phone",
+  "yt_open_with": "Open YouTube links with",
+  "yt_auto": "Auto (%1$s)",
+  "link_no_app": "No app here opens this link. Install YouTube or SmartTube."
 }

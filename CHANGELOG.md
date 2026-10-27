@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Home ghim được kênh FPT Play (+ Thêm > Ghim kênh FPT Play): 93 kênh (VTV, HTV, HTVC, ANTV, địa phương, quốc tế), bấm là mở thẳng kênh đó trong FPT Play, cả app Android TV lẫn app có sẵn trên box FPT.
+- TV Home ghim kênh, video và playlist YouTube (+ Thêm > Ghim từ YouTube): 32 kênh gợi ý, hoặc dán link từ điện thoại (quét QR, mở trang quản lý). Bấm là mở trong app YouTube nào TV đang có (kể cả bản mod như SmartTube, TizenTube, khi YouTube gốc bị tắt); đổi app ở menu ô ghim (Mở link YouTube bằng). Gỡ app này cài app khác, ô ghim vẫn chạy.
 
 **English**
 - TV Home pins FPT Play channels too (+ Add > Pin an FPT Play channel): 93 channels (VTV, HTV, HTVC, ANTV, provinces, abroad), each opens that channel in FPT Play, the Android TV app or an FPT box's own.
+- TV Home pins YouTube channels, videos and playlists (+ Add > Pin from YouTube): 32 suggested channels, or paste a link from your phone (scan the QR, it opens the manage page). A tap opens whichever YouTube app the TV has (mods such as SmartTube or TizenTube too, with the stock one turned off); change it in the tile's menu (Open YouTube links with). Swap one app for another and the pins keep working.
 
 ## 0.30.0 - 2026-10-27
 

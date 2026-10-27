@@ -62,6 +62,7 @@ import dev.tvremote.home.ui.Drop
 import dev.tvremote.home.ui.Frost
 import dev.tvremote.home.apps.InputOpen
 import dev.tvremote.home.apps.Inputs
+import dev.tvremote.home.apps.LinkApps
 import dev.tvremote.home.apps.Links
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.keys.Picker
@@ -1761,6 +1762,17 @@ class HomeActivity : Activity() {
                 if (!Apps.launch(this, prov, null)) toast(R.string.no_open)
             }.also { it.picture = try { pm.getApplicationIcon(prov) } catch (e: Exception) { null } })
         }
+        (a.pin as? android.content.pm.ShortcutInfo)?.takeIf { it.`package` == packageName }?.id?.let { sid ->   // a pinned link (YouTube): which of the apps taking it opens it, one choice for all such pins
+            val grp = LinkApps.groupOf(this, sid); val url = LinkApps.urlOf(this, sid)
+            if (grp != null && url != null && LinkApps.handlers(this, url, grp).size > 1) rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.yt_open_with), "", false, false) {
+                val hs = LinkApps.handlers(this, url, grp); val now = LinkApps.choice(this, grp)
+                val at = hs.indexOfFirst { it.pkg == now }                    // -1: automatic; after the last, automatic again
+                LinkApps.choose(this, grp, if (at + 1 < hs.size) hs[at + 1].pkg else "")
+            }.also { it.live = {
+                val hs = LinkApps.handlers(this, url, grp); val now = LinkApps.choice(this, grp)
+                if (hs.any { it.pkg == now }) hs.first { it.pkg == now }.label else getString(R.string.yt_auto, hs.first().label)
+            } })
+        }
         subs(a, st).forEachIndexed { i, s -> rows.add(TvGlass.Item(s.icon, getString(s.title), s.hint, true, true) { sub(a, st, i) }) }
         rows.add(TvGlass.Item(R.drawable.ic_sliders, getString(R.string.customize)) { customize() })
         p.page(a.label, rows, at)
@@ -2223,10 +2235,10 @@ class HomeActivity : Activity() {
                 if (k in onGrid || n >= 40) continue; n++
                 rows.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = icon(o.optString("app")) }) }
         }
-        if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.pkg })   // another app's channels (VTVgo, TV360): the picker with those alone
-            rows.add(TvGlass.Item(0, getString(R.string.add_app_channel, l[0].app), getString(R.string.add_app_channel_hint, l.size), false, false) {
-                open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(R.string.add_app_channel, l[0].app), only = pkg)
-            }.also { it.picture = icon(pkg) })
+        if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.group })   // another app's channels (VTVgo, TV360): the picker with those alone
+            rows.add(TvGlass.Item(0, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), getString(if (l[0].any) R.string.add_from_hint else R.string.add_app_channel_hint, l.size), false, false) {
+                open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), only = pkg, paste = l[0].any)
+            }.also { it.picture = icon(if (l[0].any) Links.source(this, l[0]) ?: "" else pkg) })
         if (Apps.one(this, "dev.tvremote.channels") != null)
             rows.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
         open = TvGlass.menu(this, R.style.Menu, getString(R.string.add_title), rows) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }

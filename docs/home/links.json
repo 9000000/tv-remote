@@ -1,6 +1,6 @@
 {
  "v": 1,
- "rev": 5,
+ "rev": 7,
  "apps": [
   {
    "pkg": "vn.vtv.vtvgotv",
@@ -1987,6 +1987,173 @@
      "id": "tuyen-quang",
      "name": "Tuyên Quang HD",
      "logo": "f-tuyen-quang"
+    }
+   ]
+  },
+  {
+   "pkg": "*",
+   "name": "YouTube",
+   "uri": "https://www.youtube.com/@{id}",
+   "items": [
+    {
+     "id": "vtv24",
+     "name": "VTV24",
+     "logo": "y-vtv24"
+    },
+    {
+     "id": "vtvthoitietofficial",
+     "name": "VTV Thời tiết",
+     "logo": "y-vtvthoitietofficial"
+    },
+    {
+     "id": "baotuoitre",
+     "name": "Báo Tuổi Trẻ",
+     "logo": "y-baotuoitre"
+    },
+    {
+     "id": "thanhnientvnews",
+     "name": "Báo Thanh Niên",
+     "logo": "y-thanhnientvnews"
+    },
+    {
+     "id": "VTCNewstintuc",
+     "name": "VTC News",
+     "logo": "y-vtcnewstintuc"
+    },
+    {
+     "id": "THVLGiaiTri",
+     "name": "THVL Giải trí",
+     "logo": "y-thvlgiaitri"
+    },
+    {
+     "id": "THVLPhim",
+     "name": "THVL Phim",
+     "logo": "y-thvlphim"
+    },
+    {
+     "id": "Sontungmtp",
+     "name": "Sơn Tùng M-TP",
+     "logo": "y-sontungmtp"
+    },
+    {
+     "id": "MTPEntertainment",
+     "name": "M-TP Entertainment",
+     "logo": "y-mtpentertainment"
+    },
+    {
+     "id": "casihaanhtuan",
+     "name": "Hà Anh Tuấn",
+     "logo": "y-casihaanhtuan"
+    },
+    {
+     "id": "ERIKOfficial",
+     "name": "ERIK",
+     "logo": "y-erikofficial"
+    },
+    {
+     "id": "DenVau1305",
+     "name": "Đen Vâu",
+     "logo": "y-denvau1305"
+    },
+    {
+     "id": "hoaminzy3105",
+     "name": "Hòa Minzy",
+     "logo": "y-hoaminzy3105"
+    },
+    {
+     "id": "HIEUTHUHAIOFFICIAL",
+     "name": "HIEUTHUHAI",
+     "logo": "y-hieuthuhaiofficial"
+    },
+    {
+     "id": "NhacHayVietNam",
+     "name": "Nhạc hay Việt Nam",
+     "logo": "y-nhachayvietnam"
+    },
+    {
+     "id": "BabyBusVN",
+     "name": "BabyBus",
+     "logo": "y-babybusvn"
+    },
+    {
+     "id": "WolfooTiengViet",
+     "name": "Wolfoo",
+     "logo": "y-wolfootiengviet"
+    },
+    {
+     "id": "nhacthieunhi68",
+     "name": "Nhạc thiếu nhi",
+     "logo": "y-nhacthieunhi68"
+    },
+    {
+     "id": "CoComelon",
+     "name": "CoComelon",
+     "logo": "y-cocomelon"
+    },
+    {
+     "id": "Pinkfong",
+     "name": "Baby Shark",
+     "logo": "y-pinkfong"
+    },
+    {
+     "id": "LittleBabyBum",
+     "name": "Little Baby Bum",
+     "logo": "y-littlebabybum"
+    },
+    {
+     "id": "MonAnNgon",
+     "name": "Món ăn ngon",
+     "logo": "y-monanngon"
+    },
+    {
+     "id": "AmThucMeLam",
+     "name": "Ẩm thực Mẹ Làm",
+     "logo": "y-amthucmelam"
+    },
+    {
+     "id": "FPTBongDaViet",
+     "name": "FPT Bóng đá Việt",
+     "logo": "y-fptbongdaviet"
+    },
+    {
+     "id": "VFFChannel6527",
+     "name": "VFF Channel",
+     "logo": "y-vffchannel6527"
+    },
+    {
+     "id": "KplusSportsOfficial",
+     "name": "K+ Sports",
+     "logo": "y-kplussportsofficial"
+    },
+    {
+     "id": "vtvthethao_official",
+     "name": "VTV Thể thao",
+     "logo": "y-vtvthethao-official"
+    },
+    {
+     "id": "htvthethaoofficial",
+     "name": "HTV Thể thao",
+     "logo": "y-htvthethaoofficial"
+    },
+    {
+     "id": "v.league.official",
+     "name": "V.League",
+     "logo": "y-v-league-official"
+    },
+    {
+     "id": "PewPew",
+     "name": "PewPew",
+     "logo": "y-pewpew"
+    },
+    {
+     "id": "MixiGaming3con",
+     "name": "MixiGaming",
+     "logo": "y-mixigaming3con"
+    },
+    {
+     "id": "KhoaPug_solotrip",
+     "name": "Khoa Pug",
+     "logo": "y-khoapug-solotrip"
     }
    ]
   }

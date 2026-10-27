@@ -22,7 +22,12 @@ import java.net.URL
  * becomes TV Home's own pin ([Pins.pinIntent]) of a VIEW intent held to that package, its picture the item's logo on a card.
  */
 object Links {
-    class Item(val pkg: String, val app: String, val id: String, val name: String, val logo: String, val uri: String)
+    /** [pkg] "*": no app is named, whoever handles the link opens it ([LinkApps]; YouTube's entry). */
+    class Item(val pkg: String, val app: String, val id: String, val name: String, val logo: String, val uri: String) {
+        val any get() = pkg == ANY
+        /** What "+ Add" and the picker group an app's items by: its package, or its name for a "*" entry. */
+        val group get() = if (any) "*$app" else pkg
+    }
     class All(val rev: Long, val items: List<Item>)
 
     private val BASES = listOf("https://tvremote.pages.dev/home/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/home/")
@@ -34,7 +39,10 @@ object Links {
     private val SCHEME = Regex("([a-z][a-z0-9+.\\-]*):.*")
     private val BANNED = setOf("intent", "file", "javascript", "content", "android-app")   // a link names a place in its app, nothing more (sign_links.py refuses the same)
 
+    const val ANY = "*"
     @Volatile var now: All = All(0, emptyList())
+
+    private fun scheme0(uri: String) = SCHEME.matchEntire(uri)?.groupValues?.get(1)   // a "*" entry (no app named) is an https link only
 
     /** The list as TV Home uses it: an app whose link is not a plain deep link with {id} is left out whole, a bad item alone. */
     fun parse(json: String): All? = try {
@@ -47,7 +55,7 @@ object Links {
                 val a = apps!!.optJSONObject(k) ?: continue
                 val pkg = a.optString("pkg"); val uri = a.optString("uri")
                 val scheme = SCHEME.matchEntire(uri)?.groupValues?.get(1)
-                if (!PKG.matches(pkg) || "{id}" !in uri || scheme == null || scheme in BANNED) continue
+                if (!(PKG.matches(pkg) || pkg == ANY && scheme0(uri) == "https") || "{id}" !in uri || scheme == null || scheme in BANNED) continue
                 val items = a.optJSONArray("items") ?: continue
                 for (i in 0 until items.length()) {
                     val it = items.optJSONObject(i) ?: continue
@@ -64,7 +72,11 @@ object Links {
     fun link(i: Item): String = i.uri.replace("{id}", i.id)
 
     /** The intent a pin of [i] opens: VIEW, held to its own app, no grants; a new task as Home's every start. */
-    fun intent(i: Item): Intent = Intent(Intent.ACTION_VIEW, Uri.parse(link(i))).setPackage(i.pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    fun intent(c: Context, i: Item): Intent =
+        if (i.any) LinkApps.intent(c, link(i)) else Intent(Intent.ACTION_VIEW, Uri.parse(link(i))).setPackage(i.pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    /** The app a pin of [i] opens now (its badge and fallback icon): the package, or the first handler of a "*" link. */
+    fun source(c: Context, i: Item): String? = if (i.any) LinkApps.best(c, link(i), LinkApps.groupFor(link(i)))?.pkg else i.pkg
 
     /**
      * The items of the apps installed and turned on here, in the list's order. One app under two packages (FPT Play: the
@@ -72,10 +84,11 @@ object Links {
      */
     fun installed(c: Context): List<Item> {
         val pm = c.packageManager
-        val there = now.items.map { it.pkg }.distinct()
+        val anyApps = now.items.filter { it.any }.distinctBy { it.app }.filter { LinkApps.best(c, link(it), LinkApps.groupFor(link(it))) != null }.map { it.app }.toSet()
+        val there = now.items.filter { !it.any }.map { it.pkg }.distinct()
             .filter { p -> try { pm.getApplicationInfo(p, 0).enabled } catch (e: Exception) { false } }   // Optimize TV turns an FPT box's own launcher off
             .distinctBy { p -> now.items.first { it.pkg == p }.app }.toSet()
-        return now.items.filter { it.pkg in there }
+        return now.items.filter { if (it.any) it.app in anyApps else it.pkg in there }
     }
 
     // ---- the card: the logo on a dark card, as the pin's picture ----
