@@ -28,6 +28,7 @@ class WarnActivity : Activity() {
     private lateinit var count: TextView
     private var kind = ""
     private var until = 0L
+    private val shownAt = android.os.SystemClock.uptimeMillis()
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
@@ -169,6 +170,7 @@ class WarnActivity : Activity() {
 
     private companion object {
         const val NO_LOCK_MIN = 30                                  // nothing protects the rules: a snooze, like the notice's own "+15"
+        const val DEAF_MS = 1500L                                   // presses meant for the app underneath
         const val APP_MIN = 60                                      // an app's limit or window: an hour to go on
     }
 
@@ -193,7 +195,7 @@ class WarnActivity : Activity() {
         val focus = GradientDrawable().apply { setColor(Color.rgb(59, 115, 246)); cornerRadius = dp(14).toFloat() }
         background = idle
         setOnFocusChangeListener { v, f -> v.background = if (f) focus else idle }
-        setOnClickListener { run() }
+        setOnClickListener { if (android.os.SystemClock.uptimeMillis() - shownAt >= DEAF_MS) run() }   // opened over a game: an OK still held or pressed there took the first button, the screen gone in half a second (FPT, 2026-10-27)
         visibility = View.VISIBLE
     }
 }
