@@ -1159,7 +1159,6 @@ object Customize {
             }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = gap })
         }
         door(R.drawable.ic_apps, a.getString(R.string.c_add_home), { a.getString(R.string.pk_grid_hint) }) { Picker.show(a, Picker.Mode.GRID, a.getString(R.string.c_add_home)) }
-        door(R.drawable.ic_apps, a.getString(R.string.add_choose), { a.getString(R.string.pk_choose_hint) }) { Picker.show(a, Picker.Mode.CHOOSE, a.getString(R.string.pk_choose_title)) }
         door(R.drawable.ic_pen, a.getString(R.string.el_edit), { a.getString(R.string.el_edit_sub) }) { panelDialog?.dismiss(); (a as? HomeActivity)?.edit() }
         door(R.drawable.ic_keyboard, a.getString(R.string.c_quickkeys), { a.getString(if (Keys.setup(a)) R.string.k_everywhere else R.string.k_need_setup) }) { QuickKeys.show(a) }
     }

@@ -118,7 +118,7 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
  * [Mode.GRID] a press switches the tile on the app grid or off; in [Mode.TARGET] it returns the chosen [Target] (or "" for none).
  */
 object Picker {
-    enum class Mode { GRID, TARGET, CHOOSE }   // CHOOSE: the apps alone, many ticked at once, applied by Done (the first run's "which apps on Home", reopened from + Add and Customize)
+    enum class Mode { GRID, TARGET, CHOOSE }   // CHOOSE: the apps alone, many ticked at once, applied by Done (the first run's "which apps on Home", reopened from + Add)
 
     private val bg = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "home-picker").apply { isDaemon = true } }
 
