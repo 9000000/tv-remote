@@ -43,7 +43,27 @@ th{color:var(--mut);font-weight:500;font-size:13px}
 .crash tbody tr.row{cursor:pointer}
 .crash tbody tr.row:hover{background:var(--tint)}
 .crash td.num{text-align:right;padding-right:12px}
-.crash td.msg{overflow-wrap:anywhere;max-width:420px}
+.crash td.msg{overflow-wrap:anywhere;width:50%}
+.crash td.kind{overflow-wrap:anywhere;max-width:220px}
+.crash td.day,.crash td.st{white-space:nowrap}
+.crash td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+.crash th{text-align:left;padding:6px 8px;color:var(--mut);font-size:13px;font-weight:500}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile b{display:block;font-size:26px;line-height:1.2;font-variant-numeric:tabular-nums}
+.tile.hot b{color:var(--bad)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-bottom:14px}
+.charts .card{margin:0}
+.charts h3{font-size:14px;margin:0 0 8px}
+.hb{display:grid;grid-template-columns:minmax(0,1fr) 2fr 3ch;gap:8px;align-items:center;font-size:13px;margin:3px 0;cursor:pointer}
+.hb span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb i{display:block;height:10px;border-radius:5px;background:var(--acc);min-width:2px}
+.hb.adb i{background:var(--mut)}
+.hb em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px}
+.st{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;white-space:nowrap}
+.st.new{background:var(--bad);color:#fff}
+.st.seen{background:var(--tint);color:var(--mut)}
 .detail td{border:0}
 @media (max-width:700px){
  .theme{grid-template-columns:1fr}
@@ -162,33 +182,65 @@ async function loadCrashes() {
 function opts(sel, vals, all) {
   const cur = sel.value; sel.replaceChildren(h('option', { value: '' }, all), vals.map((v) => h('option', { value: v }, v))); sel.value = cur;
 }
+// "TV Setup ADB ..." rows are AdbReport's: a user's TV that never let ADB in (debugging off, refused, not paired), not a code fault.
+const isAdb = (r) => r.kind.startsWith('TV Setup ADB');
+const kindOf = (k) => k.replace(/^([a-z]\w*\.)+/, '');          // android.os.NetworkOnMainThreadException -> its class name
+const APPS = { setup: 'TV Setup', phone: 'Điện thoại', pc: 'Máy tính', home: 'TV Home', channels: 'TV Channels', games: 'TV Games' };
+const F = { app: '', v: '', kind: '', adb: false, fresh: false };
+const sum = (list, f) => list.reduce((n, r) => n + f(r), 0);
+function groups(list, key) {
+  const m = new Map();
+  for (const r of list) { const k = key(r); m.set(k, (m.get(k) || 0) + r.n); }
+  return [...m].sort((a, b) => b[1] - a[1]);
+}
+function chart(title, list, key, pick, adb) {
+  const g = groups(list, key).slice(0, 8), max = g.length ? g[0][1] : 1;
+  return h('div', { class: 'card' }, h('h3', {}, title),
+    g.length ? g.map(([k, n]) => h('div', { class: 'hb' + (adb ? ' adb' : ''), title: k + ': ' + n + ' lần', onclick: pick ? () => pick(k) : null },
+      h('span', {}, k), h('i', { style: 'width:' + Math.max(2, n / max * 100) + '%' }), h('em', {}, n))) : h('div', { class: 'mut' }, 'Không có'));
+}
+function tile(label, n, hot) { return h('div', { class: 'tile' + (hot && n ? ' hot' : '') }, h('b', {}, n), h('span', { class: 'mut' }, label)); }
 function drawCrashes() {
   const box = $('crashes');
-  if (!CR.length) { box.replaceChildren(h('div', { class: 'bar' }, h('span', { class: 'grow' }, '0 lỗi'), h('button', { class: 'small', onclick: loadCrashes }, 'Tải lại')),
-    h('p', { class: 'empty card' }, 'Chưa có báo lỗi nào. Tốt.')); return; }
+  const code = CR.filter((r) => !isAdb(r)), adb = CR.filter(isAdb);
+  const fresh = code.filter((r) => r.unseen > 0);
   const fa = h('select', { 'aria-label': 'Lọc app' }), fv = h('select', { 'aria-label': 'Lọc phiên bản' });
-  const upd = () => rows(fa.value, fv.value);
-  fa.addEventListener('change', upd); fv.addEventListener('change', upd);
-  opts(fa, [...new Set(CR.map((r) => r.app))].sort(), 'Mọi app');
-  opts(fv, [...new Set(CR.map((r) => r.v))].sort().reverse(), 'Mọi phiên bản');
-  const count = h('span', { class: 'grow' });
-  const body = h('tbody');
-  box.replaceChildren(h('div', { class: 'bar' }, count, fa, fv, h('button', { class: 'small', onclick: loadCrashes }, 'Tải lại')),
-    h('div', { class: 'card' }, h('table', { class: 'crash' },
-      h('thead', {}, h('tr', {}, ['App', 'Bản', 'Loại', 'Thông báo', 'Lần', 'Máy', 'Gần nhất'].map((x) => h('th', {}, x)))), body)));
-  function rows(app, v) {
-    const list = CR.filter((r) => (!app || r.app === app) && (!v || r.v === v)).sort((a, b) => b.n - a.n);
-    count.textContent = list.length + ' lỗi';
-    body.replaceChildren(...list.flatMap((r) => crashRow(r)));
-  }
-  rows('', '');
+  opts(fa, [...new Set(CR.map((r) => r.app))].sort(), 'Mọi app'); fa.value = F.app;
+  opts(fv, [...new Set(CR.map((r) => r.v))].sort().reverse(), 'Mọi phiên bản'); fv.value = F.v;
+  const cb = (key, label) => h('label', { class: 'chk' }, h('input', { type: 'checkbox', ...(F[key] ? { checked: '' } : {}), onchange: (e) => { F[key] = e.target.checked; drawCrashes(); } }), label);
+  fa.addEventListener('change', () => { F.app = fa.value; drawCrashes(); });
+  fv.addEventListener('change', () => { F.v = fv.value; drawCrashes(); });
+  const pick = (k, v) => { F[k] = F[k] === v ? '' : v; drawCrashes(); };
+  const list = CR.filter((r) => (F.adb || !isAdb(r)) && (!F.fresh || r.unseen > 0) && (!F.app || r.app === F.app) && (!F.v || r.v === F.v) && (!F.kind || kindOf(r.kind) === F.kind))
+    .sort((a, b) => (b.unseen > 0) - (a.unseen > 0) || b.last.localeCompare(a.last) || b.n - a.n);
+  const body = h('tbody', {}, list.flatMap((r) => crashRow(r)));
+  box.replaceChildren(
+    h('div', { class: 'tiles' },
+      tile('lỗi code mới (chưa xem)', fresh.length, true), tile('lỗi code (sig·bản)', code.length), tile('lần xảy ra', sum(code, (r) => r.n)),
+      tile('máy gặp lỗi (cộng các dòng)', sum(code, (r) => r.installs)), tile('báo cáo ADB (không phải lỗi)', sum(adb, (r) => r.n))),
+    h('div', { class: 'charts' },
+      chart('Lỗi code theo app', code, (r) => APPS[r.app] || r.app, (k) => pick('app', Object.keys(APPS).find((a) => APPS[a] === k) || k)),
+      chart('Lỗi code theo phiên bản', code, (r) => r.app + ' ' + r.v, (k) => pick('v', k.split(' ')[1])),
+      chart('Lỗi code theo loại', code, (r) => kindOf(r.kind), (k) => pick('kind', k)),
+      chart('Lỗi code theo ngày gần nhất', code, (r) => r.last),
+      chart('ADB không nối được, theo trạng thái', adb, (r) => r.kind.split(' ')[3] || '?', null, true),
+      chart('ADB không nối được, theo hãng', adb, (r) => r.brand || r.kind.split(' ').slice(4).join(' ') || '?', null, true)),
+    h('div', { class: 'bar' }, h('span', { class: 'grow' }, list.length + ' dòng' + (F.kind ? ' · loại: ' + F.kind : '')),
+      cb('fresh', 'Chỉ lỗi mới'), cb('adb', 'Hiện báo cáo ADB'), fa, fv,
+      (F.app || F.v || F.kind) && h('button', { class: 'small', onclick: () => { F.app = F.v = F.kind = ''; drawCrashes(); } }, 'Bỏ lọc'),
+      h('button', { class: 'small', onclick: loadCrashes }, 'Tải lại')),
+    list.length ? h('div', { class: 'card' }, h('table', { class: 'crash' },
+      h('thead', {}, h('tr', {}, ['', 'App', 'Bản', 'Loại', 'Thông báo', 'Lần', 'Máy', 'Gần nhất'].map((x) => h('th', {}, x)))), body))
+      : h('p', { class: 'empty card' }, F.fresh ? 'Không có lỗi mới. Tốt.' : 'Không có lỗi nào khớp bộ lọc.'));
 }
 function crashRow(r) {
-  const det = h('tr', { class: 'detail', hidden: true }, h('td', { colspan: 7 }));
+  const det = h('tr', { class: 'detail', hidden: true }, h('td', { colspan: 8 }));
+  const st = r.unseen > 0 ? h('span', { class: 'st new', title: r.seen ? 'Lặp lại ' + r.unseen + ' lần từ lúc xem' : 'Chưa xem' }, r.seen ? '+' + r.unseen : 'Mới')
+    : h('span', { class: 'st seen', title: (r.seen && r.seen.note) || '' }, 'Đã xem');
   const tr = h('tr', { class: 'row', tabindex: 0, onclick: () => toggle(r, det), onkeydown: (e) => { if (e.key === 'Enter') toggle(r, det); } },
-    h('td', { 'data-l': 'App' }, r.app), h('td', { 'data-l': 'Bản' }, r.v), h('td', { 'data-l': 'Loại' }, r.kind),
+    h('td', { class: 'st', 'data-l': 'Trạng thái' }, st), h('td', { 'data-l': 'App' }, APPS[r.app] || r.app), h('td', { 'data-l': 'Bản' }, r.v), h('td', { class: 'kind', 'data-l': 'Loại', title: r.kind }, kindOf(r.kind)),
     h('td', { class: 'msg', 'data-l': 'Thông báo' }, short(r.msg || '').slice(0, 90)),
-    h('td', { class: 'num', 'data-l': 'Lần' }, r.n), h('td', { class: 'num', 'data-l': 'Máy' }, r.installs), h('td', { 'data-l': 'Gần nhất' }, r.last));
+    h('td', { class: 'num', 'data-l': 'Lần' }, r.n), h('td', { class: 'num', 'data-l': 'Máy' }, r.installs), h('td', { class: 'day', 'data-l': 'Gần nhất' }, r.last));
   return [tr, det];
 }
 async function toggle(r, det) {
@@ -196,8 +248,17 @@ async function toggle(r, det) {
   det.hidden = false;
   const cell = det.firstChild; cell.replaceChildren(h('span', { class: 'mut' }, 'Đang tải...'));
   try {
-    const s = (await api('/api/crashes', 'GET', { sig: r.sig })).crashes;
-    cell.replaceChildren(...s.map((x) => {
+    const s = (await api('/api/crashes', 'GET', { sig: r.sig })).crashes.sort((a, b) => (b.v === r.v) - (a.v === r.v));
+    const note = h('input', { type: 'text', placeholder: 'Ghi chú: nguyên nhân / commit sửa / vì sao bỏ qua', value: (r.seen && r.seen.note) || '', style: 'flex:1;min-width:200px' });
+    const said = h('span', { class: 'mut' });
+    const mark = h('button', { class: 'primary small', onclick: async () => {
+      mark.disabled = true;
+      try { const m = await api('/api/crashes/mark', 'POST', { sig: r.sig, v: r.v, note: note.value }); r.seen = { n: r.n, note: note.value, at: m.at }; r.unseen = 0; said.textContent = 'Đã đánh dấu (checked.json, chưa commit)'; setTimeout(drawCrashes, 900); }
+      catch (e) { said.textContent = e.message; mark.disabled = false; }
+    } }, 'Đánh dấu đã xem');
+    cell.replaceChildren(h('div', { class: 'bar' }, note, mark, said),
+      ...(r.seen ? [h('div', { class: 'mut' }, 'Xem lần trước ' + (r.seen.at || '').slice(0, 16).replace('T', ' ') + ' (lúc ' + r.seen.n + ' lần): ' + (r.seen.note || '-'))] : []),
+      ...s.map((x) => {
       const dev = ['brand', 'model', 'android', 'os', 'arch', 'java'].map((k) => x[k]).filter(Boolean).join(' ');
       return h('div', { class: 'card' },
         h('div', {}, h('b', {}, x.kind + ': '), x.msg),

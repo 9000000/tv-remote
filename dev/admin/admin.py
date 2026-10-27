@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """dev/admin/admin.py: the owner's local admin page (themes waiting for review, crash reports) instead of terminal prompts.
 
-  python3 dev/admin/admin.py [--port N] [--no-open]
+  python3 dev/admin/admin.py [--port N] [--no-open] [--tailscale]
+
+--tailscale: listens on this Mac's Tailscale IP only (100.x, reachable from the owner's own devices, never the LAN or the
+Internet) and keeps its key in ~/.tv-remote-release/admin-key, so the link stays the same across restarts.
 
 Serves on 127.0.0.1 only. A random key is made per run and sits in the link it opens (?k=, like the computer app's); every request
 (page, API, pictures) must carry it and a local Host, so another page in the browser cannot drive it. The tokens are read from their
@@ -15,6 +18,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "sign"))
 import review_themes as rt   # noqa: E402
+sys.path.insert(0, os.path.join(HERE, "..", "census"))
+import crashes as cr         # noqa: E402
 
 CENSUS = os.environ.get("CENSUS_URL", "https://tvr-census.99-hoangtran.workers.dev").rstrip("/")
 CRASH_FILE = os.path.expanduser("~/.tv-remote-release/crash-token")
@@ -22,6 +27,7 @@ LOCK = threading.Lock()      # approving edits docs/ and the list: one at a time
 KEY = secrets.token_urlsafe(24)
 TMP = tempfile.mkdtemp(prefix="tvr-admin-")
 PORT = 0
+HOST = "127.0.0.1"
 PAGE = os.path.join(HERE, "admin.html")
 
 
@@ -36,6 +42,20 @@ def census(path, params=None, method="GET"):
                                headers={"Authorization": "Bearer " + crash_token(), "User-Agent": "tvr-admin"})
     with urllib.request.urlopen(r, timeout=20) as f:
         return json.load(f)
+
+
+def crash_mark(sig, v, note):
+    """crashes.py --mark from the page: one sig (every version, or [v]) looked at, at its count now; checked.json is not committed here."""
+    rows = [r for r in census("/v1/crashes", {"sig": sig})["crashes"] if not v or r["v"] == v]
+    marks = cr.checked()
+    at = __import__("datetime").datetime.now().astimezone().isoformat(timespec="seconds")
+    for r in rows:
+        k = r["sig"] + "|" + r["v"]
+        marks[k] = {"at": at, "n": r["n"], "note": note or (marks.get(k) or {}).get("note", "")}
+    with open(cr.CHECKED, "w") as f:
+        json.dump(dict(sorted(marks.items())), f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    return {"marked": len(rows), "at": at}
 
 
 def themes_list():
@@ -68,8 +88,10 @@ def theme_approve(tid):
 class H(BaseHTTPRequestHandler):
     server_version = "tvr-admin"
 
-    def log_message(self, *a):
-        pass
+    def log_message(self, fmt, *a):
+        if HOST != "127.0.0.1":                                         # --tailscale: who reached it (path without ?k=), for "it does not load"
+            sys.stderr.write("%s %s %s\n" % (self.client_address[0], self.command, self.path.split("?")[0]))
+            sys.stderr.flush()
 
     def send(self, code, body, ctype="application/json; charset=utf-8"):
         if not isinstance(body, bytes):
@@ -83,7 +105,7 @@ class H(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def allowed(self, url):
-        host_ok = self.headers.get("Host", "") in ("127.0.0.1:%d" % PORT, "localhost:%d" % PORT)
+        host_ok = self.headers.get("Host", "") in ("%s:%d" % (HOST, PORT), "localhost:%d" % PORT)
         k = (urllib.parse.parse_qs(url.query).get("k") or [self.headers.get("x-admin-key", "")])[0]
         return host_ok and secrets.compare_digest(k, KEY)
 
@@ -122,7 +144,14 @@ class H(BaseHTTPRequestHandler):
                     rt.call("/v1/admin/%s/reject" % tid, "POST", rt.read_token())   # the API has no reason field: not stored
                     return self.send(200, {"ok": True})
             if p == "/api/crashes" and method == "GET":
-                return self.send(200, census("/v1/crashes", {"sig": q.get("sig", "")}))
+                d = census("/v1/crashes", {"sig": q.get("sig", "")})
+                marks = cr.checked()                                  # dev/census/checked.json: what was looked at, same as crashes.py --new
+                for r in d.get("crashes", []):
+                    r["seen"] = marks.get(r["sig"] + "|" + r["v"]); r["unseen"] = cr.unseen(r, marks)
+                return self.send(200, d)
+            if p == "/api/crashes/mark" and method == "POST" and q.get("sig"):
+                with LOCK:
+                    return self.send(200, crash_mark(q["sig"], q.get("v", ""), q.get("note", "")))
             if p == "/api/crashes" and method == "DELETE" and q.get("sig"):
                 return self.send(200, census("/v1/crashes", {"sig": q["sig"]}, "DELETE"))
             self.send(404, {"error": "not found"})
@@ -139,14 +168,25 @@ class H(BaseHTTPRequestHandler):
 
 
 def main():
-    global PORT
+    global PORT, HOST, KEY
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--port", type=int, default=0)
     a.add_argument("--no-open", action="store_true")
+    a.add_argument("--tailscale", action="store_true")
     o = a.parse_args()
-    srv = ThreadingHTTPServer(("127.0.0.1", o.port), H)
+    if o.tailscale:
+        import subprocess
+        HOST = subprocess.run(["tailscale", "ip", "-4"], capture_output=True, text=True, timeout=10).stdout.split()[0]
+        if not HOST.startswith("100."):
+            sys.exit("no Tailscale IPv4: " + HOST)
+        kf = os.path.expanduser("~/.tv-remote-release/admin-key")
+        if not os.path.exists(kf):
+            with open(os.open(kf, os.O_WRONLY | os.O_CREAT, 0o600), "w") as f:
+                f.write(secrets.token_urlsafe(24))
+        KEY = open(kf).read().strip()
+    srv = ThreadingHTTPServer((HOST, o.port), H)
     PORT = srv.server_address[1]
-    link = "http://127.0.0.1:%d/?k=%s" % (PORT, KEY)
+    link = "http://%s:%d/?k=%s" % (HOST, PORT, KEY)
     print("Admin: " + link + "\nCtrl+C để tắt.")
     if not o.no_open:
         webbrowser.open(link)
