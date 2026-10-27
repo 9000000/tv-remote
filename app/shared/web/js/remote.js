@@ -73,6 +73,7 @@ async function askLink() {
   const v = await ask(T('remote.link'), { value: 'https://youtu.be/', ok: T('remote.open') });
   const l = v && normalizeLink(v);
   if (!l) return;
+  if (ytParse(l)) return homePin(l);                                  // YouTube: the Pin from YouTube box (Pin to TV or Open on TV), filled in
   if (isStream(l) && ADB.state === 'ready') {
     const c = await api('/api/channels', null, true);
     if (c && c.installed) return chanPlay(l);

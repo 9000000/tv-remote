@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- Remote > Mở trên TV > **Mở link**: link YouTube hỏi luôn Ghim lên TV hay Mở trên TV (như khi chia sẻ link sang TV Remote).
+
+**English**
+- Remote > Open on TV > **Open a link**: a YouTube link asks Pin to TV or Open on TV (as when a link is shared to TV Remote).
+
 ## 0.31.0 - 2026-10-28
 
 Web 0.31.0 · app điện thoại 0.30.0 · app TV 0.31.0 · TV Home 0.18.0 · TV Channels 0.12.0 · TV Games 0.12.0

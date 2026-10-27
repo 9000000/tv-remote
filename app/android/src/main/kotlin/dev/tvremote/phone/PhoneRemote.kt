@@ -3,6 +3,7 @@ package dev.tvremote.phone
 import dev.tvremote.core.T
 import android.content.Intent
 import android.widget.LinearLayout
+import dev.tvremote.core.ontv.Home
 import dev.tvremote.core.remote.Remote
 import dev.tvremote.core.scenes.RemoteSpec
 import dev.tvremote.core.scenes.Scenes
@@ -38,7 +39,10 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "draw" to act { if (drawing) stopDrawing() else startDrawing() },
     "search" to act { askText(T("remote.search_play_store"), T("phone_remote.e_g_vlc"), T("remote.search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) } },   // the TV's Play Store takes searches only this way
     "package" to act { askText(T("remote.package_id"), "org.videolan.vlc", T("apps.open")) { storePage(it) } },
-    "link" to act { askText(T("remote.link"), "https://youtu.be/...", T("apps.open")) { openLink(if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it") } },
+    "link" to act { askText(T("remote.link"), "https://youtu.be/...", T("apps.open")) {
+        val l = if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it"
+        Home.youtubeUrl(l)?.let { yt -> askYoutube(yt) } ?: openLink(l)          // YouTube: Pin to TV or Open, as when it is shared to us
+    } },
     "media" to act { pickMedia() },
     "file" to act { pickFile(arrayOf("audio/*", "video/*", "image/*")) },
     "cast" to act {

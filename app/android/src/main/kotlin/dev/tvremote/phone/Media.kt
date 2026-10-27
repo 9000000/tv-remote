@@ -74,8 +74,8 @@ internal fun MainActivity.sendShared(tries: Int) {
     else confirmShare(link) { openLink(link); Toast.makeText(this, T("notify.sent"), Toast.LENGTH_SHORT).show() }
 }
 
-/** A YouTube link shared to us: pinned on TV Home's grid or opened in the TV's YouTube app (the same calls as the page's "Pin from YouTube"). */
-private fun MainActivity.askYoutube(url: String) {
+/** A YouTube link shared to us or typed in the remote's Open a link: pinned on TV Home's grid or opened in the TV's YouTube app (the same calls as the page's "Pin from YouTube"). */
+internal fun MainActivity.askYoutube(url: String) {
     Popup.Builder(this).setTitle(T("media.youtube_title"))
         .setMessage(url + "\n→ " + title(host ?: ""))
         .setPositiveButton(T("media.pin_to_tv")) { _, _ -> pinYoutube(url) }
