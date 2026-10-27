@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K3 bench</title>
+<!-- K3 (docs/games/web/_lib/k3d.js) under load: a loop course, trees, N karts, item boxes and sparks. Serve the repo root, open
+     /dev/test/k3bench.html?karts=8&trees=300&res=0.75 ; the corner shows fps, draws, triangles and the canvas size. -->
+<link rel="stylesheet" href="../../docs/games/web/_lib/kit.css">
+<style>#c { pointer-events: none; } #info { position: fixed; left: 8px; top: 6px; font: 700 18px monospace; color: #0f0; text-shadow: 0 0 3px #000; white-space: pre; }</style>
+</head>
+<body>
+<canvas id="c" width="1280" height="720"></canvas>
+<div id="info"></div>
+<script src="../../docs/games/web/_lib/k3d.js"></script>
+<script>
+'use strict';
+const Q = new URLSearchParams(location.search), N = +Q.get('karts') || 8, TREES = Q.has('trees') ? +Q.get('trees') : 300, info = document.getElementById('info');
+if (!K3.init({ res: +Q.get('res') || 0.75, fog: '#bfe3ff', far: 420, sky: ['#5aa9ff', '#bfe3ff'] })) info.textContent = 'no WebGL';
+const R = 90, WD = 12, SEG = 96;                                                // the course: a wobbly loop
+const rad = (t) => R + Math.sin(t * 3) * 18 + Math.cos(t * 5) * 8, at = (t, off) => { const r = rad(t) + off; return [Math.cos(t) * r, Math.sin(t) * r * 0.7]; };
+const world = K3.geo();
+world.plane(0, 0, 0, 1000, 1000, 50, '#4f9d4a', '#56a550');
+for (let i = 0; i < SEG; i++) {
+  const t0 = i / SEG * 6.2832, t1 = (i + 1) / SEG * 6.2832, a = at(t0, -WD), b = at(t0, WD), c = at(t1, WD), d = at(t1, -WD);
+  world.quad([a[0], 0.05, a[1]], [d[0], 0.05, d[1]], [c[0], 0.05, c[1]], [b[0], 0.05, b[1]], i % 2 ? '#55555f' : '#5d5d68');
+  const e = at(t0, WD + 1.5), f = at(t1, WD + 1.5);
+  world.quad([b[0], 0.06, b[1]], [c[0], 0.06, c[1]], [f[0], 0.06, f[1]], [e[0], 0.06, e[1]], i % 2 ? '#e11d48' : '#f8fafc');
+}
+for (let i = 0; i < TREES; i++) {
+  const t = Math.random() * 6.2832, o = (Math.random() < 0.5 ? -1 : 1) * (WD + 6 + Math.random() * 60), p = at(t, o), h = 4 + Math.random() * 5;
+  world.cyl(p[0], 0, p[1], 0.5, h * 0.4, 5, '#7c4a24').cyl(p[0], h * 0.4, p[1], 2.4, h, 6, Math.random() < 0.5 ? '#2f7d32' : '#3c8f3a', 0);
+}
+for (let i = 0; i < 12; i++) { const a = i / 12 * 6.2832; world.cyl(Math.cos(a) * 420, -2, Math.sin(a) * 420, 60 + i % 3 * 20, 50 + i % 4 * 15, 7, '#7ea0c8', 0); }
+const worldMesh = world.build();
+const COLS = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#f97316', '#06b6d4', '#ec4899'];
+const karts = [];
+for (let i = 0; i < N; i++) {
+  const g = K3.geo(), col = COLS[i % COLS.length];
+  g.box(0, 0.35, 0, 1.6, 0.5, 2.6, col).box(0, 0.85, 0.3, 1.1, 0.5, 1, '#1f2937', col).box(0, 0.6, -1.4, 1.8, 0.15, 0.3, col);
+  for (const w of [[-0.95, 0.9], [0.95, 0.9], [-0.95, -0.9], [0.95, -0.9]]) g.wheel(w[0], 0.4, w[1], 0.4, 0.35, 8, '#111827', '#9ca3af');
+  g.ball(0, 1.45, 0.3, 0.38, '#fde68a', 6);
+  karts.push({ mesh: g.build(), m: K3.m4(), t: i * 0.04, v: 0.16 + Math.random() * 0.04, off: (i % 3 - 1) * 5 });
+}
+const cam = { x: 0, y: 6, z: 0, tx: 0, ty: 0, tz: 0 }, sp = [0, 0, 0];
+let frames = 0, t0 = performance.now(), fps = 0, worst = 0, lastT = t0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000); worst = Math.max(worst, now - lastT); lastT = now;
+  for (const k of karts) k.t += k.v * dt;
+  const L = karts[0], p = at(L.t, L.off), q = at(L.t - 0.06, L.off), n = at(L.t + 0.02, L.off);
+  cam.x = q[0]; cam.z = q[1]; cam.tx = n[0]; cam.ty = 1; cam.tz = n[1];
+  K3.begin(cam);
+  K3.draw(worldMesh, null);
+  for (const k of karts) { const a = at(k.t, k.off), b = at(k.t + 0.01, k.off); K3.draw(k.mesh, K3.place(k.m, a[0], 0, a[1], Math.atan2(-(b[0] - a[0]), -(b[1] - a[1])))); }
+  for (let i = 0; i < 24; i++) { const a = at(i / 24 * 6.2832, 0); K3.cube(a[0], 1.6 + Math.sin(now / 300 + i) * 0.2, a[1], 1.2, 'hsl'.length && ['#f472b6', '#facc15', '#60a5fa'][i % 3], now / 500 + i); }
+  for (let i = 0; i < 60; i++) K3.cube(p[0] + Math.sin(i * 7.1 + now / 90) * 1.2, 0.3 + (i % 5) * 0.15, p[1] + Math.cos(i * 3.3 + now / 120) * 1.2, 0.18, '#fbbf24', i);
+  K3.end();
+  frames++;
+  if (now - t0 > 1000) {
+    fps = Math.round(frames * 1000 / (now - t0)); frames = 0; t0 = now; const s = K3.stats;
+    info.textContent = fps + ' fps  worst ' + Math.round(worst) + ' ms\n' + s.draws + ' draws  ' + s.tris + ' tris  culled ' + s.culled + '\n' + s.w + 'x' + s.h;
+    console.log('K3BENCH fps=' + fps + ' worst=' + Math.round(worst) + ' draws=' + s.draws + ' tris=' + s.tris + ' culled=' + s.culled);
+    worst = 0;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -7,5 +7,5 @@ body {
     #070b1a;
   color: #fff; font-family: system-ui, Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-user-select: none; user-select: none;
 }
-#c { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.78vh); height: min(56.25vw, 100vh); transform: translate(-50%, -50%); display: block; }
+#c, #gl { position: absolute; left: 50%; top: 50%; width: min(100vw, 177.78vh); height: min(56.25vw, 100vh); transform: translate(-50%, -50%); display: block; }
 #fps { position: fixed; right: 8px; bottom: 6px; font: 700 18px monospace; color: #0f0; text-shadow: 0 0 3px #000; }

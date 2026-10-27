@@ -167,6 +167,14 @@ A game whose D-pad plays sets `Credit.key = () => <between games>` so Down still
 CSS: `:root` tokens, `*{box-sizing:border-box}`, `html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:600 3.2vh/1.25 system-ui,sans-serif;overflow:hidden;cursor:none}`.
 List the game in `docs/games/games.json` "web" (`players`, `min`, `genre`, `img`) and run `dev/sign/sign_games.py`.
 
+**3D: `_lib/k3d.js` (K3), ours, no Three.js.** WebGL 1 (a Mali-450 box has no WebGL 2), ~8 KB gzipped, one shader: low-poly
+meshes with vertex colours, one sun, fog, an additive flash. Load it before `kit.js`; it puts a `#gl` canvas under Kit's `#c`, so
+the HUD, name tags and Kit's screens stay 2D. In `draw(c)`: `K3.begin(cam)`, `K3.draw(mesh, K3.place(m, x, y, z, yaw))` per
+thing, `K3.cube(...)` for small moving bits (one batch), `K3.end()`, then the 2D HUD (`K3.toScreen` puts a tag over a 3D point).
+`if (!K3.init({...}))` at start: tell the player the TV has no 3D, do not start. Budgets for a weak box: under ~60 draws and
+~40k triangles a frame (`dev/test/k3bench.html` prints both); build meshes once (`K3.geo()` ... `build()`), never per frame;
+cut a big world into a few meshes so the ones out of view are skipped; ground in tiles (`plane(..., tile)`: fog is per vertex).
+
 ## 6. Don'ts
 
 - No web fonts, CDNs, frameworks, bundlers or images from other hosts; no `import`.
