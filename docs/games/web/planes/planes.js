@@ -7,9 +7,11 @@
 // Mario Kart's boxes: a rainbow "?" gives one thing, the further behind the better the odds; A uses it (with nothing held, A rolls, so
 // the TV remote's one OK button plays it all). The planes fly side by side, so what is fired forward hits the course, not a plane:
 // paper balls pop storms (+1) and take rings ahead; the rocket and the storm call are what reach the others.
-// All 3D is drawn by hand on Kit's 2D canvas (a few dozen fills a frame, no WebGL): it runs on the weakest TV box TV Games runs on.
+// The world is real 3D through _lib/k3d.js (K3, WebGL 1): the ground, trees, rings, storms and planes are meshes; the HUD, name tags,
+// shots and pops stay on Kit's 2D canvas above it. A TV with no WebGL gets the older drawing by hand on the 2D canvas (world2d).
 (function () {
   const K = window.Kit, pad = window.tvpad, W = 1280, H = 720;
+  const GL = !!window.K3 && !/[?&]flat\b/.test(location.search) && K3.init({ res: 0.75, fov: 54, far: 260, fogNear: 90, fogFar: 250, fog: '#cfe3f2', sky: ['#2b6fd6', '#cfe3f2'], ambient: 0.55, sun: 0.5 });
   const F = 700, CYH = 416, CAMY = 7.5, BACK = 10, TH = 0.22;               // focal length, screen centre, camera height, camera behind the planes,
   const CT = Math.cos(TH), ST = Math.sin(TH), HZ = CYH - F * Math.tan(TH);   // its tilt down (so the wings show their top, not an edge); the horizon
   const XR = 8, YLO = 0.8, YHI = 8, CLO = 3, TIME = 75, FAR = 170, RR = 1.7, GR = 1.15, CR = 1.45;
@@ -56,7 +58,13 @@
     cwx = m[0]; cwy = m[1]; slx = (b[0] - a[0]) / 2; sly = (b[1] - a[1]) / 2;
     hz = CYH - F * (ST - sly * CT) / (CT + sly * ST);                        // where the flat far away meets the sky, from this slope
   }
-  function proj(x, y, z) {
+  const SP = [0, 0, 0, 0];
+  const proj = (x, y, z) => (GL ? proj3(x, y, z) : proj2(x, y, z));
+  function proj3(x, y, z) {                                                  // through the camera of the last 3D frame
+    const c = course(z), d = z - (Z - BACK); K3.toScreen(x + c[0], y + c[1], -z, SP);
+    return SP[2] && d > 0.6 ? [SP[0], SP[1], SP[3], d] : null;
+  }
+  function proj2(x, y, z) {
     view();
     const dz = z - (Z - BACK), c = course(z), dy = y + c[1] - cwy - sly * dz - CAMY, d = dz * CT - dy * ST; if (d < 0.6) return null;
     const s = F / d; return [W / 2 + (x + c[0] - cwx - slx * dz - camX) * s, CYH - (dy * CT + dz * ST) * s, s, d];
@@ -483,8 +491,7 @@
     if (!sp && p.item === 'ball' && p.n > 1) K.text(c, '×' + p.n, x + 22, y + 20, 20, '#fff', 'center', 900);
   }
 
-  function draw(c) {
-    c.save(); K.shakeApply(c);
+  function world2d(c) {
     backdrop(c);
     for (const sc of scenery) if (sc.kind === 'puff') drawPuff(c, sc);
     const z0 = Math.floor((Z - BACK) / STEP) * STEP, all = [];               // one far-to-near order for ground bands (by their far edge), things and the planes
@@ -500,6 +507,145 @@
       else if (it.s) drawShot(c, it.s);
       else if (it.o.got) drawObj(c, it.o); else drawTree(c, it.o);
     }
+  }
+
+  // ---- 3D (K3). The game's z runs into the screen, K3's -z does: a point (x, y, z) of the course is (x + cx, y + cy, -z), where
+  // [cx, cy] = course(z). The camera rides behind and above as before; the course really bends and rolls under it now.
+  const M1 = GL ? K3.m4() : null, cam = { x: 0, y: 0, z: 0, tx: 0, ty: 0, tz: 0 }, CH = 48;
+  const XS = [-220, -140, -90, -60, -40, -26, -16, -9, -3, 3, 9, 16, 26, 40, 60, 90, 140, 220];   // ground tiles across: fine near the river, wide far out
+  let chunks = [], chunkPh = null, G3 = null;
+  function hex3(hex, k) { const v = parseInt(hex.slice(1), 16), f = (x) => Math.round(x + (255 - x) * k); return [f(v >> 16), f((v >> 8) & 255), f(v & 255)]; }
+  function hsl3(h, sat, l) {
+    const a = sat * Math.min(l, 1 - l), f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+    return [f(0), f(8), f(4)];
+  }
+  function disc(rx, rz, col) {                                               // a flat ellipse on the ground (shadows)
+    const g = K3.geo();
+    for (let i = 0; i < 14; i++) { const a = i / 14 * 6.2832, b = (i + 1) / 14 * 6.2832; g.tri([0, 0, 0], [Math.cos(b) * rx, 0, Math.sin(b) * rz], [Math.cos(a) * rx, 0, Math.sin(a) * rz], col); }
+    return g.build();
+  }
+  function build3() {                                                        // every mesh, once
+    const m = {}, E = 0.99, Y0 = 1.1, Y1 = 1.9, D = 0.85;
+    m.pine = K3.geo().cyl(0, 0, 0, 0.12, 0.8, 5, '#7a5230').cyl(0, 0.6, 0, 0.9, 1.8, 7, '#2f7a3a', 0).build();   // 2.4 tall: scaled by its h
+    m.oak = K3.geo().cyl(0, 0, 0, 0.14, 1.2, 5, '#7a5230').ball(0, 1.7, 0, 0.85, '#3f8f3a', 7).ball(-0.55, 1.3, 0.1, 0.6, '#3f8f3a', 6)
+      .ball(0.6, 1.35, 0, 0.6, '#3f8f3a', 6).ball(-0.2, 1.95, 0.35, 0.4, '#5aa84e', 6).build();
+    m.house = K3.geo().box(0, 0, 0, 1.6, 1.1, 1.6, '#f3e9d2').box(0, 0, 0.81, 0.34, 0.6, 0.04, '#7c4a1e')
+      .box(0.5, 0.55, 0.81, 0.3, 0.28, 0.04, '#93c5fd').box(-0.5, 0.55, 0.81, 0.3, 0.28, 0.04, '#93c5fd')
+      .tri([-E, Y0, D], [E, Y0, D], [0, Y1, D], '#c2410c').tri([E, Y0, -D], [-E, Y0, -D], [0, Y1, -D], '#c2410c')
+      .quad([-E, Y0, D], [0, Y1, D], [0, Y1, -D], [-E, Y0, -D], '#c2410c').quad([E, Y0, -D], [0, Y1, -D], [0, Y1, D], [E, Y0, D], '#c2410c').build();
+    m.mill = K3.geo().cyl(0, 0, 0, 0.5, 2.6, 8, '#ece4d4', 0.28).ball(0, 2.6, 0, 0.34, '#9a3412', 6).build();
+    const sails = K3.geo();
+    for (let k = 0; k < 4; k++) sails.at(0, 0, 0, 0, 0, k * 1.5708).box(0, 0, 0, 0.24, 1.5, 0.04, '#5b4636');
+    m.sails = sails.at().build();
+    m.flowers = ['#f472b6', '#facc15', '#f8fafc', '#c084fc'].map((fc) => {
+      const g = K3.geo();
+      for (let i = 0; i < 12; i++) { const a = i / 12 * 6.2832, b = (i + 1) / 12 * 6.2832; g.tri([0, 0.02, 0], [Math.cos(b) * 1.4, 0.02, Math.sin(b) * 0.9], [Math.cos(a) * 1.4, 0.02, Math.sin(a) * 0.9], '#4a9a45'); }
+      for (let k = 0; k < 9; k++) g.box(Math.sin(k * 2.4) * 1.1, 0, Math.cos(k * 1.3) * 0.6, 0.16, 0.22, 0.16, fc);
+      return g.build();
+    });
+    m.puff = K3.geo().ball(0, 0, 0, 1, '#ffffff', 8).ball(-0.9, -0.25, 0, 0.7, '#ffffff', 7).ball(1, -0.3, 0, 0.6, '#ffffff', 7).build();
+    const st = K3.geo().ball(0, 0, 0, CR, '#4b5568', 8).ball(-CR * 0.85, -CR * 0.25, 0, CR * 0.7, '#4b5568', 7).ball(CR * 0.85, -CR * 0.2, 0, CR * 0.75, '#4b5568', 7)
+      .ball(-CR * 0.25, CR * 0.3, CR * 0.25, CR * 0.55, '#6b7488', 6);
+    const BOLT = [[0.1, -0.5], [-0.2, -1.05], [0.15, -1.0], [-0.1, -1.55]];
+    for (let k = 0; k < 3; k++) {                                            // the lightning: thin yellow bars from the cloud's belly
+      const a = BOLT[k], b = BOLT[k + 1], dx = (b[0] - a[0]) * CR, dy = (b[1] - a[1]) * CR;
+      st.at(a[0] * CR, a[1] * CR, CR * 0.3, 0, 0, Math.atan2(-dx, dy)).box(0, 0, 0, 0.16, Math.hypot(dx, dy) + 0.06, 0.08, '#ffd23f');
+    }
+    m.storm = st.at().build();
+    m.ring = K3.geo().torus(0, 0, 0, RR, 0.14, 22, 5, '#ffffff').build();
+    m.taken = K3.geo().torus(0, 0, 0, RR, 0.14, 22, 5, '#bfe8ff').build();
+    m.gold = K3.geo().torus(0, 0, 0, GR, 0.18, 20, 5, '#ffd23f').build();
+    m.shadow = disc(1, 0.25, '#000000');
+    m.bubble = K3.geo().ball(0, 0, 0, 1.45, '#7dd3fc', 10).build();
+    const hills = K3.geo();                                                  // two rings of far hills that ride with the camera: never nearer
+    for (let i = 0; i < 18; i++) { const a = i / 18 * 6.2832 + 0.3, r = 205; hills.cyl(Math.cos(a) * r, -6, Math.sin(a) * r, 50 + (i * 37) % 30, 16 + (i * 53) % 14, 7, '#a9bfdc', 0); }
+    for (let i = 0; i < 22; i++) { const a = i / 22 * 6.2832, r = 175; hills.cyl(Math.cos(a) * r, -6, Math.sin(a) * r, 34 + (i * 29) % 22, 9 + (i * 41) % 9, 7, '#86ae95', 0); }
+    m.hills = hills.build();
+    m.boxCols = []; for (let i = 0; i < 36; i++) m.boxCols.push(hsl3(i * 10, 0.8, 0.55));
+    m.planes = {};
+    return m;
+  }
+  function planeMesh(col) {                                                  // the paper plane of the 2D drawing, both sides of the paper
+    if (G3.planes[col]) return G3.planes[col];
+    const n = [0, 0, -1.25], wl = [-0.95, 0.06, 0.55], wr = [0.95, 0.06, 0.55], t = [0, 0, 0.6], k = [0, -0.38, 0.45];
+    const top = hex3(col, 0.5), under = hex3(col, 0.1), keel = hex3(col, 0.25);
+    return (G3.planes[col] = K3.geo().both(n, wl, t, top, under).both(n, t, wr, top, under).both(n, t, k, keel, under).build());
+  }
+  function chunk(z0) {                                                       // the ground from z0 to z0 + CH: grass and the sand river
+    const g = K3.geo();
+    for (let z = z0; z < z0 + CH; z += STEP) {
+      const a = course(z), b = course(z + STEP), odd = (z / STEP) & 1;
+      for (let i = 0; i < XS.length - 1; i++) {
+        const x0 = XS[i], x1 = XS[i + 1], col = x0 === -3 ? (odd ? '#c9b48a' : '#c2ad82') : (odd ? '#5fae5a' : '#56a352');
+        g.quad([x0 + a[0], a[1], -z], [x1 + a[0], a[1], -z], [x1 + b[0], b[1], -z - STEP], [x0 + b[0], b[1], -z - STEP], col);
+      }
+    }
+    return { z: z0, mesh: g.build() };
+  }
+  function at(x, y, z, yaw, pitch, roll, sc) { const c = course(z); return K3.place(M1, x + c[0], y + c[1], -z, yaw, pitch, roll, sc); }
+  function draw3d(c) {
+    if (!G3) G3 = build3();
+    view();
+    const sh = K.shakeAmt > 0.3 ? K.shakeAmt * 0.015 : 0;
+    cam.x = cwx + camX + K.rnd(-sh, sh); cam.y = cwy + CAMY + K.rnd(-sh, sh); cam.z = -(Z - BACK);
+    cam.tx = cam.x + slx * 10; cam.ty = cam.y + (sly - 0.12) * 10; cam.tz = cam.z - 10;   // tilted less than the 2D camera (real perspective put the planes up by the horizon) cam.tz = cam.z - 10;
+    if (!K3.begin(cam)) return;
+    if (chunkPh !== ph) { chunks.forEach((k) => K3.free(k.mesh)); chunks = []; chunkPh = ph; }   // a new match: a new course
+    chunks = chunks.filter((k) => { if (k.z + CH >= Z - BACK - STEP) return true; K3.free(k.mesh); return false; });
+    for (let z = Math.floor((Z - BACK - STEP) / CH) * CH; z < Z + FAR + STEP; z += CH) if (!chunks.some((k) => k.z === z)) chunks.push(chunk(z));
+    for (const k of chunks) K3.draw(k.mesh, null);
+    K3.draw(G3.hills, K3.place(M1, cam.x, cwy, cam.z, 0));
+    const see = [];                                                          // what is drawn see-through, after the rest: clouds, shadows, what the planes passed
+    for (const t of scenery) {
+      if (t.z > Z + FAR) continue;
+      if (t.kind === 'puff') { if (t.z - Z > 30) see.push([G3.puff, t.x, t.y, t.z, t.r, 0.85]); }   // soft, and gone before they fill the top
+      else if (t.kind === 'pine') K3.draw(G3.pine, at(t.x, 0, t.z, t.t, 0, 0, t.h / 2.4));
+      else if (t.kind === 'oak') K3.draw(G3.oak, at(t.x, 0, t.z, t.t, 0, 0, t.h / 2.2));
+      else if (t.kind === 'flowers') K3.draw(G3.flowers[Math.floor(t.t) % 4], at(t.x, 0, t.z, t.t));
+      else if (t.kind === 'house') K3.draw(G3.house, at(t.x, 0, t.z, (t.t - 3) * 0.15, 0, 0, 1.3));
+      else { K3.draw(G3.mill, at(t.x, 0, t.z, 0, 0, 0, 1.2)); K3.draw(G3.sails, at(t.x, 3.0, t.z - 0.45, 0, 0, K.t * 0.8 + t.t, 1.2)); }
+    }
+    for (const o of objs) {
+      const behind = o.z < Z, fade = behind ? K.clamp((o.z - Z + 4) / 4, 0, 1) * 0.45 : 1;
+      if (o.kind === 'box') {
+        if (Object.keys(o.got).length >= ps.length || behind) continue;
+        const pc = course(o.z);
+        K3.cube(o.x + pc[0], o.y + pc[1] + 0.2 * Math.sin(K.t * 3 + o.x), -o.z, BOX * 2, G3.boxCols[Math.floor(K.t * 6 + o.x * 3 + 360) % 36], K.t * 1.6 + o.x);
+        see.push([G3.shadow, o.x, 0.04, o.z, BOX * 1.3, 0.2]);
+        continue;
+      }
+      const mesh = o.kind === 'cloud' ? G3.storm : o.kind === 'gold' ? G3.gold : Object.keys(o.got).length ? G3.taken : G3.ring;
+      if (behind) { see.push([mesh, o.x, o.y, o.z, 1, fade]); continue; }
+      K3.draw(mesh, at(o.x, o.y, o.z, o.kind === 'cloud' ? Math.sin(K.t + o.x) * 0.3 : 0));
+      if (o.kind !== 'cloud') see.push([G3.shadow, o.x, 0.04, o.z, (o.kind === 'gold' ? GR : RR) * 0.8, 0.18]);
+    }
+    for (const p of ps) {
+      const b = p.bank + (p.roll > 0 ? (1 - p.roll / 0.6) * 6.283 : 0) + (p.stun > 0 ? p.stun * 9 : 0);
+      K3.draw(planeMesh(p.s.color), at(p.x, p.y, Z, -p.vx * 0.018, p.pitch, -b), p.roll > 0 ? [0.25, 0.25, 0.25] : null);
+      see.push([G3.shadow, p.x, 0.04, Z, 0.9, 0.22]);
+      if (p.shield > 0 && (p.shield > 2 || Math.floor(K.t * 8) % 2)) see.push([G3.bubble, p.x, p.y, Z, 1, 0.22]);
+    }
+    K3.end();                                                                // the boxes' batch
+    see.sort((u, v) => v[3] - u[3]);
+    for (const q of see) K3.draw(q[0], at(q[1], q[2], q[3], 0, 0, 0, q[4]), null, q[5]);
+    for (const o of objs) if (o.kind === 'box' && o.z > Z && o.z - Z < 60) {   // the "?" on each box, near enough to read
+      const a = proj(o.x, o.y + 0.2 * Math.sin(K.t * 3 + o.x), o.z); if (a && a[2] > 9) K.text(c, '?', a[0], a[1] + 1, BOX * 1.5 * a[2], '#fff', 'center', 900);
+    }
+    for (const s of shots) drawShot(c, s);
+    for (const p of ps) {
+      const m = proj(p.x, p.y, Z); if (!m) continue;
+      if (p.roll > 0) K.light(c, m[0], m[1], '#ffffff', 60, 0.35);
+      if (p.mag > 0) {                                                         // the magnet: rings of pull spreading out
+        c.strokeStyle = '#f87171'; c.lineWidth = 2;
+        for (let k = 0; k < 2; k++) { const u = (K.t * 1.5 + k / 2) % 1; c.globalAlpha = 0.45 * (1 - u); c.beginPath(); c.arc(m[0], m[1], (1.2 + u * 1.1) * m[2], 0, 6.29); c.stroke(); }
+        c.globalAlpha = 1;
+      }
+    }
+  }
+
+  function draw(c) {
+    c.save(); K.shakeApply(c);
+    if (GL) draw3d(c); else world2d(c);
     K.drawParts(c);
     for (const pp of pops) { c.globalAlpha = 1 - pp.t; K.text(c, pp.txt, pp.x, pp.y - pp.t * 60, 40, pp.color, 'center', 900); } c.globalAlpha = 1;
     c.restore();

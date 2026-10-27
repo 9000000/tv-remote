@@ -22,12 +22,12 @@
   const NOADD = new Float32Array(4), eye = new Float32Array(3);
 
   const VS = 'attribute vec3 aP; attribute vec4 aC; attribute vec3 aN;' +
-    'uniform mat4 uVP; uniform mat4 uM; uniform vec3 uL; uniform vec3 uEye; uniform vec4 uK; uniform vec3 uF; uniform vec4 uAdd; uniform float uSky;' +
+    'uniform mat4 uVP; uniform mat4 uM; uniform vec3 uL; uniform vec3 uEye; uniform vec4 uK; uniform vec3 uF; uniform vec4 uAdd; uniform float uSky; uniform float uA;' +
     'varying vec4 vC;' +
     'void main(){ vec4 w = uM * vec4(aP, 1.0); vec3 n = normalize((uM * vec4(aN, 0.0)).xyz);' +
     ' vec3 c = aC.rgb * (uK.x + uK.y * max(dot(n, uL), 0.0)) + uAdd.rgb;' +             // uK: ambient, sun, fog start, fog end
     ' float f = clamp((distance(w.xyz, uEye) - uK.z) / (uK.w - uK.z), 0.0, 1.0);' +
-    ' vC = vec4(mix(mix(c, uF, f), aC.rgb, uSky), 1.0);' +
+    ' vC = vec4(mix(mix(c, uF, f), aC.rgb, uSky), uA);' +
     ' gl_Position = mix(uVP * w, vec4(aP.xy, 0.9999, 1.0), uSky); }';              // the sky: a quad straight in clip space, at the back
   const FS = 'precision mediump float; varying vec4 vC; void main(){ gl_FragColor = vC; }';
 
@@ -38,9 +38,9 @@
     gl.bindAttribLocation(prog, 0, 'aP'); gl.bindAttribLocation(prog, 1, 'aC'); gl.bindAttribLocation(prog, 2, 'aN');
     gl.linkProgram(prog); if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
     gl.useProgram(prog);
-    for (const n of ['uVP', 'uM', 'uL', 'uEye', 'uK', 'uF', 'uAdd', 'uSky']) U[n] = gl.getUniformLocation(prog, n);
+    for (const n of ['uVP', 'uM', 'uL', 'uEye', 'uK', 'uF', 'uAdd', 'uSky', 'uA']) U[n] = gl.getUniformLocation(prog, n);
     gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1); gl.enableVertexAttribArray(2);
-    gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.depthFunc(gl.LEQUAL);
+    gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.depthFunc(gl.LEQUAL); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.uniform1f(U.uA, 1);
     for (const m of meshes) upload(m);
     dyn.buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, dyn.buf); gl.bufferData(gl.ARRAY_BUFFER, dyn.data.byteLength, gl.DYNAMIC_DRAW);
     bound = null;
@@ -156,6 +156,14 @@
         }
         return g;
       },
+      torus(x, y, z, R, r, n, m, col) {                                       // a ring standing up, facing z (a hoop to fly through)
+        for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) {
+          const v = (u, w) => { const a = u / n * 6.2832, b = w / m * 6.2832, k = R + Math.cos(b) * r; return [x + Math.cos(a) * k, y + Math.sin(a) * k, z + Math.sin(b) * r]; };
+          g.quad(v(i, j), v(i + 1, j), v(i + 1, j + 1), v(i, j + 1), col);
+        }
+        return g;
+      },
+      both(p, q, r, top, under) { g.tri(p, q, r, top); return g.tri(p, r, q, under || top); },   // a sheet seen from both sides (paper)
       count() { return P.length / 9; },
       build() {
         const n = P.length / 3, buf = new ArrayBuffer(n * STRIDE), f = new Float32Array(buf), u = new Uint8Array(buf), s = new Int8Array(buf);
@@ -234,15 +242,19 @@
     for (let i = 0; i < 24; i += 4) if (PL[i] * x + PL[i + 1] * y + PL[i + 2] * z + PL[i + 3] < -r) return false;
     return true;
   };
-  // one mesh; m: its matrix (K3.place), null for a mesh built in world space; add: [r, g, b] 0..1 added to its colour (a flash)
-  K3.draw = (mesh, m, add) => {
+  // one mesh; m: its matrix (K3.place), null for a mesh built in world space; add: [r, g, b] 0..1 added to its colour (a flash);
+  // alpha < 1: see-through (no depth write; draw these after the solid ones, far to near)
+  K3.draw = (mesh, m, add, alpha) => {
     if (!gl || lost || !mesh.n) return;
     const b = mesh.b; let x = b[0], y = b[1], z = b[2], r = b[3];
     if (m) { x = m[0] * b[0] + m[4] * b[1] + m[8] * b[2] + m[12]; y = m[1] * b[0] + m[5] * b[1] + m[9] * b[2] + m[13]; z = m[2] * b[0] + m[6] * b[1] + m[10] * b[2] + m[14]; r *= Math.hypot(m[0], m[1], m[2]); }
     if (!K3.visible(x, y, z, r)) { K3.stats.culled++; return; }
     const mm = m || ID; if (mm !== lastM || m) { gl.uniformMatrix4fv(U.uM, false, mm); lastM = mm; }
     if (add !== lastAdd) { if (add) gl.uniform4f(U.uAdd, add[0], add[1], add[2], 0); else gl.uniform4fv(U.uAdd, NOADD); lastAdd = add; }
+    const see = alpha != null && alpha < 1;
+    if (see) { gl.enable(gl.BLEND); gl.depthMask(false); gl.uniform1f(U.uA, alpha); }
     bind(mesh.buf); gl.drawArrays(gl.TRIANGLES, 0, mesh.n);
+    if (see) { gl.disable(gl.BLEND); gl.depthMask(true); gl.uniform1f(U.uA, 1); }
     K3.stats.draws++; K3.stats.tris += mesh.n / 3;
   };
 
@@ -281,9 +293,9 @@
   }
   K3.end = () => flush();
 
-  // a world point on Kit's 1280x720 canvas: out = [x, y, in front of the camera]
+  // a world point on Kit's 1280x720 canvas: out = [x, y, in front of the camera, pixels a metre there]
   K3.toScreen = (x, y, z, out) => {
     const cx = VP[0] * x + VP[4] * y + VP[8] * z + VP[12], cy = VP[1] * x + VP[5] * y + VP[9] * z + VP[13], w = VP[3] * x + VP[7] * y + VP[11] * z + VP[15];
-    out[0] = (cx / w * 0.5 + 0.5) * 1280; out[1] = (0.5 - cy / w * 0.5) * 720; out[2] = w > 0 ? 1 : 0; return out;
+    out[0] = (cx / w * 0.5 + 0.5) * 1280; out[1] = (0.5 - cy / w * 0.5) * 720; out[2] = w > 0 ? 1 : 0; out[3] = w > 0 ? PV[5] * 360 / w : 0; return out;
   };
 })();
