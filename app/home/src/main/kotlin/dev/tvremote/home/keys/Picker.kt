@@ -23,6 +23,7 @@ import dev.tvremote.home.Store
 import dev.tvremote.home.Target
 import dev.tvremote.home.apps.App
 import dev.tvremote.home.apps.Apps
+import dev.tvremote.home.apps.Links
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.apps.Tiles
 import dev.tvremote.home.apps.wide
@@ -118,11 +119,12 @@ object Picker {
 
     private val bg = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "home-picker").apply { isDaemon = true } }
 
-    private class Item(val key: String, val label: String, val app: App?, val tag: String, val section: Int, val icon: Int = 0)
+    private class Item(val key: String, val label: String, val app: App?, val tag: String, val section: Int, val icon: Int = 0, val link: Links.Item? = null)
 
     private fun fold(t: String) = java.text.Normalizer.normalize(t, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").replace('đ', 'd').replace('Đ', 'D').lowercase()
 
-    fun show(a: Activity, mode: Mode, title: String, now: String = "", onPick: (String) -> Unit = {}): Dialog {
+    /** [only]: a package whose channels ([Links]) alone are listed, from "+ Add"'s "Pin a VTVgo channel". */
+    fun show(a: Activity, mode: Mode, title: String, now: String = "", only: String? = null, onPick: (String) -> Unit = {}): Dialog {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val dm = a.resources.displayMetrics
@@ -156,7 +158,7 @@ object Picker {
 
         val items = ArrayList<Item>()
         val tiles = HashMap<String, PickTile>()
-        val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_tiles)
+        val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_links, R.string.pk_tiles)
 
         // read once, kept as presses change them: read per tile (~15 ms each on the FPT box) it was ~250 ms before the list showed
         var hiddenNow = Store.list(a, "hidden"); var tilesNow = Store.list(a, "tiles")
@@ -170,6 +172,18 @@ object Picker {
         }
         fun press(it: Item) {
             if (mode == Mode.TARGET) { dialog.dismiss(); onPick(it.key); return }
+            val link = it.link
+            if (link != null && it.key !in pinnedNow) {                // another app's channel: TV Home's own pin of its link, the logo as its picture
+                bg.execute {
+                    val made = Pins.pinIntent(a, link.pkg, link.name, Links.intent(link), Links.card(Links.logo(a, link), link.name))
+                    a.runOnUiThread {
+                        if (made == Pins.Made.FAIL) { android.widget.Toast.makeText(a, R.string.watch_pin_fail, android.widget.Toast.LENGTH_SHORT).show(); return@runOnUiThread }
+                        pinnedNow = pinnedNow + it.key; tiles[it.key]?.mark(true)
+                        (a as? HomeActivity)?.let { h -> h.window.decorView.postDelayed({ if (!h.isDestroyed) h.pinsRead() }, 600) }   // the system confirms through PinActivity first
+                    }
+                }
+                return
+            }
             if (Target.kind(it.key) == Target.Kind.APP) {          // an app: off the grid (hidden) or back
                 val hidden = Store.list(a, "hidden")
                 if (it.key in hidden) Store.change(a, JSONObject().put("hidden", JSONArray(hidden - it.key)))
@@ -206,7 +220,7 @@ object Picker {
                 val here = items.filter { it.section == s && (q.isEmpty() || fold(it.label).contains(q) || fold(it.tag).contains(q)) }
                 val empty = when {
                     s == 1 && !Pins.can(a) -> a.getString(R.string.pk_pins_need_home)
-                    s == 2 && Tiles.available(a).isEmpty() -> a.getString(if (Tiles.status(a) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.c_tiles_none)
+                    s == 3 && Tiles.available(a).isEmpty() -> a.getString(if (Tiles.status(a) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.c_tiles_none)
                     else -> ""
                 }
                 if (here.isEmpty() && (q.isNotEmpty() || empty.isEmpty())) continue
@@ -238,6 +252,7 @@ object Picker {
                 ?: Apps.list(a).onEach { it.load(a) }
             val hidden = Store.list(a, "hidden").toSet()
             val got = ArrayList<Item>()
+            if (only == null) {                                         // one app's channels alone: no apps, shortcuts, widgets
             if (mode == Mode.TARGET) got.add(Item("", a.getString(R.string.pk_none), null, "", 0))
             for (p in apps) got.add(Item(p.pkg, p.label, p, if (p.pkg in hidden && mode == Mode.GRID) a.getString(R.string.pk_hidden) else "", 0))
             Pins.refresh(a, apps)
@@ -248,7 +263,12 @@ object Picker {
                 val app = Pins.app(a, o.getString("key")) ?: continue
                 got.add(Item(o.getString("key"), o.getString("title"), app, names[o.getString("app")] ?: "", 1))
             }
-            for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 2, Tiles.iconRes(a, t)))
+            for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 3, Tiles.iconRes(a, t)))
+            }
+            if (mode == Mode.GRID && Pins.can(a)) for (l in Links.installed(a).filter { only == null || it.pkg == only }) {   // kept logos only, small cards: the full-size ones for ~80 channels were ~70 MB
+                val art = App(l.pkg, l.name, null).apply { banner = android.graphics.drawable.BitmapDrawable(a.resources, Links.card(Links.logo(a, l, fetch = false), l.name, tileW.coerceAtMost(320), android.graphics.Bitmap.Config.RGB_565)) }
+                got.add(Item(Target.pin(a.packageName, Pins.ownId(Links.intent(l))), l.name, art, if (only == null) l.app else "", 2, link = l))
+            }
             // the tiles made here too, not yet on a window (as AsyncLayoutInflater does): ~10 ms each on the FPT box's UI thread
             for (it in got.take(cols * 3)) tileFor(it)                    // the first screen only: all of them took ~180 ms there, longer than the wait they saved
             a.runOnUiThread {

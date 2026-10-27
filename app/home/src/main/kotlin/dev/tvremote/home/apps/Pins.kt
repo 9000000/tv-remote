@@ -58,11 +58,12 @@ object Pins {
     @TargetApi(26)
     fun picture(c: Context, a: App) {
         val s = a.pin as ShortcutInfo
-        val sharp = if (s.`package` in OURS) dev.tvremote.tvui.PinArt.read(c, s.`package`, s.id, fit) else null   // the system's copy is ~127 px: ours keep a larger one
+        val sharp = if (s.`package` == c.packageName) dev.tvremote.tvui.PinArt.own(c, s.id, fit)
+            else if (s.`package` in OURS) dev.tvremote.tvui.PinArt.read(c, s.`package`, s.id, fit) else null   // the system's copy is ~127 px: ours keep a larger one
         val d = sharp?.let { android.graphics.drawable.BitmapDrawable(c.resources, it) }
             ?: try { la(c)!!.getShortcutIconDrawable(s, c.resources.displayMetrics.densityDpi) } catch (e: Exception) { null }
             ?: try { c.packageManager.getApplicationIcon(s.`package`) } catch (e: Exception) { null }   // the system lost its bitmap ("Icon file not found"): the app's own icon, not the hidden apps' eye
-        if (d != null && wide(d.intrinsicWidth, d.intrinsicHeight) && d.intrinsicWidth > 0) a.banner = badged(c, d, if (s.`package` == c.packageName) sourceOf(c, s.id) else s.`package`) else a.icon = d
+        if (d != null && wide(d.intrinsicWidth, d.intrinsicHeight) && d.intrinsicWidth > 0) a.banner = badged(c, d, if (s.`package` != c.packageName) s.`package` else if (marked(c, s.id)) null else sourceOf(c, s.id)) else a.icon = d
     }
 
     private val OURS = setOf("dev.tvremote.games", "dev.tvremote.channels")
@@ -80,11 +81,11 @@ object Pins {
         val b = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
         val cv = android.graphics.Canvas(b)
         card.setBounds(0, 0, w, h); card.draw(cv)
-        val z = h * 22 / 100; val m = h * 6 / 100                    // ~1/5 of the height, in from the bottom-left corner the launcher rounds
+        val z = h * 22 / 100; val m = h * 6 / 100                    // ~1/5 of the height, bottom-right as on the Play Next row (Watch.art; its titles take the left)
         val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = BADGE_BG; setShadowLayer(z * 0.12f, 0f, z * 0.04f, BADGE_SHADOW) }
-        cv.drawRoundRect(android.graphics.RectF(m.toFloat(), (h - m - z).toFloat(), (m + z).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, p)
-        cv.save(); cv.clipPath(android.graphics.Path().apply { addRoundRect(android.graphics.RectF(m.toFloat(), (h - m - z).toFloat(), (m + z).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, android.graphics.Path.Direction.CW) })
-        icon.setBounds(m, h - m - z, m + z, h - m); icon.draw(cv); cv.restore()
+        cv.drawRoundRect(android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, p)
+        cv.save(); cv.clipPath(android.graphics.Path().apply { addRoundRect(android.graphics.RectF((w - m - z).toFloat(), (h - m - z).toFloat(), (w - m).toFloat(), (h - m).toFloat()), z * 0.24f, z * 0.24f, android.graphics.Path.Direction.CW) })
+        icon.setBounds(w - m - z, h - m - z, w - m, h - m); icon.draw(cv); cv.restore()
         return android.graphics.drawable.BitmapDrawable(c.resources, b)
     }
 
@@ -135,9 +136,9 @@ object Pins {
     enum class Made { OK, SAME, FAIL }
 
     @TargetApi(26)
-    fun pinIntent(c: Context, source: String, label: String, intent: android.content.Intent, art: android.graphics.Bitmap?): Made {
+    fun pinIntent(c: Context, source: String, label: String, intent: android.content.Intent, art: android.graphics.Bitmap?, marked: Boolean = false): Made {
         if (!can(c)) return Made.FAIL
-        val id = "pn" + java.security.MessageDigest.getInstance("SHA-1").digest(intent.toUri(0).toByteArray()).joinToString("") { "%02x".format(it) }.take(14)
+        val id = ownId(intent)
         if (list(c).any { it.pkg == Target.pin(c.packageName, id) }) return Made.SAME
         val sm = c.getSystemService(android.content.pm.ShortcutManager::class.java) ?: return Made.FAIL
         val icon = art ?: try {                                      // no poster: the source app's own icon, not this home's
@@ -147,13 +148,18 @@ object Pins {
         val go = android.content.Intent(intent).apply { if (action == null) action = android.content.Intent.ACTION_VIEW }
         val info = android.content.pm.ShortcutInfo.Builder(c, id).setShortLabel(label.take(40)).setIntent(go)
             .also { b -> icon?.let { b.setIcon(android.graphics.drawable.Icon.createWithBitmap(it)) } }.build()
-        c.getSharedPreferences(SRC, Context.MODE_PRIVATE).edit().putString(id, source).apply()   // whose it is: the shortcut itself is this home's
+        c.getSharedPreferences(SRC, Context.MODE_PRIVATE).edit().putString(id, source).putBoolean("$id.m", marked).apply()   // [marked]: [art] has the app's icon already (Watch.art): not a second one   // whose it is: the shortcut itself is this home's
+        art?.let { dev.tvremote.tvui.PinArt.save(c, id, it) }       // the system keeps ~127 px of it: the tile reads this one
         return try { if (sm.requestPinShortcut(info, null)) Made.OK else Made.FAIL } catch (e: Exception) { Made.FAIL }
     }
+
+    /** The id [pinIntent] gives [intent]: the same intent is the same pin, so the picker knows it is pinned before it asks. */
+    fun ownId(intent: android.content.Intent) = "pn" + java.security.MessageDigest.getInstance("SHA-1").digest(intent.toUri(0).toByteArray()).joinToString("") { "%02x".format(it) }.take(14)
 
     private const val SRC = "pin_src"
     /** The app a Play Next item pinned by [pinIntent] came from (its menu named TV Home); null for any other shortcut. */
     fun sourceOf(c: Context, id: String): String? = c.getSharedPreferences(SRC, Context.MODE_PRIVATE).getString(id, null)
+    private fun marked(c: Context, id: String) = c.getSharedPreferences(SRC, Context.MODE_PRIVATE).getBoolean("$id.m", false)
 
     // ---- every shortcut an app offers (static, dynamic, pinned), for the picker and for a key / the grid that points at one ----
 

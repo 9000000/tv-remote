@@ -38,6 +38,12 @@ object PinArt {
         c.contentResolver.openInputStream(Uri.parse("content://$pkg.pinart/" + Uri.encode(sid)))?.use { BitmapFactory.decodeStream(it, null, o) }
     } catch (e: Exception) { null }
 
+    /** TV Home's own pins (a Play Next item, another app's channel): its own file, no provider between. */
+    fun own(c: Context, sid: String, width: Int = W): Bitmap? = try {
+        var n = 1; while (W / (n * 2) >= width) n *= 2
+        File(dir(c), name(sid)).takeIf { it.isFile }?.let { BitmapFactory.decodeFile(it.path, BitmapFactory.Options().apply { inSampleSize = n }) }
+    } catch (e: Exception) { null }
+
     /** Declared by each app that pins (authority `${applicationId}.pinart`, exported): opens one card, read only, for TV Home. */
     class Provider : ContentProvider() {
         override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {

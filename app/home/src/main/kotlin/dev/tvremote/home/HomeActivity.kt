@@ -62,7 +62,9 @@ import dev.tvremote.home.ui.Drop
 import dev.tvremote.home.ui.Frost
 import dev.tvremote.home.apps.InputOpen
 import dev.tvremote.home.apps.Inputs
+import dev.tvremote.home.apps.Links
 import dev.tvremote.home.keys.Keys
+import dev.tvremote.home.keys.Picker
 import dev.tvremote.home.manage.ManageServer
 import dev.tvremote.home.apps.Nav
 import dev.tvremote.home.wall.Online
@@ -424,7 +426,7 @@ class HomeActivity : Activity() {
     /** The item as a pinned shortcut of the grid ([Pins.pinIntent]): a tile like any pin, opening the same safe intent as the row's. */
     private fun watchPin(it: Watch.Item, pic: android.graphics.Bitmap?) {
         val i = Watch.intent(it)
-        when (if (i == null) Pins.Made.FAIL else Pins.pinIntent(this, it.pkg, it.title, i, pic)) {
+        when (if (i == null) Pins.Made.FAIL else Pins.pinIntent(this, it.pkg, it.title, i, pic, marked = pic != null)) {
             Pins.Made.SAME -> toast(R.string.watch_pin_same)
             Pins.Made.FAIL -> toast(R.string.watch_pin_fail)
             Pins.Made.OK -> ui.postDelayed({ if (!isDestroyed) pinsRead() }, 600)          // the system confirms through PinActivity first
@@ -2211,6 +2213,10 @@ class HomeActivity : Activity() {
                 if (k in onGrid || n >= 40) continue; n++
                 rows.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = icon(o.optString("app")) }) }
         }
+        if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.pkg })   // another app's channels (VTVgo, TV360): the picker with those alone
+            rows.add(TvGlass.Item(0, getString(R.string.add_app_channel, l[0].app), getString(R.string.add_app_channel_hint, l.size), false, false) {
+                open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(R.string.add_app_channel, l[0].app), only = pkg)
+            }.also { it.picture = icon(pkg) })
         if (Apps.one(this, "dev.tvremote.channels") != null)
             rows.add(TvGlass.Item(R.drawable.ic_plus, getString(R.string.add_channel), getString(R.string.add_channel_hint), false, false) { if (!Apps.launch(this, "dev.tvremote.channels")) toast(R.string.no_open) })
         open = TvGlass.menu(this, R.style.Menu, getString(R.string.add_title), rows) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }

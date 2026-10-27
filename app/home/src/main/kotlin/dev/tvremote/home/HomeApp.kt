@@ -17,6 +17,7 @@ class HomeApp : Application() {
         dev.tvremote.report.OwnReport.start(this, "home", ping = true)        // anonymous error reports + the daily census ping (TV Setup's switch, else Customize's)
         CrashLoop.watch(this)
         dev.tvremote.home.widgets.Sources.start(this)                         // the market sources and news feeds: kept or packed list now, the site's when newer
+        dev.tvremote.home.apps.Links.start(this)                            // other apps' channels to pin (VTVgo, TV360): the list, then the logos of the installed ones
         Themes.start(this)                                                  // the ready-made themes: kept or packed list now, the site's when it is newer
         // a saved theme keeps its photo / video: the library and the photos' delete refuse to remove one a theme shows (409 "inuse")
         Videos.refs.add { wall -> HomeConfig.themeUses(Store.get(this), wall) }
