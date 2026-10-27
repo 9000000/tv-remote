@@ -56,10 +56,15 @@
   <div class="box">
     <h2><span class="num">3</span><span class="vi">Gửi đi</span><span class="en">Send it</span></h2>
     <div class="ways">
+      <div class="way main">
+        <h3><span class="vi">Gửi thẳng cho tác giả</span><span class="en">Straight to the author</span></h3>
+        <p><span class="vi">Không cần tài khoản: nhật ký và lời bạn viết tới máy chủ của dự án (Cloudflare), bạn nhận một mã 8 số. Nhắn mã đó cho tác giả nếu muốn hỏi tiếp. Xoá sau 14 ngày.</span><span class="en">No account needed: the log and your words go to the project's server (Cloudflare) and you get an 8-digit code. Send the author that code to follow up. Deleted after 14 days.</span></p>
+        <button class="btn btn-primary btn-sm" id="up" type="button"><span class="vi">Gửi ngay</span><span class="en">Send now</span></button>
+      </div>
       <div class="way">
         <h3>GitHub issue</h3>
         <p><span class="vi">Mở trang báo lỗi với nhật ký và lời bạn viết điền sẵn; bấm "Submit new issue" ở đó (cần tài khoản GitHub). Nhật ký dài thì chỉ phần cuối được điền sẵn: nó đã nằm trong clipboard, dán thêm vào nếu muốn.</span><span class="en">Opens the issue form with the log and your words filled in; press "Submit new issue" there (a GitHub account is needed). A long log is filled in only by its end: it is in the clipboard, paste the rest if you like.</span></p>
-        <button class="btn btn-primary btn-sm" id="gh" type="button"><span class="vi">Mở issue trên GitHub</span><span class="en">Open a GitHub issue</span></button>
+        <button class="btn btn-ghost btn-sm" id="gh" type="button"><span class="vi">Mở issue trên GitHub</span><span class="en">Open a GitHub issue</span></button>
       </div>
       <div class="way">
         <h3>Facebook</h3>
@@ -70,7 +75,7 @@
     <p class="state" id="sendstate" aria-live="polite"></p>
   </div>
 
-  <p class="priv"><span class="vi">Trang này không gửi gì đi đâu: nhật ký chỉ ở trong trình duyệt của bạn cho tới khi bạn bấm gửi trên GitHub hoặc Facebook. Nhật ký không có mã ghép đôi, địa chỉ MAC hay chữ bạn đã gõ.</span><span class="en">This page sends nothing anywhere: the log stays in your browser until you send it on GitHub or Facebook. The log holds no pairing codes, MAC addresses or words you typed.</span></p>
+  <p class="priv"><span class="vi">Nhật ký chỉ ở trong trình duyệt của bạn cho tới khi bạn bấm một nút gửi. Nhật ký không có mã ghép đôi, địa chỉ MAC hay chữ bạn đã gõ.</span><span class="en">The log stays in your browser until you press one of the send buttons. The log holds no pairing codes, MAC addresses or words you typed.</span></p>
 </main>
 
 <script>
@@ -82,10 +87,14 @@
     vi: { pasted: "Đã dán nhật ký.", noread: "Trình duyệt không cho đọc clipboard: bấm giữ ô trên rồi chọn Dán.", empty: "Clipboard đang trống: bấm Gửi nhật ký trong app lần nữa.",
           notlog: "Chữ này không giống nhật ký của app (nhật ký bắt đầu bằng \"TV Remote\" hoặc \"TV Setup\"); vẫn gửi được.", need: "Dán nhật ký vào ô 1 trước đã.",
           copied: "Đã chép vào clipboard. Trên Facebook bấm Nhắn tin rồi dán vào.", nocopy: "Không chép được: chọn hết ô 1 rồi chép tay.",
+          sending: "Đang gửi…", sent: "Đã gửi. Mã của bạn: {code}. Nhắn mã này cho tác giả nếu muốn hỏi tiếp.", sentcut: "Đã gửi phần cuối của nhật ký (nó quá dài). Mã của bạn: {code}.",
+          limit: "Hôm nay máy này đã gửi đủ lần: mai thử lại, hoặc dùng GitHub / Facebook.", upfail: "Không gửi được (mạng?): thử lại, hoặc dùng GitHub / Facebook.",
           cut: "Nhật ký dài: issue chỉ điền sẵn phần cuối; dán cả nhật ký vào nếu được.", describe: "Chuyện gì đã xảy ra?", logh: "Nhật ký" },
     en: { pasted: "The log is pasted.", noread: "The browser will not let the page read the clipboard: long-press the box above and choose Paste.", empty: "The clipboard is empty: press Send the log in the app again.",
           notlog: "This does not look like the app's log (it starts with \"TV Remote\" or \"TV Setup\"); it can still be sent.", need: "Paste the log in box 1 first.",
           copied: "Copied. On Facebook press Message and paste.", nocopy: "Could not copy: select all of box 1 and copy it by hand.",
+          sending: "Sending…", sent: "Sent. Your code: {code}. Send the author this code to follow up.", sentcut: "Sent the end of the log (it is too long). Your code: {code}.",
+          limit: "This device has sent enough for today: try tomorrow, or use GitHub / Facebook.", upfail: "Could not send (network?): try again, or use GitHub / Facebook.",
           cut: "A long log: the issue holds only its end; paste the whole log in if you can.", describe: "What happened?", logh: "Log" }
   };
   var w = function(k){ return W[root.dataset.lang][k]; };
@@ -118,6 +127,34 @@
     return Promise.resolve(legacy());
     function legacy(){ var a = document.createElement("textarea"); a.value = text; document.body.append(a); a.select(); var ok = false; try { ok = document.execCommand("copy"); } catch(e){} a.remove(); return ok; }
   }
+  // straight to the census Worker's support box (dev/census/src/support.js): the same reports TV Setup's Send to support makes, read
+  // by the author with the admin token. text/plain: a simple request, no preflight (the Worker's OPTIONS allows GET only).
+  // The id is this browser's own, for the Worker's 20 a day; the body stays under its 64 KB, keeping the log's head and end
+  function uid(){
+    var k; try { k = localStorage.getItem("logId"); } catch(e){}
+    if (!k) { k = crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, function(c){ return (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16); });
+      try { localStorage.setItem("logId", k); } catch(e){} }
+    return k;
+  }
+  $("up").onclick = function(){
+    var text = log.value.trim();
+    if (!text) { log.focus(); return say($("sendstate"), w("need"), "bad"); }
+    var head = text.split("\n\n")[0], v = (/^TV (?:Remote|Setup) (\S+)/.exec(head) || [])[1] || "", keep = 60000, report, cut = false;
+    for (;;) {
+      report = (what.value.trim() ? what.value.trim() + "\n\n" : "") + (cut ? head.slice(0, 4000) + "\n…\n" + text.slice(-keep) : text);
+      if (new Blob([report]).size <= 62000 || keep < 2000) break;
+      cut = true; keep = Math.floor(keep * 0.8);
+    }
+    var b = $("up"); b.disabled = true; say($("sendstate"), w("sending"));
+    fetch("https://tvr-census.99-hoangtran.workers.dev/v1/support", { method: "POST", headers: { "content-type": "text/plain" },
+      body: JSON.stringify({ id: uid(), app: "log", v: v.slice(0, 32), report: report }) })
+      .then(function(r){ return r.json().then(function(j){ return { s: r.status, j: j }; }); })
+      .then(function(x){
+        if (x.j && x.j.code) say($("sendstate"), w(cut ? "sentcut" : "sent").replace("{code}", x.j.code.replace(/(\d{4})(\d{4})/, "$1 $2")), "ok");
+        else say($("sendstate"), w(x.s === 429 ? "limit" : "upfail"), "bad");
+      }, function(){ say($("sendstate"), w("upfail"), "bad"); })
+      .then(function(){ b.disabled = false; });
+  };
   // GitHub takes the issue in the link: kept well under its ~8 KB, the log's first block (app, phone, TV) and its last lines
   $("gh").onclick = function(){
     var text = log.value.trim();

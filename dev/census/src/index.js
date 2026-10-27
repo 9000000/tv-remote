@@ -99,7 +99,13 @@ export default {
     ctx.waitUntil(prune(env));
   },
 
+  // an error thrown below (a D1 hiccup) would be Cloudflare's own page, without CORS: the site read it as a CORS block, not a 503
   async fetch(req, env) {
+    try { return await handle(req, env); } catch (e) { return json({ error: "busy" }, 503, { "cache-control": "no-store" }); }
+  },
+};
+
+async function handle(req, env) {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: { ...CORS, "access-control-allow-methods": "GET", "access-control-max-age": "86400" } });
 
@@ -147,5 +153,4 @@ export default {
     }
 
     return json({ error: "not found" }, 404);
-  },
-};
+}

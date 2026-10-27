@@ -63,7 +63,10 @@
     get().then(function(d){ data = d; draw(); }).catch(function(){ failed = true; draw(); });
   }
   var once;                                                         // one request for the list and the headline
-  function get(){ return once || (once = fetch(URL_).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ return d && d.models ? d : { models: [] }; })); }
+  // one more try a moment later: a Worker that threw once (a D1 hiccup) answers with no CORS header, which reads as a failure here
+  function load(u){ var f = function(){ return fetch(u).then(function(r){ if (!r.ok) throw 0; return r.json(); }); };
+    return f().catch(function(){ return new Promise(function(ok){ setTimeout(ok, 1500); }).then(f); }); }
+  function get(){ return once || (once = load(URL_).then(function(d){ return d && d.models ? d : { models: [] }; })); }
   document.querySelectorAll("[data-tvs]").forEach(mount);
 
   // The headline in big numbers ([data-tvs-big]): its own words stay until the census answers, or when it cannot.
@@ -134,7 +137,7 @@
     plot.onpointerleave = function(){ if (sel >= 0) { sel = -1; draw(); } };
     function start(){
       if (started) return; started = true;
-      fetch(DAYS).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ data = d && d.days ? d : { days: [] }; draw(); }).catch(function(){ failed = true; draw(); });
+      load(DAYS).then(function(d){ data = d && d.days ? d : { days: [] }; draw(); }).catch(function(){ failed = true; draw(); });
     }
     draw();
     new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-lang"] });

@@ -13,6 +13,7 @@
 .lg .state.bad{color:var(--red)}
 .lg .ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .lg .way{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.lg .way.main{grid-column:1/-1}   /* sent from here, no account: first and across */
 .lg .way h3{margin:0;font-size:17px}
 .lg .way p{margin:0;color:var(--muted);font-size:14px;flex:1}
 .lg .way .btn{align-self:flex-start}

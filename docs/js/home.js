@@ -50,7 +50,9 @@
     var t = document.getElementById(id); if (!t) return;
     var cards = t.children, n = document.getElementById(id + "-n"), pv = document.getElementById(id + "-prev"), nx = document.getElementById(id + "-next");
     var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    function step(){ return cards.length > 1 ? cards[1].offsetLeft - cards[0].offsetLeft : t.clientWidth; }
+    // the cards' real pitch, fractions kept (393.6 px): offsetLeft rounds to 394, and i * 394 drifted off the snap point, 9 px by
+    // the 30th card, so the snap pulled it there with a jerk once the glide let go
+    function step(){ var n = cards.length; return n > 1 ? (cards[n - 1].getBoundingClientRect().left - cards[0].getBoundingClientRect().left) / (n - 1) : t.clientWidth; }
     function upd(){
       var i = Math.min(cards.length - 1, Math.round(t.scrollLeft / step()));
       n.textContent = (i + 1) + " / " + cards.length;
@@ -97,7 +99,7 @@
       if (!drag) return;
       var v = e.timeStamp - drag.lt > 120 ? 0 : drag.v; drag = null;   // held still before letting go: no flick
       if (!moved) return;
-      t.classList.remove("drag");
+      t.classList.add("glide"); t.classList.remove("drag");   // snap stays off: step() below reads layout, and a snap back on there jumped before the glide
       var s = step(), at = t.scrollLeft / s;
       var i = Math.abs(v) > 0.3 ? (v < 0 ? Math.ceil(at) : Math.floor(at)) : Math.round(at);   // a flick goes on to the next card in its way, never two
       to(i);
