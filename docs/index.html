@@ -32,6 +32,9 @@
  "downloadUrl":"https://github.com/HoangTran0410/tv-remote/releases/latest","codeRepository":"https://github.com/HoangTran0410/tv-remote",
  "author":{"@type":"Person","name":"Hoang Tran","url":"https://github.com/HoangTran0410"}}
 </script>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "FAQPage", "inLanguage": "vi", "mainEntity": [{"@type": "Question", "name": "TV nào dùng được?", "acceptedAnswer": {"@type": "Answer", "text": "Android TV và Google TV (Sony, TCL, Xiaomi, Philips, box của nhà mạng như FPT Play Box…). LG, Samsung, Roku, VIDAA chạy được phím, gõ chữ, mở app trong app điện thoại và máy tính, nhưng còn thử nghiệm."}}, {"@type": "Question", "name": "Dùng được với iPhone không?", "acceptedAnswer": {"@type": "Answer", "text": "Được. iPhone không có app, nhưng TV Setup trên TV tự phát một trang web điều khiển: quét mã QR, gõ mã 6 số, mở bằng Safari."}}, {"@type": "Question", "name": "Cài lên TV bằng cách nào?", "acceptedAnswer": {"@type": "Answer", "text": "Cài Downloader từ CH Play trên TV, mở rồi gõ mã 2397346 để cài TV Setup. Không cần máy tính, chỉ cần remote của TV."}}, {"@type": "Question", "name": "Có cần cùng Wi-Fi không? Ở xa nhà thì sao?", "acceptedAnswer": {"@type": "Answer", "text": "Ở nhà thì cùng Wi-Fi, app tự tìm TV. Ở xa nhà dùng Tailscale, cài và đăng nhập bằng một nút; không mở cổng ra Internet."}}, {"@type": "Question", "name": "Có làm hỏng TV không? Có cần root không?", "acceptedAnswer": {"@type": "Answer", "text": "Không cần root. Tối ưu TV không gỡ gì cả và có nút Hoàn tác trả lại như cũ. Mỗi thiết bị phải được bạn cho phép trên màn hình TV."}}, {"@type": "Question", "name": "TV Home là gì? Quay về màn hình cũ được không?", "acceptedAnswer": {"@type": "Answer", "text": "TV Home là màn hình chính không quảng cáo của dự án. TV hỏi Giữ, không bấm trong 30 giây thì tự về launcher cũ; hoặc chọn Dùng launcher gốc của TV bất cứ lúc nào."}}, {"@type": "Question", "name": "Có miễn phí không? Có quảng cáo không?", "acceptedAnswer": {"@type": "Answer", "text": "Miễn phí, không quảng cáo, không tài khoản, mã nguồn mở (giấy phép MIT) trên GitHub."}}, {"@type": "Question", "name": "App gửi dữ liệu gì đi?", "acceptedAnswer": {"@type": "Answer", "text": "Mỗi ngày một ghi chú ẩn danh: hãng và mẫu TV, phiên bản Android và app, tính năng nào chạy được, một ID ngẫu nhiên. Không gửi IP, tên TV, danh sách app hay tài khoản. Tắt trong Cài đặt thì không gửi gì."}}, {"@type": "Question", "name": "Có khóa cho trẻ em không?", "acceptedAnswer": {"@type": "Answer", "text": "Có: hẹn giờ ngủ, giờ đi ngủ, giới hạn app mỗi ngày và khóa app bằng mã PIN. Các giới hạn này chạy ngay trên TV, tắt điện thoại vẫn có tác dụng."}}]}
+</script>
 <script>(function(){var l;try{l=localStorage.getItem("lang")}catch(e){}var q=new URLSearchParams(location.search).get("lang");l=q==="en"||q==="vi"?q:l||(/^vi\b/i.test(navigator.language||"")?"vi":"en");document.documentElement.dataset.lang=l;document.documentElement.lang=l})();
 /* pictures that differ by language carry data-lang-src (LANG in the name); set right after the picture, so only one is fetched */
 function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcset)i.srcset=i.dataset.langSrcset.replace(/LANG/g,L);i.src=i.dataset.langSrc.replace(/LANG/g,L)}</script>
@@ -43,7 +46,7 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
 <noscript><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="css/nav.css">
 <link rel="stylesheet" href="css/site.css">
-<link rel="stylesheet" href="css/home.css?v=1032">
+<link rel="stylesheet" href="css/home.css?v=1033">
 <link rel="stylesheet" href="css/tvs.css">
 </head>
 <body>
@@ -544,6 +547,51 @@ function LI(i){var L=document.documentElement.dataset.lang;if(i.dataset.langSrcs
   </div>
 </section>
 
+
+<!-- ============ FAQ: native <details>, no script; the JSON-LD in <head> repeats the Vietnamese text ============ -->
+<section class="h-faq" id="faq">
+  <div class="wrap">
+    <h2 class="reveal"><span class="vi">Hỏi đáp</span><span class="en">FAQ</span></h2>
+    <div class="faq reveal">
+    <details>
+      <summary><span class="vi">TV nào dùng được?</span><span class="en">Which TVs work?</span></summary>
+      <p><span class="vi">Android TV và Google TV (Sony, TCL, Xiaomi, Philips, box của nhà mạng như FPT Play Box…). LG, Samsung, Roku, VIDAA chạy được phím, gõ chữ, mở app trong app điện thoại và máy tính, nhưng còn thử nghiệm.</span><span class="en">Android TV and Google TV (Sony, TCL, Xiaomi, Philips, operator boxes such as FPT Play Box…). LG, Samsung, Roku and VIDAA get keys, typing and apps in the phone and computer apps, but that is still beta.</span> <a href="guide#brands"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">Dùng được với iPhone không?</span><span class="en">Does it work with an iPhone?</span></summary>
+      <p><span class="vi">Được. iPhone không có app, nhưng TV Setup trên TV tự phát một trang web điều khiển: quét mã QR, gõ mã 6 số, mở bằng Safari.</span><span class="en">Yes. There is no iPhone app, but TV Setup on the TV serves a control page: scan the QR code, type the 6-digit code, open it in Safari.</span> <a href="guide#web-iphone"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">Cài lên TV bằng cách nào?</span><span class="en">How do I put it on the TV?</span></summary>
+      <p><span class="vi">Cài Downloader từ CH Play trên TV, mở rồi gõ mã 2397346 để cài TV Setup. Không cần máy tính, chỉ cần remote của TV.</span><span class="en">Install Downloader from Google Play on the TV, open it and type code 2397346 to install TV Setup. No computer needed, just the TV's remote.</span> <a href="guide#install-tv"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">Có cần cùng Wi-Fi không? Ở xa nhà thì sao?</span><span class="en">Must I be on the same Wi-Fi? And away from home?</span></summary>
+      <p><span class="vi">Ở nhà thì cùng Wi-Fi, app tự tìm TV. Ở xa nhà dùng Tailscale, cài và đăng nhập bằng một nút; không mở cổng ra Internet.</span><span class="en">At home, the same Wi-Fi: the app finds the TV by itself. Away from home, use Tailscale, set up with one button; no port is opened to the Internet.</span> <a href="guide#away"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">Có làm hỏng TV không? Có cần root không?</span><span class="en">Can it break my TV? Does it need root?</span></summary>
+      <p><span class="vi">Không cần root. Tối ưu TV không gỡ gì cả và có nút Hoàn tác trả lại như cũ. Mỗi thiết bị phải được bạn cho phép trên màn hình TV.</span><span class="en">No root needed. Optimize TV uninstalls nothing and has an Undo button. Every device has to be approved by you on the TV's screen.</span> <a href="guide#optimize"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">TV Home là gì? Quay về màn hình cũ được không?</span><span class="en">What is TV Home? Can I go back to the old home screen?</span></summary>
+      <p><span class="vi">TV Home là màn hình chính không quảng cáo của dự án. TV hỏi Giữ, không bấm trong 30 giây thì tự về launcher cũ; hoặc chọn Dùng launcher gốc của TV bất cứ lúc nào.</span><span class="en">TV Home is the project's own ad-free home screen. The TV asks Keep; no answer in 30 seconds and the old launcher comes back. Or pick Use the TV's own launcher at any time.</span> <a href="guide#launchers"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">Có miễn phí không? Có quảng cáo không?</span><span class="en">Is it free? Any ads?</span></summary>
+      <p><span class="vi">Miễn phí, không quảng cáo, không tài khoản, mã nguồn mở (giấy phép MIT) trên GitHub.</span><span class="en">Free, no ads, no account, open source (MIT license) on GitHub.</span></p>
+    </details>
+    <details>
+      <summary><span class="vi">App gửi dữ liệu gì đi?</span><span class="en">What data does it send?</span></summary>
+      <p><span class="vi">Mỗi ngày một ghi chú ẩn danh: hãng và mẫu TV, phiên bản Android và app, tính năng nào chạy được, một ID ngẫu nhiên. Không gửi IP, tên TV, danh sách app hay tài khoản. Tắt trong Cài đặt thì không gửi gì.</span><span class="en">One anonymous note a day: TV brand and model, Android and app version, what worked, a random ID. Never your IP, TV name, app list or account. Switch it off in Settings and nothing is sent.</span> <a href="guide#census"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    <details>
+      <summary><span class="vi">Có khóa cho trẻ em không?</span><span class="en">Is there a kids lock?</span></summary>
+      <p><span class="vi">Có: hẹn giờ ngủ, giờ đi ngủ, giới hạn app mỗi ngày và khóa app bằng mã PIN. Các giới hạn này chạy ngay trên TV, tắt điện thoại vẫn có tác dụng.</span><span class="en">Yes: sleep timer, bedtime, daily app limits and PIN-locked apps. They run on the TV itself, so they work with every phone off.</span> <a href="guide#limits"><span class="vi">→ Hướng dẫn</span><span class="en">→ Guide</span></a></p>
+    </details>
+    </div>
+  </div>
+</section>
 
 <footer>
   <div class="wrap">

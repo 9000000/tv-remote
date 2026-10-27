@@ -155,3 +155,7 @@ button.fc{font:inherit;text-align:left;cursor:pointer;width:auto}
 .th-name{margin:0;font-size:20px;color:#fff;text-align:center}
 .th-zoom .car-b{background:var(--card2)}
 @media (max-width:560px){.h-themes .car-head h2{font-size:26px}.h-themes .car-head .lead{display:block;font-size:15px}.th-name{font-size:18px}}
+
+/* ---- FAQ: native <details>, the + turns into a − when open ---- */
+.h-faq{padding:72px 0 80px}
+.h-faq h2{text-align:center;font-size:clamp(30px,4vw,44px);font-weight:800;letter-spacing:-.025em}
