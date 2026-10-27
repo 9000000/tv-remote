@@ -4,7 +4,7 @@
 The list tells TV Home which places inside other apps it can pin to the grid: per app its package, a link with "{id}" in it (the
 app's own deep link, e.g. vtvgo://play?mediaType=CHANNEL&contentId={id}) and the items (id, name, logo). TV Home opens the link
 in that package only (Intent.setPackage), and offers an app's items only when the app is installed. A new app is an entry here,
-no new APK. "logo" is a file name under docs/home/logos/ (without .png) or an https address. dev/gen/app_links.py remakes the
+no new APK. A package "*" names no app: whoever handles that https link opens it (apps/LinkApps.kt; the YouTube entry). "logo" is a file name under docs/home/logos/ (without .png) or an https address. dev/gen/app_links.py remakes the
 VTVgo and TV360 entries; others are kept as written.
 
 Run it after every edit (raise "rev"), then commit links.json, links.json.sig and the logos together. :home packs the list as the
@@ -36,11 +36,14 @@ def check():
     pkgs = set()
     for a in d.get("apps", []):
         p = a.get("pkg", "")
-        if not PKG.fullmatch(p) or p in pkgs:
+        key = p if p != "*" else "*" + a.get("name", "")
+        if not (PKG.fullmatch(p) or p == "*") or key in pkgs:
             fail("bad or repeated pkg: %r" % p)
-        pkgs.add(p)
+        pkgs.add(key)
         u = a.get("uri", "")
         m = SCHEME.match(u)
+        if p == "*" and (not m or m.group(1) != "https"):
+            fail("%s: an entry with no package (\"*\", whoever handles the link) takes https links only" % a.get("name"))
         if "{id}" not in u or not m or m.group(1) in BANNED:
             fail("%s: uri needs a scheme (not %s) and {id}" % (p, "/".join(sorted(BANNED))))
         if not a.get("name"):

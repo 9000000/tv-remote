@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """dev/gen/app_links.py: remakes the VTVgo, TV360 and FPT Play entries of docs/home/links.json (the channels TV Home can pin, each opening
 that app at that channel) and their logos in docs/home/logos/, then signs the list (dev/sign/sign_links.py).
+`app_links.py youtube` remakes only the YouTube entry (a hand-picked list below, every handle read from its channel page on 2026-10-27;
+pkg "*": no app named, whoever handles the https link opens it, apps/LinkApps.kt; avatars are round PNGs, "y-<handle>").
 
 Every channel each app shows, not only the ones TV Channels plays: VTVgo's ids 1..MAX_ID asked of its channel API (the call TV
 Channels makes, docs/channels/providers.json) and kept when the app shows them (a 2025 merged province stays in the API, hidden);
@@ -28,6 +30,21 @@ FPT_URI = "https://fptplay.vn/xem-truyen-hinh/{id}"                    # the app
 FPT = [{"pkg": "com.fptplay.launcher", "name": "FPT Play", "uri": FPT_URI}, {"pkg": "net.fptplay.ottbox", "name": "FPT Play", "uri": FPT_URI}]   # the box's own first: signed in there
 FPT_API = "https://api.fptplay.net/api/v7.1_w/"
 FPT_KEY = "6ea6d2a4e2d3a4bd5e275401aa086d"                           # in fptplay.vn's own script: what its page signs with
+YOUTUBE = {"pkg": "*", "name": "YouTube", "uri": "https://www.youtube.com/@{id}"}
+# popular Vietnamese channels (and the kids' ones every family has): (handle, name); the handle was found by YouTube's own search and
+# its page read (name and subscribers matched the real channel), ASCII only (an id is [A-Za-z0-9_.-]). Order: news, music, kids, cooking, football, fun.
+YOUTUBE_PICKS = [
+    ("vtv24", "VTV24"), ("vtvthoitietofficial", "VTV Thời tiết"), ("baotuoitre", "Báo Tuổi Trẻ"), ("thanhnientvnews", "Báo Thanh Niên"),
+    ("VTCNewstintuc", "VTC News"), ("THVLGiaiTri", "THVL Giải trí"), ("THVLPhim", "THVL Phim"),
+    ("Sontungmtp", "Sơn Tùng M-TP"), ("MTPEntertainment", "M-TP Entertainment"), ("casihaanhtuan", "Hà Anh Tuấn"), ("ERIKOfficial", "ERIK"),
+    ("DenVau1305", "Đen Vâu"), ("hoaminzy3105", "Hòa Minzy"), ("HIEUTHUHAIOFFICIAL", "HIEUTHUHAI"), ("NhacHayVietNam", "Nhạc hay Việt Nam"),
+    ("BabyBusVN", "BabyBus"), ("WolfooTiengViet", "Wolfoo"), ("nhacthieunhi68", "Nhạc thiếu nhi"), ("CoComelon", "CoComelon"),
+    ("Pinkfong", "Baby Shark"), ("LittleBabyBum", "Little Baby Bum"),
+    ("MonAnNgon", "Món ăn ngon"), ("AmThucMeLam", "Ẩm thực Mẹ Làm"),
+    ("FPTBongDaViet", "FPT Bóng đá Việt"), ("VFFChannel6527", "VFF Channel"), ("KplusSportsOfficial", "K+ Sports"), ("vtvthethao_official", "VTV Thể thao"),
+    ("htvthethaoofficial", "HTV Thể thao"), ("v.league.official", "V.League"),
+    ("PewPew", "PewPew"), ("MixiGaming3con", "MixiGaming"), ("KhoaPug_solotrip", "Khoa Pug"),
+]
 TV360 = {"pkg": "com.viettel.tv360.tv", "name": "TV360", "uri": "tv360://recommendation?type=LIVE&id={id}"}
 
 
@@ -134,10 +151,37 @@ def fpt_items():
     return items
 
 
+def youtube_items():
+    items = []
+    for handle, name in YOUTUBE_PICKS:
+        try:
+            page = get("https://www.youtube.com/@" + handle, UA)[:3_000_000].decode("utf-8", "ignore")
+            img = re.search(r'property="og:image" content="([^"]*)"', page).group(1)
+            title = re.search(r'property="og:title" content="([^"]*)"', page).group(1)
+            im = Image.open(io.BytesIO(get(re.sub(r"=s\d+-", "=s256-", img), UA))).convert("RGBA")
+        except Exception as e:
+            print("! YouTube @%s skipped: %s" % (handle, e))
+            continue
+        side = min(im.size)
+        im = im.crop(((im.width - side) // 2, (im.height - side) // 2, (im.width + side) // 2, (im.height + side) // 2)).resize((192, 192), Image.LANCZOS)
+        mask = Image.new("L", (768, 768), 0)                         # drawn 4x then shrunk: a smooth edge
+        from PIL import ImageDraw
+        ImageDraw.Draw(mask).ellipse((0, 0, 767, 767), fill=255)
+        im.putalpha(mask.resize((192, 192), Image.LANCZOS))
+        lg = "y-" + slug(handle)
+        os.makedirs(LOGOS, exist_ok=True)
+        im.quantize(256, method=Image.Quantize.FASTOCTREE).save(os.path.join(LOGOS, lg + ".png"), optimize=True)   # 256 colours, as the other logos
+        print("  @%s = %s (page: %s)" % (handle, name, title))
+        items.append({"id": handle, "name": name, "logo": lg})
+    return items
+
+
 def main():
-    vtvgo, tv360, fpt = vtvgo_items(), tv360_items(), fpt_items()
+    only = sys.argv[1:] == ["youtube"]
+    vtvgo, tv360, fpt = ([], [], []) if only else (vtvgo_items(), tv360_items(), fpt_items())
     d = json.load(open(LIST, encoding="utf-8")) if os.path.exists(LIST) else {"v": 1, "rev": 0, "apps": []}
-    mine = {VTVGO["pkg"]: dict(VTVGO, items=vtvgo), TV360["pkg"]: dict(TV360, items=tv360), **{a["pkg"]: dict(a, items=fpt) for a in FPT}}
+    mine = {} if only else {VTVGO["pkg"]: dict(VTVGO, items=vtvgo), TV360["pkg"]: dict(TV360, items=tv360), **{a["pkg"]: dict(a, items=fpt) for a in FPT}}
+    mine[YOUTUBE["pkg"]] = dict(YOUTUBE, items=youtube_items())
     d["apps"] = [mine.pop(a["pkg"]) if a["pkg"] in mine else a for a in d["apps"]] + list(mine.values())
     d["rev"] += 1
     with open(LIST, "w", encoding="utf-8") as f:
@@ -147,7 +191,7 @@ def main():
     for f in os.listdir(LOGOS):                                      # a channel gone takes its logo with it
         if f.endswith(".png") and f[:-4] not in used:
             os.remove(os.path.join(LOGOS, f))
-    print("VTVgo %d, TV360 %d, FPT Play %d channels" % (len(vtvgo), len(tv360), len(fpt)))
+    print("VTVgo %d, TV360 %d, FPT Play %d channels (0: not remade)" % (len(vtvgo), len(tv360), len(fpt)))
     subprocess.run([sys.executable, os.path.join(ROOT, "dev", "sign", "sign_links.py")], check=True)
 
 

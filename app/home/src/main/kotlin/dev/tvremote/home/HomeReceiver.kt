@@ -16,6 +16,8 @@ import org.json.JSONObject
  */
 class HomeReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
+        val pin = i.getStringExtra("pin")?.takeIf { it.isNotEmpty() }
+        if (pin != null) return pinLink(c, pin)
         val answer = try {
             val set = i.getStringExtra("set")?.takeIf { it.isNotEmpty() }?.let { JSONObject(String(Base64.decode(it, Base64.DEFAULT), Charsets.UTF_8)) }
             i.getStringExtra("addvideo")?.takeIf { Regex("in[a-z0-9]+\\.(mp4|webm|gif)").matches(it) }?.let { f ->
@@ -29,5 +31,23 @@ class HomeReceiver : BroadcastReceiver() {
         }
         resultCode = Activity.RESULT_OK
         resultData = Base64.encodeToString(answer.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+    }
+
+    /** Extra "pin": base64 JSON {"url", "name"?, "img"?}; the answer is the snapshot, or {"error": "pin_bad_link" | "pin_no_app" | "pin_failed"}. The fetch runs off the main thread (goAsync). */
+    private fun pinLink(c: Context, b64: String) {
+        val async = goAsync()
+        Thread({
+            val answer = try {
+                val code = HomeApi.pin(c, JSONObject(String(Base64.decode(b64, Base64.DEFAULT), Charsets.UTF_8)))
+                if (code == "ok") null else JSONObject().put("error", code)
+            } catch (e: Exception) { JSONObject().put("error", "pin_bad_link") }
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                try {
+                    val out = answer ?: try { HomeApi.snapshot(c, null, null, false) } catch (e: Exception) { JSONObject().put("error", e.message ?: e.javaClass.simpleName) }
+                    async.resultCode = Activity.RESULT_OK
+                    async.resultData = Base64.encodeToString(out.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                } finally { async.finish() }
+            }, if (answer == null) 800 else 0)                       // the system confirms a pin through PinActivity first: the snapshot reads it
+        }, "pin-link").apply { isDaemon = true }.start()
     }
 }

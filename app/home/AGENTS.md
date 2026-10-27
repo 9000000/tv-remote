@@ -44,6 +44,17 @@ channel" for each installed app (not in Customize's full picker: ~200 tiles more
 logo on a card kept sharp by `PinArt.own`). A new app = an entry in the list, no APK. Phones and the web page cannot pin (only the
 home screen may ask for a pin).
 
+**YouTube pins and "whoever handles the link"** (`apps/YouTube.kt`, `apps/LinkApps.kt`, `LinkActivity`): a pin holds the canonical https link only,
+never a package: its shortcut starts our own non-exported `LinkActivity`, which at press time asks `PackageManager.queryIntentActivities`
+(VIEW + BROWSABLE, **`MATCH_ALL`**: with `MATCH_DEFAULT_ONLY` Android 12+ drops every app without a verified domain, YouTube among them) and opens the
+first handler: the person's choice (tile menu "Open YouTube links with", `LinkApps.choose`, one for all YouTube pins) > stock `com.google.android.youtube.tv` >
+the rest. Browsers and stubs are dropped (an app that also takes `https://example.com/`: BrowserStub, Downloader). So SmartTube / TizenTube / ReVanced work, with stock YouTube off,
+and swapping apps needs no re-pin; none installed: a friendly "install a YouTube app". Package visibility is the `<queries>` VIEW https entries in the manifest. A `links.json` entry with `pkg "*"` (https only) means the
+same for any site; only YouTube uses it (`dev/gen/app_links.py youtube`). The contract other clients call: `HomeReceiver --es pin <b64 {"url","name"?,"img"?}>` and `POST /h/pin`
+(same JSON; answers the snapshot or `{"error": pin_bad_link | pin_no_app | pin_failed}`). `YouTube.parse` is pure (watch, youtu.be, shorts, live, embed, playlist, @handle, channel/UC, c/, user/;
+`music.youtube.com` becomes www: no YouTube TV filter takes it); name and picture from oEmbed (videos, playlists) or the channel page's og: tags (they sit ~830 KB in: a bounded read).
++ Add > "Pin from YouTube" is the picker plus a top card: a QR of TV Home's manage page + `#pin` (`ManageServer.PASTE_HASH`); the page's paste box posts to `/h/pin`. A pin made from a shell needs TV Home in front (HOME key), or the system refuses the request.
+
 ## Backgrounds
 
 Which path draws what (read before adding a theme or a wall kind):

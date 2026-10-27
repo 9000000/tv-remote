@@ -17,12 +17,14 @@ import android.widget.ScrollView
 import android.widget.TextView
 import dev.tvremote.home.Font
 import dev.tvremote.home.HomeActivity
+import dev.tvremote.home.manage.ManageServer
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.R
 import dev.tvremote.home.Store
 import dev.tvremote.home.Target
 import dev.tvremote.home.apps.App
 import dev.tvremote.home.apps.Apps
+import dev.tvremote.home.apps.LinkApps
 import dev.tvremote.home.apps.Links
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.apps.Tiles
@@ -48,6 +50,7 @@ internal fun solidPage(w: android.view.Window) {
     w.setLayout(-1, -1); w.setGravity(Gravity.CENTER); w.setWindowAnimations(0)
 }
 internal const val PK_EMPTY = 0xFF232838.toInt()                     // a quick key with nothing on it
+private const val PK_OK = 0xFF7BE0A1.toInt()                          // "connected", "pinned" under the QR card
 private const val PK_CHECK = 0xFF2F7DF6.toInt()
 private const val PK_TAG = 0xCC101420.toInt()
 private const val PK_BANNER_BACK = 0xFF1E2230.toInt()
@@ -123,8 +126,8 @@ object Picker {
 
     private fun fold(t: String) = java.text.Normalizer.normalize(t, java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").replace('đ', 'd').replace('Đ', 'D').lowercase()
 
-    /** [only]: a package whose channels ([Links]) alone are listed, from "+ Add"'s "Pin a VTVgo channel". */
-    fun show(a: Activity, mode: Mode, title: String, now: String = "", only: String? = null, onPick: (String) -> Unit = {}): Dialog {
+    /** [only]: an app's ([Links.Item.group]) channels alone, from "+ Add"'s "Pin a VTVgo channel". [paste]: a card on top with a QR to TV Home's own page, where a link is pasted from a phone ([ManageServer.PASTE_HASH]). */
+    fun show(a: Activity, mode: Mode, title: String, now: String = "", only: String? = null, paste: Boolean = false, onPick: (String) -> Unit = {}): Dialog {
         val d = a.resources.displayMetrics.density
         fun dp(v: Number) = (v.toFloat() * d).toInt()
         val dm = a.resources.displayMetrics
@@ -169,6 +172,7 @@ object Picker {
         list.addView(Font.on(TextView(a)).apply { text = a.getString(R.string.pk_loading); textSize = 15f; setTextColor(PK_DIM); setPadding(0, dp(24), 0, 0) })   // until the first redraw: an empty page read as stuck
 
         val items = ArrayList<Item>()
+        var pasteCard: View? = null
         val tiles = java.util.concurrent.ConcurrentHashMap<String, PickTile>()   // the rest are made off the main thread while the first rows show
         val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_links, R.string.pk_tiles)
 
@@ -189,7 +193,8 @@ object Picker {
             val link = it.link
             if (link != null && it.key !in pinnedNow) {                // another app's channel: TV Home's own pin of its link, the logo as its picture
                 bg.execute {
-                    val made = Pins.pinIntent(a, link.pkg, link.name, Links.intent(link), Links.card(Links.logo(a, link), link.name))
+                    val made = Pins.pinIntent(a, Links.source(a, link) ?: a.packageName, link.name, Links.intent(a, link), Links.card(Links.logo(a, link), link.name))
+                    if (link.any) LinkApps.noteGroup(a, Pins.ownId(Links.intent(a, link)), LinkApps.groupFor(Links.link(link)), Links.link(link))
                     a.runOnUiThread {
                         if (made == Pins.Made.FAIL) { android.widget.Toast.makeText(a, R.string.watch_pin_fail, android.widget.Toast.LENGTH_SHORT).show(); return@runOnUiThread }
                         pinnedNow = pinnedNow + it.key; tiles[it.key]?.mark(true)
@@ -228,6 +233,7 @@ object Picker {
         fun redraw(limit: Int = Int.MAX_VALUE) {                     // [limit] tiles at most: the first screen, the rest a frame later
             val q = fold(search.text.toString().trim())
             list.removeAllViews()
+            if (q.isEmpty()) pasteCard?.let { list.addView(it, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) }) }
             var left = limit
             for (s in sections.indices) {
                 if (left <= 0) break
@@ -260,6 +266,40 @@ object Picker {
         })
         search.after = { (0 until list.childCount).firstNotNullOfOrNull { (list.getChildAt(it) as? LinearLayout)?.getChildAt(0) as? PickTile } }   // Done / Enter: onto the first tile left
 
+        if (paste) {                                                  // the QR to this TV Home's own page, started off the main thread
+            var mine: ManageServer.Listener? = null
+            bg.execute {
+                val s = ManageServer.start(a)
+                a.runOnUiThread {
+                    if (!dialog.isShowing) { if (s != null) ManageServer.release(); return@runOnUiThread }
+                    val status = Font.on(TextView(a)).apply { textSize = 13f; setTextColor(PK_FAINT); setPadding(0, dp(6), 0, 0) }
+                    val words = LinearLayout(a).apply {
+                        orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL
+                        addView(Font.on(TextView(a)).apply { text = a.getString(R.string.yt_paste); textSize = 20f; setTextColor(Color.WHITE); typeface = Font.bold })
+                        addView(Font.on(TextView(a)).apply { text = a.getString(if (s != null) R.string.yt_paste_step else R.string.pq_none); textSize = 15f; setTextColor(PK_SOFT); setPadding(0, dp(6), 0, 0) })
+                        addView(status)
+                    }
+                    val card = LinearLayout(a).apply {
+                        orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(16), dp(24), dp(16))
+                        background = GradientDrawable().apply { cornerRadius = dp(18).toFloat(); setColor(TvGlass.ROW_FILL); setStroke(dp(1), TvGlass.ROW_EDGE) }
+                        if (s != null) addView(ImageView(a).apply {      // drawn without smoothing: a blurred edge scans worse
+                            setImageDrawable(android.graphics.drawable.BitmapDrawable(a.resources, dev.tvremote.core.web.Qr.bitmap(s.url + ManageServer.PASTE_HASH, 8)).apply { isFilterBitmap = false })
+                        }, LinearLayout.LayoutParams(dp(150), dp(150)))
+                        addView(words, LinearLayout.LayoutParams(0, -2, 1f).apply { if (s != null) leftMargin = dp(22) })
+                    }
+                    mine = object : ManageServer.Listener {
+                        override fun connected(phones: Int) { status.text = a.getString(R.string.mg_connected); status.setTextColor(PK_OK) }
+                        override fun changed() { status.text = a.getString(R.string.yt_pinned); status.setTextColor(PK_OK)
+                            (a as? HomeActivity)?.let { h -> h.window.decorView.postDelayed({ if (!h.isDestroyed) h.pinsRead() }, 600) } }
+                        override fun stopped() {}
+                    }
+                    if (s != null) ManageServer.listener = mine
+                    pasteCard = card
+                    if (items.isNotEmpty() || list.childCount > 0) { val f = list.findFocus(); redraw(); f?.requestFocus() }
+                }
+            }
+            dialog.setOnDismissListener { if (ManageServer.listener === mine) ManageServer.listener = null; ManageServer.release() }
+        }
         // what there is, read off the main thread: every app's picture, then each app's shortcuts (a binder call per app)
         bg.execute {
             // the grid's apps with their pictures when Home has them: loading every banner again was ~230-400 ms on the FPT box
@@ -283,9 +323,9 @@ object Picker {
             for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 3, Tiles.iconRes(a, t)))
             }
             }
-            if (mode == Mode.GRID && only != null && Pins.can(a)) for (l in Links.installed(a).filter { it.pkg == only }) {   // one app's channels, from + Add (~200 of all apps' here were too many); kept logos only, small cards: full-size ones for ~80 were ~70 MB
+            if (mode == Mode.GRID && only != null && Pins.can(a)) for (l in Links.installed(a).filter { it.group == only }) {   // one app's channels, from + Add (~200 of all apps' here were too many); kept logos only, small cards: full-size ones for ~80 were ~70 MB
                 val art = App(l.pkg, l.name, null).apply { banner = android.graphics.drawable.BitmapDrawable(a.resources, Links.card(Links.logo(a, l, fetch = false), l.name, tileW.coerceAtMost(320), android.graphics.Bitmap.Config.RGB_565)) }
-                got.add(Item(Target.pin(a.packageName, Pins.ownId(Links.intent(l))), l.name, art, "", 2, link = l))
+                got.add(Item(Target.pin(a.packageName, Pins.ownId(Links.intent(a, l))), l.name, art, "", 2, link = l))
             }
             // the tiles made here too, not yet on a window (as AsyncLayoutInflater does): ~10 ms each on the FPT box's UI thread
             for (it in got.take(cols * 3)) tileFor(it)                    // the first screen only: all of them took ~180 ms there, longer than the wait they saved

@@ -11,12 +11,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ghim YouTube lên TV Home hoặc mở ngay trên TV: tab TV > Màn hình chính > **Ghim từ YouTube** (app điện thoại, app máy tính, web của TV), dán link kênh / video / danh sách phát / short, xem tên và hình rồi bấm Ghim lên TV hoặc Mở trên TV. Chia sẻ link YouTube sang TV Remote cũng hỏi Ghim hay Mở. Mở tìm đúng app YouTube đang bật trên TV (SmartTube, TizenTube, bản gốc…), không mở nhầm app tải về hay trình duyệt. Ghim cần TV Home bản mới (app hỏi cập nhật).
 - TV Home ghim được kênh FPT Play (+ Thêm > Ghim kênh FPT Play): 93 kênh (VTV, HTV, HTVC, ANTV, địa phương, quốc tế), bấm là mở thẳng kênh đó trong FPT Play, cả app Android TV lẫn app có sẵn trên box FPT.
 - TV Home: hai thẻ nhỏ xếp chồng (đồng hồ trên, thời tiết dưới) giờ bấm xuống tới được thẻ dưới; cài đặt thẻ hiện đủ mọi lựa chọn (mặt đồng hồ thứ 5 bị cắt), cả trên TV lẫn trang web.
+- TV Home ghim kênh, video và playlist YouTube (+ Thêm > Ghim từ YouTube): 32 kênh gợi ý, hoặc dán link từ điện thoại (quét QR, mở trang quản lý). Bấm là mở trong app YouTube nào TV đang có (kể cả bản mod như SmartTube, TizenTube, khi YouTube gốc bị tắt); đổi app ở menu ô ghim (Mở link YouTube bằng). Gỡ app này cài app khác, ô ghim vẫn chạy.
 
 **English**
 - A first run of TV Home asks "Choose the apps on your home screen": well-known apps (YouTube, Netflix, FPT Play, VTVgo, Kodi...) are ticked, Done gives a clean screen; the others wait in + Add ("Not on the grid"); the same screen reopens from + Add or Customize. An existing setup keeps its grid; an app installed later still shows on the grid.
 - Pin YouTube to TV Home or open it on the TV now: TV tab > Home screen > **Pin from YouTube** (Phone app, Computer app, TV web page): paste a channel / video / playlist / short link, check its name and picture, then Pin to TV or Open on TV. Sharing a YouTube link to TV Remote asks Pin or Open too. Open asks the TV which YouTube app is on (SmartTube, TizenTube, stock...), never a downloader or a browser. Pinning needs a newer TV Home (the app asks to update).
 - TV Home pins FPT Play channels too (+ Add > Pin an FPT Play channel): 93 channels (VTV, HTV, HTVC, ANTV, provinces, abroad), each opens that channel in FPT Play, the Android TV app or an FPT box's own.
 - TV Home: two small cards stacked (clock over weather) now reach the lower one with Down; a card's settings show every choice (the 5th clock face was cut), on the TV and on the web page.
+- TV Home pins YouTube channels, videos and playlists (+ Add > Pin from YouTube): 32 suggested channels, or paste a link from your phone (scan the QR, it opens the manage page). A tap opens whichever YouTube app the TV has (mods such as SmartTube or TizenTube too, with the stock one turned off); change it in the tile's menu (Open YouTube links with). Swap one app for another and the pins keep working.
 
 ## 0.30.0 - 2026-10-27
 

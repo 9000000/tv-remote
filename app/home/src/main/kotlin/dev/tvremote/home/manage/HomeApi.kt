@@ -25,6 +25,14 @@ import dev.tvremote.home.HomeConfig
  * JPEG}, bing: {date, title, copyright} of the picture kept}. Always on the main thread: Store and the screen live there.
  */
 object HomeApi {
+    /**
+     * "Pin from a link" (HomeReceiver extra "pin", POST /h/pin): [req] is {"url", "name"?, "img"?}. Returns "ok" or an error code
+     * (pin_bad_link, pin_no_app, pin_failed). Blocking (the network, the system's pin call): never on the main thread.
+     */
+    fun pin(c: Context, req: JSONObject): String = try {
+        dev.tvremote.home.apps.YouTube.pin(c, req.optString("url"), req.optString("name").ifBlank { null }, req.optString("img").ifBlank { null })
+    } catch (e: Exception) { dev.tvremote.home.apps.YouTube.FAILED }
+
     /** [set] changed first (HomeConfig.merge cleans it), [drop] one photo deleted first, [thumbs] the photos' small pictures too. */
     fun snapshot(c: Context, set: JSONObject?, drop: String?, thumbs: Boolean): JSONObject {
         if (drop != null && HomeConfig.isPhoto(drop) && Videos.kept(drop)) throw IllegalStateException("inuse")   // a saved theme keeps this photo

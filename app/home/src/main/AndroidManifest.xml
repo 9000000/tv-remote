@@ -29,6 +29,10 @@
         <intent><action android:name="android.settings.APPLICATION_DETAILS_SETTINGS" /><data android:scheme="package" /></intent>   <!-- App info shows only where the TV has it -->
 
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>   <!-- the news reader shows "Open in browser" only where one exists -->
+        <intent><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="https" android:host="www.youtube.com" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.BROWSABLE" /><category android:name="android.intent.category.DEFAULT" /><data android:scheme="https" android:host="youtu.be" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" android:host="www.youtube.com" android:path="/watch" /></intent>   <!-- who opens a pinned YouTube link (LinkApps): any app taking it, a mod too -->
+        <intent><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="https" android:host="example.com" android:pathPattern=".*" /></intent>   <!-- the probe that tells a browser from an app of that link -->
         <intent><action android:name="com.android.tv.action.VIEW_INPUTS" /></intent>   <!-- InputOpen.sync: does anything else answer it -->
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:mimeType="vnd.android.cursor.item/channel" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="content" android:mimeType="vnd.android.cursor.dir/channel" /></intent>
@@ -82,6 +86,9 @@
             <intent-filter><action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" /></intent-filter>
         </activity>
         <!-- TV Setup hands a key's or the power-on app's shortcut / live tile here (only the home screen may start one): Targets.kt, which opens only what the settings name -->
+        <!-- a pinned link (YouTube...): the shortcut's own target, not exported; it finds the app that takes the link now (apps/LinkApps.kt) -->
+        <activity android:name=".LinkActivity" android:exported="false" android:theme="@style/Ghost" android:excludeFromRecents="true"
+            android:noHistory="true" android:taskAffinity="" />
         <activity android:name=".OpenActivity" android:exported="true" android:theme="@style/Ghost" android:excludeFromRecents="true"
             android:noHistory="true" android:taskAffinity="" />
         <!-- its settings, from a phone or computer that has ADB here (core/ontv/Home.kt); DUMP is held by the shell only, so no app can -->

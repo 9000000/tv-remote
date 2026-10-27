@@ -23,6 +23,15 @@ class LinksTest {
         assertEquals(listOf("ab://x/1"), a.items.map { Links.link(it) })
     }
 
+    @Test fun anEntryWithNoPackageTakesHttpsOnly() {
+        fun app(uri: String) = """{"pkg":"*","name":"Web","uri":"$uri","items":[{"id":"1","name":"One"}]}"""
+        val a = Links.parse("""{"v":1,"rev":1,"apps":[${app("https://www.youtube.com/@{id}")},${app("ab://x/{id}")}]}""")!!
+        assertEquals(listOf("https://www.youtube.com/@1"), a.items.map { Links.link(it) })
+        assertTrue(a.items[0].any); assertEquals("*Web", a.items[0].group)
+        val yt = Links.parse(site.readText())!!.items.filter { it.any && it.app == "YouTube" }
+        assertTrue(yt.size >= 25 && yt.all { it.id.matches(Regex("[A-Za-z0-9_.\\-]{1,40}")) })
+    }
+
     @Test fun badItemsAndPackagesAreDropped() {
         val a = Links.parse("""{"v":1,"rev":1,"apps":[{"pkg":"nodot","uri":"a://{id}","items":[{"id":"1","name":"x"}]},
             {"pkg":"a.b","uri":"a://{id}","items":[{"id":"1&x=2","name":"x"},{"id":"2","name":" "},{"id":"3","name":"ok","logo":"../x"}]}]}""")!!
