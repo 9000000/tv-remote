@@ -14,6 +14,13 @@
 /launchers/*.jpg
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 
+# web games: asked again on every open (a 304 when unchanged), so a fixed crash reaches players as soon as it is pushed
+/games/web/*
+  Cache-Control: no-cache
+
+/games/games.json
+  Cache-Control: no-cache
+
 /games/img/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=86400
 

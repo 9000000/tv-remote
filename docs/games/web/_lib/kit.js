@@ -133,7 +133,8 @@
       const sx = s.x > 0.6 ? 1 : s.x < -0.6 ? -1 : 0; if (sx !== s.lastSx) { if (sx < 0) s.edgeL = true; if (sx > 0) s.edgeR = true; s.lastSx = sx; }
     }
   }
-  const clearHits = () => { for (const n in S) S[n].hit = {}; };
+  // a press is one press: poll() runs once a frame, step() up to 3 times (the title's 50 ms tick is 3 steps), so the edges it made go with the hits
+  const clearHits = () => { for (const n in S) { const s = S[n]; s.hit = {}; s.pulse = s.start = s.edgeL = s.edgeR = false; } };
 
   // ---------------- seats
   K.humans = () => {

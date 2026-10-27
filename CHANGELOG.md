@@ -7,7 +7,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
-- TV Games: game mới **Máy bay giấy** (1-4 người, 3D nhẹ, chạy được trên box yếu; đường bay có khúc cua, đồi lên xuống, cảnh đồng quê hai bên): cầm điện thoại như vô lăng để rẽ, ngả về sau để bay lên, bay qua vòng (vòng vàng +3), né mây giông, nút để lộn vòng. Không bật nghiêng thì kéo trên bàn di hoặc dùng cần analog. Ghế trống thì máy chơi.
+- TV Games: game mới **Máy bay giấy** (1-4 người, 3D nhẹ, chạy được trên box yếu; đường bay có khúc cua, đồi lên xuống, cảnh đồng quê hai bên): cầm điện thoại như vô lăng để rẽ, ngả về sau để bay lên, bay qua vòng (vòng vàng +3), né mây giông. Hộp quà "?" kiểu Mario Kart (càng đứng sau càng dễ ra đồ mạnh): đạn giấy ×3 bắn phá mây, tên lửa đuổi người dẫn đầu, khiên, nam châm hút vòng, gọi giông trước mặt đối thủ; A dùng đồ, B lộn vòng (né mây và tên lửa). Điểm bay từ vòng lên ô điểm của người đó trên đầu màn hình. Không bật nghiêng thì kéo trên bàn di hoặc dùng cần analog. Ghế trống thì máy chơi.
+- TV Games: game web không còn tính một lần bấm trái/phải thành nhiều bước (ở sảnh, một lần bấm từng thêm 3 máy); trang game luôn được tải bản mới khi mở.
 - Hộp cập nhật của app điện thoại gọn và dễ đọc hơn: "Đang dùng bản …", công tắc **Tự cập nhật** ngay trong hộp, vài dòng "Có gì mới" đúng ngôn ngữ của bạn (dòng về app điện thoại lên đầu) thay vì cả trang ghi chú song ngữ bị cắt, link xem đầy đủ trên GitHub, nút "Cập nhật lên x.y.z". App máy tính cũng hỏi bằng các dòng ngắn đó.
 - Tùy chỉnh TV Home có khung xem trước màn hình TV ở trên cùng, vẽ lại theo từng thay đổi (nền thật đang chiếu, đồng hồ, widget, số cột).
 - TV Setup ghi số bản của TV Home, TV Channels, TV Games trên từng ô (thay chữ “Đã cài”).
@@ -20,7 +21,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh nền có thêm cách hiện "Hiện trọn ảnh": ảnh dọc không bị cắt, hai bên là chính ảnh đó làm mờ. Chọn khi gửi ảnh, trong Tùy chỉnh > Hình nền trên TV hoặc trên trang web.
 
 **English**
-- TV Games: new game **Paper Planes** (1-4 players, light 3D that runs on weak boxes; the course bends and rolls over hills past a countryside): hold the phone like a wheel to steer, tilt it back to climb, fly through rings (gold +3), dodge storm clouds, the button does a barrel roll. Without tilt, drag the touchpad or use a stick. CPUs take empty seats.
+- TV Games: new game **Paper Planes** (1-4 players, light 3D that runs on weak boxes; the course bends and rolls over hills past a countryside): hold the phone like a wheel to steer, tilt it back to climb, fly through rings (gold +3), dodge storm clouds. Mario Kart "?" boxes (the further behind, the better the odds): paper balls ×3 that pop storms, a rocket at the leader, a shield, a magnet for rings, a storm called up in front of the others; A uses it, B rolls (dodges storms and rockets). Points fly from the ring to that player's score at the top. Without tilt, drag the touchpad or use a stick. CPUs take empty seats.
+- TV Games: web games no longer count one left/right press as several (the lobby added 3 CPUs per press); game pages are always fetched fresh on open.
 - The phone app's update popup is shorter and easier to read: "You have …", the **Update by itself** switch right in it, a few "What's new" lines in your language (the phone app's first) instead of both languages' whole notes cut off, a link to all changes on GitHub, an "Update to x.y.z" button. The computer app asks with the same short lines.
 - Customize TV Home has a preview of the TV screen pinned at the top, redrawn with each change (the real background on screen, clock, widgets, columns).
 - TV Setup shows the version of TV Home, TV Channels and TV Games on each tile (instead of “Installed”).
