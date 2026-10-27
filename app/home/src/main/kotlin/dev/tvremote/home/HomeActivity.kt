@@ -335,6 +335,7 @@ class HomeActivity : Activity() {
         Keys.push(this)                                               // TV Setup keeps the keys and the power-on app: told again, so a TV Setup installed later has them
         badgesRead()
         pinsRead()                                                    // a pin is confirmed in its own screen, then the home comes back here
+        if (Store.chooseDue(this)) ui.postDelayed({ if (!isDestroyed && !away) open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) }, 600)   // first run only: nothing is hidden without being shown
         bg.execute { forget(null); if (Tiles.refresh(this)) runOnUiThread { if (!isDestroyed) { shownKey = ""; show() } } }   // what TV Setup offers (it may have been installed or updated while away)
         ui.removeCallbacks(tileTick); ui.post(tileTick)
         ui.removeCallbacks(widgetTick); ui.post(widgetTick)
@@ -2210,6 +2211,7 @@ class HomeActivity : Activity() {
         val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles") + Pins.list(this).map { it.pkg }   // a pinned shortcut is on the grid already
         val rows = ArrayList<TvGlass.Item>()
         fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
+        rows.add(TvGlass.Item(R.drawable.ic_apps, getString(R.string.add_choose), getString(R.string.add_choose_hint, hidden.count { h -> apps.any { it.pkg == h } }), false, false) { open?.dismiss(); open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) })
         for (h in apps.filter { it.pkg in hidden }) rows.add(TvGlass.Item(0, h.label, getString(R.string.add_hidden), false, false) { addToGrid(h.pkg, false) }.also { it.picture = icon(h.pkg) })
         if (Tiles.status(this) == Tiles.OK) for (t in Tiles.available(this).filter { it.key !in onGrid })
             rows.add(TvGlass.Item(Tiles.iconRes(this, t), t.title.ifEmpty { HomeConfig.tileId(t.key) }, getString(R.string.add_live), false, false) { addToGrid(t.key, true) }
