@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-22",
+  "updated": "2026-10-27",
   "cores": {
     "snes": {
       "name": "SNES (bsnes-mercury performance)",
@@ -152,6 +152,19 @@
       "on": true
     },
     {
+      "id": "fight",
+      "name": {
+        "vi": "Võ đài",
+        "en": "Dojo Duel"
+      },
+      "img": "img/fight.v2.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "action",
+      "url": "https://tvremote.pages.dev/games/web/fight/",
+      "on": true
+    },
+    {
       "id": "balloons",
       "name": {
         "vi": "Balloon Pop",
@@ -296,6 +309,19 @@
     }
   ],
   "homebrew": [
+    {
+      "id": "stb",
+      "name": "Super Tilt Bro",
+      "img": "img/stb.v3.jpg",
+      "system": "nes",
+      "players": 2,
+      "genre": "action",
+      "url": "https://tvremote.pages.dev/games/roms/stb.nes",
+      "sha256": "847155bb712e474f71554174c9d9ed402bf651b13ff1e4afc9a42ec69cd03d8d",
+      "license": "WTFPL",
+      "source": "https://github.com/sgadrat/super-tilt-bro",
+      "on": true
+    },
     {
       "id": "croom",
       "name": "Concentration Room",

@@ -497,6 +497,18 @@ def planes(g):
     g.poly([n, ta, tc], "#ffffff")                                               # far wing, lit
 
 
+def fight(g):
+    g.star(CX, CY - 10, 105, 55, 12, "#ffd23f")                                  # the impact between two fists
+    g.star(CX, CY - 10, 52, 28, 12, "#ffffff", ol=None)
+    for d, c in ((-1, "#ff5d4a"), (1, "#3b8bff")):
+        x = CX + d * 70
+        g.rr(x + d * 40 - 34, CY - 44, x + d * 40 + 34, CY + 24, 14, "#f8fafc")  # the wrist wrap
+        g.rr(x - 50, CY - 62, x + 50, CY + 42, 34, c)                          # the glove
+        g.ell(x - d * 6, CY - 34, 30, 12, _lighter(c), None)                   # its shine
+        g.rr(x - 32, CY + 6, x + 32, CY + 34, 14, c)                           # the thumb across the front
+        g.line([(x + d * 4, CY - 30), (x + d * 4, CY + 4)], 4, OL)             # a finger crease
+
+
 # id: (name, bg top, bg bottom, emblem fn)
 GAMES = {
     "hockey": ("Air Hockey", "#1e5fd8", "#0b2a6b", hockey),
@@ -505,6 +517,7 @@ GAMES = {
     "sumo": ("Sumo Bump", "#d8433a", "#6e1620", sumo),
     "quiz": ("Quiz", "#7a3df0", "#2c1272", quiz),
     "planes": ("Paper Planes", "#2f8ae0", "#103a7a", planes),
+    "fight": ("Dojo Duel", "#c2410c", "#4a1406", fight),
     "balloons": ("Balloon Pop", "#1fa6c9", "#0c4a72", balloons),
     "slice": ("Fruit Slice", "#e8782a", "#7a2a14", slice_),
     "moles": ("Whack-a-Mole", "#4aa845", "#1b5a2a", moles),
@@ -531,6 +544,7 @@ GAMES = {
     "opennes-snake": ("Snake", "#2a8f3a", "#0f3d22", snake),
     "opennes-breakout": ("Breakout", "#8a2fc9", "#2a1060", breakout),
     "opennes-pong": ("Pong", "#2f3f9a", "#0b123a", pong),
+    "stb": ("Super Tilt Bro", "#1f7ad8", "#0c2f6e", None),
 }
 
 
@@ -635,6 +649,8 @@ SPRITES = {
                       "..LGGGGGGG", "..LLLLLLLL"],
     "opennes-breakout": ["RRR.RRR.RRR.RRR", "RRR.RRR.RRR.RRR", "OOO.OOO.OOO.OOO", "OOO.OOO.OOO.OOO", "YYY.YYY.YYY.YYY", "YYY.YYY.YYY.YYY",
                          "LLL.LLL.LLL.LLL", "LLL.LLL.LLL.LLL", "", "", ".......WW", ".......WW", "", "", "..CCCCCCCCCC"],
+    "stb": ["....GGGGG", "...GGGGGGG", "...GGGWKGG", "...GGGGGGG", "....GGGGG", "...LLLLLLLLLSSS", "..LLLLLLLLLLSSSS", "..LLLLLLL...SSS",
+            "..LLLLLLL", "...BBBBBB", "...BB..BB", "..BB....BB", ".BBB....BBB"],
     "opennes-pong": ["", "", "WW", "WW", "WW", "WW............WW", "WW.....WW.....WW", "WW.....WW.....WW", "WW............WW", "WW............WW", "..............WW", "..............WW", "..............WW", "", "", ""],
 }
 # id: (background, title colour, frame colour)
@@ -644,6 +660,7 @@ RETRO = {
     "nova": ("#0c3022", "Y", "L"), "witchnwiz": ("#1c0c40", "Y", "P"), "stallar": ("#080a30", "W", "C"),
     "filefixers": ("#0c2048", "A", "B"), "tabletennis": ("#0c3030", "W", "T"), "opennes-snake": ("#0c2c14", "L", "G"),
     "opennes-breakout": ("#240c48", "Y", "M"), "opennes-pong": ("#0c1034", "W", "B"),
+    "stb": ("#0c2c48", "Y", "C"),
 }
 RETRO_NAMES = {"croom": "CONCENTRATION", "ghostsgraves": "GHOSTS & GRAVES"}     # where the pixel title differs from the name
 
