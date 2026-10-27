@@ -83,9 +83,20 @@ object Store {
     private fun first(c: Context): JSONObject {
         val have = Apps.list(c).map { it.pkg }.toSet()
         val dock = FIRST_DOCK.filter { it in have }.take(HomeConfig.DOCK_MAX)
-        val conf = HomeConfig.clean(JSONObject().put("dock", org.json.JSONArray(dock)))
-        prefs(c).edit().putString("conf", conf.toString()).apply()
+        // Everything else goes to "hidden" (= off the grid, still in All apps and + Add; nothing else reads it: no search, key or
+        // Play Next rule), so no second "tucked" state is needed. It is a list of packages, so an app installed LATER is not in it
+        // and shows on the grid as always. Only when the grid keeps a few apps: a TV that knows none of ours would show an empty one.
+        val keep = have.filter { it in FIRST_DOCK || it in FEATURED }
+        val tuck = if (keep.size >= TUCK_MIN) (have - keep.toSet()).sorted().take(300) else emptyList()   // 300 = HomeConfig HIDDEN_MAX
+        val conf = HomeConfig.clean(JSONObject().put("dock", org.json.JSONArray(dock)).put("hidden", org.json.JSONArray(tuck)))
+        prefs(c).edit().putString("conf", conf.toString()).putBoolean("choose_due", have.size > keep.size).apply()   // the choice screen follows once ([HomeActivity]); this tucking is what Back / skipping keeps
         return effective(c, conf)
+    }
+    /** True once after a fresh install that tucked apps: Home then opens "Choose the apps on your home screen". An update never has it (no flag). */
+    fun chooseDue(c: Context): Boolean {
+        if (!prefs(c).getBoolean("choose_due", false)) return false
+        prefs(c).edit().putBoolean("choose_due", false).apply()
+        return true
     }
     /** The project's own TV apps: first in the dock when they come, so a person sees what goes with TV Home (the user, 2026-10-25). */
     val OWN = listOf("dev.tvremote.setup", "dev.tvremote.games", "dev.tvremote.channels")
@@ -114,6 +125,16 @@ object Store {
 
     private val FIRST_DOCK = OWN + listOf("com.google.android.youtube.tv", "com.netflix.ninja", "com.amazon.amazonvideo.livingroom",
         "com.disney.disneyplus", "com.google.android.youtube.tvmusic", "com.spotify.tv.android", "com.android.vending", "com.android.tv.settings")
+
+    /** Well-known streaming / media / TV apps that stay on the grid of a first run, after the dock (the rest is tucked into All apps). */
+    private val FEATURED = listOf("com.google.android.youtube", "com.google.android.youtube.tvmusic", "com.google.android.youtube.tv.music",
+        "com.netflix.mediaclient", "com.amazon.avod", "com.disney.disneyplus", "com.hbo.hbonow", "com.apple.atve.androidtv.appletv",
+        "net.fptplay.ottbox", "com.fptplay.launcher", "com.vtvgo.tv", "vn.vtvgo.tv", "com.vtvcab.onbox", "com.viettel.tv360", "com.vieon.tv", "vn.vieon.tv", "com.vieon",
+        "com.mytv.tv", "vn.mytv.b2c.androidtv", "com.vnpt.mytv", "org.xbmc.kodi", "com.stremio.one", "com.liskovsoft.smarttubetv", "com.liskovsoft.smarttubetv.beta",
+        "com.plexapp.android", "com.google.android.videos", "com.google.android.tv", "com.android.tv",
+        "com.google.android.apps.nbu.files", "com.android.documentsui", "com.mediatek.filemanager", "com.android.chrome", "com.google.android.play.games",
+        "com.android.vending", "com.android.tv.settings", "com.twitch.android.app", "tv.twitch.android.app")
+    private const val TUCK_MIN = 4                                // the grid keeps at least this many apps for a first run to tuck the rest
 
     /** @throws SecurityException "dream" without WRITE_SECURE_SETTINGS (a client grants it over ADB first; the TV's own switch falls back to the system's screen) */
     fun change(c: Context, change: JSONObject): JSONObject {

@@ -115,7 +115,7 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
  * [Mode.GRID] a press switches the tile on the app grid or off; in [Mode.TARGET] it returns the chosen [Target] (or "" for none).
  */
 object Picker {
-    enum class Mode { GRID, TARGET }
+    enum class Mode { GRID, TARGET, CHOOSE }   // CHOOSE: the apps alone, many ticked at once, applied by Done (the first run's "which apps on Home", reopened from + Add and Customize)
 
     private val bg = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "home-picker").apply { isDaemon = true } }
 
@@ -145,10 +145,22 @@ object Picker {
             addView(Font.on(TextView(a)).apply { text = title; textSize = 26f; setTextColor(Color.WHITE); typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
             addView(search, LinearLayout.LayoutParams(dp(300), dp(46)))
         }
-        val note = Font.on(TextView(a)).apply { textSize = 13f; setTextColor(PK_DIM); setPadding(dp(34), 0, dp(34), dp(4)); text = a.getString(if (mode == Mode.GRID) R.string.pk_grid_hint else R.string.pk_target_hint) }
+        val note = Font.on(TextView(a)).apply { textSize = 13f; setTextColor(PK_DIM); setPadding(dp(34), 0, dp(34), dp(4)); text = a.getString(when (mode) { Mode.GRID -> R.string.pk_grid_hint; Mode.CHOOSE -> R.string.pk_choose_hint; else -> R.string.pk_target_hint }) }
+        val chosen = LinkedHashSet<String>()                             // CHOOSE: the apps ticked now (not saved until Done)
+        var allKeys = emptyList<String>()
+        val doneBtn = TvUi.button(a, "", {}); val allBtn = TvUi.button(a, "", {})
+        fun labels() {
+            doneBtn.text = a.getString(R.string.pk_choose_done, chosen.size)
+            allBtn.text = a.getString(if (allKeys.isNotEmpty() && chosen.containsAll(allKeys)) R.string.pk_choose_none else R.string.pk_choose_all)
+        }
+        val bar = LinearLayout(a).apply {                                 // buttons that look like buttons, above the tiles
+            orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(4), dp(34), dp(8))
+            if (mode == Mode.CHOOSE) { addView(doneBtn, LinearLayout.LayoutParams(-2, dp(46))); addView(allBtn, LinearLayout.LayoutParams(-2, dp(46)).apply { leftMargin = dp(14) }) }
+            else visibility = View.GONE
+        }
         val panel = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
-            addView(head); addView(note); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+            addView(head); addView(note); addView(bar); addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         }
         dialog.setContentView(FrameLayout(a).apply { addView(panel, FrameLayout.LayoutParams(panelW, -1, Gravity.CENTER_HORIZONTAL)) })   // centred: a bare content view sat at the left; to the bottom edge: 64 dp short, the list stopped on an empty band
         dialog.window?.let(::solidPage)
@@ -165,6 +177,7 @@ object Picker {
         var pinnedNow = if (mode == Mode.GRID) Pins.list(a).map { it.pkg }.toSet() else emptySet()   // pinned by their apps: on the grid without being in "tiles"
         fun on(k: String): Boolean {
             return when {
+                mode == Mode.CHOOSE -> k in chosen
                 mode == Mode.TARGET -> k == now
                 Target.kind(k) == Target.Kind.APP -> k !in hiddenNow
                 else -> k in tilesNow || k in pinnedNow
@@ -172,6 +185,7 @@ object Picker {
         }
         fun press(it: Item) {
             if (mode == Mode.TARGET) { dialog.dismiss(); onPick(it.key); return }
+            if (mode == Mode.CHOOSE) { if (!chosen.remove(it.key)) chosen.add(it.key); tiles[it.key]?.mark(it.key in chosen); labels(); return }
             val link = it.link
             if (link != null && it.key !in pinnedNow) {                // another app's channel: TV Home's own pin of its link, the logo as its picture
                 bg.execute {
@@ -217,6 +231,7 @@ object Picker {
             var left = limit
             for (s in sections.indices) {
                 if (left <= 0) break
+                if (mode == Mode.CHOOSE && s != 0) continue
                 val here = items.filter { it.section == s && (q.isEmpty() || fold(it.label).contains(q) || fold(it.tag).contains(q)) }
                 val empty = when {
                     s == 1 && !Pins.can(a) -> a.getString(R.string.pk_pins_need_home)
@@ -255,6 +270,8 @@ object Picker {
             if (only == null) {                                         // one app's channels alone: no apps, shortcuts, widgets
             if (mode == Mode.TARGET) got.add(Item("", a.getString(R.string.pk_none), null, "", 0))
             for (p in apps) got.add(Item(p.pkg, p.label, p, if (p.pkg in hidden && mode == Mode.GRID) a.getString(R.string.pk_hidden) else "", 0))
+            if (mode == Mode.CHOOSE) { allKeys = apps.map { it.pkg }; chosen.clear(); chosen.addAll(apps.map { it.pkg }.filter { it !in hidden }); a.runOnUiThread { labels() } }
+            else {
             Pins.refresh(a, apps)
             val avail = try { JSONArray(a.getSharedPreferences("pins", Context.MODE_PRIVATE).getString("avail", "[]")) } catch (e: Exception) { JSONArray() }
             val names = apps.associate { it.pkg to it.label }
@@ -264,6 +281,7 @@ object Picker {
                 got.add(Item(o.getString("key"), o.getString("title"), app, names[o.getString("app")] ?: "", 1))
             }
             for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 3, Tiles.iconRes(a, t)))
+            }
             }
             if (mode == Mode.GRID && only != null && Pins.can(a)) for (l in Links.installed(a).filter { it.pkg == only }) {   // one app's channels, from + Add (~200 of all apps' here were too many); kept logos only, small cards: full-size ones for ~80 were ~70 MB
                 val art = App(l.pkg, l.name, null).apply { banner = android.graphics.drawable.BitmapDrawable(a.resources, Links.card(Links.logo(a, l, fetch = false), l.name, tileW.coerceAtMost(320), android.graphics.Bitmap.Config.RGB_565)) }
@@ -286,6 +304,16 @@ object Picker {
                 val f = list.findFocus(); val was = tiles[now]?.parent != null; redraw()
                 (tiles[now]?.takeIf { mode == Mode.TARGET && !was && f is PickTile && it.isFocusable } ?: f)?.requestFocus()   // the key's own choice, if it was further down
             } }
+        }
+        if (mode == Mode.CHOOSE) {
+            allBtn.setOnClickListener { if (chosen.containsAll(allKeys)) chosen.clear() else chosen.addAll(allKeys); allKeys.forEach { k -> tiles[k]?.mark(k in chosen) }; labels() }
+            doneBtn.setOnClickListener {                                  // what is not ticked leaves the grid (hidden: in + Add, nothing lost); a ticked favourite keeps its dock place
+                val off = allKeys.filter { it !in chosen }
+                val dock = Store.list(a, "dock").filter { it in chosen || it !in allKeys }
+                Store.change(a, JSONObject().put("hidden", JSONArray(off)).put("dock", JSONArray(dock)))
+                dialog.dismiss()
+            }
+            labels()
         }
         dialog.show()
         return dialog

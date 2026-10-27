@@ -19,7 +19,7 @@
   "hidden": "Hidden apps (%d)",
   "add": "Add",
   "add_title": "Add to Home",
-  "add_hidden": "Hidden app",
+  "add_hidden": "Not on the grid",
   "add_live": "Widget",
   "add_pin": "Shortcut",
   "add_channel": "Pin a channel",
@@ -656,5 +656,12 @@
   "el_edit": "Edit home screen",
   "el_done": "Done editing",
   "el_edit_sub": "Every element takes the focus: OK changes it, Back is done.",
-  "el_edit_hint": "OK: change · Back: done"
+  "el_edit_hint": "OK: change · Back: done",
+  "pk_choose_title": "Choose the apps on your home screen",
+  "pk_choose_hint": "The others wait in + Add, nothing is lost. Back leaves it as shown.",
+  "pk_choose_done": "Done (%1$d)",
+  "pk_choose_all": "Select all",
+  "pk_choose_none": "Select none",
+  "add_choose": "Choose apps…",
+  "add_choose_hint": "%1$d not on the grid"
 }

@@ -19,7 +19,7 @@
   "hidden": "App đã ẩn (%d)",
   "add": "Thêm",
   "add_title": "Thêm vào Home",
-  "add_hidden": "App đã ẩn",
+  "add_hidden": "Chưa có trên lưới",
   "add_live": "Widget",
   "add_pin": "Lối tắt",
   "add_channel": "Ghim một kênh",
@@ -656,5 +656,12 @@
   "el_edit": "Sửa màn hình chính",
   "el_done": "Xong, thoát sửa",
   "el_edit_sub": "Mọi thứ đều chọn được: OK để chỉnh, Back là xong.",
-  "el_edit_hint": "OK: chỉnh · Back: xong"
+  "el_edit_hint": "OK: chỉnh · Back: xong",
+  "pk_choose_title": "Chọn app hiện trên màn hình chính",
+  "pk_choose_hint": "App không chọn nằm trong + Thêm, không mất gì. Back: giữ như đang hiện.",
+  "pk_choose_done": "Xong (%1$d)",
+  "pk_choose_all": "Chọn hết",
+  "pk_choose_none": "Bỏ chọn hết",
+  "add_choose": "Chọn app…",
+  "add_choose_hint": "%1$d chưa có trên lưới"
 }
