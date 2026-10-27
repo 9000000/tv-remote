@@ -112,13 +112,13 @@ class MainActivity : Activity() {
             version = try { packageManager.getPackageInfo(app.pkg, 0).versionName ?: "0" } catch (e: Exception) { "" }
             on = version.isNotEmpty()
             val up = newer != null
-            pill.text = T(if (up) "eco.new" else if (on) "eco.on" else "eco.off")
+            pill.text = if (up) T("eco.new") else if (on) T("eco.on", "v" to version) else T("eco.off")   // its number: which TV app is behind, at a glance
             pill.background = box(if (up) PILL_NEW else if (on) PILL_ON else PILL, 10, 0)
             if (hasFocus()) ecoNote?.text = said()
         }
         /** Beside the banners, not under them (no gap to keep for a name: the log below keeps its lines): what OK does, what it is. */
         fun said(): CharSequence {
-            val act = newer?.let { T("eco.update", "name" to app.name, "from" to version, "to" to it) } ?: T(if (on) "eco.open" else "eco.get", "name" to app.name)
+            val act = newer?.let { T("eco.update", "name" to app.name, "from" to version, "to" to it) } ?: if (on) T("eco.open", "name" to app.name, "v" to version) else T("eco.get", "name" to app.name)
             return android.text.SpannableString("$act\n$sub").apply { setSpan(android.text.style.ForegroundColorSpan(TvUi.TEXT), 0, act.length, 0) }
         }
     }
@@ -834,7 +834,7 @@ class MainActivity : Activity() {
         e.newer?.let { v ->                                           // a newer one: update it, or open the one there
             menu(e.app.name, listOf(
                 TvUi.Item(R.drawable.ic_download, T("eco.update", "name" to e.app.name, "from" to e.version, "to" to v), e.sub) { ecoInstall(e) },
-                TvUi.Item(R.drawable.ic_play, T("eco.open", "name" to e.app.name), "") { ecoOpen(e) }))
+                TvUi.Item(R.drawable.ic_play, T("eco.open", "name" to e.app.name, "v" to e.version), "") { ecoOpen(e) }))
             return
         }
         if (e.on && ecoOpen(e)) return
