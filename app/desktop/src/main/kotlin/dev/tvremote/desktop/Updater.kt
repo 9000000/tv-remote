@@ -100,10 +100,21 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         }
     }
 
+    /** The notes made short per language ([Release.brief], the computer app's lines first): the page picks the one it speaks. */
+    private fun brief(r: Release?): JSONObject {
+        val o = JSONObject()
+        if (r == null) return o
+        for ((lang, vi) in listOf("vi" to true, "en" to false)) {
+            val b = Release.brief(r.notes, vi, listOf("app máy tính", "computer app", "và app máy tính", "and computer apps"))
+            o.put(lang, JSONObject().put("items", org.json.JSONArray(b.items)).put("more", b.more))
+        }
+        return o
+    }
+
     fun json(): JSONObject {
         val r = found
         return JSONObject().put("current", version).put("packaged", root != null).put("state", state).put("pct", pct).put("error", error)
-            .put("version", r?.version ?: "").put("notes", r?.notes ?: "").put("auto", writable).put("move", Mover.can(bundle))
+            .put("version", r?.version ?: "").put("notes", r?.notes ?: "").put("brief", brief(r)).put("auto", writable).put("move", Mover.can(bundle))
             .put("url", "https://github.com/${Release.REPO}/releases/latest/download/$asset")
     }
 

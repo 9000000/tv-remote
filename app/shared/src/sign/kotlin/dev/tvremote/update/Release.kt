@@ -169,6 +169,37 @@ class Release private constructor(val version: String, val url: String, val note
             return buf.toString("UTF-8")
         }
 
+        /** [Release.brief]'s answer: the lines to show, and how many more the full notes have. */
+        class Brief(val items: List<String>, val more: Int)
+
+        /**
+         * The notes made short for an update popup. They are one Markdown body for every app and both languages (~40 long
+         * bullets, Vietnamese first): cut at 900 characters, an English reader saw only Vietnamese. So: the reader's section
+         * ("**Tiếng Việt**" / "**English**"), its top-level bullets, each to its first sentence, those naming [prefer] (this
+         * app) first, at most [max]; the rest is a link to the release page.
+         */
+        fun brief(notes: String, vi: Boolean, prefer: List<String> = emptyList(), max: Int = 6): Brief {
+            val lines = notes.replace("\r", "").lines()
+            val head = Regex("^\\*\\*(.+)\\*\\*$")
+            val at = lines.indexOfFirst { it.trim() == if (vi) "**Tiếng Việt**" else "**English**" }
+            val section = if (at < 0) lines else lines.drop(at + 1).takeWhile { !head.matches(it.trim()) }
+            val bullets = section.filter { it.startsWith("- ") }.map { it.substring(2) }
+                .ifEmpty { if (at < 0) section.filter { it.isNotBlank() && !head.matches(it.trim()) } else emptyList() }
+            val clean = bullets.map { short(it.replace("**", "").replace("`", "").trim()) }.filter { it.isNotEmpty() }
+            val (mine, rest) = clean.partition { b -> prefer.any { b.contains(it, ignoreCase = true) } }
+            val all = mine + rest
+            return Brief(all.take(max), maxOf(0, all.size - max))
+        }
+
+        /** The first sentence or clause (past a "TV Home:" kind of start; not at a bracket, which cut "the wallpaper (…)" short), at most ~120 characters, cut at a space. */
+        private fun short(s: String): String {
+            var end = s.length
+            for ((stop, from) in listOf(". " to 24, "; " to 24, ": " to 44)) { val i = s.indexOf(stop, from); if (i in 0 until end) end = i }
+            var t = s.substring(0, end).trimEnd('.', ',', ':', ' ')
+            if (t.length > 120) t = t.substring(0, t.lastIndexOf(' ', 118).takeIf { it > 60 } ?: 118).trimEnd(',', ':', ' ') + "…"
+            return t
+        }
+
         /** "1.10.0" is newer than "1.9": compares the numbers between the dots. */
         fun compare(a: String, b: String): Int {
             val la = legacy(a)

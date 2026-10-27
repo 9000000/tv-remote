@@ -165,10 +165,15 @@ $('#updgo').addEventListener('click', async () => {
   const u = await api('/api/update'); if (!u) return;
   if (!u.auto && u.move) { const r = await api('/api/update', { do: 'move' }); if (r) put('#updnote', 'textContent', T('setup.update_installing')); return; }   // Mover.kt: copies, quits, opens the copy
   if (!u.auto) { window.open(u.url, '_blank'); return; }
-  const notes = (u.notes || '').replace(/\*\*/g, '').replace(/\r/g, '');
-  if (!await ask(T('setup.update_ask', { version: u.version }) + (notes ? '\n\n' + (notes.length > 900 ? notes.slice(0, 900) + '...' : notes) : ''), { ok: T('setup.update_ok') })) return;
+  if (!await ask(T('setup.update_ask', { version: u.version }) + updBrief(u), { ok: T('updater.update_to', { version: u.version }) })) return;
   const r = await api('/api/update', { do: 'install' }); if (r) showUpdate(r);
 });
+// the notes in the page's language, made short by the core (Release.brief: one body holds every app and both languages)
+function updBrief(u) {
+  const b = u.brief && (u.brief[window.LANG === 'vi' ? 'vi' : 'en']);
+  if (!b || !b.items || !b.items.length) return '';
+  return '\n\n' + T('updater.whats_new', { version: u.version }) + '\n' + b.items.map((s) => '• ' + s).join('\n') + (b.more ? '\n' + T('updater.more', { n: b.more }) : '');
+}
 $('#updcheck').addEventListener('click', async () => {
   put('#updcheckmsg', 'textContent', T('setup.checking'));
   const u = await api('/api/update', { do: 'check' });

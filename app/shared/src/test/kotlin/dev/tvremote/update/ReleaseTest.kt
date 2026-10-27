@@ -29,4 +29,15 @@ class ReleaseTest {
         assertEquals("a".repeat(64), Release.sum(list, "tv-remote.apk"))
         assertNull(Release.sum(list, "version"))
     }
+
+    @Test fun brief() {                                             // the reader's language only, this app first, first sentences
+        val notes = "Web 1 · app 2\n\n**Tiếng Việt**\n- TV Home: nhẹ hơn trên máy yếu. Đo trên FPT.\n  - con\n- App điện thoại: popup cập nhật gọn\n\n**English**\n" +
+            "- TV Home: lighter on weak boxes. Measured on FPT.\n  - sub\n- Phone app: a shorter update popup (TiviKit's look)\n- " + "word ".repeat(40) + "\n"
+        val en = Release.brief(notes, false, listOf("Phone app"), 2)
+        assertEquals(listOf("Phone app: a shorter update popup (TiviKit's look)", "TV Home: lighter on weak boxes"), en.items)
+        assertEquals(1, en.more)
+        assertTrue(Release.brief(notes, false).items[2].let { it.endsWith("…") && it.length <= 121 })
+        assertEquals(listOf("TV Home: nhẹ hơn trên máy yếu", "App điện thoại: popup cập nhật gọn"), Release.brief(notes, true).items)
+        assertEquals(listOf("just a line"), Release.brief("just a line", true).items)   // notes without sections
+    }
 }

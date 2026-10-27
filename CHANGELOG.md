@@ -7,6 +7,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Hộp cập nhật của app điện thoại gọn và dễ đọc hơn: "Đang dùng bản …", công tắc **Tự cập nhật** ngay trong hộp, vài dòng "Có gì mới" đúng ngôn ngữ của bạn (dòng về app điện thoại lên đầu) thay vì cả trang ghi chú song ngữ bị cắt, link xem đầy đủ trên GitHub, nút "Cập nhật lên x.y.z". App máy tính cũng hỏi bằng các dòng ngắn đó.
 - Tùy chỉnh TV Home có khung xem trước màn hình TV ở trên cùng, vẽ lại theo từng thay đổi (nền thật đang chiếu, đồng hồ, widget, số cột).
 - TV Setup ghi số bản của TV Home, TV Channels, TV Games trên từng ô (thay chữ “Đã cài”).
 - App TV: chọn launcher chưa có trên TV (mở trang Google Play) không còn làm app tắt ngang trên một số TV (Sony BRAVIA, TCL).
@@ -18,6 +19,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Ảnh nền có thêm cách hiện "Hiện trọn ảnh": ảnh dọc không bị cắt, hai bên là chính ảnh đó làm mờ. Chọn khi gửi ảnh, trong Tùy chỉnh > Hình nền trên TV hoặc trên trang web.
 
 **English**
+- The phone app's update popup is shorter and easier to read: "You have …", the **Update by itself** switch right in it, a few "What's new" lines in your language (the phone app's first) instead of both languages' whole notes cut off, a link to all changes on GitHub, an "Update to x.y.z" button. The computer app asks with the same short lines.
 - Customize TV Home has a preview of the TV screen pinned at the top, redrawn with each change (the real background on screen, clock, widgets, columns).
 - TV Setup shows the version of TV Home, TV Channels and TV Games on each tile (instead of “Installed”).
 - TV app: picking a launcher that is not on the TV yet (opens its Google Play page) no longer closes the app on some TVs (Sony BRAVIA, TCL).

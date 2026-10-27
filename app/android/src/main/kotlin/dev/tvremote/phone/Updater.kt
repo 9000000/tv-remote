@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.view.View
+import android.widget.Button
+import dev.tvremote.core.Words
 import dev.tvremote.update.Release
 import dev.tvremote.update.SelfUpdate
 
@@ -63,15 +65,38 @@ internal fun MainActivity.progress(s: String) {
     updateNote.text = s
 }
 
+/** Words this app's own notes start with: put first in the popup (the notes cover every app). */
+internal val PHONE_NOTES = listOf("app điện thoại", "điện thoại và", "phone app", "phone and")
+
+/**
+ * The update popup: the version in use, the auto-update switch (the same "autoUpdate" as in About: off, nothing is checked or
+ * installed by itself), the reader's notes made short ([Release.brief]) with the rest on GitHub, and "Update to x.y.z".
+ */
 internal fun MainActivity.askUpdate() {
     val r = update
     if (r == null || updating) return
-    val all = r.notes.replace("**", "").replace("\r", "")         // release notes are Markdown
-    val notes = if (all.length > 900) all.substring(0, 900) + "..." else all
-
-    Popup.Builder(this).setTitle(T("updater.version_you_have", "version" to r.version, "current" to version()))
-        .setMessage(notes.ifEmpty { T("updater.download_and_install_the") })
-        .setPositiveButton(T("setup.update_ok")) { _, _ -> startUpdate(r) }.setNegativeButton(T("common.later"), null).show()
+    val box = col()
+    box.setPadding(dp(24), 0, dp(24), 0)
+    box.addView(label(T("updater.using", "current" to version()), 14, MUTED))
+    lateinit var auto: Button
+    val autoLabel = { auto.setToggle(prefs.getBoolean("autoUpdate", true), T("updater.auto")) }
+    auto = row("") { prefs.edit().putBoolean("autoUpdate", !prefs.getBoolean("autoUpdate", true)).apply(); autoLabel() }
+    autoLabel()
+    auto.background = box(BTN, 14)                                     // the popup is CARD itself
+    box.addView(auto, gap(12))
+    box.addView(note(T("updater.auto_note")).apply { setPadding(dp(4), dp(6), dp(4), 0) })
+    val b = Release.brief(r.notes, Words.lang == "vi", PHONE_NOTES)
+    box.addView(head(T("updater.whats_new", "version" to r.version).uppercase()), gap(18))
+    if (b.items.isEmpty()) box.addView(label(T("updater.download_and_install_the"), 15, TEXT), gap(8))
+    b.items.forEach { s -> box.addView(label("•  $s", 15, TEXT).apply { setLineSpacing(dp(2).toFloat(), 1f) }, gap(8)) }
+    if (b.more > 0) box.addView(label(T("updater.more", "n" to b.more), 14, MUTED), gap(8))
+    box.addView(label(T("updater.all_notes"), 15, ACCENT_TEXT).apply {
+        setPadding(0, dp(10), 0, dp(10))
+        setOnClickListener { try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${Release.REPO}/releases/latest"))) } catch (e: Exception) { } }
+    }, gap(6))
+    Popup.Builder(this).setTitle(T("updater.title")).setView(box)
+        .setPositiveButton(T("updater.update_to", "version" to r.version)) { _, _ -> startUpdate(r) }
+        .setNegativeButton(T("common.later"), null).show()
 }
 
 internal fun MainActivity.startUpdate(r: Release) { if (installAllowed(r)) download(r) }
