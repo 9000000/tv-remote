@@ -143,14 +143,28 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     var onFocus: ((View, Boolean) -> Unit)? = null
     var onDown: ((View) -> Unit)? = null
 
-    /** The hot card nearest above-or-below the x of a tile, for Up from the first row of the grid. */
-    fun nearestHot(x: Int): View? {
+    /**
+     * The card straight above or below [x], else null: Down from the gear at the right no longer crossed the screen to the weather at the left.
+     * Two small cards stacked in one column: the top one from above, the bottom one from the grid ([fromBelow]).
+     */
+    fun hotAt(x: Int, fromBelow: Boolean = false): View? {
         val at = IntArray(2)
-        return hot.filter { it.isShown }.minByOrNull { h -> h.getLocationOnScreen(at); Math.abs(at[0] + h.width / 2 - x) }
+        val col = hot.filter { h -> h.isShown && run { h.getLocationOnScreen(at); x in at[0]..at[0] + h.width } }
+        return (if (fromBelow) col.maxByOrNull { h -> h.getLocationOnScreen(at); at[1] } else col.minByOrNull { h -> h.getLocationOnScreen(at); at[1] })
     }
 
-    /** The card straight above or below [x], else null: Down from the gear at the right no longer crossed the screen to the weather at the left. */
-    fun hotAt(x: Int): View? = nearestHot(x)?.takeIf { h -> val at = IntArray(2); h.getLocationOnScreen(at); x in at[0]..at[0] + h.width }
+    /** The shown card next to [v] towards ([dx], [dy]): Up / Down only to one sharing its columns (a stacked pair), Left / Right the nearest beside it. */
+    private fun near(v: View, dx: Int, dy: Int): View? {
+        val a = IntArray(2); v.getLocationOnScreen(a)
+        val ax = a[0] + v.width / 2; val ay = a[1] + v.height / 2
+        return hot.filter { it !== v && it.isShown }.mapNotNull { h ->
+            val b = IntArray(2); h.getLocationOnScreen(b)
+            val bx = b[0] + h.width / 2; val by = b[1] + h.height / 2
+            val ahead = if (dy != 0) (by - ay) * dy > v.height / 3 && b[0] < a[0] + v.width && a[0] < b[0] + h.width
+                else (bx - ax) * dx > v.width / 3
+            if (ahead) h to (if (dy != 0) Math.abs(by - ay) + 2 * Math.abs(bx - ax) else Math.abs(bx - ax) + 2 * Math.abs(by - ay)) else null
+        }.minByOrNull { it.second }?.first
+    }
 
     private fun hotify(v: View, k: String) {
         v.isFocusable = true; v.tag = k; hot.add(v)
@@ -166,10 +180,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             if (e.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
             val i = hot.indexOf(v)
             when (code) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> { hot.getOrNull(i - 1)?.requestFocus(); true }
-                KeyEvent.KEYCODE_DPAD_RIGHT -> { hot.getOrNull(i + 1)?.requestFocus(); true }
-                KeyEvent.KEYCODE_DPAD_UP -> { if (k == "news" && newsAt > 0) { newsAt--; onWeather?.invoke() } else onUp?.invoke(v); true }
-                KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else onDown?.invoke(v); true }
+                KeyEvent.KEYCODE_DPAD_LEFT -> { (near(v, -1, 0) ?: hot.getOrNull(i - 1))?.requestFocus(); true }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { (near(v, 1, 0) ?: hot.getOrNull(i + 1))?.requestFocus(); true }
+                // a small card stacked over another: Down goes to it before the grid, Up from it back to the top one (the user, 2026-10-27)
+                KeyEvent.KEYCODE_DPAD_UP -> { if (k == "news" && newsAt > 0) { newsAt--; onWeather?.invoke() } else near(v, 0, -1)?.requestFocus() ?: onUp?.invoke(v); true }
+                KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else near(v, 0, 1)?.requestFocus() ?: onDown?.invoke(v); true }
                 else -> false
             }
         }

@@ -1214,7 +1214,7 @@ class HomeActivity : Activity() {
         val vert = to != null && !sideways && (here != null || grid.getChildAt(to.row) is Strip)
         if (vert && to != null) to = Nav.At(to.row, maxOf(0, Nav.nearest(centres(grid.getChildAt(to.row) as ViewGroup), centre(v))))   // to or from a scrolled row: the nearest tile by position, not by column number
         if (to == null) {
-            if (dir == Nav.Dir.UP) { val hot = widgets.hotAt(centre(v)); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
+            if (dir == Nav.Dir.UP) { val hot = widgets.hotAt(centre(v), fromBelow = true); topAt = v; topVia = hot; (hot ?: run { up(v); null })?.requestFocus() }               // Android 9 (a BRAVIA) found nothing above the first row by itself
             else v.nudge(if (dir == Nav.Dir.RIGHT) 1 else if (dir == Nav.Dir.LEFT) -1 else 0, if (dir == Nav.Dir.DOWN) 1 else 0)
             return true
         }

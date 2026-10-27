@@ -237,6 +237,7 @@ dialog.wset .card { width:min(520px, 94vw); }
 .wset .wopts { display:flex; flex-direction:column; gap:10px; }
 .wset .wopt { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .wset .wopt .lbl { font-weight:600; }
+.wset .wopt .fchips { flex-wrap:wrap; overflow:visible; row-gap:6px; }   /* every face in view: the row scrolled only sideways, a wheel or the D-pad never got there */
 .packview, .wprev { --wtonal:#f6e9e0; --wpale:#f4f4f6; --wink:#3b2a22; --wsolid:#181b22; }   /* TV Home's Tonal.FILL / INK and the light clock's face */
 .wprev.wcard { width:150px; height:110px; border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box; }
 .wprev.wcard.big { width:250px; height:130px; }

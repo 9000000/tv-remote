@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Home ghim được kênh FPT Play (+ Thêm > Ghim kênh FPT Play): 93 kênh (VTV, HTV, HTVC, ANTV, địa phương, quốc tế), bấm là mở thẳng kênh đó trong FPT Play, cả app Android TV lẫn app có sẵn trên box FPT.
+- TV Home: hai thẻ nhỏ xếp chồng (đồng hồ trên, thời tiết dưới) giờ bấm xuống tới được thẻ dưới; cài đặt thẻ hiện đủ mọi lựa chọn (mặt đồng hồ thứ 5 bị cắt), cả trên TV lẫn trang web.
 
 **English**
 - TV Home pins FPT Play channels too (+ Add > Pin an FPT Play channel): 93 channels (VTV, HTV, HTVC, ANTV, provinces, abroad), each opens that channel in FPT Play, the Android TV app or an FPT box's own.
+- TV Home: two small cards stacked (clock over weather) now reach the lower one with Down; a card's settings show every choice (the 5th clock face was cut), on the TV and on the web page.
 
 ## 0.30.0 - 2026-10-27
 

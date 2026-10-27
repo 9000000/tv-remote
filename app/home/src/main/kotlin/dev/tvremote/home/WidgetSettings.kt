@@ -90,28 +90,39 @@ object WidgetSettings {
             } else Store.change(a, JSONObject().put("wopt", JSONObject().put(k, JSONObject().put(o.id, v))))
             strip.invalidate(); redraw()
         }
-        fun chips(o: HomeConfig.Opt): Pair<LinearLayout, () -> Unit> {
-            val box = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
+        fun chips(o: HomeConfig.Opt, room: Int): Pair<LinearLayout, () -> Unit> {
+            val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
             val values = if (o.type == "toggle") listOf("off", "on") else o.values
             val views = values.map { v ->
                 text(word(a, "home.ov_$v"), 14f, Color.WHITE).apply { gravity = Gravity.CENTER; setPadding(dp(12), dp(5), dp(12), dp(5)) }
             }
-            views.forEachIndexed { i, tv -> box.addView(tv, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(6) }) }
+            // as many chips on a line as fit, the rest on the next: one line never scrolled, so a clock's 5 faces were cut after the 4th
+            var line: LinearLayout? = null; var used = 0
+            for (tv in views) {
+                val w = tv.paint.measureText(tv.text.toString()).toInt() + dp(24)
+                if (line == null || used + dp(6) + w > room) {
+                    line = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL }
+                    box.addView(line, LinearLayout.LayoutParams(-2, -2).apply { if (box.childCount > 0) topMargin = dp(6) })
+                    used = 0
+                }
+                line.addView(tv, LinearLayout.LayoutParams(-2, -2).apply { if (used > 0) leftMargin = dp(6) })
+                used += (if (used > 0) dp(6) else 0) + w
+            }
             fun mark() { views.forEachIndexed { i, tv -> val on = values[i] == cur[o.id]; tv.background = glass(14, if (on) CHIP_ON else CHIP_OFF, if (on) ACCENT else ROW_EDGE) } }
             mark()
             return box to ::mark
         }
         var first: View? = null
         for (o in opts) {
-            val (box, mark) = chips(o)
             val values = if (o.type == "toggle") listOf("off", "on") else o.values
+            val under = values.size >= 3                            // three or more chips go under the label so neither is cut
+            val (box, mark) = chips(o, dp(330 - 28) - if (under) 0 else dp(120))   // the row's width less its padding (and the label beside them)
             fun go(step: Int) {
                 val at = values.indexOf(cur[o.id])
                 val v = values[Math.floorMod(at + step, values.size)]
                 save(o, v); mark(); changed[o.id]?.requestFocus()
             }
-            val under = values.size >= 3                            // three or more chips go under the label so neither is cut
-            if (under) box.gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            box.gravity = if (under) Gravity.START else Gravity.END
             val row = LinearLayout(a).apply {
                 orientation = if (under) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
                 gravity = if (under) Gravity.START else Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
