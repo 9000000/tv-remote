@@ -31,4 +31,8 @@ function homeGone() {
 }
 
 // after the last script (home.js) is in: the settings are what this page is for, so they open at once
-document.addEventListener('DOMContentLoaded', () => { $('#hwopen').addEventListener('click', homeOpen); homeOpen(); });
+// (hash #pin = TV Home's QR "Pin from YouTube": the paste box opens first, the settings stay one button away)
+document.addEventListener('DOMContentLoaded', () => {
+  $('#hwopen').addEventListener('click', homeOpen); $('#hwpin').addEventListener('click', () => homePin());
+  if (location.hash === '#pin') homePin(); else homeOpen();
+});

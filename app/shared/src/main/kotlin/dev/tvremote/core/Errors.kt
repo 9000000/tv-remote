@@ -40,6 +40,11 @@ object Errors {
             all.contains("copy to the TV incomplete") -> t("errors.file_did_not_reach")
             all.contains("no sign-in link") -> t("errors.could_not_read_sign")
             all.contains("no app that can open") -> t("errors.tv_has_no_app")
+            all.contains("home:pin_old") -> t("errors.pin_old")             // pinning a YouTube link (Home.pin; the page's friendly() has the same)
+            all.contains("pin_bad_link") -> t("errors.pin_bad_link")
+            all.contains("pin_no_app") -> t("errors.pin_no_app")
+            all.contains("pin_failed") -> t("errors.pin_failed")
+            all.contains("home:missing") -> t("core.fr_home_missing")
             Regex("INSUFFICIENT_STORAGE|No space", RegexOption.IGNORE_CASE).containsMatchIn(all) -> t("errors.tv_out_storage")
             // installing an APK: the same words as friendly() in js/core.js
             Regex("apk needs sdk (\\d+), the tv has sdk (\\d+)").containsMatchIn(all) -> {

@@ -11,6 +11,7 @@ import android.widget.Toast
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.AdbLink
 import dev.tvremote.core.ontv.Channels
+import dev.tvremote.core.ontv.Home
 import dev.tvremote.core.web.Manage
 
 // Things sent to the TV: links, shared links and files from other apps, photos / videos / songs from this phone, the Play Store.
@@ -69,7 +70,43 @@ internal fun MainActivity.sendShared(tries: Int) {
     }
     val link = Regex("(?i)https?://\\S+").find(i.getStringExtra(Intent.EXTRA_TEXT) ?: "")?.value
     if (link == null) say(T("media.what_was_shared_has"), true)
+    else if (Home.youtubeUrl(link) != null) askYoutube(Home.youtubeUrl(link)!!)
     else confirmShare(link) { openLink(link); Toast.makeText(this, T("notify.sent"), Toast.LENGTH_SHORT).show() }
+}
+
+/** A YouTube link shared to us: pinned on TV Home's grid or opened in the TV's YouTube app (the same calls as the page's "Pin from YouTube"). */
+private fun MainActivity.askYoutube(url: String) {
+    Popup.Builder(this).setTitle(T("media.youtube_title"))
+        .setMessage(url + "\n→ " + title(host ?: ""))
+        .setPositiveButton(T("media.pin_to_tv")) { _, _ -> pinYoutube(url) }
+        .setNeutralButton(T("media.open_on_tv")) { _, _ -> openYoutube(url) }
+        .setNegativeButton(T("common.cancel"), null).show()
+}
+
+private fun MainActivity.pinYoutube(url: String) {
+    val tv = tv
+    if (basic != null || tv == null || !tv.ready()) { say(T("media.pin_needs_adb"), true); return }
+    val ip = host ?: return
+    Thread {
+        // its own ADB link (as castFile): the picture session's may be reconnecting just then and answers ""
+        val link = AdbLink(filesDir, ip)
+        val err = try {
+            Home.pin({ link.get().shell(it) }, Home.youtubeInfo(url).put("url", url)); null
+        } catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) } finally { link.close() }
+        ui.post { if (!isFinishing) say(err ?: T("media.pinned"), err != null) }
+    }.start()
+}
+
+private fun MainActivity.openYoutube(url: String) {
+    val tv = tv
+    if (basic != null || tv == null || !tv.ready()) { openLink(url); return }     // keys only: no ADB to ask the TV which app has YouTube
+    val ip = host ?: return
+    Thread {
+        val link = AdbLink(filesDir, ip)
+        val err = try { Home.openYoutube({ link.get().shell(it) }, url); null }
+        catch (e: Exception) { dev.tvremote.core.Errors.say(e, dev.tvremote.core.Words.lang) } finally { link.close() }
+        ui.post { if (!isFinishing) say(err ?: T("notify.sent"), err != null) }
+    }.start()
 }
 
 /** Any app can hand us a file or a link: it reaches the TV only once the person has seen what and where. */

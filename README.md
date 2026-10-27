@@ -108,7 +108,7 @@ Free, no ads, each on its own: install from the phone or computer app (TV tab), 
 
 | App | What it is | Guide |
 |---|---|---|
-| 🏠 **TV Home** | A home screen with no ads and no suggested rows (0.2 MB): your apps, widgets, wallpapers, themes, set up from the phone | [→](https://tvremote.pages.dev/guide?lang=en#home) |
+| 🏠 **TV Home** | A home screen with no ads and no suggested rows (0.2 MB): your apps, widgets, wallpapers, themes, YouTube channels and videos pinned from a link, set up from the phone | [→](https://tvremote.pages.dev/guide?lang=en#home) |
 | 📺 **TV Channels** | Free TV channels from everywhere (iptv-org, VieON), programme guide, reminders, favourites | [→](https://tvremote.pages.dev/guide?lang=en#channels) |
 | 🎮 **TV Games** | Retro and web games, up to 4 phones as pads; card and board games with each hand on its own phone | [→](https://tvremote.pages.dev/guide?lang=en#games) |
 

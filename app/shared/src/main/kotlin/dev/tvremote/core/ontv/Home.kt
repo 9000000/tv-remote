@@ -139,4 +139,65 @@ object Home {
         if (!HomeConfig.isPhoto(id) && !HomeConfig.isVideo(id)) throw IllegalArgumentException("photo id")
         return call({ adb.shell(it) }, null, "--es drop $id")
     }
+
+    // ---- YouTube links: pinned to TV Home's grid, or opened on the TV at once (the same calls for the page and the Phone app's share sheet)
+    private val YT_HOST = Regex("^(www\\.|m\\.|music\\.)?(youtube\\.com|youtu\\.be)$")
+    private const val YT_TV = "com.google.android.youtube.tv"
+
+    /** [s] as a https YouTube link, or null: what reaches the TV's shell is only ever this (the host is checked, the quotes are Adb.q's). */
+    fun youtubeUrl(s: String?): String? {
+        val u = (s ?: "").trim()
+        val m = Regex("^https://([^/?#:@]+)(/\\S*)?$", RegexOption.IGNORE_CASE).find(u) ?: return null
+        return if (YT_HOST.matches(m.groupValues[1].lowercase())) u else null
+    }
+
+    /** Pins the link ([d]: url, name?, img?) on TV Home's grid; a TV Home from before pins answers without "pinOk" and gets `home:pin_old`. */
+    @Throws(IOException::class)
+    fun pin(sh: (String) -> String, d: JSONObject): JSONObject {
+        val u = youtubeUrl(d.optString("url")) ?: throw IOException("pin_bad_link")
+        val o = JSONObject().put("url", u)
+        d.optString("name").trim().take(120).let { if (it.isNotEmpty()) o.put("name", it) }
+        d.optString("img").let { if (it.startsWith("https://") && it.length < 400) o.put("img", it) }
+        val r = call(sh, null, "--es pin " + B64.encode(o.toString().toByteArray(Charsets.UTF_8)))
+        if (!r.optBoolean("installed")) throw IOException("home:missing")
+        if (!r.optBoolean("pinOk") && r.optJSONObject("config")?.optBoolean("pinOk") != true) throw IOException("home:pin_old")
+        return r
+    }
+
+    /** Packages that take a YouTube link but are not a YouTube app: the framework's stub, downloaders, browsers (those also take any https page). */
+    private val NOT_YT = Regex("frameworkpackagestubs|downloader|\\.browser|chrome|firefox|puffin|silk|opera|tvbro|webview")
+
+    /** The packages in `query-activities --brief` output ("pkg/.Activity" lines), in the order the TV listed them. */
+    internal fun queryPackages(out: String): List<String> =
+        out.lines().map { it.trim() }.filter { Regex("^[A-Za-z][\\w.]*/\\S+$").matches(it) }.map { it.substringBefore('/') }.distinct()
+
+    /** The app that opens [yt] links: [prefer] if the TV has it, stock YouTube for TV, else the first other app that is no stub, browser or downloader. */
+    internal fun youtubeApp(yt: List<String>, web: List<String>, prefer: String? = null): String? {
+        val apps = yt.filter { it !in web && !NOT_YT.containsMatchIn(it) }
+        return apps.firstOrNull { it == prefer } ?: apps.firstOrNull { it == YT_TV } ?: apps.firstOrNull()
+    }
+
+    /**
+     * Opens the link in the YouTube app the TV really has: many TVs run a mod (TizenTube, SmartTube, ReVanced...) with the stock app turned
+     * off, so the app is asked of the TV (one shell call) and never assumed; no bare VIEW either (it could open a downloader or a stub).
+     */
+    @Throws(IOException::class)
+    fun openYoutube(sh: (String) -> String, url: String, prefer: String? = null) {
+        val u = youtubeUrl(url) ?: throw IOException("pin_bad_link")
+        val q = "cmd package query-activities --brief -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d "
+        val out = sh(q + Adb.q(u) + " 2>&1; echo '#~#'; " + q + "https://example.com/ 2>&1")
+        if (out.isBlank()) throw IOException("not connected")            // no ADB link just then: not "no YouTube app"
+        val pkg = youtubeApp(queryPackages(out.substringBefore("#~#")), queryPackages(out.substringAfter("#~#", "")), prefer)
+            ?: throw IOException("pin_no_app")
+        val r = sh("am start -a android.intent.action.VIEW -d " + Adb.q(u) + " -p " + pkg + " 2>&1")
+        if (r.contains("Error") || r.lowercase().contains("unable to resolve")) throw IOException("pin_no_app")
+    }
+
+    /** The title and picture YouTube's oEmbed gives for the link, best effort ({} when it has none or cannot be reached). */
+    fun youtubeInfo(url: String): JSONObject = try {
+        val c = java.net.URL("https://www.youtube.com/oembed?format=json&url=" + java.net.URLEncoder.encode(url, "UTF-8")).openConnection() as java.net.HttpURLConnection
+        c.connectTimeout = 4000; c.readTimeout = 4000
+        val j = JSONObject(c.inputStream.use { String(it.readBytes(), Charsets.UTF_8) })
+        JSONObject().put("name", j.optString("title")).put("img", j.optString("thumbnail_url"))
+    } catch (e: Exception) { JSONObject() }
 }
