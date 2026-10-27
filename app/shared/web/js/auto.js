@@ -302,8 +302,8 @@ async function installSetupApk() {
 }
 
 // ---------- TV Setup's and TV Home's updates (SetupUpdate.kt, Home.kt): one bar on every remote; the TV puts an old TV Setup back if a new one does not work ----------
-let setupBusy = false, setupChecked = '', homeLatest = '';         // setupChecked: the TV whose versions were looked at
-onTvChange(() => { setupChecked = ''; homeLatest = ''; put('#setupupd', 'hidden', true); });
+let setupBusy = false, setupChecked = '', homeLatest = '', homeHas = '';         // setupChecked: the TV whose versions were looked at
+onTvChange(() => { setupChecked = ''; homeLatest = ''; homeHas = ''; put('#setupupd', 'hidden', true); });
 const seenUndo = () => { try { return localStorage.getItem('setupUndo') || ''; } catch (e) { return ''; } };
 // "Later" is per version ("tv:0.15.0", "home:0.2.0") until a time; a newer version is offered again at once
 const laterAll = () => { try { return JSON.parse(localStorage.getItem('updLater') || '{}') || {}; } catch (e) { return {}; } };
@@ -320,11 +320,12 @@ async function checkSetup() {
   const get = (u) => fetch(u).then((x) => x.ok ? x.json() : null).catch(() => null);
   const [r, h] = await Promise.all([get('/api/setup/version'), get('/api/home')]);
   if (host !== (curHost || '-')) return null;                         // another TV was picked meanwhile: not its banner
-  homeLatest = h && h.installed && h.latest || '';
+  homeLatest = h && h.installed && h.latest || ''; homeHas = h && h.installed && h.version || '';
   if (!setupBusy) showSetupUpd(r);
   return r;
 }
-// TV Setup updates itself and TV Home quietly (r.silent): no banner for 3 days after this page first saw the version (UpdatePlan.GRACE)
+// TV Setup updates itself and TV Home quietly (r.silent): no banner until the TV has stayed on the version it has for 3 days
+// (UpdatePlan.GRACE). Timed per TV and installed version, not per new one: releases in a row must not keep a stuck TV quiet
 function waitSetup(r, k) {
   if (!r || !r.silent) return false;
   let o = {}; try { o = JSON.parse(localStorage.getItem('updSeen') || '{}') || {}; } catch (e) { }
@@ -332,8 +333,8 @@ function waitSetup(r, k) {
   return Date.now() - o[k] < 3 * 86400000;
 }
 // what is on offer and not put off: [kind, name, version]
-const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) && !waitSetup(r, 'tv:' + r.latest) ? ['tv', 'TV Setup', r.latest] : null,
-  homeLatest && !later('home:' + homeLatest) && !waitSetup(r, 'home:' + homeLatest) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
+const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) && !waitSetup(r, 'tv@' + setupChecked + '@' + r.installed) ? ['tv', 'TV Setup', r.latest] : null,
+  homeLatest && !later('home:' + homeLatest) && !waitSetup(r, 'home@' + setupChecked + '@' + homeHas) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
 // a is newer than b ("0.24.0" vs "0.22.0"); a missing part is 0
 const verNewer = (a, b) => {
   const x = String(a || '').split('.').map((n) => parseInt(n, 10) || 0), y = String(b || '').split('.').map((n) => parseInt(n, 10) || 0);

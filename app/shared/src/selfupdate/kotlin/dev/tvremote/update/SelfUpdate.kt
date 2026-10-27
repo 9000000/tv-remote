@@ -23,7 +23,7 @@ import java.io.IOException
  * which asks once more. The first time, Android 8+ wants this app allowed to install apps: [install] opens that switch
  * first (Android's own path ends the install there), and [check] goes on with the download once the person is back with it
  * on, without asking again. When TV Setup is on the TV with auto-update on and ADB, it installs the update quietly (AutoUpdate):
- * the app then stays silent for [UpdatePlan.GRACE] after it first saw the release, and asks only if that passed ([leftToSetup]). Only these three apps compile this file
+ * the app then stays silent for [UpdatePlan.GRACE] after it first saw a release newer than itself, and asks only if that passed ([leftToSetup]). Only these three apps compile this file
  * (src/selfupdate); the phone and computer apps still put them on the TV over ADB (OwnApp), which needs no question.
  */
 class SelfUpdate(private val a: Activity, private val app: String, private val asset: String) {
@@ -62,7 +62,8 @@ class SelfUpdate(private val a: Activity, private val app: String, private val a
      */
     private fun leftToSetup(r: Release): Boolean {
         val now = System.currentTimeMillis()
-        if (prefs.getString("seen", null) != r.version) prefs.edit().putString("seen", r.version).putLong("seen_at", now).apply()
+        val mine = version()                                          // timed from this version, not the new one: releases in a row must not keep a stuck app quiet
+        if (prefs.getString("seen", null) != mine) prefs.edit().putString("seen", mine).putLong("seen_at", now).apply()
         val first = prefs.getLong("seen_at", now)
         if (now - first >= UpdatePlan.GRACE) return false             // asked for long enough: no more waiting
         val silent = try {
