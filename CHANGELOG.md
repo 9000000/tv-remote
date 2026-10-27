@@ -7,9 +7,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 
 **Tiếng Việt**
+- Ghim YouTube lên TV Home hoặc mở ngay trên TV: tab TV > Màn hình chính > **Ghim từ YouTube** (app điện thoại, app máy tính, web của TV), dán link kênh / video / danh sách phát / short, xem tên và hình rồi bấm Ghim lên TV hoặc Mở trên TV. Chia sẻ link YouTube sang TV Remote cũng hỏi Ghim hay Mở. Mở tìm đúng app YouTube đang bật trên TV (SmartTube, TizenTube, bản gốc…), không mở nhầm app tải về hay trình duyệt. Ghim cần TV Home bản mới (app hỏi cập nhật).
 - TV Home ghim được kênh FPT Play (+ Thêm > Ghim kênh FPT Play): 93 kênh (VTV, HTV, HTVC, ANTV, địa phương, quốc tế), bấm là mở thẳng kênh đó trong FPT Play, cả app Android TV lẫn app có sẵn trên box FPT.
 
 **English**
+- Pin YouTube to TV Home or open it on the TV now: TV tab > Home screen > **Pin from YouTube** (Phone app, Computer app, TV web page): paste a channel / video / playlist / short link, check its name and picture, then Pin to TV or Open on TV. Sharing a YouTube link to TV Remote asks Pin or Open too. Open asks the TV which YouTube app is on (SmartTube, TizenTube, stock...), never a downloader or a browser. Pinning needs a newer TV Home (the app asks to update).
 - TV Home pins FPT Play channels too (+ Add > Pin an FPT Play channel): 93 channels (VTV, HTV, HTVC, ANTV, provinces, abroad), each opens that channel in FPT Play, the Android TV app or an FPT box's own.
 
 ## 0.30.0 - 2026-10-27

@@ -112,7 +112,7 @@ Miễn phí, không quảng cáo, cài riêng từng cái: từ app điện tho�
 
 | App | Là gì | Hướng dẫn |
 |---|---|---|
-| 🏠 **TV Home** | Màn hình chính không quảng cáo, không hàng gợi ý (0,2 MB): app của bạn, widget, hình nền, chủ đề, chỉnh từ điện thoại | [→](https://tvremote.pages.dev/guide#home) |
+| 🏠 **TV Home** | Màn hình chính không quảng cáo, không hàng gợi ý (0,2 MB): app của bạn, widget, hình nền, chủ đề, ghim kênh / video YouTube từ link, chỉnh từ điện thoại | [→](https://tvremote.pages.dev/guide#home) |
 | 📺 **TV Channels** | Kênh truyền hình miễn phí khắp nơi (iptv-org, VieON), lịch phát sóng, nhắc giờ, kênh yêu thích | [→](https://tvremote.pages.dev/guide#channels) |
 | 🎮 **TV Games** | Game retro và web, tối đa 4 điện thoại làm tay cầm; bài và cờ, bài của ai nằm trên điện thoại người đó | [→](https://tvremote.pages.dev/guide#games) |
 

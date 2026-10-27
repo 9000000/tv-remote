@@ -1238,3 +1238,4 @@ function homeCropAsk(img, W, H, whole) {
 
 $('#homeopen')?.addEventListener('click', homeOpen);                  // the hosts' page has the buttons; TV Home's own opens the settings at once (homeweb.js)
 $('#homeupd')?.addEventListener('click', homeUpdate);
+$('#homepin')?.addEventListener('click', async () => { if (homeLink.direct || !await needAdbSoon()) homePin(); });
