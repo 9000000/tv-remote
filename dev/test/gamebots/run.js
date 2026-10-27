@@ -18,7 +18,7 @@ const puppeteer = require(require.resolve('puppeteer-core', { paths: [NODE_DIR] 
 // kind: which brain (page.js); input: how a Kit game is steered; players: phones that join (2 unless the game is better with more/less)
 const GAMES = {
   balloons: { kind: 'kit', input: 'ptr' }, bida: { kind: 'bida' }, bombers: { kind: 'kit', input: 'stick' }, cangua: { kind: 'tbl' },
-  caro: { kind: 'caro' }, colors: { kind: 'tbl' }, cycles: { kind: 'kit', input: 'stick' }, hockey: { kind: 'kit', input: 'ptr', fire: false },
+  caro: { kind: 'caro' }, colors: { kind: 'tbl' }, cycles: { kind: 'kit', input: 'stick' }, fight: { kind: 'kit', input: 'stick' }, hockey: { kind: 'kit', input: 'ptr', fire: false },
   meono: { kind: 'tbl' }, moles: { kind: 'kit', input: 'ptr' }, quiz: { kind: 'quiz' }, slice: { kind: 'kit', input: 'ptr', fire: false },
   sumo: { kind: 'kit', input: 'stick' }, tanks: { kind: 'kit', input: 'stick' }, tienlen: { kind: 'tbl' }, typhu: { kind: 'tbl' },
 };

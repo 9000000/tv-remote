@@ -3,7 +3,7 @@
 // A punches, B kicks, X throws a fireball (one bar of the meter; a full meter of three makes it the super), Y held blocks
 // (crouch to block a low hit). Chains on a hit: A A A (jab, jab, uppercut), A A B and B B (roundhouse), down + B sweeps,
 // in the air A punches down and B dives. The TV remote's OK is A, so a remote player still has the punch chain.
-// Hits stop the frame a moment (hitstop), launch into juggles with damage scaled down per hit, knock down; two rounds win.
+// Hits stop the two fighters a moment (hitstop), launch into juggles with damage scaled down per hit, knock down; two rounds win.
 // CPUs fill the empty seats. Fighters are jointed figures posed from angles (POSES), eased toward the move's pose each frame.
 (function () {
   const K = window.Kit, W = 1280, GROUND = 640, GRAV = 2300, WALK = 270, JUMP = 980, HP = 100, BAR = 100, WIN = 2, TIME = 60;
@@ -51,7 +51,7 @@
   };
   const TALK = { ko: 'K.O.', time: { vi: 'Hết giờ', en: 'Time' }, fight: { vi: 'Đánh!', en: 'Fight!' }, round: { vi: 'Ván ', en: 'Round ' },
     hit: { vi: ' đòn', en: ' hits' }, draw: { vi: 'Hòa', en: 'Draw' }, takes: { vi: 'thắng ván này', en: 'takes the round' } };
-  let ps, shots, fx, words, phase, ptimer, round, over, left, stop, slow, roundWin, bg;
+  let ps, shots, fx, words, phase, ptimer, round, over, left, slow, roundWin, bg;
 
   const deg = Math.PI / 180, lerp = (a, b, k) => a + (b - a) * k;
   function shade(hex, k) {                                                     // k < 0 darker, > 0 lighter
@@ -60,12 +60,12 @@
   }
 
   function newRound() {
-    round++; phase = 'ready'; ptimer = 1.8; left = TIME; stop = 0; slow = 0; shots = []; fx = []; words = [];
+    round++; phase = 'ready'; ptimer = 1.8; left = TIME; slow = 0; shots = []; fx = []; words = [];
     const n = K.slots.length, gap = n === 2 ? 420 : 900 / (n - 1);
     ps = K.slots.map((s, i) => {
       const x = n === 2 ? W / 2 + (i ? 1 : -1) * gap / 2 : W / 2 - 450 + i * gap;
       return { s, i, x, y: GROUND, vx: 0, vy: 0, f: x < W / 2 ? 1 : -1, hp: HP, hpShow: HP, bar: round === 1 ? 0 : (ps && ps[i] ? ps[i].bar : 0),
-        st: 'idle', mv: null, t: 0, hitSet: null, touched: false, shot: false, stun: 0, kd: false, ko: false, ground: true, airUsed: false,
+        st: 'idle', mv: null, t: 0, stop: 0, hitSet: null, touched: false, shot: false, stun: 0, kd: false, ko: false, ground: true, airUsed: false,
         combo: 0, flash: 0, pose: POSES.idle.slice(), buf: null, bufT: 0, upHeld: false, walkT: 0, inv: 0,
         ai: { t: 0, q: [], cool: K.rnd(0.3, 0.8), block: 0, seen: null, jump: 0 } };
     });
@@ -136,7 +136,7 @@
     if (v.st === 'block' && v.ground && (front || fromShot) && (!m.low || v.cb)) {
       v.bstun = 0.16; v.vx = (x < v.x ? 1 : -1) * 240; if (!fromShot) a.vx = -a.f * 90;
       v.bar = Math.min(3 * BAR, v.bar + 3); if (fromShot) v.hp = Math.max(1, v.hp - 1);
-      K.sfx.bounce(); K.burst(x, y, '#93c5fd', 7, 200, 0.25, 5); fx.push({ k: 'block', x, y, t: 0 }); stop = 0.04; return true;
+      K.sfx.bounce(); K.burst(x, y, '#93c5fd', 7, 200, 0.25, 5); fx.push({ k: 'block', x, y, t: 0 }); hold(v, fromShot ? null : a, 0.025); return true;
     }
     v.combo = v.st === 'hurt' || !v.ground ? v.combo + 1 : 1;
     const dmg = m.dmg * Math.max(0.45, 1 - 0.12 * (v.combo - 1));
@@ -147,7 +147,7 @@
     const owner = fromShot ? a.o : a;
     owner.bar = Math.min(3 * BAR, owner.bar + 9); v.bar = Math.min(3 * BAR, v.bar + 5);
     const big = m.heavy || m.kd || dmg >= 9;
-    stop = big ? 0.11 : 0.06; K.shake(big ? 9 : 4); K.sfx.hit(big ? 1 : 0.35);
+    hold(v, fromShot ? null : a, big ? 0.07 : 0.035); K.shake(big ? 7 : 3); K.sfx.hit(big ? 1 : 0.35);
     K.burst(x, y, '#fff', big ? 14 : 7, big ? 420 : 280, 0.3, 6); K.burst(x, y, owner.s.color, big ? 10 : 4, 300, 0.4, 5);
     fx.push({ k: 'hit', x, y, t: 0, big });
     if (v.combo >= 2) { const w = words.find((q) => q.p === owner && q.t < 1); if (w) { w.n = v.combo; w.t = 0; } else words.push({ p: owner, n: v.combo, t: 0 }); }
@@ -225,19 +225,21 @@
     for (let i = 0; i < 11; i++) p.pose[i] = lerp(p.pose[i], want[i], k);
   }
 
+  // the blow holds the two it joins, not the screen (with four fighting, a whole-screen stop on every hit read as lag), and briefly:
+  // 60 / 110 ms (3-5 frames on a 50 Hz TV) felt like the game catching up, on a phone pad most of all
+  function hold(v, a, t) { v.stop = Math.max(v.stop, t); if (a) a.stop = Math.max(a.stop, t); }
   function update(dt) {
     K.updateParts(dt);
     if (over) return;
     for (const w of words) w.t += dt; words = words.filter((w) => w.t < 1.1);
     for (const e of fx) e.t += dt; fx = fx.filter((e) => e.t < 0.25);
     if (phase === 'ready') { ptimer -= dt; for (const p of ps) step(p, NONE, dt); if (ptimer <= 0) { phase = 'play'; K.sfx.go(); } return; }
-    if (stop > 0) {                                                            // hitstop: the frame holds on the blow, a press in it still counts
-      stop -= dt; if (phase === 'play') for (const p of ps) if (p.s.human && !p.ko) press(p, humanIn(p));
-      return;
-    }
     if (slow > 0) { slow -= dt; dt *= 0.3; }                                   // the last blow in slow motion
     if (phase === 'play') { left -= dt; K.timeTick(left); }
-    for (const p of ps) step(p, phase === 'play' && !p.ko ? (p.s.human ? humanIn(p) : cpuIn(p, dt)) : NONE, dt);
+    for (const p of ps) {
+      if (p.stop > 0) { p.stop -= dt; if (phase === 'play' && p.s.human && !p.ko) press(p, humanIn(p)); continue; }   // hitstop: held on the blow, a press in it still counts
+      step(p, phase === 'play' && !p.ko ? (p.s.human ? humanIn(p) : cpuIn(p, dt)) : NONE, dt);
+    }
     for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {   // bodies do not pass through each other on the floor
       const a = ps[i], b = ps[j];
       if (a.ko || b.ko || a.st === 'down' || b.st === 'down' || Math.abs(a.y - b.y) > 90) continue;
