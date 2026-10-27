@@ -144,6 +144,7 @@ object WidgetSettings {
             if (first == null) first = row
             rows.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (rows.childCount > 0) topMargin = dp(8) })
         }
+        if (k == "adblock") rows.addView(text(a.getString(R.string.adb_note), 12f, DIM).apply { maxLines = 3 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })   // DNS-level only: said where the card is set
         val close = text(a.getString(R.string.ok), 15f, Color.WHITE).apply {
             gravity = Gravity.CENTER; isFocusable = true; isClickable = true; setPadding(dp(14), dp(9), dp(14), dp(9))
             background = StateListDrawable().apply {

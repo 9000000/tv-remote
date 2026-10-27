@@ -68,7 +68,10 @@ import org.json.JSONObject
  *           "timer" (the sleep timer or bedtime, from TV Setup too;
  *           shown only while one is set), "weather" (the sky now and the next days, Open-Meteo: [place] or, by itself, the device's
  *           location or the internet address's), "air" (the air quality index and PM2.5 at that place, Open-Meteo's air-quality API;
- *           a TV Home older than it drops the key)
+ *           a TV Home older than it drops the key), "recent" (the last apps opened, as icons that open them on OK: TV Setup's HomeInfo
+ *           "recent", in the order Android's usage events came, never by the clock), "adblock" (whether Private DNS names an ad-blocking
+ *           resolver, [ADBLOCK_DNS]; OK turns it on / off, which needs [WRITE_SECURE] granted over ADB; Android 9+: before it TV Home
+ *           leaves it out of "wschema")
  *           Their order in the list is the order on the screen (the page and the TV's panel move them).
  *   qrs     QR cards: {"qr1": {tpl, f, cap, show}, ...} up to [HomeQr.CARDS_MAX], each a template's fields (Wi-Fi, link, text, phone, SMS,
  *           e-mail, contact: [HomeQr]) and a caption; a card is on the screen when its key is also in "widgets" (the order, the size).
@@ -125,8 +128,16 @@ object HomeConfig {
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
     /** Granted over ADB when TV Home is installed or set up, never asked on the TV: the Wi-Fi's name is location to Android (8.1+), and
      *  Android TV's "pair an accessory" screen (Control Center's Bluetooth) refuses to open for an app without BLUETOOTH_CONNECT (12+),
-     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt). */
-    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; pm grant $PKG android.permission.READ_TV_LISTINGS >/dev/null 2>&1; "
+     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt); WRITE_SECURE_SETTINGS lets the Ad blocking card set Private DNS. */
+    const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; pm grant $PKG android.permission.READ_TV_LISTINGS >/dev/null 2>&1; pm grant $PKG $WRITE_SECURE >/dev/null 2>&1; "
+    /**
+     * Private DNS names that block ads (DNS-over-TLS, host names only), the first is what the "adblock" card turns on. The page's
+     * `DNS_SETS.ads` in js/tvset.js is the same list (tests/home_adblock.test.js keeps the two equal).
+     */
+    val ADBLOCK_DNS = listOf("dns.adguard-dns.com", "adblock.dns.mullvad.net", "p2.freedns.controld.com")
+    fun adblockHost(host: String?) = host != null && host.lowercase() in ADBLOCK_DNS
+    /** Android 9 (API 28) is the first with Private DNS. */
+    const val ADBLOCK_MIN_SDK = 28
     const val DOCK_MAX = 6
     const val COLS_MIN = 4; const val COLS_MAX = 8; const val COLS_DEFAULT = 5
     const val ROWS_MAX = 10.0
@@ -223,7 +234,7 @@ object HomeConfig {
         }
         return null
     }
-    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "clock", "market", "news") + HomeQr.KEYS
+    val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "recent", "adblock", "clock", "market", "news") + HomeQr.KEYS
     /**
      * One option of a card, the single source of what the settings dialog offers (TV Home's Customize and the page render it, nobody
      * hardcodes a card's options): [type] "choice" (one of [values]) or "toggle" ("off" / "on", drawn as a switch). [default] is what a
@@ -233,7 +244,7 @@ object HomeConfig {
      */
     class Opt(val id: String, val type: String, val values: List<String>, val default: String, val store: String = "wopt")
     private val SIZES = listOf("big", "small")
-    val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news") + HomeQr.KEYS   // every card but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
+    val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news", "recent", "adblock") + HomeQr.KEYS   // every card but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
     // "solid": an opaque dark card, the photo hidden under it; "none": no card at all, the words on the wallpaper with a shadow
     // (a person whose own photo is the point). The clock has no tonal form (its face and theme are its look)
     val LOOKS = listOf("glass", "tonal", "solid", "none")
@@ -253,8 +264,8 @@ object HomeConfig {
     }
     private fun optValues(o: Opt) = if (o.type == "toggle") listOf("off", "on") else o.values
     /** The schema as the clients get it ("wschema" in what TV Home reports): {card: [{id, type, store, default, label, values: [{id, w}]}]}. */
-    fun schema(): JSONObject = JSONObject().also { out ->
-        for (k in WIDGETS) out.put(k, JSONArray(options(k).map { o ->
+    fun schema(sdk: Int = ADBLOCK_MIN_SDK): JSONObject = JSONObject().also { out ->
+        for (k in WIDGETS) if (k != "adblock" || sdk >= ADBLOCK_MIN_SDK) out.put(k, JSONArray(options(k).map { o ->
             JSONObject().put("id", o.id).put("type", o.type).put("store", o.store).put("default", o.default).put("label", "home.o_${o.id}")
                 .put("values", JSONArray(optValues(o).map { JSONObject().put("id", it).put("w", "home.ov_$it") }))
         }))

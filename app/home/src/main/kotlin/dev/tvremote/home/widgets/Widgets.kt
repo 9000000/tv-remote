@@ -65,7 +65,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
                 val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null,
                 val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0, val air: Weather.Air? = null,
-                val market: Market.Snap? = null, val news: List<News.Item> = emptyList())
+                val market: Market.Snap? = null, val news: List<News.Item> = emptyList(), val recent: JSONObject? = null)
 
     /** Today in the lunar calendar and the days until the next full moon (15th), new month (1st) and Tết. */
     class Moon(val day: Lunar.Day, val full: Int, val new: Int, val tet: Int, val hol: Holidays.Next? = null)
@@ -83,6 +83,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal val RED = intArrayOf(0xFFFF8A80.toInt(), 0xFFFF453A.toInt())
         /** A ring or bar of RAM / storage: green, amber from 70 %, red from 85 % ([HomeConfig.level], also TV Setup's RAM tile). */
         internal fun levelColors(part: Float) = when (HomeConfig.level(Math.round(part * 100))) { "bad" -> RED; "warn" -> AMBER; else -> GREEN }
+        internal val GREY = intArrayOf(0xFF8A94A6.toInt(), 0xFF566074.toInt())      // the ad-blocking shield while off
+        internal const val MARK = 0x22FFFFFF                           // the veil under the recent-apps card's marked icon
         internal val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         internal const val DIM = 0xA6FFFFFF.toInt()
         private const val HOT_FILL = 0x14FFFFFF                         // a focused card (weather, news): a faint veil under its white ring
@@ -90,7 +92,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
-        private val BIG = setOf("system", "usage", "calendar", "weather", "air", "market", "news")
+        private val BIG = setOf("system", "usage", "calendar", "weather", "air", "market", "news", "recent", "adblock")
         const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
         private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
 
@@ -130,6 +132,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     var onWeather: (() -> Unit)? = null
     /** The news card: the headline chosen (D-pad up / down while it is focused), the one drawn, and whether the card has the focus. */
     internal var newsAt = 0; internal var newsShown = 0; internal var newsFocused = false; internal var newsCount = 0
+    /** The recent-apps card: the icon the mark is on, whether the card has the focus, the apps drawn and their cells (Left / Right move the mark inside it). */
+    internal var recentAt = 0; internal var recentFocused = false; internal var recentApps: List<String> = emptyList(); internal val recentCells = ArrayList<View>()
 
     /** The cards the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
     val hot = ArrayList<View>()
@@ -172,16 +176,16 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             if (!dev.tvremote.tvui.Motion.glass) addState(intArrayOf(android.R.attr.state_focused), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(3), Color.WHITE); setColor(HOT_FILL) })   // glass: the screen's pane comes here instead
             if (editing) addState(intArrayOf(), android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setStroke(dp(2), HOT_FILL_EDGE) })   // at rest: the outline says "you can change this"
         }
-        v.setOnFocusChangeListener { _, f -> if (k == "news") newsFocused = f; onFocus?.invoke(v, f) }
-        v.setOnClickListener { onOpen?.invoke(k) }
+        v.setOnFocusChangeListener { _, f -> if (k == "news") newsFocused = f; if (k == "recent") { recentFocused = f; recentMark() }; onFocus?.invoke(v, f) }
+        v.setOnClickListener { if (editing) onOpen?.invoke(k) else when (k) { "recent" -> recentOpen(); "adblock" -> adblockToggle(); else -> onOpen?.invoke(k) } }   // these two act on OK; the others open their screen or their menu
         v.setOnLongClickListener { onMenu?.invoke(k, v); true }
         v.setOnKeyListener { _, code, e ->
             if (code == KeyEvent.KEYCODE_MENU) { if (e.action == KeyEvent.ACTION_UP) onMenu?.invoke(k, v); return@setOnKeyListener true }
             if (e.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
             val i = hot.indexOf(v)
             when (code) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> { (near(v, -1, 0) ?: hot.getOrNull(i - 1))?.requestFocus(); true }
-                KeyEvent.KEYCODE_DPAD_RIGHT -> { (near(v, 1, 0) ?: hot.getOrNull(i + 1))?.requestFocus(); true }
+                KeyEvent.KEYCODE_DPAD_LEFT -> { if (k == "recent" && recentAt > 0) { recentAt--; recentMark() } else (near(v, -1, 0) ?: hot.getOrNull(i - 1))?.requestFocus(); true }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { if (k == "recent" && recentAt < recentApps.size - 1) { recentAt++; recentMark() } else (near(v, 1, 0) ?: hot.getOrNull(i + 1))?.requestFocus(); true }
                 // a small card stacked over another: Down goes to it before the grid, Up from it back to the top one (the user, 2026-10-27)
                 KeyEvent.KEYCODE_DPAD_UP -> { if (k == "news" && newsAt > 0) { newsAt--; onWeather?.invoke() } else near(v, 0, -1)?.requestFocus() ?: onUp?.invoke(v); true }
                 KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else near(v, 0, 1)?.requestFocus() ?: onDown?.invoke(v); true }
@@ -237,6 +241,10 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         usage?.let { u -> for (k in listOf("week", "limits")) u.optJSONArray(k)?.let { l -> for (i in 0 until l.length()) l.optJSONObject(i)?.optString("pkg")?.let { p ->
             if (p !in icons) try { icons[p] = a.packageManager.getApplicationIcon(p) } catch (e: Exception) { }
         } } }
+        val recent = if ("recent" in want) ask("recent") else null          // null: no TV Setup, or one older than this card
+        recent?.optJSONArray("apps")?.let { l -> for (i in 0 until l.length()) l.optString(i).let { p ->
+            if (p.isNotEmpty() && p !in icons) try { icons[p] = a.packageManager.getApplicationIcon(p) } catch (e: Exception) { }
+        } }
         val timer = if ("timer" in want) ask("timer") else null
         val moon = if ("lunar" in want) moon(Calendar.getInstance()) else null
         val cal = if ("calendar" in want) month(Calendar.getInstance(), Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek) else null
@@ -256,7 +264,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         if (feeds.isNotEmpty() && News.due(a, feeds)) News.refresh(a, feeds) { onWeather?.invoke() }
         return Facts(mem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
             cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy, if (air) Weather.cachedAir(a) else null,
-            if ("market" in want) Market.cached(a) else null, if ("news" in want) News.cached(a) else emptyList())
+            if ("market" in want) Market.cached(a) else null, if ("news" in want) News.cached(a) else emptyList(), recent)
     }
 
     /**
@@ -273,7 +281,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         } else null
         val tall = layoutParams
         if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
-        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) && (it !in HomeQr.KEYS || qrs.has(it)) }   // a card with nothing to show takes no place
+        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) && (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || Adblock.supported()) }   // a card with nothing to show takes no place; Private DNS is Android 9+
         val big = HomeConfig.bigs(JSONObject().put("wsize", sizes))
         val packed = HomeConfig.pack(keys, big, noteView != null)
         if (packed.cols.isEmpty()) { visibility = View.GONE; return }
@@ -302,6 +310,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                         "weather" -> weather(c, f, w, fixed = true)
                         "market" -> if (opt("market", "layout") == "ticker") marketTicker(c, f, true) else marketFull(c, f)
                         "news" -> newsFull(c, f, w)
+                        "recent" -> recentGlass(c, f, label, w, true)
+                        "adblock" -> adblockGlass(c, f, true)
                         else -> usage(c, f, label, w < dp(340))
                     } else {                                       // the small form: half the height, or a narrow column
                         c.setPadding(dp(16), dp(8), dp(16), dp(8))
@@ -312,6 +322,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                             "air" -> airGlass(c, f, false)
                             "market" -> if (opt("market", "layout") == "ticker") marketTicker(c, f, false) else marketHalf(c, f)
                             "news" -> newsHalf(c, f)
+                            "recent" -> recentGlass(c, f, label, w, false)
+                            "adblock" -> adblockGlass(c, f, false)
                             else -> usageHalf(c, f, label)
                         }
                     }

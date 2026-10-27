@@ -1185,6 +1185,8 @@ object Customize {
         arrayOf<Any>("timer", R.drawable.ic_timer, R.string.w_timer, R.string.c_timer_sub),
         arrayOf<Any>("weather", R.drawable.ic_weather, R.string.w_weather, R.string.c_weather_sub),
         arrayOf<Any>("air", R.drawable.ic_wind, R.string.w_air, R.string.c_air_sub),
+        arrayOf<Any>("recent", R.drawable.ic_apps, R.string.w_recent, R.string.c_recent_sub),
+        arrayOf<Any>("adblock", R.drawable.ic_shield_ok, R.string.w_adblock, R.string.c_adblock_sub),
         arrayOf<Any>("market", R.drawable.ic_chart, R.string.w_market, R.string.c_market_sub),
         arrayOf<Any>("news", R.drawable.ic_message, R.string.w_news, R.string.c_news_sub),
         arrayOf<Any>("clock", R.drawable.ic_clock, R.string.w_clock, R.string.c_clock_sub),
@@ -1214,7 +1216,7 @@ object Customize {
             val on = Store.list(a, "widgets")
             val conf = Store.get(a)
             val qrs = conf.optJSONObject("qrs") ?: JSONObject()
-            val order = (on + HomeConfig.WIDGETS.filter { it !in on }).filter { it !in HomeQr.KEYS || qrs.has(it) }   // a QR card is written on the phone or the web page: only those that exist
+            val order = (on + HomeConfig.WIDGETS.filter { it !in on }).filter { (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || android.os.Build.VERSION.SDK_INT >= HomeConfig.ADBLOCK_MIN_SDK) }   // Private DNS is Android 9+; a QR card is written on the phone or the web page: only those that exist
             val big = HomeConfig.bigs(conf)
             val waiting = HomeConfig.pack(on, big, conf.optString("note").isNotEmpty()).waiting.toSet()
             var want: View? = null

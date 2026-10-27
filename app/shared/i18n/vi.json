@@ -3072,6 +3072,8 @@
  "home.ov_off": "Tắt",
  "home.ov_on": "Bật",
  "home.w_air": "Thẻ chất lượng không khí: chỉ số và PM2.5",
+ "home.w_recent": "Thẻ app mở gần đây: bấm OK để mở lại",
+ "home.w_adblock": "Thẻ chặn quảng cáo: bật hoặc tắt DNS riêng chặn quảng cáo",
  "home.w_timer": "Thẻ hẹn giờ tắt và giờ ngủ",
  "home.w_weather": "Thẻ thời tiết: hiện tại và 3 ngày tới",
  "home.widgets": "Widget trên màn hình",

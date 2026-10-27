@@ -675,5 +675,19 @@
   "yt_pinned": "Đã ghim từ điện thoại",
   "yt_open_with": "Mở link YouTube bằng",
   "yt_auto": "Tự chọn (%1$s)",
-  "link_no_app": "Chưa có app mở được link này. Cài YouTube hoặc SmartTube."
+  "link_no_app": "Chưa có app mở được link này. Cài YouTube hoặc SmartTube.",
+  "w_recent": "Mở gần đây",
+  "c_recent_sub": "các app vừa mở, OK để mở lại",
+  "w_adblock": "Chặn quảng cáo",
+  "c_adblock_sub": "DNS riêng chặn quảng cáo, OK để bật hoặc tắt",
+  "rc_none": "Chưa có app nào. Cần TV Setup đã được cấp quyền xem mức dùng.",
+  "adb_on": "Bật · %s",
+  "adb_off": "Tắt",
+  "adb_other": "DNS riêng: %s",
+  "adb_hint_on": "OK để tắt",
+  "adb_hint_off": "OK để bật",
+  "adb_need": "Cần cấp quyền một lần từ App điện thoại hoặc App máy tính: đổi bất kỳ cài đặt TV Home ở đó",
+  "adb_failed": "DNS chặn quảng cáo không trả lời, đã giữ cài đặt cũ",
+  "adb_note": "Chặn ở mức DNS: chặn tên miền quảng cáo, không chặn quảng cáo chạy trong video YouTube.",
+  "adb_toggle": "Chặn quảng cáo"
 }
