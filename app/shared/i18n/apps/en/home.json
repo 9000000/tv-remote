@@ -656,5 +656,19 @@
   "el_edit": "Edit home screen",
   "el_done": "Done editing",
   "el_edit_sub": "Every element takes the focus: OK changes it, Back is done.",
-  "el_edit_hint": "OK: change · Back: done"
+  "el_edit_hint": "OK: change · Back: done",
+  "w_recent": "Recently opened",
+  "c_recent_sub": "the apps just opened, OK opens one again",
+  "w_adblock": "Ad blocking",
+  "c_adblock_sub": "Private DNS that blocks ads, OK turns it on or off",
+  "rc_none": "No apps yet. Needs TV Setup with usage access.",
+  "adb_on": "On · %s",
+  "adb_off": "Off",
+  "adb_other": "Private DNS: %s",
+  "adb_hint_on": "OK to turn off",
+  "adb_hint_off": "OK to turn on",
+  "adb_need": "Needs a one-time permission from the Phone or Computer app: change any TV Home setting there",
+  "adb_failed": "The ad-blocking DNS did not answer, the old setting is kept",
+  "adb_note": "DNS-level: blocks ad domains, not the ads inside YouTube videos.",
+  "adb_toggle": "Ad blocking"
 }

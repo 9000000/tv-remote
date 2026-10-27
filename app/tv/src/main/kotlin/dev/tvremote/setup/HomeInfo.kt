@@ -49,7 +49,7 @@ class HomeInfo : ContentProvider() {
             val token = Binder.clearCallingIdentity()
             try { return Bundle().apply { putString("result", WebViewFix.run(c)) } } finally { Binder.restoreCallingIdentity(token) }
         }
-        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do", "telegram", "app", "capture", "control")) return null
+        if (method !in setOf("usage", "timer", "cpu", "badges", "power", "keys", "tiles", "tile", "tile_do", "telegram", "app", "capture", "control", "recent")) return null
         // TV Home's package name signed by another key (built elsewhere, a fork): said as such, nothing else given, so the
         // button tells the person to install both from one place instead of "update TV Setup", which would not help
         if (!trusted(c, Binder.getCallingUid())) return if (fromHome(c, Binder.getCallingUid())) Bundle().apply { putString("result", "untrusted") } else null
@@ -95,6 +95,7 @@ class HomeInfo : ContentProvider() {
                 .put("bedtime", Rules.bedtime(o)).put("in_bedtime", Rules.inBedtime(o, now))
                 .put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L }).toString()) }
         }
+        if (method == "recent") return recent(c, now)
         if (method == "badges") {                                      // the tiles' marks: little to ask, answered each minute
             val rules = Rules.load(c)
             val token = Binder.clearCallingIdentity()
@@ -144,6 +145,35 @@ class HomeInfo : ContentProvider() {
                 for (pkg in l.keys()) limits.put(JSONObject().put("pkg", pkg).put("min", l.optInt(pkg) + Rules.extra(rules, pkg, now)).put("used", today.optLong(pkg)))
             }
             return Bundle().apply { putString("json", JSONObject().put("week", top).put("days", days).put("limits", limits).toString()) }
+        } finally { Binder.restoreCallingIdentity(token) }
+    }
+
+    /**
+     * "recent": {apps: [pkg]} the apps opened last, newest first, at most 8 (TV Home shows up to 6). The order is the order of Android's
+     * usage events, never their times: a box can boot with a wrong year (Usage). Not TV Home, TV Setup, a home screen or the system's
+     * screens; only what one can open (a leanback or launcher entry).
+     */
+    private fun recent(c: Context, now: Long): Bundle {
+        val token = Binder.clearCallingIdentity()                      // our own permissions from here (usage access)
+        try {
+            val seen = LinkedHashSet<String>()                         // oldest first: a later open moves the app to the end
+            try {
+                Usage.events(c, now - 7 * 86_400_000L, now) { e ->
+                    if (e.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) e.packageName?.let { seen.remove(it); seen.add(it) }
+                }
+            } catch (e: Exception) { }
+            val pm = c.packageManager
+            val homes = try {
+                pm.queryIntentActivities(android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME), 0).map { it.activityInfo.packageName }.toSet()
+            } catch (e: Exception) { emptySet() }
+            val out = JSONArray()
+            for (p in seen.toList().asReversed()) {                    // not reversed(): JDK 21's member is missing on Android
+                if (p == c.packageName || p == HOME || p in homes || p in SYSTEM_SCREENS) continue
+                val opens = (if (Build.VERSION.SDK_INT >= 21) pm.getLeanbackLaunchIntentForPackage(p) else null) ?: pm.getLaunchIntentForPackage(p)
+                if (opens == null) continue
+                out.put(p); if (out.length() >= 8) break
+            }
+            return Bundle().apply { putString("json", JSONObject().put("apps", out).toString()) }
         } finally { Binder.restoreCallingIdentity(token) }
     }
 
@@ -230,6 +260,8 @@ class HomeInfo : ContentProvider() {
         /** [pkg] is one of those apps and [theirs] (its signing digests) hold its pinned one, or one of [mine] (debug builds of all apps share a key). */
         fun censusOk(pkg: String, theirs: List<String>, mine: List<String>): Boolean = CENSUS_APPS[pkg]?.let { pin -> theirs.any { it == pin || it in mine } } == true
         const val HOME = "dev.tvremote.home"
+        /** Screens of the system, not apps a person opens: the "recent" card leaves them out. */
+        val SYSTEM_SCREENS = setOf("com.android.systemui", "com.android.permissioncontroller", "com.google.android.permissioncontroller", "com.android.packageinstaller", "com.google.android.packageinstaller", "android")
         const val HOME_CERT = "657aabacfdccbc22ff1f61138df7efd79fae765df742f7d15d80dac84c7d81b3"   // app/home/signing.jks, alias tvhome
     }
 }

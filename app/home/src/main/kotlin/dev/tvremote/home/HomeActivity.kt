@@ -71,6 +71,7 @@ import dev.tvremote.home.wall.Online
 import dev.tvremote.home.manage.PhotoScreen
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.widgets.sample
+import dev.tvremote.home.widgets.adblockToggle
 import dev.tvremote.home.apps.SetupHand
 import dev.tvremote.home.apps.Tiles
 import dev.tvremote.home.apps.Watch
@@ -505,6 +506,7 @@ class HomeActivity : Activity() {
         val opts = HomeConfig.options(k).map { it.id }
         val on = Store.list(this, "widgets")
         val items = ArrayList<TvGlass.Item>()
+        if (k == "adblock") items.add(gi(R.drawable.ic_shield_ok, getString(R.string.adb_toggle), on = { dev.tvremote.home.widgets.Adblock.on(this) }) { widgets.adblockToggle() })   // the card's OK, as a switch
         if ("size" in opts) items.add(gi(R.drawable.ic_expand, getString(R.string.el_big), on = { k in HomeConfig.bigs(Store.get(this)) }) {
             val sizes = JSONObject((Store.get(this).optJSONObject("wsize") ?: JSONObject()).toString())   // the key Customize's gear writes
             Store.change(this, JSONObject().put("wsize", sizes.put(k, if (k in HomeConfig.bigs(Store.get(this))) "small" else "big")))
@@ -528,7 +530,7 @@ class HomeActivity : Activity() {
             Store.putList(this, "widgets", on - k)
         })
         items.add(moreItem("widgets")); items.add(editItem())
-        elementMenu(widgetName(k), items, anchor = v)
+        elementMenu(widgetName(k), items, if (k == "adblock") getString(R.string.adb_note) else "", anchor = v)
     }
 
     private fun headMenu() = elementMenu(getString(R.string.el_head), listOf(

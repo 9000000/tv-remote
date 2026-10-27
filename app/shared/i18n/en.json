@@ -3081,6 +3081,8 @@
  "home.ov_off": "Off",
  "home.ov_on": "On",
  "home.w_air": "Air quality card: index and PM2.5",
+ "home.w_recent": "Recently opened card: OK opens an app again",
+ "home.w_adblock": "Ad blocking card: turns the ad-blocking Private DNS on or off",
  "home.w_timer": "Sleep timer and bedtime card",
  "home.w_weather": "Weather card: now and the next 3 days",
  "home.widgets": "Widgets on the screen",

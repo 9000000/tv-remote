@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Home ghim được kênh FPT Play (+ Thêm > Ghim kênh FPT Play): 93 kênh (VTV, HTV, HTVC, ANTV, địa phương, quốc tế), bấm là mở thẳng kênh đó trong FPT Play, cả app Android TV lẫn app có sẵn trên box FPT.
 - TV Home: hai thẻ nhỏ xếp chồng (đồng hồ trên, thời tiết dưới) giờ bấm xuống tới được thẻ dưới; cài đặt thẻ hiện đủ mọi lựa chọn (mặt đồng hồ thứ 5 bị cắt), cả trên TV lẫn trang web.
+- TV Home có 2 thẻ mới: **Mở gần đây** (4-6 app vừa mở, bấm OK mở app, Trái / Phải chuyển icon; cần TV Setup mới và quyền truy cập dữ liệu dùng) và **Chặn quảng cáo** (DNS riêng trỏ tới AdGuard / Mullvad / ControlD: bấm OK để bật / tắt, tắt thì trả về cài đặt cũ; chặn ở mức tên miền, không chặn quảng cáo phát trong video YouTube; Android 9 trở lên, cần cấp quyền một lần từ app điện thoại / máy tính).
 
 **English**
 - TV Home pins FPT Play channels too (+ Add > Pin an FPT Play channel): 93 channels (VTV, HTV, HTVC, ANTV, provinces, abroad), each opens that channel in FPT Play, the Android TV app or an FPT box's own.
 - TV Home: two small cards stacked (clock over weather) now reach the lower one with Down; a card's settings show every choice (the 5th clock face was cut), on the TV and on the web page.
+- TV Home gets two new cards: **Recently opened** (the last 4-6 apps, OK opens one, Left / Right move between icons; needs a newer TV Setup with usage access) and **Ad blocking** (Private DNS set to AdGuard / Mullvad / ControlD: OK turns it on / off, off puts back what was there; DNS-level, it blocks ad domains, not the ads YouTube plays inside videos; Android 9+, needs the one-time permission from the phone or computer app).
 
 ## 0.30.0 - 2026-10-27
 
