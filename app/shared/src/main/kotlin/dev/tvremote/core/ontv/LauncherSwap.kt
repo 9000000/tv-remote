@@ -45,6 +45,11 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val NO_SWAP = setOf("moka", "kalley", "prismplus", "prism+")
 
         /** The words (their id) for why a swap was put back ([Rec.why]): one table for TV Setup, the page and the computer's settings. */
+        /** The whys where the swap was refused before anything stayed changed: the TV kept its launcher, it did not "go back". */
+        val REFUSED = setOf("wifi", "wifi_unknown", "cast", "board", "boot")
+        /** The notice's words for a swap put back with [why]: "kept its launcher" for a refusal, "went back" for an undone swap. */
+        fun backId(why: String): String = if (why in REFUSED) "core.fr_launcher_kept" else "core.fr_launcher_back"
+
         fun whyId(why: String): String =
             if (why in setOf("crash", "home", "timeout", "interrupted", "wifi", "wifi_unknown", "cast", "board", "boot")) "launcher.why_$why" else "launcher.why_user"
 

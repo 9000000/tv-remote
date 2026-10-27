@@ -239,7 +239,7 @@ const FRIENDLY = [
   [/could not write the update script/i, T('core.fr_update_script_failed')],
   [/INSTALL_FAILED_NO_MATCHING_ABIS/i, T('core.fr_abi_mismatch')],
   // the launcher gallery (LauncherInstall.kt): the way it ended, in the order they can match
-  [/launcher:rolledback:(\w+)/, (m) => T('core.fr_launcher_back', { why: T(LAUNCH_WENT[m[1]] || 'launcher.why_user') })],
+  [/launcher:rolledback:(\w+)/, (m) => T(LAUNCH_KEPT.includes(m[1]) ? 'core.fr_launcher_kept' : 'core.fr_launcher_back', { why: T(LAUNCH_WENT[m[1]] || 'launcher.why_user') })],
   [/launcher:home/, T('core.fr_launcher_home')],
   [/launcher:play/, T('core.fr_launcher_play')],
   [/launcher:self/, T('core.fr_launcher_self')],
@@ -268,6 +268,7 @@ const FRIENDLY = [
   [/launcher list not signed/i, T('core.fr_launcher_list')],
   [/launcher file does not match/i, T('core.fr_launcher_file')],
 ];
+const LAUNCH_KEPT = ['wifi', 'wifi_unknown', 'cast', 'board', 'boot'];   // refused before anything changed (LauncherSwap.REFUSED)
 const LAUNCH_WENT = { crash: 'launcher.why_crash', home: 'launcher.why_home', timeout: 'launcher.why_timeout', interrupted: 'launcher.why_interrupted', user: 'launcher.why_user',
   wifi: 'launcher.why_wifi', wifi_unknown: 'launcher.why_wifi_unknown', cast: 'launcher.why_cast', board: 'launcher.why_board', boot: 'launcher.why_boot' };
 const ANDROID = { 21: '5.0', 22: '5.1', 23: '6', 24: '7', 25: '7.1', 26: '8', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' };

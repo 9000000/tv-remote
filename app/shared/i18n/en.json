@@ -2705,6 +2705,7 @@
  "core.fr_launcher_play": "This launcher comes from Google Play. Press Open in Google Play, install it, then try again.",
  "errors.launcher_play": "This launcher comes from Google Play: open Google Play on the TV, install it, then try again.",
  "core.fr_launcher_back": "The TV went back to its own launcher: {why}",
+ "core.fr_launcher_kept": "The TV kept its own launcher: {why}",
  "core.fr_launcher_install": "The TV could not install this launcher: {msg}",
  "core.fr_launcher_fit": "This launcher does not fit the TV.",
  "core.fr_launcher_list": "The launcher list does not carry the project's signature, so it was not used. Try again later.",

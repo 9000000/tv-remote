@@ -2711,6 +2711,7 @@
  "core.fr_launcher_play": "Этот лаунчер из Google Play. Нажмите «Открыть в Google Play», установите и попробуйте снова.",
  "errors.launcher_play": "Этот лаунчер из Google Play: откройте Google Play на ТВ, установите и попробуйте снова.",
  "core.fr_launcher_back": "ТВ вернулся к своему лаунчеру: {why}",
+ "core.fr_launcher_kept": "ТВ оставил свой лаунчер: {why}",
  "core.fr_launcher_install": "ТВ не смог установить этот лаунчер: {msg}",
  "core.fr_launcher_fit": "Этот лаунчер не подходит для ТВ.",
  "core.fr_launcher_list": "Список лаунчеров без подписи проекта — не использован. Попробуйте позже.",

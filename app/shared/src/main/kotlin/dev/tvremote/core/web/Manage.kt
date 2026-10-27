@@ -737,7 +737,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         } else if (pkg !in Setup.LAUNCHER && (swapped || stockOn())) {
             if (!swap.take(pkg)) {
                 val why = swap.refused.ifEmpty { swap.state()?.why ?: "" }   // the Wi-Fi or casting the wizard holds: what to do about it, not only "refused"
-                val say = if (why in setOf("wifi", "wifi_unknown", "cast", "board", "boot")) Words.get(lang, LauncherSwap.whyId(why)) else Words.get(lang, "tvset.home_refused")
+                val say = if (why in LauncherSwap.REFUSED) Words.get(lang, LauncherSwap.whyId(why)) else Words.get(lang, "tvset.home_refused")
                 return HttpServer.Response.json(JSONObject().put("text", "home $say"))
             }
         } else return text(TvShell.tvset("home", value), 60000)

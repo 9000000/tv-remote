@@ -2621,6 +2621,7 @@
  "core.fr_launcher_play": "Launcher này cài từ CH Play. Bấm Mở trong CH Play, cài xong thử lại.",
  "errors.launcher_play": "Launcher này cài từ CH Play: mở CH Play trên TV, cài, rồi thử lại.",
  "core.fr_launcher_back": "TV đã quay về launcher của TV: {why}",
+ "core.fr_launcher_kept": "TV giữ launcher cũ: {why}",
  "core.fr_launcher_install": "TV không cài được launcher này: {msg}",
  "core.fr_launcher_fit": "Launcher này không hợp với TV.",
  "core.fr_launcher_list": "Danh sách launcher không đúng chữ ký của dự án nên không dùng. Thử lại sau.",
