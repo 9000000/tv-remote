@@ -376,6 +376,7 @@
   "pk_pins_need_home": "Shortcuts can be read only while TV Home is the home app.",
   "c_add_home": "Add to home screen",
   "qk_title": "Quick keys",
+  "qk_test": "Test keys",
   "qk_on": "Quick keys: %1$s",
   "qk_auto_on": "Open an app when the TV turns on: %1$s",
   "qk_yes": "On",

@@ -728,6 +728,7 @@ class HomeActivity : Activity() {
         super.onNewIntent(i)
         if (locked) return
         if (i.action == InputOpen.INPUTS) { inputs(); return }
+        if (i.action == HomeConfig.QUICK_KEYS) { open?.dismiss(); open = null; dev.tvremote.home.keys.QuickKeys.show(this); return }   // TV Setup's key tester: "assign this key"
         if (i.action == HomeConfig.PHOTO_QR) { open?.dismiss(); PhotoScreen.show(this) {}; return }                  // the remote's Input key while another app is in front
         if (open?.isShowing == true) { open?.dismiss(); open = null; return }                          // a panel or menu is open: this press closes it
         val last = if (away) lastOpened?.let { p -> tiles().firstOrNull { it.app?.pkg == p } } else null

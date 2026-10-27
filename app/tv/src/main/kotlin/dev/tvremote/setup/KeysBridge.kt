@@ -107,6 +107,8 @@ class KeysBridge : Service() {
         @Volatile private var running: KeysBridge? = null
         /** The map of TV Home's keys changed: the plan is made again at once (a bridge that is not up yet reads it when the add-on binds). */
         fun poke() { running?.refresh() }
+        /** The add-on's service is bound: the key filter is working (the key tester says so). */
+        fun bound(): Boolean = running != null
 
         @Volatile private var captureUntil = 0L
         /** TV Home's assign-a-key page is open ([on]): for 3 minutes (a page that never says it closed lets go by itself) a mapped key passes to the screen under. */
@@ -147,6 +149,7 @@ class KeysBridge : Service() {
     }
 
     private fun handle(code: Int, action: Int, repeat: Int, downTime: Long, eventTime: Long): Boolean {
+        KeyTest.sink?.takeIf { KeyTest.live() }?.let { it(code, action, repeat, downTime, eventTime); return true }   // the key tester is open: it shows the key, nothing acts on it
         if (action == KeyEvent.ACTION_DOWN && repeat == 0 && Support.open()) android.util.Log.i("KeyFix", "key $code")   // only while support looks: which code a remote's button sends
         if (code in MicVoice.KEYS) when (MicVoice.step(mic && !MicVoice.broken(), MicActivity.live != null, code, action, repeat, downTime, eventTime).also {
             android.util.Log.i("MicVoice", "key $code action $action repeat $repeat -> $it (on=$mic)")   // adb logcat -s MicVoice: which key a remote's mic button sends

@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - TV Home ghim được kênh FPT Play (+ Thêm > Ghim kênh FPT Play): 93 kênh (VTV, HTV, HTVC, ANTV, địa phương, quốc tế), bấm là mở thẳng kênh đó trong FPT Play, cả app Android TV lẫn app có sẵn trên box FPT.
 - TV Home: hai thẻ nhỏ xếp chồng (đồng hồ trên, thời tiết dưới) giờ bấm xuống tới được thẻ dưới; cài đặt thẻ hiện đủ mọi lựa chọn (mặt đồng hồ thứ 5 bị cắt), cả trên TV lẫn trang web.
+- TV Setup: **Thử phím remote** (Tối ưu TV > Thử phím remote, TV Home > Phím nhanh > Thử phím, hoặc nút ở thẻ Nút remote trên trang web): màn hình trên TV hiện từng phím remote bấm, tên dễ đọc (OK, Back, Home, âm lượng, số, phím màu, nút YouTube/Netflix, mic...), mã phím, scan code, thiết bị gửi, nhấn / nhả / giữ lâu / lặp, 12 phím gần nhất, và TV Setup có đổi phím đó không. HOME và nút app hiện qua bộ lọc phím (tự bật trong lúc thử). Giữ OK 2 giây để gán phím vừa bấm trong Phím nhanh. Thoát: giữ Back 2 giây hoặc nhấn Back 2 lần nhanh.
 
 **English**
 - TV Home pins FPT Play channels too (+ Add > Pin an FPT Play channel): 93 channels (VTV, HTV, HTVC, ANTV, provinces, abroad), each opens that channel in FPT Play, the Android TV app or an FPT box's own.
 - TV Home: two small cards stacked (clock over weather) now reach the lower one with Down; a card's settings show every choice (the 5th clock face was cut), on the TV and on the web page.
+- TV Setup: **Test remote keys** (Optimize TV > Test remote keys, TV Home > Quick keys > Test keys, or the button in the Remote buttons card on the web page): a TV screen shows each remote key as it is pressed, with a readable name (OK, Back, Home, volume, digits, colour keys, YouTube/Netflix buttons, mic...), key code, scan code, the device that sent it, press / release / long press / repeat, the last 12 keys, and whether TV Setup changes that key. HOME and app buttons show through the key filter (switched on while testing). Hold OK for 2 s to assign the key just pressed in Quick keys. Exit: hold Back for 2 s or press Back twice quickly.
 
 ## 0.30.0 - 2026-10-27
 

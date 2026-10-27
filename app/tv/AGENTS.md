@@ -21,6 +21,13 @@ app/tv/                  TV Setup: MainActivity (the TV screen), RemoteService (
                          their banners copied in as `res/drawable/eco_*.png`; installed over ADB, else through Android's installer)
 ```
 
+## Key tester
+
+`KeyTestActivity` (+ pure `KeyLog.kt`: names, history, BackExit) shows every key live. Keys the system eats (HOME, app keys) come
+from the key filter: while it is open `KeyTest.live()` makes `KeyFix.sync` turn the filter on and `KeysBridge.handle` feeds the
+screen and eats them. Reached from Optimize TV, TV Home's Quick keys ("keytest" word in `HomeControl`) and the web page
+(`/api/keytest/open`, `SetupNeed` "keytest"). `input keyevent` bypasses the filter: HOME ends the test on an emulator.
+
 ## Automation (sleep timer, bedtime, app limits, scenes)
 
 - The timer, bedtime and limits live **on the TV**, in TV Setup (`Rules.kt`, prefs), enforced by `Guard` (standby with keyevent 223,

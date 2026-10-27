@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import dev.tvremote.home.Font
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.R
@@ -48,12 +49,21 @@ object QuickKeys {
 
         fun line(t: String, size: Float, color: Int) = Font.on(TextView(a)).apply { text = t; textSize = size; setTextColor(color) }
         val hint = line("", 13f, PK_DIM).apply { setPadding(dp(34), 0, dp(34), dp(4)) }
+        fun testKeys() {                                              // TV Setup draws the tester; started from here, the app in front (Android 14 blocks it from the background)
+            Thread({
+                val out = dev.tvremote.home.apps.SetupHand.control(a, "keytest")
+                a.runOnUiThread {
+                    if (out == null || out.has("error")) Toast.makeText(a, R.string.cc_setup_need, Toast.LENGTH_LONG).show() else dialog.dismiss()   // an old TV Setup answers "bad"
+                }
+            }, "home-keytest").apply { isDaemon = true }.start()
+        }
         // the switch and its state in its words: "Bật phím" alone did not say whether the keys were on, nor what pressing would do
         val keysOn = a.pill(a.getString(R.string.qk_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
         val head = LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(12))   // 32 dp above the panel before, now inside it
             clipChildren = false; clipToPadding = false                // a focused pill grows past the row: clipped, its top and bottom were cut
             addView(line(a.getString(R.string.qk_title), 26f, Color.WHITE).apply { typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(a.pill(a.getString(R.string.qk_test), 14f, animate = { true }) { testKeys() }, LinearLayout.LayoutParams(-2, dp(40)).apply { rightMargin = dp(12) })   // TV Setup's key tester
             addView(keysOn)
         }
         val panel = LinearLayout(a).apply {

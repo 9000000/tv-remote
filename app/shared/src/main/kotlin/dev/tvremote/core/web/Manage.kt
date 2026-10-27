@@ -305,6 +305,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
             if (!post) return null
             return when (what) {
+                "keytest/open" -> {                                   // the key tester on the TV (TV Setup's KeyTestActivity)
+                    SetupNeed.check(link.get(), "keytest")
+                    if (sh("am start -n dev.tvremote.setup/.KeyTestActivity 2>&1").contains("Error")) throw IllegalArgumentException("the TV did not open the key tester")
+                    HttpServer.Response.ok()
+                }
                 "app" -> { open(r.json().optString("link")); HttpServer.Response.json(JSONObject().put("ok", true).put("via", "adb")) }
                 "privacy/scan" -> HttpServer.Response.json(privacy.start())
                 "privacy/stop" -> HttpServer.Response.json(privacy.stop())

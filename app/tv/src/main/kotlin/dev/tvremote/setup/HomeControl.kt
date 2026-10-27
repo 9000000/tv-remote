@@ -8,7 +8,7 @@ import org.json.JSONObject
  * switched ON, named words and nothing else, never a rules JSON from the caller. Kids mode is not switched off from here: TV Home is
  * free in kids mode (Kids.ALWAYS), so a child could undo it from its own panel; "kids:off" only OPENS the PIN screen ([PinActivity] with
  * `kids_off`: the same PIN / Authenticator / backup code / ask a parent and Lockout as anywhere), and that screen changes the rules on a right code.
- * "kids:setup" opens TV Setup's Manage screen on the TV at the lock card, where the PIN is set; "manage:health" at the Health tab.
+ * "kids:setup" opens TV Setup's Manage screen on the TV at the lock card, where the PIN is set; "manage:health" at the Health tab; "keytest" the key tester ([KeyTestActivity]).
  * `arg`: "" asks | "sleep:<minutes>" | "kids:on" | "kids:off" | "kids:setup" | "manage:health". The answer {sleep_at, kids, pin, error?}: error "bad" | "pin"
  * (kids needs a PIN or a code set first) | "failed" (the screen could not open). An old TV Setup answers "bad" to the last two.
  */
@@ -22,6 +22,7 @@ object HomeControl {
         word == "kids:on" -> "rules"
         word == "kids:off" -> "pin"
         word == "kids:setup" || word == "manage:health" -> "manage"
+        word == "keytest" -> "keytest"
         else -> "bad"
     }
 
@@ -35,6 +36,7 @@ object HomeControl {
                 if (word == "manage:health") putExtra(ManageActivity.TAB, "health")   // TV Home's watched-today tile and an app's week
                 else putExtra(ManageActivity.TAB, "auto").putExtra(ManageActivity.SECTION, if (Rules.kidsMode(Rules.load(c))) "kidsadd" else "lockcard")   // on: the apps a child may open; off: the PIN first
             }
+        "keytest" -> android.content.Intent(c, KeyTestActivity::class.java)
         else -> null
     }
 
@@ -58,7 +60,7 @@ object HomeControl {
                 "rules" ->
                     if (word == "kids:on") Rules.change(c, JSONObject().put("do", "kids").put("mode", "kids"))
                     else Rules.change(c, JSONObject().put("do", "sleep").put("minutes", word.substringAfter(':').toInt()))
-                "pin", "manage" -> if (!handOver && !open(c, screen(c, word)!!)) error = "failed"
+                "pin", "manage", "keytest" -> if (!handOver && !open(c, screen(c, word)!!)) error = "failed"
                 else -> error = "bad"
             }
         } catch (e: IllegalArgumentException) { error = "pin" }
