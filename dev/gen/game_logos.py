@@ -488,6 +488,15 @@ def pong(g):
     g.rr(CX + 25, CY - 12, CX + 63, CY + 26, 6, "#ffd23f")
 
 
+def planes(g):
+    g.arc(CX + 70, CY - 25, 82, 0, 360, 24, OL)                                  # the ring it flies through
+    g.arc(CX + 70, CY - 25, 82, 0, 360, 13, "#ffd23f")
+    n, ta, tc, tb, k = (CX + 150, CY - 95), (CX - 135, CY - 30), (CX - 70, CY + 40), (CX - 30, CY + 110), (CX - 100, CY + 95)
+    g.poly([n, tc, k], "#7f9ad6")                                                # keel
+    g.poly([n, tc, tb], "#c3d6ff")                                               # near wing
+    g.poly([n, ta, tc], "#ffffff")                                               # far wing, lit
+
+
 # id: (name, bg top, bg bottom, emblem fn)
 GAMES = {
     "hockey": ("Air Hockey", "#1e5fd8", "#0b2a6b", hockey),
@@ -495,6 +504,7 @@ GAMES = {
     "cycles": ("Light Cycles", "#4a1fa8", "#12083a", cycles),
     "sumo": ("Sumo Bump", "#d8433a", "#6e1620", sumo),
     "quiz": ("Quiz", "#7a3df0", "#2c1272", quiz),
+    "planes": ("Paper Planes", "#2f8ae0", "#103a7a", planes),
     "balloons": ("Balloon Pop", "#1fa6c9", "#0c4a72", balloons),
     "slice": ("Fruit Slice", "#e8782a", "#7a2a14", slice_),
     "moles": ("Whack-a-Mole", "#4aa845", "#1b5a2a", moles),

@@ -139,6 +139,19 @@
       "on": true
     },
     {
+      "id": "planes",
+      "name": {
+        "vi": "Máy bay giấy",
+        "en": "Paper Planes"
+      },
+      "img": "img/planes.v2.jpg",
+      "pad": "web",
+      "players": 4,
+      "genre": "arcade",
+      "url": "https://tvremote.pages.dev/games/web/planes/",
+      "on": true
+    },
+    {
       "id": "balloons",
       "name": {
         "vi": "Balloon Pop",

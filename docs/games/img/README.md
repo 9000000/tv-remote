@@ -24,6 +24,6 @@ Emblems only suggest what a game is; they copy no game's art. The games themselv
 | Coco Battle Royale II (Rodrigo Dornelles) | GPL-3.0 | https://github.com/psywave-games/coco-battle-royale-2 |
 | Runner (zorchenhimer) | MIT | https://github.com/zorchenhimer/nes-runner |
 | Ghosts and Graves (Anthony Bongers) | Unlicense | https://github.com/AnthonyBongers/GhostsAndGraves |
-| the 16 web games | same as the repo | `docs/games/web/` |
+| the 17 web games | same as the repo | `docs/games/web/` |
 
 A new catalog game: add a spec (name, two colours, emblem function) to `GAMES` in the script, run it, add `"img": "img/<id>.v2.jpg"` (`.v3` for a NES game) to its entry and re-sign.
