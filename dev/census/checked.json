@@ -209,6 +209,11 @@
   "n": 2,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "4cacc103078f5e6b7266801e|0.29.0": {
+  "at": "2026-10-27T12:52:44+07:00",
+  "n": 1,
+  "note": "adbd restarting on the TV (init.svc.adbd=restarting), port 5555 refused; same as 05a960b8; not our code"
+ },
  "4ccd741c906da1f4d5e07f1b|0.26.2": {
   "at": "2026-10-27T09:37:09+07:00",
   "n": 1,
@@ -335,9 +340,14 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "72f479fc5e46b710d40d7e11|0.28.0": {
-  "at": "2026-10-27T09:37:27+07:00",
+  "at": "2026-10-27T12:52:42+07:00",
   "n": 3,
-  "note": "dev test instance (port 8769) reloaded while index.html was being edited (71526b75); not users"
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+ },
+ "72f479fc5e46b710d40d7e11|0.29.0": {
+  "at": "2026-10-27T12:52:42+07:00",
+  "n": 1,
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
  },
  "74e9dd24769f68fce154098f|0.26.3": {
   "at": "2026-10-27T09:37:17+07:00",
@@ -399,6 +409,11 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "95489089c325e820b1fe3f24|0.29.0": {
+  "at": "2026-10-27T12:52:42+07:00",
+  "n": 1,
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+ },
  "9696ea1b86da0f777e461096|0.26.0": {
   "at": "2026-10-27T09:37:17+07:00",
   "n": 1,
@@ -430,9 +445,14 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "b5217008041ee98e6efd9bc7|0.28.0": {
-  "at": "2026-10-27T09:37:27+07:00",
+  "at": "2026-10-27T12:52:43+07:00",
   "n": 3,
-  "note": "dev test instance (port 8769) reloaded while index.html was being edited (71526b75); not users"
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+ },
+ "b5217008041ee98e6efd9bc7|0.29.0": {
+  "at": "2026-10-27T12:52:43+07:00",
+  "n": 1,
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
  },
  "b6a3b10f364db6b1b1f97649|0.23.0": {
   "at": "2026-10-26T21:47:35+07:00",
@@ -500,9 +520,14 @@
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
  "cb86f676dfffbcf108630018|0.28.0": {
-  "at": "2026-10-27T09:37:27+07:00",
+  "at": "2026-10-27T12:52:43+07:00",
   "n": 3,
-  "note": "dev test instance (port 8769) reloaded while index.html was being edited (71526b75); not users"
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+ },
+ "cb86f676dfffbcf108630018|0.29.0": {
+  "at": "2026-10-27T12:52:43+07:00",
+  "n": 1,
+  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
  },
  "cdd3314554f5edfde8ff4338|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
