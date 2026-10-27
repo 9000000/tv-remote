@@ -66,7 +66,7 @@ val webDir = file("../shared/web")
 val wordsDir = file("../shared/i18n")
 val homeWebJs = listOf("theme", "i18n", "qr", "base", "home_link", "home_media", "homeweb", "target", "appicon", "quickkeys", "ui", "home_walls", "home_qr", "home_order", "photofit", "home_pin", "home")
 val homeWebCss = listOf("base", "page", "apps", "remote", "auto", "kit")
-val homeWebWords = listOf("home.", "homeweb.", "common.", "core.", "apps.")
+val homeWebWords = listOf("home.", "homeweb.", "common.", "core.", "apps.", "pin.", "errors.pin_")   // pin.: the "Pin from YouTube" box (home_pin.js), its errors too
 val packHomeWeb = tasks.register("packHomeWeb") {
     val out = layout.buildDirectory.dir("generated/assets/homeweb")
     inputs.dir(webDir); inputs.dir(wordsDir); outputs.dir(out)

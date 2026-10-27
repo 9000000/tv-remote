@@ -65,6 +65,7 @@ object HomeApi {
         }
         return JSONObject().put("version", c.packageManager.getPackageInfo(c.packageName, 0).versionName)
             .put("config", config).put("apps", apps)
+            .put("pinOk", true)                                     // takes links to pin (/h/pin, HomeReceiver pin): clients check it, an older TV Home lacks it
             .put("photo", File(c.getExternalFilesDir(null), "wall.jpg").isFile)
             .put("photos", photos).put("thumbs", pictures).put("shots", shots)
             // the media library (Videos.kt): its items, the work under way, the room left and the cap; the screen's real size for previews

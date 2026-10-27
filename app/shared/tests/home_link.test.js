@@ -71,3 +71,16 @@ test('media and theme file addresses: host over /api/home, direct over /h', () =
   assert.match(rig(false).link.mediaUrl('photo2'), /^\/?api\/home\/media\?id=photo2/);
   assert.match(rig(true).link.mediaUrl('photo2'), /^\/?h\/media\?id=photo2/);
 });
+
+// home_pin.js came with pin.* words the page was never given: the box showed "pin.title" (FPT box, 2026-10-27)
+test('the words TV Home packs for its page cover every id its scripts name', () => {
+  const kts = fs.readFileSync(path.join(__dirname, '../../home/build.gradle.kts'), 'utf8');
+  const list = (name) => [...kts.match(new RegExp('val ' + name + ' = listOf\\(([^)]*)\\)'))[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  const words = list('homeWebWords');
+  const missing = [];
+  for (const js of list('homeWebJs')) {
+    const src = fs.readFileSync(path.join(__dirname, '../web/js', js + '.js'), 'utf8');
+    for (const m of src.matchAll(/\bT\(\s*'([a-z0-9_]+\.[a-z0-9_.]+)'/g)) if (!words.some((w) => m[1].startsWith(w))) missing.push(js + ': ' + m[1]);
+  }
+  assert.deepEqual([...new Set(missing)], []);
+});
