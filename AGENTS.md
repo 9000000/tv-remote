@@ -11,7 +11,7 @@ Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). This file holds t
 | `app/android/` `app/tv/` `app/tvkeys/` `app/home/` `app/channels/` `app/games/` `app/desktop/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
 | `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast, profiling a weak TV box (`tvperf/`) |
 | `dev/release/` | the six version numbers, the user guide's `data-v`, release.sh, SHA256SUMS |
-| `dev/workflows/` | step-by-step recipes: add a TV Home card, a remote key, a `/api` route, a language |
+| `dev/workflows/` | step-by-step recipes: add a TV Home widget, a remote key, a `/api` route, a language |
 
 ## What this is
 
@@ -37,6 +37,13 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
 
 ## Rules that matter
 
+- **Fix a fault where it comes from, not with a "never do X" line.** A mistake found (by the user or a test) is fixed at its
+  source: one name, one shared map, a script, a test that fails. A rule in these files says how things are built and why;
+  a ban is written only when nothing can enforce it, and then with the reason.
+- **One name per thing: the screen's.** What a person sees it called is the name in the code (files, classes, functions,
+  i18n ids), the comments, the docs and the chat. When they drift, rename them all in one change; a stored or wire name
+  that old versions read stays, with one comment saying why. TV Home: **widget** (the row above the grid, `widgets/`),
+  **live widget** (live numbers inside the grid, `LiveWidgets.kt`, stored as `tile:`), **app tile** (an app in the grid).
 - **UI follows the design system, read before touching any screen:** [app/shared/web/DESIGN.md](app/shared/web/DESIGN.md)
   (the web UI), [app/DESIGN-TV.md](app/DESIGN-TV.md) (TV Setup, TV Home, TV Channels, TV Games, the Phone app's native
   screens), [docs/games/web/DESIGN.md](docs/games/web/DESIGN.md) (web games, the phone pad). A look they lack is added there first.

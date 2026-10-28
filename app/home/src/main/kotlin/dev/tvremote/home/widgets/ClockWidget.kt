@@ -22,8 +22,8 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * The clock card, [mode] 0: a pill in a stack (the face, the time and the date), 1: standing alone, the face filling the card,
- * 2: big, the face with the time and the date beside it. The digital face is its own time and date: it fills the card in every mode. The face (classic, minimal, roman) and its theme (dark, light) are HomeConfig "wopt", independent of each other (see [ClockFace]).
+ * The clock widget, [mode] 0: a pill in a stack (the face, the time and the date), 1: standing alone, the face filling the widget,
+ * 2: big, the face with the time and the date beside it. The digital face is its own time and date: it fills the widget in every mode. The face (classic, minimal, roman) and its theme (dark, light) are HomeConfig "wopt", independent of each other (see [ClockFace]).
  */
 internal fun Widgets.clock(mode: Int): View {
     val face0 = opt("clock", "face"); val light0 = opt("clock", "theme") == "light"
@@ -34,7 +34,7 @@ internal fun Widgets.clock(mode: Int): View {
     val dateF = SimpleDateFormat(if (mode != 0) android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMM")
         else if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
     val time = text("", if (mode == 2) 34f else 22f, Color.WHITE).apply { typeface = Font.medium }
-    // big beside the face in a narrow card (five in a row) "11:44" came out as "11:…": the digits shrink to the column first
+    // big beside the face in a narrow widget (five in a row) "11:44" came out as "11:…": the digits shrink to the column first
     fun fitTime() {
         val room = ((time.parent as? View)?.width ?: 0) - time.paddingLeft - time.paddingRight
         if (mode != 2 || room <= 0) return
@@ -42,7 +42,7 @@ internal fun Widgets.clock(mode: Int): View {
         while (size > 20f && time.paint.measureText(time.text.toString()) > room) { size -= 1f; time.textSize = size }
     }
     val date = text("", if (mode == 2) 15f else 12f, DIM).apply { maxLines = if (mode == 1) 2 else 1; ellipsize = TextUtils.TruncateAt.END }
-    // big beside two other big cards: "Chủ Nhật, 25 thg 10" broke in two; it falls to the short form ("CN, 25/10") when it does not fit
+    // big beside two other big widgets: "Chủ Nhật, 25 thg 10" broke in two; it falls to the short form ("CN, 25/10") when it does not fit
     val shortF = SimpleDateFormat(if (locale.language == "vi") "d/M" else "EEE d MMM", locale)
     val tinyF = SimpleDateFormat(if (locale.language == "vi") "d" else "EEE d", locale)
     var shown = Date()
@@ -52,7 +52,7 @@ internal fun Widgets.clock(mode: Int): View {
         val room = date.width - date.paddingLeft - date.paddingRight
         fun fits(t: String) = mode == 1 || (mode == 2 && (date.width == 0 || date.paint.measureText(t) <= room))
         val short = (if (locale.language == "vi") viDay(now) + ", " else "") + shortF.format(now)
-        // five cards in a row: even "Mon 26 Oct" was cut to "Mon 26 …"; the weekday and the day are what a glance wants
+        // five widgets in a row: even "Mon 26 Oct" was cut to "Mon 26 …"; the weekday and the day are what a glance wants
         date.text = if (fits(full)) full else if (fits(short)) short else (if (locale.language == "vi") viDay(now) + ", " else "") + tinyF.format(now)
     }
     if (mode == 2) date.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ -> if (r - l != or - ol) date.post { put(shown); fitTime() } }

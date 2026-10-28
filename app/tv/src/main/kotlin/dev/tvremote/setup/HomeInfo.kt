@@ -20,13 +20,13 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * What TV Home's "usage" card shows (HomeConfig.USAGE), counted here so it is the same number the app limits hold to:
+ * What TV Home's "usage" widget shows (HomeConfig.USAGE), counted here so it is the same number the app limits hold to:
  *   {week: [{pkg, sec}] the most used apps of the last 7 days with today, days: [sec] each day's total (today first), limits: [{pkg, min (today's, extra included), used (sec)}]}
- * the marks on the tiles ("badges"): {limits: [{pkg, min, used}] as above, locked: [pkg] behind a PIN, bed: bedtime is on now}, TV Home needs none of it,
- * its "timer" card: {sleep_at, bedtime: {on, ranges}, in_bedtime, snooze_until} (Rules.state's),
- * and the system card's CPU ring, "cpu": {busy (0..1 over one second), cores}; Android 8+ keeps /proc/stat from apps, the shell reads it.
- * and "tiles" / "tile" / "tile_do" (HomeTiles: live tiles drawn in TV Home's app grid; the RAM tile is the first),
- * and "telegram" (the bot's state for TV Home's card: {state: none | token_missing | ready, bot, link, code, code_left}; RemoteService.telegramForHome),
+ * the marks on the app tiles ("badges"): {limits: [{pkg, min, used}] as above, locked: [pkg] behind a PIN, bed: bedtime is on now}, TV Home needs none of it,
+ * its "timer" widget: {sleep_at, bedtime: {on, ranges}, in_bedtime, snooze_until} (Rules.state's),
+ * and the system widget's CPU ring, "cpu": {busy (0..1 over one second), cores}; Android 8+ keeps /proc/stat from apps, the shell reads it.
+ * and "tiles" / "tile" / "tile_do" (LiveWidgets: live widgets drawn in TV Home's app grid; the RAM one is the first; the wire names keep "tile" so TV Home and older TV Setups still agree),
+ * and "telegram" (the bot's state for TV Home's Telegram widget: {state: none | token_missing | ready, bot, link, code, code_left}; RemoteService.telegramForHome),
  * and "app" (HomeApp: one app's lock, daily limit, force stop and cache, for TV Home's long-press menu; `arg` {pkg, op, ...}),
  * and "capture" (`arg` "1" / "0": while "1", the remote keys of the map go to TV Home's screen unopened, for its assign-a-key page),
  * and "power" (HomePower: screen off, standby, restart, power off; `arg` the action, "result" ok / noadb / failed),
@@ -73,14 +73,14 @@ class HomeInfo : ContentProvider() {
             val token = Binder.clearCallingIdentity()
             try { return Bundle().apply { putString("json", HomeApp.handle(c, arg).toString()) } } finally { Binder.restoreCallingIdentity(token) }
         }
-        if (method == "telegram")                                      // the Telegram card: `arg` "code" starts a fresh pairing code, "" only asks
+        if (method == "telegram")                                      // the Telegram widget: `arg` "code" starts a fresh pairing code, "" only asks
             return Bundle().apply { putString("json", RemoteService.telegramForHome(c, arg == "code").toString()) }
-        if (method.startsWith("tile")) {                               // live tiles (HomeTiles): the state at once, the action on a thread of its own
+        if (method.startsWith("tile")) {                               // live widgets (LiveWidgets): the state at once, the action on a thread of its own
             val lang = extras?.getString("lang")?.let { Words.pick(it) } ?: Words.lang
             val json = when (method) {
-                "tiles" -> HomeTiles.list(lang).toString()
-                "tile" -> HomeTiles.tile(c, lang, arg.orEmpty())?.toString()
-                else -> HomeTiles.act(c, arg.orEmpty())?.toString()
+                "tiles" -> LiveWidgets.list(lang).toString()
+                "tile" -> LiveWidgets.tile(c, lang, arg.orEmpty())?.toString()
+                else -> LiveWidgets.act(c, arg.orEmpty())?.toString()
             }
             return Bundle().apply { if (json != null) putString("json", json) }
         }
@@ -96,7 +96,7 @@ class HomeInfo : ContentProvider() {
                 .put("snooze_until", o.optLong("snooze_until").let { if (it > now) it else 0L }).toString()) }
         }
         if (method == "recent") return recent(c, now)
-        if (method == "badges") {                                      // the tiles' marks: little to ask, answered each minute
+        if (method == "badges") {                                      // the app tiles' marks: little to ask, answered each minute
             val rules = Rules.load(c)
             val token = Binder.clearCallingIdentity()
             try {
@@ -137,8 +137,8 @@ class HomeInfo : ContentProvider() {
             val top = JSONArray()                                      // apps one opens: not the system's screens (systemui) nor a home screen
             for ((pkg, s) in week.entries.filter { it.key != c.packageName && it.key !in homes && it.value >= 60 && opens(it.key) != null }.sortedByDescending { it.value }.take(5).map { it.key to it.value })
                 top.put(JSONObject().put("pkg", pkg).put("sec", s))
-            val days = JSONArray()                                     // each day's total, today first: the card's columns
-            for (t in HomeTiles.dayTotals(c, perDay)) days.put(t)
+            val days = JSONArray()                                     // each day's total, today first: the usage widget's columns
+            for (t in LiveWidgets.dayTotals(c, perDay)) days.put(t)
             val rules = Rules.load(c)
             val limits = JSONArray()
             rules.optJSONObject("limits")?.let { l ->
@@ -260,7 +260,7 @@ class HomeInfo : ContentProvider() {
         /** [pkg] is one of those apps and [theirs] (its signing digests) hold its pinned one, or one of [mine] (debug builds of all apps share a key). */
         fun censusOk(pkg: String, theirs: List<String>, mine: List<String>): Boolean = CENSUS_APPS[pkg]?.let { pin -> theirs.any { it == pin || it in mine } } == true
         const val HOME = "dev.tvremote.home"
-        /** Screens of the system, not apps a person opens: the "recent" card leaves them out. */
+        /** Screens of the system, not apps a person opens: the "recent" widget leaves them out. */
         val SYSTEM_SCREENS = setOf("com.android.systemui", "com.android.permissioncontroller", "com.google.android.permissioncontroller", "com.android.packageinstaller", "com.google.android.packageinstaller", "android")
         const val HOME_CERT = "657aabacfdccbc22ff1f61138df7efd79fae765df742f7d15d80dac84c7d81b3"   // app/home/signing.jks, alias tvhome
     }

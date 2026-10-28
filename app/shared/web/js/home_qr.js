@@ -1,9 +1,9 @@
-// 🏠 TV Home's QR cards (HomeConfig "qrs", HomeQr.kt): a template is a small form that builds the text of a code (a Wi-Fi, a link, a
-// number …), "Text" is the form with nothing built, the raw payload. The person's fields are kept, so a card opens again to be
+// 🏠 TV Home's QR widgets (HomeConfig "qrs", HomeQr.kt): a template is a small form that builds the text of a code (a Wi-Fi, a link, a
+// number …), "Text" is the form with nothing built, the raw payload. The person's fields are kept, so a widget opens again to be
 // changed; the TV builds the payload itself from them. homeQrPayload is the rule HomeQr.payload has (tests/home_qr_cases.json holds
 // the cases both are tested with).
 const HOME_QR_TEMPLATES = ['wifi', 'link', 'text', 'tel', 'sms', 'mail', 'contact'];   // HomeQr.TEMPLATES, in the order offered
-const HOME_QR_KEYS = ['qr1', 'qr2', 'qr3', 'qr4'];                    // HomeQr.KEYS: each card is a "widgets" key of its own
+const HOME_QR_KEYS = ['qr1', 'qr2', 'qr3', 'qr4'];                    // HomeQr.KEYS: each widget is a "widgets" key of its own
 const HOME_QR_MAX = 271, HOME_QR_CAP_MAX = 60, HOME_QR_FIELD_MAX = 250;   // HomeQr.MAX_BYTES / CAP_MAX / FIELD_MAX
 const HOME_QR_WORDS = { wifi: 'home.qr_t_wifi', link: 'home.qr_t_link', text: 'home.qr_t_text', tel: 'home.qr_t_tel', sms: 'home.qr_t_sms', mail: 'home.qr_t_mail', contact: 'home.qr_t_contact' };
 const HOME_QR_FORM = { wifi: ['ssid', 'pass'], link: ['url'], text: ['text'], tel: ['num'], sms: ['num', 'body'], mail: ['to', 'subject', 'body'], contact: ['name', 'tel', 'email'] };   // the typed fields (the rest of a template's are chips and a switch)
@@ -44,25 +44,25 @@ function homeQrPayload(tpl, f) {
   }
 }
 const homeQrBytes = (p) => new TextEncoder().encode(p).length;
-// a card the TV keeps: only the template's own fields, the caption trimmed
+// a widget the TV keeps: only the template's own fields, the caption trimmed
 function homeQrCard(tpl, f, cap, show) {
   const out = {};
   for (const k of HOME_QR_FIELDS[tpl]) out[k] = k === 'hidden' ? !!f[k] : k === 'sec' ? (HOME_QR_SEC.some((s) => s[0] === f[k]) ? f[k] : 'WPA') : String(f[k] || '').slice(0, tpl === 'text' ? HOME_QR_MAX : HOME_QR_FIELD_MAX);
   return { tpl, f: out, cap: String(cap || '').replace(/\s+/g, ' ').trim().slice(0, HOME_QR_CAP_MAX), show: tpl === 'wifi' && !!show };
 }
-// the card's name in a list: its caption, else what it is
+// the widget's name in a list: its caption, else what it is
 function homeQrName(c) {
   const f = c.f || {}, what = c.tpl === 'wifi' ? f.ssid : c.tpl === 'link' ? f.url : c.tpl === 'text' ? f.text : '';
   return 'QR · ' + (c.cap || (T(HOME_QR_WORDS[c.tpl]) + (what ? ': ' + String(what).slice(0, 40) : '')));
 }
 
-// The form for one card, filled with [card] (null: a new one); resolves with the card to keep, or null when cancelled.
+// The form for one widget, filled with [qr] (null: a new one); resolves with the widget to keep, or null when cancelled.
 // A live picture of the code beside it, black on white as the TV will draw it.
-function homeQrAsk(card) {
+function homeQrAsk(qr) {
   return new Promise((ok) => {
-    let tpl = card ? card.tpl : 'wifi', done = null;
-    const vals = Object.assign({ sec: 'WPA' }, card ? card.f : {}), cap = el('input', { type: 'text', maxLength: HOME_QR_CAP_MAX, placeholder: T('home.qr_cap_ph'), 'aria-label': T('home.qr_cap'), value: card ? card.cap : '' });
-    const showBox = el('input', { type: 'checkbox', checked: !!(card && card.show), onchange: () => redraw() });
+    let tpl = qr ? qr.tpl : 'wifi', done = null;
+    const vals = Object.assign({ sec: 'WPA' }, qr ? qr.f : {}), cap = el('input', { type: 'text', maxLength: HOME_QR_CAP_MAX, placeholder: T('home.qr_cap_ph'), 'aria-label': T('home.qr_cap'), value: qr ? qr.cap : '' });
+    const showBox = el('input', { type: 'checkbox', checked: !!(qr && qr.show), onchange: () => redraw() });
     const hiddenBox = el('input', { type: 'checkbox', checked: !!vals.hidden, onchange: () => { vals.hidden = hiddenBox.checked; redraw(); } });
     const tplChips = el('div', { className: 'fchips homeqr-tpl', role: 'group', 'aria-label': T('home.qr_tpl') });
     const form = el('div', { className: 'homeqr-form' }), view = el('div', { className: 'homeqr-view' }), info = el('p', { className: 'note' });

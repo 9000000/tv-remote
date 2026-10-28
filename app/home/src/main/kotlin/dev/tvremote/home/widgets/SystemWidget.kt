@@ -30,7 +30,7 @@ import dev.tvremote.home.widgets.Widgets.Companion.levelColors
 import dev.tvremote.home.widgets.Widgets.Facts
 
 /** Rings only: as many as fit, no title, no graph. */
-internal fun Widgets.systemHalf(card: LinearLayout, f: Facts, room: Int) {
+internal fun Widgets.systemHalf(widget: LinearLayout, f: Facts, room: Int) {
     fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
     val all = ArrayList<View>()
     all += ring(part(f.ram), a.getString(R.string.w_ram), levelColors(part(f.ram)))
@@ -39,9 +39,9 @@ internal fun Widgets.systemHalf(card: LinearLayout, f: Facts, room: Int) {
     f.rssi?.let { r -> all += ring(((r + 100) * 2).coerceIn(0, 100) / 100f, a.getString(R.string.w_signal), GREEN) }
     val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     all.take((room / dp(78)).coerceAtLeast(1)).forEach { row.addView(it, LayoutParams(0, -2, 1f)) }
-    card.gravity = Gravity.CENTER_VERTICAL
-    card.addView(row, LayoutParams(-1, -2))
-    if (f.cpu == null && f.cpuWhy != 0) card.addView(note(a.getString(f.cpuWhy)).apply { gravity = Gravity.CENTER; setPadding(0, dp(4), 0, 0) })       // the missing ring, said where it would be
+    widget.gravity = Gravity.CENTER_VERTICAL
+    widget.addView(row, LayoutParams(-1, -2))
+    if (f.cpu == null && f.cpuWhy != 0) widget.addView(note(a.getString(f.cpuWhy)).apply { gravity = Gravity.CENTER; setPadding(0, dp(4), 0, 0) })       // the missing ring, said where it would be
 }
 
 /** A small ring with its percent inside and its name under it. */
@@ -77,7 +77,7 @@ fun Widgets.sample() {
  * icon, the figure large and its name small under it, a thin bar under a share. Colour only where it says something: the
  * Private DNS a filter is set (green), ADB on (amber). The model, Android and the CPU in the title's right.
  */
-internal fun Widgets.system(card: LinearLayout, f: Facts, width: Int) {
+internal fun Widgets.system(widget: LinearLayout, f: Facts, width: Int) {
     val room = width - dp(40)
     val gb = 1024.0 * 1024 * 1024
     fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
@@ -112,8 +112,8 @@ internal fun Widgets.system(card: LinearLayout, f: Facts, width: Int) {
     val rows = layout(cols)
     val about = listOfNotNull(android.os.Build.MODEL.takeIf { cols >= 3 }, "Android " + android.os.Build.VERSION.RELEASE,
         if (cols >= 4 && ghz != null) "$cores×%.1fGHz".format(ghz) else null).joinToString(" · ")
-    card.addView(head(a.getString(R.string.w_system), about))
-    val grid = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }       // the rows in the middle of the card, not stuck under the title
+    widget.addView(head(a.getString(R.string.w_system), about))
+    val grid = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }       // the rows in the middle of the widget, not stuck under the title
     rows.forEachIndexed { r, row ->
         val line = LinearLayout(a).apply { orientation = HORIZONTAL }
         val need = needs(row, cols); val gaps = dp(10) * (cols - 1)
@@ -126,7 +126,7 @@ internal fun Widgets.system(card: LinearLayout, f: Facts, width: Int) {
         }.apply { if (k > 0) leftMargin = dp(10) })
         grid.addView(line, LayoutParams(-1, -2).apply { if (r > 0) topMargin = dp(14) })
     }
-    card.addView(grid, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
+    widget.addView(grid, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
     if (speed != null) { lastRx = -1; sample() }
 }
 

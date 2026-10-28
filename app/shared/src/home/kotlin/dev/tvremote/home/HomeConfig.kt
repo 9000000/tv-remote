@@ -54,14 +54,14 @@ import org.json.JSONObject
  *   anim    motion effects (a focused app lifts, rows glide, the screen fades in); off = instant, with a ring. TV Home also
  *           treats the system's "animator duration scale 0" as off
  *   motion  how much moves while [anim] is on: "" this TV's choice (calm on one with little memory, 2.25 GB or less, or that Android
- *           calls low on RAM), "calm" (no overshoot, shorter, only the card grows: fewer frames on a weak chip), "full"
+ *           calls low on RAM), "calm" (no overshoot, shorter, only the tile grows: fewer frames on a weak chip), "full"
  *   focus   how the focused app shows: "glass" (a pane gliding from tile to tile) or "ring" (a blue ring on the tile)
  *   cols    how many app tiles in a row of the grid, [COLS_MIN]..[COLS_MAX] (default [COLS_DEFAULT]). A TV Home that has this reports
  *           "colsOk": true (the page offers the choice only to one that does)
- *   rows    how many rows of apps the first screen shows under the clock or the cards, tenths allowed (1.2: row 1 and a fifth of
- *           row 2), 1..[ROWS_MAX]; 0 = by itself (1.2 without cards, right under them with). More than fit stops where the grid
- *           meets the cards or the clock (TV Home reports that as "rowsMax", and "rowsOk": true)
- *   widgets the cards between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
+ *   rows    how many rows of apps the first screen shows under the clock or the widgets, tenths allowed (1.2: row 1 and a fifth of
+ *           row 2), 1..[ROWS_MAX]; 0 = by itself (1.2 without widgets, right under them with). More than fit stops where the grid
+ *           meets the widgets or the clock (TV Home reports that as "rowsMax", and "rowsOk": true)
+ *   widgets the widgets between the clock and the favourites, in their order ([WIDGETS]): "system" (memory, storage, network,
  *           ADB), "usage" (the most used apps of the week and the day's app limits, asked of TV Setup: [USAGE]),
  *           "calendar" (the month, the lunar day under every solar day),
  *           "lunar" (the lunar date, the next full moon and Tết), "clock" (an analog clock face, round, sweeping second hand),
@@ -73,44 +73,45 @@ import org.json.JSONObject
  *           resolver, [ADBLOCK_DNS]; OK turns it on / off, which needs [WRITE_SECURE] granted over ADB; Android 9+: before it TV Home
  *           leaves it out of "wschema")
  *           Their order in the list is the order on the screen (the page and the TV's panel move them).
- *   qrs     QR cards: {"qr1": {tpl, f, cap, show}, ...} up to [HomeQr.CARDS_MAX], each a template's fields (Wi-Fi, link, text, phone, SMS,
- *           e-mail, contact: [HomeQr]) and a caption; a card is on the screen when its key is also in "widgets" (the order, the size).
- *           A key with no card here is dropped from "widgets". The Wi-Fi password lives here, on the TV, and nowhere else. A TV Home
+ *   qrs     QR widgets: {"qr1": {tpl, f, cap, show}, ...} up to [HomeQr.QR_MAX], each a template's fields (Wi-Fi, link, text, phone, SMS,
+ *           e-mail, contact: [HomeQr]) and a caption; a widget is on the screen when its key is also in "widgets" (the order, the size).
+ *           A key with no widget here is dropped from "widgets". The Wi-Fi password lives here, on the TV, and nowhere else. A TV Home
  *           that has this reports "qrOk": true
- *   wsize   how big each card is: {"system": "big", "lunar": "small", ...}, "big" or "small", the default of a card when it is
- *           missing ([defaultSize]). [pack] turns the sizes and the order into columns: a big card is a column, two small cards
- *           in a row stack in one, a small card alone is a narrow column; what does not fit waits. A TV Home that has this reports
+ *   wsize   how big each widget is: {"system": "big", "lunar": "small", ...}, "big" or "small", the default of a widget when it is
+ *           missing ([defaultSize]). [pack] turns the sizes and the order into columns: a big widget is a column, two small widgets
+ *           in a row stack in one, a small widget alone is a narrow column; what does not fit waits. A TV Home that has this reports
  *           "wsizes": true (the page offers the old layout chips to one that does not). Replaces "wlayout" (row / big / big2 /
  *           flip / quad), which [clean] still reads once, as sizes giving the same picture, when there are no "wsize" yet
- *   wopt    a card's own options besides its size, by card: {"clock": {"face": "minimal", "theme": "light"}, "weather": {"look": "tonal"}}.
- *           What each card offers is [options] (one schema, reported as "wschema" and rendered by TV Home's settings dialog and the page's);
+ *   wopt    a widget's own options besides its size, by widget: {"clock": {"face": "minimal", "theme": "light"}, "weather": {"look": "tonal"}}.
+ *           What each widget offers is [options] (one schema, reported as "wschema" and rendered by TV Home's settings dialog and the page's);
  *           a missing option is its default. Replaces "wstyle" ({"clock": "light"}), which [clean] and [merge] still read once
- *           ([fromStyle]); a client sends only what it changed, [merge] adds it per card and option
- *   place   a city for the weather card, as typed ([PLACE_MAX] characters); empty = automatic
- *   market  (card) gold (SJC, 9999) and the banks' exchange rates in VND, optionally Bitcoin: public prices fetched by the TV itself,
+ *           ([fromStyle]); a client sends only what it changed, [merge] adds it per widget and option
+ *   place   a city for the weather widget, as typed ([PLACE_MAX] characters); empty = automatic
+ *   market  (widget) gold (SJC, 9999) and the banks' exchange rates in VND, optionally Bitcoin: public prices fetched by the TV itself,
  *           the addresses in the site's signed list docs/home/feeds.json; options "layout" card / ticker (one scrolling line), "show"
- *           all / gold / rates, "btc". news (card) headlines with a picture from RSS feeds (the same list, by the TV's language, and
+ *           all / gold / rates, "btc". news (widget) headlines with a picture from RSS feeds (the same list, by the TV's language, and
  *           [feeds]: the person's own links, [FEEDS_MAX]); option "src" auto (the list) / mine / both. OK on a headline opens the
- *           reader; OK on the weather card opens its map. A TV Home that has these reports "infoOk": true
- *   feeds   the person's own RSS links for the news card, [FEEDS_MAX] at most ([feeds]); set from the page, like [place]
+ *           reader; OK on the weather widget opens its map. A TV Home that has these reports "infoOk": true
+ *   feeds   the person's own RSS links for the news widget, [FEEDS_MAX] at most ([feeds]); set from the page, like [place]
  *   dream   TV Home is the TV's screensaver (the big clock and the wallpaper, [DREAM]). Read from the system, not kept: the
  *           launcher sets `screensaver_components` itself (it holds WRITE_SECURE_SETTINGS once a client has granted it over
  *           ADB) and puts the previous screensaver back when this is switched off
  *   dface   the screensaver's look ([DFACES]): "big" (the big clock and the day, as before), "modern" (StandBy: the Modern clock
- *           face beside the day, the clock card's own drawing), "digital" (the Digital face, filling the screen)
+ *           face beside the day, the clock widget's own drawing), "digital" (the Digital face, filling the screen)
  *   note    a line from the family, pinned on the home screen until it is emptied ([NOTE_MAX] characters, one line)
  *   names   the person's own names for apps and shortcuts: {"<package or pin:...>": "name"}, at most [NAMES_MAX], each [NAME_MAX] characters;
  *           shown wherever TV Home shows the app's name, and always on a banner tile (two YouTubes look the same). Not a theme key
- *   tiles   live tiles ("tile:<provider package>/<id>", [isTile]) and launcher shortcuts ("pin:<package>/<id>", [Target.isPin]) on the app grid, at most [TILES_MAX]. A provider (TV Setup's RAM
- *           tile: tile:dev.tvremote.setup/ram, and its sleep timer; TV Channels' tile:dev.tvremote.channels/next) draws a tile's value
- *           itself, in the tile's layout (gauge / next / toggle); the key then sits in dock / hidden / order like an app's package name.
+ *   tiles   live widgets ("tile:<provider package>/<id>", [isLive]) and launcher shortcuts ("pin:<package>/<id>", [Target.isPin]) on the app grid, at most [TILES_MAX]. A provider (TV Setup's RAM
+ *           live widget: tile:dev.tvremote.setup/ram, and its sleep timer; TV Channels' tile:dev.tvremote.channels/next) draws its value
+ *           itself, in its layout (gauge / next / toggle); the key then sits in dock / hidden / order like an app's package name.
  *           A TV Home that has this reports "tilesOk": true, "tilesAvail" (what the providers offer: [{key, title, kind, layout}]) and
- *           "tilesState": "ok" | "missing" (no TV Setup or one without tiles) | "untrusted" (signed by another key)
+ *           "tilesState": "ok" | "missing" (no TV Setup or one without live widgets) | "untrusted" (signed by another key)
+ *           ("tiles", "tilesOk", "tile:" are stored on TVs and sent between apps: kept, they mean live widgets)
  *   keyon   remote keys that open something (default off); keyapps: {"183": target} the key code to its [Target] (a package, "pin:pkg/id"
  *           or "tile:provider/id"; a plain package is how older configs saved it), only keys [keyFree] allows. TV Home answers them on its own screen; TV Setup's key filter answers them everywhere (HomeInfo "keys").
  *           A TV Home that has this reports "keysOk": true, "keysSetup" (TV Setup took the map) and "keysDead" (the keys it found dead)
  *   themes  the person's own themes, [THEMES_MAX]: [{id, name, conf}], conf = the look at the moment of saving ([THEME_KEYS]: background and its
- *           set, shade, video sound, cards with sizes and looks, grid, focus, motion, clock; NOT the apps, the QR cards (a Wi-Fi password),
+ *           set, shade, video sound, widgets with sizes and looks, grid, focus, motion, clock; NOT the apps, the QR widgets (a Wi-Fi password),
  *           keys, language, screensaver, power button). Kept on the TV with the rest. Changed by ONE field every client sends,
  *           "theme": {"apply": id} | {"save": name} | {"del": id} ([merge] reads it, it is never stored); [ready] are the ready-made
  *           ones (the site's signed docs/home/themes.json: ids, names per language). A TV Home that has this reports "themesOk": true,
@@ -133,10 +134,10 @@ object HomeConfig {
     const val WRITE_SECURE = "android.permission.WRITE_SECURE_SETTINGS"
     /** Granted over ADB when TV Home is installed or set up, never asked on the TV: the Wi-Fi's name is location to Android (8.1+), and
      *  Android TV's "pair an accessory" screen (Control Center's Bluetooth) refuses to open for an app without BLUETOOTH_CONNECT (12+),
-     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt); WRITE_SECURE_SETTINGS lets the Ad blocking card set Private DNS. */
+     *  and other apps' Play Next and channels are READ_TV_LISTINGS (apps/Watch.kt); WRITE_SECURE_SETTINGS lets the Ad blocking widget set Private DNS. */
     const val GRANT_WIFI = "pm grant $PKG android.permission.ACCESS_FINE_LOCATION >/dev/null 2>&1; pm grant $PKG android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1; pm grant $PKG android.permission.READ_TV_LISTINGS >/dev/null 2>&1; pm grant $PKG $WRITE_SECURE >/dev/null 2>&1; "
     /**
-     * Private DNS names that block ads (DNS-over-TLS, host names only), the first is what the "adblock" card turns on. The page's
+     * Private DNS names that block ads (DNS-over-TLS, host names only), the first is what the "adblock" widget turns on. The page's
      * `DNS_SETS.ads` in js/tvset.js is the same list (tests/home_adblock.test.js keeps the two equal).
      */
     val ADBLOCK_DNS = listOf("dns.adguard-dns.com", "adblock.dns.mullvad.net", "p2.freedns.controld.com")
@@ -217,7 +218,7 @@ object HomeConfig {
     }
     /**
      * How full a bar or ring is, as a colour word: amber from [WARN_AT] %, red from [BAD_AT] % ("ok" / "warn" / "bad"). The ONE place
-     * the thresholds live: TV Home's System card (RAM, storage) and TV Setup's RAM tile both say it through here; TV Setup's
+     * the thresholds live: TV Home's System widget (RAM, storage) and TV Setup's RAM live widget both say it through here; TV Setup's
      * memory notice (Rules, default 90) is a different, chosen number. The web page shows no such level (it has no bars).
      */
     const val WARN_AT = 70
@@ -241,20 +242,20 @@ object HomeConfig {
     }
     val WIDGETS = listOf("system", "usage", "calendar", "lunar", "timer", "weather", "air", "recent", "adblock", "clock", "market", "news") + HomeQr.KEYS
     /**
-     * One option of a card, the single source of what the settings dialog offers (TV Home's Customize and the page render it, nobody
-     * hardcodes a card's options): [type] "choice" (one of [values]) or "toggle" ("off" / "on", drawn as a switch). [default] is what a
+     * One option of a widget, the single source of what the settings dialog offers (TV Home's Customize and the page render it, nobody
+     * hardcodes a widget's options): [type] "choice" (one of [values]) or "toggle" ("off" / "on", drawn as a switch). [default] is what a
      * missing value means. [store] is where the value is kept: "wopt" ({"clock": {"face": "minimal"}}, only values that are not the
      * default), or "wsize" for the size, which the layout ([pack], the themes, older clients) has always read there.
      * The words go by id: the option's `home.o_<id>`, a value's `home.ov_<value>` (strings.xml / i18n: dots become underscores).
      */
     class Opt(val id: String, val type: String, val values: List<String>, val default: String, val store: String = "wopt")
     private val SIZES = listOf("big", "small")
-    val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news", "recent", "adblock") + HomeQr.KEYS   // every card but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
-    // "solid": an opaque dark card, the photo hidden under it; "none": no card at all, the words on the wallpaper with a shadow
+    val TONAL = setOf("system", "weather", "lunar", "air", "calendar", "usage", "timer", "market", "news", "recent", "adblock") + HomeQr.KEYS   // every widget but the clock has the "tonal" look (opaque warm card, app/DESIGN-TV.md "Tonal cards")
+    // "solid": an opaque dark widget, the photo hidden under it; "none": no widget at all, the words on the wallpaper with a shadow
     // (a person whose own photo is the point). The clock has no tonal form (its face and theme are its look)
     val LOOKS = listOf("glass", "tonal", "solid", "none")
     private val BARE = listOf("glass", "solid", "none")
-    /** What a card really implements (the drawing code in app/home widgets): the options below are all it offers, every combination is drawn. */
+    /** What a widget really implements (the drawing code in app/home widgets): the options below are all it offers, every combination is drawn. */
     fun options(k: String): List<Opt> {
         val size = Opt("size", "choice", SIZES, defaultSize(k), "wsize")
         return when {
@@ -268,26 +269,26 @@ object HomeConfig {
         }
     }
     private fun optValues(o: Opt) = if (o.type == "toggle") listOf("off", "on") else o.values
-    /** The schema as the clients get it ("wschema" in what TV Home reports): {card: [{id, type, store, default, label, values: [{id, w}]}]}. */
+    /** The schema as the clients get it ("wschema" in what TV Home reports): {widget: [{id, type, store, default, label, values: [{id, w}]}]}. */
     fun schema(sdk: Int = ADBLOCK_MIN_SDK): JSONObject = JSONObject().also { out ->
         for (k in WIDGETS) if (k != "adblock" || sdk >= ADBLOCK_MIN_SDK) out.put(k, JSONArray(options(k).map { o ->
             JSONObject().put("id", o.id).put("type", o.type).put("store", o.store).put("default", o.default).put("label", "home.o_${o.id}")
                 .put("values", JSONArray(optValues(o).map { JSONObject().put("id", it).put("w", "home.ov_$it") }))
         }))
     }
-    /** The value of option [id] of card [k] in a cleaned [conf]: what was chosen, else the default ("" for a card or option that does not exist). */
+    /** The value of option [id] of widget [k] in a cleaned [conf]: what was chosen, else the default ("" for a widget or option that does not exist). */
     fun optValue(conf: JSONObject, k: String, id: String): String {
         val o = options(k).firstOrNull { it.id == id } ?: return ""
         val v = if (o.store == "wsize") conf.optJSONObject("wsize")?.optString(k) else conf.optJSONObject("wopt")?.optJSONObject(k)?.optString(id)
         return v?.takeIf { it in optValues(o) } ?: o.default
     }
-    /** The old "wstyle" of a card as the options that give the same picture (the clock's "light" was a light classic; "minimal" was forced dark). */
+    /** The old "wstyle" of a widget as the options that give the same picture (the clock's "light" was a light classic; "minimal" was forced dark). */
     private fun fromStyle(k: String, s: String): Map<String, String> = when (k) {
         "clock" -> when (s) { "light" -> mapOf("face" to "classic", "theme" to "light"); "minimal", "roman" -> mapOf("face" to s, "theme" to "dark"); "classic" -> mapOf("face" to "classic", "theme" to "dark"); else -> emptyMap() }
         else -> mapOf("look" to s)
     }
     /**
-     * "wopt" of [o] cleaned against the schema: unknown cards, options and values dropped, a value equal to the default not kept. A card
+     * "wopt" of [o] cleaned against the schema: unknown widgets, options and values dropped, a value equal to the default not kept. A widget
      * with no entry takes its old "wstyle" ([fromStyle]) when there is one: that is the migration, nothing else reads "wstyle" now.
      */
     fun cleanWopt(o: JSONObject): JSONObject {
@@ -305,7 +306,7 @@ object HomeConfig {
         }
         return out
     }
-    /** [change] (a "wopt" delta, or an older client's "wstyle") on top of [now]'s "wopt", per card and option: a client sends what it changed. */
+    /** [change] (a "wopt" delta, or an older client's "wstyle") on top of [now]'s "wopt", per widget and option: a client sends what it changed. */
     private fun woptMerge(now: JSONObject?, change: JSONObject): JSONObject {
         val out = JSONObject(now?.toString() ?: "{}")
         val delta = change.optJSONObject("wopt"); val old = change.optJSONObject("wstyle")
@@ -320,26 +321,26 @@ object HomeConfig {
         }
         return out
     }
-    /** A card's size when nobody chose: the four large cards are big, the small pills (lunar, timer, clock, and the note) small. */
+    /** A widget's size when nobody chose: the four large widgets are big, the small pills (lunar, timer, clock, and the note) small. */
     fun defaultSize(k: String) = if (k in BIG_KINDS) "big" else "small"
     private val BIG_KINDS = setOf("system", "usage", "calendar", "weather", "air", "market", "news") + HomeQr.KEYS     // a code is read from the sofa: big until chosen otherwise
     /**
-     * Widths as weights (a column's share of the row): a big card, the calendar (seven day columns) a little more, a small column
-     * (stacked pills, or one standing) a little less. The row holds [BUDGET] at most: three big cards and a small column fit; a
-     * fourth big card is 200 dp wide at 1920x1080 and the weather there cuts its words to "…" (measured on a TV), so it waits. [FLOOR]: a few
-     * cards do not stretch across the whole row.
+     * Widths as weights (a column's share of the row): a big widget, the calendar (seven day columns) a little more, a small column
+     * (stacked pills, or one standing) a little less. The row holds [BUDGET] at most: three big widgets and a small column fit; a
+     * fourth big widget is 200 dp wide at 1920x1080 and the weather there cuts its words to "…" (measured on a TV), so it waits. [FLOOR]: a few
+     * widgets do not stretch across the whole row.
      */
     const val W_BIG = 100; const val W_CAL = 120; const val W_SMALL = 90; const val BUDGET = 415; const val FLOOR = 190
     fun weight(k: String, big: Boolean) = if (!big) W_SMALL else if (k == "calendar") W_CAL else W_BIG
-    /** The cards of one column, top to bottom, and its weight. */
+    /** The widgets of one column, top to bottom, and its weight. */
     class Col(val keys: List<String>, val weight: Int)
-    /** The columns that fit, left to right, and the cards that wait (the pinned note, "note", never does). */
+    /** The columns that fit, left to right, and the widgets that wait (the pinned note, "note", never does). */
     class Packed(val cols: List<Col>, val waiting: List<String>)
     /**
      * The one rule of the layout (js/home.js `homePack` does the same, tests/home_pack_cases.json holds the cases both read): walk
-     * the cards in order, a [big] card is a column, two small cards in a row stack in one column, a small card alone is a narrow
+     * the widgets in order, a [big] widget is a column, two small widgets in a row stack in one column, a small widget alone is a narrow
      * column of its own; stop at the first column that would pass [BUDGET], the rest wait. The pinned note ([note]) is the last
-     * small card and keeps its place: the cards before it give way, from the end.
+     * small widget and keeps its place: the widgets before it give way, from the end.
      */
     fun pack(keys: List<String>, big: Set<String>, note: Boolean = false): Packed {
         fun run(ks: List<String>): Packed {
@@ -360,7 +361,7 @@ object HomeConfig {
         }
         return Packed(emptyList(), keys)                                // not reached: the note alone always fits
     }
-    /** The sizes in [conf] as the set of big cards. */
+    /** The sizes in [conf] as the set of big widgets. */
     fun bigs(conf: JSONObject): Set<String> {
         val s = conf.optJSONObject("wsize")
         return WIDGETS.filter { (s?.optString(it)?.takeIf { v -> v == "big" || v == "small" } ?: defaultSize(it)) == "big" }.toSet()
@@ -377,7 +378,7 @@ object HomeConfig {
         if (o != null) for (k in o.keys()) {
             val code = k.toIntOrNull() ?: continue
             val p = o.optString(k)
-            if (keyAllowed(code) && Target.valid(p)) out[code] = p       // any [Target]: an app, a shortcut, a live tile
+            if (keyAllowed(code) && Target.valid(p)) out[code] = p       // any [Target]: an app, a shortcut, a live widget
         }
         return out
     }
@@ -417,26 +418,26 @@ object HomeConfig {
     }
     fun fill(s: String, t: Map<String, String>) = Regex("\\{([a-z]+)\\}").replace(s) { m -> t[m.groupValues[1]] ?: m.value }
     private fun line(s: String, max: Int) = s.replace(Regex("\\s+"), " ").trim().take(max)
-    /** The person's own RSS links for the news card: at most [FEEDS_MAX], each an http(s) address of at most [FEED_URL_MAX]. */
+    /** The person's own RSS links for the news widget: at most [FEEDS_MAX], each an http(s) address of at most [FEED_URL_MAX]. */
     const val FEEDS_MAX = 5
     const val FEED_URL_MAX = 300
     fun feeds(a: JSONArray?): List<String> = strs(a).map { it.trim() }.filter { it.length <= FEED_URL_MAX && WURL.matches(it) }.distinct().take(FEEDS_MAX)
     /** TV Setup's answer to TV Home about app use (its HomeInfo provider): `call(USAGE, "usage")` → Bundle "json". */
     const val USAGE = "content://dev.tvremote.setup.home"
-    /** The first TV Setup with the Telegram bot: TV Home's card names it, and SetupNeed.MIN "telegram" is this, so both say one number. */
+    /** The first TV Setup with the Telegram bot: TV Home's widget names it, and SetupNeed.MIN "telegram" is this, so both say one number. */
     const val TELEGRAM_SETUP = "0.21.1"
     /** The languages TV Home has words in (res/values-<lang>; English is res/values), "" = the TV's. */
     val MOTIONS = listOf("calm", "full")
     val LANGS = listOf("") + dev.tvremote.i18n.Langs.CODES
     private val PKG_NAME = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
-    private val TILE = Regex("tile:[A-Za-z][\\w]*(\\.[\\w]+)+/[a-z][a-z0-9_]{0,15}")
-    const val TILES_MAX = 24                                          // live tiles and shortcuts together: the picker adds both
-    /** [k] is a live tile's key ("tile:dev.tvremote.setup/ram"), not an app's package name. */
-    fun isTile(k: String) = k.length <= 100 && TILE.matches(k)
-    fun tileKey(provider: String, id: String) = "tile:$provider/$id"
-    /** The provider's package of a tile key, and its id there. */
-    fun tileProvider(k: String) = k.removePrefix("tile:").substringBefore('/')
-    fun tileId(k: String) = k.substringAfter('/')
+    private val LIVE = Regex("tile:[A-Za-z][\\w]*(\\.[\\w]+)+/[a-z][a-z0-9_]{0,15}")
+    const val TILES_MAX = 24                                          // live widgets and shortcuts together: the picker adds both; "tiles" and "tile:" are stored on TVs and sent between apps: kept
+    /** [k] is a live widget's key ("tile:dev.tvremote.setup/ram"), not an app's package name. */
+    fun isLive(k: String) = k.length <= 100 && LIVE.matches(k)
+    fun liveKey(provider: String, id: String) = "tile:$provider/$id"
+    /** The provider's package of a live widget's key, and its id there. */
+    fun liveProvider(k: String) = k.removePrefix("tile:").substringBefore('/')
+    fun liveId(k: String) = k.substringAfter('/')
 
     // ---- themes: the look as a set of existing settings, switched at once ----
     const val THEMES_MAX = 12
@@ -451,7 +452,7 @@ object HomeConfig {
 
     val SHOWS = listOf("showClock", "showDate", "showNet", "showGear", "showAdd", "showSuggest", "showWatch")
 
-    /** [c] (a cleaned config) cut down to a theme's settings, the QR cards left out: their codes (and a Wi-Fi password) are not a look. */
+    /** [c] (a cleaned config) cut down to a theme's settings, the QR widgets left out: their codes (and a Wi-Fi password) are not a look. */
     fun pickTheme(c: JSONObject): JSONObject {
         val out = JSONObject()
         for (k in THEME_KEYS) if (c.has(k) || (k == "wopt" && c.has("wstyle"))) out.put(k, when (k) {
@@ -468,14 +469,14 @@ object HomeConfig {
      * kept or the copy packed in the APK, and again when the site's is newer (`Themes.kt` there). Each is a whole look (every key of
      * [THEME_KEYS], [clean] fills the rest), so applying one never leaves a bit of the one before.
      */
-    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val tiles: List<String> = emptyList(), val look: String = "", val thumb: String = "", val by: String = "", val community: Boolean = false) {
+    class Ready(val id: String, val names: Map<String, String>, val conf: JSONObject, val live: List<String> = emptyList(), val look: String = "", val thumb: String = "", val by: String = "", val community: Boolean = false) {
         /** The name in [lang], else English, else the id. */
         fun name(lang: String): String = names[lang] ?: names["en"] ?: id
     }
     @Volatile var ready: List<Ready> = emptyList()
     val BUILTIN: List<Pair<String, JSONObject>> get() = ready.map { it.id to it.conf }
     const val READY_MAX = 120                                 // the project's own (~20) and the community's, which the store adds as they are approved
-    const val READY_TILES_MAX = 4
+    const val READY_LIVE_MAX = 4
     private val READY_ID = Regex("[a-z][a-z0-9_]{0,15}")
 
     /** [a] newer than [b] ("0.8.1" vs "0.8.0"); a missing part is 0. */
@@ -502,8 +503,8 @@ object HomeConfig {
             if (t.optString("since").let { it.isNotEmpty() && newer(it, have) }) continue
             val n = t.optJSONObject("names")
             val names = if (n == null) emptyMap() else n.keys().asSequence().filter { LANGS.contains(it) }.associateWith { themeName(n.optString(it)) }.filterValues { it.isNotEmpty() }
-            // "tiles": live tiles the theme adds ([doTheme]); "look": a drawn wall or gradient for its picture in the list when its own wall has none (Bing, a page, a video); "thumb": a small https picture of that background, drawn under the preview of the layout
-            out += Ready(id, names, pickTheme(clean(conf)), strs(t.optJSONArray("tiles")).filter { isTile(it) }.distinct().take(READY_TILES_MAX),
+            // "tiles": live widgets the theme adds ([doTheme]); "look": a drawn wall or gradient for its picture in the list when its own wall has none (Bing, a page, a video); "thumb": a small https picture of that background, drawn under the preview of the layout
+            out += Ready(id, names, pickTheme(clean(conf)), strs(t.optJSONArray("tiles")).filter { isLive(it) }.distinct().take(READY_LIVE_MAX),
                 t.optString("look").takeIf { it in ART || it in PLAIN } ?: "", thumb(t.optString("thumb")),
                 by = themeName(t.optString("by")), community = t.optBoolean("community") && t.optString("by").isNotBlank())      // "by": the sender's name, community themes only (the store's signed entries)
             if (out.size >= READY_MAX) break
@@ -572,7 +573,7 @@ object HomeConfig {
     }
 
     /** [n] (cleaned) with the "theme" field [op] done: apply (what is gone, [usable], is passed over), save the look now, delete. */
-    private fun doTheme(n: JSONObject, op: JSONObject, usable: (String) -> Boolean, tileOk: (String) -> Boolean): JSONObject {
+    private fun doTheme(n: JSONObject, op: JSONObject, usable: (String) -> Boolean, liveOk: (String) -> Boolean): JSONObject {
         val mine = customThemes(n).toMutableList()
         op.optString("del").takeIf { it.isNotEmpty() }?.let { id -> if (id == BEFORE) n.remove(BEFORE) else mine.removeAll { it.optString("id") == id } }
         op.optString("save").takeIf { it.isNotEmpty() }?.let { name ->
@@ -592,7 +593,7 @@ object HomeConfig {
             if (id != themeNow(n) && themeNow(n).isEmpty()) n.put(BEFORE, pickTheme(now))
             for (k in conf.keys()) n.put(k, conf.get(k))
             n.put("wopt", cleanWopt(conf)).remove("wstyle")                  // a theme saved before the options has "wstyle": the same looks, as options
-            // the QR cards stay as they are, where they are in the order
+            // the QR widgets stay as they are, where they are in the order
             val qr = strs(now.optJSONArray("widgets")).filter { it in HomeQr.KEYS }
             n.put("widgets", JSONArray(strs(conf.optJSONArray("widgets")) + qr))
             n.put("wsize", JSONObject(conf.optJSONObject("wsize")?.toString() ?: "{}").also { m -> now.optJSONObject("wsize")?.let { g -> for (x in g.keys()) if (x in HomeQr.KEYS) m.put(x, g.get(x)) } })
@@ -600,8 +601,8 @@ object HomeConfig {
             val walls = strs(conf.optJSONArray("walls")).filter(usable)
             val wall = conf.optString("wall").takeIf(usable) ?: walls.firstOrNull() ?: "night"
             n.put("walls", JSONArray(walls.ifEmpty { listOf(wall) })).put("wall", wall)
-            // a ready-made theme's live tiles: put FIRST in the grid and kept beside the person's own (never replaced); one whose provider is not here is skipped
-            ready.firstOrNull { it.id == id }?.tiles?.filter(tileOk)?.takeIf { it.isNotEmpty() }?.let { add ->
+            // a ready-made theme's live widgets: put FIRST in the grid and kept beside the person's own (never replaced); one whose provider is not here is skipped
+            ready.firstOrNull { it.id == id }?.live?.filter(liveOk)?.takeIf { it.isNotEmpty() }?.let { add ->
                 n.put("tiles", JSONArray((add + strs(n.optJSONArray("tiles"))).distinct().take(TILES_MAX)))
                 n.put("order", JSONArray((add + strs(n.optJSONArray("order"))).distinct().take(ORDER_MAX)))
             }
@@ -611,7 +612,7 @@ object HomeConfig {
 
     /** [o] made safe: unknown fields dropped, lists of real package names without repeats, every value in range. */
     fun clean(o: JSONObject): JSONObject {
-        val qrs = HomeQr.cards(o.optJSONObject("qrs"))
+        val qrs = HomeQr.widgets(o.optJSONObject("qrs"))
         val widgets = o.optJSONArray("widgets")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty().filter { it in WIDGETS && (it !in HomeQr.KEYS || qrs.has(it)) }.distinct()
         val dock = pkgs(o.optJSONArray("dock"), DOCK_MAX)
         val wurl = wurl(o.optString("wurl"))
@@ -666,7 +667,7 @@ object HomeConfig {
             .put("autoon", o.optBoolean("autoon", false))
             .put("autoapp", Target.clean(o.optString("autoapp")))
             .put("autoall", o.optBoolean("autoall", false))
-            .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
+            .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isLive(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
             .put("qrs", qrs)
             .put("names", names(o.optJSONObject("names")))
             .put("themes", JSONArray(customThemes(o)))
@@ -679,23 +680,23 @@ object HomeConfig {
     /** [r] to tenths, 1..[ROWS_MAX]; anything under 1 (or not a number) is 0, by itself. */
     fun rows(r: Double): Double = if (r.isNaN() || r < 1) 0.0 else Math.round(minOf(r, ROWS_MAX) * 10) / 10.0
 
-    private val CARD = Regex("[a-z][a-z0-9_]{0,15}")
+    private val WIDGET_ID = Regex("[a-z][a-z0-9_]{0,15}")
 
     /**
-     * What a client sends: [clean], but the cards it does not know (a newer TV Home's, read back from it) kept in "widgets" and
-     * "wsize": an older phone or computer that turned one card on or resized one dropped the newer ones. TV Home's own [clean] decides.
+     * What a client sends: [clean], but the widgets it does not know (a newer TV Home's, read back from it) kept in "widgets" and
+     * "wsize": an older phone or computer that turned one widget on or resized one dropped the newer ones. TV Home's own [clean] decides.
      */
     fun forward(o: JSONObject): JSONObject {
         val c = clean(o)
-        o.optJSONArray("widgets")?.let { a -> c.put("widgets", JSONArray((0 until a.length()).map { a.optString(it) }.filter { CARD.matches(it) }.distinct().take(16))) }
+        o.optJSONArray("widgets")?.let { a -> c.put("widgets", JSONArray((0 until a.length()).map { a.optString(it) }.filter { WIDGET_ID.matches(it) }.distinct().take(16))) }
         o.optJSONObject("wsize")?.let { g ->
             val out = JSONObject()
-            for (k in g.keys()) if (CARD.matches(k)) g.optString(k).takeIf { it == "big" || it == "small" }?.let { out.put(k, it) }
+            for (k in g.keys()) if (WIDGET_ID.matches(k)) g.optString(k).takeIf { it == "big" || it == "small" }?.let { out.put(k, it) }
             c.put("wsize", out)
         }
         themeOp(o.optJSONObject("theme"))?.let { c.put("theme", it) }   // an operation, not a setting: it is not in [clean]
         // "wopt" is a delta (what the client changed, defaults included: a value set back to the default must reach the TV); the options
-        // of cards this client does not know (a newer TV Home's, read back from it) pass too, TV Home's own [clean] decides
+        // of widgets this client does not know (a newer TV Home's, read back from it) pass too, TV Home's own [clean] decides
         c.remove("wopt")
         o.optJSONObject("wopt")?.let { g ->
             val out = JSONObject()
@@ -705,17 +706,17 @@ object HomeConfig {
                 for (i in e.keys()) {
                     val v = e.optString(i)
                     val op = options(k).firstOrNull { it.id == i }
-                    if (if (k in WIDGETS) op != null && op.store == "wopt" && v in optValues(op) else CARD.matches(k) && CARD.matches(i) && CARD.matches(v)) x.put(i, v)
+                    if (if (k in WIDGETS) op != null && op.store == "wopt" && v in optValues(op) else WIDGET_ID.matches(k) && WIDGET_ID.matches(i) && WIDGET_ID.matches(v)) x.put(i, v)
                 }
                 if (x.length() > 0) out.put(k, x)
             }
             if (out.length() > 0) c.put("wopt", out)
         }
-        o.optJSONObject("wstyle")?.let { c.put("wstyle", JSONObject().also { w -> for (k in WIDGETS) it.optString(k).takeIf { v -> CARD.matches(v) }?.let { v -> w.put(k, v) } }) }   // an older client's looks: [merge] turns them into options
+        o.optJSONObject("wstyle")?.let { c.put("wstyle", JSONObject().also { w -> for (k in WIDGETS) it.optString(k).takeIf { v -> WIDGET_ID.matches(v) }?.let { v -> w.put(k, v) } }) }   // an older client's looks: [merge] turns them into options
         return c
     }
 
-    /** "wsize" kept for the known cards with a known size; with none yet, the old "wlayout" as the sizes that gave the same picture. */
+    /** "wsize" kept for the known widgets with a known size; with none yet, the old "wlayout" as the sizes that gave the same picture. */
     private fun sizes(o: JSONObject, widgets: List<String>): JSONObject {
         val out = JSONObject()
         val given = o.optJSONObject("wsize")
@@ -730,23 +731,23 @@ object HomeConfig {
         return out
     }
 
-    /** [old] with the fields [change] has (any of them), cleaned. [usable]: whether a wall's file is there, [tileOk] whether a live tile is on offer (a theme's apply passes over one that is not). */
-    fun merge(old: JSONObject, change: JSONObject, tileOk: (String) -> Boolean = { true }, usable: (String) -> Boolean = { true }): JSONObject {
+    /** [old] with the fields [change] has (any of them), cleaned. [usable]: whether a wall's file is there, [liveOk] whether a live widget is on offer (a theme's apply passes over one that is not). */
+    fun merge(old: JSONObject, change: JSONObject, liveOk: (String) -> Boolean = { true }, usable: (String) -> Boolean = { true }): JSONObject {
         val n = JSONObject(clean(old).toString())
         for (k in change.keys()) if (k != "theme" && k != "wopt" && k != "wstyle") n.put(k, change.get(k))
         if (change.has("wopt") || change.has("wstyle")) n.put("wopt", woptMerge(clean(old).optJSONObject("wopt"), change))
         if (change.has("wall") && !change.has("walls")) n.put("walls", JSONArray().put(change.get("wall")))   // a client that picks one: the set is that one
-        themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable, tileOk) }
+        themeOp(change.optJSONObject("theme"))?.let { doTheme(n, it, usable, liveOk) }
         return clean(n)
     }
 
-    /** {target: name}: apps and shortcuts only (a live tile has its own title), a name trimmed to one line of [NAME_MAX]; an empty one is no entry. */
+    /** {target: name}: apps and shortcuts only (a live widget has its own title), a name trimmed to one line of [NAME_MAX]; an empty one is no entry. */
     fun names(g: JSONObject?): JSONObject {
         val out = JSONObject()
         if (g == null) return out
         for (k in g.keys().asSequence().sorted()) {
             if (out.length() >= NAMES_MAX) break
-            if (!Target.valid(k) || isTile(k)) continue
+            if (!Target.valid(k) || isLive(k)) continue
             val v = g.optString(k).replace(Regex("\\s+"), " ").trim().take(NAME_MAX).trim()
             if (v.isNotEmpty()) out.put(k, v)
         }

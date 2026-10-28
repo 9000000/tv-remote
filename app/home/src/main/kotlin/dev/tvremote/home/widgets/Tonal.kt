@@ -23,12 +23,12 @@ import dev.tvremote.home.widgets.Widgets.Facts
 import dev.tvremote.home.widgets.Widgets.Moon
 
 /**
- * The "tonal" look of every card but the clock (HomeConfig.TONAL: weather, system, lunar, air, calendar, usage, timer, market, news, QR) (HomeConfig "wopt" look; app/DESIGN-TV.md "Tonal cards"): an opaque warm
- * card, a label, a very large figure, a caption, and a scalloped badge with the card's icon. One fixed warm tone: TV Home does not
- * pick a colour from the wallpaper. Every part is drawn here so the four cards cannot drift apart.
+ * The "tonal" look of every widget but the clock (HomeConfig.TONAL: weather, system, lunar, air, calendar, usage, timer, market, news, QR) (HomeConfig "wopt" look; app/DESIGN-TV.md "Tonal cards"): an opaque warm
+ * widget, a label, a very large figure, a caption, and a scalloped badge with the widget's icon. One fixed warm tone: TV Home does not
+ * pick a colour from the wallpaper. Every part is drawn here so the four widgets cannot drift apart.
  */
 internal object Tonal {
-    val FILL = 0xFFF6E9E0.toInt()                                      // the card
+    val FILL = 0xFFF6E9E0.toInt()                                      // the widget
     val INK = 0xFF3B2A22.toInt()                                       // dark brown words
     val SUB = 0xFF6D564A.toInt()                                       // the caption
     val PALE = 0xFFE7CDBD.toInt()                                      // a pale badge (dark icon)
@@ -39,10 +39,10 @@ internal object Tonal {
     val TRACK = 0xFFE9D5C8.toInt()
     val WARN = 0xFFB07418.toInt(); val BAD = 0xFFB3402E.toInt()        // a bar from 70 % / 85 %
     const val RADIUS = 28                                              // dp
-    const val BADGE_MAX = 100                                          // dp; smaller in a narrow card, see [badge]
+    const val BADGE_MAX = 100                                          // dp; smaller in a narrow widget, see [badge]
     const val BUMPS = 9
 
-    /** The badge's side: a share of the card's inner width, 44..[BADGE_MAX] dp. */
+    /** The badge's side: a share of the widget's inner width, 44..[BADGE_MAX] dp. */
     fun badge(innerDp: Int) = (innerDp * 0.30f).toInt().coerceIn(44, BADGE_MAX)
 }
 
@@ -88,8 +88,8 @@ internal class TonalBar(c: Context, private val part: Float, private val fill: I
     }
 }
 
-/** The tonal card itself: opaque, 28 dp corners, no edge, no shadow; the same padding as the glass one. */
-internal fun Widgets.tonalCard(compact: Boolean = false) = LinearLayout(a).apply {
+/** The tonal widget itself: opaque, 28 dp corners, no edge, no shadow; the same padding as the glass one. */
+internal fun Widgets.tonalWidget(compact: Boolean = false) = LinearLayout(a).apply {
     orientation = VERTICAL
     background = GradientDrawable().apply { setColor(Tonal.FILL); cornerRadius = dp(Tonal.RADIUS).toFloat() }
     if (compact) setPadding(dp(16), dp(8), dp(16), dp(8)) else setPadding(dp(20), dp(14), dp(20), dp(14))
@@ -102,9 +102,9 @@ internal fun Widgets.ink(t: String, size: Float, color: Int = Tonal.INK) = Font.
 
 /**
  * The three lines and the badge: [label] on top, [value] large, [caption] under it, the badge at the top right ([olive]: dark with a
- * light icon, else pale with a dark one). [width] is the card's width in px; [compact]: half the height, the figure smaller.
+ * light icon, else pale with a dark one). [width] is the widget's width in px; [compact]: half the height, the figure smaller.
  */
-internal fun Widgets.tonalBody(card: LinearLayout, label: String, value: String, caption: String, icon: Int, olive: Boolean, width: Int, compact: Boolean, headline: Boolean = false) {
+internal fun Widgets.tonalBody(widget: LinearLayout, label: String, value: String, caption: String, icon: Int, olive: Boolean, width: Int, compact: Boolean, headline: Boolean = false) {
     val side = dp(if (compact) 48 else Tonal.badge(((width - dp(40)) / dp(1)).coerceAtLeast(1)))
     val root = FrameLayout(a)
     val col = LinearLayout(a).apply { orientation = VERTICAL }
@@ -123,7 +123,7 @@ internal fun Widgets.tonalBody(card: LinearLayout, label: String, value: String,
     root.addView(col, FrameLayout.LayoutParams(-1, -1))
     root.addView(Scallop(a, if (olive) Tonal.OLIVE else Tonal.PALE, icon, if (olive) Tonal.OLIVE_INK else Tonal.PALE_INK),
         FrameLayout.LayoutParams(side, side, Gravity.TOP or Gravity.END))
-    card.addView(root, LayoutParams(-1, -1))
+    widget.addView(root, LayoutParams(-1, -1))
 }
 
 private fun Widgets.skyIcon(w: Weather.Forecast) = when (w.kind) {
@@ -133,18 +133,18 @@ private fun Widgets.skyIcon(w: Weather.Forecast) = when (w.kind) {
     else -> R.drawable.ic_cloud
 }
 
-internal fun Widgets.weatherTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+internal fun Widgets.weatherTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val w = f.wx
-    if (w == null) { tonalBody(card, a.getString(R.string.w_weather), "—", a.getString(R.string.wx_none), R.drawable.ic_weather, false, width, compact); return }
+    if (w == null) { tonalBody(widget, a.getString(R.string.w_weather), "—", a.getString(R.string.wx_none), R.drawable.ic_weather, false, width, compact); return }
     val d = w.days[0]
-    tonalBody(card, w.place.ifEmpty { a.getString(R.string.wx_near) }, "${w.temp}°", a.getString(R.string.ton_sky, a.getString(kindWords(w.kind)), d.max, d.min),
+    tonalBody(widget, w.place.ifEmpty { a.getString(R.string.wx_near) }, "${w.temp}°", a.getString(R.string.ton_sky, a.getString(kindWords(w.kind)), d.max, d.min),
         skyIcon(w), false, width, compact)
 }
 
-internal fun Widgets.airTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+internal fun Widgets.airTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val x = f.air
-    if (x == null) { tonalBody(card, a.getString(R.string.w_air), "—", a.getString(R.string.aq_none), R.drawable.ic_wind, true, width, compact); return }
-    tonalBody(card, a.getString(R.string.w_air), x.aqi.toString(), airLine(x), R.drawable.ic_wind, true, width, compact)
+    if (x == null) { tonalBody(widget, a.getString(R.string.w_air), "—", a.getString(R.string.aq_none), R.drawable.ic_wind, true, width, compact); return }
+    tonalBody(widget, a.getString(R.string.w_air), x.aqi.toString(), airLine(x), R.drawable.ic_wind, true, width, compact)
 }
 
 /** "Trung bình, PM2.5 25". */
@@ -154,7 +154,7 @@ internal fun Widgets.airWords(level: Int) = when (level) {
     0 -> R.string.aq_0; 1 -> R.string.aq_1; 2 -> R.string.aq_2; 3 -> R.string.aq_3; 4 -> R.string.aq_4; else -> R.string.aq_5
 }
 
-internal fun Widgets.lunarTonal(card: LinearLayout, m: Moon, width: Int, compact: Boolean) {
+internal fun Widgets.lunarTonal(widget: LinearLayout, m: Moon, width: Int, compact: Boolean) {
     val d = m.day; val r = a.resources
     val (can, chi) = Lunar.canChi(d.year)
     val year = a.getString(R.string.ton_year, a.getString(R.string.lunar_year, r.getStringArray(R.array.lunar_can)[can], r.getStringArray(R.array.lunar_chi)[chi]))
@@ -162,7 +162,7 @@ internal fun Widgets.lunarTonal(card: LinearLayout, m: Moon, width: Int, compact
     val caption = if (h == null) "" else holidayWords(h.key).let { name ->
         if (h.days == 0) a.getString(R.string.h_today, name) else r.getQuantityString(R.plurals.h_in, h.days, name, h.days)
     }
-    tonalBody(card, year + if (d.leap) a.getString(R.string.lunar_leap) else "", "${d.day}/${d.month}", caption, R.drawable.ic_calendar, false, width, compact)
+    tonalBody(widget, year + if (d.leap) a.getString(R.string.lunar_leap) else "", "${d.day}/${d.month}", caption, R.drawable.ic_calendar, false, width, compact)
 }
 
 internal fun Widgets.holidayWords(key: String) = a.getString(when (key) {
@@ -172,8 +172,8 @@ internal fun Widgets.holidayWords(key: String) = a.getString(when (key) {
     "duanwu" -> R.string.h_duanwu; "vulan" -> R.string.h_vulan; else -> R.string.h_midautumn
 })
 
-/** CPU, memory and storage as rows: a small icon, the name, the figure at the right, a thick bar under it. The half-height card keeps two. */
-internal fun Widgets.systemTonal(card: LinearLayout, f: Facts, compact: Boolean) {
+/** CPU, memory and storage as rows: a small icon, the name, the figure at the right, a thick bar under it. The half-height widget keeps two. */
+internal fun Widgets.systemTonal(widget: LinearLayout, f: Facts, compact: Boolean) {
     val gb = 1024.0 * 1024 * 1024
     fun part(p: Pair<Long, Long>) = if (p.second > 0) p.first.toFloat() / p.second else 0f
     fun size(x: Double) = if (x < 10) "%.1f".format(x) else "%.0f".format(x)
@@ -197,83 +197,83 @@ internal fun Widgets.systemTonal(card: LinearLayout, f: Facts, compact: Boolean)
         line.addView(TonalBar(a, r.part, tone), LayoutParams(-1, dp(if (compact) 8 else 10)).apply { topMargin = dp(if (compact) 3 else 6) })
         box.addView(line, LayoutParams(-1, 0, 1f))
     }
-    card.addView(box, LayoutParams(-1, -1))
+    widget.addView(box, LayoutParams(-1, -1))
 }
 
 /**
- * Fills a tonal [card] for card [k]: the ONE place that says what each card shows in the look, all through [tonalBody] (a label, a
- * figure, a caption, a badge) and [systemTonal]'s rows; a card never paints its own tonal style. [w] is the column's width in px.
+ * Fills a tonal [widget] for widget [k]: the ONE place that says what each widget shows in the look, all through [tonalBody] (a label, a
+ * figure, a caption, a badge) and [systemTonal]'s rows; a widget never paints its own tonal style. [w] is the column's width in px.
  */
-internal fun Widgets.tonalFill(k: String, card: LinearLayout, f: Facts, w: Int, compact: Boolean, label: (String) -> String, qrs: org.json.JSONObject) {
+internal fun Widgets.tonalFill(k: String, widget: LinearLayout, f: Facts, w: Int, compact: Boolean, label: (String) -> String, qrs: org.json.JSONObject) {
     when (k) {
-        "system" -> systemTonal(card, f, compact)
-        "weather" -> weatherTonal(card, f, w, compact)
-        "air" -> airTonal(card, f, w, compact)
-        "lunar" -> f.moon?.let { lunarTonal(card, it, w, compact) }
-        "calendar" -> calendarTonal(card, f, w, compact)
-        "usage" -> usageTonal(card, f, label, w, compact)
-        "timer" -> timerTonal(card, f.timer, w, compact)
-        "market" -> marketTonal(card, f, w, compact)
-        "news" -> newsTonal(card, f, w, compact)
-        "recent" -> recentTonal(card, f, label, w, compact)
-        "adblock" -> adblockTonal(card, f, w, compact)
-        else -> if (k in HomeQr.KEYS) qrTonal(card, qrs.optJSONObject(k), compact)
+        "system" -> systemTonal(widget, f, compact)
+        "weather" -> weatherTonal(widget, f, w, compact)
+        "air" -> airTonal(widget, f, w, compact)
+        "lunar" -> f.moon?.let { lunarTonal(widget, it, w, compact) }
+        "calendar" -> calendarTonal(widget, f, w, compact)
+        "usage" -> usageTonal(widget, f, label, w, compact)
+        "timer" -> timerTonal(widget, f.timer, w, compact)
+        "market" -> marketTonal(widget, f, w, compact)
+        "news" -> newsTonal(widget, f, w, compact)
+        "recent" -> recentTonal(widget, f, label, w, compact)
+        "adblock" -> adblockTonal(widget, f, w, compact)
+        else -> if (k in HomeQr.KEYS) qrTonal(widget, qrs.optJSONObject(k), compact)
     }
 }
 
 /** Today: the weekday over the day's number, the date and the lunar date under it. */
-internal fun Widgets.calendarTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+internal fun Widgets.calendarTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val c = f.cal ?: return
     val r = a.resources; val loc = resources.configuration.locales[0]; val now = java.util.Date()
     val d = c.moon
     val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
     val dayWord = if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString()
     val caption = java.text.SimpleDateFormat("d MMMM", loc).format(now) + " · " + a.getString(R.string.lunar_title, dayWord, month)
-    tonalBody(card, java.text.SimpleDateFormat("EEEE", loc).format(now), java.text.SimpleDateFormat("d", loc).format(now), caption, R.drawable.ic_calendar, false, width, compact)
+    tonalBody(widget, java.text.SimpleDateFormat("EEEE", loc).format(now), java.text.SimpleDateFormat("d", loc).format(now), caption, R.drawable.ic_calendar, false, width, compact)
 }
 
 /** The week's screen time over the most used app. */
-internal fun Widgets.usageTonal(card: LinearLayout, f: Facts, appLabel: (String) -> String, width: Int, compact: Boolean) {
+internal fun Widgets.usageTonal(widget: LinearLayout, f: Facts, appLabel: (String) -> String, width: Int, compact: Boolean) {
     val label = a.getString(R.string.w_week)
     val u = f.usage
-    if (u == null) { tonalBody(card, label, "—", a.getString(R.string.w_need_setup), R.drawable.ic_chart, false, width, compact); return }
+    if (u == null) { tonalBody(widget, label, "—", a.getString(R.string.w_need_setup), R.drawable.ic_chart, false, width, compact); return }
     val days = u.optJSONArray("days"); var total = 0L
     if (days != null) for (i in 0 until days.length()) total += days.optLong(i)
     val top = u.optJSONArray("week")?.optJSONObject(0)
     val caption = top?.let { appLabel(it.optString("pkg")) + " · " + span(it.optLong("sec") * 1000) } ?: a.getString(R.string.w_none)
-    tonalBody(card, label, if (total > 0) span(total * 1000) else "—", caption, R.drawable.ic_chart, false, width, compact)
+    tonalBody(widget, label, if (total > 0) span(total * 1000) else "—", caption, R.drawable.ic_chart, false, width, compact)
 }
 
 /** The sleep timer or bedtime: its time left over when it ends. */
-internal fun Widgets.timerTonal(card: LinearLayout, o: org.json.JSONObject?, width: Int, compact: Boolean) {
+internal fun Widgets.timerTonal(widget: LinearLayout, o: org.json.JSONObject?, width: Int, compact: Boolean) {
     val (title, sub) = timerLine(o) ?: return
-    tonalBody(card, a.getString(R.string.w_timer), sub.ifEmpty { "—" }, title, R.drawable.ic_timer, true, width, compact)
+    tonalBody(widget, a.getString(R.string.w_timer), sub.ifEmpty { "—" }, title, R.drawable.ic_timer, true, width, compact)
 }
 
 /** The first price big, the others in one line under it. */
-internal fun Widgets.marketTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+internal fun Widgets.marketTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val m = f.market
     val l = if (m == null || m.empty) emptyList() else lines(m, opt("market", "show"), opt("market", "btc") == "on")
-    if (l.isEmpty()) { tonalBody(card, a.getString(R.string.w_market), "—", a.getString(R.string.mk_none), R.drawable.ic_gold, false, width, compact); return }
+    if (l.isEmpty()) { tonalBody(widget, a.getString(R.string.w_market), "—", a.getString(R.string.mk_none), R.drawable.ic_gold, false, width, compact); return }
     val first = l[0]
     val chg = first.pct?.takeIf { Math.abs(it) >= 0.05 }?.let { (if (it > 0) " ▲" else " ▼") + String.format(java.util.Locale.getDefault(), "%.1f%%", Math.abs(it)) }.orEmpty()
-    tonalBody(card, first.name + chg, first.value, l.drop(1).take(if (compact) 1 else 2).joinToString("  ·  ") { it.name + " " + it.value }, R.drawable.ic_gold, false, width, compact)
+    tonalBody(widget, first.name + chg, first.value, l.drop(1).take(if (compact) 1 else 2).joinToString("  ·  ") { it.name + " " + it.value }, R.drawable.ic_gold, false, width, compact)
 }
 
-/** One headline (the chosen one while the card is focused, else turning every two minutes), its source and time under it. */
-internal fun Widgets.newsTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+/** One headline (the chosen one while the widget is focused, else turning every two minutes), its source and time under it. */
+internal fun Widgets.newsTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val items = f.news
-    if (items.isEmpty()) { tonalBody(card, a.getString(R.string.w_news), "—", a.getString(R.string.nw_none), R.drawable.ic_news, true, width, compact); return }
+    if (items.isEmpty()) { tonalBody(widget, a.getString(R.string.w_news), "—", a.getString(R.string.nw_none), R.drawable.ic_news, true, width, compact); return }
     newsCount = minOf(items.size, 3); newsAt = newsAt.coerceIn(0, newsCount - 1)
     val i = if (newsFocused) newsAt else ((System.currentTimeMillis() / 120_000) % items.size).toInt()
     newsShown = i
-    tonalBody(card, a.getString(R.string.w_news), items[i].title, listOf(items[i].src, ago(items[i].at)).filter { it.isNotEmpty() }.joinToString(" · "), R.drawable.ic_news, true, width, compact, headline = true)
+    tonalBody(widget, a.getString(R.string.w_news), items[i].title, listOf(items[i].src, ago(items[i].at)).filter { it.isNotEmpty() }.joinToString(" · "), R.drawable.ic_news, true, width, compact, headline = true)
 }
 
-/** A QR card: the code on its white square in the tonal card, the caption and password in the card's ink (the card is the one tonal path, so no bespoke fill). */
-internal fun Widgets.qrTonal(card: LinearLayout, c: org.json.JSONObject?, compact: Boolean) {
+/** A QR widget: the code on its white square in the tonal widget, the caption and password in the widget's ink (the widget is the one tonal path, so no bespoke fill). */
+internal fun Widgets.qrTonal(widget: LinearLayout, c: org.json.JSONObject?, compact: Boolean) {
     c ?: return
-    card.setPadding(dp(14), dp(14), dp(16), dp(14))
+    widget.setPadding(dp(14), dp(14), dp(16), dp(14))
     val v = qrView(c, tonal = true) ?: return
-    card.addView(v, LinearLayout.LayoutParams(-1, -1))
+    widget.addView(v, LinearLayout.LayoutParams(-1, -1))
 }

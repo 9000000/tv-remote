@@ -40,13 +40,13 @@ let homeShots = { mine: {}, ready: {}, now: null };                  // the them
 const homeFaces = new Map();                                         // a theme's drawn preview, by what it is made of: drawn once, put back on every redraw
 const homeThumbs = {};                                                // a photo's small picture by id + its stamp: asked of the TV once
 const HOME_WIDGETS = ['system', 'usage', 'calendar', 'lunar', 'timer', 'weather', 'air', 'recent', 'adblock', 'clock', 'market', 'news'];          // HomeConfig.WIDGETS, in the order drawn
-// A TV Home with "wsizes" sizes each card (big / small) and packs them (homePack); one older than that has only the preset layouts below
+// A TV Home with "wsizes" sizes each widget (big / small) and packs them (homePack); one older than that has only the preset layouts below
 const HOME_BIG_KINDS = ['system', 'usage', 'calendar', 'weather', 'air', 'market', 'news', 'qr1', 'qr2', 'qr3', 'qr4'];     // HomeConfig.defaultSize: these are big until chosen otherwise
 const HOME_W = { big: 100, cal: 120, small: 90, budget: 415, floor: 190 };   // HomeConfig.W_BIG / W_CAL / W_SMALL / BUDGET / FLOOR
 const homeSize = (c, k) => (c.wsize && (c.wsize[k] === 'big' || c.wsize[k] === 'small')) ? c.wsize[k] : (HOME_BIG_KINDS.includes(k) ? 'big' : 'small');
-// HomeConfig.pack, the same rule (tests/home_pack_cases.json holds the cases both are tested with): walk the cards in order, a big
-// card is a column, two small ones in a row stack in one, a small one alone is a narrow column; the first column past the budget and
-// all after it wait. A pinned note is the last small card and keeps its place: the cards before it give way, from the end.
+// HomeConfig.pack, the same rule (tests/home_pack_cases.json holds the cases both are tested with): walk the widgets in order, a big
+// widget is a column, two small ones in a row stack in one, a small one alone is a narrow column; the first column past the budget and
+// all after it wait. A pinned note is the last small widget and keeps its place: the widgets before it give way, from the end.
 function homePack(keys, big, note) {
   const run = (ks) => {
     const cols = []; let sum = 0, i = 0;
@@ -67,7 +67,7 @@ function homePack(keys, big, note) {
   return { cols: [], waiting: keys };
 }
 const HOME_LAYOUTS = { row: 'home.layout_row', big: 'home.layout_big', big2: 'home.layout_big2', flip: 'home.layout_flip', quad: 'home.layout_quad' };   // HomeConfig.LAYOUTS
-// HomeConfig.COLS: [share of the width %, cards stacked] per column; "row" is drawn as it looks (it has no fixed places)
+// HomeConfig.COLS: [share of the width %, widgets stacked] per column; "row" is drawn as it looks (it has no fixed places)
 const HOME_COLS = { row: [[33, 1], [33, 1], [34, 2]], big: [[58, 1], [42, 2]], big2: [[36, 1], [36, 1], [28, 1]], flip: [[42, 2], [58, 1]], quad: [[50, 2], [50, 2]] };
 const HOME_OLD_LAYOUTS = ['row', 'big'];                              // a TV Home without "wlayouts" has only these
 const HOME_ROW_CARDS = 3, HOME_LARGE = ['system', 'usage', 'calendar', 'weather'];   // HomeConfig.ROW_CARDS, Widgets.BIG: what "row" shows
@@ -75,8 +75,8 @@ const homeSlots = (k) => k === 'row' || !HOME_COLS[k] ? 0 : HOME_COLS[k].reduce(
 const HOME_WIDGET_WORDS = { system: 'home.w_system', usage: 'home.w_usage', calendar: 'home.w_calendar', lunar: 'home.w_lunar', timer: 'home.w_timer', weather: 'home.w_weather', air: 'home.w_air', recent: 'home.w_recent', adblock: 'home.w_adblock', clock: 'home.w_clock', market: 'home.w_market', news: 'home.w_news' };
 const HOME_STYLE_WORDS = { classic: 'home.style_classic', light: 'home.style_light', minimal: 'home.style_minimal', roman: 'home.style_roman', glass: 'home.style_glass', tonal: 'home.style_tonal' };   // HomeConfig.STYLES
 
-// The packed layout drawn small: a column per weight, its cards stacked, big ones filled (sizes in css/remote.css)
-// [x]: the settings dialog's strip, { mark: the card framed, conf: the settings the cards are drawn with (tonal warm, a light clock pale) }
+// The packed layout drawn small: a column per weight, its widgets stacked, big ones filled (sizes in css/remote.css)
+// [x]: the settings dialog's strip, { mark: the widget framed, conf: the settings the widgets are drawn with (tonal warm, a light clock pale) }
 function packGlyph(p, big, x = {}) {
   const g = el('div', { className: 'packview', role: 'img', 'aria-label': T('home.pack_alt') });
   const sum = Math.max(HOME_W.floor, p.cols.reduce((n, c) => n + c.weight, 0));
@@ -88,7 +88,7 @@ function packGlyph(p, big, x = {}) {
   return g;
 }
 
-// An older TV Home's layout drawn small: its columns, the cards stacked in each (sizes in css/remote.css)
+// An older TV Home's layout drawn small: its columns, the widgets stacked in each (sizes in css/remote.css)
 function layGlyph(k) {
   const g = el('i', { className: 'layglyph', 'aria-hidden': 'true' });
   for (const [pct, n] of HOME_COLS[k]) {
@@ -103,14 +103,14 @@ function layGlyph(k) {
 const HOME_OPT_WORDS = ['home.o_size', 'home.o_face', 'home.o_theme', 'home.o_look', 'home.ov_big', 'home.ov_small', 'home.ov_classic', 'home.ov_minimal', 'home.ov_roman', 'home.ov_modern', 'home.ov_digital', 'home.ov_month', 'home.ov_date',
   'home.ov_dark', 'home.ov_light', 'home.ov_glass', 'home.ov_tonal', 'home.ov_solid', 'home.ov_none', 'home.ov_off', 'home.ov_on',
   'home.o_layout', 'home.o_show', 'home.o_btc', 'home.o_src', 'home.ov_card', 'home.ov_ticker', 'home.ov_all', 'home.ov_gold', 'home.ov_rates', 'home.ov_auto', 'home.ov_mine', 'home.ov_both'];
-// A card's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
+// A widget's options, from the schema its TV Home reports ("wschema": HomeConfig.options): what was chosen, else the default
 const homeOpt = (c, k, id) => {
   const o = ((c.wschema || {})[k] || []).find((x) => x.id === id);
   const v = id === 'size' ? homeSize(c, k) : (((c.wopt || {})[k] || {})[id]);
   return o && o.values.some((x) => x.id === v) ? v : o ? o.default : '';
 };
 
-// The card itself at the chosen options, drawn small: the clock as a face (10:10) in its face and theme, any other card in its look (glass, tonal, solid, none)
+// The widget itself at the chosen options, drawn small: the clock as a face (10:10) in its face and theme, any other widget in its look (glass, tonal, solid, none)
 function homeCardPrev(k, c) {
   const big = homeSize(c, k) === 'big';
   if (k === 'clock') {
@@ -144,8 +144,8 @@ function homeCardPrev(k, c) {
     el('small', { textContent: HOME_WIDGET_WORDS[k] ? T(HOME_WIDGET_WORDS[k]) : k }), el('b', { textContent: '··' }), el('i'));
 }
 
-// One dialog for every card, drawn from the schema: the layout strip of the cards that are on with this one framed, the card at the
-// chosen options, a row of chips per option. Each press goes to the TV at once ([send]) and repaints the strip and the card here.
+// One dialog for every widget, drawn from the schema: the layout strip of the widgets that are on with this one framed, the widget at the
+// chosen options, a row of chips per option. Each press goes to the TV at once ([send]) and repaints the strip and the widget here.
 function homeWidgetDlg(k, c0, title, send) {
   const w = c0.widgets || [], opts = (c0.wschema || {})[k] || [];
   const c = { ...c0, wsize: { ...(c0.wsize || {}) }, wopt: JSON.parse(JSON.stringify(c0.wopt || {})) };
@@ -233,14 +233,14 @@ async function homeOpen() {
 
   const row = (pkg, acts) => {
     const icon = Target.kind(pkg) === 'app' ? appIcon(pkg) : qkLogo(r.config, pkg), name = el('span', { textContent: appLabel(pkg) });
-    if (!isTile(pkg) && Target.kind(pkg) === 'app') onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appLabel(pkg)); });   // a live tile is no app: TV Setup names it
+    if (!isTile(pkg) && Target.kind(pkg) === 'app') onMeta(pkg, (m) => { icon.fill(m); put(name, 'textContent', appLabel(pkg)); });   // a live widget is no app: TV Setup names it
     return el('div', { className: 'item' }, icon, el('div', { className: 'name' }, name), el('div', { className: 'acts' }, ...acts));
   };
   const isTile = (p) => /^tile:[^/]+\/[a-z][a-z0-9_]{0,15}$/.test(p);
   const appLabel = (pkg) => { const own = (r.config.names || {})[pkg]; if (own) return own; if (Target.kind(pkg) === 'pin') return qkLabel(r.config, r.apps, pkg); if (isTile(pkg)) { const t = (r.config.tilesAvail || []).find((x) => x.key === pkg); return (t && t.title) || pkg.split('/').pop(); } const a = r.apps.find((x) => x.pkg === pkg); return appName(pkg) !== pkg ? appName(pkg) : (a && a.label) || pkg; };
   const tool = (text, title, fn, off) => el('button', { type: 'button', className: 'small iconbtn', textContent: text, title, 'aria-label': title, disabled: !!off, onclick: fn });
 
-  // live tiles (HomeConfig "tiles"): what TV Setup offers, each on or off the app grid; only a TV Home that reports "tilesOk"
+  // live widgets (HomeConfig "tiles"): what TV Setup offers, each on or off the app grid; only a TV Home that reports "tilesOk"
   const tilesHead = el('h3', { textContent: T('home.tiles_head') }), tilesNote = el('p', { className: 'note' }), tilesList = el('div', { className: 'list' });
   // no favourites any more: TV Home is one grid, and its order is edited as that grid (home_order.js), saved in one go
   const hidden = el('div', { className: 'list' });
@@ -378,7 +378,7 @@ async function homeOpen() {
   const autoNote = el('p', { className: 'note' });
   const autoAll = el('input', { type: 'checkbox', onchange: () => send({ autoall: autoAll.checked }) });   // HomeConfig autoall: also over an app or input the TV woke into
   const autoAllBox = el('label', { className: 'check' }, autoAll, el('span', { textContent: T('home.auto_all') })), autoAllNote = el('p', { className: 'note' });
-  // the cards over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
+  // the widgets over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
   const wTurnOn = async (w) => {
     if ((w === 'usage' || w === 'timer' || w === 'recent') && !await homeLink.setup('home_usage')) return false;
@@ -411,13 +411,13 @@ async function homeOpen() {
   const pin = el('button', { type: 'button', className: 'primary', textContent: T('home.note_pin'), onclick: () => send({ note: note.value.trim() }) });
   const unpin = el('button', { type: 'button', textContent: T('home.note_clear'), onclick: () => { note.value = ''; send({ note: '' }); } });
   note.addEventListener('keydown', (e) => { if (e.key === 'Enter') pin.click(); });
-  // the weather card's city (HomeConfig.PLACE_MAX); empty = the TV finds its own place
+  // the weather widget's city (HomeConfig.PLACE_MAX); empty = the TV finds its own place
   const place = el('input', { type: 'text', maxLength: 60, placeholder: T('home.place_ph'), 'aria-label': T('home.place') });
   const placeSet = el('button', { type: 'button', className: 'primary', textContent: T('home.place_set'), onclick: () => send({ place: place.value.trim() }) });
   const placeAuto = el('button', { type: 'button', textContent: T('home.place_auto'), onclick: () => { place.value = ''; send({ place: '' }); } });
   place.addEventListener('keydown', (e) => { if (e.key === 'Enter') placeSet.click(); });
   const placeHead = el('h3', { textContent: T('home.place') }), placeLine = UI.line(place, placeSet, placeAuto);
-  // the News card's own RSS links (HomeConfig.FEEDS_MAX, "feeds"): a list, added one by one; the card reads them when its Sources say Mine or Both
+  // the News widget's own RSS links (HomeConfig.FEEDS_MAX, "feeds"): a list, added one by one; the widget reads them when its Sources say Mine or Both
   const feedIn = el('input', { type: 'url', maxLength: 300, placeholder: T('home.feeds_ph'), 'aria-label': T('home.feeds') });
   const feedAdd = el('button', { type: 'button', className: 'primary', textContent: T('home.feeds_add'), onclick: () => {
     const v = feedIn.value.trim(), l = (homeNow && homeNow.config && homeNow.config.feeds) || [];
@@ -428,11 +428,11 @@ async function homeOpen() {
   feedIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') feedAdd.click(); });
   const feedHead = el('h3', { textContent: T('home.feeds') }), feedLine = UI.line(feedIn, feedAdd), feedList = el('div', { className: 'list' }), feedNote = el('p', { className: 'note', textContent: T('home.feeds_note') });
   const noteHead = el('h3', { textContent: T('home.note') }), noteLine = UI.line(note, pin, unpin);
-  // QR cards (HomeConfig "qrs", home_qr.js): a code of anything, up to four, each its own card among the others (order, size, off in the list above)
+  // QR widgets (HomeConfig "qrs", home_qr.js): a code of anything, up to four, each its own widget among the others (order, size, off in the list above)
   const qrAdd = el('button', { type: 'button', className: 'small', textContent: T('home.qr_add'), onclick: async () => {
     const k = HOME_QR_KEYS.find((x) => !(r.config.qrs || {})[x]);
-    const card = k && await homeQrAsk(null);
-    if (card) send({ qrs: { ...r.config.qrs, [k]: card }, widgets: [...r.config.widgets, k] });
+    const qr = k && await homeQrAsk(null);
+    if (qr) send({ qrs: { ...r.config.qrs, [k]: qr }, widgets: [...r.config.widgets, k] });
   } });
   const qrHead = el('div', { className: 'card-head' }, el('h3', { textContent: T('home.qr') }), qrAdd), qrList = el('div', { className: 'list' }), qrNote = el('p', { className: 'note', textContent: T('home.qr_note') });
   // a web page as the background and the screensaver (HomeConfig.wurl, http or https): asked in its own box when its tile is pressed
@@ -468,8 +468,8 @@ async function homeOpen() {
   const markSug = (c) => { for (const b of sugBox.children) { const on = c.wall === 'web' && c.wurl === b.dataset.url; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); } };
   homeGallery(gal, credit, galHead, (n) => { r = n; homeNow = n; draw(); }, { box: sugBox, head: sugHead, note: sugNote, pick: (u) => send({ wall: 'web', wurl: u, wmode: 'live' }), mark: () => markSug(r.config) });
 
-  // "Add to home screen": a picker of the apps (hidden ones too), their shortcuts and the live tiles; a press puts one on the grid or
-  // takes it off and the list stays open. Shortcuts and live tiles are in config "tiles" (the order they have on the grid), an app is
+  // "Add to home screen": a picker of the apps (hidden ones too), their shortcuts and the live widgets; a press puts one on the grid or
+  // takes it off and the list stays open. Shortcuts and live widgets are in config "tiles" (the order they have on the grid), an app is
   // on the grid unless it is in "hidden"
   const addHome = el('button', { type: 'button', className: 'small', textContent: T('home.qk_addhome'), onclick: async () => {
     const has = (t) => { const c = r.config; return Target.kind(t) === 'app' ? !c.hidden.includes(t) : (c.tiles || []).includes(t); };
@@ -485,7 +485,7 @@ async function homeOpen() {
     if (!on) return;
     const have = c.tiles || [], offer = c.tilesAvail || [];
     tilesNote.textContent = T(c.tilesState === 'untrusted' ? 'home.tiles_untrusted' : offer.length || have.length || c.pinsOk ? 'home.tiles_note' : 'home.tiles_missing');
-    tilesList.replaceChildren(...have.map((k) => row(k, [tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))])));   // a tile whose provider is away stays, to take off
+    tilesList.replaceChildren(...have.map((k) => row(k, [tool('✕', T('home.tile_remove'), () => send({ tiles: have.filter((x) => x !== k) }))])));   // a live widget whose provider is away stays, to take off
   }
   // the home screen as the settings now make it, at the TV's shape, over every group (CleanTV's idea, 2026-10-27): each change shows
   // here at once, no look over at the TV. The same painter as the themes' pictures; the wall's own picture when the page has one
@@ -604,12 +604,12 @@ async function homeOpen() {
     autoAll.disabled = !c.keysAll;                                                 // nor does a TV Setup from before it
     autoAllNote.textContent = T(!c.keysSetup ? 'home.auto_need_setup' : !c.keysAll ? 'home.auto_all_old' : c.autoapp ? 'home.auto_all_app' : 'home.auto_all_home');
     if (kOk) quickKeysDraw(keysList, c, r.apps, send);              // the slots: 1-9 and 0, the colour keys, the power-on app
-    const w = c.widgets;                                              // absent: a TV Home older than the cards
-    const qrs = c.qrs || {};                                          // the QR cards' fields, by key (absent: a TV Home older than them)
+    const w = c.widgets;                                              // absent: a TV Home older than the widgets
+    const qrs = c.qrs || {};                                          // the QR widgets' fields, by key (absent: a TV Home older than them)
     const has = (k) => !!w && w.includes(k);
     wLines.forEach((l, i) => { l.hidden = !w || has(HOME_WIDGETS[i]) || (HOME_WIDGETS[i] === 'weather' && c.place === undefined) || ((HOME_WIDGETS[i] === 'market' || HOME_WIDGETS[i] === 'news') && !c.infoOk) || (HOME_WIDGETS[i] === 'air' && !((c.wschema && c.wschema.air) || (c.wstyles && c.wstyles.air))) || ((HOME_WIDGETS[i] === 'recent' || HOME_WIDGETS[i] === 'adblock') && !(c.wschema && c.wschema[HOME_WIDGETS[i]])); });   // weather, air: a TV Home older than them has no card
     wHead.hidden = !w;
-    const sized = !!c.wsizes;                                         // this TV Home sizes the cards; an older one has the preset layouts
+    const sized = !!c.wsizes;                                         // this TV Home sizes the widgets; an older one has the preset layouts
     const bigs = sized && w ? w.filter((k) => homeSize(c, k) === 'big') : [];
     const packed = sized && w ? homePack(w, bigs, !!c.note) : null;
     const places = sized ? 0 : homeSlots(c.wlayout), slots = c.note ? places - 1 : places;
@@ -617,10 +617,10 @@ async function homeOpen() {
       : places ? (i >= slots ? T('home.w_waits', { n: slots }) : '')
       : HOME_LARGE.includes(k) && w.slice(0, i).filter((x) => HOME_LARGE.includes(x)).length >= HOME_ROW_CARDS ? T('home.w_waits_row', { n: HOME_ROW_CARDS }) : '';
     const wmove = (i, j) => { const n = w.slice(); [n[i], n[j]] = [n[j], n[i]]; send({ widgets: n }); };
-    const wsize = (k, v) => send({ wsize: Object.fromEntries([...new Set([...HOME_WIDGETS, ...(w || [])])].map((x) => [x, x === k ? v : homeSize(c, x)])) });   // a newer TV Home's cards keep theirs
+    const wsize = (k, v) => send({ wsize: Object.fromEntries([...new Set([...HOME_WIDGETS, ...(w || [])])].map((x) => [x, x === k ? v : homeSize(c, x)])) });   // a newer TV Home's widgets keep theirs
     const sizeChips = (k) => el('span', { className: 'sizechips', role: 'group', 'aria-label': T('home.size') },
       ...['big', 'small'].map((v) => el('button', { type: 'button', className: 'small' + (homeSize(c, k) === v ? ' on' : ''), textContent: T(v === 'big' ? 'home.size_big' : 'home.size_small'), 'aria-pressed': String(homeSize(c, k) === v), onclick: () => wsize(k, v) })));
-    // a card with looks (the TV Home lists them in "wstyles"): a row of chips under its name; the first is the default
+    // a widget with looks (the TV Home lists them in "wstyles"): a row of chips under its name; the first is the default
     const styleOf = (k) => (c.wstyle && c.wstyle[k]) || c.wstyles[k][0];
     const wstyle = (k, v) => send({ wstyle: { ...(c.wstyle || {}), [k]: v } });
     const styleChips = (k) => el('div', { className: 'fchips wstyle', role: 'group', 'aria-label': T('home.style') },
@@ -651,9 +651,9 @@ async function homeOpen() {
     webKeepBox.checked = !!c.wkeep;
     webModeNote.textContent = T(!snap ? 'home.web_mode_note_live' : c.wkeep ? 'home.web_mode_note_keep' : 'home.web_mode_note_snap');
     put(webNow, 'textContent', c.wurl || '');
-    placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the card is on
+    placeHead.hidden = placeLine.hidden = c.place === undefined || !has('weather');   // a TV Home older than the weather; and only while the widget is on
     const feeds = c.feeds || [];
-    feedHead.hidden = feedLine.hidden = feedNote.hidden = !c.infoOk || !has('news');   // a TV Home older than the News card; and only while the card is on
+    feedHead.hidden = feedLine.hidden = feedNote.hidden = !c.infoOk || !has('news');   // a TV Home older than the News widget; and only while the widget is on
     feedList.hidden = feedHead.hidden || !feeds.length;
     feedAdd.disabled = feeds.length >= 5; feedAdd.title = feeds.length >= 5 ? T('home.feeds_full') : '';
     feedList.replaceChildren(...feeds.map((u) => el('div', { className: 'item' }, el('div', { className: 'name' }, el('span', { textContent: u })),
@@ -661,7 +661,7 @@ async function homeOpen() {
     if (document.activeElement !== place) place.value = c.place || '';
     placeAuto.disabled = !c.place;
     const qrKeys = HOME_QR_KEYS.filter((k) => qrs[k]);
-    qrHead.hidden = qrNote.hidden = !c.qrOk;                          // a TV Home older than the QR cards
+    qrHead.hidden = qrNote.hidden = !c.qrOk;                          // a TV Home older than the QR widgets
     qrList.hidden = !c.qrOk || !qrKeys.length;
     qrAdd.disabled = qrKeys.length >= HOME_QR_KEYS.length;
     qrList.replaceChildren(...qrKeys.map((k) => el('div', { className: 'item' },
@@ -731,7 +731,7 @@ async function homeOpen() {
   // TV Home's own page (home.html) has nothing else to show: the settings are the page itself, not a box over an empty one.
   // Seven groups as on the TV (Customize.kt): a row each with what is set now under its name, a page of controls behind it. All
   // at once was a page of forty controls nobody found anything in. On TV Home's own page the phone's Back goes back to the list.
-  // Themes (HomeConfig "theme"; ready-made ones and the person's, kept on the TV): one tap switches the background and its set, the veil, the cards,
+  // Themes (HomeConfig "theme"; ready-made ones and the person's, kept on the TV): one tap switches the background and its set, the veil, the widgets,
   // the grid, the focus, the motion and the clock at once. A saved one keeps its photo / video (the TV refuses to delete one a theme shows).
   const themeReady = el('div', { className: 'fchips homewalls themes' }), themeReadyHead = el('h3', { textContent: T('home.theme_ready') }), themeMineHead = el('h3', { textContent: T('home.theme_mine') }), themeCommHead = el('h3', { textContent: T('home.theme_community') }), themeComm = el('div', { className: 'fchips homewalls themes' }), themeMine = el('div', { className: 'fchips homewalls themes' });
   const themeName = el('input', { type: 'text', maxLength: 24, placeholder: T('home.theme_name_ph'), 'aria-label': T('home.theme_name') });

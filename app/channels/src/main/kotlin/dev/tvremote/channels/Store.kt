@@ -110,7 +110,7 @@ object Store {
 
     fun last(c: Context): String? = p(c).getString("last", null)
     fun setLast(c: Context, id: String) = p(c).edit().putString("last", id).apply()
-    /** The last channel watched whole (name, logo, streams), for TV Home's "Keep watching" tile, which needs no list read to show it. */
+    /** The last channel watched whole (name, logo, streams), for TV Home's "Keep watching" live widget, which needs no list read to show it. */
     fun setLastChannel(c: Context, ch: Channel) { p(c).edit().putString("last_ch", write(ch).toString()).apply(); publishLast(c, ch); HomeRows.watched(c, ch) }
 
     /** The dynamic launcher shortcut `last` (TV Home's picker lists it): the channel just watched, so it follows what is playing. */

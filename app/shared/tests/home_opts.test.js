@@ -8,7 +8,7 @@ const vm = require('node:vm');
 
 const src = fs.readFileSync(path.join(__dirname, '../web/js/home.js'), 'utf8');
 const sizes = src.slice(src.indexOf('const HOME_BIG_KINDS'), src.indexOf('// HomeConfig.pack, the same rule'));
-const from = src.indexOf('const homeOpt'), to = src.indexOf('// One dialog for every card');
+const from = src.indexOf('const homeOpt'), to = src.indexOf('// One dialog for every widget');
 assert.ok(from > 0 && to > from);
 const sb = { T: (k) => k, HOME_WIDGET_WORDS: { weather: 'home.w_weather' }, el: (tag, o = {}, ...kids) => ({ tag, ...o, kids }) };
 vm.createContext(sb);

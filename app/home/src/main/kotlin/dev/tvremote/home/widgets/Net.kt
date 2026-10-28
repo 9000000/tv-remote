@@ -6,7 +6,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-/** The cards' small HTTP reads (market, news, pictures): off the main thread by the callers, a timeout and a size cap on each, null on any failure. */
+/** The widgets' small HTTP reads (market, news, pictures): off the main thread by the callers, a timeout and a size cap on each, null on any failure. */
 internal object Net {
     const val FEED_CAP = 2 * 1024 * 1024                              // a feed is read up to this many bytes (the parser stops sooner, at its last item)
     const val PIC_CAP = 1536 * 1024

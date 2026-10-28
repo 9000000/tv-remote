@@ -42,7 +42,7 @@ dev/shots/shots.py web ts tv phone tvapp   # or some
 ```
 
 It needs the computer app built and, for `tv`, `phone` and `tvapp`, both emulators running (`dev/test/emu.sh`). The TV's picture
-is TV Home itself, `img/tvhome-widgets-<lang>.webp` (taken first from the TV emulator: widgets, live tiles, our own apps); the TV is named "TV phòng khách" / "Living room TV". Then check each
+is TV Home itself, `img/tvhome-widgets-<lang>.webp` (taken first from the TV emulator: widgets, live widgets, our own apps); the TV is named "TV phòng khách" / "Living room TV". Then check each
 `<img>`'s width and height in `index.html`.
 New pictures under old names: raise the `?v=` every page puts after `img/…` (one replace across `docs/`), or a browser that saw
 the old one keeps it up to a day (`_headers`; it was a week, and the site looked like the last build's for days).

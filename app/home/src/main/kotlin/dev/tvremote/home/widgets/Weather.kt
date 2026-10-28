@@ -10,7 +10,7 @@ import java.net.URL
 import java.net.URLEncoder
 
 /**
- * The weather card's data: Open-Meteo (no key), the place worked out by itself. Everything here runs off the main thread; the card
+ * The weather widget's data: Open-Meteo (no key), the place worked out by itself. Everything here runs off the main thread; the widget
  * ([Widgets]) only reads [cached]. Kept in prefs with its time, so a restart or a dead network still shows the last one.
  */
 object Weather {
@@ -98,7 +98,7 @@ object Weather {
 
     /**
      * The place to ask for: the city typed in the settings; else the device's own last known location (a TV with none gives nothing);
-     * else the internet address's. A typed city that is not found is not replaced by a guess: the card says so rather than show
+     * else the internet address's. A typed city that is not found is not replaced by a guess: the widget says so rather than show
      * another city's weather.
      */
     fun resolve(typed: String, src: Sources): Place? =
@@ -112,7 +112,7 @@ object Weather {
 
     fun cachedAir(c: Context): Air? = prefs(c).getString("aq", null)?.let { airFromJson(it) }
 
-    /** True when the card should ask again now: no answer yet, or an old one, and not just after a failure. [air]: the air card is on too. */
+    /** True when the widget should ask again now: no answer yet, or an old one, and not just after a failure. [air]: the air widget is on too. */
     fun due(c: Context, typed: String, now: Long = System.currentTimeMillis(), air: Boolean = false): Boolean {
         val p = prefs(c); val f = cached(c)
         if (now - p.getLong("tried", 0) < RETRY_MS && now >= p.getLong("tried", 0)) return false
@@ -123,7 +123,7 @@ object Weather {
 
     private var busy = false
 
-    /** Asks the network (a thread of its own, the cards' reading must not wait for it) and calls [done] on that thread when something changed. */
+    /** Asks the network (a thread of its own, the widgets' reading must not wait for it) and calls [done] on that thread when something changed. */
     fun refresh(c: Context, typed: String, lang: String, air: Boolean = false, done: () -> Unit) {
         synchronized(this) { if (busy) return; busy = true }
         Thread {

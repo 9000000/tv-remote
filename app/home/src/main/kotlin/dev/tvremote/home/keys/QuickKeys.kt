@@ -18,7 +18,7 @@ import dev.tvremote.home.R
 import dev.tvremote.home.Store
 import dev.tvremote.home.Target
 import dev.tvremote.home.apps.App
-import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveWidgets
 import dev.tvremote.tvui.TvGlass
 import dev.tvremote.tvui.pill
 import dev.tvremote.tvui.pillText
@@ -26,7 +26,7 @@ import org.json.JSONObject
 
 /**
  * "Quick keys" (Phím nhanh), webOS's number-key screen for this TV: 1-9 and 0, the four colour keys and the power-on slot, each a tile
- * with the logo of what it opens (a [Target]: app, shortcut or live tile). A key this remote does not have ([Keys.have]) is greyed
+ * with the logo of what it opens (a [Target]: app, shortcut or live widget). A key this remote does not have ([Keys.have]) is greyed
  * and cannot be chosen, unless something is already on it (so it can still be cleared). A press picks the target in the [Picker];
  * the first one chosen switches the keys on (HomeConfig keyon / keyapps / autoon / autoapp, the same settings the phone's page edits).
  */
@@ -124,10 +124,10 @@ object QuickKeys {
                         val art = pics[code]
                         val missing = target.isNotEmpty() && art == null                    // the app is gone: the slot shows it, to be cleared or changed
                         val off = code != POWER && have != null && code !in have
-                        val info = if (Target.kind(target) == Target.Kind.TILE) Tiles.available(a).firstOrNull { it.key == target } else null
+                        val info = if (Target.kind(target) == Target.Kind.TILE) LiveWidgets.available(a).firstOrNull { it.key == target } else null
                         return Keypad.Slot(if (art != null) art.label else if (missing) Targets.label(a, target) else if (off) a.getString(R.string.qk_no_key) else "", art, words(code), target.isEmpty(),
                             if (art == null) COLOUR[code] ?: PK_EMPTY else 0,
-                            icon = if (code == POWER) R.drawable.ic_power else if (Target.kind(target) == Target.Kind.TILE) (info?.let { Tiles.iconRes(a, it) } ?: R.drawable.ic_gauge) else 0,
+                            icon = if (code == POWER) R.drawable.ic_power else if (Target.kind(target) == Target.Kind.TILE) (info?.let { LiveWidgets.iconRes(a, it) } ?: R.drawable.ic_gauge) else 0,
                             dead = code != POWER && code in HomeConfig.KEY_NUMBERS + HomeConfig.KEY_COLOURS && off && target.isEmpty())
                     }
                     grid.addView(Keypad.build(a, ::dp, extra, ::slot, ::choose, tiles), LinearLayout.LayoutParams(-1, -2))

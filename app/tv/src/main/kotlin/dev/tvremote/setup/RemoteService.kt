@@ -133,7 +133,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         }
 
         /**
-         * TV Home's Telegram card (HomeInfo "telegram"): {state: token_missing (no bot yet) | none (a token, switched off) | ready (listening),
+         * TV Home's Telegram widget (HomeInfo "telegram"): {state: token_missing (no bot yet) | none (a token, switched off) | ready (listening),
          * bot (the @name without @, "" until Telegram has answered once)}; with [newCode] (and ready) a fresh pairing code: {code, code_left (s), link
          * https://t.me/<bot>?start=<code>}, which a phone's camera can open and /start <code> pairs.
          */

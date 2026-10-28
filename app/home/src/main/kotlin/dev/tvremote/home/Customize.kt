@@ -112,7 +112,7 @@ object Customize {
      * "rows" or "cols" with the remote: rows ◀ ▶ a tenth, ▲ ▼ a whole row; columns ◀ ▶ ▲ ▼ one. OK or Back done. The panel steps
      * aside ([panel] hidden) and the number sits in the clock's corner with no dim, so each step shows on the home screen at once
      * (saved a moment after the last press: holding a key does not rebuild it every repeat). Then the panel is back as it was.
-     * Rows below 1 are "by itself"; the most is what fits under the clock or the cards ([rowsFit]). "shade" in percent (◀ ▶ 5,
+     * Rows below 1 are "by itself"; the most is what fits under the clock or the widgets ([rowsFit]). "shade" in percent (◀ ▶ 5,
      * ▲ ▼ 10) with a bar under it, as a slider: the veil changes behind it as it moves.
      */
     private fun stepper(a: Activity, panel: Dialog, key: String, done: () -> Unit) {
@@ -458,16 +458,16 @@ object Customize {
             page.viewTreeObserver.addOnScrollChangedListener { pump() }
             page.viewTreeObserver.addOnGlobalLayoutListener { if (pending.isNotEmpty()) pump() }
             // the preview is the theme's home screen in miniature (ThemePreview): drawn once off the main thread, kept by theme + list rev + size + picture
-            fun themeTile(id: String, name: String, conf: JSONObject, tiles: List<String>, look: String, shot: java.io.File?, mine: Boolean, by: String = ""): View {
+            fun themeTile(id: String, name: String, conf: JSONObject, live: List<String>, look: String, shot: java.io.File?, mine: Boolean, by: String = ""): View {
                 val t = FrameLayout(a).apply {
                     isFocusable = true; isClickable = true
                     background = GradientDrawable().apply { setColor(NO_PIC); cornerRadius = dp(12).toFloat() }
                     val pv = ImageView(a).apply { scaleType = ImageView.ScaleType.FIT_XY }
                     addView(pv, FrameLayout.LayoutParams(-1, -1))
-                    val key = ThemePreview.key(id, conf, tiles, shotsW, shot)
+                    val key = ThemePreview.key(id, conf, live, shotsW, shot)
                     val drawn = ThemePreview.cached(key)
                     if (drawn != null) pv.setImageBitmap(drawn)
-                    else pending.add(this to { shots.execute { val b = ThemePreview.get(a, key, conf, tiles, shot, look, shotsW, shotsW * 9 / 16, dp(12).toFloat()); a.runOnUiThread { if (!a.isDestroyed) put(pv, b) } } })
+                    else pending.add(this to { shots.execute { val b = ThemePreview.get(a, key, conf, live, shot, look, shotsW, shotsW * 9 / 16, dp(12).toFloat()); a.runOnUiThread { if (!a.isDestroyed) put(pv, b) } } })
                     foreground = StateListDrawable().apply {
                         addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
@@ -569,11 +569,11 @@ object Customize {
                 }
                 page.addView(save, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (own.isEmpty()) 10 else 14) })
                 section(a.getString(R.string.th_ready))
-                grid(HomeConfig.ready.filter { !it.community }.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.tiles, r.look, ThemeShots.ready(a, r), false) })
+                grid(HomeConfig.ready.filter { !it.community }.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.live, r.look, ThemeShots.ready(a, r), false) })
                 val shared = HomeConfig.ready.filter { it.community }
                 if (shared.isNotEmpty()) {                       // the store's approved themes (the signed list's "community"), each with its sender
                     section(a.getString(R.string.th_community))
-                    grid(shared.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.tiles, r.look, ThemeShots.ready(a, r), false, r.by) })
+                    grid(shared.map { r -> themeTile(r.id, themeName(a, c, r.id), r.conf, r.live, r.look, ThemeShots.ready(a, r), false, r.by) })
                 }
                 mark()
             }
@@ -843,7 +843,7 @@ object Customize {
         }
         groups[3].fill = {
             val preview = PackGlyph(a)
-            // the result first, where it is seen as the cards below change (at the end it took scrolling past every card)
+            // the result first, where it is seen as the widgets below change (at the end it took scrolling past every widget)
             col.addView(label(a.getString(R.string.w_layout).uppercase(), 12f, DIM).apply { letterSpacing = 0.12f }, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(10) })
             col.addView(preview, LinearLayout.LayoutParams(-1, (64 * a.resources.displayMetrics.density).toInt()).apply { bottomMargin = dp(16) })
             widgetRows(a, col, gap, ::glass, ::label, preview)
@@ -930,7 +930,7 @@ object Customize {
             if (g.page.visibility == View.GONE) g.page.visibility = View.INVISIBLE
         }
         // a page made earlier and changed by another page since (a theme applied: the widgets page still
-        // listed the cards before it while its preview, read live, was empty) is made again as it is now
+        // listed the widgets before it while its preview, read live, was empty) is made again as it is now
         fun fresh(g: Group) {
             val f = g.made ?: return
             if (Store.stamp(a) == g.seen) return
@@ -1133,7 +1133,7 @@ object Customize {
     }
 
     /**
-     * Two doors to full screens built of tvui tiles: "Add to home screen" ([Picker] in grid mode: apps, their shortcuts, live tiles,
+     * Two doors to full screens built of tvui tiles: "Add to home screen" ([Picker] in grid mode: apps, their shortcuts, live widgets,
      * the hidden apps) and "Quick keys" ([QuickKeys]: 0-9, colour keys and the power-on app, each shown by the logo of its [Target]).
      * They replaced a row list here that could not show logos nor shortcuts. Lines under say what needs TV Setup.
      */
@@ -1174,8 +1174,8 @@ object Customize {
         android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()
     }
 
-    private const val GLYPH_SOLID = 0xE60E1016.toInt(); private const val GLYPH_NONE = 0x14FFFFFF   // a "solid" card, darker than the strip; "none": only its place
-    private const val GLYPH_TONAL = 0xCCF6E9E0.toInt(); private const val GLYPH_PALE = 0xCCF4F4F6.toInt(); private const val GLYPH_INK = 0xFF2A2320.toInt()   // the strip's cards in the tonal look / a light clock
+    private const val GLYPH_SOLID = 0xE60E1016.toInt(); private const val GLYPH_NONE = 0x14FFFFFF   // a "solid" widget, darker than the strip; "none": only its place
+    private const val GLYPH_TONAL = 0xCCF6E9E0.toInt(); private const val GLYPH_PALE = 0xCCF4F4F6.toInt(); private const val GLYPH_INK = 0xFF2A2320.toInt()   // the strip's widgets in the tonal look / a light clock
     private const val CHIP_FOCUS = 0x2EFFFFFF; private const val CHIP_REST = 0x12FFFFFF; private const val CHIP_EDGE = 0x1FFFFFFF   // a widget row's look button, as its size button
     private val WIDGET_ROWS = listOf(                                  // key, icon, name, line under it
         arrayOf<Any>("system", R.drawable.ic_gauge, R.string.w_system, R.string.c_system_sub),
@@ -1194,15 +1194,15 @@ object Customize {
 
     private val QR_ROW = arrayOf<Any>("qr", R.drawable.ic_qr, R.string.w_qr, R.string.c_qr_sub)
 
-    /** What a QR card holds, in a word: "Wi-Fi", "Link" … (its fields are written on the phone or the web page). */
-    private fun qrKind(a: Context, card: JSONObject) = a.getString(when (card.optString("tpl")) {
+    /** What a QR widget holds, in a word: "Wi-Fi", "Link" … (its fields are written on the phone or the web page). */
+    private fun qrKind(a: Context, widget: JSONObject) = a.getString(when (widget.optString("tpl")) {
         "wifi" -> R.string.qr_t_wifi; "link" -> R.string.qr_t_link; "tel" -> R.string.qr_t_tel; "sms" -> R.string.qr_t_sms
         "mail" -> R.string.qr_t_mail; "contact" -> R.string.qr_t_contact; else -> R.string.qr_t_text })
 
     /**
-     * The widgets in the order they have on the screen, the chosen ones first. OK on a card switches it; the button at its right
-     * is the move mode: OK turns it on, Up / Down move the card, OK or Back (or leaving it) turn it off. One column, so Up / Down
-     * mean the same as on the screen's list, and a card switched on goes to the end.
+     * The widgets in the order they have on the screen, the chosen ones first. OK on a widget switches it; the button at its right
+     * is the move mode: OK turns it on, Up / Down move the widget, OK or Back (or leaving it) turn it off. One column, so Up / Down
+     * mean the same as on the screen's list, and a widget switched on goes to the end.
      */
     private fun widgetRows(a: Activity, col: LinearLayout, gap: Int, glass: (Int, Int, Int) -> GradientDrawable, label: (String, Float, Int) -> TextView, preview: View) {
         val d = a.resources.displayMetrics.density
@@ -1216,7 +1216,7 @@ object Customize {
             val on = Store.list(a, "widgets")
             val conf = Store.get(a)
             val qrs = conf.optJSONObject("qrs") ?: JSONObject()
-            val order = (on + HomeConfig.WIDGETS.filter { it !in on }).filter { (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || android.os.Build.VERSION.SDK_INT >= HomeConfig.ADBLOCK_MIN_SDK) }   // Private DNS is Android 9+; a QR card is written on the phone or the web page: only those that exist
+            val order = (on + HomeConfig.WIDGETS.filter { it !in on }).filter { (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || android.os.Build.VERSION.SDK_INT >= HomeConfig.ADBLOCK_MIN_SDK) }   // Private DNS is Android 9+; a QR widget is written on the phone or the web page: only those that exist
             val big = HomeConfig.bigs(conf)
             val waiting = HomeConfig.pack(on, big, conf.optString("note").isNotEmpty()).waiting.toSet()
             var want: View? = null
@@ -1229,7 +1229,7 @@ object Customize {
                 val state = label("", 12f, if (isOn) ACCENT else DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
                 val sub = if (qr != null) qrKind(a, qr) else a.getString(r[3] as Int)
                 val word = a.getString(if (isOn) R.string.w_on else R.string.w_off).replaceFirstChar { it.uppercase() }
-                // on: what the gear holds (Big · Minimal · Light); off: what the card is
+                // on: what the gear holds (Big · Minimal · Light); off: what the widget is
                 state.text = if (moving == k) a.getString(R.string.c_moving) else if (k in waiting) "$word · ${a.getString(R.string.c_waits)}" else if (isOn) "$word · ${WidgetSettings.summary(a, conf, k)}" else "$word · $sub"
                 val t = LinearLayout(a).apply {
                     orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
@@ -1252,7 +1252,7 @@ object Customize {
                     }
                 }
                 line.addView(t, LinearLayout.LayoutParams(0, -2, 1f))
-                if (isOn) {                                            // one gear: the card's own settings, drawn from HomeConfig.options, with the card beside them
+                if (isOn) {                                            // one gear: the widget's own settings, drawn from HomeConfig.options, with the widget beside them
                     val gear = LinearLayout(a).apply {
                         orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; isFocusable = true; isClickable = true
                         contentDescription = a.getString(R.string.c_wsettings)
@@ -1312,18 +1312,18 @@ object Customize {
     }
 
     /**
-     * The result in miniature: the columns [HomeConfig.pack] makes of the cards on, a big card in the accent, small ones pale; what
+     * The result in miniature: the columns [HomeConfig.pack] makes of the widgets on, a big widget in the accent, small ones pale; what
      * waits is not drawn. Reads the settings when painted (the rows call invalidate after every change), never animated.
      */
     private var panelDialog: Dialog? = null
-    /** The panel is hidden (not closed) while a card's settings are open over it, and back when they close. */
+    /** The panel is hidden (not closed) while a widget's settings are open over it, and back when they close. */
     internal fun hidePanel(hide: Boolean) { panelDialog?.window?.decorView?.alpha = if (hide) 0f else 1f }
 
     internal class PackGlyph(c: Context) : View(c) {
-        /** Each block shows its card's icon and name (the settings dialog's strip); the Widget page's own preview stays plain. */
+        /** Each block shows its widget's icon and name (the settings dialog's strip); the Widget page's own preview stays plain. */
         var named = false
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        /** A card drawn with an accent edge (the one whose settings are open), and each card's own look: tonal warm, a light clock pale. */
+        /** A widget drawn with an accent edge (the one whose settings are open), and each widget's own look: tonal warm, a light clock pale. */
         var mark: String? = null
         private fun drawName(cv: Canvas, k: String, x: Float, y: Float, w: Float, h: Float, lightBlock: Boolean) {
             val r = WIDGET_ROWS.firstOrNull { it[0] == k } ?: QR_ROW
@@ -1434,7 +1434,7 @@ object Customize {
         val set = conf.optJSONArray("walls"); val sizes = conf.optJSONObject("wsize")
         val wall = wallName(a, conf.optString("wall")) + if (set != null && set.length() > 1)
             " · " + a.getString(R.string.g_bg_set, set.length(), a.getString(EVERY_WORDS.getValue(conf.optString("wevery", "off"))).lowercase()) else ""
-        val ws = conf.optJSONArray("widgets"); val cards = (0 until (ws?.length() ?: 0)).map { ws!!.getString(it) }.map { k ->
+        val ws = conf.optJSONArray("widgets"); val widgets = (0 until (ws?.length() ?: 0)).map { ws!!.getString(it) }.map { k ->
             val n = a.resources.getIdentifier("w_$k", "string", a.packageName).let { if (it != 0) a.getString(it) else k }
             val parts = listOf(a.getString(if (sizes?.optString(k) == "big") R.string.th_big else R.string.th_small)) + WidgetSettings.looks(a, conf, k)
             "$n (${parts.joinToString(", ")})"
@@ -1442,7 +1442,7 @@ object Customize {
         return listOf(
             a.getString(R.string.bg) to wall,
             a.getString(R.string.c_shade) to "${conf.optInt("shade", HomeConfig.SHADE_DEFAULT)}%",
-            a.getString(R.string.w_widgets) to (if (cards.isEmpty()) a.getString(R.string.th_none) else cards.joinToString(", ")),
+            a.getString(R.string.w_widgets) to (if (widgets.isEmpty()) a.getString(R.string.th_none) else widgets.joinToString(", ")),
             a.getString(R.string.c_cols) to "${conf.optInt("cols", HomeConfig.COLS_DEFAULT)}",
             a.getString(R.string.c_rows) to rowsWord(a, conf.optDouble("rows", 0.0)),
             a.getString(R.string.c_focus) to a.getString(if (conf.optString("focus") == "ring") R.string.c_focus_ring else R.string.c_focus_glass),

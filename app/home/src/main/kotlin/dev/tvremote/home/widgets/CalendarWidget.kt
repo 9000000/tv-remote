@@ -24,7 +24,7 @@ import java.util.Calendar
 import java.util.Date
 
 /** Today as a date: the day in a square, the weekday and date, the lunar date under it (the month grid needs the large slot). */
-internal fun Widgets.calendarHalf(card: LinearLayout, f: Facts, room: Int) {
+internal fun Widgets.calendarHalf(widget: LinearLayout, f: Facts, room: Int) {
     val c = f.cal ?: return
     val r = a.resources
     val loc = resources.configuration.locales[0]
@@ -43,13 +43,13 @@ internal fun Widgets.calendarHalf(card: LinearLayout, f: Facts, room: Int) {
     words.addView(text(SimpleDateFormat("d MMMM yyyy", loc).format(now), 12f, DIM))
     words.addView(text(lunar, 12f, DIM))
     row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(12) })
-    card.gravity = Gravity.CENTER_VERTICAL
-    card.addView(row, LayoutParams(-1, -2))
+    widget.gravity = Gravity.CENTER_VERTICAL
+    widget.addView(row, LayoutParams(-1, -2))
 }
 
 /** The month: the title and the lunar month and year of today, then one View drawing the weekdays and every day (solar only: a lunar line under each was too busy). */
-/** StandBy's Date: the weekday in red over the month's name, the day as the card's figure, the lunar date under it. */
-internal fun Widgets.calendarDate(card: LinearLayout, f: Facts) {
+/** StandBy's Date: the weekday in red over the month's name, the day as the widget's figure, the lunar date under it. */
+internal fun Widgets.calendarDate(widget: LinearLayout, f: Facts) {
     val c = f.cal ?: return
     val loc = resources.configuration.locales[0]
     val now = Date()
@@ -58,14 +58,14 @@ internal fun Widgets.calendarDate(card: LinearLayout, f: Facts) {
     val head = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.BOTTOM }
     head.addView(text(SimpleDateFormat("EEEE", loc).format(now).replaceFirstChar { it.uppercase() }, 17f, ACCENT).apply { typeface = BOLD; maxLines = 1 })
     head.addView(text("  " + a.resources.getStringArray(R.array.cal_month)[c.grid.month - 1], 17f, DIM).apply { typeface = MEDIUM; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
-    card.addView(head)
-    card.addView(text(SimpleDateFormat("d", loc).format(now), 84f, Color.WHITE).apply {
+    widget.addView(head)
+    widget.addView(text(SimpleDateFormat("d", loc).format(now), 84f, Color.WHITE).apply {
         typeface = Font.medium; includeFontPadding = false; gravity = Gravity.CENTER_VERTICAL
     }, LayoutParams(-1, 0, 1f))
-    card.addView(text(a.getString(R.string.lunar_title, if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString(), month), 13f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+    widget.addView(text(a.getString(R.string.lunar_title, if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString(), month), 13f, DIM).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
 }
 
-internal fun Widgets.calendar(card: LinearLayout, f: Facts, width: Int, maxH: Int = Int.MAX_VALUE) {
+internal fun Widgets.calendar(widget: LinearLayout, f: Facts, width: Int, maxH: Int = Int.MAX_VALUE) {
     val c = f.cal ?: return
     val r = a.resources
     val (can, chi) = Lunar.canChi(c.moon.year)
@@ -78,12 +78,12 @@ internal fun Widgets.calendar(card: LinearLayout, f: Facts, width: Int, maxH: In
     title.addView(text(" " + c.grid.year, 16f, 0x80FFFFFF.toInt()).apply { typeface = MEDIUM })
     if (inner >= dp(320)) title.addView(text(lunar, 12f, 0x99FFFFFF.toInt()).apply { gravity = Gravity.END }, LayoutParams(0, -2, 1f))
     val view = Month(this@calendar, a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, inner / 7f, maxH - dp(8))
-    card.addView(title)
-    // in a fixed-height card the month takes all that is left under the title, and the card gives it some of its padding:
+    widget.addView(title)
+    // in a fixed-height widget the month takes all that is left under the title, and the widget gives it some of its padding:
     // six weeks of a long month need every dp there is
     val fixed = maxH < Int.MAX_VALUE
-    if (fixed) card.setPadding(card.paddingLeft, dp(10), card.paddingRight, dp(8))
-    card.addView(view, (if (fixed) LayoutParams(-1, 0, 1f) else LayoutParams(-1, view.wanted)).apply { topMargin = dp(if (fixed) 3 else 6) })
+    if (fixed) widget.setPadding(widget.paddingLeft, dp(10), widget.paddingRight, dp(8))
+    widget.addView(view, (if (fixed) LayoutParams(-1, 0, 1f) else LayoutParams(-1, view.wanted)).apply { topMargin = dp(if (fixed) 3 else 6) })
 }
 
 /**

@@ -5,9 +5,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * The Market card's data: gold (SJC and ring gold 9999, VND per lượng), the bank's exchange rates (VND) and optionally Bitcoin, each part
+ * The Market widget's data: gold (SJC and ring gold 9999, VND per lượng), the bank's exchange rates (VND) and optionally Bitcoin, each part
  * fetched straight from a public source named in the signed list ([Sources]) on a thread of its own and kept in prefs with its time.
- * A part that fails keeps its last value (the card shows the time of the last update); nothing here is shown as an error.
+ * A part that fails keeps its last value (the widget shows the time of the last update); nothing here is shown as an error.
  */
 object Market {
     /** [buy] is what the bank pays (bank transfer), [sell] what it asks; 0 = the source has no figure. */

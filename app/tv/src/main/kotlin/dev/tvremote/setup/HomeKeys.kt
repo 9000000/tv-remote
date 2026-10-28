@@ -36,11 +36,11 @@ internal object HomeKeys {
     /** The key → app map the person wants; empty while the switch is off. */
     fun keys(c: Context): Map<Int, String> = all(c).filterValues { Target.kind(it) == Target.Kind.APP }   // apps only: the key filter's rule can start nothing else (KeyFix); see [open] for the others
 
-    /** Every target the person gave a key, shortcuts and live tiles too. */
+    /** Every target the person gave a key, shortcuts and live widgets too. */
     fun all(c: Context): Map<Int, String> = load(c).let { if (it.optBoolean("keyon")) HomeConfig.keyApps(it.optJSONObject("keyapps")) else emptyMap() }
 
     /**
-     * Opens [t], any [Target]: an app by its launch intent; a launcher shortcut or live tile through TV Home (only the home app may
+     * Opens [t], any [Target]: an app by its launch intent; a launcher shortcut or live widget through TV Home (only the home app may
      * start another app's shortcut, LauncherApps), whose OpenActivity checks [t] is in its own settings. False: nothing to start.
      */
     fun open(c: Context, t: String): Boolean {
@@ -54,7 +54,7 @@ internal object HomeKeys {
         return try { c.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); true } catch (e: Exception) { false }
     }
 
-    /** Whether [t] can be opened now: an app is installed, a shortcut or tile needs TV Home. */
+    /** Whether [t] can be opened now: an app is installed, a shortcut or live widget needs TV Home. */
     fun can(c: Context, t: String): Boolean = if (t.isEmpty()) true else when (Target.kind(t)) {
         null -> false
         Target.Kind.APP -> c.packageManager.getLeanbackLaunchIntentForPackage(t) != null || c.packageManager.getLaunchIntentForPackage(t) != null

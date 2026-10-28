@@ -3,12 +3,12 @@ package dev.tvremote.home
 import org.json.JSONObject
 
 /**
- * The QR cards of TV Home ("qrs" in [HomeConfig]): each is a template (a small form) that builds the text the code holds, plus an
- * optional caption. Whatever the person types is kept as fields, so a client can open the card again to change it; TV Home builds the
+ * The QR widgets of TV Home ("qrs" in [HomeConfig]): each is a template (a small form) that builds the text the code holds, plus an
+ * optional caption. Whatever the person types is kept as fields, so a client can open the widget again to change it; TV Home builds the
  * payload from them with [payload] (js/home_qr.js `homeQrPayload` is the same rule, tests/home_qr_cases.json holds the cases both read).
  *   wifi     ssid, pass, sec (WPA / WEP / nopass), hidden → WIFI:T:WPA;S:..;P:..;H:true;;  (\ ; , : " escaped); no password = an open network
  *   link     url (https:// is put in front of a bare address)
- *   text     text, as typed: the raw payload is the card
+ *   text     text, as typed: the raw payload is the widget
  *   tel      num → tel:+84...        sms  num, body → sms:num?body=..        mail  to, subject, body → mailto:to?subject=..&body=..
  *   contact  name, tel, email → MECARD:N:..;TEL:..;EMAIL:..;;
  * "show" (wifi only): also write the password under the code, default off. The password lives only in TV Home's config on the TV.
@@ -19,10 +19,10 @@ object HomeQr {
     const val MAX_BYTES = 271                                         // what Qr.kt (version 10, level L) holds
     const val FIELD_MAX = 250
     const val CAP_MAX = 60
-    const val CARDS_MAX = 4                                           // "qr1" .. "qr4", each is a card of its own in "widgets"
-    val KEYS = (1..CARDS_MAX).map { "qr$it" }
+    const val QR_MAX = 4                                          // "qr1" .. "qr4", each is a widget of its own in "widgets"
+    val KEYS = (1..QR_MAX).map { "qr$it" }
 
-    /** Which fields each template has (the others are dropped by [card]). */
+    /** Which fields each template has (the others are dropped by [widget]). */
     val FIELDS: Map<String, List<String>> = mapOf(
         "wifi" to listOf("ssid", "pass", "sec", "hidden"), "link" to listOf("url"), "text" to listOf("text"), "tel" to listOf("num"),
         "sms" to listOf("num", "body"), "mail" to listOf("to", "subject", "body"), "contact" to listOf("name", "tel", "email"))
@@ -67,8 +67,8 @@ object HomeQr {
         else -> ""
     }
 
-    /** [o] as a card TV Home keeps, or null when it holds nothing a code can carry (no such template, nothing typed, too long for the code). */
-    fun card(o: JSONObject?): JSONObject? {
+    /** [o] as a widget TV Home keeps, or null when it holds nothing a code can carry (no such template, nothing typed, too long for the code). */
+    fun widget(o: JSONObject?): JSONObject? {
         if (o == null) return null
         val tpl = o.optString("tpl").takeIf { it in TEMPLATES } ?: return null
         val given = o.optJSONObject("f") ?: JSONObject()
@@ -85,10 +85,10 @@ object HomeQr {
             .put("show", tpl == "wifi" && o.optBoolean("show", false))
     }
 
-    /** The "qrs" of [o] made safe: only [KEYS], only cards [card] keeps. */
-    fun cards(o: JSONObject?): JSONObject {
+    /** The "qrs" of [o] made safe: only [KEYS], only widgets [widget] keeps. */
+    fun widgets(o: JSONObject?): JSONObject {
         val out = JSONObject()
-        if (o != null) for (k in KEYS) card(o.optJSONObject(k))?.let { out.put(k, it) }
+        if (o != null) for (k in KEYS) widget(o.optJSONObject(k))?.let { out.put(k, it) }
         return out
     }
 }

@@ -81,7 +81,7 @@ private fun Activity.label(t: String, size: Float, color: Int, bold: Boolean = f
 }
 
 /**
- * The reader of one headline, from the News card: the picture, the source and time, the title and the summary the feed gave in big
+ * The reader of one headline, from the News widget: the picture, the source and time, the title and the summary the feed gave in big
  * text, the next headlines to jump to, "previous / next" and "Open in browser" (only where an app answers a web link). The article
  * itself is never fetched here. A glass panel on the dark screen, as Customize.
  */
@@ -164,7 +164,7 @@ class NewsActivity : Activity() {
 }
 
 /**
- * The Market card's detail, on OK: every price with buy and sell, the time of the last update and the sources. The card shows one
+ * The Market widget's detail, on OK: every price with buy and sell, the time of the last update and the sources. The widget shows one
  * figure per row; this is where both live.
  */
 class MarketActivity : Activity() {
@@ -232,8 +232,8 @@ class MarketActivity : Activity() {
 }
 
 /**
- * The weather map, from the weather card: Windy's own embedded map at the card's place, with the layer to look at (rain, wind,
- * temperature, satellite (its clouds too), PM2.5) and the next days beside it, in a glass panel with the card's own sky icons. Back closes. Needs the
+ * The weather map, from the weather widget: Windy's own embedded map at the widget's place, with the layer to look at (rain, wind,
+ * temperature, satellite (its clouds too), PM2.5) and the next days beside it, in a glass panel with the widget's own sky icons. Back closes. Needs the
  * internet, and says so before it shows a blank page.
  */
 class WeatherMapActivity : Activity() {

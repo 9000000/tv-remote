@@ -3,7 +3,7 @@ package dev.tvremote.home
 import android.content.Context
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.apps.Pins
-import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveWidgets
 import dev.tvremote.home.keys.Keys
 import dev.tvremote.home.wall.Online
 import dev.tvremote.home.wall.Videos
@@ -61,7 +61,7 @@ object Store {
      */
     fun forClients(c: Context, conf: JSONObject): JSONObject {
         return conf.put("wsizes", true).put("colsOk", true).put("rowsOk", true).put("rowsMax", rowsFit)   // an older TV Home has none: the page offers it the old layout chips
-            .put("wschema", HomeConfig.schema(android.os.Build.VERSION.SDK_INT))                  // what each card offers in its settings (an older one has none: its looks were "wstyles")
+            .put("wschema", HomeConfig.schema(android.os.Build.VERSION.SDK_INT))                  // what each widget offers in its settings (an older one has none: its looks were "wstyles")
             .put("wweb", true)                                    // the background can be a web page (an older one would clean it away)
             .put("wrotate", true)                                 // the background can turn through a set (an older one has one choice)
             .put("shadeOk", true)                                 // the veil's strength can be chosen (an older one has one)
@@ -69,12 +69,12 @@ object Store {
             .put("greetOk", true)                                 // the greeting's words: with a name, or the person's own (HomeConfig "gstyle")
             .put("headOk", true)                                  // the header's two lines: what each says and its type (HomeConfig "dstyle", HEAD_TYPE)
             .put("ownOk", true)                                   // the own wall: its colours and direction (HomeConfig "wcol", "wdir")
-            .put("qrOk", true)                                    // QR cards (an older one would clean them away)
-            .put("infoOk", true)                                  // the market and news cards, own RSS links ("feeds"), the weather map
+            .put("qrOk", true)                                    // QR widgets (an older one would clean them away)
+            .put("infoOk", true)                                  // the market and news widgets, own RSS links ("feeds"), the weather map
             .put("themesOk", true)                                // themes (HomeConfig "theme"): the ready-made ones ([get] has which look is on now)
-            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.tiles)).also { o -> if (r.community) o.put("community", true).put("by", r.by) } }))
+            .put("themesBuiltin", org.json.JSONArray(HomeConfig.ready.map { r -> JSONObject().put("id", r.id).put("names", JSONObject(r.names)).put("conf", r.conf).put("look", r.look).put("tiles", org.json.JSONArray(r.live)).also { o -> if (r.community) o.put("community", true).put("by", r.by) } }))
             .let { Keys.report(c, it) }                           // keys that open apps: "keysOk", and whether TV Setup took them
-            .let { Tiles.report(c, it) }                          // live tiles: "tilesOk", what TV Setup offers, and whether it can be asked
+            .let { LiveWidgets.report(c, it) }                          // live widgets: "tilesOk", what TV Setup offers, and whether it can be asked
             .let { Pins.report(c, it) }                           // shortcuts: "pinsOk", what the apps offer ([Target] "pin:...")
             .put("keysHave", Keys.have(c))                        // the keys this remote has (the quick keys screen greys out the others)
     }
@@ -139,7 +139,7 @@ object Store {
     /** @throws SecurityException "dream" without WRITE_SECURE_SETTINGS (a client grants it over ADB first; the TV's own switch falls back to the system's screen) */
     fun change(c: Context, change: JSONObject): JSONObject {
         if (change.has("dream")) Dream.set(c, change.optBoolean("dream"))
-        val n = HomeConfig.merge(get(c), change, { k -> Tiles.status(c) == Tiles.OK && Tiles.available(c).any { it.key == k } },
+        val n = HomeConfig.merge(get(c), change, { k -> LiveWidgets.status(c) == LiveWidgets.OK && LiveWidgets.available(c).any { it.key == k } },
             { it == HomeConfig.BING || Walls.usable(c, it) })           // Bing is fetched once it shows, so a theme with it is not turned into Night on a TV that has none yet
         if (change.has("wall")) Videos.forgetPerf(c, change.optString("wall"))   // a video that was too slow gets another try when it is chosen again
         val e = prefs(c).edit().putString("conf", n.toString())

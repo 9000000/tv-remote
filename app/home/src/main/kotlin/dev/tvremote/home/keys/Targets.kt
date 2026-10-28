@@ -7,10 +7,10 @@ import dev.tvremote.home.apps.App
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.apps.HomeLock
 import dev.tvremote.home.apps.Pins
-import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveWidgets
 
 /**
- * Opens and describes a [Target] (an app, a launcher shortcut, a live tile) for the screens of TV Home: the key map, the grid, the
+ * Opens and describes a [Target] (an app, a launcher shortcut, a live widget) for the screens of TV Home: the key map, the grid, the
  * picker. TV Setup opens the same strings for a key pressed outside Home and for the power-on app (an app by itself, anything else by
  * handing it to [OpenActivity] here, because only the home screen may start a shortcut and read a tile's state).
  */
@@ -21,7 +21,7 @@ object Targets {
     fun open(c: Context, t: String, o: Bundle? = null, cleared: Boolean = false): Boolean = when (Target.kind(t)) {
         Target.Kind.APP -> if (HomeLock.needsPin(HomeLock.locked(c), t, cleared)) false else Apps.launch(c, t, o)   // a lock of TV Home's own: only the PIN pad ([cleared]) opens it
         Target.Kind.PIN -> Pins.start(c, t, o)
-        Target.Kind.TILE -> { val app = c.applicationContext; bg.execute { Tiles.press(app, t) { } }; true }
+        Target.Kind.TILE -> { val app = c.applicationContext; bg.execute { LiveWidgets.press(app, t) { } }; true }
         null -> false
     }
 
@@ -37,7 +37,7 @@ object Targets {
     fun app(c: Context, t: String): App? = when (Target.kind(t)) {
         Target.Kind.APP -> Apps.one(c, t)?.also { it.load(c) }
         Target.Kind.PIN -> Pins.app(c, t)
-        Target.Kind.TILE -> App(t, Tiles.title(c, t), null)
+        Target.Kind.TILE -> App(t, LiveWidgets.title(c, t), null)
         null -> null
     }
 
@@ -45,7 +45,7 @@ object Targets {
     fun label(c: Context, t: String): String = when (Target.kind(t)) {
         Target.Kind.APP -> Apps.one(c, t)?.label ?: t
         Target.Kind.PIN -> Pins.find(c, t)?.let { (it.shortLabel ?: it.longLabel ?: it.id).toString() } ?: Target.id(t)
-        Target.Kind.TILE -> Tiles.title(c, t)
+        Target.Kind.TILE -> LiveWidgets.title(c, t)
         null -> "—"
     }
 }

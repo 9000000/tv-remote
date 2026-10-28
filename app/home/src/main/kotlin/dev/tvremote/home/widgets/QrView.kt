@@ -14,15 +14,15 @@ import android.view.View
 import dev.tvremote.home.Font
 
 /**
- * A QR card: the code, dark modules on a white square whatever the wallpaper or theme (a scanner needs the contrast and a white
- * margin), as big as the card lets it be. Only the square is white: the card is the other cards' glass (Widgets puts it in
- * card()), the words white on it; a white slab hid the wallpaper (2026-10-23). The code comes with the caption under it (or
- * beside it in a wide, low card) and, when the person asked, the Wi-Fi password as text. Beside the code the words span its height:
+ * A QR widget: the code, dark modules on a white square whatever the wallpaper or theme (a scanner needs the contrast and a white
+ * margin), as big as the widget lets it be. Only the square is white: the widget is the other widgets' glass (Widgets puts it in
+ * widget()), the words white on it; a white slab hid the wallpaper (2026-10-23). The code comes with the caption under it (or
+ * beside it in a wide, low widget) and, when the person asked, the Wi-Fi password as text. Beside the code the words span its height:
  * the caption at its top, the password (else a line on how to scan) at its bottom; a lone caption at the top looked unfinished,
  * in the middle it floated. Modules are drawn as whole pixels so the edges stay sharp; no bitmap is kept. Only to look at, like
- * the other cards. The text is built by [HomeQr.payload] from the card's fields; nothing here is logged.
+ * the other widgets. The text is built by [HomeQr.payload] from the widget's fields; nothing here is logged.
  */
-class QrCard(c: Context, private val grid: Array<BooleanArray>, private val caption: String, private val secretLabel: String, private val secret: String, private val hint: String = "", tonal: Boolean = false) : View(c) {
+class QrView(c: Context, private val grid: Array<BooleanArray>, private val caption: String, private val secretLabel: String, private val secret: String, private val hint: String = "", tonal: Boolean = false) : View(c) {
     private val d = resources.displayMetrics.density
     private val paper = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = PAPER }
     private val ink = Paint().apply { color = INK }
@@ -33,7 +33,7 @@ class QrCard(c: Context, private val grid: Array<BooleanArray>, private val capt
     private var box = RectF()                                          // where the code's modules go (a square), set with the text
     private var module = 0f
 
-    /** The module size in px at the card's current size (tests and the report read it; 0 before the first layout). */
+    /** The module size in px at the widget's current size (tests and the report read it; 0 before the first layout). */
     fun modulePx() = module
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
@@ -54,7 +54,7 @@ class QrCard(c: Context, private val grid: Array<BooleanArray>, private val capt
         }
         if (secret.isNotEmpty()) {
             // one line, whatever its length: shrink down to a floor, then cut out of the middle (the ends are what a person checks), never wrap
-            val low = side && h < 120 * d                              // a small card: no room for the label line, the password is what matters
+            val low = side && h < 120 * d                              // a small widget: no room for the label line, the password is what matters
             if (secretLabel.isNotEmpty() && !low) bottom += line(secretLabel, lab, textW, 1)
             sec.textSize = 14f * d
             while (sec.measureText(secret) > textW && sec.textSize > 10f * d) sec.textSize -= 0.5f * d
@@ -65,7 +65,7 @@ class QrCard(c: Context, private val grid: Array<BooleanArray>, private val capt
         val textH = height(top + bottom)
         val room = if (side) avail.toFloat() else minOf(avail.toFloat(), h - textH - (if (top.isEmpty() && bottom.isEmpty()) 0f else gap))
         module = Math.floor((room / n).toDouble()).toFloat().coerceAtLeast(1f)
-        val size = Math.floor(room.toDouble()).toFloat()               // the white square takes the whole room, not module * n: a 136 px card lost 31 px to the rounding
+        val size = Math.floor(room.toDouble()).toFloat()               // the white square takes the whole room, not module * n: a 136 px widget lost 31 px to the rounding
         val quiet = (size - module * grid.size) / 2
         val x0 = if (side) (avail - size) / 2 else (w - size) / 2
         val y0 = if (side) (h - size) / 2 else ((h - textH - (if (top.isEmpty() && bottom.isEmpty()) 0f else gap)) - size).coerceAtLeast(0f) / 2

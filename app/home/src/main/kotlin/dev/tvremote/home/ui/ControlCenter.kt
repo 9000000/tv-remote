@@ -42,7 +42,7 @@ import dev.tvremote.home.HomeConfig
 import dev.tvremote.home.Power
 import dev.tvremote.home.R
 import dev.tvremote.home.Store
-import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveWidgets
 import dev.tvremote.home.widgets.memoryUsage
 import dev.tvremote.tvui.Motion
 import dev.tvremote.tvui.TvGlass
@@ -363,8 +363,8 @@ object ControlCenter {
             acts += action(R.drawable.ic_eraser, R.string.cc_clear_ram) {
                 say(a.getString(R.string.cc_working), 60_000)
                 Thread({
-                    // the same press as the Free RAM tile: TV Setup closes what waits in the background and measures what came free
-                    Tiles.press(a, HomeConfig.tileKey("dev.tvremote.setup", "ram")) { s ->
+                    // the same press as the Free RAM live widget: TV Setup closes what waits in the background and measures what came free
+                    LiveWidgets.press(a, HomeConfig.liveKey("dev.tvremote.setup", "ram")) { s ->
                         val line = s.optString("small")
                         a.runOnUiThread { if (dialog.isShowing && line.isNotEmpty()) say(line, if (s.optString("mode") == "working") 60_000 else 6000) }
                     }

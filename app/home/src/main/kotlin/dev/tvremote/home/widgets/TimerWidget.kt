@@ -12,7 +12,7 @@ internal fun Widgets.timer(o: JSONObject?): View? {
     return pill(tile(VIOLET, if (o != null && o.optLong("sleep_at") > System.currentTimeMillis()) R.drawable.ic_timer else R.drawable.ic_moon), title, sub, 1)
 }
 
-/** What the timer card says: (title, the line under it); both looks draw this, null when there is nothing to show. */
+/** What the timer widget says: (title, the line under it); both looks draw this, null when there is nothing to show. */
 internal fun Widgets.timerLine(o: JSONObject?): Pair<String, String>? {
     if (o == null) return a.getString(R.string.w_timer) to a.getString(R.string.w_need_setup)
     val now = System.currentTimeMillis()

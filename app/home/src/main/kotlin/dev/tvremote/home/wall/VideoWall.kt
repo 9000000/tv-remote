@@ -25,7 +25,7 @@ import java.io.File
  *
  * A SurfaceView is a hole in the window, black until its first frame: an ImageView with the poster (the first frame at the screen's
  * size, Home's own window background) covers it until the player shows one, and again whenever the player is let go, so Home never flashes black.
- * The cards' frost uses the same poster, blurred, as for a photo.
+ * The widgets' frost uses the same poster, blurred, as for a photo.
  *
  * It measures itself: [Verdict.WINDOW_MS] after the first frame it reports [Measure] (frames shown against the clip's rate, its CPU)
  * and HomeActivity keeps the verdict ([Videos.measured]); too slow twice and Home shows the poster alone.

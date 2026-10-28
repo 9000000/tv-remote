@@ -164,8 +164,8 @@ function homeVeil(ctx, w, h, k, user) {
 }
 
 // ---- a theme's picture in the Themes list: its home screen in miniature, from its config (ThemePreview.kt does the same on the TV).
-// The wall under the veil at its real strength, the clock, the cards as homePack lays them, the grid's columns and rows with
-// the live tiles first and the focus on the first one. Rounded shapes only; `img` (a loaded Image) is the background of a photo / page /
+// The wall under the veil at its real strength, the clock, the widgets as homePack lays them, the grid's columns and rows with
+// the live widgets first and the focus on the first one. Rounded shapes only; `img` (a loaded Image) is the background of a photo / page /
 // video, else the drawn look or the colours.
 const HOME_PREV = { ink: '255,255,255', live: ['#4fc3a1', '#ffc857', '#8ab4f8', '#f28b82'], none: '#2a2f3a' };
 // the wall moves (a video, or a web page that is one video): the picture alone cannot say so (ThemePreview.moving is the twin)

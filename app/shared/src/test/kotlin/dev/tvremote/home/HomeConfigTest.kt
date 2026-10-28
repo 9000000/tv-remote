@@ -451,16 +451,16 @@ class HomeConfigTest {
     }
 
     @Test fun liveTilesRoundTrip() {
-        val k = HomeConfig.tileKey("dev.tvremote.setup", "ram")
+        val k = HomeConfig.liveKey("dev.tvremote.setup", "ram")
         assertEquals("tile:dev.tvremote.setup/ram", k)
-        assertTrue(HomeConfig.isTile(k)); assertFalse(HomeConfig.isTile("dev.tvremote.setup")); assertFalse(HomeConfig.isTile("tile:x/ram; rm"))
+        assertTrue(HomeConfig.isLive(k)); assertFalse(HomeConfig.isLive("dev.tvremote.setup")); assertFalse(HomeConfig.isLive("tile:x/ram; rm"))
         val c = HomeConfig.clean(JSONObject().put("tiles", JSONArray(listOf(k, k, "junk", "tile:Bad Pkg/ram")))
             .put("dock", JSONArray(listOf("com.a.b", k))).put("hidden", JSONArray(listOf("tile:com.x.y/z1"))).put("order", JSONArray(listOf(k))))
         assertEquals(listOf(k), c.getJSONArray("tiles").let { a -> List(a.length()) { a.getString(it) } })
         assertEquals(listOf("com.a.b", k), dock(c))                    // a tile sits among the apps in the dock, the hidden list and the order
         assertEquals(listOf("tile:com.x.y/z1"), hidden(c))
         assertEquals(c.toString(), HomeConfig.clean(JSONObject(c.toString())).toString())   // cleaning twice changes nothing
-        assertEquals("dev.tvremote.setup", HomeConfig.tileProvider(k)); assertEquals("ram", HomeConfig.tileId(k))
+        assertEquals("dev.tvremote.setup", HomeConfig.liveProvider(k)); assertEquals("ram", HomeConfig.liveId(k))
         assertEquals(0, HomeConfig.clean(JSONObject()).getJSONArray("tiles").length())
         assertEquals(HomeConfig.TILES_MAX, HomeConfig.clean(JSONObject().put("tiles", JSONArray((1..30).map { "tile:com.x.y/t$it" }))).getJSONArray("tiles").length())
     }
@@ -573,7 +573,7 @@ class HomeConfigTest {
         assertEquals("YouTube TV", n.getString("com.google.android.youtube.tv"))
         assertEquals(HomeConfig.NAME_MAX, n.getString("dev.cobalt.youtube").length)
         assertEquals("Kids", n.getString("pin:dev.a.b/c"))
-        assertEquals(3, n.length())                                    // a live tile, a bad key and an empty name are dropped
+        assertEquals(3, n.length())                                    // a live widget, a bad key and an empty name are dropped
         val many = JSONObject().also { o -> (1..150).forEach { o.put("com.app.n$it", "N$it") } }
         assertEquals(HomeConfig.NAMES_MAX, HomeConfig.clean(JSONObject().put("names", many)).getJSONObject("names").length())
         assertEquals(0, HomeConfig.clean(JSONObject()).getJSONObject("names").length())

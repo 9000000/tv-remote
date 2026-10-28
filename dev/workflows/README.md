@@ -6,7 +6,7 @@ matches the code is fixed here in the same change.
 
 | I want to | Recipe |
 |---|---|
-| add a TV Home card (widget) | [home-card.md](home-card.md) |
+| add a TV Home widget | [home-widget.md](home-widget.md) |
 | add a key or a menu entry on the remote | [remote-key.md](remote-key.md) |
 | add a `/api` route every core can answer | [api-route.md](api-route.md) |
 | add a UI language | [language.md](language.md) |

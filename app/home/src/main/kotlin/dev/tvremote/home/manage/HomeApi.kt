@@ -13,7 +13,7 @@ import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.wall.Online
 import dev.tvremote.home.apps.Pins
 import dev.tvremote.home.Store
-import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveWidgets
 import dev.tvremote.home.wall.Walls
 import dev.tvremote.home.wall.Videos
 import dev.tvremote.home.HomeConfig
@@ -38,7 +38,7 @@ object HomeApi {
         if (drop != null && HomeConfig.isPhoto(drop) && Videos.kept(drop)) throw IllegalStateException("inuse")   // a saved theme keeps this photo
         if (drop != null && HomeConfig.isPhoto(drop)) drop(c, drop)
         else if (drop != null && HomeConfig.isVideo(drop) && !Videos.delete(c, drop, Store.get(c))) throw IllegalStateException("inuse")   // the setting (or a theme) still shows it
-        if (set == null) { Tiles.refresh(c); Pins.refresh(c) }         // a client reading: what the providers and the apps offer is as true as this moment
+        if (set == null) { LiveWidgets.refresh(c); Pins.refresh(c) }         // a client reading: what the providers and the apps offer is as true as this moment
         val config = Store.forClients(c, if (set == null) Store.get(c) else Store.change(c, set))
         val apps = JSONArray()
         for (a in Apps.list(c)) apps.put(JSONObject().put("pkg", a.pkg).put("label", a.label))

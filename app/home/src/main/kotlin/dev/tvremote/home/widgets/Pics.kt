@@ -13,7 +13,7 @@ import java.util.concurrent.Executors
 
 /**
  * The news pictures: downloaded once into the cache folder (a day), decoded no bigger than the place needs, a few kept in memory.
- * Off the main thread; the view is set only if it still wants that address (the card is rebuilt every minute).
+ * Off the main thread; the view is set only if it still wants that address (the widget is rebuilt every minute).
  */
 internal object Pics {
     private val pool = Executors.newFixedThreadPool(2) { r -> Thread(r, "pics").apply { isDaemon = true } }

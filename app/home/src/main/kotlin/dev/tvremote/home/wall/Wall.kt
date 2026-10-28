@@ -55,7 +55,7 @@ object Wall {
         return smooth(if (c.isMutable) c else c.copy(Bitmap.Config.ARGB_8888, true).also { if (it !== c && c !== b) c.recycle() })
     }
 
-    /** Three box blurs over the small copy (~120 x 68): shrinking alone left blocks and bright streaks behind a card's words. */
+    /** Three box blurs over the small copy (~120 x 68): shrinking alone left blocks and bright streaks behind a widget's words. */
     private fun smooth(b: Bitmap, r: Int = 2): Bitmap {
         val w = b.width; val h = b.height
         if (w < 2 || h < 2) return b

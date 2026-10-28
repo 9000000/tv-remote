@@ -12,18 +12,18 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Live tiles TV Home draws in its app grid at the size of an app tile, provided here through the HomeInfo provider:
+ * Live widgets TV Home draws in its app grid at the size of an app tile, provided here through the HomeInfo provider (its wire names say "tile": TV Home and older TV Setups already speak them):
  *   "tiles"    the list [{id, title, icon, kind}] (the key in TV Home's config is "tile:dev.tvremote.setup/<id>")
- *   "tile"     one tile's state now (arg = id): {id, mode: live|working|done|failed, big, small, progress 0..1, accent: ok|warn|bad,
+ *   "tile"     one live widget's state now (arg = id): {id, mode: live|working|done|failed, big, small, progress 0..1, accent: ok|warn|bad,
  *              icon?, tone? (how TV Home draws it), note? (a shorter line than small, for the outcome),
  *              result?: {before, after, freed_mb, none, text}}; answers at once, a binder call never waits on ADB
  *   "tile_do"  runs its action (arg = id) on a thread of its own and answers {started}; the outcome shows in "tile" as mode done / failed
- * Each tile has a "layout" (how TV Home draws it): "gauge" (a ring and a line) or "toggle" (a value to cycle). Three tiles:
+ * Each live widget has a "layout" (how TV Home draws it): "gauge" (a ring and a line) or "toggle" (a value to cycle). Three live widgets:
  * "ram" (gauge): RAM used, a bar and the free MB; pressed, it closes what waits in the background and shows the measured
- * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it adds 15 minutes, up to 120, then off ([nextSleep]). "watch" (gauge): the hours on the screen today (the usage card's count), yesterday under it.
+ * before -> after. "sleep" (toggle): the sleep timer from Rules; pressed, it adds 15 minutes, up to 120, then off ([nextSleep]). "watch" (gauge): the hours on the screen today (the usage widget's count), yesterday under it.
  * The pure parts (numbers, words, which packages may be closed) live here and are tested without a TV.
  */
-internal object HomeTiles {
+internal object LiveWidgets {
     const val RAM = "ram"
     const val SLEEP = "sleep"
     const val WATCH = "watch"
@@ -39,9 +39,9 @@ internal object HomeTiles {
         .put(JSONObject().put("id", SLEEP).put("title", Words.get(lang, "tile.sleep_title")).put("icon", "moon").put("kind", "toggle").put("layout", "toggle"))
         .put(JSONObject().put("id", WATCH).put("title", Words.get(lang, "tile.watch_title")).put("icon", "tv").put("kind", "meter").put("layout", "gauge"))
 
-    // ---- the watched-today tile ----
+    // ---- the watched-today live widget ----
 
-    /** Seconds on screen per day (today first) in apps one opens: the sum the usage card's columns hold, counted by the same Stats; not TV Home / the launcher nor this app. */
+    /** Seconds on screen per day (today first) in apps one opens: the sum the usage widget's columns hold, counted by the same Stats; not TV Home / the launcher nor this app. */
     fun dayTotals(c: Context, perDay: List<JSONObject>): List<Long> {
         val pm = c.packageManager
         val homes = try {                                              // a home screen (Google TV's, TV Home) is where people pass, not what they watch
@@ -72,7 +72,7 @@ internal object HomeTiles {
             .put("small", Words.get(lang, "tile.watch_yesterday", "t" to duration(lang, yesterday)))
     }
 
-    // ---- the sleep timer tile ----
+    // ---- the sleep timer live widget ----
 
     /** Whole minutes left on the timer (rounded up, so "1 min" shows until it fires); 0 = none set. */
     fun sleepLeft(sleepAt: Long, now: Long): Int = if (sleepAt > now) ((sleepAt - now + 59_999L) / 60_000L).toInt() else 0
@@ -110,7 +110,7 @@ internal object HomeTiles {
         if (freedMb < MIN_FREED_MB) Words.get(lang, "tile.ram_nothing", "pct" to after.pct)
         else Words.get(lang, "tile.ram_done", "from" to before.pct, "to" to after.pct, "mb" to freedMb)
 
-    /** The short line the tile shows for the press's outcome instead of its live line: "−37 MB", or "Already lean" when nothing came back. */
+    /** The short line the live widget shows for the press's outcome instead of its live line: "−37 MB", or "Already lean" when nothing came back. */
     fun noteText(lang: String, freedMb: Long): String =
         if (freedMb < MIN_FREED_MB) Words.get(lang, "tile.ram_lean") else Words.get(lang, "tile.ram_freed", "mb" to freedMb)
 
@@ -180,7 +180,7 @@ internal object HomeTiles {
 
     private fun mem(): Mem = Guard.memory().let { Mem(it.first, it.second) }
 
-    /** "tile": the state now, from /proc/meminfo (apps may read it): no ADB, no wait. */
+    /** "tile" (wire name): the state now, from /proc/meminfo (apps may read it): no ADB, no wait. */
     fun tile(c: Context, lang: String, id: String): JSONObject? {
         val now = System.currentTimeMillis()
         if (id == SLEEP) return sleepState(lang, sleepLeft(Rules.load(c).optLong("sleep_at"), now))
@@ -191,7 +191,7 @@ internal object HomeTiles {
         return state(lang, mem(), working, last, bad, now)
     }
 
-    /** Today from Stats (usage events, as the usage card), the earlier days from its usage.json. */
+    /** Today from Stats (usage events, as the usage widget), the earlier days from its usage.json. */
     private fun watchNow(c: Context, lang: String, now: Long): JSONObject {
         val token = android.os.Binder.clearCallingIdentity()           // our own permissions (usage access)
         try {
@@ -233,11 +233,11 @@ internal object HomeTiles {
                 else if (mine.isNotEmpty()) sh(mine.joinToString("; ") { "am kill $it" })
                 Thread.sleep(SETTLE_MS)
                 last = Result(before, mem(), System.currentTimeMillis())
-                WireLog.all.add("·", "tile ram: ${before.pct}% -> ${last!!.after.pct}% (${last!!.freedMb} MB)")
+                WireLog.all.add("·", "live widget ram: ${before.pct}% -> ${last!!.after.pct}% (${last!!.freedMb} MB)")
             } catch (e: Exception) {
                 failed = true; failedAt = System.currentTimeMillis()
             } finally { working = false }
-        }, "home-tile").apply { isDaemon = true }.start()
+        }, "home-live-widget").apply { isDaemon = true }.start()
         return JSONObject().put("started", true)
     }
 }

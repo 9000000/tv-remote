@@ -56,7 +56,7 @@ internal object Adblock {
         } else { restore(c); done(true) }
     }
 
-    /** What was there before the card turned it on ("automatic" when nothing was kept: Android's own default). */
+    /** What was there before the widget turned it on ("automatic" when nothing was kept: Android's own default). */
     private fun restore(c: Context) {
         val cr = c.contentResolver; val p = prefs(c)
         val host = p.getString("prev_host", null)?.takeIf { it.isNotEmpty() && !HomeConfig.adblockHost(it) }
@@ -70,7 +70,7 @@ internal object Adblock {
 
     /**
      * Whether names resolve through [target]. The system takes the new setting a moment later, and a lookup before that went the
-     * old way and passed (FPT box: every Private DNS fails there, yet the card stayed on and the TV lost the Internet): first wait
+     * old way and passed (FPT box: every Private DNS fails there, yet the widget stayed on and the TV lost the Internet): first wait
      * until the network says it uses [target], then past InetAddress's own 2 s cache, then ask.
      */
     @Suppress("DEPRECATION")
@@ -100,7 +100,7 @@ internal object Adblock {
     }
 }
 
-/** OK on the card (and its menu's switch): turn it on / off, or say in one line how the permission comes. */
+/** OK on the widget (and its menu's switch): turn it on / off, or say in one line how the permission comes. */
 internal fun Widgets.adblockToggle() {
     if (!Adblock.supported()) return
     if (!Adblock.canWrite(a)) { Toast.makeText(a, a.getString(R.string.adb_need), Toast.LENGTH_LONG).show(); return }
@@ -120,10 +120,10 @@ private fun Widgets.hintLine(host: String?, dns: String?) = when {
 }
 
 /** The glass look: a shield (green while on), the state, and what OK does. [full]: with its title. */
-internal fun Widgets.adblockGlass(card: LinearLayout, f: Facts, full: Boolean) {
+internal fun Widgets.adblockGlass(widget: LinearLayout, f: Facts, full: Boolean) {
     val host = f.dns?.takeIf { HomeConfig.adblockHost(it) }
-    card.gravity = Gravity.CENTER_VERTICAL
-    if (full) card.addView(head(a.getString(R.string.w_adblock), ""))
+    widget.gravity = Gravity.CENTER_VERTICAL
+    if (full) widget.addView(head(a.getString(R.string.w_adblock), ""))
     val row = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     row.addView(tile(if (host != null) GREEN else Widgets.GREY, R.drawable.ic_shield_ok), LayoutParams(dp(if (full) 56 else 44), dp(if (full) 56 else 44)))
     val words = LinearLayout(a).apply { orientation = VERTICAL }
@@ -133,11 +133,11 @@ internal fun Widgets.adblockGlass(card: LinearLayout, f: Facts, full: Boolean) {
     words.addView(text(state, if (full) 22f else 18f, Color.WHITE).apply { typeface = Font.medium })
     words.addView(text(hint, 12f, DIM))
     row.addView(words, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
-    card.addView(row, if (full) LayoutParams(-1, 0, 1f) else LayoutParams(-1, -2))
+    widget.addView(row, if (full) LayoutParams(-1, 0, 1f) else LayoutParams(-1, -2))
 }
 
 /** The tonal look: the state as the figure, what OK does as the caption. */
-internal fun Widgets.adblockTonal(card: LinearLayout, f: Facts, width: Int, compact: Boolean) {
+internal fun Widgets.adblockTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val host = f.dns?.takeIf { HomeConfig.adblockHost(it) }
-    tonalBody(card, a.getString(R.string.w_adblock), if (host != null) dnsName(host) else a.getString(R.string.adb_off), hintLine(host, f.dns), R.drawable.ic_shield_ok, host != null, width, compact)
+    tonalBody(widget, a.getString(R.string.w_adblock), if (host != null) dnsName(host) else a.getString(R.string.adb_off), hintLine(host, f.dns), R.drawable.ic_shield_ok, host != null, width, compact)
 }

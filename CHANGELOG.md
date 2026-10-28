@@ -11,16 +11,18 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home > Phím nhanh: nút **Tự mở TV Home khi bật TV** (mặc định tắt; tên app thay chỗ TV Home nếu ô "Khi bật TV" đã chọn app). Mỗi lần bật TV sẽ về TV Home (hoặc app ở ô "Khi bật TV"), kể cả khi TV tự vào HDMI hay app cũ; trừ lúc đang cast. Cũng có trên trang web (Phím & khởi động). Cần TV Setup mới.
 - TV Home: nút Cài đặt mở được trên TV giấu màn Cài đặt chuẩn (máy chiếu HY300, Xiaomi, TCL, Fire TV); không mở được thì báo bằng chữ thay vì im lặng.
 - TV Home > Giao diện: tùy chọn **Chỉ hiện cổng HDMI/AV đang cắm** (mặc định tắt): cổng trống nằm sau "Nguồn vào khác".
-- TV Home: đồ thị mạng không còn tự đánh thức mỗi 2 giây khi không có card mạng.
+- TV Home: đồ thị mạng không còn tự đánh thức mỗi 2 giây khi không có widget mạng.
 - Chữ dễ hiểu hơn ở mọi ngôn ngữ: "Nguồn vào" thay "Ngõ vào", "Bật TV" thay "Đánh thức", "màn hình chính" thay "launcher" (khi nói về màn hình), "nhật ký", "bộ nhớ tạm"; tiếng Anh và tiếng Nga sửa chỗ dịch máy, số đếm đúng số ít/nhiều, 4 dòng tiếng Nga còn thiếu.
+- TV Home: nút "Thêm" luôn có nhóm "Live widget" với đủ mọi live widget, cái đã đặt ghi "Đã có trên màn hình chính" (trước đây còn một cái thì nó nằm lẫn trong danh sách); hàng phía trên lưới app gọi chung là "widget" ở mọi nơi, không còn "thẻ".
 
 **English**
 - Remote > Open on TV > **Open a link**: a YouTube link asks Pin to TV or Open on TV (as when a link is shared to TV Remote).
 - TV Home > Quick keys: an **Auto-open TV Home at power-on** switch (off by default; it names the "At power-on" app instead when one is set). Every power-on goes to TV Home (or the "At power-on" app) even if the TV woke into HDMI or its last app; a cast is kept. Also on the web page (Keys & startup). Needs a newer TV Setup.
 - TV Home: Settings opens on TVs that hide the standard Settings screen (HY300 projectors, Xiaomi, TCL, Fire TV); if nothing opens it says so instead of doing nothing.
 - TV Home > Look: **Show only plugged-in HDMI/AV inputs** (off by default): empty ports go behind "More inputs".
-- TV Home: the network graph no longer wakes every 2 seconds when no network card is shown.
+- TV Home: the network graph no longer wakes every 2 seconds when no network widget is shown.
 - Plainer words in every language: no code words ("Still picture", "Display over other apps", "link" instead of token), one name per thing ("Turn off" apps), US spelling, counts right for 1; Russian fixes (grammar, plurals, four missing lines); Vietnamese everyday words.
+- TV Home: "Add" always has a "Live widgets" group listing every live widget, the placed ones marked "Already on the home screen" (with one left it used to sit loose in the list); the row above the app grid is called "widget" everywhere, no more "card".
 
 ## 0.31.0 - 2026-10-28
 

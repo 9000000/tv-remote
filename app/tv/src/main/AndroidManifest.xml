@@ -20,7 +20,7 @@
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LEANBACK_LAUNCHER" /></intent>
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
         <package android:name="com.tailscale.ipn" />                  <!-- its updates, to switch it back on (TailscaleWatch) -->
-        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /></intent>   <!-- home screens left out of TV Home's usage card (HomeInfo) -->
+        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /></intent>   <!-- home screens left out of TV Home's usage widget (HomeInfo) -->
         <package android:name="dev.tvremote.home" />                  <!-- TV Home's key, checked before it is told the usage -->
         <package android:name="dev.tvremote.channels" />              <!-- Channels and Games: their key, checked before they are told the stats switch (HomeInfo "census") -->
         <package android:name="dev.tvremote.games" />
@@ -58,7 +58,7 @@
         <receiver android:name=".TrustReceiver" android:exported="true" android:permission="android.permission.DUMP" />
         <!-- timers and limits for a device that has ADB here (RulesClient.kt); held by the shell only, like the one above -->
         <receiver android:name=".RulesReceiver" android:exported="true" android:permission="android.permission.DUMP" />
-        <!-- app use for TV Home's card: open to every app, answered only for TV Home with this project's key (HomeInfo checks) -->
+        <!-- app use for TV Home's widgets: open to every app, answered only for TV Home with this project's key (HomeInfo checks) -->
         <provider android:name=".HomeInfo" android:authorities="dev.tvremote.setup.home" android:exported="true" />
         <!-- drawing over the screen for a device that has ADB here (DrawLayer.kt, Draw.kt) -->
         <receiver android:name=".DrawReceiver" android:exported="true" android:permission="android.permission.DUMP" />

@@ -5,7 +5,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** One string says what to open: an app, a shortcut or a live tile; js/target.js must agree (tests/target.test.js reads the same table). */
+/** One string says what to open: an app, a shortcut or a live widget; js/target.js must agree (tests/target.test.js reads the same table). */
 class TargetTest {
     /** The page's Target (js/target.js) is held to the same table: tests/target_cases.json. */
     @Test fun kinds() {

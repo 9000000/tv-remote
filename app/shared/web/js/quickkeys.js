@@ -1,12 +1,12 @@
 // ⌨️ Quick keys (Phím nhanh) and the picker of what something opens. The same screen as TV Home's own (QuickKeys.kt / Picker.kt),
 // so the TV, the phone, the computer and TV Home's web page edit one layout: 1-9 and 0, the colour keys, the power-on slot, each a
-// tile with the logo of its target (js/target.js: an app, "pin:" shortcut or "tile:" live tile). A key this remote does not have
+// tile with the logo of its target (js/target.js: an app, "pin:" shortcut or "tile:" live widget). A key this remote does not have
 // (config.keysHave) is shown dead; one that already has something stays editable, so it can be cleared.
 const QK_NUMBERS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 7];          // KEYCODE_1 .. 9, then 0 (HomeConfig.KEY_NUMBERS)
 const QK_COLOURS = { 183: 'red', 184: 'green', 185: 'yellow', 186: 'blue' };
 const QK_POWER = 0;                                                // the power-on slot's code: no key has it
 
-// What a target is called: the app's name, the shortcut's or the live tile's title (from what TV Home lists), else its id
+// What a target is called: the app's name, the shortcut's or the live widget's title (from what TV Home lists), else its id
 function qkLabel(c, apps, t) {
   const k = Target.kind(t);
   if (k === 'tile') { const x = (c.tilesAvail || []).find((y) => y.key === t); return (x && x.title) || Target.id(t); }
@@ -15,7 +15,7 @@ function qkLabel(c, apps, t) {
   return (a && a.label) || (k === 'app' ? appName(t) : t);
 }
 
-// The logo of a target: the app's own picture (a shortcut wears its app's), a live tile a letter on a colour of its own
+// The logo of a target: the app's own picture (a shortcut wears its app's), a live widget a letter on a colour of its own
 function qkLogo(c, t) {
   const k = Target.kind(t);
   if (k === 'tile') {
@@ -27,7 +27,7 @@ function qkLogo(c, t) {
   return icon;
 }
 
-// A modal list of what can be opened: the apps, each one's shortcuts, the live tiles, with a search (no accents needed). It gives the
+// A modal list of what can be opened: the apps, each one's shortcuts, the live widgets, with a search (no accents needed). It gives the
 // target chosen, '' for "none" (only when [opts.none]) or null when closed. With [opts.toggle] a press calls it and the list stays
 // open (the "add to home screen" use): [opts.has](target) says what is on, redrawn by the returned `refresh()` on the dialog.
 function pickTarget(title, now, c, apps, opts = {}) {

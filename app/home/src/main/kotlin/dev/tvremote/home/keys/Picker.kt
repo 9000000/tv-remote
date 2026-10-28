@@ -27,7 +27,7 @@ import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.apps.LinkApps
 import dev.tvremote.home.apps.Links
 import dev.tvremote.home.apps.Pins
-import dev.tvremote.home.apps.Tiles
+import dev.tvremote.home.apps.LiveWidgets
 import dev.tvremote.home.apps.wide
 import dev.tvremote.tvui.Glass
 import dev.tvremote.tvui.Motion
@@ -57,7 +57,7 @@ private const val PK_BANNER_BACK = 0xFF1E2230.toInt()
 private val PK_HUES = intArrayOf(0xFF27324A.toInt(), 0xFF2E3B2F.toInt(), 0xFF43293A.toInt(), 0xFF2B3A45.toInt(), 0xFF3D3424.toInt(), 0xFF2F2D4A.toInt())   // a tile without a picture: a colour from its key
 
 /**
- * One tile of the picker and of the quick keys: the logo of a [Target] (an app's banner or icon, a shortcut's picture, a live tile's
+ * One tile of the picker and of the quick keys: the logo of a [Target] (an app's banner or icon, a shortcut's picture, a live widget's
  * mark) on a colour of its own, its name inside when it has no wide picture, and TV Home's lift and ring ([TvTile]), never the
  * glass ([glassy]). [tag] is a small pill on a corner, [mark] a check, [dead] a tile that cannot be used (greyed, no focus).
  */
@@ -114,7 +114,7 @@ class PickTile(c: Context, w: Int, private val dpx: (Number) -> Int, val key: St
 
 /**
  * "Add to home screen" and the choice of what a key or the power-on opens: one screen listing the apps (the hidden ones too), the
- * launcher shortcuts each app offers ([Pins]) and the live tiles ([Tiles]), made of [PickTile]s with a search over their names. In
+ * launcher shortcuts each app offers ([Pins]) and the live widgets ([LiveWidgets]), made of [PickTile]s with a search over their names. In
  * [Mode.GRID] a press switches the tile on the app grid or off; in [Mode.TARGET] it returns the chosen [Target] (or "" for none).
  */
 object Picker {
@@ -174,7 +174,7 @@ object Picker {
         val items = ArrayList<Item>()
         var pasteCard: View? = null
         val tiles = java.util.concurrent.ConcurrentHashMap<String, PickTile>()   // the rest are made off the main thread while the first rows show
-        val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_links, R.string.pk_tiles)
+        val sections = listOf(R.string.pk_apps, R.string.pk_pins, R.string.pk_links, R.string.pk_live)
 
         // read once, kept as presses change them: read per tile (~15 ms each on the FPT box) it was ~250 ms before the list showed
         var hiddenNow = Store.list(a, "hidden"); var tilesNow = Store.list(a, "tiles")
@@ -228,7 +228,7 @@ object Picker {
             }
         }
 
-        // 30 dp above, not 18: the focused tile's name hangs 6-24 dp under its row (TvTile) and drew over the next section's heading (smoke, "Live TV" over "LIVE TILES")
+        // 30 dp above, not 18: the focused tile's name hangs 6-24 dp under its row (TvTile) and drew over the next section's heading (smoke, "Live TV" over "LIVE WIDGETS")
         fun heading(t: String) = Font.on(TextView(a)).apply { text = t.uppercase(); textSize = 12f; setTextColor(PK_DIM); letterSpacing = 0.12f; setPadding(0, dp(30), 0, dp(14)) }
         fun redraw(limit: Int = Int.MAX_VALUE) {                     // [limit] tiles at most: the first screen, the rest a frame later
             val q = fold(search.text.toString().trim())
@@ -241,7 +241,7 @@ object Picker {
                 val here = items.filter { it.section == s && (q.isEmpty() || fold(it.label).contains(q) || fold(it.tag).contains(q)) }
                 val empty = when {
                     s == 1 && !Pins.can(a) -> a.getString(R.string.pk_pins_need_home)
-                    s == 3 && Tiles.available(a).isEmpty() -> a.getString(if (Tiles.status(a) == Tiles.UNTRUSTED) R.string.power_untrusted else R.string.c_tiles_none)
+                    s == 3 && LiveWidgets.available(a).isEmpty() -> a.getString(if (LiveWidgets.status(a) == LiveWidgets.UNTRUSTED) R.string.power_untrusted else R.string.c_live_none)
                     else -> ""
                 }
                 if (here.isEmpty() && (q.isNotEmpty() || empty.isEmpty())) continue
@@ -303,7 +303,7 @@ object Picker {
         // what there is, read off the main thread: every app's picture, then each app's shortcuts (a binder call per app)
         bg.execute {
             // the grid's apps with their pictures when Home has them: loading every banner again was ~230-400 ms on the FPT box
-            val apps = (a as? dev.tvremote.home.HomeActivity)?.loaded()?.filter { !it.grid }?.takeIf { it.isNotEmpty() }?.onEach { if (it.banner == null && it.icon == null) it.load(a) }   // Home's list has its live tiles and pins too: listed here as apps, their tile moved to its own section and left a hole
+            val apps = (a as? dev.tvremote.home.HomeActivity)?.loaded()?.filter { !it.grid }?.takeIf { it.isNotEmpty() }?.onEach { if (it.banner == null && it.icon == null) it.load(a) }   // Home's list has its live widgets and pins too: listed here as apps, their tile moved to its own section and left a hole
                 ?: Apps.list(a).onEach { it.load(a) }
             val hidden = Store.list(a, "hidden").toSet()
             val got = ArrayList<Item>()
@@ -320,7 +320,7 @@ object Picker {
                 val app = Pins.app(a, o.getString("key")) ?: continue
                 got.add(Item(o.getString("key"), o.getString("title"), app, names[o.getString("app")] ?: "", 1))
             }
-            for (t in Tiles.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 3, Tiles.iconRes(a, t)))
+            for (t in LiveWidgets.available(a)) got.add(Item(t.key, t.title, null, a.getString(R.string.pk_live), 3, LiveWidgets.iconRes(a, t)))
             }
             }
             if (mode == Mode.GRID && only != null && Pins.can(a)) for (l in Links.installed(a).filter { it.group == only }) {   // one app's channels, from + Add (~200 of all apps' here were too many); kept logos only, small cards: full-size ones for ~80 were ~70 MB

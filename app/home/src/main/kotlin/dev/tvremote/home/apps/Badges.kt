@@ -18,9 +18,9 @@ object Badges {
     /** The marks by app; [bed]: bedtime is on, which locks every app; [kids]: kids mode is on, which locks every app but [open]. */
     class Info(val by: Map<String, Mark>, val bed: Boolean, val kids: Boolean = false, val open: Set<String> = emptySet()) {
         fun of(pkg: String): Mark? {
-            // a live tile does its job inside TV Home (Free RAM, the timer) and opens TV Setup's screens behind its own PIN: no
-            // lock on TV Setup's tiles, which still worked under one; another app's tile opens that app, so it has that app's mark
-            if (pkg.startsWith("tile:")) return HomeConfig.tileProvider(pkg).let { p -> if (p == SETUP) null else of(p) }
+            // a live widget does its job inside TV Home (Free RAM, the timer) and opens TV Setup's screens behind its own PIN: no
+            // lock on TV Setup's live widgets, which still worked under one; another app's live widget opens that app, so it has that app's mark
+            if (pkg.startsWith("tile:")) return HomeConfig.liveProvider(pkg).let { p -> if (p == SETUP) null else of(p) }
             return if (bed || (kids && pkg !in open)) LOCK else by[pkg]
         }
     }

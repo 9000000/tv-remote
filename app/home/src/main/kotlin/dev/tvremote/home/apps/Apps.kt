@@ -15,9 +15,9 @@ class App(val pkg: String, val orig: String, val info: ActivityInfo?, val pin: A
     /** The name shown everywhere: the person's own ([Apps.names], "names" of the settings) else the app's. */
     val label: String get() = Apps.names[pkg] ?: orig
     val renamed: Boolean get() = Apps.names.containsKey(pkg)
-    /** A live tile ([Tiles]) rather than an app: its pkg is "tile:<provider>/<id>", it has no pictures, a press runs its action. */
-    val live: Boolean get() = HomeConfig.isTile(pkg)
-    /** On the grid by the settings' "tiles" (a live tile or a shortcut the picker added), not an installed app. */
+    /** A live widget ([LiveWidgets]) rather than an app: its pkg is "tile:<provider>/<id>", it has no pictures, a press runs its action. */
+    val live: Boolean get() = HomeConfig.isLive(pkg)
+    /** On the grid by the settings' "tiles" (a live widget or a shortcut the picker added), not an installed app. */
     val grid: Boolean get() = live || (pin != null && Target.isPin(pkg))
     var banner: Drawable? = null
     var icon: Drawable? = null

@@ -40,7 +40,7 @@ import dev.tvremote.home.HomeQr
 import dev.tvremote.home.R
 
 /**
- * The cards between the clock and the favourites (HomeConfig "widgets"), only to look at: no focus stops on them. Read off the
+ * The widgets between the clock and the favourites (HomeConfig "widgets"), only to look at: no focus stops on them. Read off the
  * main thread once a minute while the screen is shown ([HomeActivity]), the network graph every [SAMPLE_MS]; nothing runs
  * while an app is in front.
  *   system  memory, storage and the Wi-Fi signal as rings, the network's speed, the address, ADB, time on
@@ -50,18 +50,18 @@ import dev.tvremote.home.R
 
  *   air      the air quality index and PM2.5 ([Weather.Air]: Open-Meteo's air-quality API, same place and cache as the weather)
  *   calendar the month, today a filled circle, a lunar day only on its 1st and 15th ([Month], one View; the lunar days from [Lunar], once a day)
- * every card but the clock also has the "tonal" look (HomeConfig "wopt" look, HomeConfig.TONAL, drawn only by [Tonal] / tonalFill).
+ * every widget but the clock also has the "tonal" look (HomeConfig "wopt" look, HomeConfig.TONAL, drawn only by [Tonal] / tonalFill).
  * and, smaller, stacked in a column beside them:
  *   clock   an analog clock: a face (classic, minimal, roman) in a theme (dark, light) (HomeConfig "wopt"); a face in a stack, standing, or big with the time beside it
  *   lunar   the lunar date, the next full moon or new month, the days to Tết ([Lunar], worked out here)
  *   timer   the sleep timer or bedtime and the time left (TV Setup's rules, through the same provider); none while neither is set
  *   note    the family's note (HomeConfig "note"), while there is one
- *   qr1..4  QR cards (HomeConfig "qrs", [QrCard]): big by default, the glass card with only the code on white
+ *   qr1..4  QR widgets (HomeConfig "qrs", [QrView]): big by default, the glass widget with only the code on white
  */
 class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : LinearLayout(a) {
     private var cpuMiss = 0
 
-    /** What a card needs, gathered on a background thread. */
+    /** What a widget needs, gathered on a background thread. */
     class Facts(val ram: Pair<Long, Long>, val disk: Pair<Long, Long>, val ip: String, val eth: Boolean, val rssi: Int?, val up: Long,
                 val adb: Boolean, val usage: JSONObject?, val icons: Map<String, Drawable>, val timer: JSONObject?, val moon: Moon?, val cpu: Float?, val cores: Int, val cal: Cal? = null, val wx: Weather.Forecast? = null,
                 val link: Int? = null, val dns: String? = null, val adbPort: Int = 0, val cpuWhy: Int = 0, val air: Weather.Air? = null,
@@ -81,20 +81,20 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         internal val GREEN = intArrayOf(0xFF6BE8A6.toInt(), 0xFF22B07D.toInt())
         internal val AMBER = intArrayOf(0xFFFFD27A.toInt(), 0xFFFF8A4C.toInt())
         internal val RED = intArrayOf(0xFFFF8A80.toInt(), 0xFFFF453A.toInt())
-        /** A ring or bar of RAM / storage: green, amber from 70 %, red from 85 % ([HomeConfig.level], also TV Setup's RAM tile). */
+        /** A ring or bar of RAM / storage: green, amber from 70 %, red from 85 % ([HomeConfig.level], also TV Setup's RAM live widget). */
         internal fun levelColors(part: Float) = when (HomeConfig.level(Math.round(part * 100))) { "bad" -> RED; "warn" -> AMBER; else -> GREEN }
         internal val GREY = intArrayOf(0xFF8A94A6.toInt(), 0xFF566074.toInt())      // the ad-blocking shield while off
-        internal const val MARK = 0x22FFFFFF                           // the veil under the recent-apps card's marked icon
+        internal const val MARK = 0x22FFFFFF                           // the veil under the recent-apps widget's marked icon
         internal val ROSE = intArrayOf(0xFFFF7A7A.toInt(), 0xFFE0457B.toInt())
         internal const val DIM = 0xA6FFFFFF.toInt()
-        private const val HOT_FILL = 0x14FFFFFF                         // a focused card (weather, news): a faint veil under its white ring
-        private const val HOT_FILL_EDGE = 0x80FFFFFF.toInt()              // a card's outline in edit mode
+        private const val HOT_FILL = 0x14FFFFFF                         // a focused widget (weather, news): a faint veil under its white ring
+        private const val HOT_FILL_EDGE = 0x80FFFFFF.toInt()              // a widget's outline in edit mode
         internal const val ACCENT = 0xFFFF453A.toInt()                  // the calendar's red: the month's name and today
         internal val MEDIUM get() = Font.medium
         internal val BOLD get() = Font.bold
         private val BIG = setOf("system", "usage", "calendar", "weather", "air", "market", "news", "recent", "adblock")
-        const val BIG_H = 180                                          // dp: the cards' height, fixed: the favourites stay on screen
-        private const val FULL_MIN = 180                              // dp: a big card in a column narrower than this shows its small form (the row of three big cards gives 190 to 260)
+        const val BIG_H = 180                                          // dp: the widgets' height, fixed: the favourites stay on screen
+        private const val FULL_MIN = 180                              // dp: a big widget in a column narrower than this shows its small form (the row of three big widgets gives 190 to 260)
 
         private var calKey = 0; private var calMemo: Cal? = null
 
@@ -128,30 +128,30 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     /** (used, total) bytes of RAM from /proc/meminfo, which any app may read; null when it cannot be read. */
     private fun memory(): Pair<Long, Long>? = memoryUsage()
 
-    /** Set by the screen: the weather arrived (or failed) on its own thread, the cards are read again. */
+    /** Set by the screen: the weather arrived (or failed) on its own thread, the widgets are read again. */
     var onWeather: (() -> Unit)? = null
-    /** The news card: the headline chosen (D-pad up / down while it is focused), the one drawn, and whether the card has the focus. */
+    /** The news widget: the headline chosen (D-pad up / down while it is focused), the one drawn, and whether the widget has the focus. */
     internal var newsAt = 0; internal var newsShown = 0; internal var newsFocused = false; internal var newsCount = 0
-    /** The recent-apps card: the icon the mark is on, whether the card has the focus, the apps drawn and their cells (Left / Right move the mark inside it). */
-    /** Where the glass pane goes inside a card (the recent-apps card's marked icon); null: the card draws its own mark. */
+    /** The recent-apps widget: the icon the mark is on, whether the widget has the focus, the apps drawn and their cells (Left / Right move the mark inside it). */
+    /** Where the glass pane goes inside a widget (the recent-apps widget's marked icon); null: the widget draws its own mark. */
     var onMark: ((View) -> Unit)? = null
     internal var recentAt = 0; internal var recentFocused = false; internal var recentApps: List<String> = emptyList(); internal val recentCells = ArrayList<View>()
 
-    /** The cards the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
+    /** The widgets the D-pad can stop on (weather: its map; news: the reader), left to right; the screen says where Up, Down and OK go. */
     val hot = ArrayList<View>()
     var onOpen: ((String) -> Unit)? = null
-    /** Edit mode: every card at rest wears an outline ("you can change this"). Set before [show]. */
+    /** Edit mode: every widget at rest wears an outline ("you can change this"). Set before [show]. */
     var editing = false
-    /** Long OK or Menu on any card: its small menu (size, look, hide...), live on the card itself. */
+    /** Long OK or Menu on any widget: its small menu (size, look, hide...), live on the widget itself. */
     var onMenu: ((String, View) -> Unit)? = null
     var onUp: ((View) -> Unit)? = null
-    /** A card took or lost the focus: the screen's glass pane follows it. */
+    /** A widget took or lost the focus: the screen's glass pane follows it. */
     var onFocus: ((View, Boolean) -> Unit)? = null
     var onDown: ((View) -> Unit)? = null
 
     /**
-     * The card straight above or below [x], else null: Down from the gear at the right no longer crossed the screen to the weather at the left.
-     * Two small cards stacked in one column: the top one from above, the bottom one from the grid ([fromBelow]).
+     * The widget straight above or below [x], else null: Down from the gear at the right no longer crossed the screen to the weather at the left.
+     * Two small widgets stacked in one column: the top one from above, the bottom one from the grid ([fromBelow]).
      */
     fun hotAt(x: Int, fromBelow: Boolean = false): View? {
         val at = IntArray(2)
@@ -159,7 +159,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         return (if (fromBelow) col.maxByOrNull { h -> h.getLocationOnScreen(at); at[1] } else col.minByOrNull { h -> h.getLocationOnScreen(at); at[1] })
     }
 
-    /** The shown card next to [v] towards ([dx], [dy]): Up / Down only to one sharing its columns (a stacked pair), Left / Right the nearest beside it. */
+    /** The shown widget next to [v] towards ([dx], [dy]): Up / Down only to one sharing its columns (a stacked pair), Left / Right the nearest beside it. */
     private fun near(v: View, dx: Int, dy: Int): View? {
         val a = IntArray(2); v.getLocationOnScreen(a)
         val ax = a[0] + v.width / 2; val ay = a[1] + v.height / 2
@@ -188,7 +188,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             when (code) {
                 KeyEvent.KEYCODE_DPAD_LEFT -> { if (k == "recent" && recentAt > 0) { recentAt--; recentMark() } else (near(v, -1, 0) ?: hot.getOrNull(i - 1))?.requestFocus(); true }
                 KeyEvent.KEYCODE_DPAD_RIGHT -> { if (k == "recent" && recentAt < recentApps.size - 1) { recentAt++; recentMark() } else (near(v, 1, 0) ?: hot.getOrNull(i + 1))?.requestFocus(); true }
-                // a small card stacked over another: Down goes to it before the grid, Up from it back to the top one (the user, 2026-10-27)
+                // a small widget stacked over another: Down goes to it before the grid, Up from it back to the top one (the user, 2026-10-27)
                 KeyEvent.KEYCODE_DPAD_UP -> { if (k == "news" && newsAt > 0) { newsAt--; onWeather?.invoke() } else near(v, 0, -1)?.requestFocus() ?: onUp?.invoke(v); true }
                 KeyEvent.KEYCODE_DPAD_DOWN -> { if (k == "news" && newsAt < newsCount - 1) { newsAt++; onWeather?.invoke() } else near(v, 0, 1)?.requestFocus() ?: onDown?.invoke(v); true }
                 else -> false
@@ -208,7 +208,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     }
 
     fun read(want: List<String>): Facts {
-        // MemAvailable, as TV Setup's RAM tile reads it: ActivityManager.availMem counts cached apps as free (53 % here, 75 % there)
+        // MemAvailable, as TV Setup's RAM live widget reads it: ActivityManager.availMem counts cached apps as free (53 % here, 75 % there)
         val mem = memory() ?: ActivityManager.MemoryInfo().also { (a.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(it) }.let { (it.totalMem - it.availMem) to it.totalMem }
         val disk = try { StatFs(Environment.getDataDirectory().path).let { (it.totalBytes - it.availableBytes) to it.totalBytes } } catch (e: Exception) { 0L to 0L }
         var ip = ""; var eth = false
@@ -237,13 +237,13 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             (Class.forName("android.os.SystemProperties").getMethod("get", String::class.java).invoke(null, "service.adb.tcp.port") as String).toIntOrNull()?.takeIf { it > 0 } ?: 0
         } catch (e: Throwable) { 0 }
         fun ask(m: String) = try { a.contentResolver.call(Uri.parse(HomeConfig.USAGE), m, null, null)?.getString("json")?.let { JSONObject(it) } }
-            catch (e: Exception) { null }                                  // no TV Setup, or one older than this card
+            catch (e: Exception) { null }                                  // no TV Setup, or one older than this widget
         val usage = if ("usage" in want) ask("usage") else null
         val icons = HashMap<String, Drawable>()
         usage?.let { u -> for (k in listOf("week", "limits")) u.optJSONArray(k)?.let { l -> for (i in 0 until l.length()) l.optJSONObject(i)?.optString("pkg")?.let { p ->
             if (p !in icons) try { icons[p] = a.packageManager.getApplicationIcon(p) } catch (e: Exception) { }
         } } }
-        val recent = if ("recent" in want) ask("recent") else null          // null: no TV Setup, or one older than this card
+        val recent = if ("recent" in want) ask("recent") else null          // null: no TV Setup, or one older than this widget
         recent?.optJSONArray("apps")?.let { l -> for (i in 0 until l.length()) l.optString(i).let { p ->
             if (p.isNotEmpty() && p !in icons) try { icons[p] = a.packageManager.getApplicationIcon(p) } catch (e: Exception) { }
         } }
@@ -270,27 +270,27 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     }
 
     /**
-     * The cards in the order of [want], sized by [sizes] (HomeConfig "wsize"). [HomeConfig.pack] makes the columns: a big card is a
-     * column, two small cards in a row stack in one, a small card alone stands in a narrow one; what does not fit waits. The height
+     * The widgets in the order of [want], sized by [sizes] (HomeConfig "wsize"). [HomeConfig.pack] makes the columns: a big widget is a
+     * column, two small widgets in a row stack in one, a small widget alone stands in a narrow one; what does not fit waits. The height
      * is fixed so the favourites below stay in view. A column's width is its weight's share of the row.
      */
     fun show(want: List<String>, f: Facts, note: String, label: (String) -> String, sizes: JSONObject = JSONObject(), qrs: JSONObject = JSONObject()) {
         val keep = hot.firstOrNull { it.hasFocus() }?.tag
         removeAllViews(); speed = null; speedUp = null; hot.clear()
         val timerView = if ("timer" in want) timer(f.timer) else null
-        val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the card: large, no "Note" over them
+        val noteView = if (note.isNotEmpty()) pill(tile(AMBER, R.drawable.ic_message), note, "", 1).apply {   // the words are the widget: large, no "Note" over them
             ((getChildAt(1) as LinearLayout).getChildAt(0) as TextView).apply { textSize = 16f; maxLines = 3; ellipsize = android.text.TextUtils.TruncateAt.END }
         } else null
         val tall = layoutParams
         if (tall != null && tall.height != dp(BIG_H)) { tall.height = dp(BIG_H); layoutParams = tall }
-        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) && (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || Adblock.supported()) }   // a card with nothing to show takes no place; Private DNS is Android 9+
+        val keys = want.filter { (it != "timer" || timerView != null) && (it != "lunar" || f.moon != null) && (it !in HomeQr.KEYS || qrs.has(it)) && (it != "adblock" || Adblock.supported()) }   // a widget with nothing to show takes no place; Private DNS is Android 9+
         val big = HomeConfig.bigs(JSONObject().put("wsize", sizes))
         val packed = HomeConfig.pack(keys, big, noteView != null)
         if (packed.cols.isEmpty()) { visibility = View.GONE; return }
         fun plain(k: String, alone: Boolean): View? = when (k) {
             "lunar" -> f.moon?.let { lunar(it) }; "timer" -> timerView
             "clock" -> clock(if (!alone) 0 else if (k in big) 2 else 1)
-            in HomeQr.KEYS -> qrCard(qrs.getJSONObject(k))
+            in HomeQr.KEYS -> qrWidget(qrs.getJSONObject(k))
             else -> noteView
         }
         fun tonal(k: String) = k in HomeConfig.TONAL && opt(k, "look") == "tonal"                  // the default look, glass, is what a missing one means
@@ -301,14 +301,14 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             val w = room * col.weight / sum
             val box = LinearLayout(a).apply { orientation = VERTICAL }
             col.keys.forEachIndexed { j, k ->
-                val alone = col.keys.size == 1                         // a lone card has the column's whole height
+                val alone = col.keys.size == 1                         // a lone widget has the column's whole height
                 val full = alone && k in big && w >= dp(FULL_MIN)
-                val v: View = if (tonal(k)) tonalCard(!full).also { c -> tonalFill(k, c, f, w, !full, label, qrs) }     // one path for every card: a figure, a caption, a badge
-                else if (k in BIG) card().also { c ->
+                val v: View = if (tonal(k)) tonalWidget(!full).also { c -> tonalFill(k, c, f, w, !full, label, qrs) }     // one path for every widget: a figure, a caption, a badge
+                else if (k in BIG) widget().also { c ->
                     if (full) when (k) {
                         "system" -> system(c, f, w)
                         "air" -> airGlass(c, f, true)
-                        "calendar" -> if (opt("calendar", "layout") == "date") calendarDate(c, f) else calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the card's padding, the title and its gap
+                        "calendar" -> if (opt("calendar", "layout") == "date") calendarDate(c, f) else calendar(c, f, w, dp(BIG_H) - dp(26) - dp(22))   // minus the widget's padding, the title and its gap
                         "weather" -> weather(c, f, w, fixed = true)
                         "market" -> if (opt("market", "layout") == "ticker") marketTicker(c, f, true) else marketFull(c, f)
                         "news" -> newsFull(c, f, w)
@@ -329,9 +329,9 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                             else -> usageHalf(c, f, label)
                         }
                     }
-                } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass card already, not a pill to stand up
+                } else plain(k, alone)!!.also { if (alone && k != "clock" && k !in HomeQr.KEYS) stand(it) }   // a QR is a glass widget already, not a pill to stand up
                 bare(v, k)
-                hotify(v, k)                                               // every card a stop (the user, 2026-10-27): OK opens its screen, or its menu where it has none
+                hotify(v, k)                                               // every widget a stop (the user, 2026-10-27): OK opens its screen, or its menu where it has none
                 box.addView(v, LayoutParams(-1, 0, 1f).apply { if (j > 0) topMargin = dp(12) })
             }
             addView(box, LayoutParams(w, -1).apply { if (i > 0) leftMargin = gap })
@@ -341,8 +341,8 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     }
 
     /**
-     * The options the cards are drawn with: the saved ones (HomeConfig "wopt"), or [options] when something else is looking at a card with
-     * choices not saved yet (the settings dialog's preview). Reads the same way for both, so the preview is the card.
+     * The options the widgets are drawn with: the saved ones (HomeConfig "wopt"), or [options] when something else is looking at a widget with
+     * choices not saved yet (the settings dialog's preview). Reads the same way for both, so the preview is the widget.
      */
     var options: JSONObject? = null
     internal fun opt(k: String, id: String): String = HomeConfig.optValue(options ?: Store.get(a), k, id)
@@ -356,7 +356,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         if (inner != null) addView(inner, FrameLayout.LayoutParams(-1, -1))
     }
 
-    /** A small card turned upright: the square larger on top, the words bigger under it, all to the left. */
+    /** A small widget turned upright: the square larger on top, the words bigger under it, all to the left. */
     internal fun stand(v: View) {
         val p = v as? LinearLayout ?: return
         (p as? Pill)?.let { it.upright = true; it.beside?.let { v -> it.removeView(v) }; it.beside = null }   // upright, its counts say it (Night)
@@ -366,7 +366,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         square.layoutParams = LayoutParams(dp(56), dp(56))
         ((square as FrameLayout).getChildAt(0) as? TextView)?.textSize = 26f   // the lunar day's number
         (square.getChildAt(0) as? ImageView)?.layoutParams = FrameLayout.LayoutParams(dp(30), dp(30), Gravity.CENTER)
-        (p.tag as? Night)?.let { sky ->                                // the lunar card: its day, the date and the year, the moon on the right
+        (p.tag as? Night)?.let { sky ->                                // the lunar widget: its day, the date and the year, the moon on the right
             p.removeView(square)
             val title = words.getChildAt(0) as TextView
             words.removeView(title)
@@ -380,7 +380,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
                 }, LayoutParams(0, -2, 1f).apply { leftMargin = dp(14) })
                 addView(MoonFace(a, sky.phase), LayoutParams(dp(44), dp(44)))
             }, 0, LayoutParams(-1, -2).apply { topMargin = dp(6) })
-            // a title and the top edge like the big cards beside it (weather, system): centred and untitled it sat off their lines
+            // a title and the top edge like the big widgets beside it (weather, system): centred and untitled it sat off their lines
             p.addView(head(a.getString(R.string.w_lunar), ""), 0)
             p.gravity = Gravity.START or Gravity.TOP
             p.setPadding(dp(20), dp(12), dp(20), dp(14))
@@ -390,7 +390,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
             (words.getChildAt(0) as? TextView)?.let { words.removeView(it) }
             words.addView(LinearLayout(a).apply {
                 orientation = HORIZONTAL
-                // "Hôm nay rằm" is a column beside the counts: as a line over them it pushed "tới Tết" off the card's bottom
+                // "Hôm nay rằm" is a column beside the counts: as a line over them it pushed "tới Tết" off the widget's bottom
                 n.line?.let { addView(text(it, 17f, Color.WHITE).apply { typeface = Font.medium; isSingleLine = false; maxLines = 2 }, LayoutParams(0, -2, 1f).apply { rightMargin = dp(8) }) }
                 n.counts.forEach { (days, label) ->
                     addView(LinearLayout(a).apply {
@@ -405,7 +405,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         (words.getChildAt(if (p.tag is Night) 0 else 1) as? TextView)?.apply { textSize = 14f; maxLines = 2; setPadding(0, dp(3), 0, 0) }
     }
 
-    /** One of the small cards: a coloured square, a title, a line under it ([lines] of it). */
+    /** One of the small widgets: a coloured square, a title, a line under it ([lines] of it). */
     internal fun pill(square: View, title: String, sub: String, lines: Int, side: String? = null) = Pill(a, side).apply {
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         Frost.on(this, dp(18).toFloat(), dp(1))
@@ -420,7 +420,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     }
 
     /**
-     * A pill with a second fact ([side], the lunar card's "Tết sau 105 ngày"): beside the words when the pill is wide, a line under
+     * A pill with a second fact ([side], the lunar widget's "Tết sau 105 ngày"): beside the words when the pill is wide, a line under
      * them when it is narrow. As two lines always, a pill alone across a column left most of its width empty and the lines crowded.
      */
     internal class Pill(c: Context, private val side: String?) : LinearLayout(c) {
@@ -451,21 +451,21 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         }
     }
 
-    /** A card's "look" when it is "solid" or "none" (glass is how [card], [pill] and the clock are made; tonal is its own card). */
+    /** A widget's "look" when it is "solid" or "none" (glass is how [widget], [pill] and the clock are made; tonal is its own widget). */
     private fun bare(v: View, k: String) {
         val l = opt(k, "look"); if (l != "solid" && l != "none") return
         (v.background as? Frost)?.look = l
         if (l == "none") shade(v)
     }
 
-    // no card under them: a soft shadow keeps white words readable on a light part of the photo, as the clock above the dock has
+    // no widget under them: a soft shadow keeps white words readable on a light part of the photo, as the clock above the dock has
     private val BARE_SHADOW = 0xCC000000.toInt()
     private fun shade(v: View) {
         if (v is TextView) v.setShadowLayer(dp(6).toFloat(), 0f, dp(1).toFloat(), BARE_SHADOW)
         else if (v is ViewGroup) for (i in 0 until v.childCount) shade(v.getChildAt(i))
     }
 
-    internal fun card() = LinearLayout(a).apply {
+    internal fun widget() = LinearLayout(a).apply {
         orientation = VERTICAL
         Frost.on(this, dp(22).toFloat(), dp(1))                         // the dock band's glass, its blurred photo too
         setPadding(dp(20), dp(12), dp(20), dp(14))
@@ -488,7 +488,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
 
 }
 
-/** (used, total) bytes of RAM from /proc/meminfo (MemAvailable, as TV Setup's RAM tile reads it), which any app may read; null when it cannot be read. The system card and the Control Center share it. */
+/** (used, total) bytes of RAM from /proc/meminfo (MemAvailable, as TV Setup's RAM live widget reads it), which any app may read; null when it cannot be read. The system widget and the Control Center share it. */
 internal fun memoryUsage(): Pair<Long, Long>? = try {
     val m = java.io.File("/proc/meminfo").readText()
     fun kb(k: String) = Regex("^$k:\\s+(\\d+)", RegexOption.MULTILINE).find(m)?.groupValues?.get(1)?.toLongOrNull()

@@ -164,24 +164,24 @@ Durations go through `Motion.ms(t)` (Home) / `ms(t)` (Games) so *calm* shortens 
 3. D-pad Down from the field → the list; Up from the list's first row → the field; the IME action key also goes to the list;
 4. empty field or no results: Back behaves normally (closes).
 
-### Tonal cards (TV Home's home screen cards, style "tonal")
+### Tonal widgets (TV Home's home screen widgets, style "tonal")
 
-The other look of EVERY home screen card but the clock (weather, system, lunar, air, calendar, usage, timer, market, news and the QR cards; option `look` in `wopt`, `HomeConfig.options` / `HomeConfig.TONAL`; "glass" stays the default; the clock has its own face and theme). One path draws all of them: `widgets/Tonal.kt` (`tonalFill` says what each card shows, through `tonalBody` / `systemTonal` on `tonalCard`, `Scallop`, `TonalBar`); a card never hand-paints its own tonal style, and a new card gets the look by joining `HomeConfig.TONAL` and one line in `tonalFill`. The settings dialog on every client draws the option from the schema, nothing else to add. Per card: calendar = weekday / day number / date + lunar date; usage = the week's time / top app; timer = time left / when it ends; market = first price / the next two (the ticker layout is the glass card only); news = one headline (a sentence, not a figure: `tonalBody(headline = true)`) / source and time; QR = the code on its white square in the tonal card, words in `Tonal.INK`. In a ready theme all cards are one family: glass with glass, tonal with tonal (and a light clock beside tonal).
+The other look of EVERY home screen widget but the clock (weather, system, lunar, air, calendar, usage, timer, market, news and the QR widgets; option `look` in `wopt`, `HomeConfig.options` / `HomeConfig.TONAL`; "glass" stays the default; the clock has its own face and theme). One path draws all of them: `widgets/Tonal.kt` (`tonalFill` says what each widget shows, through `tonalBody` / `systemTonal` on `tonalCard`, `Scallop`, `TonalBar`); a widget never hand-paints its own tonal style, and a new widget gets the look by joining `HomeConfig.TONAL` and one line in `tonalFill`. The settings dialog on every client draws the option from the schema, nothing else to add. Per widget: calendar = weekday / day number / date + lunar date; usage = the week's time / top app; timer = time left / when it ends; market = first price / the next two (the ticker layout is the glass widget only); news = one headline (a sentence, not a figure: `tonalBody(headline = true)`) / source and time; QR = the code on its white square in the tonal widget, words in `Tonal.INK`. In a ready theme all widgets are one family: glass with glass, tonal with tonal (and a light clock beside tonal).
 
-Two more looks for every card, the clock too (`HomeConfig.LOOKS`; the clock's are `glass` / `solid` / `none`): **solid**, the glass card's shape filled nearly opaque `#181B22` (`Frost.look`, a busy photo stays out); **none**, no card drawn at all, the words on the wallpaper with a 6 dp shadow (`Widgets.bare`), for a person whose own photo is the point. Both are the glass card's layout (one drawing path: `Frost.draw`), only the fill changes.
+Two more looks for every widget, the clock too (`HomeConfig.LOOKS`; the clock's are `glass` / `solid` / `none`): **solid**, the glass widget's shape filled nearly opaque `#181B22` (`Frost.look`, a busy photo stays out); **none**, no widget drawn at all, the words on the wallpaper with a 6 dp shadow (`Widgets.bare`), for a person whose own photo is the point. Both are the glass widget's layout (one drawing path: `Frost.draw`), only the fill changes.
 
 **StandBy faces** (iPhone StandBy's spirit, drawn once a minute like every face): the clock's `face` adds **modern** (60 ticks, the
 hour ones bright, 12 numbers, the weekday and day in the dial in the calendar's red `ACCENT`) and **digital** (a screen in the
-theme's disc colour: the date line in red over the time, as large as the card allows; it fills the card at both sizes, the pill keeps
-the plain digits). The calendar's `layout` adds **date** (the weekday in red over the month's name, the day as the card's figure, the
+theme's disc colour: the date line in red over the time, as large as the widget allows; it fills the widget at both sizes, the pill keeps
+the plain digits). The calendar's `layout` adds **date** (the weekday in red over the month's name, the day as the widget's figure, the
 lunar date under it) beside the month grid. No second hand on Home: a redraw each second costs a weak box the D-pad's smoothness.
 The screensaver's StandBy styles are these same views, larger (`HomeDream`).
 
 | Part | Value |
 |---|---|
-| Card | opaque fill `Tonal.FILL` `#F6E9E0` (one warm tone, **not** taken from the wallpaper: TV Home has no colour pick), radius **28** dp, no border, no shadow, height = the cards' `BIG_H` |
-| Words | ink `Tonal.INK` `#3B2A22`; 3 lines: label 14 sp (placed first), figure 64 sp regular (shrinks to 30 in a narrow card), caption 14 sp in `Tonal.SUB` |
-| Badge | `Scallop`: a circle with 9 bumps (Material 3 "cookie"), 100 dp (smaller in a narrow or small card), top right. Pale `Tonal.PALE` + dark icon, or dark olive `Tonal.OLIVE` + light icon (air) |
+| Widget | opaque fill `Tonal.FILL` `#F6E9E0` (one warm tone, **not** taken from the wallpaper: TV Home has no colour pick), radius **28** dp, no border, no shadow, height = the widgets' `BIG_H` |
+| Words | ink `Tonal.INK` `#3B2A22`; 3 lines: label 14 sp (placed first), figure 64 sp regular (shrinks to 30 in a narrow widget), caption 14 sp in `Tonal.SUB` |
+| Badge | `Scallop`: a circle with 9 bumps (Material 3 "cookie"), 100 dp (smaller in a narrow or small widget), top right. Pale `Tonal.PALE` + dark icon, or dark olive `Tonal.OLIVE` + light icon (air) |
 | Bar (system rows) | 10 dp rounded, fill `Tonal.BAR` on track `Tonal.TRACK`, a small dot at the end of the track |
 | Small (half height) | same parts, figure 30 sp, badge 52 dp |
 

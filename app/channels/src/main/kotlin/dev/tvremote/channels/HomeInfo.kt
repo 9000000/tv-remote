@@ -14,12 +14,13 @@ import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * The live tile TV Home draws in its app grid ("Keep watching", [ChannelTile]), asked the way TV Setup's HomeInfo is asked:
- *   "tiles"    the list [{id, title, icon, kind, layout}]   "tile"  one tile's state now (arg = id)   "tile_do"  its action, {started}
+ * The live widget TV Home draws in its app grid ("Keep watching", [ChannelLiveWidget]), asked the way TV Setup's HomeInfo is asked:
+ *   "tiles"    the list [{id, title, icon, kind, layout}]   "tile"  one live widget's state now (arg = id)   "tile_do"  its action, {started}
+ *   (the wire names say "tile": TV Home and TV Setup already speak them)
  * Answered only to TV Home, by its signing certificate (or this app's own, one key for both: a debug build); TV Home's package name
  * signed by another key gets {result: untrusted}, anything else nothing. A binder call never waits: the guide is read on a thread
  * and shows in the next answer. The press itself is TV Home starting the link in "open" (it is the app in front, which Android 14
- * needs for an app to open an activity), so "tile_do" only says it knows the tile.
+ * needs for an app to open an activity), so "tile_do" only says it knows the live widget.
  */
 class HomeInfo : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -30,9 +31,9 @@ class HomeInfo : ContentProvider() {
         if (!trusted(c)) return Bundle().apply { putString("result", "untrusted") }
         val w = words(localized(c, extras?.getString("lang")))
         val json = when (method) {
-            "tiles" -> ChannelTile.list(w).toString()
-            "tile" -> if (arg == ChannelTile.NEXT) state(c, w).toString() else null
-            else -> if (arg == ChannelTile.NEXT) JSONObject().put("started", true).toString() else null
+            "tiles" -> ChannelLiveWidget.list(w).toString()
+            "tile" -> if (arg == ChannelLiveWidget.NEXT) state(c, w).toString() else null
+            else -> if (arg == ChannelLiveWidget.NEXT) JSONObject().put("started", true).toString() else null
         }
         return Bundle().apply { if (json != null) putString("json", json) }
     }
@@ -41,17 +42,17 @@ class HomeInfo : ContentProvider() {
     private fun localized(c: Context, lang: String?): Context =
         if (lang == null || lang !in dev.tvremote.i18n.Langs.CODES) c else c.createConfigurationContext(android.content.res.Configuration(c.resources.configuration).apply { setLocale(dev.tvremote.i18n.Langs.locale(lang)) })
 
-    private fun words(c: Context) = ChannelTile.Words(c.getString(R.string.tile_next_title), c.getString(R.string.tile_next_empty), c.getString(R.string.tile_next_empty_line),
+    private fun words(c: Context) = ChannelLiveWidget.Words(c.getString(R.string.tile_next_title), c.getString(R.string.tile_next_empty), c.getString(R.string.tile_next_empty_line),
         c.getString(R.string.tile_next_play)) { c.getString(R.string.guide_next, it) }
 
-    private fun state(c: Context, w: ChannelTile.Words): JSONObject {
+    private fun state(c: Context, w: ChannelLiveWidget.Words): JSONObject {
         val ch = Store.lastChannel(c)
         var now: Show? = null; var then: Show? = null
         if (ch != null) {
             val shows = Guide.known(ch.id)
             if (shows != null) { now = Guide.now(shows); then = Guide.after(shows) } else ask(c, ch)
         }
-        return ChannelTile.state(w, ch, now, then, Guide::hm)
+        return ChannelLiveWidget.state(w, ch, now, then, Guide::hm)
     }
 
     /** The guide of [ch] read on a thread of its own (one at a time); [Guide.known] has it for the next answer. */

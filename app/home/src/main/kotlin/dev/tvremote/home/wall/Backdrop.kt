@@ -46,7 +46,7 @@ class Backdrop(private val target: View) {
 
     /**
      * [l] painted off the main thread; the last call wins (an older one still painting is dropped). [then] runs on the main thread
-     * with the swap (the cards' frost changes with the picture, not a few frames before it).
+     * with the swap (the widgets' frost changes with the picture, not a few frames before it).
      */
     fun show(l: Look, then: (() -> Unit)? = null) {
         val dm = target.resources.displayMetrics

@@ -3,7 +3,7 @@
 // own page has only the D-pad). Nothing goes to the TV until Save: one write, one rebuild, where a write per move made the TV
 // redraw its grid at each step and the page wait for it.
 
-// The grid as TV Home lays it out (HomeActivity.show): its old favourites (config "dock") first, then every other app, live tile
+// The grid as TV Home lays it out (HomeActivity.show): its old favourites (config "dock") first, then every other app, live widget
 // and shortcut put on the grid ("tiles") not hidden, in "order", those it does not list after them by name. [apps]: [{pkg, label}].
 // (A shortcut an app pinned by itself is not in the config: the TV puts it after the favourites, and this page never sees it.)
 function homeGridOrder(c, apps) {

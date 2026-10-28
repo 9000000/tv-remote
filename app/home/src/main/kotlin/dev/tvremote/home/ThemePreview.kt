@@ -20,13 +20,13 @@ import java.io.File
 
 /**
  * A theme's picture in the Themes page: a miniature of the home screen it makes, built from its config (the page's twin is
- * js/home.js `homeThemePaint`): the real background under the real veil, the clock, the cards as [HomeConfig.pack] lays
- * them (the same rule HomeActivity uses), the grid with its columns and rows, the live tiles first, the focus on the first one.
+ * js/home.js `homeThemePaint`): the real background under the real veil, the clock, the widgets as [HomeConfig.pack] lays
+ * them (the same rule HomeActivity uses), the grid with its columns and rows, the live widgets first, the focus on the first one.
  * Rounded shapes only. Each is drawn ONCE into a bitmap (off the main thread) and kept in [cache], so scrolling the page costs nothing.
  */
 object ThemePreview {
     private const val INK = 0xFFFFFFFF.toInt()                      // every shape is this at some alpha: it reads on any wall
-    private const val SOLID = 0xF0181B22.toInt()                     // Frost's "solid" card
+    private const val SOLID = 0xF0181B22.toInt()                     // Frost's "solid" widget
     private const val FILL_GLASS = 0x2E; private const val FILL_TONAL = 0x4A; private const val FILL_TILE = 0x26
     private const val LIVE_A = 0xFF4FC3A1.toInt(); private const val LIVE_B = 0xFFFFC857.toInt(); private const val LIVE_C = 0xFF8AB4F8.toInt(); private const val LIVE_D = 0xFFF28B82.toInt()
     private val LIVE = intArrayOf(LIVE_A, LIVE_B, LIVE_C, LIVE_D)
@@ -40,18 +40,18 @@ object ThemePreview {
     fun forget() = cache.evictAll()
 
     /** Same picture, same key: the theme (its id and the list's rev), its look, the size, and whether the network / captured background is there. */
-    fun key(id: String, conf: JSONObject, tiles: List<String>, w: Int, shot: File?) =
-        "$id:${Themes.rev}:$w:${(conf.toString() + tiles).hashCode()}:${shot?.takeIf { it.isFile }?.lastModified() ?: 0}"
+    fun key(id: String, conf: JSONObject, live: List<String>, w: Int, shot: File?) =
+        "$id:${Themes.rev}:$w:${(conf.toString() + live).hashCode()}:${shot?.takeIf { it.isFile }?.lastModified() ?: 0}"
 
     /** The preview of [conf] at [w] x [h] with corner radius [r]; made on the calling thread (call it off the main one), kept for next time. */
-    fun get(a: Context, key: String, conf: JSONObject, tiles: List<String>, shot: File?, look: String, w: Int, h: Int, r: Float): Bitmap {
+    fun get(a: Context, key: String, conf: JSONObject, live: List<String>, shot: File?, look: String, w: Int, h: Int, r: Float): Bitmap {
         cache.get(key)?.let { return it }
-        val b = make(a, conf, tiles, shot, look, w, h, r)
+        val b = make(a, conf, live, shot, look, w, h, r)
         cache.put(key, b)
         return b
     }
 
-    private fun make(a: Context, conf: JSONObject, tiles: List<String>, shot: File?, look: String, w: Int, h: Int, r: Float): Bitmap {
+    private fun make(a: Context, conf: JSONObject, live: List<String>, shot: File?, look: String, w: Int, h: Int, r: Float): Bitmap {
         val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val cv = Canvas(out)
         val wall = conf.optString("wall")
@@ -77,7 +77,7 @@ object ThemePreview {
         pic?.recycle()
         p.shader = null
         cv.save(); cv.clipRect(0f, 0f, w.toFloat(), h.toFloat())
-        layout(cv, p, conf, tiles, w.toFloat(), h.toFloat())
+        layout(cv, p, conf, live, w.toFloat(), h.toFloat())
         if (moving(conf)) play(cv, p, w.toFloat(), h.toFloat())
         cv.restore()
         return out
@@ -103,13 +103,13 @@ object ThemePreview {
         cv.drawRoundRect(x, y, x + w, y + h, h / 2f, h / 2f, p)
     }
 
-    private fun layout(cv: Canvas, p: Paint, conf: JSONObject, tiles: List<String>, w: Float, h: Float) {
+    private fun layout(cv: Canvas, p: Paint, conf: JSONObject, live: List<String>, w: Float, h: Float) {
         val m = w * 0.06f
         // the head is one row on TV Home (time, greeting, date | buttons): one bar each side, where things are, not each one
         bar(cv, p, m, h * 0.075f, w * 0.30f, h * 0.07f, 0xCC)
         bar(cv, p, w - m - w * 0.16f, h * 0.085f, w * 0.16f, h * 0.05f, 0x40)
         var y = h * 0.21f
-        // the cards, in the columns HomeActivity makes of them
+        // the widgets, in the columns HomeActivity makes of them
         val keys = strs(conf, "widgets")
         val packed = HomeConfig.pack(keys, HomeConfig.bigs(conf))
         if (packed.cols.isNotEmpty()) {
@@ -126,7 +126,7 @@ object ThemePreview {
                     val cy = y + j * (ch + gap * 0.6f)
                     val look = HomeConfig.optValue(conf, k, "look")
                     p.color = if (look == "solid") SOLID else (((if (look == "tonal") FILL_TONAL else FILL_GLASS) shl 24) or (INK and 0xFFFFFF))
-                    if (look != "none") cv.drawRoundRect(x, cy, x + cw, cy + ch, h * 0.035f, h * 0.035f, p)   // no card: only what is on it
+                    if (look != "none") cv.drawRoundRect(x, cy, x + cw, cy + ch, h * 0.035f, h * 0.035f, p)   // no widget: only what is on it
                     val pad = h * 0.03f
                     if (k == "clock" && (n == 1 || ch > h * 0.12f)) {                    // the analog face
                         val d = minOf(cw, ch) * 0.56f
@@ -142,7 +142,7 @@ object ThemePreview {
             }
             y += rowH + h * 0.04f
         }
-        // the grid: [cols] to a row, the live tiles first, the first one focused; "rows" as set (a part of a row shows part), else what fits
+        // the grid: [cols] to a row, the live widgets first, the first one focused; "rows" as set (a part of a row shows part), else what fits
         val cols = conf.optInt("cols", HomeConfig.COLS_DEFAULT).coerceIn(HomeConfig.COLS_MIN, HomeConfig.COLS_MAX)
         val gap = w * 0.014f
         val tw = (w - 2 * m - (cols - 1) * gap) / cols
@@ -160,8 +160,8 @@ object ThemePreview {
             val rx = m + (i % cols) * (tw + gap); val ry = y + (i / cols) * (th + gap)
             val vis = if (i / cols + 1 <= shown + 0.0001) 1f else (shown - (i / cols)).toFloat().coerceIn(0.05f, 1f)
             val bottom = ry + th * vis
-            val live = i < tiles.size
-            p.color = if (live) (LIVE[i % LIVE.size] and 0xFFFFFF) or (0xCC shl 24) else (FILL_TILE shl 24) or (INK and 0xFFFFFF)
+            val isLive = i < live.size
+            p.color = if (isLive) (LIVE[i % LIVE.size] and 0xFFFFFF) or (0xCC shl 24) else (FILL_TILE shl 24) or (INK and 0xFFFFFF)
             cv.drawRoundRect(rx, ry, rx + tw, bottom, h * 0.03f, h * 0.03f, p)
             if (i == 0) {                                                                // the focus: a ring, or the glass lifting the tile
                 if (ring) { p.style = Paint.Style.STROKE; p.strokeWidth = maxOf(1.5f, h * 0.012f); p.color = INK; cv.drawRoundRect(rx - 1, ry - 1, rx + tw + 1, bottom + 1, h * 0.03f, h * 0.03f, p); p.style = Paint.Style.FILL }

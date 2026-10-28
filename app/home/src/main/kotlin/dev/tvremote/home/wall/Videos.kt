@@ -25,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  *   <external files>/videos/in/          where a file lands before [ingest] (a client pushes there over ADB, the QR page writes there)
  *
  * The wall id is "vid:<hex8>" ([HomeConfig.isVideo]); [Walls.file] gives the poster for it, so everything that treats a wall as a
- * picture (the screensaver, the blurred cards, the panel's thumbnails) works on it unchanged.
+ * picture (the screensaver, the blurred widgets, the panel's thumbnails) works on it unchanged.
  * A theme says which backgrounds it keeps alive with [refs]; [delete] never removes one the current setting or a theme uses.
  */
 object Videos {

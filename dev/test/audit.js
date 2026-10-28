@@ -53,6 +53,7 @@ function serve(host) {
       const html = fs.readFileSync(path.join(WEB, 'index.html'), 'utf8').replace('<html ', `<html data-core="${CORE}" `);   // as WebPage.kt
       return route.fulfill({ contentType: TYPES.html, body: html });
     }
+    if (u.pathname.startsWith('/app/i18n/')) return file(path.join(WEB, '../i18n', decodeURIComponent(u.pathname.slice(10))));   // the words live beside web/ (as WebPage.kt maps them)
     if (u.pathname.startsWith('/app/')) return file(path.join(WEB, decodeURIComponent(u.pathname.slice(5))));
     return file(path.join(DOCS, decodeURIComponent(u.pathname)));
   };

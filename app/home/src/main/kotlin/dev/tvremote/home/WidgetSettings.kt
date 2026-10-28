@@ -19,8 +19,8 @@ import dev.tvremote.home.widgets.Widgets
 import org.json.JSONObject
 
 /**
- * A card's settings, one dialog for every card, drawn from [HomeConfig.options] (no card has a screen of its own): a row per option
- * (a choice shows its values as chips, Left / Right pick one, OK goes to the next; a toggle flips on OK), and the real card beside
+ * A widget's settings, one dialog for every widget, drawn from [HomeConfig.options] (no widget has a screen of its own): a row per option
+ * (a choice shows its values as chips, Left / Right pick one, OK goes to the next; a toggle flips on OK), and the real widget beside
  * them, drawn by the same [Widgets] code at the chosen values, so what is seen here is what the home screen shows. Each press is
  * saved at once (the home screen behind changes with it); Back or Done closes, and the focus stays on the row last changed.
  */
@@ -34,7 +34,7 @@ object WidgetSettings {
     private fun word(a: Context, id: String): String =
         a.resources.getIdentifier(id.replace('.', '_'), "string", a.packageName).let { if (it != 0) a.getString(it) else id.substringAfterLast('_') }
 
-    /** The words of every option's value for card [k] in [conf], in the schema's order, e.g. "Big", "Minimal", "Light" (the state line of the card's row). */
+    /** The words of every option's value for widget [k] in [conf], in the schema's order, e.g. "Big", "Minimal", "Light" (the state line of the widget's row). */
     fun summary(a: Context, conf: JSONObject, k: String): String =
         HomeConfig.options(k).joinToString(" · ") { o -> word(a, "home.ov_" + HomeConfig.optValue(conf, k, o.id)) }
 
@@ -53,32 +53,32 @@ object WidgetSettings {
         val dialog = Dialog(a, R.style.Menu)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
 
-        // the card itself, beside the options: the same Widgets code at the chosen values (read once off the main thread, drawn again on each press)
+        // the widget itself, beside the options: the same Widgets code at the chosen values (read once off the main thread, drawn again on each press)
         val stage = FrameLayout(a).apply { clipChildren = false; clipToPadding = false }
-        val card = Widgets(a, ::dp).apply { clipChildren = false }
+        val widget = Widgets(a, ::dp).apply { clipChildren = false }
         var facts: Widgets.Facts? = null
         fun redraw() {
             val f = facts ?: return
             val big = cur["size"] == "big"
-            card.options = JSONObject().put("wopt", JSONObject().put(k, JSONObject().also { e -> for ((i, v) in cur) e.put(i, v) }))
+            widget.options = JSONObject().put("wopt", JSONObject().put(k, JSONObject().also { e -> for ((i, v) in cur) e.put(i, v) }))
             val sizes = JSONObject().put(k, cur["size"] ?: "small")
-            // a lone card is a column of its weight in a row of at least FLOOR: the stage is as wide as that row so the column is the card's own width
-            val cardW = dp(if (big) 330 else 230)
+            // a lone widget is a column of its weight in a row of at least FLOOR: the stage is as wide as that row so the column is the widget's own width
+            val widgetW = dp(if (big) 330 else 230)
             val weight = HomeConfig.weight(k, big)
-            val row = cardW * maxOf(HomeConfig.FLOOR, weight) / weight
-            stage.layoutParams = stage.layoutParams.apply { width = cardW }
-            card.layoutParams = FrameLayout.LayoutParams(row, dp(Widgets.BIG_H))
-            card.post {
-                card.show(listOf(k), f, "", { it.substringAfterLast('.') }, sizes, now.optJSONObject("qrs") ?: JSONObject())
+            val row = widgetW * maxOf(HomeConfig.FLOOR, weight) / weight
+            stage.layoutParams = stage.layoutParams.apply { width = widgetW }
+            widget.layoutParams = FrameLayout.LayoutParams(row, dp(Widgets.BIG_H))
+            widget.post {
+                widget.show(listOf(k), f, "", { it.substringAfterLast('.') }, sizes, now.optJSONObject("qrs") ?: JSONObject())
             }
         }
-        stage.addView(card, FrameLayout.LayoutParams(dp(330) * 2, dp(Widgets.BIG_H)))
+        stage.addView(widget, FrameLayout.LayoutParams(dp(330) * 2, dp(Widgets.BIG_H)))
         Thread {
-            val f = card.read(listOf(k))
+            val f = widget.read(listOf(k))
             a.runOnUiThread { if (dialog.isShowing) { facts = f; redraw() } }
         }.start()
 
-        // the Widget page's layout strip, every card on in its place, this one framed; Store has each press already, so it only repaints
+        // the Widget page's layout strip, every widget on in its place, this one framed; Store has each press already, so it only repaints
         val strip = Customize.PackGlyph(a).apply { mark = k; named = true }
         val rows = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
         val changed = HashMap<String, View>()
@@ -144,7 +144,7 @@ object WidgetSettings {
             if (first == null) first = row
             rows.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (rows.childCount > 0) topMargin = dp(8) })
         }
-        if (k == "adblock") rows.addView(text(a.getString(R.string.adb_note), 12f, DIM).apply { maxLines = 3 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })   // DNS-level only: said where the card is set
+        if (k == "adblock") rows.addView(text(a.getString(R.string.adb_note), 12f, DIM).apply { maxLines = 3 }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })   // DNS-level only: said where the widget is set
         val close = text(a.getString(R.string.ok), 15f, Color.WHITE).apply {
             gravity = Gravity.CENTER; isFocusable = true; isClickable = true; setPadding(dp(14), dp(9), dp(14), dp(9))
             background = StateListDrawable().apply {

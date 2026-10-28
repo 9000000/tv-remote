@@ -13,13 +13,13 @@ import dev.tvremote.home.R
 import dev.tvremote.home.apps.Apps
 import dev.tvremote.home.widgets.Widgets.Facts
 
-/** Most apps the card names; how many show depends on its width. */
+/** Most apps the widget names; how many show depends on its width. */
 internal const val RECENT_MAX = 6
 
 /**
  * "Recently opened": the last apps the person opened, newest first, as icons (a name under each in the big size). TV Setup says which
- * ([Facts.recent]: its usage events in the order Android gave them, never by the clock: boxes boot with a wrong year). The card is ONE
- * focus stop; Left / Right move the mark between its icons ([Widgets.recentAt]) and leave the card past the first / last, OK opens the marked one.
+ * ([Facts.recent]: its usage events in the order Android gave them, never by the clock: boxes boot with a wrong year). The widget is ONE
+ * focus stop; Left / Right move the mark between its icons ([Widgets.recentAt]) and leave the widget past the first / last, OK opens the marked one.
  * [avail] is the width the icons may take, in px; [labels] the big size; [col] the words' colour, [ring] the mark's.
  */
 internal fun Widgets.recentRow(f: Facts, label: (String) -> String, avail: Int, labels: Boolean, col: Int, ring: Int): View {
@@ -47,7 +47,7 @@ internal fun Widgets.recentRow(f: Facts, label: (String) -> String, avail: Int, 
     return row
 }
 
-/** The mark on the icon the focus is on (only while the card has it): the glass pane ([Widgets.onMark]) or a veil drawn in place; no card is read or built again. */
+/** The mark on the icon the focus is on (only while the widget has it): the glass pane ([Widgets.onMark]) or a veil drawn in place; no widget is read or built again. */
 internal fun Widgets.recentMark() {
     val pane = onMark.takeIf { dev.tvremote.tvui.Motion.glass }       // the glass look: the pane itself glides from icon to icon, as between tiles
     if (pane != null && recentFocused) recentCells.getOrNull(recentAt)?.let { pane(it) }
@@ -58,24 +58,24 @@ internal fun Widgets.recentMark() {
     }
 }
 
-/** OK on the card: opens the marked app. */
+/** OK on the widget: opens the marked app. */
 internal fun Widgets.recentOpen() {
     val p = recentApps.getOrNull(recentAt) ?: return
     if (!Apps.launch(a, p, null)) android.widget.Toast.makeText(a, a.getString(R.string.no_open), android.widget.Toast.LENGTH_SHORT).show()
 }
 
 /** The glass look: a title (big size) and the icons. */
-internal fun Widgets.recentGlass(card: LinearLayout, f: Facts, label: (String) -> String, w: Int, full: Boolean) {
-    card.gravity = Gravity.CENTER_VERTICAL
-    if (full) card.addView(head(a.getString(R.string.w_recent), ""))
-    if (f.recent == null) { card.addView(note(a.getString(R.string.w_need_setup))); return }
-    card.addView(recentRow(f, label, w - dp(if (full) 40 else 32), full, Color.WHITE, Color.WHITE), if (full) LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) } else LayoutParams(-1, -2))
+internal fun Widgets.recentGlass(widget: LinearLayout, f: Facts, label: (String) -> String, w: Int, full: Boolean) {
+    widget.gravity = Gravity.CENTER_VERTICAL
+    if (full) widget.addView(head(a.getString(R.string.w_recent), ""))
+    if (f.recent == null) { widget.addView(note(a.getString(R.string.w_need_setup))); return }
+    widget.addView(recentRow(f, label, w - dp(if (full) 40 else 32), full, Color.WHITE, Color.WHITE), if (full) LayoutParams(-1, 0, 1f).apply { topMargin = dp(8) } else LayoutParams(-1, -2))
 }
 
-/** The tonal look: the label over the icons on the warm card. */
-internal fun Widgets.recentTonal(card: LinearLayout, f: Facts, label: (String) -> String, w: Int, compact: Boolean) {
-    card.gravity = Gravity.CENTER_VERTICAL
-    card.addView(ink(a.getString(R.string.w_recent), if (compact) 12f else 14f))
-    if (f.recent == null) { card.addView(ink(a.getString(R.string.w_need_setup), 12f, Tonal.SUB).apply { maxLines = 3 }, LayoutParams(-1, -2).apply { topMargin = dp(6) }); return }
-    card.addView(recentRow(f, label, w - dp(if (compact) 32 else 40), !compact, Tonal.INK, Tonal.INK), LayoutParams(-1, 0, 1f).apply { topMargin = dp(6) })
+/** The tonal look: the label over the icons on the warm widget. */
+internal fun Widgets.recentTonal(widget: LinearLayout, f: Facts, label: (String) -> String, w: Int, compact: Boolean) {
+    widget.gravity = Gravity.CENTER_VERTICAL
+    widget.addView(ink(a.getString(R.string.w_recent), if (compact) 12f else 14f))
+    if (f.recent == null) { widget.addView(ink(a.getString(R.string.w_need_setup), 12f, Tonal.SUB).apply { maxLines = 3 }, LayoutParams(-1, -2).apply { topMargin = dp(6) }); return }
+    widget.addView(recentRow(f, label, w - dp(if (compact) 32 else 40), !compact, Tonal.INK, Tonal.INK), LayoutParams(-1, 0, 1f).apply { topMargin = dp(6) })
 }

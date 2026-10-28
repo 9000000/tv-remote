@@ -23,7 +23,7 @@ test('the old favourites first, then the order, the apps it does not list after 
   assert.deepEqual(g, ['com.b.tube', 'com.d.spot', 'com.a.flix']);
 });
 
-test('live tiles and shortcuts on the grid take a place like an app', () => {
+test('live widgets and shortcuts on the grid take a place like an app', () => {
   const g = order({ tiles: ['tile:dev.tvremote.setup/cpu', 'pin:com.x/abc'], tilesAvail: [{ key: 'tile:dev.tvremote.setup/cpu', title: 'CPU' }], order: ['tile:dev.tvremote.setup/cpu'] });
   assert.equal(g[0], 'tile:dev.tvremote.setup/cpu');
   assert.equal(g.length, 6); assert.ok(g.includes('pin:com.x/abc'));

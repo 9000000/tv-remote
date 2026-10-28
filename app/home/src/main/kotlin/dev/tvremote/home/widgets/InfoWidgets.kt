@@ -17,7 +17,7 @@ import dev.tvremote.home.widgets.Widgets.Facts
 import dev.tvremote.tvui.Motion
 import java.util.Locale
 
-/** The Market card (gold, the bank's exchange rates, Bitcoin) and the News card (RSS headlines), drawn like the other glass cards. */
+/** The Market widget (gold, the bank's exchange rates, Bitcoin) and the News widget (RSS headlines), drawn like the other glass widgets. */
 
 private val UP = 0xFF6BE8A6.toInt()
 private val DOWN = 0xFFFF8A80.toInt()
@@ -55,7 +55,7 @@ internal fun changeChip(c: android.content.Context, d: Float, pct: Double, size:
     background = GradientDrawable().apply { cornerRadius = 12 * d; setColor((col and 0xFFFFFF) or CHIP_A) }
 }
 
-/** One row of the card: a badge, a muted name, the one figure in big tabular type on the right, and the change since yesterday. */
+/** One row of the widget: a badge, a muted name, the one figure in big tabular type on the right, and the change since yesterday. */
 internal class Line(val kind: String, val key: String, val icon: Int, val sign: String, val tint: Int, val name: String, val value: String, val pct: Double?)
 
 internal fun Widgets.lines(m: Market.Snap, show: String, btc: Boolean): List<Line> {
@@ -86,33 +86,33 @@ private fun Widgets.priceRow(x: Line, big: Boolean, dense: Boolean = false) = Li
     }, LayoutParams(-2, -2))
 }
 
-/** The card at its full height: the title with the time of the last update, up to four prices, one figure each. */
-internal fun Widgets.marketFull(card: LinearLayout, f: Facts) {
+/** The widget at its full height: the title with the time of the last update, up to four prices, one figure each. */
+internal fun Widgets.marketFull(widget: LinearLayout, f: Facts) {
     val m = f.market
-    if (m == null || m.empty) { card.addView(head(a.getString(R.string.w_market), "")); card.addView(note(a.getString(R.string.mk_none))); return }
-    card.gravity = Gravity.CENTER_VERTICAL
-    card.addView(head(a.getString(R.string.w_market), hm(m.at)))
+    if (m == null || m.empty) { widget.addView(head(a.getString(R.string.w_market), "")); widget.addView(note(a.getString(R.string.mk_none))); return }
+    widget.gravity = Gravity.CENTER_VERTICAL
+    widget.addView(head(a.getString(R.string.w_market), hm(m.at)))
     val l = lines(m, opt("market", "show"), opt("market", "btc") == "on").take(4)
     val box = LinearLayout(a).apply { orientation = VERTICAL; gravity = Gravity.CENTER_VERTICAL }
     for (x in l) box.addView(priceRow(x, true, l.size >= 4), LayoutParams(-1, 0, 1f))
-    card.addView(box, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
+    widget.addView(box, LayoutParams(-1, 0, 1f).apply { topMargin = dp(4) })
 }
 
 /** Half the height, or a narrow column: two prices (gold, then the dollar) and the time. */
-internal fun Widgets.marketHalf(card: LinearLayout, f: Facts) {
+internal fun Widgets.marketHalf(widget: LinearLayout, f: Facts) {
     val m = f.market
-    card.gravity = Gravity.CENTER_VERTICAL
-    if (m == null || m.empty) { card.addView(head(a.getString(R.string.w_market), "")); card.addView(note(a.getString(R.string.mk_none))); return }
+    widget.gravity = Gravity.CENTER_VERTICAL
+    if (m == null || m.empty) { widget.addView(head(a.getString(R.string.w_market), "")); widget.addView(note(a.getString(R.string.mk_none))); return }
     val l = lines(m, opt("market", "show"), opt("market", "btc") == "on")
     val pick = (l.filter { it.kind == "gold" }.take(1) + l.filter { it.kind == "rate" }.take(1) + l.filter { it.kind == "btc" }).ifEmpty { l }.take(2)
-    for ((i, x) in pick.withIndex()) card.addView(priceRow(x, false), LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
+    for ((i, x) in pick.withIndex()) widget.addView(priceRow(x, false), LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
 }
 
-/** One scrolling line: every price after the other. The marquee runs only where motion is on and not calm (a weak box would redraw the cards each frame). */
-internal fun Widgets.marketTicker(card: LinearLayout, f: Facts, big: Boolean) {
+/** One scrolling line: every price after the other. The marquee runs only where motion is on and not calm (a weak box would redraw the widgets each frame). */
+internal fun Widgets.marketTicker(widget: LinearLayout, f: Facts, big: Boolean) {
     val m = f.market
-    card.gravity = Gravity.CENTER_VERTICAL
-    if (m == null || m.empty) { card.addView(note(a.getString(R.string.mk_none))); return }
+    widget.gravity = Gravity.CENTER_VERTICAL
+    if (m == null || m.empty) { widget.addView(note(a.getString(R.string.mk_none))); return }
     val l = lines(m, opt("market", "show"), opt("market", "btc") == "on")
     val moving = Motion.on && !Motion.calm
     val sep = "   ·   "
@@ -127,8 +127,8 @@ internal fun Widgets.marketTicker(card: LinearLayout, f: Facts, big: Boolean) {
         }
         if (moving) { ellipsize = TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit = -1; isSelected = true; isFocusable = false }
     }
-    card.addView(text(a.getString(R.string.w_market) + " · " + hm(m.at), 11f, DIM), LayoutParams(-1, -2).apply { bottomMargin = dp(4) })
-    card.addView(tv, LayoutParams(-1, -2))
+    widget.addView(text(a.getString(R.string.w_market) + " · " + hm(m.at), 11f, DIM), LayoutParams(-1, -2).apply { bottomMargin = dp(4) })
+    widget.addView(tv, LayoutParams(-1, -2))
 }
 
 // ---- news ----
@@ -150,11 +150,11 @@ private fun Widgets.thumb(url: String, w: Int, h: Int): View = ImageView(a).appl
 
 private fun Widgets.byline(i: News.Item) = listOf(i.src, ago(i.at)).filter { it.isNotEmpty() }.joinToString(" · ")
 
-/** The full card: the picture of the chosen headline on the left, three headlines on the right (the chosen one bright, its source and time under it). */
-internal fun Widgets.newsFull(card: LinearLayout, f: Facts, width: Int) {
+/** The full widget: the picture of the chosen headline on the left, three headlines on the right (the chosen one bright, its source and time under it). */
+internal fun Widgets.newsFull(widget: LinearLayout, f: Facts, width: Int) {
     val items = f.news
-    card.addView(head(a.getString(R.string.w_news), ""))
-    if (items.isEmpty()) { card.addView(note(a.getString(R.string.nw_none))); return }
+    widget.addView(head(a.getString(R.string.w_news), ""))
+    if (items.isEmpty()) { widget.addView(note(a.getString(R.string.nw_none))); return }
     newsCount = minOf(items.size, 3); newsAt = newsAt.coerceIn(0, newsCount - 1); newsShown = newsAt
     val sel = newsAt
     val body = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -169,14 +169,14 @@ internal fun Widgets.newsFull(card: LinearLayout, f: Facts, width: Int) {
         if (on) col.addView(text(byline(it), 11f, DIM), LayoutParams(-1, -2).apply { topMargin = dp(1) })
     }
     body.addView(col, LayoutParams(0, -1, 1f).apply { leftMargin = dp(12) })
-    card.addView(body, LayoutParams(-1, 0, 1f))
+    widget.addView(body, LayoutParams(-1, 0, 1f))
 }
 
-/** Half the height: the picture, then the headline and its source (the headline turns every two minutes, the chosen one when the card is focused). */
-internal fun Widgets.newsHalf(card: LinearLayout, f: Facts) {
+/** Half the height: the picture, then the headline and its source (the headline turns every two minutes, the chosen one when the widget is focused). */
+internal fun Widgets.newsHalf(widget: LinearLayout, f: Facts) {
     val items = f.news
-    card.gravity = Gravity.CENTER_VERTICAL
-    if (items.isEmpty()) { card.addView(head(a.getString(R.string.w_news), "")); card.addView(note(a.getString(R.string.nw_none))); return }
+    widget.gravity = Gravity.CENTER_VERTICAL
+    if (items.isEmpty()) { widget.addView(head(a.getString(R.string.w_news), "")); widget.addView(note(a.getString(R.string.nw_none))); return }
     newsCount = minOf(items.size, 3); newsAt = newsAt.coerceIn(0, newsCount - 1)
     val i = if (newsFocused) newsAt else ((System.currentTimeMillis() / 120_000) % items.size).toInt()
     newsShown = i
@@ -186,5 +186,5 @@ internal fun Widgets.newsHalf(card: LinearLayout, f: Facts) {
     col.addView(text(items[i].title, 12f, Color.WHITE).apply { maxLines = 3; typeface = Font.medium })
     col.addView(text(byline(items[i]), 11f, DIM))
     row.addView(col, LayoutParams(0, -2, 1f).apply { leftMargin = dp(10) })
-    card.addView(row, LayoutParams(-1, -2))
+    widget.addView(row, LayoutParams(-1, -2))
 }

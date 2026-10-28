@@ -22,7 +22,7 @@ class HomeQrTest {
     }
 
     @Test fun aCardKeepsOnlyItsOwnFieldsAndAnOpenWifiKeepsNoPassword() {
-        val k = HomeQr.card(JSONObject().put("tpl", "wifi").put("cap", "  my \n wifi ").put("show", true)
+        val k = HomeQr.widget(JSONObject().put("tpl", "wifi").put("cap", "  my \n wifi ").put("show", true)
             .put("f", JSONObject().put("ssid", "A").put("pass", "b").put("sec", "bogus").put("hidden", true).put("url", "x")))!!
         assertEquals("my wifi", k.getString("cap"))
         assertEquals(true, k.getBoolean("show"))
@@ -30,17 +30,17 @@ class HomeQrTest {
         assertFalse(k.getJSONObject("f").has("url"))
         assertEquals("WIFI:T:WPA;S:A;P:b;H:true;;", HomeQr.payload("wifi", k.getJSONObject("f")))
         // "show" belongs to a Wi-Fi only
-        assertEquals(false, HomeQr.card(JSONObject().put("tpl", "link").put("show", true).put("f", JSONObject().put("url", "a.b")))!!.getBoolean("show"))
+        assertEquals(false, HomeQr.widget(JSONObject().put("tpl", "link").put("show", true).put("f", JSONObject().put("url", "a.b")))!!.getBoolean("show"))
     }
 
     @Test fun nothingTypedOrTooLongOrUnknownIsNoCard() {
-        assertNull(HomeQr.card(JSONObject().put("tpl", "wifi").put("f", JSONObject().put("ssid", ""))))
-        assertNull(HomeQr.card(JSONObject().put("tpl", "fax").put("f", JSONObject().put("num", "1"))))
-        assertNotNull(HomeQr.card(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "x".repeat(HomeQr.MAX_BYTES + 1)))))   // cut to what fits, not refused
-        assertNotNull(HomeQr.card(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "x".repeat(HomeQr.MAX_BYTES)))))
+        assertNull(HomeQr.widget(JSONObject().put("tpl", "wifi").put("f", JSONObject().put("ssid", ""))))
+        assertNull(HomeQr.widget(JSONObject().put("tpl", "fax").put("f", JSONObject().put("num", "1"))))
+        assertNotNull(HomeQr.widget(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "x".repeat(HomeQr.MAX_BYTES + 1)))))   // cut to what fits, not refused
+        assertNotNull(HomeQr.widget(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "x".repeat(HomeQr.MAX_BYTES)))))
         // bytes, not letters: 90 accented letters are 180 bytes, 140 are 280
-        assertNotNull(HomeQr.card(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "é".repeat(130)))))
-        assertNull(HomeQr.card(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "é".repeat(140)))))
+        assertNotNull(HomeQr.widget(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "é".repeat(130)))))
+        assertNull(HomeQr.widget(JSONObject().put("tpl", "text").put("f", JSONObject().put("text", "é".repeat(140)))))
     }
 
     @Test fun whatTheTemplatesBuildFitsTheEncoder() {

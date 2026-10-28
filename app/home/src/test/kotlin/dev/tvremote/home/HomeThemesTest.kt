@@ -64,11 +64,11 @@ class HomeThemesTest {
         }
         val r = HomeConfig.parseReady(String(list), "99.0.0")
         assertEquals(j.length(), r.size)
-        assertEquals(listOf("tile:dev.tvremote.setup/sleep"), r.first { it.id == "bed" }.tiles)
+        assertEquals(listOf("tile:dev.tvremote.setup/sleep"), r.first { it.id == "bed" }.live)
         assertEquals("sunset", r.first { it.id == "beach" }.look)
     }
 
-    @Test fun aThemesTilesGoFirstBesideTheOwnAndAMissingProviderIsSkipped() {
+    @Test fun aThemesLiveWidgetsGoFirstBesideTheOwnAndAMissingProviderIsSkipped() {
         HomeConfig.ready = HomeConfig.parseReady(String(list), "99.0.0")
         val own = org.json.JSONObject().put("tiles", org.json.JSONArray(listOf("pin:com.a/b", "tile:dev.tvremote.setup/ram"))).put("order", org.json.JSONArray(listOf("com.x.y")))
         val apply = org.json.JSONObject().put("theme", org.json.JSONObject().put("apply", "bed"))

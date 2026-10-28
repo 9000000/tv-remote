@@ -5,23 +5,23 @@ package dev.tvremote.home
  * It is a string, so every saved config and every client (phone, computer, TV web page; js/target.js is the same code) can keep it:
  *   com.example.app            an app by its package (the only form before this; saved configs still read as that)
  *   pin:com.example.app/id     a launcher shortcut of that app (LauncherApps: static, dynamic or pinned), [HomeConfig] "pin" keys
- *   tile:dev.tvremote.setup/id a live tile from a provider ([Tiles]); its press runs the provider's action
+ *   tile:dev.tvremote.setup/id a live widget from a provider ([LiveWidgets]); its press runs the provider's action
  * Why a prefix and not a JSON object: configs already hold plain strings in dock / hidden / order / keyapps / autoapp, and a
  * plain package name must stay valid in all of them (no migration, an old TV Home still understands what it knew).
  */
 object Target {
-    enum class Kind { APP, PIN, TILE }
+    enum class Kind { APP, PIN, TILE }   // TILE = a live widget: the name is kept, TV Setup's HomeKeys reads it, as "tile:" is stored on TVs
 
     private val PKG = Regex("[A-Za-z][\\w]*(\\.[\\w]+)+")
     private val PIN = Regex("pin:([A-Za-z][\\w]*(?:\\.[\\w]+)+)/([A-Za-z0-9][\\w.\\-:@]{0,63})")   // a channel shortcut's id is "ch:00sReplay.us@SD": without : and @ it was no target (not offered, not kept)
-    private val TILE = Regex("tile:([A-Za-z][\\w]*(?:\\.[\\w]+)+)/([a-z][a-z0-9_]{0,15})")
+    private val LIVE = Regex("tile:([A-Za-z][\\w]*(?:\\.[\\w]+)+)/([a-z][a-z0-9_]{0,15})")
     const val MAX = 200
 
     /** What [t] points at, or null when it is not a good target (empty, too long, another shape). */
     fun kind(t: String): Kind? = when {
         t.isEmpty() || t.length > MAX -> null
         t.startsWith("pin:") -> if (PIN.matches(t)) Kind.PIN else null
-        t.startsWith("tile:") -> if (TILE.matches(t)) Kind.TILE else null
+        t.startsWith("tile:") -> if (LIVE.matches(t)) Kind.TILE else null
         PKG.matches(t) -> Kind.APP
         else -> null
     }
@@ -29,11 +29,11 @@ object Target {
     fun valid(t: String) = kind(t) != null
     fun isPin(t: String) = kind(t) == Kind.PIN
 
-    /** The package this target belongs to: the app itself, the app owning the shortcut, the tile's provider. */
+    /** The package this target belongs to: the app itself, the app owning the shortcut, the live widget's provider. */
     fun pkg(t: String): String = when (kind(t)) {
         Kind.APP -> t
         Kind.PIN -> t.removePrefix("pin:").substringBefore('/')
-        Kind.TILE -> HomeConfig.tileProvider(t)
+        Kind.TILE -> HomeConfig.liveProvider(t)
         null -> ""
     }
 

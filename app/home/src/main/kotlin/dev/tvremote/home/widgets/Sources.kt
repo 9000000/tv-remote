@@ -6,7 +6,7 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * Where the Market and News cards read from: the site's signed list (docs/home/feeds.json, made by dev/sign/sign_feeds.py), else GitHub,
+ * Where the Market and News widgets read from: the site's signed list (docs/home/feeds.json, made by dev/sign/sign_feeds.py), else GitHub,
  * else the copy kept in files/, else the one packed in the APK. Same pattern as the ready-made themes ([dev.tvremote.home.Themes]).
  * A source that moves or blocks the app is changed in the list, with no new APK; an unsigned list is ignored.
  */

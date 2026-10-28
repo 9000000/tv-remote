@@ -33,7 +33,7 @@ object HomeControl {
         "pin" -> android.content.Intent(c, PinActivity::class.java).putExtra("kids_off", true)
         "manage" -> android.content.Intent(c, ManageActivity::class.java).putExtra(ManageActivity.PASS, RemoteService.selfPass)
             .apply {
-                if (word == "manage:health") putExtra(ManageActivity.TAB, "health")   // TV Home's watched-today tile and an app's week
+                if (word == "manage:health") putExtra(ManageActivity.TAB, "health")   // TV Home's watched-today live widget and an app's week
                 else putExtra(ManageActivity.TAB, "auto").putExtra(ManageActivity.SECTION, if (Rules.kidsMode(Rules.load(c))) "kidsadd" else "lockcard")   // on: the apps a child may open; off: the PIN first
             }
         "keytest" -> android.content.Intent(c, KeyTestActivity::class.java)
@@ -43,7 +43,7 @@ object HomeControl {
     /**
      * That screen for TV Home to start itself: this app is in the background when the panel asks, and Android 10+ drops its own start
      * without a word unless it may draw over others (granted through ADB: a TV without ADB for TV Setup, or the emulator, got nothing;
-     * the kids tile closed the panel and nothing came). TV Home is the screen in front, so the start is its own.
+     * the kids switch closed the panel and nothing came). TV Home is the screen in front, so the start is its own.
      */
     fun handBack(c: Context, word: String): android.app.PendingIntent? = screen(c, word)?.let {
         android.app.PendingIntent.getActivity(c, word.hashCode(), it.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),

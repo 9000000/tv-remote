@@ -100,7 +100,7 @@ object WebWall {
 
 /**
  * The "web" wall in [HomeConfig] `wmode` "snap": the page is drawn to a picture every `wsnap` minutes and the picture is the
- * background, so the cards' frost and the dim work as on a photo and nothing runs between two shots. The last picture is kept in a
+ * background, so the widgets' frost and the dim work as on a photo and nothing runs between two shots. The last picture is kept in a
  * file, so Home shows it at once after a restart.
  */
 object WebSnap {

@@ -28,34 +28,34 @@ import java.util.Date
 import org.json.JSONObject
 
 /** The two most used apps side by side, with their limits; no columns of the days. */
-internal fun Widgets.usageHalf(card: LinearLayout, f: Facts, label: (String) -> String) {
+internal fun Widgets.usageHalf(widget: LinearLayout, f: Facts, label: (String) -> String) {
     val u = f.usage
     val week = u?.optJSONArray("week")
     val days = u?.optJSONArray("days")
     var total = 0L
     if (days != null) for (i in 0 until days.length()) total += days.optLong(i)
-    card.addView(head(a.getString(R.string.w_week).substringBefore(" · "), if (total > 0) span(total * 1000) else ""))
-    if (u == null) { card.addView(note(a.getString(R.string.w_need_setup))); return }
+    widget.addView(head(a.getString(R.string.w_week).substringBefore(" · "), if (total > 0) span(total * 1000) else ""))
+    if (u == null) { widget.addView(note(a.getString(R.string.w_need_setup))); return }
     val limits = HashMap<String, JSONObject>()
     u.optJSONArray("limits")?.let { l -> for (i in 0 until l.length()) l.optJSONObject(i)?.let { limits[it.optString("pkg")] = it } }
     val rows = ArrayList<Pair<String, Long>>()
     if (week != null) for (i in 0 until minOf(2, week.length())) week.getJSONObject(i).let { rows += it.optString("pkg") to it.optLong("sec") }
-    if (rows.isEmpty()) { card.addView(note(a.getString(R.string.w_none))); return }
+    if (rows.isEmpty()) { widget.addView(note(a.getString(R.string.w_none))); return }
     val max = rows.maxOf { it.second }.coerceAtLeast(1)
     val line = LinearLayout(a).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     rows.forEachIndexed { i, (p, sec) -> line.addView(appRow(p, label(p), f.icons[p], sec, sec.toFloat() / max, limits[p]), LayoutParams(0, -2, 1f).apply { if (i > 0) leftMargin = dp(18) }) }
-    card.addView(line, LayoutParams(-1, 0, 1f))
+    widget.addView(line, LayoutParams(-1, 0, 1f))
 }
 
 /** [narrow]: the apps only, no columns of the days. */
-internal fun Widgets.usage(card: LinearLayout, f: Facts, label: (String) -> String, narrow: Boolean) {
+internal fun Widgets.usage(widget: LinearLayout, f: Facts, label: (String) -> String, narrow: Boolean) {
     val u = f.usage
     val week = u?.optJSONArray("week")
     val days = u?.optJSONArray("days")
     var total = 0L
     if (days != null) for (i in 0 until days.length()) total += days.optLong(i)
-    card.addView(head(a.getString(R.string.w_week).let { if (narrow) it.substringBefore(" · ") else it }, if (total > 0) span(total * 1000) else ""))
-    if (u == null) { card.addView(note(a.getString(R.string.w_need_setup))); return }
+    widget.addView(head(a.getString(R.string.w_week).let { if (narrow) it.substringBefore(" · ") else it }, if (total > 0) span(total * 1000) else ""))
+    if (u == null) { widget.addView(note(a.getString(R.string.w_need_setup))); return }
     val body = LinearLayout(a).apply { orientation = HORIZONTAL }
     if (!narrow && days != null && days.length() == 7) body.addView(Columns(this@usage, a, (6 downTo 0).map { days.optLong(it) }), LayoutParams(dp(150), dp(96)))
     val list = LinearLayout(a).apply { orientation = VERTICAL }
@@ -68,7 +68,7 @@ internal fun Widgets.usage(card: LinearLayout, f: Facts, label: (String) -> Stri
     if (rows.isEmpty()) list.addView(note(a.getString(R.string.w_none)))
     rows.forEachIndexed { i, (p, sec) -> list.addView(appRow(p, label(p), f.icons[p], sec, sec.toFloat() / max, limits[p]), LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(7) }) }
     body.addView(list, LayoutParams(0, -2, 1f).apply { if (body.childCount > 0) leftMargin = dp(20) })
-    card.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(10) })
+    widget.addView(body, LayoutParams(-1, -2).apply { topMargin = dp(10) })
 }
 
 /** An app's line: icon, name, its share of the week as a bar, its time; an amber "x left" when it has a limit today. */
@@ -81,7 +81,7 @@ internal fun Widgets.appRow(pkg: String, name: String, icon: Drawable?, sec: Lon
     line.addView(text(span(sec * 1000), 13f, Color.WHITE).apply { typeface = Font.medium })
     col.addView(line)
     col.addView(Bar(this@appRow, a, part, if (limit != null) AMBER else CYAN), LayoutParams(-1, dp(4)).apply { topMargin = dp(3) })
-    if (limit != null) {                                              // under the bar, not beside the name: a narrow card cut the name to "…"
+    if (limit != null) {                                              // under the bar, not beside the name: a narrow widget cut the name to "…"
         val left = (limit.optLong("min") * 60 - limit.optLong("used")).coerceAtLeast(0)
         col.addView(text(if (left <= 0) a.getString(R.string.w_used_up) else a.getString(R.string.w_left, span(left * 1000)), 12f, AMBER[0]),
             LayoutParams(-2, -2).apply { topMargin = dp(2) })

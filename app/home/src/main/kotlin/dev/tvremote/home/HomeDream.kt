@@ -110,7 +110,7 @@ class DreamBody(private val c: Context) {
         val face = conf.optString("dface")
         block = LinearLayout(c).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(40), dp(20), dp(40), dp(20)) }
         when (face) {
-            // StandBy: the clock card's own faces (ClockFace, drawn once a minute), large; the block still moves every minute against burn-in
+            // StandBy: the clock widget's own faces (ClockFace, drawn once a minute), large; the block still moves every minute against burn-in
             "digital" -> block.addView(ClockFace({ dp(it) }, c, "digital", false) { }, LinearLayout.LayoutParams((dm.widthPixels * 0.62f).toInt(), (dm.heightPixels * 0.5f).toInt()))
             "modern" -> {
                 val side = (dm.heightPixels * 0.56f).toInt()

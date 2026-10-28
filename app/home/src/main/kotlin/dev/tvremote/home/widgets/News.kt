@@ -13,7 +13,7 @@ import java.util.TimeZone
 import javax.xml.parsers.SAXParserFactory
 
 /**
- * The News card's data: headlines from RSS feeds ([Sources] for the defaults by language, the person's own links on top): title, the
+ * The News widget's data: headlines from RSS feeds ([Sources] for the defaults by language, the person's own links on top): title, the
  * picture the feed gives, the summary the feed gives, the link and the time. Never the article itself. Fetched on a thread of its own,
  * each feed capped ([Net.FEED_CAP]) and read only as far as its newest [PER_FEED] items; kept in prefs, so a dead network shows the last.
  */
