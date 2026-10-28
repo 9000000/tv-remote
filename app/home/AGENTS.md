@@ -80,3 +80,12 @@ Pexels videos, a live page; `dev/gen/wallpapers.py LINKS_ONLY=1`, small pictures
 `wall: web` + `wurl`, so the table above draws it (`Suggest.kt` here, `Wallpapers.links` + `/api/home/walls/thumb` for the page).
 **Custom** (`wall: own`): `wcol` 1-4 colours (one = plain), `wdir` one of `HomeConfig.WDIRS` (`radial` from the middle), drawn by
 `wallGradient` (Backdrop, the screensaver, the tiles); a change of either is part of `wall()`'s key.
+
+## Off = nothing runs
+
+Size does not slow a weak box; what runs at start and in the background does. So: **a new option / switch defaults to off (or to
+today's behaviour), and with it off no receiver, service, thread, timer, alarm, observer or file write runs for it.** Work that
+only a card, widget or wall needs starts when that thing is on the screen, and stops with it (the `netTick` of the network graph
+is the model: it re-arms only while that widget exists). Everything runs only while Home is on screen: the manifest has no service
+but the dream and no boot / alarm receiver. Guards: `dev/test/apk_sizes.js` (APK jump alarm, baseline `dev/test/apk-sizes.json`),
+`dev/test/tvperf/idle.sh` (CPU per thread when left alone), `cold.sh` (start and PSS).
