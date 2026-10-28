@@ -116,6 +116,8 @@ import org.json.JSONObject
  *           ones (the site's signed docs/home/themes.json: ids, names per language). A TV Home that has this reports "themesOk": true,
  *           "themesBuiltin": [{id, names, conf}] and "theme": the id of the one whose look is on now ("" none). A theme's pictures and videos stay while it
  *           keeps them ([themeUses], Videos.refs)
+ *   infold  the Inputs list shows the connected HDMI ports first and folds the rest (jacks always; a port only when the TV says "disconnected" and its
+ *           answers can be trusted) behind a "More inputs" row; default off (nothing new runs)
  *   autoon  open [autoapp] (a [Target] too) once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
  *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
  */
@@ -644,6 +646,7 @@ object HomeConfig {
             .also { n -> for ((k, d) in HEAD_TYPE) n.put(k, o.optString(k).takeIf { it in (if (k.endsWith("size")) HEAD_SIZES else HEAD_COLORS) } ?: d) }
             .also { n -> for (k in HEAD_FLAGS) n.put(k, o.optBoolean(k, false)) }
             .also { n -> for (k in SHOWS) n.put(k, o.optBoolean(k, true)) }
+            .put("infold", o.optBoolean("infold", false))
             .put("watchAt", o.optString("watchAt").takeIf { it in WATCH_AT } ?: WATCH_AT[0])
             .put("anim", o.optBoolean("anim", true))
             .put("motion", o.optString("motion").takeIf { it in MOTIONS } ?: "")

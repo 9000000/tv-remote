@@ -3104,6 +3104,7 @@
  "home.show_add": "Плитка «Добавить»",
  "home.show_suggest": "Плитка «Установить TV Setup»",
  "home.show_watch": "Ряд «Продолжить просмотр»",
+ "home.show_infold": "Скрывать неподключённые входы HDMI/AV",
  "home.watch_at": "Позиция ряда «Продолжить просмотр»",
  "home.watch_at_top": "Над приложениями",
  "home.watch_at_under1": "Под первым рядом",

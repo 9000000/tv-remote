@@ -24,6 +24,7 @@
         <provider android:authorities="com.skyworth.tv.sdk.provider" />
         <package android:name="com.tcl.tv" /><package android:name="com.sony.dtv.tvx" /><package android:name="com.mediatek.wwtv.tvcenter" /><package android:name="com.mitv.livetv" />
         <package android:name="com.realtek.tv" /><package android:name="com.cltv.hybrid" /><package android:name="com.android.tv" />   <!-- Inputs.LIVE_APPS: a TV with inputs of its own -->
+        <package android:name="com.xiaomi.mitv.settings" /><package android:name="com.amazon.tv.launcher" /><package android:name="com.android.tv.settings" />   <!-- SystemSettings: the vendors' Settings (com.tcl.settings is listed above) -->
         <intent><action android:name="android.settings.DISPLAY_SETTINGS" /></intent>   <!-- the Picture and Sound rows show only where the TV has those screens -->
         <intent><action android:name="android.settings.SOUND_SETTINGS" /></intent>
         <intent><action android:name="android.settings.APPLICATION_DETAILS_SETTINGS" /><data android:scheme="package" /></intent>   <!-- App info shows only where the TV has it -->
