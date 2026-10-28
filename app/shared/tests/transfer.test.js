@@ -57,7 +57,7 @@ test('every way of sending a file has a Stop, and the server has the routes', ()
 
 test('a launcher swap refused before anything changed says the TV kept its launcher, an undone one that it went back', () => {
   const vi = friendlyOf(), en = friendlyOf('en');
-  assert.match(vi('IOException: launcher:rolledback:wifi'), /^TV giữ launcher cũ: Mạng Wi-Fi/);
-  assert.match(en('launcher:rolledback:cast'), /^The TV kept its own launcher: /);
-  assert.match(vi('launcher:rolledback:crash'), /^TV đã quay về launcher của TV: Launcher mới bị lỗi/);
+  assert.match(vi('IOException: launcher:rolledback:wifi'), /^TV giữ màn hình chính cũ: Mạng Wi-Fi/);
+  assert.match(en('launcher:rolledback:cast'), /^The TV kept its own home screen: /);
+  assert.match(vi('launcher:rolledback:crash'), /^TV đã quay về màn hình chính của TV: Màn hình chính mới bị lỗi/);
 });

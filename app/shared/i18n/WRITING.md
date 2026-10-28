@@ -23,6 +23,10 @@ cắm" for "Fold unplugged inputs"; "Luôn về khi bật TV" that never said wh
 7. **Short still holds** (see the memory/guide limits): one line for a label, the detail in the note under it or the
    dialog, not in the label.
 
+A mark at the start of the words (✓ ✗ ▶ ⏻ ✕ ⚠, an emoji) is not text: the web (`js/ui.js` `ICON`), the Phone app
+(`Ui.kt` `markIcon`) and the TV apps (`tvui/Marks.kt`) draw it as a line icon, and code reads it (`startsWith("✓")`).
+Keep it in every language; ◀ ▶ ▲ ▼ in a key hint are the remote's keys, keep them too.
+
 ## Per language
 
 | Language | Notes |

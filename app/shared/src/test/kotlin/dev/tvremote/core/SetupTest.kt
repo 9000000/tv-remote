@@ -139,7 +139,7 @@ class SetupTest {
         run(tv, listOf("com.foo.game", "com.brand.locked"), lines)
         assertEquals(setOf("com.foo.game"), tv.disabled)
         assertTrue(lines.toString(), "✓ Turned off 1 app" in lines)
-        assertTrue(lines.toString(), lines.any { "would not turn off" in it && "com.brand.locked" in it })
+        assertTrue(lines.toString(), lines.any { "would not let these be turned off" in it && "com.brand.locked" in it })
     }
 
     @Test fun aTvThatRestartsMidwayStopsAndNamesTheApp() {
@@ -156,7 +156,7 @@ class SetupTest {
         tv.downAt = "com.brand.core"; tv.stayDown = true
         val lines = mutableListOf<String>()
         try { run(tv, listOf("com.foo.game", "com.brand.core"), lines); fail() }
-        catch (e: Setup.Stopped) { assertTrue(e.message!!, "not back in" in e.message!!) }
+        catch (e: Setup.Stopped) { assertTrue(e.message!!, "has not come back in" in e.message!!) }
         assertEquals(1, lines.count { "waiting for it" in it })
         assertEquals(listOf("com.foo.game", "com.brand.core"), tv.offList)
     }

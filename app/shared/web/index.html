@@ -143,7 +143,7 @@
           <div class="listenbar" id="listenbar" hidden><button class="small" id="listenway" title="Cách nghe tiếng TV" data-i18n-title="remote.how_to_hear_the"></button><button class="small" id="listenhq" title="Tiếng chất lượng cao (160 kbit/s)" data-i18n-title="remote.high_quality_sound_160">HQ</button><button class="small" id="listeneven" title="Tiếng đều hơn: trễ nửa giây nhưng không giật" data-i18n-title="remote.steadier_sound_half_a" data-i18n="remote.even">Đều</button><button class="small" id="listenboost" title="Tiếng to hơn trên máy này" data-i18n-title="remote.louder_on_this_device"></button></div>
           <div class="screenbox" id="screenbox"><img id="screen" alt="Màn hình TV" hidden data-i18n-alt="remote.tv_screen"><video id="screenv" muted playsinline autoplay hidden></video><canvas id="screenc" hidden></canvas><div class="ph" id="screenph"></div><span class="watchers" id="watchers" hidden></span><canvas id="drawcv" hidden></canvas><div class="blackhint" id="screenblack" hidden><span data-i18n="remote.the_tv_does_not">TV không cho chiếu hình lên đây</span><small data-i18n="remote.the_tv_s_chip">(do chip của TV hoặc phim có bản quyền)</small></div></div>
           <div class="drawbar" id="drawbar" hidden>
-            <span class="pickc"><button class="swatch" id="drawcolor" style="--c:#ff3b30" aria-label="Màu" title="Màu" data-i18n-title="remote.colour" data-i18n-aria-label="remote.colour"></button><span class="swatches" id="drawcolors" hidden><button class="swatch on" data-color="#ff3b30" style="--c:#ff3b30" aria-label="Đỏ" title="Đỏ" data-i18n-title="remote.red" data-i18n-aria-label="remote.red"></button><button class="swatch" data-color="#ff9f0a" style="--c:#ff9f0a" aria-label="Cam" title="Cam" data-i18n-title="remote.orange" data-i18n-aria-label="remote.orange"></button><button class="swatch" data-color="#ffd60a" style="--c:#ffd60a" aria-label="Vàng" title="Vàng" data-i18n-title="remote.yellow" data-i18n-aria-label="remote.yellow"></button><button class="swatch" data-color="#32d74b" style="--c:#32d74b" aria-label="Xanh lá" title="Xanh lá" data-i18n-title="remote.green" data-i18n-aria-label="remote.green"></button><button class="swatch" data-color="#40c8ff" style="--c:#40c8ff" aria-label="Xanh dương" title="Xanh dương" data-i18n-title="remote.blue" data-i18n-aria-label="remote.blue"></button><button class="swatch" data-color="#0a5cff" style="--c:#0a5cff" aria-label="Xanh đậm" title="Xanh đậm" data-i18n-title="remote.dark_blue" data-i18n-aria-label="remote.dark_blue"></button><button class="swatch" data-color="#bf5af2" style="--c:#bf5af2" aria-label="Tím" title="Tím" data-i18n-title="remote.purple" data-i18n-aria-label="remote.purple"></button><button class="swatch" data-color="#ff6ac1" style="--c:#ff6ac1" aria-label="Hồng" title="Hồng" data-i18n-title="remote.pink" data-i18n-aria-label="remote.pink"></button><button class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="Trắng" title="Trắng" data-i18n-title="remote.white" data-i18n-aria-label="remote.white"></button><button class="swatch" data-color="#000000" style="--c:#000000" aria-label="Đen" title="Đen" data-i18n-title="remote.black" data-i18n-aria-label="remote.black"></button><span class="sizes"><input type="range" id="drawwidth" min="20" max="250" step="10" value="60" aria-label="Nét" title="Nét" data-i18n-title="remote.line_size" data-i18n-aria-label="remote.line_size"><span class="dotbox"><i id="drawdot"></i></span></span></span></span>
+            <span class="pickc"><button class="swatch" id="drawcolor" style="--c:#ff3b30" aria-label="Màu" title="Màu" data-i18n-title="remote.colour" data-i18n-aria-label="remote.colour"></button><span class="swatches" id="drawcolors" hidden><button class="swatch on" data-color="#ff3b30" style="--c:#ff3b30" aria-label="Đỏ" title="Đỏ" data-i18n-title="remote.red" data-i18n-aria-label="remote.red"></button><button class="swatch" data-color="#ff9f0a" style="--c:#ff9f0a" aria-label="Cam" title="Cam" data-i18n-title="remote.orange" data-i18n-aria-label="remote.orange"></button><button class="swatch" data-color="#ffd60a" style="--c:#ffd60a" aria-label="Vàng" title="Vàng" data-i18n-title="remote.yellow" data-i18n-aria-label="remote.yellow"></button><button class="swatch" data-color="#32d74b" style="--c:#32d74b" aria-label="Xanh lá" title="Xanh lá" data-i18n-title="remote.green" data-i18n-aria-label="remote.green"></button><button class="swatch" data-color="#40c8ff" style="--c:#40c8ff" aria-label="Xanh dương" title="Xanh dương" data-i18n-title="remote.blue" data-i18n-aria-label="remote.blue"></button><button class="swatch" data-color="#0a5cff" style="--c:#0a5cff" aria-label="Xanh đậm" title="Xanh đậm" data-i18n-title="remote.dark_blue" data-i18n-aria-label="remote.dark_blue"></button><button class="swatch" data-color="#bf5af2" style="--c:#bf5af2" aria-label="Tím" title="Tím" data-i18n-title="remote.purple" data-i18n-aria-label="remote.purple"></button><button class="swatch" data-color="#ff6ac1" style="--c:#ff6ac1" aria-label="Hồng" title="Hồng" data-i18n-title="remote.pink" data-i18n-aria-label="remote.pink"></button><button class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="Trắng" title="Trắng" data-i18n-title="remote.white" data-i18n-aria-label="remote.white"></button><button class="swatch" data-color="#000000" style="--c:#000000" aria-label="Đen" title="Đen" data-i18n-title="remote.black" data-i18n-aria-label="remote.black"></button><span class="sizes"><input type="range" id="drawwidth" min="20" max="250" step="10" value="60" aria-label="Độ dày nét" title="Độ dày nét" data-i18n-title="remote.line_size" data-i18n-aria-label="remote.line_size"><span class="dotbox"><i id="drawdot"></i></span></span></span></span>
             <button class="small" id="drawpic" title="Đưa một ảnh trong máy lên TV" data-i18n-title="remote.put_a_picture_from" data-i18n="remote.picture">🖼️ Ảnh</button><button class="small" id="drawtext" title="Gõ một lời nhắn, hiện to trên TV" data-i18n-title="remote.type_a_message_shown" data-i18n="remote.text">💬 Chữ</button><input type="file" id="drawfile" accept="image/*" hidden>
             <button class="small" id="drawundo" title="Bỏ nét vừa vẽ" data-i18n-title="remote.take_back_the_last">↩</button>
             <button class="small" id="drawclear" data-i18n="remote.clear_all">🗑 Xóa hết</button>
@@ -223,7 +223,7 @@
       <form class="line" id="appsf"><input type="search" id="appsq" placeholder="Tìm theo tên app" autocomplete="off" data-i18n-placeholder="common.search_by_app_name"></form>
       <div class="fchips" id="appsfilter"></div>
       <input type="checkbox" id="appssys" hidden>
-      <div class="aihint"><button class="small" id="aiapps" title="Hỏi AI nên tắt / gỡ app nào" data-i18n-title="apps.ask_an_ai_which" data-i18n="apps.ask_ai">🤖 Hỏi AI</button><button class="small" id="bulkopen" title="Bật / tắt / gỡ hàng loạt" data-i18n-title="apps.turn_on_off_remove" data-i18n="apps.in_bulk">📝 Hàng loạt</button></div>
+      <div class="aihint"><button class="small" id="aiapps" title="Hỏi AI nên tắt / gỡ app nào" data-i18n-title="apps.ask_an_ai_which" data-i18n="apps.ask_ai">🤖 Hỏi AI</button><button class="small" id="bulkopen" title="Bật / tắt / gỡ nhiều app" data-i18n-title="apps.turn_on_off_remove" data-i18n="apps.in_bulk">📝 Nhiều app</button></div>
       <div class="list" id="appslist"></div>
     </section>
   </div>
@@ -275,7 +275,7 @@
   <div class="panel" data-panel="health" hidden>
     <div data-adb-banner></div>
     <div class="health" data-adb-gated>
-      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now" data-i18n="health.now">Hiện tại</button><button type="button" data-m="hist" data-i18n="health.history">Lịch sử</button><button type="button" data-m="sleep" data-i18n="health.sleep">Giấc ngủ</button><button type="button" data-m="caps" data-i18n="health.capabilities">Khả năng</button><button type="button" data-m="priv" data-i18n="health.privacy">Riêng tư</button></div>
+      <div id="hmode" class="seg" role="tablist"><button type="button" class="on" data-m="now" data-i18n="health.now">Hiện tại</button><button type="button" data-m="hist" data-i18n="health.history">Lịch sử</button><button type="button" data-m="sleep" data-i18n="health.sleep">Giấc ngủ</button><button type="button" data-m="caps" data-i18n="health.capabilities">Tính năng</button><button type="button" data-m="priv" data-i18n="health.privacy">Riêng tư</button></div>
       <div id="hhist" hidden></div>
       <div id="herr" hidden></div>
       <div id="hsleep" hidden></div>
@@ -284,7 +284,7 @@
       <div id="hnow">
       <div class="muted" id="hwait" data-i18n="health.reading_from_the_tv">Đang đọc từ TV...</div>
       <section class="card"><div class="card-head"><h2 data-i18n="health.overview">📊 Tổng quan</h2><span class="muted" id="hwhen"></span></div><div class="kv" id="hsum"></div><p class="note" id="hnight" hidden></p></section>
-      <section class="card"><div class="card-head"><h2 data-i18n="health.system_load">⚙️ Tải hệ thống</h2><button type="button" class="small" id="freeram" data-i18n="health.free_up_ram">🧹 Giải phóng RAM</button></div><div id="hload"></div><h3 data-i18n="health.top_cpu_processes">🔥 Tiến trình tốn CPU nhất</h3><div class="ptable" id="htop"></div></section>
+      <section class="card"><div class="card-head"><h2 data-i18n="health.system_load">⚙️ Mức dùng của máy</h2><button type="button" class="small" id="freeram" data-i18n="health.free_up_ram">🧹 Dọn RAM</button></div><div id="hload"></div><h3 data-i18n="health.top_cpu_processes">🔥 Tiến trình tốn CPU nhất</h3><div class="ptable" id="htop"></div></section>
       <section class="card" id="htempc" hidden><h2 data-i18n="health.temperature">🌡️ Nhiệt độ</h2><div class="kv" id="htemp"></div></section>
       <section class="card"><div class="card-head"><h2 data-i18n="health.network">📶 Mạng</h2><button type="button" class="small" id="speedgo" data-i18n="speed.go">⚡ Đo tốc độ</button></div><div class="kv" id="hspeed" hidden></div><div class="kv" id="hrate"></div><div class="kv" id="hnet"></div></section>
       <section class="card" id="hbtc" hidden><h2>🔵 Bluetooth</h2><div class="kv" id="hbt"></div></section>
@@ -382,7 +382,7 @@
         <div class="actions">
           <button class="primary" id="setupapply" data-i18n="common.optimize_tv">⚡ Tối ưu TV</button>
           <button id="setupundo" data-i18n="tv.undo">↩ Hoàn tác</button>
-          <button id="setuprestore" hidden title="Một file chạy bằng adb trên máy tính, để đưa TV về như cũ dù app hỏng hay đã xoá" data-i18n="tv.restore_script" data-i18n-title="tv.restore_script_tip">💾 Lưu script khôi phục</button>
+          <button id="setuprestore" hidden title="Một file chạy bằng adb trên máy tính, để đưa TV về như cũ dù app hỏng hay đã xoá" data-i18n="tv.restore_script" data-i18n-title="tv.restore_script_tip">💾 Lưu tệp khôi phục</button>
         </div>
         <pre class="log" id="setuplog" hidden></pre>
       </section>
@@ -392,14 +392,14 @@
       </section>
       <section class="card" data-adb-gated id="launchcard">
         <h2 data-i18n="launcher.title">🏠 Màn hình chính</h2>
-        <p class="note" data-i18n="launcher.note">Đổi giao diện màn hình chính của TV. Launcher mới lỗi thì TV tự quay về bản cũ.</p>
+        <p class="note" data-i18n="launcher.note">Đổi giao diện màn hình chính của TV. Màn hình chính mới lỗi thì TV tự quay về bản cũ.</p>
         <p class="state" id="homestate" hidden></p>
         <div class="actions">
           <button class="primary" id="launchopen" data-i18n="launcher.open">🖼️ Thư viện launcher</button>
           <button id="homeopen" hidden data-i18n="home.customize">🎛️ Tùy chỉnh TV Home</button>
           <button id="homepin" data-i18n="pin.btn">📌 Ghim từ YouTube</button>
           <button id="homeupd" hidden></button>
-          <button id="launchback" data-i18n="launcher.back">Dùng launcher gốc của TV</button>
+          <button id="launchback" data-i18n="launcher.back">Dùng màn hình chính gốc của TV</button>
         </div>
       </section>
       <section class="card" data-adb-gated id="chancard">
@@ -555,7 +555,7 @@
     <div class="line2"><input id="sceneicon" maxlength="4" aria-label="Biểu tượng" placeholder="🎬" data-i18n-aria-label="scenedlg.icon"><input id="scenename" maxlength="40" placeholder="Tên cảnh, vd Xem phim" data-i18n-placeholder="scenedlg.scene_name_e_g"></div>
     <h3 data-i18n="scenedlg.steps">Các bước</h3>
     <div id="scenesteps"></div>
-    <div class="line2"><select id="stepkind" aria-label="Loại bước" data-i18n-aria-label="scenedlg.kind_of_step"><option value="wake" data-i18n="scenedlg.turn_the_tv_on">☀️ Bật TV</option><option value="app" data-i18n="scenedlg.open_an_app">📱 Mở app</option><option value="volume" data-i18n="scenedlg.set_the_volume">🔊 Đặt âm lượng</option><option value="key" data-i18n="scenedlg.press_a_key">🎮 Bấm phím</option><option value="link" data-i18n="scenedlg.open_a_link">🔗 Mở link</option><option value="wait" data-i18n="scenedlg.wait">⏱️ Chờ</option><option value="input" data-i18n="scenedlg.switch_input">📺 Chuyển ngõ vào</option><option value="timer" data-i18n="scenedlg.sleep_timer">😴 Hẹn giờ tắt</option><option value="notify" data-i18n="scenedlg.send_a_notification">🔔 Gửi thông báo</option><option value="sleep" data-i18n="scenedlg.turn_the_tv_off">🌙 Tắt TV</option></select><span id="stepargs"></span><button class="small" id="stepadd" data-i18n="scenedlg.add_step">＋ Thêm bước</button></div>
+    <div class="line2"><select id="stepkind" aria-label="Loại bước" data-i18n-aria-label="scenedlg.kind_of_step"><option value="wake" data-i18n="scenedlg.turn_the_tv_on">☀️ Bật TV</option><option value="app" data-i18n="scenedlg.open_an_app">📱 Mở app</option><option value="volume" data-i18n="scenedlg.set_the_volume">🔊 Đặt âm lượng</option><option value="key" data-i18n="scenedlg.press_a_key">🎮 Bấm phím</option><option value="link" data-i18n="scenedlg.open_a_link">🔗 Mở link</option><option value="wait" data-i18n="scenedlg.wait">⏱️ Chờ</option><option value="input" data-i18n="scenedlg.switch_input">📺 Chuyển nguồn vào</option><option value="timer" data-i18n="scenedlg.sleep_timer">😴 Hẹn giờ tắt</option><option value="notify" data-i18n="scenedlg.send_a_notification">🔔 Gửi thông báo</option><option value="sleep" data-i18n="scenedlg.turn_the_tv_off">🌙 Tắt TV</option></select><span id="stepargs"></span><button class="small" id="stepadd" data-i18n="scenedlg.add_step">＋ Thêm bước</button></div>
   </div>
   <div class="actions"><button class="primary" id="scenesave" data-i18n="scenedlg.save">💾 Lưu</button><button id="scenetry" data-i18n="scenedlg.try">▶ Thử</button><button class="danger" id="scenedel" data-i18n="scenedlg.delete">🗑 Xóa</button></div>
 </div></dialog>
@@ -564,8 +564,8 @@
   <textarea id="aitext" rows="14" spellcheck="false"></textarea>
   <div class="aihint"><button class="primary" id="aicopy" data-i18n="common.copy">📋 Sao chép</button></div>
 </div></dialog>
-<dialog id="bulkdlg"><div class="card assistbox"><div class="card-head"><h2 data-i18n="bulkdlg.turn_on_off_remove">📝 Bật / tắt / gỡ hàng loạt</h2><button class="small iconbtn" id="bulkclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div>
-  <p class="note" data-i18n="bulkdlg.paste_app_ids_one">Dán app id (mỗi dòng một app) hoặc cả câu trả lời của AI.</p>
+<dialog id="bulkdlg"><div class="card assistbox"><div class="card-head"><h2 data-i18n="bulkdlg.turn_on_off_remove">📝 Bật / tắt / gỡ nhiều app</h2><button class="small iconbtn" id="bulkclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div>
+  <p class="note" data-i18n="bulkdlg.paste_app_ids_one">Dán tên gói app (mỗi dòng một app) hoặc cả câu trả lời của AI.</p>
   <textarea id="bulktext" rows="5" spellcheck="false" placeholder="com.sony.dtv.imanual&#10;com.google.android.marvin.talkback"></textarea>
   <div class="list" id="bulklist"></div>
   <div class="aihint"><button class="small" id="bulkoff" data-i18n="bulkdlg.disable_these_apps">⏸ Tắt các app này</button><button class="small" id="bulkon" data-i18n="bulkdlg.turn_these_back_on">↩ Bật lại các app này</button><button class="small danger" id="bulkdel" data-i18n="bulkdlg.remove_these_apps">🗑 Gỡ các app này</button></div>
@@ -573,7 +573,7 @@
 </div></dialog>
 <dialog id="logdlg"><div class="card assistbox logbox"><div class="card-head"><h2 id="logtitle">📜 Log</h2>
   <div class="tools"><button class="small" id="logpause"></button><button class="small" id="logcopy"><span class="ico">📋</span><span class="lbl" data-i18n="logdlg.copy"> Sao chép</span></button><button class="small iconbtn" id="logclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div></div>
-  <p class="muted" id="lognote" hidden data-i18n="logdlg.the_app_is_not">App chưa chạy: mở app, log hiện ở đây ngay khi app chạy. <button class="small" id="logopen" data-i18n="logdlg.open_an_app">▶ Mở app</button></p>
+  <p class="muted" id="lognote" hidden data-i18n="logdlg.the_app_is_not">App chưa chạy: mở app, nhật ký hiện ở đây ngay khi app chạy. <button class="small" id="logopen" data-i18n="logdlg.open_an_app">▶ Mở app</button></p>
   <div id="logpre" class="logpre"></div>
 </div></dialog>
 <dialog id="infodlg"><div class="card assistbox"><div class="card-head"><h2 id="infotitle">ℹ️</h2><div class="tools"><button class="small iconbtn" id="infoclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div></div>
