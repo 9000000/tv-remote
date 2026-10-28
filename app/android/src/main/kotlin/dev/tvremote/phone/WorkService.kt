@@ -25,10 +25,11 @@ class WorkService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        loadLang(this)
-        reachAroundVpn()
+        loadLang(this)                                                // the notification's words
         val n = note(this, "")
         if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC) else startForeground(ID, n)
+        synchronized(Companion) { up = true; if (stopAsked) { stopAsked = false; stopSelf() } }   // the work ended before this ran: see [stop]
+        reachAroundVpn()
         wake = (getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tvremote:work")
             .apply { setReferenceCounted(false); acquire(60 * 60 * 1000L) }   // an hour at most, whatever happens
     }
@@ -39,6 +40,7 @@ class WorkService : Service() {
     }
 
     override fun onDestroy() {
+        synchronized(Companion) { up = false }
         wake?.release()
         super.onDestroy()
     }
@@ -46,6 +48,15 @@ class WorkService : Service() {
     companion object {
         private const val ID = 5
         const val WHAT = "what"
+        private var up = false                                        // past startForeground; both under the Companion's lock
+        private var stopAsked = false
+
+        /** Asked by startForegroundService(): ends it. A stopService() before its onCreate ran makes Android 12+ throw "did not then call
+         *  startForeground" (census 50c2bc6e, a job over in a moment), so a service not up yet stops itself once it is. */
+        fun stop(c: Context) = synchronized(Companion) { if (up) c.stopService(Intent(c, WorkService::class.java)) else stopAsked = true }
+
+        /** Before startForegroundService(): a stop asked of an earlier start that never came up does not end this one. */
+        fun starting() = synchronized(Companion) { stopAsked = false }
 
         /** In words, what Manage.working() names. */
         fun say(what: String): String = when (what) {

@@ -40,6 +40,17 @@ object GuardLogic {
         return false
     }
 
+    /**
+     * True when [t] is a dialog shown or closed after its screen went away (BadTokenException from Dialog.show, "not attached to
+     * window manager" from Dialog.dismiss): a late job finding its Activity gone. Nothing is lost, there was nothing to show it
+     * on, so it is neither shown nor sent; one check here instead of a guard around each of the apps' dialogs.
+     */
+    fun goneWindow(t: Throwable): Boolean {
+        val bad = t.javaClass.name.endsWith("\$BadTokenException") ||        // WindowManager's, by name: no Android in this file
+            (t is IllegalArgumentException && t.message?.contains("not attached to window manager") == true)
+        return bad && t.stackTrace.any { it.className == "android.app.Dialog" && (it.methodName == "show" || it.methodName.startsWith("dismiss")) }
+    }
+
     /** The whole text saved to the file and put on the clipboard: when, which app and phone, which thread, then the stack. */
     fun report(time: String, app: String, android: String, device: String, thread: String, t: Throwable): String {
         val sw = StringWriter()

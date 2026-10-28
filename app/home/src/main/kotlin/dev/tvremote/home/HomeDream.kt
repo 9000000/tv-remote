@@ -20,7 +20,6 @@ import android.widget.TextView
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.Executors
 import dev.tvremote.home.widgets.Lunar
 import dev.tvremote.home.widgets.ClockFace
 import dev.tvremote.home.widgets.Widgets
@@ -67,7 +66,8 @@ class ScreensaverActivity : Activity() {
 /** The drawing of the screensaver, shared by the system dream and the "Screensaver" button of the Control Center (an activity): built once, see HomeDream. */
 class DreamBody(private val c: Context) {
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
-    private val bg = Executors.newSingleThreadExecutor()
+    private val bg = java.util.concurrent.ThreadPoolExecutor(1, 1, 0, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.LinkedBlockingQueue(),
+        java.util.concurrent.ThreadPoolExecutor.DiscardPolicy())   // a late job after onDestroy's shutdown is dropped, not thrown (census 1d158634)
     private lateinit var block: LinearLayout
     private var date: TextView? = null
     private var lunar: TextView? = null

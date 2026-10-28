@@ -4,6 +4,8 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GuardLogicTest {
+    class BadTokenException(m: String) : RuntimeException(m)         // android.jar's is a stub in a unit test
+
     private fun thrown(vararg frames: Pair<String, String>, cause: Throwable? = null) =
         RuntimeException("boom", cause).apply { stackTrace = frames.map { StackTraceElement(it.first, it.second, "X.java", 1) }.toTypedArray() }
 
@@ -23,6 +25,18 @@ class GuardLogicTest {
         assertFalse(GuardLogic.inLifecycle(thrown("dev.tvremote.phone.PhoneRemote" to "remoteMenu", "android.view.View" to "performClick",
             "android.os.Handler" to "dispatchMessage", "android.os.Looper" to "loop", "android.app.ActivityThread" to "main")))
         assertFalse(GuardLogic.inLifecycle(thrown("a.B" to "c", "android.app.ActivityThread" to "handleMessage")))
+    }
+
+    @Test fun `a dialog shown or closed after its screen went away is a gone window`() {
+        val show = BadTokenException("Unable to add window -- token is not valid; is your activity running?").apply {
+            stackTrace = arrayOf(StackTraceElement("android.view.ViewRootImpl", "setView", "X.java", 1), StackTraceElement("android.app.Dialog", "show", "X.java", 1)) }
+        assertTrue(GuardLogic.goneWindow(show))
+        val dismiss = IllegalArgumentException("View=DecorView@1[MainActivity] not attached to window manager").apply {
+            stackTrace = arrayOf(StackTraceElement("android.view.WindowManagerGlobal", "findViewLocked", "X.java", 1), StackTraceElement("android.app.Dialog", "dismissDialog", "X.java", 1)) }
+        assertTrue(GuardLogic.goneWindow(dismiss))
+        assertFalse(GuardLogic.goneWindow(IllegalArgumentException("not attached to window manager").apply {
+            stackTrace = arrayOf(StackTraceElement("a.B", "c", "X.java", 1)) }))              // the same words from our own code: still reported
+        assertFalse(GuardLogic.goneWindow(thrown("android.app.Dialog" to "show")))
     }
 
     @Test fun `the report has when, app, android, device, thread and the stack`() {

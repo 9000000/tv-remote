@@ -612,10 +612,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
             if (what.isNotEmpty()) {
                 workWhat = what
                 val i = Intent(this, WorkService::class.java).putExtra(WorkService.WHAT, what)
-                if (!workOn) { askNotifications(); askBackground(); if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i); ui.postDelayed(workTick, 1000) }
+                if (!workOn) { askNotifications(); askBackground(); WorkService.starting(); if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i); ui.postDelayed(workTick, 1000) }
                 else WorkService.show(this, what, managing.progress())
                 workOn = true
-            } else if (workOn) { workOn = false; workPct = -2; ui.removeCallbacks(workTick); stopService(Intent(this, WorkService::class.java)) }
+            } else if (workOn) { workOn = false; workPct = -2; ui.removeCallbacks(workTick); WorkService.stop(this) }
         } catch (e: Exception) { }                                    // not allowed from the background: it only runs until Android freezes the app
     }
     private val workTick = object : Runnable {

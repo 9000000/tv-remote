@@ -385,7 +385,8 @@ class GameServer private constructor(private val ctx: Context) {
     }
 
     private fun serve(sock: Socket) {
-        val conn = Conn(sock)
+        // the TLS handshake runs in Conn's getOutputStream(): a browser that refuses the self-signed certificate ends it there
+        val conn = try { Conn(sock) } catch (e: Exception) { try { sock.close() } catch (x: Exception) { }; return }
         try {
             sock.tcpNoDelay = true
             sock.soTimeout = 15_000                                   // a connection that never says anything (a scanner, Wi-Fi gone) does not keep a thread

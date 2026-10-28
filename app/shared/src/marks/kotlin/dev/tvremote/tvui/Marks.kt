@@ -43,7 +43,7 @@ object Marks {
         val out = SpannableStringBuilder(s)
         for (i in s.indices) if (isMark(s, i)) {
             val id = icon(c, s[i]); if (id == 0) continue
-            val d = c.getDrawable(id)!!.mutate()
+            val d = try { c.getDrawable(id)!!.mutate() } catch (e: Exception) { continue }   // its file gone from under a running app (seen once, census ec35e370): the character stays
             out.setSpan(IconSpan(d), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         return out

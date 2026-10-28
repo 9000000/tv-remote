@@ -102,10 +102,12 @@ object FleetStatus {
             val running = hosts.distinct().mapNotNull { h ->
                 val s = last[h]
                 if (s != null && now - s.at < maxAgeMs) null
-                else busy.computeIfAbsent(h) {
-                    pool.submit {
-                        try { last[h] = try { read(h) } catch (e: Exception) { Status(h, UP, at = System.currentTimeMillis()) } } finally { busy.remove(h) }
-                    }
+                // not computeIfAbsent: its java.util.function lambda is Android 7+, the phone app starts at 5 (census b1ccd0d2, Android 6)
+                else synchronized(busy) {
+                    busy[h] ?: pool.submit {
+                        try { last[h] = try { read(h) } catch (e: Exception) { Status(h, UP, at = System.currentTimeMillis()) } }
+                        finally { synchronized(busy) { busy.remove(h) } }     // after the put below, never before it
+                    }.also { busy[h] = it }
                 }
             }
             val until = System.nanoTime() + waitMs * 1_000_000

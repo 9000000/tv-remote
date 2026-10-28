@@ -4,6 +4,16 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "006ff771c8c4067b9c955449|0.30.0": {
+  "at": "2026-10-28T14:05:28+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "03776095643e4e96a8e381de|0.30.0": {
+  "at": "2026-10-28T14:05:29+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "05a960b8701c5d39240e4c3e|0.27.0": {
   "at": "2026-10-27T09:37:01+07:00",
   "n": 1,
@@ -13,6 +23,16 @@
   "at": "2026-10-26T21:47:39+07:00",
   "n": 1,
   "note": "fixed in 5d4096ec"
+ },
+ "090d42fbb8c922d3d4843dbc|0.29.0": {
+  "at": "2026-10-28T14:05:29+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "0d9f97b24e188d539096d5f4|0.29.0": {
+  "at": "2026-10-28T14:05:30+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "0f0bf561278c7d5229a700e5|0.23.0": {
   "at": "2026-10-26T21:47:37+07:00",
@@ -29,15 +49,30 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "0f5293ceab6f19dd1a3509a2|0.29.0": {
+  "at": "2026-10-28T14:05:30+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "10beb007bf91c5ebda6acc25|0.25.0": {
   "at": "2026-10-27T09:37:02+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "10d226c42e6185c27fb45f11|0.24.1": {
-  "at": "2026-10-27T09:37:02+07:00",
+  "at": "2026-10-28T14:05:31+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "10d226c42e6185c27fb45f11|0.30.0": {
+  "at": "2026-10-28T14:05:31+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "11dae087510cdce770d7ff44|0.31.0": {
+  "at": "2026-10-28T14:05:31+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "11e6a1d8790c4769373b5dbb|0.27.0": {
   "at": "2026-10-27T09:37:28+07:00",
@@ -45,9 +80,19 @@
   "note": "zaloJSV2: injected by the Zalo in-app browser, not ours"
  },
  "13ebb1a66fdaf61270829f5a|0.26.3": {
-  "at": "2026-10-27T09:37:03+07:00",
+  "at": "2026-10-28T14:05:32+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "13ebb1a66fdaf61270829f5a|0.30.0": {
+  "at": "2026-10-28T14:05:32+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "13ebb1a66fdaf61270829f5a|0.31.0": {
+  "at": "2026-10-28T14:05:32+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "18d5207d7465e70cbd3ae5b1|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
@@ -60,44 +105,59 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "1b64c0fdb7081f015b2765c2|0.22.1": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 1,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.23.0": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 2,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.24.0": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 5,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.24.1": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 2,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.25.0": {
-  "at": "2026-10-27T09:37:28+07:00",
-  "n": 3,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "at": "2026-10-28T14:05:21+07:00",
+  "n": 4,
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.26.0": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 1,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.26.1": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 6,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
  },
  "1b64c0fdb7081f015b2765c2|0.26.3": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-28T14:05:21+07:00",
   "n": 4,
-  "note": "0.26.3 only, fixed in 5d4096ec (released)"
+  "note": "already fixed: setup.js checks typeof fleetCheck"
+ },
+ "1d1586341fa4c7bfe6945938|0.17.0": {
+  "at": "2026-10-28T14:05:17+07:00",
+  "n": 2,
+  "note": "fixed: TV Home's bg executor drops jobs after onDestroy's shutdown (DiscardPolicy)"
+ },
+ "1d6f4d6ca98627c06c8cca53|0.30.0": {
+  "at": "2026-10-28T14:05:32+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "2762d2d3012a1454188ebd57|0.11.0": {
+  "at": "2026-10-28T14:05:20+07:00",
+  "n": 2,
+  "note": "fixed: GameServer.serve: TLS handshake in Conn() inside the try (Android 11 conscrypt handshakes in getOutputStream)"
  },
  "295939b8f46236dcdb43011b|0.29.0": {
   "at": "2026-10-27T09:37:03+07:00",
@@ -154,15 +214,25 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "3525468061a5c692ec2b7a8e|0.30.0": {
+  "at": "2026-10-28T14:05:33+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "39112b90c5ee2dd78e4de160|0.25.0": {
   "at": "2026-10-27T09:37:06+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "39af9333f7eea45d78f8bf79|0.8.0": {
-  "at": "2026-10-26T21:47:48+07:00",
+  "at": "2026-10-28T14:05:20+07:00",
   "n": 3,
-  "note": "games 0.8.0 TLS handshake to a site with an unknown cert; watch"
+  "note": "fixed: GameServer.serve: TLS handshake in Conn() inside the try (Android 11 conscrypt handshakes in getOutputStream)"
+ },
+ "39af9333f7eea45d78f8bf79|0.9.0": {
+  "at": "2026-10-28T14:05:20+07:00",
+  "n": 2,
+  "note": "fixed: GameServer.serve: TLS handshake in Conn() inside the try (Android 11 conscrypt handshakes in getOutputStream)"
  },
  "3a1bf82f27788cf110a94668|0.24.1": {
   "at": "2026-10-27T09:37:06+07:00",
@@ -170,9 +240,24 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "3de729f6815ae508958555a8|0.28.0": {
-  "at": "2026-10-27T09:37:07+07:00",
+  "at": "2026-10-28T14:05:34+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "3de729f6815ae508958555a8|0.30.0": {
+  "at": "2026-10-28T14:05:34+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "3df75f21109cfe64c6abe060|0.30.0": {
+  "at": "2026-10-28T14:05:34+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "3eba4ca5a45b04107595e6ee|0.30.0": {
+  "at": "2026-10-28T14:05:35+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "3f0b18abfabe8ffc7e286e46|0.25.0": {
   "at": "2026-10-27T09:37:07+07:00",
@@ -180,24 +265,49 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "3f685f9c7cdca8d898486836|0.26.2": {
-  "at": "2026-10-27T09:37:08+07:00",
+  "at": "2026-10-28T14:05:35+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "3f685f9c7cdca8d898486836|0.26.3": {
-  "at": "2026-10-27T09:37:08+07:00",
+  "at": "2026-10-28T14:05:35+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "3f685f9c7cdca8d898486836|0.28.0": {
-  "at": "2026-10-27T09:37:08+07:00",
+  "at": "2026-10-28T14:05:35+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "3f685f9c7cdca8d898486836|0.29.0": {
+  "at": "2026-10-28T14:05:35+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "3f685f9c7cdca8d898486836|0.30.0": {
+  "at": "2026-10-28T14:05:35+07:00",
+  "n": 4,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "3f685f9c7cdca8d898486836|0.31.0": {
+  "at": "2026-10-28T14:05:35+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "41dd31f77cb49ce98c2242e0|0.28.0": {
   "at": "2026-10-27T09:37:26+07:00",
   "n": 1,
   "note": "launcher picker: Play link opened with adb.shell on the click thread; moved to a Thread (next release)"
+ },
+ "457f2bad9ad912b88a771ef4|0.30.0": {
+  "at": "2026-10-28T14:05:36+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "47baed67085a7343b6f1e186|0.30.0": {
+  "at": "2026-10-28T14:05:36+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "49414a3dd12a8a0d4a59e726|0.26.2": {
   "at": "2026-10-27T09:37:08+07:00",
@@ -209,6 +319,11 @@
   "n": 2,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "4ab694b37c47fbba0c8b073a|0.25.0": {
+  "at": "2026-10-28T14:05:37+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "4cacc103078f5e6b7266801e|0.29.0": {
   "at": "2026-10-27T12:52:44+07:00",
   "n": 1,
@@ -219,15 +334,35 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "4edb09196527cb498fe7af5a|0.31.0": {
+  "at": "2026-10-28T14:05:37+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "4ee82f50c03f8f890107b774|0.26.2": {
   "at": "2026-10-27T09:37:10+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
- "535993e358ec33bffb4a2ab7|0.27.0": {
-  "at": "2026-10-27T09:37:10+07:00",
+ "50c2bc6eeec582dfacfe151c|0.29.0": {
+  "at": "2026-10-28T14:05:10+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "fixed: WorkService calls startForeground first; a stop before it came up waits for it (WorkService.stop)"
+ },
+ "5255e1fda001cda94f5657bc|0.30.0": {
+  "at": "2026-10-28T14:05:38+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "535993e358ec33bffb4a2ab7|0.27.0": {
+  "at": "2026-10-28T14:05:38+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "535993e358ec33bffb4a2ab7|0.30.0": {
+  "at": "2026-10-28T14:05:38+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "53c851be292645defe2ebe29|0.25.0": {
   "at": "2026-10-27T09:37:10+07:00",
@@ -249,10 +384,25 @@
   "n": 1,
   "note": "old version (<=0.24): gone in current page"
  },
- "5df1b3d619bed9fd987a0aad|0.26.3": {
-  "at": "2026-10-27T09:37:12+07:00",
+ "5bff425f65d93c72f20a0551|0.31.0": {
+  "at": "2026-10-28T14:05:39+07:00",
+  "n": 2,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "5c3d20915ff953ae9d0d2071|0.30.0": {
+  "at": "2026-10-28T14:05:39+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "5df1b3d619bed9fd987a0aad|0.26.3": {
+  "at": "2026-10-28T14:05:40+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "5df1b3d619bed9fd987a0aad|0.31.0": {
+  "at": "2026-10-28T14:05:40+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "5e49fc275903f2d19df2cf96|0.26.3": {
   "at": "2026-10-27T09:37:12+07:00",
@@ -264,10 +414,20 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "62a1d553ea172cf0d150520a|0.30.0": {
+  "at": "2026-10-28T14:05:40+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "64978197464de830da805923|0.25.0": {
   "at": "2026-10-27T09:37:13+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "657db7980ca8eda492ca97eb|0.29.0": {
+  "at": "2026-10-28T14:05:41+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "6643ac5ba371539b73349499|0.26.3": {
   "at": "2026-10-26T21:47:45+07:00",
@@ -275,24 +435,49 @@
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
  "67c022dfb5a21bcb3a3560b8|0.24.1": {
-  "at": "2026-10-27T09:37:14+07:00",
+  "at": "2026-10-28T14:05:41+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "67c022dfb5a21bcb3a3560b8|0.26.2": {
-  "at": "2026-10-27T09:37:14+07:00",
+  "at": "2026-10-28T14:05:41+07:00",
   "n": 2,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "67c022dfb5a21bcb3a3560b8|0.26.3": {
-  "at": "2026-10-27T09:37:14+07:00",
+  "at": "2026-10-28T14:05:41+07:00",
   "n": 2,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.29.0": {
+  "at": "2026-10-28T14:05:41+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.30.0": {
+  "at": "2026-10-28T14:05:41+07:00",
+  "n": 4,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.31.0": {
+  "at": "2026-10-28T14:05:41+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "6a301ce35b080b921814a52a|0.29.0": {
+  "at": "2026-10-28T14:05:22+07:00",
+  "n": 1,
+  "note": "left: Android-x86 VM, overflow inside Runtime.exec, no app frame"
  },
  "6ab3cb0c2d5cd811a0c51b91|0.24.1": {
   "at": "2026-10-27T09:37:14+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "6b2b5368c5ee63755ac02afc|0.29.0": {
+  "at": "2026-10-28T14:05:42+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "6b3b0f3f48f49ae1022d0fdf|0.26.3": {
   "at": "2026-10-27T09:37:15+07:00",
@@ -324,10 +509,25 @@
   "n": 2,
   "note": "old version (<=0.24): gone in current page"
  },
- "6ee3614a8b9bcabc17846802|0.29.0": {
-  "at": "2026-10-27T09:37:15+07:00",
+ "6e74bfe9ce7c98065828fe28|0.29.0": {
+  "at": "2026-10-28T14:05:18+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
+ },
+ "6e74bfe9ce7c98065828fe28|0.30.0": {
+  "at": "2026-10-28T14:05:18+07:00",
+  "n": 1,
+  "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
+ },
+ "6ee3614a8b9bcabc17846802|0.29.0": {
+  "at": "2026-10-28T14:05:42+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "6ee3614a8b9bcabc17846802|0.31.0": {
+  "at": "2026-10-28T14:05:42+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "70ce0f419f77afe2a702668d|0.25.0": {
   "at": "2026-10-27T09:37:16+07:00",
@@ -335,9 +535,19 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "72197a51e589326b53120179|0.28.0": {
-  "at": "2026-10-27T09:37:16+07:00",
+  "at": "2026-10-28T14:05:43+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "72197a51e589326b53120179|0.29.0": {
+  "at": "2026-10-28T14:05:43+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "72197a51e589326b53120179|0.31.0": {
+  "at": "2026-10-28T14:05:43+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "72f479fc5e46b710d40d7e11|0.28.0": {
   "at": "2026-10-27T12:52:42+07:00",
@@ -369,10 +579,45 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
- "86af8cb18d7c1247988aba2e|0.26.3": {
-  "at": "2026-10-27T09:37:17+07:00",
+ "82bbd4343b46d5b4f2b8ec5e|0.30.0": {
+  "at": "2026-10-28T14:05:17+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "fixed: homeOnce's second shell inside the try"
+ },
+ "86af8cb18d7c1247988aba2e|0.26.3": {
+  "at": "2026-10-28T14:05:43+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "86af8cb18d7c1247988aba2e|0.31.0": {
+  "at": "2026-10-28T14:05:43+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "86e0f0317c01d63472f141c3|0.30.0": {
+  "at": "2026-10-28T14:05:44+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "86e0f0317c01d63472f141c3|0.31.0": {
+  "at": "2026-10-28T14:05:44+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "8d835efbc4285a9e53433733|0.31.0": {
+  "at": "2026-10-28T14:05:44+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "90bc60d1687a8726a7af224d|0.29.0": {
+  "at": "2026-10-28T14:05:45+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "90d42f9a9572cf9043dcfd5e|0.31.0": {
+  "at": "2026-10-28T14:05:45+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "93c1d74822c7d6a4439c956b|0.23.0": {
   "at": "2026-10-26T21:47:40+07:00",
@@ -429,10 +674,65 @@
   "n": 2,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "a301db96eb9605ab2e155ea0|0.30.0": {
+  "at": "2026-10-28T14:05:46+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a301db96eb9605ab2e155ea0|0.31.0": {
+  "at": "2026-10-28T14:05:46+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a3f667697fbe6c1df462f460|0.28.0": {
+  "at": "2026-10-28T14:05:46+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "a468264ed0a50f4f2ddd7dce|0.26.3": {
   "at": "2026-10-27T09:37:18+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "a54cc4711ab55a41b38bd0ab|0.29.0": {
+  "at": "2026-10-28T14:05:47+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a61105e296172cd1c6bf213f|0.30.0": {
+  "at": "2026-10-28T14:05:47+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a61105e296172cd1c6bf213f|0.31.0": {
+  "at": "2026-10-28T14:05:47+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a6d1fca490c3d9fc86469d7b|0.29.0": {
+  "at": "2026-10-28T14:05:48+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a7711f7084c62b477cccd209|0.31.0": {
+  "at": "2026-10-28T14:05:49+07:00",
+  "n": 2,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "b10448044da52feadeb9ccdb|0.26.2": {
+  "at": "2026-10-28T14:05:21+07:00",
+  "n": 1,
+  "note": "fixed: old.js adds canvas roundRect for WebView < 99"
+ },
+ "b1999d21c00cbbc951ce9906|0.10.0": {
+  "at": "2026-10-28T14:05:22+07:00",
+  "n": 1,
+  "note": "left: NPE inside system_server, platform"
+ },
+ "b1ccd0d29d66cdd753d27562|0.27.0": {
+  "at": "2026-10-28T14:05:19+07:00",
+  "n": 1,
+  "note": "fixed: FleetStatus.round no computeIfAbsent (Android 7+ lambda) on Android 6"
  },
  "b2bad9122a9b4f430c6f151b|0.25.0": {
   "at": "2026-10-27T09:37:19+07:00",
@@ -465,9 +765,19 @@
   "note": "fixed in 5d4096ec"
  },
  "b6f2dbac085dd251c785a738|0.26.2": {
-  "at": "2026-10-26T21:47:46+07:00",
+  "at": "2026-10-28T14:05:23+07:00",
   "n": 1,
-  "note": "zaloJSV2: injected by the Zalo in-app browser, not ours"
+  "note": "left: zaloJSV2 is injected by the TV's browser, not ours"
+ },
+ "b6f2dbac085dd251c785a738|0.29.0": {
+  "at": "2026-10-28T14:05:23+07:00",
+  "n": 1,
+  "note": "left: zaloJSV2 is injected by the TV's browser, not ours"
+ },
+ "bb235b5156d5dfe6f4b07f66|0.31.0": {
+  "at": "2026-10-28T14:05:49+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "bb6aa51a71dd220857d39503|0.24.1": {
   "at": "2026-10-27T09:37:20+07:00",
@@ -509,15 +819,35 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
- "c76047145558da719bf26343|0.27.0": {
-  "at": "2026-10-27T09:37:21+07:00",
+ "c478fe63f0120d08264658ae|0.29.0": {
+  "at": "2026-10-28T14:05:50+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "c6a86068f3601afb5dbbefd8|0.31.0": {
+  "at": "2026-10-28T14:05:50+07:00",
+  "n": 2,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "c76047145558da719bf26343|0.27.0": {
+  "at": "2026-10-28T14:05:51+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "c76047145558da719bf26343|0.29.0": {
+  "at": "2026-10-28T14:05:51+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "c9ed129e030fd9374b14cfd4|0.26.3": {
   "at": "2026-10-26T21:47:46+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "ca6240bed79ba64b5f8cd8a9|0.28.0": {
+  "at": "2026-10-28T14:05:19+07:00",
+  "n": 1,
+  "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
  },
  "cb86f676dfffbcf108630018|0.28.0": {
   "at": "2026-10-27T12:52:43+07:00",
@@ -528,6 +858,11 @@
   "at": "2026-10-27T12:52:43+07:00",
   "n": 1,
   "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+ },
+ "cc0ca3bfdda49c7e255d18ca|0.29.0": {
+  "at": "2026-10-28T14:05:51+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "cdd3314554f5edfde8ff4338|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
@@ -550,14 +885,19 @@
   "note": "launcher picker: Play link opened with adb.shell on the click thread; moved to a Thread (next release)"
  },
  "d8b23f67ace7d1ad4be28a63|0.25.0": {
-  "at": "2026-10-27T09:37:22+07:00",
+  "at": "2026-10-28T14:05:52+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "d8b23f67ace7d1ad4be28a63|0.26.0": {
-  "at": "2026-10-27T09:37:22+07:00",
+  "at": "2026-10-28T14:05:52+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "d8b23f67ace7d1ad4be28a63|0.29.0": {
+  "at": "2026-10-28T14:05:52+07:00",
+  "n": 2,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "da6214721e9abe7601758e7a|0.26.3": {
   "at": "2026-10-26T21:47:45+07:00",
@@ -594,15 +934,55 @@
   "n": 1,
   "note": "old version (<=0.24): gone in current page"
  },
+ "e22d1d1548eb881e2fbb8bc3|0.30.0": {
+  "at": "2026-10-28T14:05:52+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "e2ac20416e441327a8535260|0.30.0": {
+  "at": "2026-10-28T14:05:53+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "e3535283ab456e068ad89a4b|0.30.0": {
+  "at": "2026-10-28T14:05:18+07:00",
+  "n": 1,
+  "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
+ },
+ "e3cda4c81f00053653368fc9|0.31.0": {
+  "at": "2026-10-28T14:05:53+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "ec35e370d1f1ed3547aef3ac|0.30.0": {
+  "at": "2026-10-28T14:05:10+07:00",
+  "n": 1,
+  "note": "fixed: Marks.text keeps the character when the drawable file is gone (APK replaced under a running app)"
+ },
  "ee57e878f33619a603accc6d|0.25.0": {
   "at": "2026-10-27T09:37:24+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "f03fa6b922541471343a37b2|0.30.0": {
+  "at": "2026-10-28T14:05:53+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
  "f3043f31e9ac948bffe2425a|0.26.3": {
   "at": "2026-10-26T21:47:43+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "f450a91c33294b34be468f07|0.30.0": {
+  "at": "2026-10-28T14:05:54+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "f47e3e4ff3e9c81406ab9094|0.31.0": {
+  "at": "2026-10-28T14:05:54+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "f577d1fc6dd6c2b3c4b8c4fe|0.26.2": {
   "at": "2026-10-27T09:37:24+07:00",
@@ -613,6 +993,11 @@
   "at": "2026-10-27T09:37:24+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "f65f13a2f87c6c56c3da7e9a|0.28.0": {
+  "at": "2026-10-28T14:05:55+07:00",
+  "n": 1,
+  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "fad2a14ed1bb2056883cbfb5|0.28.0": {
   "at": "2026-10-27T09:37:25+07:00",

@@ -14,6 +14,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: đồ thị mạng không còn tự đánh thức mỗi 2 giây khi không có widget mạng.
 - Chữ dễ hiểu hơn ở mọi ngôn ngữ: "Nguồn vào" thay "Ngõ vào", "Bật TV" thay "Đánh thức", "màn hình chính" thay "launcher" (khi nói về màn hình), "nhật ký", "bộ nhớ tạm"; tiếng Anh và tiếng Nga sửa chỗ dịch máy, số đếm đúng số ít/nhiều, 4 dòng tiếng Nga còn thiếu.
 - TV Home: nút "Thêm" luôn có nhóm "Live widget" với đủ mọi live widget, cái đã đặt ghi "Đã có trên màn hình chính" (trước đây còn một cái thì nó nằm lẫn trong danh sách); hàng phía trên lưới app gọi chung là "widget" ở mọi nơi, không còn "thẻ".
+- Sửa 11 lỗi văng từ báo cáo lỗi: hộp thoại mở sau khi màn hình đã đóng, TV Games khi trình duyệt từ chối chứng chỉ (Android 11), app điện thoại trên Android 6, đồ hoạ trên WebView cũ, TV Setup khi mất kết nối ADB, TV Home khi đóng.
 
 **English**
 - Remote > Open on TV > **Open a link**: a YouTube link asks Pin to TV or Open on TV (as when a link is shared to TV Remote).
@@ -23,6 +24,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Home: the network graph no longer wakes every 2 seconds when no network widget is shown.
 - Plainer words in every language: no code words ("Still picture", "Display over other apps", "link" instead of token), one name per thing ("Turn off" apps), US spelling, counts right for 1; Russian fixes (grammar, plurals, four missing lines); Vietnamese everyday words.
 - TV Home: "Add" always has a "Live widgets" group listing every live widget, the placed ones marked "Already on the home screen" (with one left it used to sit loose in the list); the row above the app grid is called "widget" everywhere, no more "card".
+- 11 crashes from the crash reports fixed: a dialog opened after its screen closed, TV Games when a browser refuses its certificate (Android 11), the phone app on Android 6, drawing on an old WebView, TV Setup when the ADB link drops, TV Home while closing.
 
 ## 0.31.0 - 2026-10-28
 

@@ -86,10 +86,12 @@ object Guard {
             override fun onActivitySaveInstanceState(a: Activity, b: Bundle) {}
             override fun onActivityDestroyed(a: Activity) {}
         })
-        if (debuggable) {     // debug builds only: adb shell am broadcast -a dev.tvremote.GUARD_TEST --es on main|bg|resume
+        if (debuggable) {     // debug builds only: adb shell am broadcast -a dev.tvremote.GUARD_TEST --es on main|bg|resume|gone
             val r = object : android.content.BroadcastReceiver() {
                 override fun onReceive(c: Context, i: Intent) {
-                    if (i.getStringExtra("on") == "resume") File(app.filesDir, "guard-resume-throw").writeText("1")   // the next onResume throws
+                    if (i.getStringExtra("on") == "gone") top.get()?.let { a ->            // a dialog shown a second after its screen closed
+                        a.finish(); main.postDelayed({ android.app.Dialog(a).show() }, 1000) }
+                    else if (i.getStringExtra("on") == "resume") File(app.filesDir, "guard-resume-throw").writeText("1")   // the next onResume throws
                     else throwOn(i.getStringExtra("on") != "bg")
                 }
             }
@@ -110,6 +112,7 @@ object Guard {
         val now = System.currentTimeMillis()
         stamps.addLast(now); while (stamps.size > BURST) stamps.removeFirst()
         val burst = stamps.size >= BURST && now - stamps.first() < BURST_MS
+        if (GuardLogic.goneWindow(t)) { Log.w("Guard", "a dialog of a closed screen: $t"); return true }
         if (GuardLogic.inLifecycle(t) || burst) { save(Looper.getMainLooper().thread, t, died = true); return false }
         report(Looper.getMainLooper().thread, t)
         return true

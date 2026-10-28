@@ -43,7 +43,6 @@ import org.json.JSONObject
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.Executors
 import dev.tvremote.tvui.Glass
 import dev.tvremote.tvui.Motion
 import dev.tvremote.tvui.TvGlass
@@ -100,7 +99,8 @@ import dev.tvremote.home.ui.Zoom
  * (hold OK on an app) or from the phone / computer (HomeReceiver).
  */
 class HomeActivity : Activity() {
-    private val bg = Executors.newSingleThreadExecutor()
+    private val bg = java.util.concurrent.ThreadPoolExecutor(1, 1, 0, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.LinkedBlockingQueue(),
+        java.util.concurrent.ThreadPoolExecutor.DiscardPolicy())   // a late job after onDestroy's shutdown is dropped, not thrown (census 1d158634)
     private lateinit var backdrop: Backdrop
     private lateinit var scroll: ScrollView
     private lateinit var content: FrameLayout

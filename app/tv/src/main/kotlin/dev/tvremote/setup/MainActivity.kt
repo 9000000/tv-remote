@@ -1029,8 +1029,9 @@ class MainActivity : Activity() {
         val p = getSharedPreferences("remote", MODE_PRIVATE)
         if (p.getBoolean("home_offered", false)) return
         if (busy) { Thread { while (busy) Thread.sleep(300); homeOnce(a) }.start(); return }   // the installs' job: the list waits for it
-        val now = try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow() } catch (e: Exception) { return }
-        if (now.startsWith(dev.tvremote.home.HomeConfig.PKG + "/") || !a.shell("pm path ${dev.tvremote.home.HomeConfig.PKG}").contains("package:")) return
+        val (now, has) = try { dev.tvremote.core.ontv.LauncherSwap({ a.shell(it) }).homeNow() to a.shell("pm path ${dev.tvremote.home.HomeConfig.PKG}").contains("package:") }
+            catch (e: Exception) { return }                           // the link dropped (census 82bbd434): asked again on the next one
+        if (now.startsWith(dev.tvremote.home.HomeConfig.PKG + "/") || !has) return
         p.edit().putBoolean("home_offered", true).apply()
         ui { chooseLauncher(dev.tvremote.home.HomeConfig.PKG) }
     }
