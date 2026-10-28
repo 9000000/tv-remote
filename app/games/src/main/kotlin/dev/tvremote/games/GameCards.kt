@@ -176,7 +176,7 @@ class GameCards(
         pauseCard.visibility = if (paused) View.VISIBLE else View.GONE
         startPlayers.removeAllViews(); chipDots.removeAllViews(); pingViews.clear()
         players.forEach { p ->
-            startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(who(p), 18f).apply { text = dev.tvremote.tvui.Marks.text(act, text) { R.drawable.ic_check }; maxLines = 1; maxWidth = act.dp(260); ellipsize = android.text.TextUtils.TruncateAt.END }); addView(pingLabel(p, 14f)) })
+            startPlayers.addView(LinearLayout(act).apply { gravity = Gravity.CENTER; addView(act.dot(p, 14)); addView(act.label(who(p), 18f).apply { text = dev.tvremote.tvui.Marks.text(act, text); maxLines = 1; maxWidth = act.dp(260); ellipsize = android.text.TextUtils.TruncateAt.END }); addView(pingLabel(p, 14f)) })
             chipDots.addView(act.dot(p, 12)); chipDots.addView(pingLabel(p, 12f))
         }
         if (!startShown && !paused && !quiet && !lobby && players.isNotEmpty()) { if (flash) flashChip() } else chip.visibility = View.GONE

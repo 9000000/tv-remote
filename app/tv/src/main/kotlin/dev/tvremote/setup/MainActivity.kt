@@ -1459,7 +1459,7 @@ class MainActivity : Activity() {
             if (!logUsed) { logUsed = true; logView.setText("", android.widget.TextView.BufferType.EDITABLE); logView.setTextColor(TvUi.TEXT) }
             // one colour per kind, read from the line's own mark before a font without it drops the mark: one look tells a failure from a step
             val tint = kind ?: when (val m = Marks.lead(line)) { null -> line.trimStart().firstOrNull().let { if (it == '❌') BAD else if (it == '✅') OK else null }; '✗', '✕', '✖' -> BAD; '⚠' -> WARN; else -> OK.takeIf { m == '✓' || m == '✔' } }
-            val row = Marks.text(this, "$at  ${drawable(line)}\n", ::markIcon)   // the marks are drawn as line icons
+            val row = Marks.text(this, "$at  ${drawable(line)}\n")   // the marks are drawn as line icons
             row.setSpan(android.text.style.ForegroundColorSpan(TvUi.DIM), 0, at.length, 0)   // the time stays quiet
             if (tint != null) row.setSpan(android.text.style.ForegroundColorSpan(tint), at.length, row.length, 0)
             val atEnd = scroll.scrollY + scroll.height >= logView.bottom + scroll.paddingBottom - dp(8)   // read before the append: a reader higher up is not yanked down
@@ -1473,13 +1473,8 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun marked(s: String) = Marks.text(this, s, ::markIcon)
+    private fun marked(s: String) = Marks.text(this, s)
 
-    private fun markIcon(ch: Char) = when (ch) {
-        '✓', '✔' -> R.drawable.ic_check; '✗', '✕', '✖' -> R.drawable.ic_close; '⚠' -> R.drawable.ic_alert; '▶' -> R.drawable.ic_play
-        '⏻' -> R.drawable.ic_power; '⏹' -> R.drawable.ic_stop; '⏸' -> R.drawable.ic_pause; '♪' -> R.drawable.ic_music
-        '↻' -> R.drawable.ic_refresh; '↩' -> R.drawable.ic_undo; '★', '☆' -> R.drawable.ic_star; '⚙' -> R.drawable.ic_settings
-        '⬇' -> R.drawable.ic_download; else -> 0 }
 
     /** [line] without the symbols this TV's font has no glyph for (emoji; the plain marks ✗ ✓ ⚠ are icon spans, [Marks]): the words say it anyway. */
     private fun drawable(line: String): String {

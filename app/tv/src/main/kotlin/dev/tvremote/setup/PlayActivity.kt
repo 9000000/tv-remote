@@ -36,7 +36,7 @@ class PlayActivity : Activity() {
         root.addView(video, FrameLayout.LayoutParams(-1, -1, Gravity.CENTER))
         if ((intent.type ?: "").startsWith("audio/")) {                  // a song has no picture: its name
             val t = TextView(this)
-            t.text = dev.tvremote.tvui.Marks.text(this, "♪  " + file.nameWithoutExtension) { R.drawable.ic_music }   // a line icon: a TV font may lack ♪
+            t.text = dev.tvremote.tvui.Marks.text(this, "♪  " + file.nameWithoutExtension)   // a line icon: a TV font may lack ♪
             t.setTextColor(Color.WHITE); t.textSize = 28f; t.gravity = Gravity.CENTER
             root.addView(t, FrameLayout.LayoutParams(-1, -1))
         }

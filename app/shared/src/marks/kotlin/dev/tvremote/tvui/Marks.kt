@@ -13,8 +13,22 @@ import android.text.style.ReplacementSpan
  * Words keep their mark in the i18n files (the web page turns them into icons too); the native screens turn them here.
  */
 object Marks {
+    /** Each mark's line icon, the one map for every app (dev/gen/gen_icons.py writes the ic_* files; tests/marks.test.js checks each
+     *  app has them). Full names on purpose: the resource shrinker keeps what getIdentifier is asked for by a literal name. */
+    private val ICONS = mapOf(
+        '✓' to "ic_check", '✔' to "ic_check", '✗' to "ic_close", '✕' to "ic_close", '✖' to "ic_close", '⚠' to "ic_alert",
+        '▶' to "ic_play", '⏻' to "ic_power", '⏹' to "ic_stop", '⏸' to "ic_pause", '♪' to "ic_music", '↻' to "ic_refresh",
+        '↩' to "ic_undo", '★' to "ic_star", '☆' to "ic_star", '⚙' to "ic_settings", '⬇' to "ic_download", '⌫' to "ic_backspace")
+
     /** The marks that have a line icon; a mark followed by U+FE0F is a colour emoji and stays. */
-    const val SET = "✓✔✗✕✖⏻⏹⏸▶♪↻↩★☆⚠⚙⬇⌫"
+    val SET = ICONS.keys.joinToString("")
+
+    private val ids = HashMap<Char, Int>()
+
+    /** The drawable id of [ch]'s line icon in this app, 0 when it has none (looked up once per mark). */
+    fun icon(c: Context, ch: Char): Int = synchronized(ids) {
+        ids.getOrPut(ch) { ICONS[ch]?.let { c.resources.getIdentifier(it, "drawable", c.packageName) } ?: 0 }
+    }
 
     fun isMark(s: CharSequence, i: Int) = SET.indexOf(s[i]) >= 0 && !(i + 1 < s.length && s[i + 1] == '️')
 
@@ -24,11 +38,11 @@ object Marks {
     /** [s] without its marks, for a toast or a notification where no icon can go: the words say it. */
     fun plain(s: String): String = buildString { s.forEachIndexed { i, ch -> if (!isMark(s, i)) append(ch) } }.trim().replace("  ", " ")
 
-    /** [s] with each mark an icon span; [icon] gives the drawable id of a mark (0 = leave the character). The icon takes the colour the text is drawn in, whenever it is drawn (focus changes it). */
-    fun text(c: Context, s: CharSequence, icon: (Char) -> Int): SpannableStringBuilder {
+    /** [s] with each mark an icon span (a mark this app has no icon for stays a character). The icon takes the colour the text is drawn in, whenever it is drawn (focus changes it). */
+    fun text(c: Context, s: CharSequence): SpannableStringBuilder {
         val out = SpannableStringBuilder(s)
         for (i in s.indices) if (isMark(s, i)) {
-            val id = icon(s[i]); if (id == 0) continue
+            val id = icon(c, s[i]); if (id == 0) continue
             val d = c.getDrawable(id)!!.mutate()
             out.setSpan(IconSpan(d), i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }

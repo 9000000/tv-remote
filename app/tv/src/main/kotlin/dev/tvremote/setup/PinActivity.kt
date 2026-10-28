@@ -220,7 +220,7 @@ class PinActivity : Activity() {
     }
 
     private fun button(label: String, run: () -> Unit): Button = Button(this).apply {
-        text = Marks.text(this@PinActivity, label) { if (it == '✕') R.drawable.ic_close else if (it == '⌫') R.drawable.ic_backspace else 0 }   // ✕ ⌫ as line icons
+        text = Marks.text(this@PinActivity, label)   // ✕ ⌫ as line icons
         if (label == "✕") contentDescription = T("common.close")
         isAllCaps = false
         textSize = 20f
