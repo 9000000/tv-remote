@@ -385,6 +385,7 @@
   "qk_test": "Test keys",
   "qk_on": "Quick keys: %1$s",
   "qk_auto_on": "Open an app when the TV turns on: %1$s",
+  "qk_always": "Always at power-on: %1$s",
   "qk_yes": "On",
   "qk_no": "Off",
   "qk_power": "At power-on",

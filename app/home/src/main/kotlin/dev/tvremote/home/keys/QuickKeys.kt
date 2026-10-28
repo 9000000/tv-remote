@@ -59,11 +59,14 @@ object QuickKeys {
         }
         // the switch and its state in its words: "Bật phím" alone did not say whether the keys were on, nor what pressing would do
         val keysOn = a.pill(a.getString(R.string.qk_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
+        // power-on wins over whatever the TV woke into (HomeConfig autoall); shown once TV Setup has said it takes it
+        val always = a.pill(a.getString(R.string.qk_always, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoall", !Store.get(a).optBoolean("autoall"))) }
         val head = LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(12))   // 32 dp above the panel before, now inside it
             clipChildren = false; clipToPadding = false                // a focused pill grows past the row: clipped, its top and bottom were cut
             addView(line(a.getString(R.string.qk_title), 26f, Color.WHITE).apply { typeface = Font.bold; maxLines = 1 }, LinearLayout.LayoutParams(0, -2, 1f))
             addView(a.pill(a.getString(R.string.qk_test), 14f, animate = { true }) { testKeys() }, LinearLayout.LayoutParams(-2, dp(40)).apply { rightMargin = dp(12) })   // TV Setup's key tester
+            addView(always, LinearLayout.LayoutParams(-2, dp(40)).apply { rightMargin = dp(12) })
             addView(keysOn)
         }
         val panel = LinearLayout(a).apply {
@@ -97,6 +100,9 @@ object QuickKeys {
             keysOn.isSelected = c.optBoolean("keyon")
             fun said(on: Boolean) = a.getString(if (on) R.string.qk_yes else R.string.qk_no)
             keysOn.pillText(a.getString(R.string.qk_on, said(keysOn.isSelected)))
+            always.visibility = if (Keys.all(a)) View.VISIBLE else View.GONE
+            always.isSelected = c.optBoolean("autoall")
+            always.pillText(a.getString(R.string.qk_always, said(always.isSelected)))
             hint.text = a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere)
         }
 

@@ -54,6 +54,8 @@ object Keys {
     fun setup(c: Context) = prefs(c).getBoolean("setup", false)
     /** TV Setup may run its key filter (the grant over ADB): without it the keys work on TV Home's screen only. */
     fun can(c: Context) = prefs(c).getBoolean("can", false)
+    /** TV Setup takes "autoall" (power-on opens its app even over the one the TV woke into): an older one ignores it. */
+    fun all(c: Context) = prefs(c).getBoolean("all", false)
 
     /** The dead keys TV Setup found on this TV, which a person may give an app. */
     fun dead(c: Context): List<Int> = try { JSONArray(prefs(c).getString("free", "[]")).let { a -> List(a.length()) { a.getInt(it) } } } catch (e: Exception) { emptyList() }
