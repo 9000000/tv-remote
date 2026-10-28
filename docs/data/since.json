@@ -39,6 +39,7 @@
   "home-widgets": {"since": "0.22.0"},
   "home-quickkeys": {"since": "0.22.0"},
   "home-add": {"since": "0.22.0"},
+  "home-pin": {"since": "0.31.0"},
   "quick-talk": {"since": "0.22.0", "phone": "0.22.0"},
   "census": {"since": "0.22.0"},
   "keymap": {"since": "0.21.0"},
