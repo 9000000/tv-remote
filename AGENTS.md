@@ -49,6 +49,8 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
   rules in app/shared/web/AGENTS.md.
 - **The apps map** lives once in `docs/data/apps-map.json`: `docs/apps.html` draws it; edit it, then `node dev/gen/apps_map.js` (the README mermaid blocks;
   `tests/apps_map.test.js` fails when they differ).
+- **Words people understand at a glance, in every language:** [app/shared/i18n/WRITING.md](app/shared/i18n/WRITING.md) (write each
+  language as its speakers say it, never word by word; say what happens and name the thing). Read it before writing any UI words.
 - **Vietnamese is the source language; words go by id**, all under `app/shared/i18n/` (one place for every app and language):
   `langs.json` (THE list of languages), `<lang>.json` (the page and `core/Words.kt`: `T('id')`, `T("id")`; `vi.json` first, `en.json`
   complete) and `apps/<lang>/<module>.json` (the native apps: home, games, channels, tvkeys, android, tvui; the Android ids; Gradle

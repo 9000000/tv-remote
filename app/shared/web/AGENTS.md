@@ -21,6 +21,7 @@ Read with the root [AGENTS.md](../../../AGENTS.md).
 - **The page's state:** a `js/` file sets only the globals it declares; another file calls a function the owner offers
   (`pickGo`, `adbNow`, `appsStale`), and what a file keeps about one TV it forgets in its own `onTvChange()`. Fields of the
   page are written through `put()`. Both checked by `tests/page.test.js`.
+- **How to write the words** (plain, per language, not translated word by word): `app/shared/i18n/WRITING.md`.
 - **Vietnamese is the source language; words go by id.** `app/shared/i18n/<lang>.json` holds every word of the page under an
   id (`area.words`): `vi.json` first, then the same ids in each language (`en.json` complete: it is every other one's fallback).
   A language is its files plus its line in `i18n/langs.json` (the ONE list: `js/i18n.js` reads it, `i18n/apps/<lang>/<module>.json` holds the native apps' words, see the root AGENTS.md). In `index.html` an element keeps its Vietnamese and names the id
