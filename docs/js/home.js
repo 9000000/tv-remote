@@ -230,6 +230,11 @@
     dlg.addEventListener("click", function(e){ if (e.target === dlg) dlg.close(); });      // the backdrop
   })();
 
+  // before / after: the range input moves the clip (--p) and the bar
+  document.querySelectorAll(".ba").forEach(function(f){
+    f.querySelector(".ba-in").addEventListener("input", function(){ f.style.setProperty("--p", this.value + "%"); });
+  });
+
   // latest release tag in the pill; the page reads fine if GitHub is unreachable
   fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases/latest")
     .then(function(r){ return r.ok ? r.json() : null; })
