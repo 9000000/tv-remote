@@ -28,7 +28,7 @@ object Drop {
     const val MENU_DIM = 0.45f
 
     /** [on]: the state on the right with a green dot ("Connected"); [group]: rows of another group get a line above them. */
-    class Row(val icon: Int, val label: String, val on: String? = null, val group: Int = 0, val go: () -> Unit)
+    class Row(val icon: Int, val label: String, val on: String? = null, val group: Int = 0, val folds: Boolean = false, val more: List<Row>? = null, val go: () -> Unit = {})
 
     private const val DIM = 0x8CFFFFFF.toInt()
 
@@ -46,7 +46,8 @@ object Drop {
         }
         val tint = ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF111318.toInt(), Color.WHITE))
         var last = rows.firstOrNull()?.group
-        for (r in rows) {
+        fun add(list: List<Row>) {
+        for (r in list) {
             if (r.group != last) {
                 col.addView(View(a).apply { setBackgroundColor(0x1FFFFFFF) }, LinearLayout.LayoutParams(-1, dp(1)).apply { setMargins(dp(14), dp(6), dp(14), dp(6)) })
                 last = r.group
@@ -72,9 +73,21 @@ object Drop {
                         setTextColor(ColorStateList(arrayOf(intArrayOf(android.R.attr.state_focused), intArrayOf()), intArrayOf(0xFF5B5F6B.toInt(), DIM)))
                     }, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(6) })
                 }
-                setOnClickListener { dialog.dismiss(); r.go() }
+                setOnClickListener {
+                    val more = r.more
+                    if (more == null) { dialog.dismiss(); r.go(); return@setOnClickListener }
+                    // "More inputs": the folded rows open in its place, the menu stays
+                    val idx = col.indexOfChild(this); col.removeViewAt(idx)
+                    if (idx > 0 && col.getChildAt(idx - 1).layoutParams.height == dp(1)) col.removeViewAt(idx - 1)   // its own divider
+                    last = rows.lastOrNull { x -> x.more == null }?.group
+                    val first = col.childCount
+                    add(more)
+                    col.getChildAt(if (col.getChildAt(first).isFocusable) first else first + 1)?.requestFocus()   // a divider may come first
+                }
             }, LinearLayout.LayoutParams(-1, -2))
         }
+        }
+        add(rows)
         dialog.setContentView(col)
         // under the button, its left edge on the button's (a button in the right half: its right edge), kept inside the screen (Settings sits near the right edge)
         val at = IntArray(2).also { anchor.getLocationOnScreen(it) }

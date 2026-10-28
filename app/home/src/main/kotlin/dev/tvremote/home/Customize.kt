@@ -830,6 +830,7 @@ object Customize {
             tile(R.drawable.ic_plus, a.getString(R.string.show_add), null, "showAdd")
             tile(R.drawable.ic_download, a.getString(R.string.show_suggest), null, "showSuggest")
             tile(R.drawable.ic_play, a.getString(R.string.show_watch), null, "showWatch")
+            tile(R.drawable.ic_input, a.getString(R.string.show_infold), null, "infold")   // default off (HomeConfig "infold")
             tile(R.drawable.ic_updown, a.getString(R.string.watch_at), null, "watchAt", HomeConfig.WATCH_AT.map { it to a.getString(when (it) { "top" -> R.string.watch_at_top; "under1" -> R.string.watch_at_under1; "tiles" -> R.string.watch_at_tiles; else -> R.string.watch_at_bottom }) })
             tile(R.drawable.ic_sparkle, a.getString(R.string.motion), null, "anim")
             tile(R.drawable.ic_sparkle, a.getString(R.string.c_motion), null, "motion",
@@ -1167,7 +1168,7 @@ object Customize {
     private fun systemDream(a: Activity) {
         val go = {
             try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_DREAM_SETTINGS)) }
-            catch (e: Exception) { try { a.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS)) } catch (e2: Exception) { } }
+            catch (e: Exception) { dev.tvremote.home.apps.SystemSettings.open(a) }
         }
         // a Toast was hidden by the settings screen opened at once; a question the person reads, then goes on
         android.app.AlertDialog.Builder(a, R.style.Menu).setMessage(R.string.dream_system).setPositiveButton(R.string.ok) { _, _ -> go() }.showOnOk()

@@ -17,7 +17,7 @@ import dev.tvremote.home.ui.Drop
  * [onFail]: an input that would not open.
  */
 object Inputs {
-    fun rows(a: Activity, onFail: () -> Unit): List<Drop.Row> {
+    fun rows(a: Activity, fold: Boolean = false, onFail: () -> Unit): List<Drop.Row> {
         val tim = try { a.getSystemService(Context.TV_INPUT_SERVICE) as? TvInputManager } catch (e: Exception) { null }
         val list: List<TvInputInfo> = try { tim?.tvInputList.orEmpty() } catch (e: Exception) { emptyList() }
         fun hidden(i: TvInputInfo) = try { i.isHidden(a) } catch (e: Exception) { false }
@@ -35,13 +35,32 @@ object Inputs {
             val dev = devices[i.id]?.firstNotNullOfOrNull { d -> name(custom(d), d.loadLabel(a).toString(), d.id).takeIf { it != base } }
             val connected = !(hdmi && bogus) && (state(i.id) == TvInputManager.INPUT_STATE_CONNECTED || devices[i.id].orEmpty().any { state(it.id) == TvInputManager.INPUT_STATE_CONNECTED })
             val group = if (hdmi) 0 else if (i.isPassthroughInput) 1 else 2
+            val folds = fold && foldable(group, state(i.id), bogus)
             Drop.Row(if (group == 2) R.drawable.ic_tv else if (hdmi) R.drawable.ic_input else R.drawable.ic_plug,
-                if (dev != null) "$base · $dev" else base, if (connected && group < 2) a.getString(R.string.connected) else null, group) {
+                if (dev != null) "$base · $dev" else base, if (connected && group < 2) a.getString(R.string.connected) else null, group, folds = folds && !devices[i.id].orEmpty().any { state(it.id) == TvInputManager.INPUT_STATE_CONNECTED }) {
                 val uri = if (i.isPassthroughInput) TvContract.buildChannelUriForPassthroughInput(i.id) else TvContract.buildChannelsUriForInput(i.id)
                 try { a.startActivity(InputOpen.intent(a, uri)) } catch (e: Exception) { if (!xgimi(a, uri)) onFail() }
             }
         }.sortedWith(compareBy<Drop.Row> { it.group }.thenBy(Nat) { it.label })
-        return rows.ifEmpty { coocaa(a, onFail) }
+        return if (rows.isEmpty()) coocaa(a, onFail) else if (fold) foldRows(rows, a.getString(R.string.inputs_more, rows.count { it.folds })) else rows
+    }
+
+    /**
+     * The "fold empty ports" option: [group] 0 = HDMI, 1 = other passthrough (AV, component: no hotplug, so the TV cannot say), 2 = tuner and
+     * the like. A jack always folds; an HDMI port folds only when the TV says it is DISCONNECTED and its answers can be trusted
+     * ([bogus] = every port "connected": it means nothing); STANDBY is a device that is there. Pure.
+     */
+    fun foldable(group: Int, state: Int, bogus: Boolean): Boolean = when (group) {
+        1 -> true
+        0 -> !bogus && state == TvInputManager.INPUT_STATE_DISCONNECTED
+        else -> false
+    }
+
+    /** [rows] with the folded ones moved behind one "More inputs" row (which expands in place); nothing is folded when it would leave nothing to show. Pure. */
+    fun foldRows(rows: List<Drop.Row>, moreLabel: String): List<Drop.Row> {
+        val keep = rows.filter { !it.folds }; val away = rows.filter { it.folds }
+        if (away.isEmpty() || keep.isEmpty()) return rows
+        return keep + Drop.Row(R.drawable.ic_more, moreLabel, null, (keep.last().group + 1), more = away)
     }
 
     /**

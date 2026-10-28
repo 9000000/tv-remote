@@ -190,7 +190,11 @@ object ControlCenter {
         private fun hasSetup() = try { a.packageManager.getPackageInfo("dev.tvremote.setup", 0); true } catch (e: Exception) { false }
         private fun resolves(action: String) = Intent(action).resolveActivity(a.packageManager) != null
         private val PAIR = "com.google.android.intent.action.CONNECT_INPUT"   // Android TV Settings' "Pair remote or accessory"
-        private fun go(actions: List<String>) { actions.firstOrNull { resolves(it) }?.let { dialog.dismiss(); open(it) } }
+        private fun go(actions: List<String>) {
+            val hit = actions.firstOrNull { resolves(it) }
+            if (hit != null) { dialog.dismiss(); open(hit) }
+            else { dialog.dismiss(); dev.tvremote.home.apps.SystemSettings.open(a) }   // nothing standard resolves: the vendors' Settings, else a toast
+        }
         private fun say(text: String, ms: Long = 0) { footer.text = text; hold = if (ms > 0) System.currentTimeMillis() + ms else 0L }
 
         private fun tile(icon: Int, name: Int, press: () -> Unit) = CcTile(a, ::dp, icon, a.getString(name)).also { t -> t.press = { if (t.need) needSetup(t) else press() }; tiles.add(t) }

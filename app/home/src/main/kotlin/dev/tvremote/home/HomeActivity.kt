@@ -174,7 +174,7 @@ class HomeActivity : Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         if (CrashLoop.tripped(this)) {                               // crashing on start again and again: let the person change the home app
-            try { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (ignored: Exception) { }
+            dev.tvremote.home.apps.SystemSettings.open(this)
             finish(); return
         }
         wantInputs = intent?.action == InputOpen.INPUTS
@@ -2268,7 +2268,7 @@ class HomeActivity : Activity() {
 
     /** The inputs' menu under the top bar (the list is [Inputs.rows], the Control Center counts the same): the TV's own settings when it lists none. */
     private fun inputs() {
-        val rows = Inputs.rows(this) { toast(R.string.no_open) }
+        val rows = Inputs.rows(this, conf.optBoolean("infold")) { toast(R.string.no_open) }
         if (rows.isEmpty()) { if (Inputs.liveApp(this)?.let { Apps.launch(this, it) } == true || Inputs.panel(this)) return; toast(R.string.no_inputs); open(Settings.ACTION_SETTINGS); return }   // a Live TV app is the TV's own input picker
         open?.dismiss()
         open = Drop.show(this, bar.capsule, rows)
@@ -2286,7 +2286,7 @@ class HomeActivity : Activity() {
         catch (e: Exception) { settings() }
     }
 
-    private fun settings() { try { startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e2: Exception) { toast(R.string.no_open) } }
+    private fun settings() { dev.tvremote.home.apps.SystemSettings.open(this) }   // the vendors' Settings when the standard one is missing, else a toast
 
     private var afterGrant: String? = null                            // the screen [open] goes on to once the person answered
 
