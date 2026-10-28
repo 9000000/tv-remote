@@ -464,7 +464,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             override fun onVideoSize(w: Int, h: Int) { }
             override fun onNetwork(mac: String, lan: String, tailscale: String) { }
             override fun wantsNetwork() = false                        // the address is not used here: one shell less on every wake
-        })
+        }, quiet = true)                                               // never turns a TV in standby on (issue #6)
         tv = mine
     }
 
