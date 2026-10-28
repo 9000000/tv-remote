@@ -262,6 +262,9 @@ class Tv(
                         + " tunnel_forward=true cleanup=false control=$wantControl send_dummy_byte=true send_device_meta=false clipboard_autosync=false "   // autosync on, GET_CLIPBOARD answers nothing
                         + (if (wantVideo) "video=true $video max_fps=" + fpsFor(quality, fps, soft != null, capped) + (soft?.let { " video_encoder=$it" } ?: "") else "video=false")
                         + (if (hearing == null) " audio=false" else " audio=true audio_codec=$hearing" + (if (hearing == "opus") " audio_bit_rate=$audioBitRate" else "") + (if (sdk >= 33) " audio_source=playback" else "") + (if (share) " audio_dup=true" else ""))
+                        // scrcpy presses POWER at start when the screen is off: a keys-only link (TV Setup's own, after every update
+                        // or ADB reconnect at night) turned a TV in standby on (issue #6); [wake] says when to wake it
+                        + (if (!wantVideo && hearing == null) " power_on=false" else "")
                         // scrcpy-server does not always notice that we left (a still picture sends nothing), and a leftover one keeps
                         // loading the TV. So a shell loop on the TV waits for our heartbeat and kills the server when it stops; 60 s,
                         // not less: a phone frozen in the background or a laptop that slept a moment is not a viewer gone.
