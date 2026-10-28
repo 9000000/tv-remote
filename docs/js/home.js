@@ -236,17 +236,17 @@
     .then(function(j){ if (j && j.tag_name) document.getElementById("ver").textContent = j.tag_name.replace(/^v?/, "v"); })
     .catch(function(){});
 
-  // hero line: downloads (GitHub releases, all .apk) and TVs / phones that used it (census); each cached 6 h, a failed part stays hidden
+  // hero line: TVs / phones that used it (census installs, each counted once). Not GitHub's download counts: TV Setup's quiet
+  // updates fetch every app from there too, so they grew with each release, not with people. Cached 6 h, hidden on failure
   (function(){
-    var box = document.getElementById("h-stats"), H = 6 * 3600e3, got = {};
+    var box = document.getElementById("h-stats"), H = 6 * 3600e3;
     function fmt(n, l){ return String(n).replace(/\B(?=(\d{3})+$)/g, l === "vi" ? "." : ","); }
     function show(id, n, plus){
       if (!(n > 0)) return;
       var el = document.getElementById(id), b = el.querySelectorAll("b"), v = n;
       if (plus) v = n >= 1000 ? Math.floor(n / 100) * 100 : n >= 100 ? Math.floor(n / 10) * 10 : n;
       b[0].textContent = fmt(v, "vi") + (plus && v < n ? "+" : ""); b[1].textContent = fmt(v, "en") + (plus && v < n ? "+" : "");
-      el.hidden = false; got[id] = 1;
-      document.getElementById("st-sep").hidden = !(got["st-dl"] && got["st-us"]);
+      el.hidden = false;
       box.hidden = false; requestAnimationFrame(function(){ box.classList.add("on"); });
     }
     function part(key, id, plus, load){
@@ -258,12 +258,6 @@
         show(id, n, plus);
       }).catch(function(){});
     }
-    part("hs-dl", "st-dl", true, function(){
-      return fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases?per_page=100").then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(rs){
-        var n = 0; rs.forEach(function(r){ (r.assets || []).forEach(function(a){ if (/\.apk$/i.test(a.name)) n += a.download_count || 0; }); });
-        return n;
-      });
-    });
     part("hs-us", "st-us", false, function(){
       return fetch("https://tvr-census.99-hoangtran.workers.dev/v1/days").then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ return d && d.installs; });
     });
