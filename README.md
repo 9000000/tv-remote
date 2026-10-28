@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="https://github.com/HoangTran0410/tv-remote/releases/latest"><img src="https://img.shields.io/github/v/release/HoangTran0410/tv-remote?style=flat-square&label=release&color=3b82f6&labelColor=15181e" alt="Latest release"></a>
-  <a href="https://github.com/HoangTran0410/tv-remote/releases"><img src="https://img.shields.io/github/downloads/HoangTran0410/tv-remote/total?style=flat-square&color=3b82f6&labelColor=15181e" alt="Downloads"></a>
+  <a href="https://github.com/HoangTran0410/tv-remote/releases"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Ftvr-census.99-hoangtran.workers.dev%2Fv1%2Fdownloads&query=%24.downloads&label=downloads&style=flat-square&color=3b82f6&labelColor=15181e" alt="Downloads"></a>
   <img src="https://img.shields.io/badge/Android%20TV-5%2B-3b82f6?style=flat-square&labelColor=15181e" alt="Android TV 5+">
   <img src="https://img.shields.io/badge/apps-Android%20·%20Mac%20·%20Windows%20·%20Linux%20·%20web-3b82f6?style=flat-square&labelColor=15181e" alt="Android, Mac, Windows, Linux, web">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-3b82f6?style=flat-square&labelColor=15181e" alt="MIT"></a>

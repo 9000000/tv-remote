@@ -1,7 +1,7 @@
 // tvr-census: an anonymous count of which TVs the apps ran on. Stores no IP, no headers, no user agent;
 // the install id is kept only as the first 8 bytes of its sha256. See ../README.md.
 import { support, prune } from "./support.js";
-import { MAX_BODY, validate, hashId, today, aggregate, series, MAX_CRASH, CRASH_PER_DAY, CRASH_ROWS, CRASH_IDS, validateCrash, crashSig, sameSecret } from "./logic.js";
+import { MAX_BODY, validate, hashId, today, aggregate, series, downloads, MAX_CRASH, CRASH_PER_DAY, CRASH_ROWS, CRASH_IDS, validateCrash, crashSig, sameSecret } from "./logic.js";
 
 const CORS = { "access-control-allow-origin": "*" };
 const json = (o, status = 200, extra = {}) =>
@@ -148,6 +148,31 @@ async function handle(req, env) {
       if (hit) return hit;
       const { results } = await env.DB.prepare("SELECT day, app, active, new FROM days ORDER BY day LIMIT 20000").all();
       const res = json(series(results), 200, { "cache-control": "public, max-age=600" });
+      await cache.put(key, res.clone());
+      return res;
+    }
+
+    if (url.pathname === "/v1/downloads" && req.method === "GET") {   // README badge and the site's hero: {downloads}
+      const cache = caches.default, key = new Request(url.origin + "/v1/downloads");
+      const hit = await cache.match(key);
+      if (hit) return hit;
+      let n = 0;
+      try {                                                   // GitHub allows 60 calls an hour without a token: once per 6 h here
+        for (let page = 1; page <= 5; page++) {
+          const r = await fetch(`https://api.github.com/repos/HoangTran0410/tv-remote/releases?per_page=100&page=${page}`,
+            { headers: { "user-agent": "tvr-census", accept: "application/vnd.github+json" } });
+          if (!r.ok) throw new Error("github " + r.status + " " + r.headers.get("x-ratelimit-remaining") + " " + (await r.text()).slice(0, 60));
+          const rs = await r.json();
+          n += downloads(rs);
+          if (rs.length < 100) break;
+        }
+        await env.DB.prepare("INSERT INTO summary (k, body) VALUES ('downloads', ?1) ON CONFLICT (k) DO UPDATE SET body = excluded.body").bind(String(n)).run();
+      } catch (e) {                                           // GitHub busy: the last good count
+        const row = await env.DB.prepare("SELECT body FROM summary WHERE k = 'downloads'").first();
+        if (!row) return json({ error: "busy", why: String(e.message || e).slice(0, 80) }, 503, { "cache-control": "no-store" });
+        n = Number(row.body);
+      }
+      const res = json({ downloads: n }, 200, { "cache-control": "public, max-age=21600" });
       await cache.put(key, res.clone());
       return res;
     }

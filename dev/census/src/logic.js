@@ -110,6 +110,15 @@ export function series(rows, now = new Date()) {
 }
 
 // ---------------------------------------------------------------------------------------------------- crash reports
+// GitHub's download count of what people install: the apps (.apk) and the computer app (.zip, .tar.gz). Not versions.json,
+// SHA256SUMS(.sig): every app fetches those on each update check, ~70% of all downloads and none of them a person
+export const INSTALLER = /\.(apk|zip|tar\.gz)$/i;
+export function downloads(releases) {
+  let n = 0;
+  for (const r of releases || []) for (const a of r.assets || []) if (INSTALLER.test(a.name)) n += a.download_count || 0;
+  return n;
+}
+
 export const MAX_CRASH = 24 * 1024;
 export const CRASH_PER_DAY = 20;
 export const CRASH_ROWS = 5000;

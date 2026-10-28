@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { validate, str, hashId, aggregate, kindOf, series, listed, MAX_BODY } from "../src/logic.js";
+import { validate, str, hashId, aggregate, kindOf, series, listed, downloads, MAX_BODY } from "../src/logic.js";
 
 const ID = "3f2b8c1e-5a4d-4e6f-9a7b-1c2d3e4f5a6b";
 const ping = (o = {}) => JSON.stringify({ id: ID, app: "setup", v: "0.21.1", tv: { brand: "Sony", model: "BRAVIA 4K", android: "14", sdk: 34, leanback: true }, ok: { adb: true, video: false }, ...o });
@@ -86,4 +86,11 @@ test("aggregate: a non-leanback device (a phone) is not listed, whichever app se
   assert.equal(listed(r("pc", 0)), false);
   const a = aggregate([r("setup", 0), r("home", 0), r("phone", 0), r("setup", 1)], new Date("2026-10-25T00:00:00Z"));
   assert.equal(a.installs, 1);
+});
+
+test("downloads: installers only, not the update checks' files", () => {
+  const rel = (...a) => ({ assets: a.map(([name, download_count]) => ({ name, download_count })) });
+  assert.equal(downloads([rel(["tv-setup.apk", 10], ["versions.json", 99], ["SHA256SUMS", 50], ["SHA256SUMS.sig", 50]),
+    rel(["TV-Remote-mac.zip", 3], ["TV-Remote-linux-x64.tar.gz", 2], ["tv-remote-0.1.apk", 1])]), 16);
+  assert.equal(downloads(null), 0);
 });

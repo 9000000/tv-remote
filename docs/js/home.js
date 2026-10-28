@@ -241,7 +241,7 @@
     .then(function(j){ if (j && j.tag_name) document.getElementById("ver").textContent = j.tag_name.replace(/^v?/, "v"); })
     .catch(function(){});
 
-  // hero line: downloads (GitHub releases, all .apk) and TVs / phones that used it (census); each cached 6 h, a failed part stays hidden
+  // hero line: downloads (the census worker sums GitHub's .apk / .zip / .tar.gz, the README badge reads it too) and TVs / phones that used it (census); each cached 6 h, a failed part stays hidden
   (function(){
     var box = document.getElementById("h-stats"), H = 6 * 3600e3, got = {};
     function fmt(n, l){ return String(n).replace(/\B(?=(\d{3})+$)/g, l === "vi" ? "." : ","); }
@@ -263,11 +263,8 @@
         show(id, n, plus);
       }).catch(function(){});
     }
-    part("hs-dl", "st-dl", true, function(){
-      return fetch("https://api.github.com/repos/HoangTran0410/tv-remote/releases?per_page=100").then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(rs){
-        var n = 0; rs.forEach(function(r){ (r.assets || []).forEach(function(a){ if (/\.apk$/i.test(a.name)) n += a.download_count || 0; }); });
-        return n;
-      });
+    part("hs-dl2", "st-dl", true, function(){
+      return fetch("https://tvr-census.99-hoangtran.workers.dev/v1/downloads").then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ return d && d.downloads; });
     });
     part("hs-us", "st-us", false, function(){
       return fetch("https://tvr-census.99-hoangtran.workers.dev/v1/days").then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(d){ return d && d.installs; });
