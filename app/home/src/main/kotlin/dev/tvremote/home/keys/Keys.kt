@@ -34,12 +34,12 @@ object Keys {
     fun push(c: Context) {
         val app = c.applicationContext
         val conf = Store.get(app)
-        val arg = JSONObject().also { o -> for (k in listOf("keyon", "keyapps", "autoon", "autoapp")) o.put(k, conf.get(k)) }.toString()
+        val arg = JSONObject().also { o -> for (k in listOf("keyon", "keyapps", "autoon", "autoapp", "autoall")) o.put(k, conf.get(k)) }.toString()
         Thread({
             val said = try { app.contentResolver.call(Uri.parse(HomeConfig.USAGE), "keys", arg, null)?.getString("json")?.let { JSONObject(it) } } catch (e: Exception) { null }
             // null: no TV Setup, or one from before this (it answers nothing to a word it does not know)
             prefs(app).edit().putBoolean("setup", said != null).putString("free", (said?.optJSONArray("free") ?: JSONArray()).toString())
-                .putBoolean("can", said?.optBoolean("can") ?: false).apply()
+                .putBoolean("can", said?.optBoolean("can") ?: false).putBoolean("all", said?.optBoolean("all") ?: false).apply()
             ui.post { onState?.invoke() }
         }, "home-keys").apply { isDaemon = true }.start()
     }
@@ -47,7 +47,7 @@ object Keys {
     /** What the last answer said, for the config the clients read: {keysOk, keysSetup, keysDead [codes]}. */
     fun report(c: Context, conf: JSONObject): JSONObject {
         val p = prefs(c)
-        return conf.put("keysOk", true).put("keysSetup", p.getBoolean("setup", false))
+        return conf.put("keysOk", true).put("keysSetup", p.getBoolean("setup", false)).put("keysAll", p.getBoolean("all", false))
             .put("keysDead", try { JSONArray(p.getString("free", "[]")) } catch (e: Exception) { JSONArray() })
     }
 

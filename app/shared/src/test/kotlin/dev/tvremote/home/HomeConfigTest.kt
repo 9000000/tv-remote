@@ -419,7 +419,7 @@ class HomeConfigTest {
     }
     @Test fun keysAndPowerOnAppAreOffByDefaultAndKeepOnlyFreeKeys() {
         val c = HomeConfig.clean(JSONObject())
-        assertFalse(c.getBoolean("keyon")); assertFalse(c.getBoolean("autoon")); assertEquals("", c.getString("autoapp")); assertEquals(0, c.getJSONObject("keyapps").length())
+        assertFalse(c.getBoolean("keyon")); assertFalse(c.getBoolean("autoon")); assertFalse(c.getBoolean("autoall")); assertEquals("", c.getString("autoapp")); assertEquals(0, c.getJSONObject("keyapps").length())
         val m = HomeConfig.clean(JSONObject().put("keyon", true).put("autoon", true).put("autoapp", "a.b")
             .put("keyapps", JSONObject().put("183", "x.y").put("7", "x.z").put("170", "p.q").put("24", "no.vol").put("183x", "bad.one").put("184", "not a pkg")))
         assertEquals(mapOf(183 to "x.y", 7 to "x.z", 170 to "p.q"), HomeConfig.keyApps(m.getJSONObject("keyapps")))   // volume up (24), a bad name, a bad package: dropped

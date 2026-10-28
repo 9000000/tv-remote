@@ -376,6 +376,8 @@ async function homeOpen() {
   const keysHead = el('h3', { textContent: T('home.keys') }), keysNote = el('p', { className: 'note' }), keysList = el('div', { className: 'list' });
   const keysOld = el('button', { type: 'button', className: 'small', onclick: homeUpdate, textContent: T('home.keys_old') });   // a TV Home from before them
   const autoNote = el('p', { className: 'note' });
+  const autoAll = el('input', { type: 'checkbox', onchange: () => send({ autoall: autoAll.checked }) });   // HomeConfig autoall: also over an app or input the TV woke into
+  const autoAllBox = el('label', { className: 'check' }, autoAll, el('span', { textContent: T('home.auto_all') })), autoAllNote = el('p', { className: 'note' });
   // the cards over the favourites, in the order they have on the TV (the first on the left); usage and timer read TV Setup, so a
   // TV Setup too old for them is offered first. Chosen: a list to reorder; the others: a switch each, which adds one at the end
   const wTurnOn = async (w) => {
@@ -597,6 +599,10 @@ async function homeOpen() {
     keysNote.textContent = kOk ? T(!c.keysSetup ? 'home.keys_need_setup' : 'home.keys_everywhere') : '';
     autoNote.textContent = kOk ? T(!c.keysSetup ? 'home.auto_need_setup' : 'home.auto_note') : '';
     keysList.hidden = !kOk;
+    autoAll.checked = !!c.autoall;
+    autoAllBox.hidden = autoAllNote.hidden = !kOk || c.autoall === undefined;      // a TV Home from before it does not keep it
+    autoAll.disabled = !c.keysAll;                                                 // nor does a TV Setup from before it
+    autoAllNote.textContent = T(!c.keysSetup ? 'home.auto_need_setup' : !c.keysAll ? 'home.auto_all_old' : c.autoapp ? 'home.auto_all_app' : 'home.auto_all_home');
     if (kOk) quickKeysDraw(keysList, c, r.apps, send);              // the slots: 1-9 and 0, the colour keys, the power-on app
     const w = c.widgets;                                              // absent: a TV Home older than the cards
     const qrs = c.qrs || {};                                          // the QR cards' fields, by key (absent: a TV Home older than them)
@@ -962,7 +968,7 @@ async function homeOpen() {
     ['widgets', 'chart', 210, 'home.g_widgets', [sect(null, wHead, wList, ...wLines), sect(null, packHead, packBox, packNote), sect(null, layHead, lay, layNote, placeHead, placeLine),
       sect(null, feedHead, feedLine, feedList, feedNote), sect(null, noteHead, noteLine), sect(null, qrHead, qrList, qrNote)]],
     ['system', 'power', 260, 'home.g_system', [sect(null, check(dream, 'home.dream'), dfaceHead, dface)]],
-    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote]],
+    ['keys', 'keyboard', 230, 'home.keys', [keysOld, check(keyOn, 'home.keys_on'), keysNote, keysList, autoNote, autoAllBox, autoAllNote]],
     ['lang', 'globe', 200, 'home.lang', [langs]],
   ];
   keysHead.hidden = langHead.hidden = true;                           // the page's own title says it
