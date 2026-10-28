@@ -167,8 +167,8 @@ details{background:var(--card);border:1px solid var(--line);border-radius:16px;p
 details[open]{border-color:var(--line2)}
 summary{list-style:none;cursor:pointer;padding:18px 0;font-weight:600;font-size:16.5px;display:flex;justify-content:space-between;gap:16px}
 summary::-webkit-details-marker{display:none}
-summary::after{content:"+";font-size:22px;line-height:1;color:var(--muted);transition:transform .2s}
-details[open] summary::after{transform:rotate(45deg)}
+summary::after{content:"";flex:none;width:8px;height:8px;margin:6px 4px 0 0;border:solid var(--muted);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .2s}   /* a chevron: down, up when open */
+details[open] summary::after{transform:rotate(225deg);margin-top:10px}
 details p{color:var(--muted);padding:0 0 20px;font-size:15px}
 details p a{color:var(--blue)}
 
