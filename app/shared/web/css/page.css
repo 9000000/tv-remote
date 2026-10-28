@@ -135,6 +135,8 @@ html:not(.tabbed) .panel { visibility:hidden; }   /* theme.js, setup.js */
 .fleetrow .name { display:flex; flex:1 1 0; flex-direction:column; gap:2px; min-width:0; }
 .fleetdo { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; }   /* every act in sight, none behind a ⋯ */
 .fleetdo > :is(button, label.filebtn) { justify-content:center; min-height:var(--ctl); padding:0 10px; font-size:14px; }
+@media (max-width:480px) { .fleetdo > :is(button, label.filebtn) { font-size:13px; padding:0 8px; } }   /* two columns on a phone: "💤 Tắt màn hình chào" stays on one line */
+
 .fleetrow small { color:var(--muted); overflow-wrap:anywhere; }
 .fleetrow.off b { color:var(--muted); }
 .fleetstep:empty { display:none; }

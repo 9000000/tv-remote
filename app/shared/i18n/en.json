@@ -162,7 +162,7 @@
   "other": "{n} days ago"
  },
  "recents.none": "No app open",
- "recents.background": "In the background",
+ "recents.background": "Background",
  "recents.closed_n": {
   "one": "Closed {n} app",
   "other": "Closed {n} apps"
@@ -927,7 +927,7 @@
  "health.ram_freed": "Freed {freed} MB · {after} MB free",
  "core.need_checkout": "Check-out (signing guests' browsers out)",
  "health.proc_front": "On screen",
- "health.proc_bg": "In the background",
+ "health.proc_bg": "Background",
  "health.proc_home": "Home screen",
  "health.proc_idle": "Idle",
  "health.proc_system": "System",
