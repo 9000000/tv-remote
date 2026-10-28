@@ -1,14 +1,15 @@
 # Writing the words (every language)
 
 Who reads them: a person on the sofa with a remote, not a developer. They read a label in one glance or not at all.
-Why this file: words written in English first and then translated came out as machine words ("Gập cổng HDMI/AV chưa
+Why this file: words carried over from another language or from the code came out as machine words ("Gập cổng HDMI/AV chưa
 cắm" for "Fold unplugged inputs"; "Luôn về khi bật TV" that never said where to). Short is not enough: it must be plain.
 
 ## The rules
 
-1. **Write each language as its speakers say it, never word by word from another.** Vietnamese is written first and on
-   its own (it is the source); English and the others say the same thing the way a native would, not the Vietnamese
-   (or the code's) words in a row. If you think in English, find what a Vietnamese person would say, then write that.
+1. **No language is the source: write each one as its speakers say it, never word by word from another.** Code,
+   comments and docs are English; the words a person sees are written for that person, in vi, en, ru or any other, each
+   as plain as the others. Start from the idea (what will they see, what should they do), not from another language's
+   label or the code's names, and write it the way a native speaker would say it.
 2. **Say what happens, not how it works inside.** "Chỉ hiện cổng đang cắm", not "Gập cổng"; "Tự mở TV Home khi bật
    TV", not "Luôn về khi bật TV". A setting's label answers "what will I see?".
 3. **Name the thing.** No label without its object: where it goes, what it opens, which app. When the object

@@ -51,7 +51,7 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
   `tests/apps_map.test.js` fails when they differ).
 - **Words people understand at a glance, in every language:** [app/shared/i18n/WRITING.md](app/shared/i18n/WRITING.md) (write each
   language as its speakers say it, never word by word; say what happens and name the thing). Read it before writing any UI words.
-- **Vietnamese is the source language; words go by id**, all under `app/shared/i18n/` (one place for every app and language):
+- **No language is the source; words go by id** (code, comments and docs are English; what a person sees is written for them in each language), all under `app/shared/i18n/` (one place for every app and language):
   `langs.json` (THE list of languages), `<lang>.json` (the page and `core/Words.kt`: `T('id')`, `T("id")`; `vi.json` first, `en.json`
   complete) and `apps/<lang>/<module>.json` (the native apps: home, games, channels, tvkeys, android, tvui; the Android ids; Gradle
   builds `res/values-<lang>` from them, `app/gradle/i18n.gradle`). **A new language = its files in that folder + one line in

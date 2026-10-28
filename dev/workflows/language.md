@@ -1,6 +1,6 @@
 # Add a UI language
 
-Read first: "Vietnamese is the source language" in the root [AGENTS.md](../../AGENTS.md). A language is its files plus ONE line;
+Read first: "No language is the source" in the root [AGENTS.md](../../AGENTS.md). A language is its files plus ONE line;
 no `strings.xml`, no language list in code. Model: `ru` (the newest).
 
 1. **The line**: add `"<code>": "<Native name>"` to `app/shared/i18n/langs.json`. Kotlin gets `dev.tvremote.i18n.Langs` generated
