@@ -8,16 +8,16 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - Remote > Mở trên TV > **Mở link**: link YouTube hỏi luôn Ghim lên TV hay Mở trên TV (như khi chia sẻ link sang TV Remote).
-- TV Home > Phím nhanh: nút **Luôn về khi bật TV** (mặc định tắt). Mỗi lần bật TV sẽ về TV Home (hoặc app ở ô "Khi bật TV"), kể cả khi TV tự vào HDMI hay app cũ; trừ lúc đang cast. Cũng có trên trang web (Phím & khởi động). Cần TV Setup mới.
+- TV Home > Phím nhanh: nút **Tự mở TV Home khi bật TV** (mặc định tắt; tên app thay chỗ TV Home nếu ô "Khi bật TV" đã chọn app). Mỗi lần bật TV sẽ về TV Home (hoặc app ở ô "Khi bật TV"), kể cả khi TV tự vào HDMI hay app cũ; trừ lúc đang cast. Cũng có trên trang web (Phím & khởi động). Cần TV Setup mới.
 - TV Home: nút Cài đặt mở được trên TV giấu màn Cài đặt chuẩn (máy chiếu HY300, Xiaomi, TCL, Fire TV); không mở được thì báo bằng chữ thay vì im lặng.
-- TV Home > Giao diện: tùy chọn **Gập cổng HDMI/AV chưa cắm** (mặc định tắt): Nguồn vào chỉ hiện cổng đang cắm, còn lại nằm sau "Nguồn vào khác".
+- TV Home > Giao diện: tùy chọn **Chỉ hiện cổng HDMI/AV đang cắm** (mặc định tắt): cổng trống nằm sau "Nguồn vào khác".
 - TV Home: đồ thị mạng không còn tự đánh thức mỗi 2 giây khi không có card mạng.
 
 **English**
 - Remote > Open on TV > **Open a link**: a YouTube link asks Pin to TV or Open on TV (as when a link is shared to TV Remote).
-- TV Home > Quick keys: an **Always at power-on** switch (off by default). Every power-on goes to TV Home (or the "At power-on" app) even if the TV woke into HDMI or its last app; a cast is kept. Also on the web page (Keys & startup). Needs a newer TV Setup.
+- TV Home > Quick keys: an **Auto-open TV Home at power-on** switch (off by default; it names the "At power-on" app instead when one is set). Every power-on goes to TV Home (or the "At power-on" app) even if the TV woke into HDMI or its last app; a cast is kept. Also on the web page (Keys & startup). Needs a newer TV Setup.
 - TV Home: Settings opens on TVs that hide the standard Settings screen (HY300 projectors, Xiaomi, TCL, Fire TV); if nothing opens it says so instead of doing nothing.
-- TV Home > Look: **Fold unplugged HDMI/AV inputs** (off by default): Inputs lists plugged-in ports, the rest behind "More inputs".
+- TV Home > Look: **Show only plugged-in HDMI/AV inputs** (off by default): empty ports go behind "More inputs".
 - TV Home: the network graph no longer wakes every 2 seconds when no network card is shown.
 
 ## 0.31.0 - 2026-10-28

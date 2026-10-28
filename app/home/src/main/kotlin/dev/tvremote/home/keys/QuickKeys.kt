@@ -60,7 +60,7 @@ object QuickKeys {
         // the switch and its state in its words: "Bật phím" alone did not say whether the keys were on, nor what pressing would do
         val keysOn = a.pill(a.getString(R.string.qk_on, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("keyon", !Store.get(a).optBoolean("keyon"))) }
         // power-on wins over whatever the TV woke into (HomeConfig autoall); shown once TV Setup has said it takes it
-        val always = a.pill(a.getString(R.string.qk_always, a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoall", !Store.get(a).optBoolean("autoall"))) }
+        val always = a.pill(a.getString(R.string.qk_always, "TV Home", a.getString(R.string.qk_no)), 14f, animate = { true }) { Store.change(a, JSONObject().put("autoall", !Store.get(a).optBoolean("autoall"))) }
         val head = LinearLayout(a).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(34), dp(58), dp(34), dp(12))   // 32 dp above the panel before, now inside it
             clipChildren = false; clipToPadding = false                // a focused pill grows past the row: clipped, its top and bottom were cut
@@ -102,7 +102,9 @@ object QuickKeys {
             keysOn.pillText(a.getString(R.string.qk_on, said(keysOn.isSelected)))
             always.visibility = if (Keys.all(a)) View.VISIBLE else View.GONE
             always.isSelected = c.optBoolean("autoall")
-            always.pillText(a.getString(R.string.qk_always, said(always.isSelected)))
+            // where it goes, in the words: "Luôn về khi bật TV" did not say to what
+            val to = c.optString("autoapp").let { if (c.optBoolean("autoon") && it.isNotEmpty()) Targets.label(a, it) else "TV Home" }
+            always.pillText(a.getString(R.string.qk_always, to, said(always.isSelected)))
             hint.text = a.getString(if (!Keys.setup(a)) R.string.k_need_setup else if (!Keys.can(a)) R.string.k_need_adb else R.string.k_everywhere)
         }
 
