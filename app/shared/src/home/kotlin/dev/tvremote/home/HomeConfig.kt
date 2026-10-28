@@ -118,6 +118,9 @@ import org.json.JSONObject
  *           keeps them ([themeUses], Videos.refs)
  *   autoon  open [autoapp] (a [Target] too) once each time the TV is turned on (boot or wake from standby); default off. TV Setup does it
  *           (TV Home is not running in standby), so it needs TV Setup, said in the setting ("keysSetup")
+ *   autoall "always": open at power-on even when the TV woke into another app or input (default off; the guard of one open per power-on and a
+ *           cast just started still hold). With no [autoapp] it brings TV Home (the launcher) up. A TV Setup that has it answers "all": true
+ *           to "keys", which TV Home reports as "keysAll"
  */
 object HomeConfig {
     const val PKG = "dev.tvremote.home"
@@ -659,6 +662,7 @@ object HomeConfig {
             .put("keyapps", JSONObject().also { m -> keyApps(o.optJSONObject("keyapps")).toSortedMap().forEach { (k, v) -> m.put(k.toString(), v) } })
             .put("autoon", o.optBoolean("autoon", false))
             .put("autoapp", Target.clean(o.optString("autoapp")))
+            .put("autoall", o.optBoolean("autoall", false))
             .put("tiles", JSONArray(strs(o.optJSONArray("tiles")).filter { isTile(it) || Target.isPin(it) }.distinct().take(TILES_MAX)))
             .put("qrs", qrs)
             .put("names", names(o.optJSONObject("names")))
