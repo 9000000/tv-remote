@@ -157,7 +157,7 @@ class HomeActivity : Activity() {
     private lateinit var widgets: Widgets
     private val ui = android.os.Handler(android.os.Looper.getMainLooper())
     private val widgetTick = object : Runnable { override fun run() { widgetsRead(); ui.postDelayed(this, 60_000) } }
-    private val netTick = object : Runnable { override fun run() { widgets.sample(); ui.postDelayed(this, Widgets.SAMPLE_MS) } }
+    private val netTick = object : Runnable { override fun run() { widgets.sample(); if (widgets.speed != null) ui.postDelayed(this, Widgets.SAMPLE_MS) } }   // no network graph: no 2 s wake-up
 
     private fun dp(v: Number) = (v.toFloat() * resources.displayMetrics.density).toInt()
 
@@ -688,6 +688,7 @@ class HomeActivity : Activity() {
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
                 widgets.show(want, f, note, { p -> apps.firstOrNull { it.pkg == p }?.label ?: p.substringAfterLast('.') }, sizes, conf.optJSONObject("qrs") ?: JSONObject())
+                if (widgets.speed != null) { ui.removeCallbacks(netTick); ui.postDelayed(netTick, Widgets.SAMPLE_MS) }   // the graph was just added: its tick starts
                 // TV Setup answers the CPU with its last measure and starts the next: the first time there is none, so ask again soon, once
                 if ("system" in want && f.cpu == null && !cpuAgain) { cpuAgain = true; ui.postDelayed({ if (!isDestroyed) widgetsRead() }, 2500) }
             }
