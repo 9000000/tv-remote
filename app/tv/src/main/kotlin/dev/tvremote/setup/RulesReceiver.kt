@@ -70,6 +70,16 @@ class RulesReceiver : BroadcastReceiver() {
                 }, "telegram-card").apply { isDaemon = true }.start()
                 return
             }
+            if (change.optString("do") == "support") {              // the phone, the computer (Manage "/api/support/tv"): let support look at this TV
+                val pending = goAsync()
+                Thread({
+                    val out = Support.act(c, change.optString("act"))
+                    pending.resultCode = Activity.RESULT_OK
+                    pending.resultData = Base64.encodeToString(out.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                    pending.finish()
+                }, "support-card").apply { isDaemon = true }.start()
+                return
+            }
             val state = Rules.change(c, change)
             if (Rules.active(c) && !RemoteService.isRunning()) {
                 try { RemoteService.start(c, true) } catch (e: Exception) { }   // may be refused from the background: RulesClient starts it through the shell then

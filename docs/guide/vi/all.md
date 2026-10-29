@@ -1215,6 +1215,8 @@ Màn hình Quản lý trong app điện thoại dùng trình duyệt của Andro
 
 > 💡 **Cho hỗ trợ xem 30 phút** chỉ cho đọc trạng thái, không bấm hay đổi gì; dừng được bất cứ lúc nào.
 
+> 💡 Mở cho TV từ điện thoại hay máy tính: tab **Thiết lập**, thẻ TV, **👁️ Cho hỗ trợ xem TV này**. Cho xem chính app điện thoại hay máy tính: **Giới thiệu**.
+
 ## Lỗi thường gặp
 
 | Gặp | Thử |

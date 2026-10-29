@@ -81,7 +81,7 @@ internal fun MainActivity.savedIps(): MutableList<String> = pref("ips").split(",
 
 private val PER_TV = listOf("name", "mac", "lan", "ts", "tvs", "kind") // the prefs kept per saved TV, as "<field>:<ip>" (and atv:)
 
-private fun MainActivity.savedTv(ip: String) = SameTv.Tv(ip, pref("lan:$ip"), pref("ts:$ip"), pref("mac:$ip"))
+internal fun MainActivity.savedTv(ip: String) = SameTv.Tv(ip, pref("lan:$ip"), pref("ts:$ip"), pref("mac:$ip"))
 
 /** The saved TV that [ip] is another address of (its home IP, its Tailscale IP), if any. */
 internal fun MainActivity.savedOwner(ip: String): String? = savedIps().firstOrNull { it != ip && ip in savedTv(it).addresses }

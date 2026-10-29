@@ -227,7 +227,7 @@ dialog.ask button.danger { background:var(--bad); color:#fff; font-weight:700; }
 .qrs { display:flex; gap:14px; flex-wrap:wrap; margin:12px 0; }
 .qrs.stale { opacity:.25; transition:opacity .15s; pointer-events:none; }   /* a new invite on its way (shareDialog) */
 .qr { flex:1; min-width:150px; text-align:center; font-size:12.5px; line-height:1.4; }
-.qr svg { border-radius:8px; display:block; margin:0 auto 6px; max-width:100%; height:auto; }
+.qr > svg { border-radius:8px; display:block; margin:0 auto 6px; max-width:100%; height:auto; }
 .qr b { display:block; font-size:13.5px; }
 .qr a { overflow-wrap:anywhere; }   /* breaks only where the line ends, not every few letters */
 .assistbox { width:min(560px, 94vw); margin:0; max-height:90vh; overflow:auto; }

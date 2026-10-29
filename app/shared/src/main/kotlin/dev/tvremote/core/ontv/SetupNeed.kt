@@ -38,6 +38,7 @@ object SetupNeed {
         "kids" to "0.21.1",                                            // 🧒 kids mode: every app asks a code, Authenticator, a parent over Telegram, a total of minutes a day (Rules "kids" / "totp" / "total"; the release after 0.21.0)
         "homekey" to "0.26.3",                                         // 🏠 Home to the launcher picked on a Chromecast (HomeKey; the release after 0.26.2)
         "keytest" to "0.30.1",                                         // ⌨️ the remote key tester (KeyTestActivity; the release after 0.30.0)
+        "support" to "0.33.2",                                         // 🛟 let support look at the TV, opened from a phone, a computer or the web page (RulesReceiver "support"; the release after 0.33.1)
         "home_usage" to "0.14.1",                                      // 📊 TV Home's card of app use and limits (HomeInfo)
     )
 
@@ -75,6 +76,7 @@ object SetupNeed {
             "kids" -> t("kids.need_name")
             "homekey" -> t("core.need_homekey")
             "keytest" -> t("core.need_keytest")
+            "support" -> t("core.need_support")
             else -> feature
         }
     }

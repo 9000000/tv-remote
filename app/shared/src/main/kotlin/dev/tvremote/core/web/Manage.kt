@@ -242,6 +242,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "stats" -> return HttpServer.Response.json(stats(r.q("days").toIntOrNull() ?: 7))
                 "rules" -> if (!post) return HttpServer.Response.json(rules(null))
                 "telegram" -> return HttpServer.Response.json(telegram(r))
+                "support/tv" -> if (!post) return HttpServer.Response.json(supportTv("state"))
                 "welcome" -> if (!post) return HttpServer.Response.json(Welcome.call({ sh(it) }, null))
                 "welcome/thumb" -> {                                  // a small picture of the welcome, for the card's preview
                     val b64 = Welcome.call({ sh(it) }, JSONObject().put("do", "thumb")).optString("thumb")
@@ -369,6 +370,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "shell" -> shell(r.json().optString("cmd"))
                 "rules" -> HttpServer.Response.json(rules(r.json()))
                 "telegram" -> HttpServer.Response.json(telegram(r))
+                "support/tv" -> HttpServer.Response.json(supportTv(r.json().optString("act")))
                 "welcome" -> HttpServer.Response.json(Welcome.call({ sh(it) }, r.json()))
                 "notify" -> { Notify.send({ sh(it) }, r.json()); HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "share" -> HttpServer.Response.json(Invite.share({ sh(it) }, link.host, r.json().optString("scope"), r.json().optBoolean("again")))   // a QR another phone scans (Invite.kt)
@@ -1270,6 +1272,21 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         if (setup == "missing" || setup == "old" || out.optString("error") == "unknown action") throw SetupNeed.Missing("telegram", SetupNeed.have { sh(it) })
         if (setup == "busy") throw IOException("adb: TV Setup is starting")
         if (out.has("failed")) throw IllegalArgumentException(out.optString("failed"))
+        return out
+    }
+
+    /**
+     * Let support look at the TV (TV Setup's Support, RulesReceiver "support"): [act] "start", "stop" or "state". The answer is
+     * `{open, code, min, left}`, or `{failed: "no_net" | "none_left" | why}`; the browser of the TV has its own route (RemoteService).
+     */
+    private fun supportTv(act: String): JSONObject {
+        val ask = JSONObject().put("do", "support").put("act", act)
+        var out = RulesClient.call({ sh(it) }, ask)
+        if (out.optString("setup") == "busy") { sh(RulesClient.START); Thread.sleep(2500); out = RulesClient.call({ sh(it) }, ask) }
+        val setup = out.optString("setup")
+        if (setup == "missing" || setup == "old" || out.optString("error") == "unknown action")
+            throw SetupNeed.Missing("support", SetupNeed.have { sh(it) })
+        if (setup == "busy") throw IOException("adb: TV Setup is starting")
         return out
     }
 

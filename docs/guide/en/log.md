@@ -13,3 +13,5 @@
 > 💡 A TV nobody can reach (an ISP box, no ADB): on the TV open **TV Setup → Connection → Send to support** and read the 8-digit code to the author.
 
 > 💡 **Let support look for 30 min** only reads the state, never presses or changes anything; stop it any time.
+
+> 💡 For the TV from a phone or computer: **Setup** tab, TV card, **👁️ Let support see this TV**. For the phone or computer app itself: **About**.

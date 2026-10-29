@@ -43,4 +43,4 @@ form > .timerow + .line { margin-top:10px; }
 .panel .timerow button.small { min-height:var(--ctl); }   /* beside the time fields: as tall as they are */
 .wthumb { width:112px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; background:var(--btn); flex:none; }   /* the welcome screen card: what the TV will show */
 .secret { font:600 15px/1.6 ui-monospace, Menlo, monospace; letter-spacing:.06em; overflow-wrap:anywhere; margin:0; user-select:all; }
-.qrs .qr svg { max-width:100%; height:auto; }
+.qrs .qr > svg { max-width:100%; height:auto; }

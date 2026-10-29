@@ -221,6 +221,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         })
         dev.tvremote.core.Census.useTestFile(getExternalFilesDir(null))
         dev.tvremote.core.CensusAndroid.use()                     // errors the guard catches are reported with the same switch
+        PhoneSupport.attach(this)                                 // support open before the app was closed goes on
         soundPace()                                               // Listen.kt
         reachAroundVpn()                                          // a TV at home stays reachable with a VPN on
         dev.tvremote.core.WireLog.app = "TV Remote " + version() + " (phone, Android " + android.os.Build.VERSION.RELEASE + ")"

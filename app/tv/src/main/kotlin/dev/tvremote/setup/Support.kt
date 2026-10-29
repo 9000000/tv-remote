@@ -2,192 +2,102 @@ package dev.tvremote.setup
 
 import android.content.Context
 import android.os.Build
-import dev.tvremote.core.Census
 import dev.tvremote.core.Scrub
+import dev.tvremote.core.SupportAndroid
+import dev.tvremote.core.SupportRelay
 import dev.tvremote.core.WireLog
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 
 /**
  * Help for a TV nobody here can reach (an FPT Play behind its ISP's lock, 2026-10-25: AnyDesk, Tailscale, then a pairing code
- * read out over TeamViewer, one evening for four answers). [send]: the facts AdbReport gathers and this app's log go to the census
- * worker (dev/census/src/support.js) on a press, and the TV shows the 8-digit code to read out. [open]: for [MINUTES] the owner
- * may GET a few of this app's own read-only routes (`dev/census/support.py CODE /api/state`); the TV asks the worker every 2 s,
- * runs them on its own server with a pass of its own, listed among the paired devices while it lasts, and stops when the time
- * is up or on Stop. TV Setup restarting (it updates itself quietly, a weak box kills it) picks the same code up again ([resume]). Nothing is ever pressed or changed: GET only, [ROUTES] only, plus [SupportDump]'s
- * settings, own log and read-only commands (`support.py CODE sh "dumpsys package x"`), so a new feature needs no new field here.
+ * read out over TeamViewer, one evening for four answers), through [SupportRelay] like the Phone and Computer apps. Opened on the
+ * TV (Connection), or from a phone, a computer or this TV's web page (RulesReceiver "support", `/api/support/tv`). While support
+ * looks, the owner may GET a few of this app's own read-only routes, run on its own server with a pass of its own listed among
+ * the paired devices, plus [SupportDump]'s settings, own log and read-only commands (`support.py CODE sh "dumpsys package x"`),
+ * so a new feature needs no new field here. Nothing is ever pressed or changed.
  */
 object Support {
-    const val MINUTES = 30
-    const val MAX_ANSWER = 200_000                                    // bytes as sent; the worker keeps 256 KB (src/support.js MAX_ANSWER)
-    private const val PREFS = "support"
+    const val MINUTES = SupportRelay.MINUTES
     private const val KIND = "support"
     // read-only answers worth having from afar; never the clipboard, files, the screen or anything that acts
     private val ROUTES = setOf("/api/about", "/api/state", "/api/diagnose", "/api/setup/version", "/api/setup/need", "/api/wirelog",
         "/api/apps", "/api/playing", "/api/caps", "/api/rules", "/api/paired", "/api/health", "/api/stats", "/api/tailscale")
 
-    @Volatile private var thread: Thread? = null
-    @Volatile var until = 0L; private set
-    @Volatile var code = ""; private set
-    @Volatile var asked = 0; private set
-    @Volatile private var lastKey = ""
-    @Volatile private var liveKey = ""                             // the open code's key: a later send must not make Stop close another
-    /** Sends today has left after the last one, as the worker counts them (20 a day); -1 not known, 0 with no code: none left. */
-    @Volatile var left = -1; private set
+    @Volatile private var relay: SupportRelay? = null
+    @Volatile private var token = ""
 
-    fun open() = until > System.currentTimeMillis() && thread != null
+    private fun relay(c: Context): SupportRelay = relay ?: synchronized(this) {
+        relay ?: run {
+            val app = c.applicationContext
+            val version = try { app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "" } catch (e: Exception) { "" }
+            SupportRelay("setup", version, Build.MODEL, SupportAndroid.store(app), { report(app, version) }, { answer(app, it) }).apply {
+                onOpen = { code -> forgetPass(app); token = Paired.add(app, KIND, "Hỗ trợ / Support $code", "relay", false) }   // one pass, not two
+                onEnd = { forgetPass(app) }
+            }.also { relay = it }
+        }
+    }
 
-    private fun base() = Census.url.trimEnd('/') + "/v1/support"
+    fun open() = relay?.open() == true
+    val code get() = relay?.code ?: ""
+    val until get() = relay?.until ?: 0L
+    /** Sends today has left after the last one (20 a day); -1 not known. */
+    val left get() = relay?.left ?: -1
 
     /** The report as sent: what AdbReport reads without ADB, this app's state, its log. */
     fun report(c: Context, version: String): String = Scrub.blank(buildString {
         append("TV Setup ").append(version).append(" · adb ").append(RemoteService.adbState()).append(' ').append(RemoteService.adbDetail()).append('\n')
         append(AdbReport.facts(c, RemoteService.adbState(), RemoteService.adbDetail())).append('\n')
-        append(fit(SupportDump.prefs(c), 10_000, tail = false)).append('\n')
-        append(fit(SupportDump.logcat(), 14_000, tail = true)).append('\n')
+        append(SupportRelay.fit(SupportDump.prefs(c), 10_000, tail = false)).append('\n')
+        append(SupportRelay.fit(SupportDump.logcat(), 14_000, tail = true)).append('\n')
         append(WireLog.all.report().takeLast(24_000))
     })
 
-    /** Sends the report; the code to read out, or null when the worker cannot be reached. Runs off the main thread. */
-    fun send(c: Context, version: String): String? {
-        val body = JSONObject().put("id", Census.id().ifEmpty { java.util.UUID.randomUUID().toString() }).put("app", "setup").put("v", version).put("model", Build.MODEL).put("report", fit(report(c, version), 56_000, tail = true))
-        left = -1
-        val r = post(base(), body) ?: return null
-        left = r.optInt("left", -1)
-        val got = r.optString("code").takeIf { it.length == 8 } ?: return null
-        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("code", got).putString("key", r.optString("key")).apply()
-        lastKey = r.optString("key")
-        if (!open()) code = got                                       // while support looks, Stop is about that code, not this one
-        return got
+    /** Sends the report; the code to read out, or null. Blocks: off the main thread. */
+    fun send(c: Context): String? = relay(c).send()
+
+    /** Lets the owner read for [MINUTES]; [said] gets the code, or null, on its own thread. */
+    fun start(c: Context, said: (String?) -> Unit) {
+        val r = relay(c)
+        Thread({ said(r.start()) }, "support-start").apply { isDaemon = true }.start()
     }
 
-    /** Lets the owner read for [MINUTES], sending a fresh report first when there is none from today. [said] gets the code, or null. */
-    fun start(c: Context, version: String, said: (String?) -> Unit) {
-        val app = c.applicationContext
-        Thread({
-            val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val code = send(app, version) ?: return@Thread said(null)   // always fresh: the facts of now with the code
-            val key = lastKey
-            val r = post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", MINUTES))?.takeIf { it.has("live") } ?: return@Thread said(null)
-            asked = 0
-            run(app, code, key, ends(r, System.currentTimeMillis() + MINUTES * 60_000L))
-            WireLog.all.add("·", "support open $code for $MINUTES min")
-            said(code)
-        }, "support-start").apply { isDaemon = true }.start()
-    }
+    /** At start: support open when TV Setup stopped (an update, a kill) goes on with the same code, else no pass is kept. */
+    fun resume(c: Context) { if (!relay(c).resume()) forgetPass(c.applicationContext) }
 
-    private fun run(app: Context, code: String, key: String, end: Long) {
-        stopThread()
-        until = end; this.code = code; liveKey = key
-        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("live_code", code).putString("live_key", key).putLong("live_until", end).apply()
-        forgetPass(app)                                               // a second press before the first returned: one pass, not two
-        val token = Paired.add(app, KIND, "Hỗ trợ / Support $code", "relay", false)
-        val t = Thread({ loop(app, code, key, token) }, "support").apply { isDaemon = true }
-        thread = t; t.start()                                         // assigned first: the loop runs only while it is [thread]
-    }
+    fun stop(c: Context) = relay(c).stop()
+
+    fun state(c: Context) = relay(c).state()
 
     /**
-     * At start: support that was open when TV Setup stopped goes on with the same code (an update mid-session left the owner
-     * asking a TV that had quietly stopped), else its pass is not kept. The worker's answer to the first poll sets the end again.
+     * For the phone, the computer and the web page (RulesReceiver "support", `/api/support/tv`): [act] "start", "stop" or "state";
+     * `{open, code, min, left}`, or `{failed: "no_net" | "none_left" | why}`. Blocks up to 30 s on "start": off the main thread.
      */
-    fun resume(c: Context) {
-        if (open()) return
-        val app = c.applicationContext
-        val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val code = p.getString("live_code", "") ?: ""; val key = p.getString("live_key", "") ?: ""; val end = p.getLong("live_until", 0)
-        if (code.isEmpty() || end <= System.currentTimeMillis()) { forgetPass(app); return }
-        run(app, code, key, end)
-        WireLog.all.add("·", "support goes on after a restart, $code")
-    }
-
-    /** Stops at once: the worker is told (best effort), the pass is forgotten. */
-    fun stop(c: Context) {
-        val app = c.applicationContext
-        val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val code = this.code.ifEmpty { p.getString("code", "") ?: "" }; val key = liveKey.ifEmpty { p.getString("key", "") ?: "" }
-        until = 0
-        stopThread()
-        forgetPass(app)
-        p.edit().remove("live_until").apply()
-        if (code.isNotEmpty()) Thread({ post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", 0)) }, "support-stop").apply { isDaemon = true }.start()
-    }
+    fun act(c: Context, act: String): JSONObject = try {
+        when (act) {
+            "start" -> {
+                if (!RemoteService.isRunning()) try { RemoteService.start(c, true) } catch (e: Exception) { }   // its routes answer support
+                val got = LinkedBlockingQueue<String>()
+                start(c) { got.put(it ?: "") }
+                if (got.poll(30, TimeUnit.SECONDS).isNullOrEmpty()) JSONObject().put("failed", if (left == 0) "none_left" else "no_net") else state(c)
+            }
+            "stop" -> { stop(c); state(c) }
+            else -> state(c)
+        }
+    } catch (e: Exception) { JSONObject().put("failed", e.message ?: e.javaClass.simpleName) }
 
     private fun forgetPass(c: Context) { Paired.list(c).filter { it.kind == KIND }.forEach { Paired.forget(c, it.id) } }
 
-    private fun stopThread() { thread?.interrupt(); thread = null }
-
-    private fun loop(c: Context, code: String, key: String, token: String) {
-        val me = Thread.currentThread()
-        try {
-            while (thread === me && System.currentTimeMillis() < until) {
-                val r = post("${base()}/poll", JSONObject().put("code", code).put("key", key))
-                if (r != null && r.has("error")) break                // the code is gone (deleted, expired): nobody can ask any more
-                if (r != null) {
-                    if (r.has("live")) until = ends(r, until)
-                    val asks = r.optJSONArray("asks")
-                    for (i in 0 until (asks?.length() ?: 0)) {
-                        val a = asks!!.getJSONObject(i)
-                        val (status, text) = answer(c, a.optString("path"), token)
-                        asked++
-                        WireLog.all.add("·", "support GET ${a.optString("path").take(120)} -> $status")
-                        val answer = JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", status).put("body", text)
-                        // a slow link or a busy box lost one answer of 12 KB (a Viettel ZTE box, 2026-10-29): once more before giving up
-                        val sent = post("${base()}/answer", answer) ?: run { Thread.sleep(2000); post("${base()}/answer", answer) }
-                        if (sent == null || sent.has("error"))           // refused or lost: say so, or the owner waits for nothing
-                            post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", 0).put("body", "answer not delivered ($status, ${text.length} chars)"))
-                    }
-                }
-                Thread.sleep(2000)
-            }
-        } catch (e: InterruptedException) { return }
-        if (thread === me) { thread = null; until = 0; forgetPass(c); c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("live_until").apply() }
-    }
-
     /** One GET on this app's own server, as a paired browser would, only [ROUTES]; or a [SupportDump] read. */
-    fun answer(c: Context, path: String, token: String): Pair<Int, String> {
+    fun answer(c: Context, path: String): Pair<Int, String> {
         val route = path.substringBefore('?')
         when (route) {                                                // no route of the server: read here (SupportDump)
             "/api/support/sh" -> return SupportDump.shell(java.net.URLDecoder.decode(path.substringAfter("c=", "").substringBefore('&'), "UTF-8"))
-            "/api/support/prefs" -> return 200 to fit(SupportDump.prefs(c), MAX_ANSWER, tail = false)
-            "/api/support/logcat" -> return 200 to fit(SupportDump.logcat(), MAX_ANSWER, tail = true)
+            "/api/support/prefs" -> return 200 to SupportDump.prefs(c)
+            "/api/support/logcat" -> return 200 to SupportDump.logcat()
         }
         if (route !in ROUTES || ".." in path) return 403 to "not allowed for support: $route"
-        return try {
-            val c = URL("http://127.0.0.1:${RemoteService.PORT}$path").openConnection() as HttpURLConnection
-            try {
-                c.connectTimeout = 3000; c.readTimeout = 25000
-                c.setRequestProperty("Cookie", RemoteService.SELF_COOKIE + "=" + token)
-                val code = c.responseCode
-                val text = (if (code < 400) c.inputStream else c.errorStream)?.use { it.readBytes().toString(Charsets.UTF_8) } ?: ""
-                code to fit(Scrub.blank(text), MAX_ANSWER, tail = false)
-            } finally { c.disconnect() }
-        } catch (e: Exception) { 0 to (e.message ?: e.javaClass.simpleName) }
+        return SupportRelay.get("http://127.0.0.1:${RemoteService.PORT}$path") { it.setRequestProperty("Cookie", RemoteService.SELF_COOKIE + "=" + token) }
     }
-
-    /** The end of support by this TV's clock: the worker's `live` is its own time, and a TV's clock may be half an hour off. */
-    private fun ends(r: JSONObject, or: Long): Long {
-        val live = r.optLong("live"); val now = r.optLong("now")
-        return if (live <= 0) 0 else if (now > 0) System.currentTimeMillis() + (live - now) else or
-    }
-
-    /** [s] cut to at most [bytes] as it travels (JSON-escaped UTF-8: Vietnamese and quotes grow), keeping its end or its start. */
-    fun fit(s: String, bytes: Int, tail: Boolean): String {
-        var t = s
-        while (JSONObject.quote(t).toByteArray().size > bytes) t = if (tail) t.takeLast(t.length * 4 / 5) else t.take(t.length * 4 / 5)
-        return t
-    }
-
-    private fun post(to: String, body: JSONObject): JSONObject? = try {
-        val c = URL(to).openConnection() as HttpURLConnection
-        try {
-            c.connectTimeout = 6000; c.readTimeout = 20000                  // an answer of 200 KB from a slow box
-            c.requestMethod = "POST"; c.doOutput = true
-            c.setRequestProperty("Content-Type", "application/json")
-            c.outputStream.use { it.write(body.toString().toByteArray()) }
-            if (c.responseCode == 403 || c.responseCode == 404 || c.responseCode == 429) JSONObject().put("error", c.responseCode).put("left", 0)   // refused: not a network hiccup to wait out
-            else if (c.responseCode !in 200..299) null
-            else c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }.let { if (it.isBlank()) JSONObject() else JSONObject(it) }
-        } finally { c.disconnect() }
-    } catch (e: Exception) { null }
 }

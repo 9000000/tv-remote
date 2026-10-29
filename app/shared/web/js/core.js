@@ -18,7 +18,7 @@ const kbdAutoOn = () => { try { return localStorage.getItem('kbdauto') !== '0'; 
 const buzz = () => { if (CAN_BUZZ && buzzOn()) try { navigator.vibrate(15); } catch {} };
 // Questions asked in the page, not with confirm() / prompt(): they look the same everywhere, and the computer app's window
 // (a bare web view) has no dialogs of its own. ask(text) → true / false; ask(text, { value }) → the typed text, or null.
-// { ok, danger }: the words and colour of the yes button. One question at a time; the button that asked keeps its spinner.
+// { ok, danger, no }: the words and colour of the yes button, the words of the other. One question at a time; the button that asked keeps its spinner.
 // askTime(text, minutes, max) → minutes, or null: an hours box and a minutes box, so nobody guesses which unit a number is.
 let askQ = Promise.resolve();
 function ask(text, o = {}) {
@@ -38,7 +38,7 @@ function ask(text, o = {}) {
     if (pick) { input.addEventListener('input', mark); input.placeholder = T('core.type_own'); }
     if (o.pin && input) { input.type = 'password'; input.inputMode = 'numeric'; input.autocomplete = 'new-password'; }   // the phone's number pad, dots
     const yes = el('button', { type: 'submit', className: o.danger ? 'danger' : 'primary', textContent: o.ok || 'OK' });
-    const no = el('button', { type: 'button', textContent: T('common.cancel'), onclick: () => d.close() });
+    const no = el('button', { type: 'button', textContent: o.no || T('common.cancel'), onclick: () => d.close() });
     const d = el('dialog', { className: 'ask' }, el('form', { className: 'card', onsubmit: (e) => { e.preventDefault(); d.returnValue = 'yes'; d.close(); } },
       el('p', { textContent: text }), o.warn ? el('p', { className: 'warnline', textContent: o.warn }) : null, pick || null, input, el('div', { className: 'acts' }, no, yes)));
     d.addEventListener('close', () => {
@@ -163,7 +163,7 @@ addEventListener('resize', closePop);
 // meets one (its error says "setup:old|missing:<feature>:<min>:<have>") asks to update or install TV Setup, with the button.
 // A page that knows before starting asks setupFor(feature). The same names as SetupNeed.name.
 // ids of i18n/*.json: the words of each feature, said in the question below
-const SETUP_NEEDS = { schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest' };
+const SETUP_NEEDS = { schedule: 'core.need_schedule', schedule_windows: 'core.need_schedule_windows', rules: 'core.need_rules', draw: 'core.need_draw', invite: 'core.need_invite', ram: 'core.need_ram', pic: 'core.need_pic', volume: 'core.need_volume', bedtimes: 'core.need_bedtimes', notify: 'core.need_notify', awake: 'core.need_awake', files: 'core.need_files', welcome: 'core.need_welcome', launcher: 'core.need_launcher', lock: 'core.need_lock', dim: 'core.need_dim', unextra: 'core.need_unextra', home_usage: 'core.need_home_usage', holdkeys: 'core.need_holdkeys', mic: 'core.need_mic', checkout: 'core.need_checkout', telegram: 'core.need_telegram', kids: 'core.need_kids', homekey: 'core.need_homekey', keytest: 'core.need_keytest', support: 'core.need_support' };
 const SETUP_RE = /setup:(old|missing):(\w+):([0-9.]*):([0-9.]*)/;
 const setupSay = (m) => { const what = SETUP_NEEDS[m[2]] ? T(SETUP_NEEDS[m[2]]) : m[2];
   return m[1] === 'missing' ? T('core.setup_missing', { what }) : T('core.setup_old', { what, min: m[3], have: m[4] }); };

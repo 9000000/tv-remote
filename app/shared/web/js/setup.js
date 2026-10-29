@@ -219,6 +219,29 @@ $('#censuspick').addEventListener('click', async (e) => {
 });
 $('#aboutclose').addEventListener('click', () => $('#about').close());
 $('#sendlog').addEventListener('click', sendWireLog);
+// ---------- Let support look (SupportRelay), 30 min, read only: this computer app (About), or the TV (the TV card; TV Setup, over ADB but on the TV) ----------
+const supPath = (what) => '/api/support/' + (what === 'app' ? 'app' : 'tv');
+async function supShow(what, s) {                                     // the code to read out, with Stop
+  if (!s) return;
+  if (s.failed) { toast(s.failed === 'none_left' ? T('support.none_left') : s.failed === 'no_net' ? T(what === 'app' ? 'support.no_net_here' : 'support.no_net') : friendly(s.failed)); return; }
+  supMark(what, s);
+  if (!s.open) return;
+  if (!await ask(T('support.code_title') + ': ' + s.code.replace(/(\d{4})(\d{4})/, '$1 $2') + '\n\n' + T('support.read_out_stop', { min: s.min }), { ok: T('support.stop'), danger: true, no: T('common.close') })) return;
+  supMark(what, await api(supPath(what), { act: 'stop' }));
+  toast(T('support.stopped'));
+}
+function supMark(what, s) {                                           // the button says the code while support looks
+  const b = $(what === 'app' ? '#supapp' : '#suptv');
+  b.textContent = s && s.open ? T('support.stop_sub', { code: s.code, min: s.min }) : T(what === 'app' ? 'support.this_app' : 'support.this_tv');
+  b.classList.toggle('on', !!(s && s.open));
+}
+for (const what of ['app', 'tv']) $(what === 'app' ? '#supapp' : '#suptv').addEventListener('click', async () => {
+  const now = await api(supPath(what), null, true);
+  supShow(what, now && now.open ? now : await api(supPath(what), { act: 'start' }));
+});
+$('#aboutbtn').addEventListener('click', async () => {             // the phone's own row is native (InfoScreens), the TV's is in the TV card
+  if (CORE === 'pc') supMark('app', await api('/api/support/app', null, true));
+});
 $('#about').addEventListener('click', (e) => { if (e.target === $('#about')) $('#about').close(); });   // click outside the box
 
 // ---------- stop the local server from the page (`stopped` lives in core.js) ----------

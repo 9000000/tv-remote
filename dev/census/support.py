@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Support codes from TV Setup (src/support.js). Needs the admin token: ~/.tv-remote-release/crash-token (or $CRASH_TOKEN).
+"""Support codes from TV Setup, the Phone app and the Computer app (src/support.js; the list's "app" column: setup / phone / pc). Needs the admin token: ~/.tv-remote-release/crash-token (or $CRASH_TOKEN).
 
   support.py                         the last 50 codes: when sent, which TV, whether it lets you look now
   support.py CODE                    what the TV sent (its facts and log)
@@ -7,6 +7,8 @@
   support.py CODE --all              everything at once: about, state, diagnose, setup/version, wirelog, rules, apps, the prefs,
                                      health, stats, playing, caps, paired, tailscale, TV Setup's log, and the TV's state over ADB
                                      (home screens, what is on screen, memory, settings, network, remotes, getprop, the whole logcat)
+                                     a phone code: its log, logcat, settings, every network, the saved TVs, the self-check of each;
+                                     a computer code: its log, system, networks, and its page's state, TVs, about, fleet, setup
   support.py CODE --all --out DIR    the same, one file per answer in DIR, and one line each here (agents: read the files, not the screen)
   support.py CODE sh "dumpsys package dev.tvremote.setup.keys"   any read-only command (TV Setup newer than 0.26.2: settings, dumpsys,
                                      getprop, pm list/dump, appops get, logcat -d); /api/support/prefs, /api/support/logcat
@@ -27,6 +29,10 @@ SH = ["cmd package query-activities --brief -a android.intent.action.MAIN -c and
 ALL = ["/api/about", "/api/state", "/api/diagnose", "/api/setup/version", "/api/wirelog", "/api/rules", "/api/apps",
        "/api/health", "/api/stats", "/api/playing", "/api/caps", "/api/paired", "/api/tailscale",
        "/api/support/prefs", "/api/support/logcat"] + ["/api/support/sh?c=" + urllib.parse.quote(c, safe="") for c in SH]
+
+PHONE = ["/api/support/log", "/api/support/net", "/api/support/tvs", "/api/support/prefs", "/api/support/logcat"]   # + /api/diagnose?ip= of each saved TV
+PC = ["/api/support/sys", "/api/support/net", "/api/support/log", "/api/state", "/api/about", "/api/tvs", "/api/update", "/api/setup/need",
+      "/api/setup/status", "/api/fleet", "/api/diagnose", "/api/health", "/api/caps", "/api/playing", "/api/rules", "/api/setup/version"]
 
 
 def token():
@@ -93,11 +99,16 @@ def main():
     if a.path == "sh":                                       # a read-only command on the TV, over TV Setup's own ADB
         a.path = "/api/support/sh?c=" + urllib.parse.quote(a.cmd or "", safe="").replace("~", "%7E")
     if a.path or a.all:
-        for p in ([a.path] if a.path else ALL):
+        app = call(base, "/v1/support", {"code": a.code}).get("app", "setup") if not a.path else ""
+        paths = [a.path] if a.path else PHONE if app == "phone" else PC if app == "pc" else ALL
+        if app == "phone":                                   # the self-check against every saved TV, as its picker would run it
+            try: paths += ["/api/diagnose?ip=" + t["ip"] for t in json.loads(ask(base, a.code, "/api/support/tvs").get("body", "{}")).get("tvs", [])]
+            except ValueError: pass
+        for p in paths:
             r = ask(base, a.code, p)
             if a.out:
                 os.makedirs(a.out, exist_ok=True)
-                f = os.path.join(a.out, re.sub(r"[^\w.-]+", "_", urllib.parse.unquote(p).replace("/api/support/sh?c=", "sh_").replace("/api/", ""))[:80] + ".txt")
+                f = os.path.join(a.out, re.sub(r"[^\w.-]+", "_", urllib.parse.unquote(p).replace("/api/support/sh?c=", "sh_").replace("/api/support/", "").replace("/api/", ""))[:80] + ".txt")
                 open(f, "w").write(r.get("body", ""))
                 print(f"{r.get('status')}  {len(r.get('body', '')):>7} chars  {f}")
                 continue

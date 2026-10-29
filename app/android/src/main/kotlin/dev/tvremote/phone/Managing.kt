@@ -231,6 +231,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         if (r.path == "/api/state" || r.path == "/api/about")      // the page only needs to know it may show itself, and for which TV
             return HttpServer.Response.json(JSONObject().put("core", "phone").put("host", forHost ?: "").put("name", a.name(forHost ?: "")).put("connected", true).put("is_on", true).put("paired", true)
                 .put("adb", JSONObject().put("state", manage?.adbState() ?: "unknown")).put("app_name", "TV Remote").put("version", a.version()).put("released", a.released()))
+        if (r.path == "/api/support/app")                              // About: let support look at this phone app (PhoneSupport)
+            return HttpServer.Response.json(PhoneSupport.act(a, if (r.method == "POST") r.json().optString("act") else "state"))
         if (r.path == "/api/phone/back" && r.method == "POST") {       // a dialog opened from the remote (AdbHelp.kt adbSteps) was closed: straight back to it
             a.ui.post { back() }
             return HttpServer.Response.json(JSONObject())

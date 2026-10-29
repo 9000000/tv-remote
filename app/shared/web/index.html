@@ -371,6 +371,7 @@
       <section class="card" data-adb-gated id="tvsetcard">
         <div class="card-head"><h2>📺 TV</h2><button class="small" id="tvreboot" data-asks><span class="ico">🔁</span><span class="lbl" data-i18n="tv.restart_the_tv"> Khởi động lại TV</span></button></div>
         <div class="tvset" id="tvset"><div class="muted" data-i18n="tv.reading_the_tv_s">Đang đọc cài đặt TV...</div></div>
+        <div class="actions"><button class="small" id="suptv" title="Người hỗ trợ đọc trạng thái và nhật ký của TV 30 phút, không đổi gì. Bạn đọc cho họ mã 8 số." data-i18n-title="support.tv_note" data-i18n="support.this_tv">👁️ Cho hỗ trợ xem TV này</button></div>
       </section>
       <section class="card" data-adb-gated id="tscard" data-for="tv phone">
         <h2 data-i18n="tv.tailscale_control_away_from">🌐 Tailscale · điều khiển khi không ở nhà</h2>
@@ -514,6 +515,10 @@
     <p><a href="https://tvremote.pages.dev/#install" target="_blank" rel="noopener" data-i18n="about.releases">Tải app</a> · <a href="https://github.com/HoangTran0410/tv-remote/blob/main/CHANGELOG.md" target="_blank" rel="noopener" data-i18n="about.change_log">Nhật ký thay đổi</a> · <a href="https://tvremote.pages.dev/log" target="_blank" rel="noopener" data-i18n="about.report_a_problem">Báo lỗi</a></p>
     <p class="muted" data-i18n-html="about.the_live_picture_and">Hình trực tiếp và chuột dùng <a href="https://github.com/Genymobile/scrcpy" target="_blank" rel="noopener">scrcpy</a> (Genymobile, Apache-2.0). Nút remote dùng giao thức Android TV Remote.</p>
     <div class="actions"><button class="small" id="sendlog" title="App làm sai? Chép các lệnh đã gửi tới TV, câu TV trả lời và các lỗi (không có mã ghép đôi, địa chỉ MAC, chữ đã gõ), rồi mở trang gửi nhật ký: dán vào đó và gửi qua GitHub hoặc Facebook." data-i18n-title="about.something_wrong_send_what" data-i18n="about.send_the_log">📋 Gửi nhật ký</button></div></div>
+    <div class="group" id="supgroup" data-for="pc"><h3 data-i18n="support.title">👁️ Hỗ trợ từ xa</h3>
+      <p class="note" id="supnote" data-i18n="support.page_note">Khi có lỗi, người hỗ trợ xem trạng thái và nhật ký 30 phút, không đổi gì. Bạn đọc cho họ mã 8 số.</p>
+      <div class="actions"><button class="small" id="supapp" data-i18n="support.this_app">Cho xem app này</button></div>
+    </div>
     <div class="group"><h3 data-i18n="about.get_the_app">Tải app</h3><div class="qrs" id="qrs"></div></div>
   </div>
 </dialog>

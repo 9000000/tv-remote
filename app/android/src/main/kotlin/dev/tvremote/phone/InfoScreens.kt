@@ -200,6 +200,30 @@ internal fun MainActivity.buildAbout(): View {
         web("https://tvremote.pages.dev/log")
     })
 
+    // let support look at this app for 30 min (PhoneSupport): the same code and Stop as the Manage screen's About
+    lateinit var sup: android.widget.Button
+    fun supMark(o: org.json.JSONObject) = sup.setLabel("@eye|" + if (o.optBoolean("open")) T("support.stop_sub", "code" to o.optString("code"), "min" to o.optLong("min"))
+        else T("support.app_open", "min" to dev.tvremote.core.SupportRelay.MINUTES))
+    fun supShow(o: org.json.JSONObject) {
+        supMark(o)
+        when (o.optString("failed")) {
+            "" -> if (o.optBoolean("open")) Popup.Builder(this).setTitle(T("support.code_title") + ": " + o.optString("code").chunked(4).joinToString(" "))
+                .setMessage(T("support.read_out_stop", "min" to o.optLong("min")))
+                .setPositiveButton(T("common.close"), null)
+                .setNegativeButton(T("support.stop")) { _, _ -> Thread { val s = PhoneSupport.act(this, "stop"); ui.post { supMark(s); Toast.makeText(this, T("support.stopped"), Toast.LENGTH_SHORT).show() } }.start() }
+                .show()
+            "none_left" -> Toast.makeText(this, T("support.none_left"), Toast.LENGTH_LONG).show()
+            else -> Toast.makeText(this, T("support.no_net_here"), Toast.LENGTH_LONG).show()
+        }
+    }
+    sup = row("") {
+        sup.isEnabled = false
+        Thread { val s = PhoneSupport.act(this, "state").takeIf { it.optBoolean("open") } ?: PhoneSupport.act(this, "start"); ui.post { sup.isEnabled = true; supShow(s) } }.start()
+    }
+    box.addView(sup)
+    box.addView(note(T("support.app_sub")))
+    supMark(PhoneSupport.relay(this).state())
+
     box.addView(head(T("info_screens.credits")), gap(18))
     box.addView(row("scrcpy · Apache-2.0") { web("https://github.com/Genymobile/scrcpy") })
 

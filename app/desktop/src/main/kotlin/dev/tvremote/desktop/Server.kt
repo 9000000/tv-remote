@@ -52,6 +52,48 @@ class Server(private val repo: File, private val keys: File, private val pass: P
         })
     }
 
+    /**
+     * Let support look at this app for 30 min (SupportRelay, as the phone's and TV Setup's): its log, the computer's networks and
+     * system, and [SUPPORT_ROUTES] of this server, asked as the page would (read-only; a TV is reached only to read). In the
+     * cache folder, so a restart mid-session picks the same code up again.
+     */
+    val support: dev.tvremote.core.SupportRelay by lazy {
+        val f = File(cache, "support.json")
+        dev.tvremote.core.SupportRelay("pc", version, System.getProperty("os.name") + " " + System.getProperty("os.version"), object : dev.tvremote.core.Census.Store {
+            override fun get(key: String): String? = synchronized(f) { try { JSONObject(f.readText()).optString(key).takeIf { it.isNotEmpty() } } catch (e: Exception) { null } }
+            override fun put(key: String, value: String) = synchronized(f) { f.writeText((try { JSONObject(f.readText()) } catch (e: Exception) { JSONObject() }).put(key, value).toString()) }
+        }, { supportReport() }, { supportAnswer(it) })
+    }
+    init { Thread({ support.resume() }, "support-resume").apply { isDaemon = true }.start() }
+
+    private fun supportReport() = dev.tvremote.core.Scrub.blank(supportSys() + "\n" + supportNet() + "\n" + WireLog.all.report().takeLast(30_000))
+
+    private fun supportSys() = "[system] TV Remote $version · ${System.getProperty("os.name")} ${System.getProperty("os.version")} ${System.getProperty("os.arch")} · Java ${System.getProperty("java.version")}" +
+        " · ${Runtime.getRuntime().availableProcessors()} cores · heap ${Runtime.getRuntime().totalMemory() / 1048576}/${Runtime.getRuntime().maxMemory() / 1048576} MB\n" +
+        "tv: ${cur.host.ifEmpty { "none" }} (${cur.kind}) adb ${cur.link?.state()} · saved ${saved.tvs.length()}\n"
+
+    private fun supportNet(): String = try {
+        "[networks]\n" + java.net.NetworkInterface.getNetworkInterfaces().toList().filter { it.isUp && !it.isLoopback }.joinToString("\n") { n ->
+            n.name + " " + n.displayName + (if (n.isVirtual || n.isPointToPoint) " (vpn/virtual)" else "") + " " + n.interfaceAddresses.joinToString(",") { it.address.hostAddress + "/" + it.networkPrefixLength }
+        }
+    } catch (e: Exception) { "[networks] $e" }
+
+    private fun supportAnswer(path: String): Pair<Int, String> {
+        val route = path.substringBefore('?')
+        when (route) {
+            "/api/support/log" -> return 200 to WireLog.all.report()
+            "/api/support/net" -> return 200 to supportNet()
+            "/api/support/sys" -> return 200 to supportSys()
+        }
+        if (route !in SUPPORT_ROUTES || ".." in path) return 403 to "not allowed for support: $route (the computer answers /api/support/log, net, sys, ${SUPPORT_ROUTES.joinToString(", ")})"
+        val q = HttpServer.Request().apply {
+            method = "GET"; this.path = route
+            path.substringAfter('?', "").split('&').filter { '=' in it }.forEach { query[java.net.URLDecoder.decode(it.substringBefore('='), "UTF-8")] = java.net.URLDecoder.decode(it.substringAfter('='), "UTF-8") }
+        }
+        val r = dispatch(q)
+        return r.status to dev.tvremote.core.Scrub.blank(r.body.toString(Charsets.UTF_8))
+    }
+
     private val kinds = java.util.concurrent.ConcurrentHashMap<String, String>()   // before cur, which needs it: what an unsaved TV is (scan, ports)
 
     @Volatile var cur = session(first ?: saved.current)               // --tv: this run only, the saved choice stays
@@ -189,9 +231,15 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     private fun route(r: HttpServer.Request, s: Session): Response? {
         val post = r.method == "POST"
         if (post) infoAt.clear()                                      // an action (install, save...) may have changed what the status shows
+        if (post && r.path == "/api/support/app") return Response.json(when (r.json().optString("act")) {   // About: let support look at this app
+            "start" -> if (support.start() == null) JSONObject().put("failed", if (support.left == 0) "none_left" else "no_net") else support.state()
+            "stop" -> { support.stop(); support.state() }
+            else -> support.state()
+        })
         if (!post) when (r.path) {
             "/api/state" -> return state(s)
             "/api/about" -> return about(s)
+            "/api/support/app" -> return Response.json(support.state())
             "/api/wirelog" -> return Response.of("text/plain; charset=utf-8", WireLog.all.report(s.atv?.takeIf { native(s) }).toByteArray())
             "/api/update" -> return Response.json(updater.json())
             "/api/downloader" -> return Response.json(dev.tvremote.core.Downloader.json())   // needs no TV: the help for installing TV Setup types it
@@ -627,10 +675,12 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE", "YOUTUBE", "NETFLIX", "PRIME")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
-            "/api/tv/remove", "/api/voice", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown",
+            "/api/tv/remove", "/api/voice", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown", "/api/support/app",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
-        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",
+        /** What support may read of this server (SupportRelay): read-only, what a page shows. */
+        val SUPPORT_ROUTES = setOf("/api/state", "/api/about", "/api/tvs", "/api/update", "/api/diagnose", "/api/setup/need", "/api/setup/status", "/api/apps", "/api/fleet", "/api/caps", "/api/playing", "/api/health", "/api/stats", "/api/rules", "/api/setup/version", "/api/tailscale")
+        val NATIVE_TOO = setOf("/api/state", "/api/about", "/api/support/app", "/api/wirelog", "/api/update", "/api/tvs", "/api/discover", "/api/setup/status", "/api/scenes", "/api/apps", "/api/inputs", "/api/app/icon", "/api/app/meta", "/api/setup/need",
             "/api/fleet", "/api/fleet/checkout", "/api/fleet/job", "/api/fleet/install", "/api/fleet/welcome", "/api/fleet/cancel", "/api/fleet/status", "/api/fleet/shot")
         const val HD = 5                                              // Tv.QUALITY's sharpest level, the page's "Nét nhất"
         val IP = Regex("((25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)")   // IPv4: what ADB and the TV's page links are written for

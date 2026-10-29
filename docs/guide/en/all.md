@@ -1215,6 +1215,8 @@ The phone app's Manage screen uses Android's own browser (WebView). If it is too
 
 > 💡 **Let support look for 30 min** only reads the state, never presses or changes anything; stop it any time.
 
+> 💡 For the TV from a phone or computer: **Setup** tab, TV card, **👁️ Let support see this TV**. For the phone or computer app itself: **About**.
+
 ## Common problems
 
 | Problem | Try |

@@ -897,14 +897,14 @@ class MainActivity : Activity() {
     private fun supportSend() {
         log(T("support.sending"))
         Thread({
-            val code = Support.send(this, version())
+            val code = Support.send(this)
             ui { if (code == null) notSent() else { log(T("support.sent", "code" to spaced(code))); showCode(code, T("support.read_out")) } }
         }, "support-send").apply { isDaemon = true }.start()
     }
 
     private fun supportOpen() {
         log(T("support.sending"))
-        Support.start(this, version()) { code -> ui {
+        Support.start(this) { code -> ui {
             if (code == null) notSent()
             else { log(T("support.opened", "code" to spaced(code), "min" to Support.MINUTES)); showCode(code, T("support.opened_sub", "min" to Support.MINUTES)) }
         } }
