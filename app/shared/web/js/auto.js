@@ -298,7 +298,7 @@ async function installSetupApk() {
   for (let misses = 0; j && j.status === 'running' && misses < 10;) { await sleep(1500); const r = await api('/api/job?id=' + j.id, null, true); if (r) { j = r; misses = 0; } else misses++; }
   if (!j || j.status !== 'done') { toast(T('auto.install_failed', { why: friendly(j ? j.msg : T('core.lost_connection')) })); return; }
   await api('/api/app/launch', { pkg: 'dev.tvremote.setup' }, true);    // opened once, it starts its service and keeps it across restarts
-  toast(T('auto.setup_installed')); await sleep(2500); loadRules(null, true);
+  toast(T('auto.setup_installed')); await sleep(2500); loadRules(null, true); checkSetup();   // the "no TV Setup" bar goes
 }
 
 // ---------- TV Setup's and TV Home's updates (SetupUpdate.kt, Home.kt): one bar on every remote; the TV puts an old TV Setup back if a new one does not work ----------
@@ -332,8 +332,8 @@ function waitSetup(r, k) {
   if (!o[k]) { o[k] = Date.now(); try { localStorage.setItem('updSeen', JSON.stringify(o)); } catch (e) { } }
   return Date.now() - o[k] < 3 * 86400000;
 }
-// what is on offer and not put off: [kind, name, version]
-const updOffers = (r) => [r && r.latest && !later('tv:' + r.latest) && !waitSetup(r, 'tv@' + setupChecked + '@' + r.installed) ? ['tv', 'TV Setup', r.latest] : null,
+// what is on offer and not put off: [kind, name, version]; 'none': no TV Setup on this TV, offered once ADB works, until hidden for good
+const updOffers = (r) => r && r.installed === '' ? (later('tv:none@' + setupChecked) ? [] : [['none', 'TV Setup', '']]) : [r && r.latest && !later('tv:' + r.latest) && !waitSetup(r, 'tv@' + setupChecked + '@' + r.installed) ? ['tv', 'TV Setup', r.latest] : null,
   homeLatest && !later('home:' + homeLatest) && !waitSetup(r, 'home@' + setupChecked + '@' + homeHas) ? ['home', 'TV Home', homeLatest] : null].filter(Boolean);
 // a is newer than b ("0.24.0" vs "0.22.0"); a missing part is 0
 const verNewer = (a, b) => {
@@ -356,15 +356,26 @@ function showSetupUpd(r) {
     $('#suplater').onclick = () => { try { localStorage.setItem('setupUndo', String(r.at)); } catch (e) { } r.state = ''; showSetupUpd(r); };   // then the update, if there is one
     return;
   }
+  if (offers[0][0] === 'none') {
+    b.className = 'banner ok';
+    put('#suptitle', 'textContent', T('upd.setup_missing')); put('#supnote', 'textContent', T('upd.setup_missing_note'));
+    put('#supgo', 'hidden', false); put('#supgo', 'textContent', T('core.install_setup')); put('#suplater', 'textContent', T('setup_banner.no_thanks'));
+    $('#suplater').onclick = () => { putOff(['tv:none@' + setupChecked], 0); showSetupUpd(setupNow); };
+    return;
+  }
   put('#suptitle', 'textContent', T('upd.new', { what: offers.map((o) => o[1] + ' ' + o[2]).join(' · ') }));
   put('#supnote', 'textContent', '');
-  put('#supgo', 'hidden', false); put('#suplater', 'textContent', T('common.later'));
+  put('#supgo', 'hidden', false); put('#supgo', 'textContent', T('page.update')); put('#suplater', 'textContent', T('common.later'));
   $('#suplater').onclick = () => {
     const keys = offers.map((o) => o[0] + ':' + o[2]), off = (days) => () => { putOff(keys, days); showSetupUpd(setupNow); };
     menuDlg(T('upd.when'), -1, [...[1, 7, 30].map((n) => [T('upd.in_days', { n }), '', off(n)]), [T('upd.skip'), T('upd.skip_sub'), off(0)]]);
   };
 }
-$('#supgo').addEventListener('click', () => updateAll(updOffers(setupNow).map((o) => o[0])));
+$('#supgo').addEventListener('click', () => {
+  const o = updOffers(setupNow);
+  if (o.length && o[0][0] === 'none') return installSetupApk();
+  updateAll(o.map((x) => x[0]));
+});
 // [kinds]: 'home' and / or 'tv'. TV Home first: TV Setup's update may close the page's own server (the TV web page)
 async function updateAll(kinds = ['tv', 'home']) {
   if (setupBusy) return;

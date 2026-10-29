@@ -25,7 +25,7 @@ internal fun MainActivity.checkSetup(tv: Tv, h: String) {
         val homeNow = home?.takeIf { it.optBoolean("installed") }
         val found = try {
             val installed = Regex("versionName=(\\S+)").find(tv.shell("dumpsys package ${SetupUpdate.PKG} 2>/dev/null | grep -m1 versionName="))?.groupValues?.get(1) ?: ""
-            if (installed.isEmpty()) homeNow?.let { SetupNews("", "", "", 0L, "", "", it.optString("version"), it.optString("latest")) }   // no TV Setup: offered where it is needed (Automation), not here
+            if (installed.isEmpty()) SetupNews("", "", "", 0L, "", "", homeNow?.optString("version") ?: "", homeNow?.optString("latest") ?: "", missing = true)   // no TV Setup: offered, with ✕ to hide it for good
             else {
                 val s = SetupUpdate.parse(tv.shell("cat ${SetupUpdate.DIR}/state 2>/dev/null; echo '|'; cat ${SetupUpdate.DIR}/bad 2>/dev/null"))
                 val r = try { Release.newer(installed, "tv", "tv-setup.apk") } catch (e: Exception) { null }
@@ -50,7 +50,7 @@ internal fun MainActivity.setupAgain() {
 }
 
 internal class SetupNews(val installed: String, val latest: String, val state: String, val at: Long, val version: String, val from: String,
-                         val home: String = "", val homeLatest: String = "") {
+                         val home: String = "", val homeLatest: String = "", val missing: Boolean = false) {
     /** A new version broke on this TV in the last 3 days and was taken back: said once, until "Got it". Not when that version
      *  (or a later one) is on the TV now, put there another way since (Downloader): the old line was still read (a Chromecast, 0.24.0). */
     fun undone(seen: String) = state == "rolledback" && System.currentTimeMillis() - at < 3 * 86400_000L && seen != at.toString() &&
@@ -59,9 +59,10 @@ internal class SetupNews(val installed: String, val latest: String, val state: S
 
 private fun MainActivity.laterAll(): org.json.JSONObject = try { org.json.JSONObject(pref("updLater").ifEmpty { "{}" }) } catch (e: Exception) { org.json.JSONObject() }
 
-/** What is on offer and not put off: (kind, name, installed, new). */
-private fun MainActivity.offers(n: SetupNews): List<List<String>> {
+/** What is on offer and not put off: (kind, name, installed, new); "none": no TV Setup on this TV, until hidden ("tv:none@host", as the page). */
+private fun MainActivity.offers(n: SetupNews, h: String): List<List<String>> {
     val o = laterAll(); val now = System.currentTimeMillis()
+    if (n.missing && o.optLong("tv:none@$h") <= now) return listOf(listOf("none", "TV Setup", "", ""))
     return listOfNotNull(
         listOf("tv", "TV Setup", n.installed, n.latest).takeIf { n.latest.isNotEmpty() && o.optLong("tv:" + n.latest) <= now },
         listOf("home", "TV Home", n.home, n.homeLatest).takeIf { n.homeLatest.isNotEmpty() && o.optLong("home:" + n.homeLatest) <= now })
@@ -77,9 +78,22 @@ private fun MainActivity.putOff(keys: List<String>, days: Int) {
 internal fun MainActivity.showSetup(h: String? = host) {
     val n = if (h != null && h == host && tv != null) setupNews[h] else null
     val undone = n != null && n.undone(pref("setupUndo"))
-    val offer = if (n != null) offers(n) else emptyList()
-    setupBar.visibility = if (undone || offer.isNotEmpty()) View.VISIBLE else View.GONE
-    if (n == null || !(undone || offer.isNotEmpty())) return
+    val offer = if (n != null && h != null) offers(n, h) else emptyList()
+    setupRow.visibility = if (undone || offer.isNotEmpty()) View.VISIBLE else View.GONE
+    setupClose.visibility = View.GONE
+    if (n == null || h == null || !(undone || offer.isNotEmpty())) return
+    if (!undone && offer[0][0] == "none") {
+        setupBar.background = box(GREEN, 14); setupBar.setTextColor(Color.WHITE)
+        setupBar.setLabel("@download|" + T("setup_banner.offer"))
+        setupBar.setOnClickListener {
+            setupNews.remove(h); setupChecked.remove(h)                   // looked at again after: installed, or still missing
+            showSetup(h)
+            managing.open(h, then = "installSetupApk()")
+        }
+        setupClose.visibility = View.VISIBLE
+        setupClose.setOnClickListener { putOff(listOf("tv:none@$h"), 0); showSetup(h) }
+        return
+    }
     setupBar.background = box(if (undone) ERR_BG else GREEN, 14)
     setupBar.setTextColor(if (undone) ERR_TEXT else Color.WHITE)       // white on the green fill, in both themes
     setupBar.setLabel(if (undone) "@alert|" + T("setup_banner.tv_setup_failed_the", "version" to n.version, "from" to n.from)

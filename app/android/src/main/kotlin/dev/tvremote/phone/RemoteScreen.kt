@@ -259,8 +259,11 @@ internal fun MainActivity.buildRemote() {
     controls.addView(basicBar, bb)
     setupBar = button("", GREEN)                                      // SetupBanner.kt
     setupBar.textSize = 13f
-    setupBar.visibility = View.GONE
-    controls.addView(setupBar, LinearLayout.LayoutParams(-1, dp(44)).apply { bottomMargin = dp(12) })
+    setupClose = icon("@close", T("setup_banner.no_thanks"), BTN)     // only on "Install TV Setup": hides it for good on this TV
+    setupRow = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; visibility = View.GONE }
+    setupRow.addView(setupBar, LinearLayout.LayoutParams(0, dp(44), 1f))
+    setupRow.addView(setupClose, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(8) })
+    controls.addView(setupRow, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     playing = PlayingBar(this)
     controls.addView(playing.view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     nowApp = NowApp(this)                                             // NowApp.kt

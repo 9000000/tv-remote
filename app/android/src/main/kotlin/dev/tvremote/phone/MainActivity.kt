@@ -188,6 +188,8 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
 
     // ---- SetupBanner.kt
     internal lateinit var setupBar: Button
+    internal lateinit var setupRow: LinearLayout
+    internal lateinit var setupClose: IconButton
     internal lateinit var playing: PlayingBar                          // NowPlayingBar.kt
     internal lateinit var nowApp: NowApp                              // NowApp.kt
     internal val setupChecked = HashMap<String, Long>()                // when each TV's TV Setup was last looked at
@@ -660,7 +662,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         clearBox()                                                    // the next TV has received nothing from the box
         managing.close()
-        setupBar.visibility = View.GONE
+        setupRow.visibility = View.GONE
         if (listen) { listen = false; bgListen = false; listenService(false); stopSound() }
         stopSession()
         waiting.visibility = View.GONE
