@@ -29,3 +29,13 @@ test(`no topic over ${TOPIC_MAX} words of prose`, () => {
   const long = topics.map((t) => [t.id, spans(prose(t.body), 'en').reduce((a, s) => a + words(s), 0)]).filter(([, n]) => n > TOPIC_MAX);
   assert.deepStrictEqual(long, [], 'cut it, or move the rare cases into a table');
 });
+
+// docs/guide/ (the guide for AI agents) is written by dev/gen/guide_md.js from guide.html: run it after editing the page
+test('docs/guide/*.md match guide.html', () => {
+  const { build } = require('../../../dev/gen/guide_md.js');
+  const dir = path.join(__dirname, '../../../docs/guide');
+  const want = build();
+  const have = fs.readdirSync(dir).flatMap((l) => fs.readdirSync(path.join(dir, l)).map((f) => l + '/' + f));
+  assert.deepStrictEqual(have.sort(), Object.keys(want).sort(), 'run: node dev/gen/guide_md.js');
+  for (const [f, s] of Object.entries(want)) assert.strictEqual(fs.readFileSync(path.join(dir, f), 'utf8'), s, f + ' is stale: run node dev/gen/guide_md.js');
+});

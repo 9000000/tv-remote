@@ -1,0 +1,22 @@
+# Air Mouse
+
+Hold the phone like a remote: turning your wrist moves a pointer on the TV, like LG's Magic Remote. Good for apps the arrow keys cannot drive (a browser, some old apps).
+
+Phone app only. Android TVs need ADB; LG TVs use their own pointer.
+
+1. On the remote, tap the button under the arrows (**Arrow keys ▾**) and choose **Air Mouse**. The arrows turn into the mouse pad.
+2. Turn your wrist with the phone, or drag a finger on the pad.
+3. Done: tap **Air Mouse** again; the arrows come back and the pointer goes away.
+
+| Gesture | What it does |
+| --- | --- |
+| One-finger drag | Moves the pointer like a touchpad, no gyroscope needed; the gyroscope waits while a finger is down. |
+| Tap the pad | Click. |
+| Tap, then touch again and drag | Drags with the finger, like a laptop touchpad. |
+| Drag the strip on the pad's right edge | Scrolls with one finger; a quicker drag scrolls further. The rest of the pad moves the pointer as usual. |
+| Two fingers | Scroll. |
+| Hold a finger still on the pad (a buzz), then move | Like holding the mouse button: move the phone or the finger to select text or drag what is under it. Lift to let go. |
+
+### Tips
+
+- Left-handed: the swap button at the foot of the scroll strip puts the strip on the left and the close button on the right (remembered).

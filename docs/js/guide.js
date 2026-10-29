@@ -181,7 +181,33 @@
     dlg.hidden = true; root.style.overflow = "";
     if (refocus && opener && opener.focus) opener.focus();
   }
-  [].forEach.call(document.querySelectorAll(".gfind"), function(b){ b.addEventListener("click", openFind); });
+  [].forEach.call(document.querySelectorAll(".gfind:not(.gai)"), function(b){ b.addEventListener("click", openFind); });
+
+  // "Copy the guide for AI": a prompt that sends an agent to guide/<lang>/index.md (one line per topic, written by
+  // dev/gen/guide_md.js) and on to only the topics it needs, not this whole page (~25x the tokens)
+  var toast = document.getElementById("toast"), tt;
+  function say(s){ toast.textContent = s; toast.classList.add("show"); clearTimeout(tt); tt = setTimeout(function(){ toast.classList.remove("show"); }, 2200); }
+  function aiPrompt(){
+    var vi = root.dataset.lang === "vi", base = location.origin + "/guide/" + (vi ? "vi" : "en") + "/";
+    var id = new URLSearchParams(location.search).get("t") || location.hash.slice(1), t = id && document.getElementById(id), here = t && t.classList.contains("topic") ? base + t.id + ".md" : "";
+    return vi
+      ? "Giúp tôi cài và dùng TV Remote (điều khiển Android TV / Google TV, LG, Samsung, Roku, VIDAA từ điện thoại hoặc máy tính).\n"
+        + "Hướng dẫn cho AI: " + base + "index.md (mỗi mục một dòng). Đọc file đó trước, rồi chỉ mở trang của mục cần dùng; cả hướng dẫn trong một file: " + base + "all.md.\n"
+        + (here ? "Tôi đang xem: " + here + "\n" : "")
+        + "Hỏi tôi dùng TV gì và thiết bị gì (điện thoại Android, iPhone, máy tính), rồi đưa từng bước một, nói rõ bước đó làm trên app hay màn hình nào, và chờ tôi báo xong mới sang bước tiếp."
+      : "Help me set up and use TV Remote (control an Android TV / Google TV, LG, Samsung, Roku or VIDAA TV from a phone or computer).\n"
+        + "The guide for AI: " + base + "index.md (one line per topic). Read it first, then open only the topics you need; everything in one file: " + base + "all.md.\n"
+        + (here ? "I am reading: " + here + "\n" : "")
+        + "Ask which TV and which device I have (Android phone, iPhone, computer), then give me one step at a time, saying which app or screen it happens in, and wait until I say it worked.";
+  }
+  [].forEach.call(document.querySelectorAll(".gai"), function(b){
+    b.addEventListener("click", function(){
+      var p = aiPrompt(), vi = root.dataset.lang === "vi";
+      (navigator.clipboard ? navigator.clipboard.writeText(p) : Promise.reject())
+        .then(function(){ say(vi ? "Đã chép. Dán vào ChatGPT, Claude, Gemini…" : "Copied. Paste it into ChatGPT, Claude, Gemini…"); })
+        .catch(function(){ window.prompt(vi ? "Chép đoạn này cho AI:" : "Copy this for your AI:", p); });
+    });
+  });
   dlg.querySelector(".gdlg-back").addEventListener("click", function(){ closeFind(true); });
   document.addEventListener("keydown", function(e){
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || "")) || e.target.isContentEditable;

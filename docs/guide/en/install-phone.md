@@ -1,0 +1,14 @@
+# Install the phone app (Android)
+
+The easiest way: nothing to install on the TV, the keys work at once ([see](nokeys.md)). Turn on ADB for the picture, apps and files.
+
+1. On the Android phone, open the home page, tap **tv-remote.apk**, then open the file. If Android asks about “unknown apps”, allow the browser.
+2. Open **TV Remote**, tap **Scan Wi-Fi** and pick the TV (or type its address).
+3. The first time the TV asks “Allow USB debugging?”: tick **Always allow** and OK. See [this part](allow-usb.md).
+4. Done: the TV's picture is on the phone. ADB not on yet? [Keys still work](nokeys.md).
+
+> 💡 The phone and the TV must be on the same Wi-Fi. The app tells you when a new version exists. Another Android device: Downloader code **2973135**.
+
+> 💡 Updating inside the app: the first time Android asks for “Install unknown apps”. Tap **Open settings**, turn on “Allow from this source”, come back and it carries on. After that (Android 12+) it updates quietly.
+
+> 💡 Won't install: tap **Download in browser**, open the file and tap Install. Samsung: turn Auto Blocker off, then back on after updating.

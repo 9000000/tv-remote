@@ -1,0 +1,16 @@
+# Khóa app bằng mã PIN
+
+1. Tab **⏰ Tự động → 🔒 Khóa app bằng mã PIN**, bấm **＋ Thêm**.
+2. Chọn app. Lần đầu thì đặt thêm mã PIN 4 đến 8 chữ số.
+3. Mở app đó trên TV: TV hỏi PIN. Nhập bằng phím số của remote hoặc bàn phím trên màn hình.
+
+Đã mở khóa thì dùng tới khi sang app khác hoặc TV tắt; mở lại là hỏi lại. Sai 5 lần: chờ 1 phút.
+
+> 💡 Cần TV Setup. Mã PIN chỉ lưu trên TV (dạng băm), không gửi đi đâu.
+
+1. **🛡️ Chế độ trẻ em** (cùng tab Tự động): bật thì mọi app đều hỏi mã trừ vài app bạn cho phép; Cài đặt TV luôn khóa.
+2. Chọn cách mở khóa: PIN, **Google Authenticator** (quét QR, nhập mã 6 số; đồng hồ TV phải đúng, trang báo nếu lệch) hoặc hỏi bố mẹ qua Telegram.
+3. Lưu 8 **mã dự phòng** khi thêm Authenticator (mỗi mã dùng 1 lần). Nghi trẻ biết PIN: đổi PIN, hoặc tắt PIN khi đã có Authenticator.
+4. **Mở khóa 30 phút / 1 giờ / 2 giờ / Hết hôm nay**, **Khóa lại ngay**, và thẻ **📺 Tổng giờ xem TV** mỗi ngày (+30p khi cần).
+
+> 💡 TV Home → **Cài đặt nhanh** có ô **Khoá trẻ em**; tắt nó thì TV hỏi mã PIN.

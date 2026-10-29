@@ -1,0 +1,16 @@
+# Lock apps with a PIN
+
+1. Tab **⏰ Automation → 🔒 Lock apps with a PIN**, tap **＋ Add**.
+2. Pick the app. The first time, also set a PIN of 4 to 8 digits.
+3. Open that app on the TV: it asks for the PIN. Type it with the remote's number keys or the keypad on screen.
+
+Once unlocked it stays open until another app comes up or the TV turns off; opening it again asks again. 5 wrong PINs: a minute's wait.
+
+> 💡 Needs TV Setup. The PIN is kept only on the TV (hashed), never sent anywhere.
+
+1. **🛡️ Kids mode** (same Automation tab): when on, every app asks for a code except the few you allow; TV settings stay locked.
+2. Pick the ways to unlock: PIN, **Google Authenticator** (scan the QR, type 6 digits; the TV clock must be right, the page warns if off) or ask a parent on Telegram.
+3. Save the 8 **backup codes** when adding Authenticator (each works once). If a child may know the PIN: change it, or turn it off once Authenticator is on.
+4. **Open 30 min / 1 hour / 2 hours / Rest of today**, **Lock now**, and the **📺 Total TV time** card per day (+30 min when needed).
+
+> 💡 TV Home → **Quick settings** has a **Kids lock** tile; turning it off asks the PIN.

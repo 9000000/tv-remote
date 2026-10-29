@@ -1,0 +1,26 @@
+# Ra lệnh bằng giọng nói
+
+Ô **Hỏi TV: mở YouTube** (trong **⌨️ Bàn phím**) hiểu câu nói thường: gõ rồi bấm **🔍**, hoặc bấm **Nói** để nói.
+
+| Nói | TV làm |
+| --- | --- |
+| mở Netflix | Mở app đó. |
+| tắt tiếng · tạm dừng · phát | Bấm phím tương ứng. |
+| về home · quay lại · bài tiếp · bài trước | Điều hướng. |
+| tăng âm lượng 5 · giảm âm lượng | Đổi âm lượng. |
+| tắt TV · bật TV | Nguồn. |
+| hẹn giờ tắt 30 phút · hủy hẹn giờ | Hẹn giờ tắt. |
+| mở kênh VTV1 · kênh tiếp | Mở kênh trên [TV Channels](channels.md). |
+| tên một cảnh | Chạy cảnh đó. |
+
+> 💡 Câu nào lạ thì chuyển cho Trợ lý hoặc tìm trên YouTube.
+
+> Các câu nói là một danh sách có chữ ký trên trang web: thêm câu mới không cần cập nhật app.
+
+> 💻 App máy tính trên Windows, Linux: 🎤 gửi thẳng giọng bạn tới Trợ lý của TV (TV Android), TV tự nghe.
+
+Nút mic của điều khiển TV: bật **Nút mic mở giọng nói của TV Remote** ở tab Thiết lập, thẻ Nút remote (mặc định tắt). Cần TV Setup mới.
+
+### Mẹo
+
+- Trên app điện thoại có [Nói nhanh](quick-talk.md) (giữ để nói, xem trước việc sẽ làm). Câu lệnh là danh sách ký trên trang web: có thêm nhiều lệnh thường ngày như đóng app, về Home, mở Cài đặt.

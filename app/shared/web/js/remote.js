@@ -340,3 +340,18 @@ setInterval(async () => {
   if (d === 'open') { if ($('#kbd').disabled) return; setKbd(true); $('#text').focus({ preventScroll: true }); }
   else if (d === 'close' && $('#kbdbtn').classList.contains('on')) { $('#text').blur(); setKbd(false); }
 }, 1000);
+
+// LG, Samsung, Roku, VIDAA let no app switch their tracking off: the paths in their own menus (the guide's #tracking-other), each a
+// tap that opens Settings on the TV and this list again, so the path stays in front of the person while they walk it
+const TRACK_PATHS = { lg: ['track.lg_acr', 'track.lg_ads', 'track.lg_mic'], samsung: ['track.samsung_acr', 'track.samsung_ads', 'track.samsung_mic'],
+  roku: ['track.roku_acr', 'track.roku_ads', 'track.roku_mic'], vidaa: ['track.vidaa_acr', 'track.vidaa_ads', 'track.vidaa_mic'] };
+function trackingMenu() {
+  const k = TV_KIND, [acr, ads, mic] = TRACK_PATHS[k] || []; if (!acr) return;
+  const open = () => { REMOTE_DO.key(k === 'roku' ? 'HOME' : 'SETTINGS'); setTimeout(trackingMenu, 300); };
+  menuDlg(T('track.title', { tv: KIND_NAME[k] }), 0, [
+    ['@settings|' + T('track.open'), T('track.open_sub'), open],
+    ['@eye|' + T('track.acr'), T(acr), open],
+    ['@tag|' + T('track.ads'), T(ads), open],
+    ['@mic|' + T('track.mic'), T(mic), open],
+    ['@guide|' + T('track.guide'), T('track.guide_sub'), () => window.open('https://tvremote.pages.dev/guide#tracking-other', '_blank')]], -1, true);
+}

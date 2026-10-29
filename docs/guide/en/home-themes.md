@@ -1,0 +1,22 @@
+# TV Home themes
+
+A theme changes the whole home screen in one press: background, widgets, widget style, columns and rows, live widgets.
+
+1. On the TV: ⚙ → **Customize TV Home** → **Themes**. Phone, computer: **TV** tab → **Customize TV Home** → **Themes**.
+2. Each tile is the home screen in miniature: the real background, where the widgets go, the app grid. Pick one and the TV changes at once.
+3. Like the current look: **Save the current look as a theme** and name it. Your photo, video or web page is captured small for its preview.
+4. Share: tap ⓘ on a theme → **Export theme** gives a `.tvtheme.json` file; **Import theme** reads it back (**Include photos/videos** carries your own photos and videos, 60 MB each).
+5. Send to everyone: ⓘ on your theme → **Share to the store** (phone, computer), enter a display name, **Send**. It shows in **Community** once reviewed; 3 themes a day at most.
+
+| Ready-made | For |
+| --- | --- |
+| Modern, Morning, Day | Big clock, weather, lunar calendar |
+| Rice terraces, Beach sunset, City night | A photo or video background from the web |
+| Gamer, Match day, Cinema | With a fitting live widget (Free RAM, Keep watching) |
+| Kids, Easy to read, Bedtime | Big text, few things, the sleep timer |
+
+### Tips
+
+- Switching from an unsaved look keeps it as **Previous look**, so you can go back.
+- Hold OK on a theme (web: the ⓘ button) to see what it sets.
+- Ready-made themes update from the website, no new TV Home needed.

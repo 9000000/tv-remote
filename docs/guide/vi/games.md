@@ -1,0 +1,14 @@
+# TV Games, game trên TV
+
+App trên TV chơi game retro và game web, dùng điện thoại làm tay cầm (tối đa 4). Chơi không cần ADB hay TV Setup: quét mã QR trên TV bằng điện thoại.
+
+Chỉ có remote của TV: cài bằng Downloader, mã **2294968**.
+
+1. Tab **TV** → thẻ **Game trên TV** → **Cài TV Games** (cần ADB, chỉ để cài). Chưa có trong bản phát hành mới nhất thì thẻ báo “có trong bản phát hành tới”.
+2. Bấm **Mở TV Games**, rồi quét QR trên TV bằng điện thoại để làm tay cầm.
+3. Game bài và cờ (Tiến lên, Bài màu, Cờ tỷ phú…): mỗi người cầm bài trên điện thoại, chạm hoặc vuốt chọn lá rồi bấm nút. Ghế trống thì máy chơi.
+4. Chơi một mình bằng remote TV: OK là nút A. Start, Select, B: **Back → Gán nút remote**, rồi bấm nút muốn dùng (nút màu, ⏯…). Hoặc nút **🎮 Tay cầm** trên remote.
+5. Game nghiêng điện thoại (Bóng bay, Bida, Máy bay giấy…): bấm **Bật nghiêng**. Trình duyệt cảnh báo vì chuyển sang https: bấm **Nâng cao** rồi **Tiếp tục** (iPhone thêm **Cho phép**). Ghế vẫn giữ.
+6. Game web bị treo hay mới cập nhật? Trên TV giữ OK ở game web → **Mở bản mới nhất**; trên điện thoại menu ⚙ → **Tải lại game**. Các điện thoại vẫn giữ kết nối.
+
+### Mẹo

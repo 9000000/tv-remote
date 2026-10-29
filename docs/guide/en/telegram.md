@@ -1,0 +1,22 @@
+# Control the TV from Telegram
+
+Message your own bot to turn the TV off or on, set the volume, open apps, take a screenshot. The bot runs in TV Setup and opens no port to the Internet.
+
+1. In Telegram open **@BotFather**, send `/newbot`, pick a name and a username ending in `bot`.
+2. BotFather returns a **token** (`123456789:AAH…`). Whoever has it controls the bot: share it with no one.
+3. 🛠️ Settings on the TV or its web page → **Control from Telegram** → **Allow**, paste the token, **Save**.
+4. Press **Make pairing code**: a 6-digit code shows in Settings and on the TV screen, single use, 5 minutes.
+5. Open the bot (private chat or group), send `/pair 123456`. Unknown chats get no answer at all.
+6. Five wrong tries cancel the code and lock pairing for 15 minutes; a new code unlocks.
+
+Commands:
+
+```
+/status  /off  /on  /vol 30  /key HOME
+/open netflix  /scene Xem phim  /timer 30 (0 = huỷ/cancel)
+/say Ăn cơm nhé  /shot  /remote  /help
+```
+
+A new chat gets **Remote** rights; the owner can raise it to **Full** in the chat list.
+
+Screenshots pass through Telegram's servers. Stop any time: **Don't allow**, **Remove token** (forgets chats too) or remove one chat.

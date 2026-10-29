@@ -1,0 +1,56 @@
+# Home Assistant · Phím tắt (Siri)
+
+Cho iPhone Phím tắt, Siri hay Home Assistant điều khiển TV bằng một đường link.
+
+1. **App máy tính** hoặc **trang web của TV** (xem “[iPhone](web-iphone.md)”) → nút **🛠️ Cài đặt** ở trên. App điện thoại không có.
+2. Thẻ **Home Assistant · Phím tắt** → **Cho dùng**.
+3. Bấm **📋 Sao chép** đường link.
+
+Link có dạng:
+
+```
+http://192.168.1.20:8765/api/hook?k=3f9a1c7e5b2d4a60b8c1d9e7f2a4b6c8&key=HOME
+```
+
+Địa chỉ TV và cổng, `k=` là mã bí mật, `key=HOME` là việc cần làm. Mở link trong trình duyệt để thử.
+
+**iPhone: Phím tắt và Siri**
+
+1. Gửi link sang iPhone (Ghi chú, AirDrop), hoặc chép từ trang web của TV mở trong Safari.
+2. App **Phím tắt** → **+** → **Thêm hành động**.
+3. Chọn **Lấy nội dung của URL**, dán link vào ô **URL** (giữ **GET**).
+4. Đặt tên (vd “TV Home”), bấm **Xong**.
+5. Nói **“Hey Siri, tên phím tắt”** hoặc bấm phím tắt. iPhone cùng Wi-Fi với TV; lần đầu chọn **Cho phép** mạng cục bộ.
+
+**Home Assistant**
+
+1. Bấm **📋 YAML cho Home Assistant**.
+2. Mở `configuration.yaml` (add-on File editor), dán vào cuối tệp, lưu: ``` rest_command:   tv_key:     url: "http://192.168.1.20:8765/api/hook"     method: post     headers:       x-tvr-hook: "3f9a1c7e5b2d4a60b8c1d9e7f2a4b6c8"     content_type: "application/json"     payload: '{"key": "{{ key }}"}' ```
+3. Khởi động lại (**Công cụ nhà phát triển → YAML → Khởi động lại**).
+4. Dùng trong script hay automation. Bấm Home: ``` action: rest_command.tv_key data:   key: HOME ```
+5. Mở app / chạy cảnh: chép khối `tv_key` thành `tv_app`, đổi `payload` thành `'{"app": "{{ app }}"}'` hoặc `'{"scene": "{{ scene }}"}'`.
+
+Đổi đuôi link để làm việc khác (khoảng trắng viết `%20`):
+
+| Thêm vào link | TV làm |
+| --- | --- |
+| `key=HOME` | Bấm một phím (HOME, OK, BACK, MUTE…). |
+| `app=com.netflix.ninja` | Mở app theo tên gói. |
+| `scene=Xem phim` | Chạy một cảnh. |
+| `text=xin chào` | Gõ chữ. |
+| `volume=20` / `up` / `down` / `mute` | Đặt âm lượng (0 đến 100) hoặc tăng, giảm, tắt tiếng. |
+| `power=on` / `off` / `toggle` | Bật, tắt hay đổi trạng thái. |
+| `/api/hook/state` | Chỉ đọc: TV đang bật không, đang chạy gì. |
+
+Home Assistant gửi mã qua header `x-tvr-hook`, không lộ trong log.
+
+| Chạy ở đâu | Cổng |
+| --- | --- |
+| TV Setup (nên dùng, vì TV luôn bật) | 8765 |
+| App máy tính (chỉ mở khi bật) | 8766 |
+
+> ⚠️ Link là chìa khóa. Lộ thì bấm **🔄 Đổi mã mới**, link cũ chết ngay.
+
+> 💡 Chỉ trong mạng nhà; ở xa dùng Tailscale.
+
+### Mẹo

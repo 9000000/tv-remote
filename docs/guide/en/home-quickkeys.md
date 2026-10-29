@@ -1,0 +1,10 @@
+# TV Home Quick keys
+
+Quick keys open an app from the home screen with one number or color key on the remote.
+
+1. **TV** tab → **Customize TV Home** → **Quick keys**.
+2. The keypad is the same as "Assign remote keys": 1-9, 0, the 4 color keys, then **At power-on** and the keys the remote lacks. Press a tile to pick an app.
+3. An assigned tile shows the app's banner or icon large. Pressing the real number or color key on the remote picks its tile.
+
+- The **At power-on** slot: pick an app = it opens at power-on, clear = off. **Auto-open … at power-on**: opens it (empty: TV Home) even if the TV woke into HDMI or another app, except during a cast.
+- Live widgets can be assigned too and show their own icon.

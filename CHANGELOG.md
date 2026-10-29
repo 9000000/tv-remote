@@ -11,12 +11,16 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Hisense (VIDAA): ghép nối thử tiếp cách đăng nhập khác khi TV không hiện mã hoặc ngắt kết nối, và không lỡ mã truy cập TV gửi sớm (góp ý ở issue #8).
 - App điện thoại và máy tính: TV chưa có TV Setup thì hiện thanh mời cài (một chạm, không cần Downloader), có nút ẩn hẳn cho TV đó.
 - Đổi màn hình chính trên box ZTE (B866F): không tắt launcher gốc nữa, vì box tự khôi phục cài đặt gốc khi thiếu nó; nút Home do TV Setup chuyển. Tối ưu TV giữ lại vài gói mà tắt đi là TV hỏng (Dangbei, ZTE).
+- Remote cho TV LG, Samsung, Roku, VIDAA: Thêm › Tiện ích › **Tắt theo dõi** mở Cài đặt của TV và hiện đường dẫn tới từng công tắc (theo dõi nội dung đang xem, quảng cáo, micro).
+- Trang hướng dẫn: nút **Chép hướng dẫn cho AI**, dán vào ChatGPT, Claude, Gemini… để AI dẫn từng bước. AI đọc bản Markdown (mục lục một dòng mỗi mục, rồi chỉ trang cần), ít hơn ~25 lần so với đọc cả trang.
 
 **English**
 - Phone and computer apps: opening the remote while the TV is in standby turns it on again, as before 0.32.1; only TV Setup's background link never presses Power.
 - Hisense (VIDAA) TVs: pairing tries the next kind of login when the TV shows no code or hangs up, and keeps a token the TV sends early (issue #8).
 - Phone and computer apps: a TV without TV Setup gets a bar offering to install it (one tap, no Downloader), with a button to hide it for good on that TV.
 - Home screen on a ZTE box (B866F): its own launcher stays on, since the box factory-resets without it; TV Setup sends the Home key instead. Optimize TV keeps a few packages that break the TV when off (Dangbei, ZTE).
+- Remote for LG, Samsung, Roku, VIDAA TVs: More › Tools › **Turn off tracking** opens the TV's Settings and shows the path to each switch (what you watch, ads, mic).
+- User guide: a **Copy the guide for AI** button to paste into ChatGPT, Claude, Gemini… so it walks you through. The AI reads a Markdown copy (one line per topic, then only the page it needs), ~25x fewer tokens than the whole page.
 
 ## 0.32.1 - 2026-10-28
 

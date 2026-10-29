@@ -1,0 +1,14 @@
+# Share with others
+
+1. More keys → **Tools** → **📲 Share**.
+2. Choose **📺 Share the TV**: a one-time QR that expires in 10 minutes.
+3. The other person (same Wi-Fi) scans it and can use the remote.
+4. To give them the app: choose **📱 Share the app**.
+
+| Access | Can do |
+| --- | --- |
+| 🛡️ Full access | Everything, Manage included. |
+| 🎮 Remote only | Keys, typing, picture, opening apps, sleep timer, saved scenes, TV channels. No Manage. |
+| 👁️ View only | The picture and what is playing. |
+
+> 💡 Change or revoke in **Setup → 📱 Paired devices** (Unpair or Unpair all).

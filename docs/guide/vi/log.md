@@ -1,0 +1,15 @@
+# Gửi nhật ký để được giúp
+
+1. Mở **Cài đặt (🛠️) → Giới thiệu**.
+2. Bấm **📋 Gửi nhật ký**. Nhật ký được chép.
+3. App chép nhật ký và mở [trang gửi nhật ký](https://tvremote.pages.dev/log): dán vào, viết vài dòng, rồi gửi qua GitHub issue hoặc nhắn Facebook cho tác giả.
+
+> 💡 Nhật ký có lệnh đã gửi, câu trả lời của TV và lỗi. Không có khóa ghép, địa chỉ MAC hay chữ bạn đã gõ.
+
+> 💡 App Android bị sập thì lần mở sau hiện “Lần trước app bị lỗi” kèm tên lỗi và vài dòng đầu. Bấm **Sao chép** hoặc **Chia sẻ**, rồi dán vào trang gửi nhật ký.
+
+> 💡 Lỗi trong hộp “Có lỗi xảy ra” cũng được gửi ẩn danh (đã xóa IP, đường dẫn, khóa), nếu công tắc **Gửi thống kê ẩn danh** bật.
+
+> 💡 TV không ai với tới được (box nhà mạng, không có ADB): trên TV mở **TV Setup → Kết nối → Gửi cho hỗ trợ**, đọc mã 8 số cho tác giả.
+
+> 💡 **Cho hỗ trợ xem 30 phút** chỉ cho đọc trạng thái, không bấm hay đổi gì; dừng được bất cứ lúc nào.

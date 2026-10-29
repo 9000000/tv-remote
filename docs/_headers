@@ -29,3 +29,7 @@
 
 /demo/img/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# the guide for AI agents (dev/gen/guide_md.js): plain text in UTF-8, so a browser or fetch tool shows the Vietnamese right
+/guide/*
+  Content-Type: text/markdown; charset=utf-8

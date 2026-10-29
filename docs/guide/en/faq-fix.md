@@ -1,0 +1,13 @@
+# Common problems
+
+| Problem | Try |
+| --- | --- |
+| Cannot connect | See [The self-check](selfcheck.md). Same Wi-Fi? TV on? |
+| Buttons do nothing | [Turn ADB on again](prep-tv.md), or restart the TV. |
+| The TV's page asks for the code again | Pair again once; avoid private windows. |
+| Choppy picture | Lower size and bitrate ([Picture quality](quality.md)). |
+| Tailscale shows no link | Wait a bit, then tap **🔑** again ([Tailscale](away.md)). |
+| Play Protect warns | Choose “Install anyway”. The source is public. |
+| Fire TV: Home / Alexa buttons dead, other keys work | First setup never finished: the app says so at the top, press **Fix** (sets `user_setup_complete` to 1). |
+| TV Settings freezes on the text-to-speech page | Run `pm clear com.google.android.tts` (the Terminal, or `adb shell`); the voice downloads again on first use. |
+| The TV's page shows no pairing code | A TV with no ADB cannot show it by itself: open TV Setup on the TV, the code is on its main screen (2 minutes). See [Open the TV's web page](web-iphone.md). |

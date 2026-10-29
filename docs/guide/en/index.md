@@ -1,0 +1,85 @@
+# TV Remote user guide (for AI agents)
+
+Remote control for Android TV / Google TV (and LG, Samsung, Roku, VIDAA) with no server in between: a phone app, a computer app, a web page served by the TV, and TV apps. Find the topic below, then read only its page. Everything at once: [all.md](all.md). The same guide for people: https://tvremote.pages.dev/guide
+
+## Get started
+- [Install the phone app (Android)](install-phone.md): The easiest way: nothing to install on the TV, the keys work at once (see). Turn on ADB for the picture, apps and files. _(tv remote apk dien thoai android)_
+- [Install the computer app](install-pc.md): Download the build for your computer (links below) and unpack it. _(mac windows linux zip tar webkit unverified developer)_
+- [Keys before ADB is on](nokeys.md): You can still control the TV before ADB is on. The phone and computer apps send keys with Google's Android TV Remote protocol, so many… _(atv remote protocol 6466 6467 khong adb ghep remote ma 6 ky tu bam nut khong an pairing)_
+- [Install the app on the TV (TV Setup)](install-tv.md): A small app on the TV: it runs the TV's web page, the sleep timer, app limits and more. _(downloader 2397346 2973135 tv setup apk cai dat)_
+- [Open the TV's web page (iPhone, any browser)](web-iphone.md): iPhone has no app. Instead the TV serves its own control page. Open it in Safari or any browser. _(iphone safari ma ghep 6 so pairing code web cua tv ios)_
+- [Infrared remote (no network)](ir.md): A phone with an IR blaster (many Xiaomi, Huawei and older Samsung phones) works like a paper remote: no Wi-Fi, no TV to pick. Phone app… _(hong ngoai ir remote infrared khong mang mat mang remote hong do ma fpt play box dien thoai den ir)_
+- [Air Mouse](air.md): Hold the phone like a remote: turning your wrist moves a pointer on the TV, like LG's Magic Remote. Good for apps the arrow keys cannot… _(chuot bay air mouse con tro con quay hoi chuyen gyroscope nhap cuon magic remote lg)_
+- [Turn on ADB by hand (if needed)](prep-tv.md): Optional, and usually not needed: TV Setup opens the switch itself. Without ADB the phone and computer apps still send keys. ADB adds the… _(adb developer options tuy chon nha phat trien remote start dia chi ip fpt play mat khau password ban dung build box nha mang)_
+- [Pair with Wireless debugging (Android 11+)](wireless.md): Some newer Google TVs only have “Wireless debugging” and no plain ADB port. The phone and computer apps and the TV web page (iPhone too)… _(go loi khong day wireless debugging ghep noi ma ghep noi google tv doi moi canpair)_
+- [Connect and “Allow USB debugging?”](allow-usb.md): The first time a device connects, the TV asks whether to trust it. This is Android's safety step; once per device. _(allow usb debugging luon cho phep always allow nhin len tv ket noi)_
+
+## Control
+- [The remote](remote.md): The 🎮 Remote tab works like a real remote. Tap to press. _(phim nguon power home back menu volume kenh channel more keys them phim)_
+- [Type on the TV](typing.md): Tap ⌨️ Keyboard on the Remote tab: the box opens right under the top row. _(ban phim keyboard go chu co dau tieng viet enter)_
+- [The TV's clipboard (accents, pasting)](clipboard.md): The clipboard holds the text the TV last copied. Use it to read it, copy it to your device, or send text to the TV. _(clipboard dan chu copy sao chep dan vao o gõ chu co dau paste)_
+- [Voice commands](voice.md): The Ask the TV: open YouTube box (in ⌨️ Keyboard) understands plain sentences: type and tap 🔍, or tap Speak. _(giong noi micro hoi tv mo youtube voice assistant)_
+- [Quick talk (phone app)](quick-talk.md): The voice button on the phone app's remote: hold, speak, let go and the TV does it. _(noi nhanh quick talk giu de noi hold to talk giong noi nut noi dien thoai)_
+- [See and touch the TV's picture](picture.md): You see the TV's picture on your device and tap or click as if touching the TV. _(pip thu nho noi touchpad cham man hinh xem hinh scrcpy chuot keo cuon watch fullscreen toan man hinh tv khong cho chieu)_
+- [Listen to the TV on your device](listen.md): Hear the TV in your own headphones without bothering anyone. Needs Android 11 or newer on the TV. _(nghe 🎧 tai nghe am thanh sound audio headphones opus)_
+- [Picture quality and “Frame pace”](quality.md): Choppy or blurry? Open 🖥️ Picture quality from the quality button next to ▶ Watch. The defaults suit most TVs. _(chat luong hinh nhip hinh bitrate khung giay bo ma hoa sharpest quality frame pace giat lag)_
+- [Use a game controller as the remote](gamepad.md): Plug or pair a controller (Xbox, PlayStation…) into the device running the app and drive the TV. _(tay cam gamepad joystick xbox ps5 ps4 controller game pad do nhan)_
+
+## Manage the TV
+- [Apps on the TV](apps.md): The 📱 Apps tab lists installed apps. Type in the search box or filter with the chips: All, Open now, 🚀 Autostart, 🔒 Must keep, ⏸… _(dang mo da nhiem recents ram ung dung app go uninstall tat disable don bo nho dem sao luu backup quyen permission)_
+- [Optimize TV and Undo](optimize.md): A slow TV? Optimize makes apps open faster. Nothing is uninstalled, and Undo puts it back. _(toi uu tv home animation hieu ung hoan tac undo manh nhanh hon cham)_
+- [Launcher gallery](launchers.md): Change the TV's home screen. First is TV Home, this project's own. _(launcher man hinh chinh flauncher home thu vien sony bravia xiaomi patchwall android tv cu leanback tvlauncher setupwraith chromecast quen mang)_
+- [TV Home, the project's home screen](home.md): A home screen with no ads, set up from the phone or computer. Install it from the launcher gallery. _(downloader 4356026 tv home launcher man hinh chinh khong quang cao hinh nen anh app yeu thich an app tre em dong ho kim analog clock widget lich am cpu ghi chu hen gio thoi tiet weather phu toi dim shade trang web web page tuy chinh customize giao dien look bo cuc layout he thong system man cho screensaver)_
+- [Market, News, weather map and ⚙](home-widgets.md): TV Home has two more widgets that read their data straight from the source, with no server in between. They need internet. _(thi truong gia vang ty gia vietcombank bitcoin tin tuc rss thoi tiet ban do windy widget cai dat the market news weather map gear gan day recent chan quang cao adblock dns)_
+- [QR widgets and Manage from phone on TV Home](home-qr.md): Big QR codes on the home screen, readable from the sofa: guest Wi-Fi, a menu link, a phone number. Up to 4 widgets. _(qr ma qr wifi wi-fi mat khau khach thuc don link sms tin nhan dien thoai quet the card guest menu scan quan ly tu dien thoai manage from phone trang cai dat)_
+- [Live widgets in TV Home's app grid](home-tiles.md): A live widget is a tile in the app grid with live numbers; press it and it does the job. Provided by TV Setup and TV Channels. _(o song tile live widgets don ram clean ram free ram xem tiep kenh keep watching hen gio tat sleep timer them vao man hinh chinh add to home screen luoi app grid tv setup tv channels)_
+- [Add and remove tiles on the home screen](home-add.md): One panel to add, in groups: apps not on the grid, pinned channels / videos, live widgets, shortcuts, the Play Next row. Apps left out at… _(them go o xoa khoi luoi remove from grid pin go ghim loi tat shortcut app go cai dat don o live widget)_
+- [Pin YouTube to TV Home](home-pin.md): Paste a channel, video or playlist link: pin it as a tile on the grid, or open it on the TV now. _(youtube ghim pin kenh channel video playlist danh sach phat link chia se share mo tren tv open)_
+- [TV Home themes](home-themes.md): A theme changes the whole home screen in one press: background, widgets, widget style, columns and rows, live widgets. _(chu de themes giao dien look preview xem truoc luu save ruong bac thang sapa video nen web)_
+- [Quick settings (TV Home)](home-control.md): The Settings button on the top bar opens a panel in Customize's style: Network (Wi-Fi name), Inputs (or Bluetooth when the TV has no… _(trung tam dieu khien control center nhanh mang am thanh hen gio khoa tre em khoi dong lai don ram)_
+- [Hold OK on an app in TV Home](home-app-menu.md): Holding OK on an app opens its own menu, in groups. Back on the remote returns to the main menu. _(giu ok long press menu app doi ten rename khoa lock gioi han limit pin gan phim assign key bao tri force stop cache go uninstall)_
+- [Remote keys: give a key an app, fix dead keys, hold](keymap.md): Color keys, number keys and buttons that no longer do anything can open the app you choose. It needs TV Home; to work in every app it… _(phim gan phim phim mau phim chet phim so giu phim nut remote khong an khong chay nguon vao input youtube netflix prime tat ca app cai dat khoi dong mo app khi bat tv tu mo app phim nhanh tv setup keys tro nang play protect keys key map color keys dead keys number keys hold key power on startup quick keys accessibility)_
+- [TV Home Quick keys](home-quickkeys.md): Quick keys open an app from the home screen with one number or color key on the remote. _(phim nhanh quick keys ban phim keypad 1-9 phim mau khi bat tv power on gan phim)_
+- [Fix dead keys, hold to switch](keyfix.md): These need TV Setup on the TV and ADB switched on. They run by themselves once on. _(phim chet nut remote khong an khong chay nguon vao input youtube netflix prime tat ca app cai dat giu phim giu 2 giay bam nham tv setup keys tro nang play protect downloader chan app dead keys hold key accessibility add-on)_
+- [TV Channels, free TV channels](channels.md): An app on the TV that plays channels from iptv-org's public lists and VieON's free channels (Vietnam). No account. _(downloader 8135635 lich phat song epg guide kenh tv truyen hinh iptv iptv-org vtv htv xem tivi mien phi nhom yeu thich ghim quan ly kenh manage channels)_
+- [TV Games, games on the TV](games.md): An app on the TV that plays retro and web games, with phones as pads (up to 4). Playing needs no ADB and no TV Setup: scan the QR on the… _(downloader 2294968 game tro choi retro libretro tay cam phone pad qr nes snes gba ps1 homebrew games)_
+- [Files and installing APKs](files.md): The 📁 Files tab is the TV's file manager. _(tep file apk cai upload tai len keo tha terminal thu muc doi ten xoa)_
+- [TV health](health.md): The 🩺 Health tab shows how the TV is doing. _(suc khoe ram cpu nhiet do temperature mang bluetooth giai phong bo nho health toc do mang speed test)_
+- [Privacy check](privacy.md): Open Health → Privacy and choose Check. The scan runs quietly on the TV without slowing other apps, and apps appear as they are found. _(quyen rieng tu privacy micro camera vi tri acr theo doi tracking nghe len)_
+- [Anonymous stats](census.md): Once a day each app sends a small note to learn which TVs work well. It feeds the "TVs it ran on" part of the home page. _(thong ke an danh census gui hang model tv chip ay tat telemetry anonymous stats privacy)_
+- [Manage right on the TV](ontv.md): No phone or computer at hand? Do it on the TV itself with the TV's own remote. _(quan ly tren tv khong co dien thoai may tinh remote cua tv back tv setup man hinh tv)_
+- [TV Setup repairs DNS and ADB by itself](tvguard.md): TV Setup watches two things that often cut the TV off, and fixes them itself. _(dns loc dns keepadb adb tu bat lai tat loc dns cat mang youtube khong ket noi dns filter)_
+- [Stay reachable when the TV is off](awake.md): Once the TV is off it can fall into deep sleep and stop answering. This option keeps the chip awake so you can still connect. _(giu ket noi khi tat tv awake keepawake chip ngu sau tcl standby tailscale)_
+- [Send a notification to the TV](notify.md): More keys → Tools → Notify (🔔 Notify the TV). _(thong bao notification the nhan goc man hinh message card)_
+- [Draw on the TV](draw.md): Tap ✏️ by the picture (or More keys → Draw on the TV). _(ve len tv but pen anh chu text hinh draw)_
+- [Put a picture on the TV](photo.md): Two ways: lay a picture over the TV's screen (above every app), or play a photo or video from your device. _(dua anh len tv hinh anh phu len man hinh pic phat anh video)_
+- [TV screenshot](screenshot.md): Tap More keys on the Remote tab. _(chup man hinh screenshot anh png)_
+- [Screen off, dim the screen](screen-dim.md): In More keys → Sleep timer → TV screen: _(tat man hinh giam do sang loc anh sang xanh toi screen off dim night)_
+
+## Automation
+- [Sleep timer](sleep.md): Tap More keys → Sleep timer, or open ⏰ Automation → 😴 Sleep timer. _(hen gio tat sleep timer tat man hinh van nghe)_
+- [Bedtime](bedtime.md): Tab ⏰ Automation → 🌙 Bedtime. _(gio di ngu bedtime tre em tat tv ban dem)_
+- [Welcome screen](welcome.md): Tab ⏰ Automation → 🏠 Welcome screen, tap Choose a video or picture (mp4, webm, mkv, jpg, png, webp; 200 MB at most). _(man hinh chao welcome video anh khach homestay khach san bat tv khoi dong)_
+- [App, volume and memory limits](limits.md): Tab ⏰ Automation → ⏳ Daily app limits. _(gioi han app moi ngay am luong ram day limit tre em)_
+- [Lock apps with a PIN](lock.md): Once unlocked it stays open until another app comes up or the TV turns off; opening it again asks again. 5 wrong PINs: a minute's wait. _(tre em kids google authenticator totp ma du phong recovery tong gio xem khoa app ma pin tre em lock pin parental)_
+- [App schedule: days and hours](schedule.md): For example: YouTube opens only Monday to Friday, 16:00 to 18:00, at most 30 minutes. Outside those hours the app is closed at once and… _(lich mo app theo ngay gio thu hai den thu sau khung gio tre em chan app schedule weekday window parental block)_
+- [Scenes (one tap, many steps)](scenes.md): A scene is a chain of steps run with one tap. For example “Movie”: turn on the TV, open Netflix, set volume 20. _(canh scene lenh nhanh tu dong hoa kich ban)_
+- [Control the TV from Telegram](telegram.md): Message your own bot to turn the TV off or on, set the volume, open apps, take a screenshot. The bot runs in TV Setup and opens no port… _(telegram bot botfather token pair ghep doi nhan tin chat nhom group lenh command shot remote)_
+- [Telegram: alerts and bedtime](telegram-more.md): More bot commands, and the TV messages you when something happens. A paired chat is needed (see the previous topic). _(telegram bao tin alert thong bao gio ngu bedtime gioi han limit chan app qr ghep doi lich su history usage thoi gian man hinh scenes channel type)_
+- [Home Assistant · Shortcuts (Siri)](hook.md): Let iPhone Shortcuts, Siri or Home Assistant control the TV with one link. _(home assistant phim tat shortcuts siri hook rest_command yaml webhook ios tu dong hoa nha thong minh token)_
+
+## More
+- [Several TVs](many.md): Save each TV: connect once and it stays in 💾 Saved TVs. _(nhieu tv fleet cai hang loat danh sach)_
+- [See every TV at a glance](tv-status.md): Each saved TV has a line: On, Standby or No answer, with its model and the app open. It refreshes every 10 seconds. _(tinh trang trang thai bat tat cho man hinh homestay nhieu tv status standby thumbnail)_
+- [Share with others](share.md): More keys → Tools → 📲 Share. _(chia se qr quyen scope toan quyen chi remote chi xem khach)_
+- [Away from home (Tailscale)](away.md): Tailscale is a free private network joining your devices. No ports opened to the Internet. _(tailscale xa nha vpn 100 key expiry wake on lan dem)_
+- [LG, Samsung, Roku, VIDAA TVs](brands.md): Beta. Only in the phone app and the computer app. _(sony bravia xiaomi tcl android tv lg webos samsung tizen roku vidaa hang khac beta)_
+- [Turn off tracking on Samsung, LG, Roku, VIDAA TVs](tracking-other.md): These TVs let no app do it for you: it takes the remote, once. Menu names change between years: if the words differ, look under Privacy. _(theo doi acr quang cao quyen rieng tu samsung lg roku vidaa hisense viewing information live plus tat theo doi dns chan quang cao privacy tracking ads)_
+- [Phone app extras](extras.md):  _(widget tile shortcut phim tat man hinh chinh am luong cap nhat)_
+
+## When something is wrong
+- [App settings](settings.md): Tap 🛠️ in the top corner to open Settings. _(cai dat settings giao dien sang toi theme ngon ngu language rung vibrate kiem tra ban moi cap nhat tat thoat quit)_
+- [The self-check when it will not connect](selfcheck.md): Cannot connect? The app checks by itself in under 4 seconds and gives one conclusion with the fix. No guessing. _(tu kiem tra loi diagnose khong ket noi vpn dong ho clock mang khac thu lai quet mang bat adb)_
+- [“The browser needs an update”](webview.md): The phone app's Manage screen uses Android's own browser (WebView). If it is too old, the app shows this notice. _(webview play store cap nhat trinh duyet android system webview cu old)_
+- [Send the log to get help](log.md): Open Settings (🛠️) → About. _(nhat ky log gui loi bao loi wirelog ho tro support ma 8 so)_
+- [Common problems](faq-fix.md):  _(loi thuong gap faq khong bam duoc ma ghep hoi lai giat play protect)_

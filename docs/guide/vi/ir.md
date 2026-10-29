@@ -1,0 +1,15 @@
+# Remote hồng ngoại (không cần mạng)
+
+Điện thoại có đèn hồng ngoại (nhiều máy Xiaomi, Huawei, Samsung đời cũ) thì dùng được như remote giấy: không cần Wi-Fi, không cần chọn TV. Chỉ có ở app điện thoại.
+
+1. Ở danh sách TV, bấm **Remote hồng ngoại** (chỉ hiện khi máy có đèn hồng ngoại): các remote đã lưu hiện trước, bấm một cái là dùng. Remote mới: **Thêm remote**.
+2. Chọn hãng (nhiều kiểu thì **Kiểu 1** phổ biến nhất), đặt tên (vd TV phòng ngủ). Sang máy khác: **Xuất file** rồi **Nhập file**.
+3. Không có trong danh sách (box của nhà mạng, FPT Play Box)? Bấm **Dò mã**: app gửi lần lượt từng mã, thấy thiết bị phản hồi thì bấm **Có phản hồi**, app nhớ mã đó.
+4. Android TV đã kết nối? **Dò mã** tự chạy: hướng đèn vào TV, TV tự báo mã đúng.
+5. Box vẫn không có mã? **Học phím từ remote của box**: bấm từng phím trên remote thật, app đọc mã qua ADB và lưu thành remote riêng.
+
+Mã lấy từ Flipper-IRDB (CC0). Bấm giữ phím mũi tên, âm lượng, kênh để lặp. Có cả phím màu, Netflix, YouTube, Prime khi remote của TV có.
+
+### Mẹo
+
+- Giữ một phím là giữ thật: phím nào (trừ Nguồn) cũng gửi liên tục khi còn giữ, nên giữ OK mở menu thay vì mở app.

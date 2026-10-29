@@ -1,0 +1,9 @@
+# Clipboard của TV (chữ có dấu, dán chữ)
+
+Clipboard là chỗ TV giữ chữ vừa sao chép. Dùng để xem chữ trên TV, lấy về máy, hoặc đưa chữ lên TV.
+
+1. Thêm phím → **Mở trên TV** → **Clipboard của TV**.
+2. Xem chữ TV đang sao chép. Bấm **Chép về máy** để lấy về.
+3. Muốn đưa chữ lên TV: gõ chữ, gửi lên, rồi dán vào ô đang gõ trên TV.
+
+> 💡 Mẹo chữ có dấu: đưa vào clipboard của TV rồi dán. Cần ADB.

@@ -31,10 +31,11 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },
     "open" to act { quickOpen() },
     "apps" to act { if (kind() != dev.tvremote.core.remote.Remote.Kind.ANDROID) openInstalled() else if (!needsAdb()) managing.open(host, "apps") },   // an Android TV's apps: the Apps tab, tiles with a search
-    "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!, if (irAvailable()) setOf("ir") else emptySet())) },   // "ir": this phone has an IR LED
+    "menu" to act { m -> menu(T(remoteGroups[m] ?: return@act), -1, remoteMenu(m!!, setOfNotNull("ir".takeIf { irAvailable() }, "native".takeIf { kind() != Remote.Kind.ANDROID }))) },   // "ir": this phone has an IR LED; "native": LG, Samsung, Roku, VIDAA
     "key" to act { k -> val code = Scenes.KEYS[k] ?: return@act; if (code in Tv.OPENERS) opens(code) else press(code) },   // a key from a menu (Tools)
     "timer" to act { timerMenu() },
     "scenes" to act { scenesMenu() },
+    "privacy" to act { trackingMenu() },
     "notify" to act { if (!needsAdb()) managing.open(host, then = "fromRemote(notifyDialog)") },   // the page's dialogs (js/notify.js, dim.js, setup.js): one copy
     "draw" to act { if (drawing) stopDrawing() else startDrawing() },
     "search" to act { askText(T("remote.search_play_store"), T("phone_remote.e_g_vlc"), T("remote.search")) { openLink("market://search?c=apps&q=" + java.net.URLEncoder.encode(it, "UTF-8")) } },   // the TV's Play Store takes searches only this way
@@ -143,4 +144,19 @@ internal fun MainActivity.remoteMenu(name: String, conditions: Set<String> = emp
         items.add(Triple("@" + e.icon + (if (e.tint.isEmpty()) "" else ":" + e.tint) + "|" + e.words(), e.subWords()) { run(this, arg) })
     }
     return items
+}
+
+/**
+ * LG, Samsung, Roku, VIDAA let no app switch their tracking off: the paths in their own menus (the guide's #tracking-other; the page's
+ * trackingMenu), each a tap that opens Settings on the TV and this list again, so the path stays in front of the person.
+ */
+internal fun MainActivity.trackingMenu() {
+    val k = kind(); if (k == Remote.Kind.ANDROID) return
+    val open: () -> Unit = { press(Scenes.KEYS[if (k == Remote.Kind.ROKU) "HOME" else "SETTINGS"]!!); window.decorView.postDelayed({ trackingMenu() }, 300) }
+    menu(T("track.title", "tv" to Remote.Kind.name(k)), 0, listOf(
+        Triple("@settings|" + T("track.open"), T("track.open_sub"), open),
+        Triple("@eye|" + T("track.acr"), T("track.${k}_acr"), open),
+        Triple("@tag|" + T("track.ads"), T("track.${k}_ads"), open),
+        Triple("@mic|" + T("track.mic"), T("track.${k}_mic"), open),
+        Triple("@guide|" + T("track.guide"), T("track.guide_sub")) { web("https://tvremote.pages.dev/guide#tracking-other") }))
 }

@@ -1,0 +1,55 @@
+# TV Home, the project's home screen
+
+A home screen with no ads, set up from the phone or computer. Install it from the [launcher gallery](launchers.md).
+
+1. **TV** tab → **Home screen** card → **Customize TV Home**.
+2. **Layout**: drag apps on the grid, then **Save order**.
+3. Pick a background and widgets; preview at the top, the TV changes at once.
+4. **Themes**: ready-made looks, or **Save the current look as a theme**.
+
+| Widget | Shows |
+| --- | --- |
+| System | CPU, memory, storage, IP, network speed, ADB |
+| Weather | Temperature, the next 3 days (needs internet) |
+| Analog clock | A round face, hour and minute hands; size, face (Classic, Minimal, Roman, Modern, Digital) and light / dark theme are picked in ⚙ |
+| Lunar date | Lunar day, year name, days to full moon / Tết |
+| Month calendar | This month, today circled in red; the Date layout: weekday and a huge day (lunar date: the Lunar date widget) |
+| Most used apps | The last 7 days, time left on [app limits](limits.md) |
+| Timer | When the TV turns off, bedtime |
+| Note | Words pinned on the screen |
+
+| Background | What it is |
+| --- | --- |
+| Suggested | A Việt Nam slideshow, calm videos, a live page; the list updates from the site, no app release |
+| Custom | One color or 2-4 blended, 9 directions; on the TV ◀ ▶ change it live |
+| Drawn scene | Built in, no internet needed |
+| Bing | The last 8 days' pictures; press the Bing tile again on the TV = the day before |
+| Wallpapers | NASA pictures, sized to the screen |
+| Your photos | Up to 10; a portrait one: **Whole photo**, blurred sides |
+| Web page | Paste an http/https link; the TV tries it first |
+
+Pick several; **Change background** rotates them.
+
+**Dim** 0-100 %: readable text on any picture.
+
+| On TV Home | What it is |
+| --- | --- |
+| Top bar | Two buttons: **Network** (status) and **Settings** = the [Quick settings](home-control.md), which holds Inputs and Power off / Restart / Screen off / Standby. |
+| Customize | A list of groups, OK opens each: Background, **Look**, **Layout**, Widgets, **System** (screensaver, **Home screen**), **Keys & startup**, Language. |
+| Home screen | In **System**: opens TV Setup's launcher picker to switch to another launcher (needs TV Setup) |
+| Keys & startup | Remote keys that open apps, an app at power-on |
+
+### Tips
+
+- On the TV: the gear icon at the top right → Customize TV Home, or the Menu key.
+- Hold OK on an app: open, pin, move, hide, rename, assign a key, lock or limit its time (asks the parent PIN), force stop, clear cache.
+- Each widget **Big** or **Small**; two small ones share a column.
+- **Columns**: 4 to 8 apps per row (default 5).
+- Home pressed in an app: back on TV Home, on that app.
+- **TV Home screensaver**: a big clock and the background while the TV is idle.
+- A locked app shows a padlock, a limited one ⏳ and minutes left.
+- New version: **Update TV Home** card, settings kept.
+
+Only the TV's remote at hand: Downloader, code **4356026**, then pick TV Home as the home screen.
+
+Google TV: **Accounts & profiles** is empty while TV Home is in use. To switch profile: **Use the TV's own launcher**, switch, then pick TV Home again.

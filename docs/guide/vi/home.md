@@ -1,0 +1,55 @@
+# TV Home, màn hình chính của dự án
+
+Màn hình chính không quảng cáo, chỉnh từ điện thoại hoặc máy tính. Cài từ [thư viện launcher](launchers.md).
+
+1. Tab **TV** → thẻ **Màn hình chính** → **Tùy chỉnh TV Home**.
+2. **Bố cục**: kéo thả app trên lưới, bấm **Lưu thứ tự**. Ẩn app không cần.
+3. Chọn hình nền và widget; xem trước ở trên cùng, TV đổi ngay.
+4. **Chủ đề**: giao diện có sẵn, hoặc **Lưu giao diện đang có thành chủ đề**.
+
+| Widget | Hiện gì |
+| --- | --- |
+| Hệ thống | CPU, RAM, bộ nhớ, IP, tốc độ mạng, ADB |
+| Thời tiết | Nhiệt độ, 3 ngày tới (cần mạng) |
+| Đồng hồ kim | Mặt tròn, kim giờ và kim phút; cỡ, mặt (Cổ điển, Tối giản, La Mã, Hiện đại, Số) và giao diện sáng / tối chọn trong ⚙ |
+| Lịch âm | Ngày âm, can chi, còn mấy ngày tới rằm / Tết |
+| Lịch tháng | Tháng này, hôm nay khoanh đỏ; kiểu Ngày: thứ và ngày thật to (ngày âm: widget Lịch âm) |
+| App dùng nhiều | 7 ngày qua, giờ còn lại của [giới hạn app](limits.md) |
+| Hẹn giờ | Giờ TV tắt, giờ ngủ |
+| Ghi chú | Chữ ghim trên màn hình |
+
+| Hình nền | Là gì |
+| --- | --- |
+| Gợi ý | Slideshow Việt Nam, video êm, trang web sống; danh sách cập nhật từ site, không cần bản app mới |
+| Tự chọn | 1 màu hoặc 2-4 màu chuyển dần, 9 hướng; trên TV đổi bằng ◀ ▶ |
+| Hình vẽ | Có sẵn, không cần mạng |
+| Bing | Ảnh 8 ngày gần nhất; bấm lại ô Bing trên TV = ảnh hôm trước |
+| Hình nền đẹp | Ảnh NASA, đúng cỡ màn hình |
+| Ảnh của bạn | Tối đa 10; ảnh dọc: **Hiện trọn ảnh**, hai bên mờ |
+| Trang web | Dán liên kết http/https; TV mở thử rồi báo kết quả |
+
+Chọn nhiều hình rồi đặt **Đổi hình nền** (30 phút → mỗi lần mở) để xoay vòng.
+
+**Phủ tối** 0-100 %: chữ dễ đọc trên mọi hình.
+
+| Trên TV Home | Là gì |
+| --- | --- |
+| Thanh trên cùng | Hai nút: **Mạng** (trạng thái) và **Cài đặt** = [Cài đặt nhanh](home-control.md), nơi có Nguồn vào và các nút Tắt nguồn / Khởi động lại / Tắt màn hình / Chế độ chờ. |
+| Tùy chỉnh | Danh sách nhóm, OK để vào từng nhóm: Hình nền, **Giao diện**, **Bố cục**, Widget, **Hệ thống** (màn chờ, **Màn hình chính**), **Phím & khởi động**, Ngôn ngữ. |
+| Màn hình chính | Trong **Hệ thống**: mở bộ chọn launcher của TV Setup để đổi sang launcher khác (cần TV Setup) |
+| Phím & khởi động | Phím remote mở app, app tự mở khi bật TV |
+
+### Mẹo
+
+- Trên TV: biểu tượng bánh răng góc trên phải → Tùy chỉnh TV Home, hoặc phím Menu.
+- Giữ OK trên app: mở, ghim, dời, ẩn, đổi tên, gán phím, khóa hoặc giới hạn giờ (hỏi mã PIN phụ huynh), dừng, xóa bộ nhớ đệm.
+- Mỗi widget **To** hoặc **Nhỏ**; hai widget nhỏ chung một cột.
+- **Số cột**: 4 đến 8 app mỗi hàng (mặc định 5).
+- Bấm Home trong một app: về TV Home, đứng đúng ở app đó.
+- **Màn chờ TV Home**: đồng hồ lớn và hình nền khi TV rảnh.
+- App bị khóa có ổ khóa, app có giới hạn hiện ⏳ phút còn lại.
+- Có bản mới: thẻ hiện **Cập nhật TV Home**, cài đặt được giữ.
+
+Chỉ có remote của TV: Downloader, mã **4356026**, rồi chọn TV Home làm màn hình chính.
+
+Google TV: trang **Tài khoản và hồ sơ** trống khi dùng TV Home. Đổi hồ sơ: **Dùng launcher gốc của TV**, đổi, rồi chọn lại TV Home.

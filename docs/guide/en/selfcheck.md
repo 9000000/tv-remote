@@ -1,0 +1,24 @@
+# The self-check when it will not connect
+
+Cannot connect? The app checks by itself in under 4 seconds and gives **one conclusion with the fix**. No guessing.
+
+| The app says | The fix |
+| --- | --- |
+| The TV is not answering | The TV is off or asleep. Turn it on, then tap **🔄 Try again**. |
+| The TV has a new address | Tap **📍 Use the address …**. |
+| This TV only has Wireless debugging | Pair once with the 6-digit code: Developer options → Wireless debugging → Pair with pairing code. |
+| ADB debugging is off on the TV | Keys still work. For picture and apps tap **🧭 Turn ADB on for me** or switch it on in Developer options. |
+| The TV is waiting for you to allow | Look at the TV: tick “Always allow”, choose OK. |
+| This device is on another network than the TV | Join the TV's own Wi-Fi, not a guest network or mobile data. |
+| This device is not on Wi-Fi | Turn Wi-Fi on. |
+| Tailscale is off on this device | Turn Tailscale on, then try again. |
+| A VPN is in the way | In the VPN app allow the local network (LAN), or turn the VPN off. |
+| The TV's date and time are wrong | On the TV: Settings → System → Date & time, set automatic. A wrong clock makes the secure connection fail. |
+| The TV is on the network but not listening | The TV is dozing. Press power on its own remote and wait a few seconds. |
+| This Fire TV never finished its first setup | The Home and Alexa buttons stay dead. Tap **Fix** to mark setup as done. |
+
+Buttons in the box: **🔄 Try again**, **🔍 Scan**, **🧭 Turn ADB on for me**, **Fix** (only for a Fire TV whose setup never finished). Open the **What was checked** list to see what the app tried.
+
+> 💡 The box shows in the computer app, the phone app's Manage screen and the phone app's TV list.
+
+> 💡 ISP boxes (FPT, Viettel) lock Developer options with a password: the app says plainly that the provider locked it; ask the provider or the seller.

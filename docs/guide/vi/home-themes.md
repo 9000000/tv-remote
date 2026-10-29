@@ -1,0 +1,22 @@
+# Chủ đề TV Home
+
+Một chủ đề đổi cả màn hình chính trong một lần bấm: hình nền, widget, kiểu widget, số cột và hàng, live widget.
+
+1. Trên TV: ⚙ → **Tùy chỉnh TV Home** → **Chủ đề**. Điện thoại, máy tính: tab **TV** → **Tùy chỉnh TV Home** → **Chủ đề**.
+2. Mỗi ô là màn hình chính thu nhỏ: nền thật, chỗ widget, lưới app. Chọn một ô là TV đổi ngay.
+3. Thích giao diện đang có: **Lưu giao diện đang có thành chủ đề**, đặt tên. Ảnh, video hay trang web của bạn được chụp nhỏ làm ảnh xem trước.
+4. Chia sẻ: bấm ⓘ trên một chủ đề → **Xuất chủ đề** ra tệp `.tvtheme.json`; **Nhập chủ đề** đọc lại tệp đó (hộp **Kèm ảnh/video** mang theo ảnh, video riêng, tối đa 60 MB mỗi mục).
+5. Gửi cho mọi người: ⓘ trên chủ đề của bạn → **Chia sẻ lên cửa hàng**, nhập tên, **Gửi đi**. Duyệt xong mới hiện ở nhóm **Cộng đồng**; 3 chủ đề một ngày.
+
+| Có sẵn | Cho ai |
+| --- | --- |
+| Hiện đại, Buổi sáng, Ban ngày | Đồng hồ, thời tiết, lịch âm lớn |
+| Ruộng bậc thang, Hoàng hôn biển, Đêm thành phố | Ảnh hoặc video nền từ mạng |
+| Game thủ, Bóng đá, Rạp phim | Kèm live widget hợp (Dọn RAM, Xem tiếp kênh) |
+| Bé vui, Dễ nhìn, Đi ngủ | Chữ to, ít thứ, hẹn giờ tắt |
+
+### Mẹo
+
+- Đổi chủ đề khi giao diện chưa lưu: nó được giữ ở ô **Giao diện trước**, đổi lại được.
+- Giữ OK trên một chủ đề (web: nút ⓘ) để xem nó chỉnh những gì.
+- Chủ đề có sẵn được cập nhật từ trang web, không cần cài lại TV Home.

@@ -48,6 +48,8 @@
       { "id": "tools-share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
       { "id": "tools-notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },
       { "id": "tools-rescue", "icon": "alert", "t": "rkey.rescue", "sub": "rkey.rescue_sub", "do": "rescue", "needs": ["adb"] },
+      { "id": "tools-privacy", "icon": "shield", "t": "rkey.privacy", "sub": "rkey.privacy_sub", "do": "privacy", "when": "native",
+        "why": "LG, Samsung, Roku, VIDAA keep their tracking switches in their own menus; an Android TV has Health → Privacy" },
       { "id": "tools-home", "icon": "sliders", "t": "rkey.home_custom", "do": "homeCustom", "needs": ["adb"], "cores": ["phone"],
         "why": "on the web TV Home has its own key in the grid" },
       { "id": "tools-ir", "icon": "pulse", "t": "rkey.ir", "do": "ir", "cores": ["phone"], "when": "ir",

@@ -1,0 +1,20 @@
+# Market, News, weather map and ⚙
+
+TV Home has two more widgets that read their data straight from the source, with no server in between. They need internet.
+
+| Widget | Shows |
+| --- | --- |
+| Market | SJC bar and 9999 ring gold, Vietcombank rates, optional Bitcoin. A box or a scrolling ticker. Refreshes ~20 min; offline it keeps the last numbers with their time |
+| News | Headlines and pictures from the RSS of VnExpress, Tuoi Tre, Thanh Nien, Dan Tri, VietnamNet (English TV: BBC, NPR, the Guardian, Al Jazeera). Add up to 5 RSS links of your own from the phone. OK opens a big-text reader |
+| Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5); Back closes |
+| Recently opened | The last 4-6 apps; Left / Right pick, OK opens |
+| Ad blocking | OK turns an ad-blocking DNS on / off (AdGuard...). Not the ads inside YouTube videos. If the DNS fails, it goes back in ~10 s |
+
+### Each widget's settings
+
+1. **TV** tab → **Customize TV Home** → **Widgets**; switch the widget on.
+2. Tap **⚙** on the widget: its own settings box, with a live preview and the layout strip with this widget framed. Each change applies to the TV at once.
+
+> 💡 On the TV Home app and the web page. The sources are in a signed list on the site, so one can move without an app update.
+
+> 💡 A widget’s ⚙ has a **Tonal** style (a warm widget, like weather and system) on every widget except the clock.

@@ -1,0 +1,21 @@
+# Xem và chạm lên màn hình TV
+
+Bạn thấy hình TV ngay trên máy và chạm hay bấm chuột như đang chạm vào TV.
+
+1. Ở thẻ **🖥️ Màn hình TV**, bấm **▶ Xem**.
+2. Chạm lên hình để bấm. Kéo để vuốt.
+3. Bấm **⛶** để xem toàn màn hình.
+4. App điện thoại: nút **Thu nhỏ hình** cạnh ⛶ thả hình nổi trên mọi màn hình của app. Kéo đi đâu cũng được, hai ngón để phóng to, chạm để đặt về chỗ cũ.
+
+| Trên máy tính | Trên điện thoại | Kết quả |
+| --- | --- | --- |
+| Bấm chuột | Chạm | Bấm vào chỗ đó trên TV |
+| Kéo chuột | Vuốt | Vuốt trên TV |
+| Lăn chuột | Vuốt hai ngón | Cuộn danh sách |
+| Chuột phải | (không có) | Quay lại |
+
+> 💡 Video có bản quyền (Netflix…) hiện màu đen và báo “TV không cho chiếu hình lên đây”. Đây là chủ ý của app đó, không phải lỗi.
+
+> 💡 Wi-Fi yếu hoặc iPhone: chọn **Ảnh chụp** thay **Trực tiếp**.
+
+💡 Nhiều máy xem cùng lúc được; góc hình hiện **👁 2**. Cùng một app máy tính hay trang web của TV thì dùng chung một luồng hình.
