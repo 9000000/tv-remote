@@ -1,5 +1,6 @@
 package dev.tvremote.home.widgets
 
+import dev.tvremote.home.locale0
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -95,7 +96,7 @@ internal class Columns(private val host: Widgets, c: Context, val secs: List<Lon
     private val sp get() = host.sp
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val t = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Font.regular; textSize = 11 * sp; textAlign = Paint.Align.CENTER; color = DIM }
-    private val names = (6 downTo 0).map { d -> SimpleDateFormat("EEEEE", resources.configuration.locales[0]).format(Date(System.currentTimeMillis() - d * 86_400_000L)) }
+    private val names = (6 downTo 0).map { d -> SimpleDateFormat("EEEEE", resources.locale0()).format(Date(System.currentTimeMillis() - d * 86_400_000L)) }
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x1AFFFFFF }
     private val past = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x66FFFFFF }
     private val backs = List(7) { RectF() }; private val fills = List(7) { RectF() }

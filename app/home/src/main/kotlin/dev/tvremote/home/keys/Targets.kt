@@ -44,7 +44,7 @@ object Targets {
     /** Its name only, cheap: for a row of words. */
     fun label(c: Context, t: String): String = when (Target.kind(t)) {
         Target.Kind.APP -> Apps.one(c, t)?.label ?: t
-        Target.Kind.PIN -> Pins.find(c, t)?.let { (it.shortLabel ?: it.longLabel ?: it.id).toString() } ?: Target.id(t)
+        Target.Kind.PIN -> Pins.label(c, t) ?: Target.id(t)
         Target.Kind.TILE -> LiveWidgets.title(c, t)
         null -> "—"
     }

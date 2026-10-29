@@ -42,7 +42,7 @@ internal object DimLayer {
     fun restore(c: Context) { val o = state(c); if (o.optBoolean("on")) ui.post { draw(c.applicationContext, o) } }
 
     private fun draw(c: Context, o: JSONObject) {
-        val wm = c.getSystemService(WindowManager::class.java)
+        val wm = (c.getSystemService(android.content.Context.WINDOW_SERVICE) as WindowManager)
         if (!o.optBoolean("on")) { view?.let { try { wm.removeView(it) } catch (e: Exception) { } }; view = null; return }
         val v = view ?: View(c).also { it.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
         v.setBackgroundColor(Dim.rgb(o))

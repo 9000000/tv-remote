@@ -9,8 +9,8 @@ object PadNames {
         if (raw == null) return null
         val s = raw.replace(Regex("[\\p{Cc}\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069\\uFEFF]"), " ").replace(Regex("\\s+"), " ").trim()
         if (s.isEmpty()) return null
-        val cps = s.codePoints().limit(MAX.toLong()).toArray()
-        return String(cps, 0, cps.size).trim().ifEmpty { null }
+        val end = s.offsetByCodePoints(0, minOf(MAX, s.codePointCount(0, s.length)))   // String.codePoints() is API 24
+        return s.substring(0, end).trim().ifEmpty { null }
     }
 
     /** One slot as [pick] sees it. */

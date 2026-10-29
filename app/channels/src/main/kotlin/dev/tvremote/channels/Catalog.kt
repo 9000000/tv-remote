@@ -65,7 +65,7 @@ object Catalog {
         return try {
             when (k.responseCode) {
                 200 -> if (progress == null) k.inputStream.bufferedReader().readText() else {
-                    val total = k.contentLengthLong
+                    val total = (k.getHeaderField("content-length")?.toLongOrNull() ?: -1L)
                     val out = java.io.ByteArrayOutputStream(if (total in 1..8_000_000) total.toInt() else 64 * 1024)
                     val buf = ByteArray(16 * 1024)
                     k.inputStream.use { i -> while (true) { val n = i.read(buf); if (n < 0) break; out.write(buf, 0, n); progress(out.size().toLong(), total) } }

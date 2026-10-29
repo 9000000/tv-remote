@@ -337,7 +337,8 @@ object Customize {
         val tiles = ArrayList<Pair<String, View>>()
         var ownFace: () -> Unit = {}                                  // the own wall's tile, painted again after its colours changed
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
-        val shots = java.util.concurrent.Executors.newSingleThreadExecutor()    // the scenes drawn and the photos read small, off the main thread
+        val shots = java.util.concurrent.ThreadPoolExecutor(1, 1, 0, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.LinkedBlockingQueue(),
+            java.util.concurrent.ThreadPoolExecutor.DiscardPolicy())   // the scenes drawn and the photos read small, off the main thread; a tile shown after the panel closed is dropped, not thrown (census 4823c228)
         dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
         val waiting = ArrayList<Pair<ImageView, Bitmap>>()
@@ -468,11 +469,11 @@ object Customize {
                     val drawn = ThemePreview.cached(key)
                     if (drawn != null) pv.setImageBitmap(drawn)
                     else pending.add(this to { shots.execute { val b = ThemePreview.get(a, key, conf, live, shot, look, shotsW, shotsW * 9 / 16, dp(12).toFloat()); a.runOnUiThread { if (!a.isDestroyed) put(pv, b) } } })
-                    foreground = StateListDrawable().apply {
+                    fg(StateListDrawable().apply {
                         addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
                         addState(intArrayOf(), ring(d, 1, RING_REST))
-                    }
+                    })
                     addView(LinearLayout(a).apply {                      // the name, and under it "by <sender>" on a community theme
                         orientation = LinearLayout.VERTICAL; setPadding(dp(10), dp(4), dp(10), dp(5))
                         background = GradientDrawable().apply { setColor(NAME_SCRIM); cornerRadii = floatArrayOf(0f, 0f, 0f, 0f, dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat(), dp(12).toFloat()) }
@@ -615,10 +616,10 @@ object Customize {
             fun addTile() = FrameLayout(a).apply {
                 isFocusable = true; isClickable = true
                 background = GradientDrawable().apply { setColor(DOOR_REST); cornerRadius = dp(12).toFloat() }
-                foreground = StateListDrawable().apply {
+                fg(StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                     addState(intArrayOf(), ring(d, 1, RING_REST))
-                }
+                })
                 val (iv, sz) = icon(R.drawable.ic_plus, ACCENT, dp(40)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER))
                 onFocusChangeListener = View.OnFocusChangeListener { v, f -> lit(v, f) }
                 setOnClickListener { PhotoScreen.show(a) { dialog.dismiss() } }
@@ -646,11 +647,11 @@ object Customize {
                             else if (HomeConfig.isPhoto(k) || HomeConfig.isVideo(k)) { val (iv, sz) = icon(R.drawable.ic_image, DIM, dp(22)); addView(iv, FrameLayout.LayoutParams(sz, sz, Gravity.CENTER)) }   // a photo that cannot be read: a mark, not a blank grey
                         } }
                     }
-                    foreground = StateListDrawable().apply {
+                    fg(StateListDrawable().apply {
                         addState(intArrayOf(android.R.attr.state_focused), ring(d, 3, Color.WHITE))
                         addState(intArrayOf(android.R.attr.state_selected), ring(d, 2, ACCENT))
                         addState(intArrayOf(), ring(d, 1, RING_REST))
-                    }
+                    })
                     if (k == HomeConfig.WEB || Suggest.byKey(k)?.let { it.kind == "page" && it.thumb.isEmpty() } == true) { val (iv, s) = icon(R.drawable.ic_globe, ACCENT, dp(26)); addView(iv, FrameLayout.LayoutParams(s, s, Gravity.CENTER)) }
                     Suggest.byKey(k)?.takeIf { it.kind == "video" || it.kind == "slides" }?.let {          // it moves: said on the tile, as the page's badge
                         val (iv, s) = icon(if (it.kind == "video") R.drawable.ic_play else R.drawable.ic_image, Color.WHITE, dp(16))
@@ -707,7 +708,7 @@ object Customize {
                 }
                 if (k != ADD) tiles.add(k to t)
                 cell.addView(t, LinearLayout.LayoutParams(w, w * 9 / 16))
-                cell.addView(label(if (k == ADD) a.getString(R.string.wall_add) else Suggest.byKey(k)?.name(a.resources.configuration.locales[0].language) ?: wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
+                cell.addView(label(if (k == ADD) a.getString(R.string.wall_add) else Suggest.byKey(k)?.name(a.resources.locale0().language) ?: wallName(a, k), 12f, DIM).apply { gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END },
                     LinearLayout.LayoutParams(w, -2).apply { topMargin = dp(5) })
                 row!!.addView(cell, LinearLayout.LayoutParams(w, -2).apply { if (i % cols > 0) leftMargin = gap })
             }
@@ -901,7 +902,7 @@ object Customize {
         groups[6].fill = {
             // every language at once, each in its own words, the one in use ticked: one tile stepping through them hid which
             // there were, and each press built Home again before the next could be seen
-            val sys = android.content.res.Resources.getSystem().configuration.locales[0]
+            val sys = android.content.res.Resources.getSystem().locale0()
             val now = Store.get(a).optString("lang")
             for ((k, name) in (listOf("" to a.getString(R.string.c_lang_tv)) + dev.tvremote.i18n.Langs.NAMES.toList())) {
                 val row = LinearLayout(a).apply {
@@ -1463,7 +1464,7 @@ object Customize {
     private fun themeName(a: Context, c: JSONObject, id: String): String {
         if (id == HomeConfig.BEFORE) return a.getString(R.string.th_before)
         c.optJSONArray("themes")?.let { m -> for (i in 0 until m.length()) m.getJSONObject(i).let { if (it.optString("id") == id) return it.optString("name") } }
-        return HomeConfig.ready.firstOrNull { it.id == id }?.name(a.resources.configuration.locales[0].language) ?: id
+        return HomeConfig.ready.firstOrNull { it.id == id }?.name(a.resources.locale0().language) ?: id
     }
 
     /** The name under a background's tile: from the strings, "Photo 3" for the person's third photo. */
@@ -1474,3 +1475,7 @@ object Customize {
         else -> a.getString(a.resources.getIdentifier("wall_$k", "string", a.packageName))
     }
 }
+
+/** FrameLayout.setForeground exists since API 1; lint reads the Kotlin property as View's (API 23). */
+@android.annotation.TargetApi(23)
+private fun android.widget.FrameLayout.fg(d: android.graphics.drawable.Drawable) { foreground = d }

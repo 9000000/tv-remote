@@ -13,6 +13,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Hỗ trợ từ xa cho app điện thoại và app máy tính: Giới thiệu → "Cho hỗ trợ xem app này" (máy tính: Cài đặt → Giới thiệu → "Cho xem app này") ra mã 8 số; trong 30 phút người hỗ trợ đọc trạng thái app, nhật ký, mạng (điện thoại: mọi mạng, mạng nào đang ra Internet, các TV đã lưu và tự kiểm tra), không đổi gì. Bấm Dừng bất cứ lúc nào.
 - "Cho hỗ trợ xem TV này" giờ mở được từ điện thoại, máy tính và trang web của TV (tab Thiết lập, thẻ TV), không phải ra TV bấm Kết nối nữa. Cần TV Setup mới (tự hỏi cập nhật).
 - Cài đặt → Giới thiệu: hết khoảng trống lớn dưới mã QR "Tải app".
+- TV và điện thoại Android 5–6: TV Channels, TV Games, TV Home, TV Setup và app điện thoại hết văng ở những chỗ gọi tính năng chỉ Android 7+ mới có (TV Channels văng khi mở danh sách kênh trên Android 6).
+- TV Home: đóng Tùy chỉnh khi ảnh xem trước còn đang vẽ không còn báo lỗi; lỗi của chính Android (trợ lý giọng nói bị chặn, đồng hồ khi đóng màn hình) không còn hiện bảng lỗi.
+- TV Games: trên vài TV Android 14 (Haier) app không còn văng khi điện thoại vừa kết nối làm tay cầm.
+- App điện thoại: nhập file remote hồng ngoại mà lỡ chọn file lớn (video) không còn văng, chỉ báo không có remote nào; ngắt kết nối ADB đúng lúc một luồng đang đóng không còn báo lỗi.
+- Trang quản lý: cài app thẳng lên TV mà lỗi giờ hiện đúng lời khuyên (trước đây báo lỗi khác); mở tab từ app điện thoại trước khi trang tải xong không còn báo lỗi.
 
 **English**
 - Phone app: a TV on the same Wi-Fi showed "no answer · TV off?" while the phone went online through mobile data (Wi-Fi "without Internet", or a weak Wi-Fi the phone switched away from): the app now always reaches the TV on the Wi-Fi. A TV that does not answer shows "trying again…"; a network change asks again at once; Scan Wi-Fi also refreshes the saved TVs.
@@ -21,6 +26,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Remote support for the Phone and Computer apps: About → "Let support look at this app" (computer: Settings → About → "Let them see this app") gives an 8-digit code; for 30 minutes support reads the app's state, log and network (phone: every network, which one goes online, the saved TVs and the self-check), changing nothing. Stop any time.
 - "Let support see this TV" now opens from the phone, the computer and the TV web page (Setup tab, TV card), not only on the TV under Connection. Needs a newer TV Setup (offered).
 - Settings → About: no more big empty gap under the "Get the app" QR code.
+- TVs and phones on Android 5–6: TV Channels, TV Games, TV Home, TV Setup and the Phone app no longer crash where they called something only Android 7+ has (TV Channels crashed opening the channel list on Android 6).
+- TV Home: closing Customize while previews are still drawing no longer shows an error; Android's own errors (the voice assistant refused, the clock as a screen closes) no longer show the error box.
+- TV Games: on some Android 14 TVs (Haier) the app no longer crashes as a phone joins as a pad.
+- Phone app: importing an IR remote file and picking a big file by mistake (a video) no longer crashes, it says no remote was found; ADB dropping just as a stream closes no longer shows an error.
+- The manage page: a failed direct install on the TV now shows the right advice (it showed another error); opening a tab from the Phone app before the page has loaded no longer shows an error.
 
 ## 0.33.1 - 2026-10-29
 

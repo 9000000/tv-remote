@@ -142,7 +142,7 @@ class KeyTestActivity : Activity() {
                 KeyFix.sync(c)
                 val map = KeyFix.keyMap(c)
                 val p = HashMap(KeyFix.current(c))
-                for ((k, v) in KeyFix.digits(c)) p.putIfAbsent(k, KeyFix.Rule(KeyFix.APP, listOf(v), true))
+                for ((k, v) in KeyFix.digits(c)) p.getOrPut(k) { KeyFix.Rule(KeyFix.APP, listOf(v), true) }
                 val a = KeyFix.allowed(map) { KeyFix.alive(c, it) } + HomeKey.DIGITS
                 val w = KeyFix.wanted(c)
                 ui.post { if (!gone) { plan = p; assignable = a; wanted = w; paintFilter(); shown?.let { paintRemap(it.code) } } }

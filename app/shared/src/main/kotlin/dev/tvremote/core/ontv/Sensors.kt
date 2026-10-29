@@ -34,14 +34,14 @@ object Sensors {
             val c = m.groupValues[1].toDoubleOrNull() ?: continue
             val type = HAL_TYPES[m.groupValues[2].toInt()] ?: continue
             val name = m.groupValues[3].trim().ifEmpty { type }
-            if (c > -30 && c < 150) temps.putIfAbsent(name, c)
+            if (c > -30 && c < 150) temps.getOrPut(name) { c }
         }
         if (temps.isEmpty()) for (line in zones.lines()) {                 // older TVs: the kernel's zones, in thousandths of a degree
             val p = line.trim().split(Regex("\\s+"))
             if (p.size != 2) continue
             val v = p[1].toLongOrNull() ?: continue
             val c = if (v > 1000 || v < -1000) v / 1000.0 else v.toDouble()
-            if (c > -30 && c < 150 && c != 0.0) temps.putIfAbsent(p[0], Math.round(c * 10) / 10.0)
+            if (c > -30 && c < 150 && c != 0.0) temps.getOrPut(p[0]) { Math.round(c * 10) / 10.0 }
         }
         if (status == null && temps.isEmpty()) return null
         val o = JSONObject()

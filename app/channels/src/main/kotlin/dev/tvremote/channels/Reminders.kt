@@ -70,9 +70,9 @@ object Reminders {
 
     private fun arm(c: Context, it: Item) {
         val at = fireAt(it.start, System.currentTimeMillis()) ?: System.currentTimeMillis()    // past but kept (GRACE): at once
-        val am = c.getSystemService(AlarmManager::class.java)
+        val am = (c.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
         val p = pending(c, it) ?: return
         if (Build.VERSION.SDK_INT >= 23) am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p) else am.set(AlarmManager.RTC_WAKEUP, at, p)
     }
-    private fun cancel(c: Context, it: Item) { pending(c, it)?.let { p -> c.getSystemService(AlarmManager::class.java).cancel(p); p.cancel() } }
+    private fun cancel(c: Context, it: Item) { pending(c, it)?.let { p -> (c.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(p); p.cancel() } }
 }

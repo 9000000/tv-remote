@@ -2,6 +2,7 @@ package dev.tvremote.setup
 
 import android.app.Application
 import android.content.res.Configuration
+import android.os.Build
 import dev.tvremote.core.Words
 import java.util.Locale
 
@@ -23,5 +24,5 @@ class SetupApp : Application() {
     private fun main(): Boolean = try { java.io.File("/proc/self/cmdline").readText().trimEnd('\u0000') == packageName } catch (e: Exception) { true }
 
     /** The language the system gives THIS app (a per-app choice included): Locale.getDefault() still said the TV's own while this ran, so the dialogs spoke English on a Vietnamese screen. */
-    private fun speak(c: Configuration) = c.locales.get(0)?.language ?: Locale.getDefault().language
+    private fun speak(c: Configuration) = (if (Build.VERSION.SDK_INT >= 24) c.locales.get(0) else @Suppress("DEPRECATION") c.locale)?.language ?: Locale.getDefault().language
 }

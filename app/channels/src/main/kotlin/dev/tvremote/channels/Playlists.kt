@@ -39,7 +39,7 @@ object Playlists {
                 val code = k.responseCode
                 if (code in 301..308 && code != 304) { url = URL(URL(url), k.getHeaderField("Location") ?: return null).toString(); return@repeat }
                 if (code != 200) return null
-                val len = k.contentLengthLong
+                val len = (k.getHeaderField("content-length")?.toLongOrNull() ?: -1L)
                 if (len > MAX_BYTES) return null
                 val out = java.io.ByteArrayOutputStream()
                 k.inputStream.use { i ->

@@ -97,7 +97,7 @@ class LibraryActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        root = FrameLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }
+        root = FrameLayout(this).apply { setBackgroundColor(tvColor(R.color.tv_bg)) }
         setContentView(root)
         server = GameServer.acquire(this)
         intent.getStringExtra("cat_base")?.let { Catalog.setDebug(this, it, intent.getStringExtra("cat_key")) }   // debug builds only
@@ -366,7 +366,7 @@ class LibraryActivity : ComponentActivity() {
             outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, resources.getDimension(R.dimen.tv_head_radius)) } }
             clipToOutline = true
         }, LinearLayout.LayoutParams(resources.getDimensionPixelSize(R.dimen.tv_head_icon), resources.getDimensionPixelSize(R.dimen.tv_head_icon)).apply { marginEnd = resources.getDimensionPixelSize(R.dimen.tv_head_gap) })
-        addView(label(getString(R.string.app_name), 24f, getColor(R.color.tv_ink)).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; typeface = android.graphics.Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(label(getString(R.string.app_name), 24f, tvColor(R.color.tv_ink)).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; typeface = android.graphics.Typeface.DEFAULT_BOLD }, LinearLayout.LayoutParams(0, -2, 1f))
         val f = EditText(context).apply {
             hint = getString(R.string.search_hint); setHintTextColor(0x99FFFFFF.toInt()); setTextColor(Color.WHITE); textSize = 16f
             setText(query); setSingleLine(true); imeOptions = EditorInfo.IME_ACTION_SEARCH; inputType = android.text.InputType.TYPE_CLASS_TEXT
@@ -474,7 +474,7 @@ class LibraryActivity : ComponentActivity() {
         options.forEach { (v, t) ->
             val on = v == cur
             val r = TextView(this).apply {
-                text = if (icons != null) t + (if (on) "  \u2713" else "") else (if (on) "\u2713  " else "     ") + t; textSize = 18f; setTextColor(getColor(R.color.tv_ink)); gravity = Gravity.CENTER_VERTICAL; maxLines = 1
+                text = if (icons != null) t + (if (on) "  \u2713" else "") else (if (on) "\u2713  " else "     ") + t; textSize = 18f; setTextColor(tvColor(R.color.tv_ink)); gravity = Gravity.CENTER_VERTICAL; maxLines = 1
                 setPadding(dp(16), 0, dp(24), 0); isFocusable = true; isClickable = true; minWidth = maxOf(anchor.width, dp(240))
                 background = StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_focused), GradientDrawable().apply { setColor(0x40FFFFFF); cornerRadius = dp(10).toFloat(); setStroke(dp(2), 0xCCFFFFFF.toInt()) })
@@ -489,7 +489,7 @@ class LibraryActivity : ComponentActivity() {
         val maxH = root.height - y - dp(16)
         val card = ScrollView(this).apply {
             addView(list); isVerticalScrollBarEnabled = false
-            background = GradientDrawable().apply { setColor(getColor(R.color.tv_card)); cornerRadius = resources.getDimension(R.dimen.tv_radius_card) }
+            background = GradientDrawable().apply { setColor(tvColor(R.color.tv_card)); cornerRadius = resources.getDimension(R.dimen.tv_radius_card) }
             clipToOutline = true
         }
         val v = FrameLayout(this).apply {
@@ -538,7 +538,7 @@ class LibraryActivity : ComponentActivity() {
             for (g in shelf.groups) box.addView(section("g" + g.id, g.name, g.items.mapNotNull { byId[it] }, group = g))
             box.addView(section("all", getString(R.string.sec_all), lib, add = true))
             if (sugs.isNotEmpty()) box.addView(section("sug", getString(R.string.suggest), sugs))
-            else if (catOffline) box.addView(label(getString(R.string.sug_offline), 16f, getColor(R.color.tv_dim)).apply { setPadding(dp(8), dp(18), 0, 0) })
+            else if (catOffline) box.addView(label(getString(R.string.sug_offline), 16f, tvColor(R.color.tv_dim)).apply { setPadding(dp(8), dp(18), 0, 0) })
         }
         val pend = pendingFocus; pendingFocus = null
         val f = wantFolder; wantFolder = null
@@ -669,7 +669,7 @@ class LibraryActivity : ComponentActivity() {
             getString(R.string.upd_later) to { upd.later(); closeOverlay() },
             getString(R.string.upd_skip) to { upd.skip(r); closeOverlay() },
         ), icons = listOf(R.drawable.ic_download, R.drawable.ic_clock, R.drawable.ic_eye_off), close = false,
-            extra = { it.addView(label(getString(R.string.upd_note, upd.version()), 18f, getColor(R.color.tv_dim)).apply { setPadding(0, 0, 0, dp(10)) }) })
+            extra = { it.addView(label(getString(R.string.upd_note, upd.version()), 18f, tvColor(R.color.tv_dim)).apply { setPadding(0, 0, 0, dp(10)) }) })
     }
 
     /** Its download, with Cancel; at 100 % Android's installer takes over with its own question. */
@@ -683,7 +683,7 @@ class LibraryActivity : ComponentActivity() {
             if (pct >= 100) { onOverlayClose = null; if (line.isAttachedToWindow) closeOverlay() }
         }, { m ->
             if (line.isAttachedToWindow) closeOverlay()
-            popup(getString(R.string.upd_title, r.version), emptyList(), extra = { it.addView(label(getString(R.string.upd_failed, m), 18f, getColor(R.color.tv_dim))) })
+            popup(getString(R.string.upd_title, r.version), emptyList(), extra = { it.addView(label(getString(R.string.upd_failed, m), 18f, tvColor(R.color.tv_dim))) })
         })
         if (!started) { onOverlayClose = null; closeOverlay() }               // Android's "install unknown apps" first: back from it, onResume goes on
     }
@@ -740,7 +740,7 @@ class LibraryActivity : ComponentActivity() {
             try {
                 val c = java.net.URL(h.getString("url")).openConnection() as java.net.HttpURLConnection
                 c.connectTimeout = 8000; c.readTimeout = 15000
-                val total = c.contentLengthLong
+                val total = (c.getHeaderField("content-length")?.toLongOrNull() ?: -1L)
                 val out = java.io.ByteArrayOutputStream(if (total in 1..(64L shl 20)) total.toInt() else 1 shl 16)
                 var last = -1; var lastAt = 0L
                 c.inputStream.use { i ->
@@ -842,7 +842,7 @@ class LibraryActivity : ComponentActivity() {
     private fun ringDrawable(r: Float): Drawable {
         val o = ringOut
         fun band(w: Int, color: Int, radius: Float) = GradientDrawable().apply { cornerRadius = maxOf(0f, radius); setStroke(w, color); setColor(Color.TRANSPARENT) }
-        return android.graphics.drawable.LayerDrawable(arrayOf(band(o + dp(1), getColor(R.color.tv_ring_accent), r + o), band(dp(1), Color.WHITE, r - dp(1)))).apply { setLayerInset(1, o + dp(1), o + dp(1), o + dp(1), o + dp(1)) }
+        return android.graphics.drawable.LayerDrawable(arrayOf(band(o + dp(1), tvColor(R.color.tv_ring_accent), r + o), band(dp(1), Color.WHITE, r - dp(1)))).apply { setLayerInset(1, o + dp(1), o + dp(1), o + dp(1), o + dp(1)) }
     }
 
     /** The shell every tile shares: the card (face + ring) that grows, and the lines that show under it while focused. [fill] builds the face; returns its content. */
@@ -885,7 +885,7 @@ class LibraryActivity : ComponentActivity() {
             if (was === i) {                                          // the same game in the same row as before: its view comes back as it was, picture and all
                 (v.parent as? ViewGroup)?.removeView(v)
                 (v.layoutParams as? GridLayout.LayoutParams)?.let { it.rowSpec = GridLayout.spec(GridLayout.UNDEFINED); it.columnSpec = GridLayout.spec(GridLayout.UNDEFINED) }   // the old grid's cell
-                tileKeys.putIfAbsent("$section|${i.id}", v)
+                tileKeys.getOrPut("$section|${i.id}") { v }
                 return v
             }
         }
@@ -932,7 +932,7 @@ class LibraryActivity : ComponentActivity() {
             }
         }
         val key = "$section|${i.id}"
-        tileKeys.putIfAbsent(key, outer)
+        tileKeys.getOrPut(key) { outer }
         outer.setTag(R.id.tile_key, key)
         if (i.rom != null) outer.setOnClickListener { getRom(i.rom.first, i.rom.second, outer) }
         else outer.setOnClickListener { i.play?.invoke() }
@@ -994,7 +994,7 @@ class LibraryActivity : ComponentActivity() {
      * or none: the plain room.
      */
     private fun tintFor(v: View) {
-        val bg = getColor(R.color.tv_bg)
+        val bg = tvColor(R.color.tv_bg)
         val c = art[v]?.let { b -> tints.getOrPut(b) { LobbyTheme.accent(b).let { a -> if (a == LobbyTheme.DEFAULT) bg else room(a) } } } ?: bg
         root.removeCallbacks(tintGo); tintTo = c; root.postDelayed(tintGo, 250)
     }
@@ -1002,7 +1002,7 @@ class LibraryActivity : ComponentActivity() {
     private fun room(a: Int): Int { val hsv = FloatArray(3); android.graphics.Color.colorToHSV(a, hsv); hsv[1] = 0.6f; hsv[2] = 0.3f; return android.graphics.Color.HSVToColor(hsv) }
 
     private fun tint(c: Int) {
-        val bg = getColor(R.color.tv_bg)
+        val bg = tvColor(R.color.tv_bg)
         val from = if (tintShown == 0) bg else tintShown
         tintAnim?.cancel()
         if (c == from) return

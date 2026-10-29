@@ -39,6 +39,18 @@ class GuardLogicTest {
         assertFalse(GuardLogic.goneWindow(thrown("android.app.Dialog" to "show")))
     }
 
+    @Test fun `Android's own faults in its calls to the app are known`() {
+        val assist = IllegalStateException("Not allowed to start service Intent { act=android.service.voice.VoiceInteractionService }").apply {
+            stackTrace = arrayOf(StackTraceElement("android.os.Parcel", "createException", "X.java", 1), StackTraceElement("android.app.ActivityThread", "handleRequestAssistContextExtras", "X.java", 1)) }
+        assertTrue(GuardLogic.systemFault(assist))
+        val clock = IllegalArgumentException("Receiver not registered: android.widget.TextClock\$1@45ea11").apply {
+            stackTrace = arrayOf(StackTraceElement("android.app.LoadedApk", "forgetReceiverDispatcher", "X.java", 1), StackTraceElement("android.widget.TextClock", "onDetachedFromWindow", "X.java", 1)) }
+        assertTrue(GuardLogic.systemFault(clock))
+        assertFalse(GuardLogic.systemFault(IllegalArgumentException("Receiver not registered: a.B@1").apply {
+            stackTrace = arrayOf(StackTraceElement("a.B", "onDestroy", "X.java", 1)) }))         // our own receiver: still reported
+        assertFalse(GuardLogic.systemFault(thrown("android.app.ActivityThread" to "handleRequestAssistContextExtras")))
+    }
+
     @Test fun `the report has when, app, android, device, thread and the stack`() {
         val r = GuardLogic.report("2026-10-23 10:00:00", "dev.tvremote.phone 0.1.2", "14 (API 34)", "Google sdk", "main", thrown("a.B" to "c"))
         for (k in listOf("time: 2026-10-23 10:00:00", "app: dev.tvremote.phone 0.1.2", "android: 14 (API 34)", "device: Google sdk", "thread: main",

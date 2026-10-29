@@ -476,7 +476,7 @@ async function installDirect() {
     const s = await api('/api/assist', null, true); if (shown !== assistGen) return;
     if (s && /installer/.test(s.front || '')) continue;               // the TV's installer is up: the person is busy there
     return assistShow(T('setup.tv_failed_title'), say(T('setup.tv_failed_body')),
-      row(act(T('setup.via_downloader'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())), say(tip));
+      row(act(T('setup.via_downloader'), async () => installSetup(), 'primary'), act(T('setup.other_ways'), async () => adbHelp())), say(await dlTip()));
   }
 }
 // The app Downloader puts on the TV: its code key (core/Downloader.kt), package, and the words around the install.

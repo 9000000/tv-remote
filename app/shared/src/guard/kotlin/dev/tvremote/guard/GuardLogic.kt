@@ -51,6 +51,19 @@ object GuardLogic {
         return bad && t.stackTrace.any { it.className == "android.app.Dialog" && (it.methodName == "show" || it.methodName.startsWith("dismiss")) }
     }
 
+    /**
+     * True when [t] is Android's own fault inside a call it made to the app, nothing the app did or can change: the system refusing
+     * to start the TV's assistant while it asked the screen for assist data (census 4ccc4845), a TextClock unregistering a receiver
+     * the system had already dropped while its screen was closed (630851a6). Logged, not shown or sent, and the app goes on.
+     */
+    fun systemFault(t: Throwable): Boolean {
+        val f = t.stackTrace
+        val assist = t is IllegalStateException && f.any { it.className == "android.app.ActivityThread" && it.methodName == "handleRequestAssistContextExtras" }
+        val clock = t is IllegalArgumentException && t.message?.startsWith("Receiver not registered") == true &&
+            f.any { it.className == "android.widget.TextClock" && it.methodName == "onDetachedFromWindow" }
+        return assist || clock
+    }
+
     /** The whole text saved to the file and put on the clipboard: when, which app and phone, which thread, then the stack. */
     fun report(time: String, app: String, android: String, device: String, thread: String, t: Throwable): String {
         val sw = StringWriter()

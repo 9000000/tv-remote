@@ -30,9 +30,10 @@ object Watch {
     /** [done]: how far it was watched, 0..1, or -1 when the app does not say (Play Next with a position and a length). */
     class Item(val key: String, val pkg: String, val title: String, val art: String, val intent: String, val app: String, val done: Float = -1f)
 
-    fun allowed(c: Context) = Build.VERSION.SDK_INT >= 26 && c.checkSelfPermission(PERM) == PackageManager.PERMISSION_GRANTED
+    fun allowed(c: Context) = Build.VERSION.SDK_INT >= 26 && c.packageManager.checkPermission(PERM, c.packageName) == PackageManager.PERMISSION_GRANTED
 
     /** Up to [max] items: Play Next, newest first, then the channels' programmes, one app after another; [hidden] apps left out. */
+    @android.annotation.TargetApi(26)   // allowed() is false below 26
     fun read(c: Context, max: Int, hidden: Set<String>): List<Item> {
         if (!allowed(c) || max <= 0) return emptyList()
         val labels = HashMap<String, String?>()
@@ -130,8 +131,9 @@ object Watch {
             }
             val room = (w - m - textLeft - (if (lines == 1) sz + m * .5f else 0f)).toInt()
             if (room > h / 4) {
-                val lay = android.text.StaticLayout.Builder.obtain(i.title, 0, i.title.length, tp, room).setMaxLines(lines)
+                val lay = if (Build.VERSION.SDK_INT >= 23) android.text.StaticLayout.Builder.obtain(i.title, 0, i.title.length, tp, room).setMaxLines(lines)
                     .setEllipsize(android.text.TextUtils.TruncateAt.END).setLineSpacing(0f, .95f).build()
+                else @Suppress("DEPRECATION") android.text.StaticLayout(i.title.take(60), tp, room, android.text.Layout.Alignment.ALIGN_NORMAL, .95f, 0f, false)   // no max lines before 23: a short cut-off instead
                 cv.save(); cv.translate(textLeft, if (lines == 1) textTop + (h * .2f - lay.height) / 2 else textTop); lay.draw(cv); cv.restore()
             }
         }

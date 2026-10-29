@@ -98,6 +98,7 @@ public final class Caps {
         return s.toString();
     }
 
+    @android.annotation.TargetApi(24)                                 // called in a try that catches Throwable: an old TV just says less
     private static void display(Context ctx, StringBuilder out) {
         Display d = ((DisplayManager) ctx.getSystemService(Context.DISPLAY_SERVICE)).getDisplay(Display.DEFAULT_DISPLAY);
         if (d == null) return;
@@ -116,6 +117,7 @@ public final class Caps {
             .append(Math.round(m.getRefreshRate() * 100) / 100.0).append('\n');
     }
 
+    @android.annotation.TargetApi(23)                                 // the same
     private static void audio(Context ctx, StringBuilder out) {
         AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
         for (AudioDeviceInfo dev : am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {

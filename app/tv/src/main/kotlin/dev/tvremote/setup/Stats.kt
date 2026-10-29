@@ -161,7 +161,7 @@ internal class Stats(private val ctx: Context) {
 
     /** The TV's own way out: "eth" before "wifi" (a cable wins when both are there), "" with neither. A VPN does not count. */
     fun net(): String {
-        val cm = ctx.getSystemService(ConnectivityManager::class.java) ?: return ""
+        val cm = (ctx.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? ConnectivityManager) ?: return ""
         var kind = ""
         @Suppress("DEPRECATION") for (n in cm.allNetworks) {
             val c = cm.getNetworkCapabilities(n) ?: continue
@@ -184,14 +184,14 @@ internal class Stats(private val ctx: Context) {
     /** Starts writing net.jsonl; the service calls it once. */
     fun watchNet() {
         try {
-            ctx.getSystemService(ConnectivityManager::class.java)?.registerNetworkCallback(NetworkRequest.Builder()
+            (ctx.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)?.registerNetworkCallback(NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build(), watch)   // NOT_VPN is in every request by default
         } catch (ignored: Exception) {
         }
     }
 
     fun stopNet() {
-        try { ctx.getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(watch) } catch (ignored: Exception) { }
+        try { (ctx.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)?.unregisterNetworkCallback(watch) } catch (ignored: Exception) { }
         ui.removeCallbacks(check)
     }
 

@@ -18,11 +18,21 @@ import org.json.JSONObject
  * a TV channel, a playlist, a page. This home knows none of those apps; the system keeps which shortcuts are pinned here
  * (asked again on every build); [order] is ours, outside HomeConfig: the phone and computer do not set it. They sit in the dock after its apps, under the same limit.
  */
+@TargetApi(25)   // everything here starts at can(), which needs 26; ShortcutInfo is 25
 object Pins {
-    private fun la(c: Context) = c.getSystemService(LauncherApps::class.java)
+    private fun la(c: Context) = c.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
 
     /** Only the default home may read or start pinned shortcuts (hasShortcutHostPermission); anything else sees none. */
     fun can(c: Context) = Build.VERSION.SDK_INT >= 26 && try { la(c)?.hasShortcutHostPermission() == true } catch (e: Exception) { false }
+
+    /** The app a pinned tile belongs to: the app that pinned it, or for TV Home's own pins the app they open (null for a tile that is no shortcut). */
+    fun appOf(c: Context, a: App): String? = (if (a.pin == null) null else a.pin as? ShortcutInfo)?.let { s -> if (s.`package` == c.packageName) sourceOf(c, s.id) ?: s.`package` else s.`package` }   // the null check first: the cast alone fails on Android 5-7
+
+    /** The id of a shortcut TV Home made itself (a pinned link), else null. */
+    fun ownIdOf(c: Context, a: App): String? = (if (a.pin == null) null else a.pin as? ShortcutInfo)?.takeIf { it.`package` == c.packageName }?.id
+
+    /** A shortcut's name for a key's label, null when it is gone. */
+    fun label(c: Context, key: String): String? = find(c, key)?.let { (it.shortLabel ?: it.longLabel ?: it.id).toString() }
 
     fun key(s: ShortcutInfo) = "pin:${s.`package`}/${s.id}"
 

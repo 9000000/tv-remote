@@ -386,6 +386,7 @@ setScreenPlaceholder();
 // ---------- tabs ----------
 let currentTab = window.ONTV ? (location.search.match(/[?&]tab=(\w+)/) || [])[1] || 'apps' : 'remote', streamFps = 0;   // on the TV itself there is no Remote tab; TV Setup may name one
 function showTab(t) {
+  if (document.readyState === 'loading') return document.addEventListener('DOMContentLoaded', () => showTab(t), { once: true });   // a jump from the phone app can come before tvset.js etc. are read (crash 5b47665e)
   if ((CORE === 'phone' || window.ONTV) && (t === 'remote' || !document.querySelector('[data-tab="' + t + '"]'))) t = 'apps';   // the phone app has its own remote; the TV itself needs none
   if (SCOPE !== 'full') t = 'remote';                                  // a guest (a shared QR): the other tabs are the owner's
   currentTab = t; document.querySelector('main').classList.toggle('wide', t === 'remote' && !picking);

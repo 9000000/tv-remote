@@ -14,10 +14,13 @@ object Lang {
     fun wrap(base: Context): Context {
         shown = try { Store.get(base).optString("lang") } catch (e: Exception) { "" }
         // the default locale too: dates and numbers are formatted with it (DateFormat, String.format) all over the screen
-        val loc = if (shown.isEmpty()) Resources.getSystem().configuration.locales[0] else dev.tvremote.i18n.Langs.locale(shown)
+        val loc = if (shown.isEmpty()) Resources.getSystem().locale0() else dev.tvremote.i18n.Langs.locale(shown)
         Locale.setDefault(loc)
         if (shown.isEmpty()) return base
         val cfg = Configuration(base.resources.configuration).apply { setLocale(loc) }
         return base.createConfigurationContext(cfg)
     }
 }
+
+/** The first locale; Configuration.locales is API 24, the TV boxes on Android 5-6 have only .locale. */
+fun Resources.locale0(): Locale = if (android.os.Build.VERSION.SDK_INT >= 24) configuration.locales[0] else @Suppress("DEPRECATION") configuration.locale

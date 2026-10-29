@@ -71,7 +71,7 @@ internal object NotifyLayer {
         ui.removeCallbacks(hide)
         val v = view ?: return
         view = null
-        try { app?.getSystemService(WindowManager::class.java)?.removeView(v) } catch (e: Exception) { }
+        try { (app?.getSystemService(android.content.Context.WINDOW_SERVICE) as? WindowManager)?.removeView(v) } catch (e: Exception) { }
     }
 
     private fun dp(c: Context, v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, c.resources.displayMetrics).toInt()

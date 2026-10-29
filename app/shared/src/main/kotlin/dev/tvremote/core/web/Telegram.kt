@@ -712,7 +712,7 @@ class Telegram(
         for (k in listOf("limits", "sched")) st.optJSONArray(k)?.let { a -> for (i in 0 until a.length()) a.optJSONObject(i)?.let { labels[it.optString("pkg")] = it.optString("label") } }
         val b = hook.brief(try { state() } catch (e: Exception) { JSONObject() })
         val front = if (b.isNull("app")) "" else b.optString("app")
-        if (front.isNotEmpty() && front != SELF) labels.putIfAbsent(front, b.optString("app_label").ifEmpty { appLabel(front) })
+        if (front.isNotEmpty() && front != SELF) labels.getOrPut(front) { b.optString("app_label").ifEmpty { appLabel(front) } }
         val pkgs = (named + blocked + front).filter { it.isNotEmpty() && it != SELF && PKG.matches(it) && it.length <= 56 }.distinct()
         val rows = pkgs.map { p ->
             val name = labels[p]?.ifEmpty { null } ?: appLabel(p)

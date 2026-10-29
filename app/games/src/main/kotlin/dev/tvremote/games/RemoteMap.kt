@@ -21,8 +21,8 @@ class RemoteMap(private val act: Activity, private val root: FrameLayout, privat
         KeyEvent.KEYCODE_BUTTON_B to R.string.map_b)
     private var step = -1
     private var card: FrameLayout? = null
-    private val ask = act.label("", 30f, act.getColor(R.color.tv_ink))
-    private val now = act.label("", 19f, act.getColor(R.color.tv_dim))
+    private val ask = act.label("", 30f, act.tvColor(R.color.tv_ink))
+    private val now = act.label("", 19f, act.tvColor(R.color.tv_dim))
     val learning get() = step >= 0
 
     /** The console button for a remote key, or null. */
@@ -36,7 +36,7 @@ class RemoteMap(private val act: Activity, private val root: FrameLayout, privat
             minimumWidth = act.dp(520)
             addView(ask.apply { setPadding(0, act.dp(6), 0, act.dp(8)) })
             addView(now)
-            addView(act.label(act.getString(R.string.map_skip), 17f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(18), 0, 0) })
+            addView(act.label(act.getString(R.string.map_skip), 17f, act.tvColor(R.color.tv_dim)).apply { setPadding(0, act.dp(18), 0, 0) })
         }).also { root.addView(it, FrameLayout.LayoutParams(-1, -1)) }
         step = 0; hold(true); show()
     }
@@ -45,7 +45,7 @@ class RemoteMap(private val act: Activity, private val root: FrameLayout, privat
         if (step >= steps.size) { step = -1; card?.visibility = View.GONE; hold(false); return }
         val (button, words) = steps[step]
         val w = act.getString(words); val t = act.getString(R.string.map_press, w); val at = t.indexOf(w)
-        ask.text = android.text.SpannableString(t).apply { if (at >= 0) setSpan(android.text.style.ForegroundColorSpan(act.getColor(R.color.tv_ring_accent)), at, at + w.length, 0)
+        ask.text = android.text.SpannableString(t).apply { if (at >= 0) setSpan(android.text.style.ForegroundColorSpan(act.tvColor(R.color.tv_ring_accent)), at, at + w.length, 0)
             if (at >= 0) setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), at, at + w.length, 0) }
         val k = keyOf(button) ?: if (button == KeyEvent.KEYCODE_BUTTON_START) KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE else null
         now.text = if (k == null) "" else act.getString(R.string.map_now, name(k))

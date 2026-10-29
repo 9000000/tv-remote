@@ -1,5 +1,6 @@
 package dev.tvremote.home.widgets
 
+import dev.tvremote.home.locale0
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -27,7 +28,7 @@ import java.util.Date
  */
 internal fun Widgets.clock(mode: Int): View {
     val face0 = opt("clock", "face"); val light0 = opt("clock", "theme") == "light"
-    val locale = resources.configuration.locales[0]
+    val locale = resources.locale0()
     val h24 = Store.get(a).optBoolean("clock24", true)
     val timeF = SimpleDateFormat(if (h24) "HH:mm" else "h:mm", locale)
     // the small form is one short line, never broken inside the date: "T4, 21/10", "Wed 21 Oct"
@@ -95,7 +96,7 @@ internal class ClockFace(private val dp: (Number) -> Int, c: Context, val style:
     private val orange = 0xFFFF9500.toInt()
     private val gold = if (light) GOLD_LIGHT else GOLD      // the roman face's ink: pale gold on dark, deep gold on light
     private val red = if (light) RED_LIGHT else Widgets.ACCENT       // modern / digital: the date, in the calendar's red
-    private val locale = c.resources.configuration.locales[0]
+    private val locale = c.resources.locale0()
     private val digitsF = SimpleDateFormat(if (Store.get(c).optBoolean("clock24", true)) "HH:mm" else "h:mm", locale)
     private val dateF = SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM"), locale)
     private val dayF = SimpleDateFormat(if (locale.language == "vi") "d" else "EEE d", locale)

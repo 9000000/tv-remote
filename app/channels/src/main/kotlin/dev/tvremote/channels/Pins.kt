@@ -36,11 +36,12 @@ object Pins {
     fun groupId(u: Uri?): String? = u?.takeIf { it.scheme == "tvchannels" && it.host == "group" }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.ifEmpty { null }
 
     fun can(c: Context): Boolean =
-        Build.VERSION.SDK_INT >= 26 && c.getSystemService(ShortcutManager::class.java)?.isRequestPinShortcutSupported == true
+        Build.VERSION.SDK_INT >= 26 && (c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager)?.isRequestPinShortcutSupported == true
 
+    @android.annotation.TargetApi(26)   // [can] is checked first
     fun pin(c: Context, ch: Channel, logo: Bitmap?): Boolean {
         if (!can(c)) return false
-        val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
+        val sm = c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager ?: return false
         val icon = if (logo != null) Icon.createWithBitmap(tile(logo, size(sm))) else Icon.createWithResource(c, R.drawable.icon)
         val s = ShortcutInfo.Builder(c, "ch:" + ch.id)
             .setShortLabel(ch.name.take(24)).setLongLabel(ch.name).setIcon(icon)
@@ -64,7 +65,7 @@ object Pins {
      */
     fun mend(c: Context) {
         if (Build.VERSION.SDK_INT < 26) return
-        val sm = c.getSystemService(ShortcutManager::class.java) ?: return
+        val sm = c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager ?: return
         val pinned = try { sm.pinnedShortcuts.map { it.id }.filter { it.startsWith("ch:") } } catch (e: Exception) { return }
         val p = prefs(c)
         if (!p.getBoolean("mended", false)) p.edit().putStringSet("nologo", p.getStringSet("nologo", emptySet())!! + pinned).putBoolean("mended", true).apply()
@@ -86,9 +87,10 @@ object Pins {
     }
 
     /** A group on the home screen: its name, and up to four of its logos on the card. Opens the list on that group. */
+    @android.annotation.TargetApi(26)   // [can] is checked first
     fun pinGroup(c: Context, id: String, name: String, logos: List<Bitmap>): Boolean {
         if (!can(c)) return false
-        val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
+        val sm = c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager ?: return false
         val icon = if (logos.isNotEmpty()) Icon.createWithBitmap(mosaic(logos, size(sm))) else Icon.createWithResource(c, R.drawable.banner)
         val s = ShortcutInfo.Builder(c, "grp:$id")
             .setShortLabel(name.take(24)).setLongLabel(name).setIcon(icon)
@@ -101,13 +103,13 @@ object Pins {
     /** A group renamed: its pin (if any) takes the new name. Deleted: its pin is turned off, the home screen drops it. */
     fun renamed(c: Context, id: String, name: String) {
         if (Build.VERSION.SDK_INT < 26) return
-        val sm = c.getSystemService(ShortcutManager::class.java) ?: return
+        val sm = c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager ?: return
         val old = try { sm.pinnedShortcuts.firstOrNull { it.id == "grp:$id" } } catch (e: Exception) { null } ?: return
         try { sm.updateShortcuts(listOf(ShortcutInfo.Builder(c, old.id).setShortLabel(name.take(24)).setLongLabel(name).build())) } catch (e: Exception) {}
     }
     fun deleted(c: Context, id: String) {
         if (Build.VERSION.SDK_INT < 26) return
-        try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("grp:$id")) } catch (e: Exception) {}
+        try { (c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager)?.disableShortcuts(listOf("grp:$id")) } catch (e: Exception) {}
         dev.tvremote.tvui.PinArt.drop(c, "grp:$id")
     }
 
@@ -132,6 +134,7 @@ object Pins {
      * The card's pixels: the biggest 16:9 the system keeps. ShortcutManager shrinks any icon to getIconMaxWidth / Height (about
      * 96 dp), so a bigger card was scaled down there and then stretched to the tile by the launcher: the blur of the first version (a fixed 320x180).
      */
+    @android.annotation.TargetApi(25)   // only with a ShortcutManager, which [can] allowed
     private fun size(sm: ShortcutManager): Pair<Int, Int> {
         val mw = try { sm.iconMaxWidth } catch (e: Exception) { 0 }; val mh = try { sm.iconMaxHeight } catch (e: Exception) { 0 }
         val w = (if (mw > 0) mw else 320).coerceIn(128, 640)

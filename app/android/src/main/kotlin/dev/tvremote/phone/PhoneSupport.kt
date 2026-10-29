@@ -75,7 +75,7 @@ internal object PhoneSupport {
     /** Every network the phone has, which one is the way out, and whether the Wi-Fi was found to reach the Internet. */
     fun net(c: Context): String = try {
         val cm = c.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val active = cm.activeNetwork
+        val active = if (android.os.Build.VERSION.SDK_INT >= 23) cm.activeNetwork else null
         buildString {
             append("[networks] way out: ").append(active).append(" · lan for TVs: ").append(c.lanNetwork()).append('\n')
             @Suppress("DEPRECATION")

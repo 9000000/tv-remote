@@ -249,9 +249,15 @@ internal fun MainActivity.irExported(uri: android.net.Uri) {
 
 /** A file from Xuất file (or a bare list): its remotes added after the ones here; the same name and code twice, or a code this
  *  app does not know (a newer list of codes), is left out. */
+private const val IR_FILE_MAX = 1 shl 20
+
 internal fun MainActivity.irImported(uri: android.net.Uri) {
     val got = try {
-        val text = contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) }.trim()
+        val text = contentResolver.openInputStream(uri)!!.use { s ->                     // at most 1 MB: a big file picked by mistake (a video) ran out of memory (census 3b92aa84)
+            val out = java.io.ByteArrayOutputStream(); val b = ByteArray(8192)
+            while (out.size() <= IR_FILE_MAX) { val n = s.read(b); if (n < 0) break; out.write(b, 0, n) }
+            if (out.size() > IR_FILE_MAX) "" else out.toString("UTF-8")
+        }.trim()
         val a = if (text.startsWith("[")) org.json.JSONArray(text) else org.json.JSONObject(text).getJSONArray("ir")
         (0 until a.length()).map { a.getJSONObject(it).let { o -> Pair(o.optString("name"), o.optString("id")) } }
     } catch (e: Exception) { emptyList() }

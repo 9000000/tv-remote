@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.media.tv.TvContract
 import android.media.tv.TvInputInfo
 import android.media.tv.TvInputManager
@@ -20,8 +21,8 @@ object Inputs {
     fun rows(a: Activity, fold: Boolean = false, onFail: () -> Unit): List<Drop.Row> {
         val tim = try { a.getSystemService(Context.TV_INPUT_SERVICE) as? TvInputManager } catch (e: Exception) { null }
         val list: List<TvInputInfo> = try { tim?.tvInputList.orEmpty() } catch (e: Exception) { emptyList() }
-        fun hidden(i: TvInputInfo) = try { i.isHidden(a) } catch (e: Exception) { false }
-        fun custom(i: TvInputInfo) = try { i.loadCustomLabel(a)?.toString()?.trim().orEmpty() } catch (e: Exception) { "" }
+        fun hidden(i: TvInputInfo) = try { Build.VERSION.SDK_INT >= 24 && i.isHidden(a) } catch (e: Exception) { false }
+        fun custom(i: TvInputInfo) = try { if (Build.VERSION.SDK_INT < 24) "" else i.loadCustomLabel(a)?.toString()?.trim().orEmpty() } catch (e: Exception) { "" }
         fun state(id: String) = try { tim?.getInputState(id) ?: -1 } catch (e: Exception) { -1 }
         val ids = list.map { it.id }.toSet()
         val top = list.filter { (it.parentId == null || it.parentId !in ids) && !hidden(it) }

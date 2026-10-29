@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -97,7 +98,7 @@ class MicActivity : Activity(), RecognitionListener {
         setContentView(root)
     }
 
-    private fun ask() { asking = true; requestPermissions(arrayOf(MicVoice.PERM), 1) }
+    private fun ask() { if (Build.VERSION.SDK_INT >= 23) { asking = true; requestPermissions(arrayOf(MicVoice.PERM), 1) } }   // below 23 permissions are granted at install
 
     private fun dp(n: Int) = TvUi.dp(this, n).toInt()
 

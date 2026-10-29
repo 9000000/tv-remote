@@ -17,16 +17,16 @@ object AdbReport {
     private const val PREFS = "adb_report"
     @Volatile private var sending = false
 
-    /** Called on each failed try; [since] when the failures began, [tries] how many in a row. */
+    /** Called on each failed try; [since] when the failures began (elapsedRealtime: the TV clock jumps at boot, "for 2632037 min"), [tries] how many in a row. */
     fun failing(c: Context, state: String, detail: String, since: Long, tries: Int, version: String) {
-        if (sending || System.currentTimeMillis() - since < AFTER_MS || !Census.enabled) return
+        if (sending || android.os.SystemClock.elapsedRealtime() - since < AFTER_MS || !Census.enabled) return
         val key = "$version $state"
         val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (p.getBoolean(key, false)) return
         sending = true
         Thread({
             try {
-                val msg = "ADB $state for ${(System.currentTimeMillis() - since) / 60_000} min, $tries tries: " + detail.take(150)
+                val msg = "ADB $state for ${(android.os.SystemClock.elapsedRealtime() - since) / 60_000} min, $tries tries: " + detail.take(150)
                 Census.crash("kotlin", "TV Setup ADB $state " + Build.MODEL, msg, facts(c, state, detail)) { sent ->
                     if (sent) p.edit().putBoolean(key, true).apply()
                     sending = false

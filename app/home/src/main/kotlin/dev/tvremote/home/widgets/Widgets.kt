@@ -1,5 +1,6 @@
 package dev.tvremote.home.widgets
 
+import dev.tvremote.home.locale0
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
@@ -249,7 +250,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         } }
         val timer = if ("timer" in want) ask("timer") else null
         val moon = if ("lunar" in want) moon(Calendar.getInstance()) else null
-        val cal = if ("calendar" in want) month(Calendar.getInstance(), Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek) else null
+        val cal = if ("calendar" in want) month(Calendar.getInstance(), Calendar.getInstance(resources.locale0()).firstDayOfWeek) else null
         // the CPU: apps may read neither /proc/stat nor loadavg, so TV Setup's shell measures it (null without TV Setup 0.14.1 or its ADB)
         val cpu = if ("system" in want) ask("cpu") else null
         // no CPU: TV Setup does not answer at all (missing or old), or it does but has no ADB to measure with; the first miss is only
@@ -258,11 +259,11 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
         val cpuWhy = if (cpuMiss == 0) 0 else if (ask("badges") == null) R.string.w_cpu_need_setup else if (cpuMiss >= 2) R.string.w_cpu_need_adb else 0
         val typed = Store.get(a).optString("place")
         val air = "air" in want
-        if (("weather" in want || air) && Weather.due(a, typed, air = air)) Weather.refresh(a, typed, resources.configuration.locales[0].language, air) { onWeather?.invoke() }
+        if (("weather" in want || air) && Weather.due(a, typed, air = air)) Weather.refresh(a, typed, resources.locale0().language, air) { onWeather?.invoke() }
         val wx = if ("weather" in want) Weather.cached(a) else null
         val btc = opt("market", "btc") == "on"
         if ("market" in want && Market.due(a, btc)) Market.refresh(a, btc) { onWeather?.invoke() }
-        val feeds = if ("news" in want) News.urls(opt("news", "src"), resources.configuration.locales[0].language, Store.get(a).optJSONArray("feeds").let { l -> List(l?.length() ?: 0) { l!!.getString(it) } }) else emptyList()
+        val feeds = if ("news" in want) News.urls(opt("news", "src"), resources.locale0().language, Store.get(a).optJSONArray("feeds").let { l -> List(l?.length() ?: 0) { l!!.getString(it) } }) else emptyList()
         if (feeds.isNotEmpty() && News.due(a, feeds)) News.refresh(a, feeds) { onWeather?.invoke() }
         return Facts(mem, disk, ip, eth, rssi, SystemClock.elapsedRealtime(), adb, usage, icons, timer, moon,
             cpu?.optDouble("busy", -1.0)?.takeIf { it >= 0 }?.toFloat(), cpu?.optInt("cores") ?: 0, cal, wx, link, dns, adbPort, cpuWhy, if (air) Weather.cachedAir(a) else null,
@@ -347,7 +348,7 @@ class Widgets(internal val a: Activity, internal val dp: (Number) -> Int) : Line
     var options: JSONObject? = null
     internal fun opt(k: String, id: String): String = HomeConfig.optValue(options ?: Store.get(a), k, id)
 
-    internal fun hm(t: Long) = SimpleDateFormat(if (Store.get(a).optBoolean("clock24", true)) "HH:mm" else "h:mm a", resources.configuration.locales[0]).format(Date(t))
+    internal fun hm(t: Long) = SimpleDateFormat(if (Store.get(a).optBoolean("clock24", true)) "HH:mm" else "h:mm a", resources.locale0()).format(Date(t))
 
     /** A small coloured square for a pill: an icon, or [inner] (the lunar day's number). */
     internal fun tile(colors: IntArray, icon: Int?, inner: View? = null) = FrameLayout(a).apply {

@@ -8,6 +8,7 @@ import dev.tvremote.core.Words
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.Gravity
@@ -951,8 +952,8 @@ class MainActivity : Activity() {
         retryOnResume = true
         // Android TV's own Developer options page only says "not available for this user" when they are still off, on a second
         // profile, or locked (a box seen from FPT): say which, and when they are only off open About for the 7 presses first.
-        val um = getSystemService(android.os.UserManager::class.java)
-        if (um != null && (um.hasUserRestriction(android.os.UserManager.DISALLOW_DEBUGGING_FEATURES) || !um.isSystemUser)) {
+        val um = getSystemService(USER_SERVICE) as? android.os.UserManager
+        if (um != null && (um.hasUserRestriction(android.os.UserManager.DISALLOW_DEBUGGING_FEATURES) || (Build.VERSION.SDK_INT >= 23 && !um.isSystemUser))) {
             log(T("tv_main.dev_locked")); return
         }
         val isp = ispBox()

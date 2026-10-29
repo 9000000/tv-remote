@@ -35,12 +35,14 @@ abstract class TvTile : TileService() {
     open fun paint(tile: Tile) { tile.state = Tile.STATE_INACTIVE }
 }
 
+@TargetApi(24)
 class PowerTile : TvTile() {
     override fun job(i: Intent): Intent = i.putExtra("do", "power")
     override fun paint(tile: Tile) { super.paint(tile); tile.label = T("tiles.tv_power") }
 }
 
 /** Runs the first scene in the list; its name is the tile's label. */
+@TargetApi(24)
 class SceneTile : TvTile() {
     override fun job(i: Intent): Intent? = SceneStore.list(this).firstOrNull()?.let { i.putExtra("scene", it.optString("id")) }
     override fun paint(tile: Tile) {

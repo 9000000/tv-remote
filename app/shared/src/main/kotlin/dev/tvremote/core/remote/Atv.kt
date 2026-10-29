@@ -190,7 +190,7 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
             hasField = true
         }
         m[30]?.let {                                                  // remote_voice_begin: the Assistant listens, under this session
-            voiceWait?.complete(Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? Long ?: 0L)
+            voiceWait?.offer(Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? Long ?: 0L)
         }
         m[20]?.let {                                                  // remote_ime_key_inject: sent whenever another app comes to the front
             val info = Pb.read(it[0] as? ByteArray ?: ByteArray(0))[1]?.firstOrNull() as? ByteArray
@@ -247,15 +247,15 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
     // (tronikos/androidtvremote2 found the flow). Its samples go big-endian: a TCL (Google TV 12) heard nothing in
     // little-endian ("no speech detected") and every word in big-endian, measured. The TV closes the connection on a piece
     // over 20 KB; pieces under 8 KB are padded with silence, so the caller sends at least that much at a time but the last.
-    @Volatile private var voiceWait: java.util.concurrent.CompletableFuture<Long>? = null
+    @Volatile private var voiceWait: java.util.concurrent.ArrayBlockingQueue<Long>? = null   // not a CompletableFuture: API 24, phones run Android 5
 
     /** The Assistant listening to this device: its session, or null when the TV named none within 3 s (no Assistant there). */
     fun voiceBegin(): Long? {
         if (!ready()) return null
-        val f = java.util.concurrent.CompletableFuture<Long>()
+        val f = java.util.concurrent.ArrayBlockingQueue<Long>(1)
         voiceWait = f
         key(KEYCODE_SEARCH, SHORT)
-        val id = try { f.get(3, java.util.concurrent.TimeUnit.SECONDS) } catch (e: Exception) { null } finally { voiceWait = null }
+        val id = try { f.poll(3, java.util.concurrent.TimeUnit.SECONDS) } catch (e: Exception) { null } finally { voiceWait = null }
         if (id != null) post(Pb().msg(30, Pb().int(1, id).bytes()).bytes())
         return id
     }

@@ -442,7 +442,7 @@ class Adb(private val dir: File) : Closeable {
         } catch (e: IOException) {
             if (!dead) WireLog.all.add("·", "adb connection lost: $e")
             dead = true
-            for (s in streams.values.toList()) s.end()
+            for (s in ArrayList(streams.values)) s.end()                 // toList() counts, then walks: a stream closing between ran out (census 1eaf9599)
         }
     }
 

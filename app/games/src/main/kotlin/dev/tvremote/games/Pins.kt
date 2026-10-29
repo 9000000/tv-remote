@@ -30,7 +30,7 @@ object Pins {
     private fun idOf(u: Uri?, host: String): String? = u?.takeIf { it.scheme == "tvgames" && it.host == host }?.encodedPath?.trim('/')?.let { Uri.decode(it) }?.ifEmpty { null }
 
     fun can(c: Context): Boolean =
-        Build.VERSION.SDK_INT >= 26 && c.getSystemService(ShortcutManager::class.java)?.isRequestPinShortcutSupported == true
+        Build.VERSION.SDK_INT >= 26 && (c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager)?.isRequestPinShortcutSupported == true
 
     /** [art] the game's picture as the library shows it (null: a card in the system's colour with its initials). */
     fun pinGame(c: Context, id: String, name: String, art: Bitmap?, color: Int): Boolean =
@@ -43,13 +43,15 @@ object Pins {
     /** TV Home takes a pin at once or refuses it (its dock is full); the system keeps only the accepted ones. True when [sid] is not pinned a moment after asking. */
     fun gameRefused(c: Context, id: String) = !pinned(c, "g:$id")
     fun folderRefused(c: Context, id: String) = !pinned(c, "f:$id")
+    @android.annotation.TargetApi(25)   // only asked after a pin, which [can] allowed (API 26)
     private fun pinned(c: Context, sid: String): Boolean =
-        try { c.getSystemService(ShortcutManager::class.java)?.pinnedShortcuts?.any { it.id == sid } == true } catch (e: Exception) { true }
+        try { (c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager)?.pinnedShortcuts?.any { it.id == sid } == true } catch (e: Exception) { true }
 
     /** [card] drawn twice: at the system's icon size for any launcher, at the tile's size for TV Home ([PinArt]). */
+    @android.annotation.TargetApi(26)   // [can] is checked first
     private fun pin(c: Context, sid: String, name: String, intent: Intent, card: (Int, Int) -> Bitmap): Boolean {
         if (!can(c)) return false
-        val sm = c.getSystemService(ShortcutManager::class.java) ?: return false
+        val sm = c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager ?: return false
         dev.tvremote.tvui.PinArt.save(c, sid, card(dev.tvremote.tvui.PinArt.W, dev.tvremote.tvui.PinArt.H))
         val iw = (try { sm.iconMaxWidth } catch (e: Exception) { 0 }).takeIf { it > 0 }?.coerceIn(128, 320) ?: 320
         val s = ShortcutInfo.Builder(c, sid).setShortLabel(name.take(24)).setLongLabel(name).setIcon(Icon.createWithBitmap(card(iw, iw * 9 / 16))).setIntent(intent).build()
@@ -59,18 +61,18 @@ object Pins {
     /** A folder renamed: its pin (if any) takes the new name. Deleted: its pin is turned off and the home screen drops it. */
     fun renamed(c: Context, id: String, name: String) {
         if (Build.VERSION.SDK_INT < 26) return
-        val sm = c.getSystemService(ShortcutManager::class.java) ?: return
+        val sm = c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager ?: return
         val old = try { sm.pinnedShortcuts.firstOrNull { it.id == "f:$id" } } catch (e: Exception) { null } ?: return
         try { sm.updateShortcuts(listOf(ShortcutInfo.Builder(c, old.id).setShortLabel(name.take(24)).setLongLabel(name).build())) } catch (e: Exception) { }
     }
     fun gameDeleted(c: Context, id: String) {
         if (Build.VERSION.SDK_INT < 26) return
-        try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("g:$id")) } catch (e: Exception) { }; dev.tvremote.tvui.PinArt.drop(c, "g:$id")
+        try { (c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager)?.disableShortcuts(listOf("g:$id")) } catch (e: Exception) { }; dev.tvremote.tvui.PinArt.drop(c, "g:$id")
     }
 
     fun deleted(c: Context, id: String) {
         if (Build.VERSION.SDK_INT < 26) return
-        try { c.getSystemService(ShortcutManager::class.java)?.disableShortcuts(listOf("f:$id")) } catch (e: Exception) { }; dev.tvremote.tvui.PinArt.drop(c, "f:$id")
+        try { (c.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager)?.disableShortcuts(listOf("f:$id")) } catch (e: Exception) { }; dev.tvremote.tvui.PinArt.drop(c, "f:$id")
     }
 
     /** One picture fills the 16:9 card; two to four go in a grid; none: the colour with the initials. Square corners: the launcher rounds them. */

@@ -156,8 +156,8 @@ object Weather {
 
     /** The network's or passive last fix, when the location permission was granted over ADB; null on a TV without a provider. */
     private fun deviceLocation(c: Context): Place? = try {
-        if (c.checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED
-            && c.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != android.content.pm.PackageManager.PERMISSION_GRANTED) null
+        if (c.packageManager.checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, c.packageName) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            && c.packageManager.checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, c.packageName) != android.content.pm.PackageManager.PERMISSION_GRANTED) null
         else {
             val lm = c.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             val fix = listOf(LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER, LocationManager.GPS_PROVIDER)

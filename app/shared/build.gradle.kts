@@ -8,6 +8,7 @@ android {
     namespace = "dev.tvremote.core"
     compileSdk = 35
     defaultConfig { minSdk = 21 }
+    lint { checkOnly += "NewApi" }                                   // the same check as the apps (release.sh): this code runs on their Android 5-6 too
     // assets/scrcpy-server.jar is started on the TV for the picture and the input; web/index.html is the page the apps serve
     sourceSets["main"].assets.srcDirs("assets", "web", layout.buildDirectory.dir("generated/assets/i18n"))   // + i18n/: the page's words (below)
     sourceSets["main"].java.srcDirs("src/home/kotlin")                 // HomeConfig: TV Home's settings, compiled into app/home too

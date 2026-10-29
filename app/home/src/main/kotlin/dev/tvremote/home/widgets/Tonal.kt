@@ -1,5 +1,6 @@
 package dev.tvremote.home.widgets
 
+import dev.tvremote.home.locale0
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -224,7 +225,7 @@ internal fun Widgets.tonalFill(k: String, widget: LinearLayout, f: Facts, w: Int
 /** Today: the weekday over the day's number, the date and the lunar date under it. */
 internal fun Widgets.calendarTonal(widget: LinearLayout, f: Facts, width: Int, compact: Boolean) {
     val c = f.cal ?: return
-    val r = a.resources; val loc = resources.configuration.locales[0]; val now = java.util.Date()
+    val r = a.resources; val loc = resources.locale0(); val now = java.util.Date()
     val d = c.moon
     val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
     val dayWord = if (d.day <= 10) a.getString(R.string.lunar_day_early, d.day) else d.day.toString()

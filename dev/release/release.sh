@@ -29,6 +29,8 @@ grep -q "$(java dev/release/Sign.java pub "$KEY")" app/shared/src/sign/kotlin/de
 # the user guide: a topic whose app files changed since the release it was checked against may now be wrong
 node --test app/shared/tests/ app/games/tests/ >/dev/null 2>&1 || { echo "node tests fail: node --test app/shared/tests/ app/games/tests/"; exit 1; }   # what ships must parse and pass
 (cd app/gradle && ./gradlew -q :shared:testDebugUnitTest >/dev/null 2>&1) || { echo "Kotlin tests fail (speed budgets included): cd app/gradle && ./gradlew :shared:testDebugUnitTest"; exit 1; }   # not in pre-push: Gradle is ~1 min; a release is where a slowdown must not ship
+LINTS=":shared:lintDebug :android:lintDebug :tv:lintDebug :tvkeys:lintDebug :home:lintDebug :channels:lintDebug :games:lintDebug"
+(cd app/gradle && ./gradlew -q $LINTS >/dev/null 2>&1) || { echo "a call newer than Android 5 unguarded (lint NewApi): cd app/gradle && ./gradlew $LINTS"; exit 1; }   # Android 5-6 boxes crash on it (census 8f22ae15)
 if [ -z "$GUIDE_OK" ] && [ -n "$(dev/release/guide_stale.py -q)" ]; then
   dev/release/guide_stale.py
   echo "update those topics in docs/guide.html (or check they are still right) and set their data-v=\"next\"; GUIDE_OK=1 releases anyway"; exit 1

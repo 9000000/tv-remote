@@ -120,7 +120,7 @@ private fun MainActivity.pipIntent(n: Int): PendingIntent =
 /** Tells Android the size and the actions the PiP window will have. */
 /** Home / recents with the picture floating: PiP (before Android 12 by hand, from onUserLeaveHint). */
 internal fun MainActivity.pipLeaveHint() {
-    if (!canPip() || isInPictureInPictureMode) return
+    if (Build.VERSION.SDK_INT < 26 || !canPip() || isInPictureInPictureMode) return
     try { pipParams()?.let { enterPictureInPictureMode(it) } } catch (e: Exception) { }
 }
 

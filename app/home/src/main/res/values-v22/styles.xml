@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Menu" parent="@android:style/Theme.DeviceDefault.Dialog.Alert">
+        <item name="android:windowAnimationStyle">@null</item>   <!-- no fade when the window comes back from another activity -->
+    </style>
+</resources>

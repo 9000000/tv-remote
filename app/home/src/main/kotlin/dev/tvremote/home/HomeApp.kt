@@ -2,6 +2,7 @@ package dev.tvremote.home
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import dev.tvremote.guard.Guard
 import dev.tvremote.guard.GuardWords
 import dev.tvremote.home.wall.Videos
@@ -34,7 +35,7 @@ object CrashLoop {
     const val WINDOW_MS = 60_000L
     private const val KEY = "crashes"
     // device-protected: HomeActivity is direct-boot aware and may crash before the first unlock
-    private fun prefs(c: Context) = c.createDeviceProtectedStorageContext().getSharedPreferences("crashloop", Context.MODE_PRIVATE)
+    private fun prefs(c: Context) = (if (Build.VERSION.SDK_INT >= 24) c.createDeviceProtectedStorageContext() else c).getSharedPreferences("crashloop", Context.MODE_PRIVATE)
 
     fun watch(app: Application) {
         val prev = Thread.getDefaultUncaughtExceptionHandler()   // after Guard's: ours runs first, then its screen and the kill

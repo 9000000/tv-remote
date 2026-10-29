@@ -44,7 +44,7 @@ class GameCards(
     private var startShown = true
     private val startPlayers = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; minimumHeight = act.dp(26) }
     private val chipDots = LinearLayout(act).apply { gravity = Gravity.CENTER_VERTICAL }
-    private val pauseNote = act.label("", 18f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(10), 0, 0) }
+    private val pauseNote = act.label("", 18f, act.tvColor(R.color.tv_dim)).apply { setPadding(0, act.dp(10), 0, 0) }
     private val pingViews = HashMap<Int, MutableList<TextView>>()
     private lateinit var start: LinearLayout
     private lateinit var chip: LinearLayout
@@ -59,9 +59,9 @@ class GameCards(
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL
             setPadding(act.dp(32), act.dp(22), act.dp(32), act.dp(22)); background = card(); minimumWidth = act.dp(400)
             addView(act.label(title, 26f).apply { maxLines = 2 })
-            addView(act.label(s(R.string.scan_play), 18f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(4), 0, act.dp(10)) })
+            addView(act.label(s(R.string.scan_play), 18f, act.tvColor(R.color.tv_dim)).apply { setPadding(0, act.dp(4), 0, act.dp(10)) })
             addView(act.qrView(server.url(), 150))
-            addView(act.label(server.url().substringAfter("//").substringBefore('/'), 16f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(8), 0, act.dp(4)) })
+            addView(act.label(server.url().substringAfter("//").substringBefore('/'), 16f, act.tvColor(R.color.tv_dim)).apply { setPadding(0, act.dp(8), 0, act.dp(4)) })
             if (runs != null) addView(act.label(act.getString(R.string.runs, runs), 14f, 0xFF8892A6.toInt()).apply { maxLines = 1; maxWidth = act.dp(380); ellipsize = android.text.TextUtils.TruncateAt.MIDDLE })
             addView(act.label(s(if (alone) R.string.press_ok else R.string.press_ok_web), 20f).apply { setPadding(0, act.dp(8), 0, act.dp(8)) })
             addView(startPlayers)
@@ -88,7 +88,7 @@ class GameCards(
         val side = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(0, 0, act.dp(36), 0)
             addView(act.qrView(server.url(), 200))
-            addView(act.label(s(R.string.scan_play), 18f, act.getColor(R.color.tv_dim)).apply { setPadding(0, act.dp(10), 0, 0) })
+            addView(act.label(s(R.string.scan_play), 18f, act.tvColor(R.color.tv_dim)).apply { setPadding(0, act.dp(10), 0, 0) })
         }
         pauseCard = act.scrim(LinearLayout(act).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(act.dp(36), act.dp(26), act.dp(36), act.dp(26)); background = card()

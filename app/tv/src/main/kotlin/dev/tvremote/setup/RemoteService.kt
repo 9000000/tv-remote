@@ -539,7 +539,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         when (key) {
             "allow" -> {                                              // the TV is asking "Allow USB debugging?"
                 adbState = "allow"
-                if (failSince == 0L) failSince = System.currentTimeMillis()
+                if (failSince == 0L) failSince = android.os.SystemClock.elapsedRealtime()
                 AdbReport.failing(this, "allow", "", failSince, ++fails, version)   // asked for minutes and never allowed
             }
             "live" -> {
@@ -559,7 +559,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 tv = null
                 ui.removeCallbacks(retry); ui.postDelayed(retry, retryMs)
                 retryMs = minOf(retryMs * 2, 5 * 60_000L)              // ADB off for good: every 5 min at most, not a session every 5 s forever; a use tries at once
-                if (failSince == 0L) failSince = System.currentTimeMillis()
+                if (failSince == 0L) failSince = android.os.SystemClock.elapsedRealtime()
                 fails++
                 AdbReport.failing(this, adbState, detail, failSince, fails, version)   // never through for minutes: the census hears it once
             }

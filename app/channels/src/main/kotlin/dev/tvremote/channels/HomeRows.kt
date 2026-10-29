@@ -39,6 +39,7 @@ object HomeRows {
         Thread({ try { writeNext(app, ch) } catch (e: Exception) { } }, "home-rows").start()
     }
 
+    @android.annotation.TargetApi(26)   // callers return early unless [ok]
     private fun channel(c: Context): Long {
         val p = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val id = p.getLong("channel", -1)
@@ -58,6 +59,7 @@ object HomeRows {
         return made
     }
 
+    @android.annotation.TargetApi(26)   // callers return early unless [ok]
     private fun writeFavs(c: Context) {
         val favs = Store.favourites(c).distinctBy { it.id }.take(FAVS)
         val id = channel(c).takeIf { it >= 0 } ?: return
@@ -77,6 +79,7 @@ object HomeRows {
         if (rows.isNotEmpty()) c.contentResolver.bulkInsert(TvContract.PreviewPrograms.CONTENT_URI, rows.toTypedArray())
     }
 
+    @android.annotation.TargetApi(26)   // callers return early unless [ok]
     private fun writeNext(c: Context, ch: Channel) {
         val r = c.contentResolver
         val ours = ArrayList<Pair<Long, String>>()                   // only this app's rows come back: TvProvider filters by caller

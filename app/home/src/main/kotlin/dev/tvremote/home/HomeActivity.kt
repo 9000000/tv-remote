@@ -1758,7 +1758,7 @@ class HomeActivity : Activity() {
         capture(false); p.dialog.setOnKeyListener(null); amGroup = ""
         val rows = ArrayList<TvGlass.Item>()
         rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.am_open)) { launch(a) })
-        val source = if (a.live) HomeConfig.liveProvider(a.pkg) else (a.pin as? android.content.pm.ShortcutInfo)?.let { s -> if (s.`package` == packageName) Pins.sourceOf(this, s.id) ?: s.`package` else s.`package` }
+        val source = if (a.live) HomeConfig.liveProvider(a.pkg) else Pins.appOf(this, a)
         if (source != null) {                                         // a live widget or a pinned shortcut belongs to an app: its name and own icon, a press opens it
             val prov = source
             val pm = packageManager
@@ -1767,7 +1767,7 @@ class HomeActivity : Activity() {
                 if (!Apps.launch(this, prov, null)) toast(R.string.no_open)
             }.also { it.picture = try { pm.getApplicationIcon(prov) } catch (e: Exception) { null } })
         }
-        (a.pin as? android.content.pm.ShortcutInfo)?.takeIf { it.`package` == packageName }?.id?.let { sid ->   // a pinned link (YouTube): which of the apps taking it opens it, one choice for all such pins
+        Pins.ownIdOf(this, a)?.let { sid ->   // a pinned link (YouTube): which of the apps taking it opens it, one choice for all such pins
             val grp = LinkApps.groupOf(this, sid); val url = LinkApps.urlOf(this, sid)
             if (grp != null && url != null && LinkApps.handlers(this, url, grp).size > 1) rows.add(TvGlass.Item(R.drawable.ic_play, getString(R.string.yt_open_with), "", false, false) {
                 val hs = LinkApps.handlers(this, url, grp); val now = LinkApps.choice(this, grp)

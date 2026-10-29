@@ -35,7 +35,7 @@ object WebEnd {
         // which then joins the same renderer: ended now, it took the new page with it. Asked again once the caller is done.
         val r = if (Build.VERSION.SDK_INT >= 29) try { v.webViewRenderProcess } catch (e: Throwable) { null } else null
         step { v.destroy() }
-        if (r != null) main.post { if (live.isEmpty()) step { r.terminate() } }
+        if (r != null && Build.VERSION.SDK_INT >= 29) main.post { if (live.isEmpty()) step { r.terminate() } }   // r is only set on 29+: said again for lint
     }
 
     /** What a WebView that is going away is told: its renderer's end is not a crash (the default answer kills the app). */

@@ -33,5 +33,5 @@ object Dream {
         }
     }
 
-    fun canWrite(c: Context) = c.checkSelfPermission(HomeConfig.WRITE_SECURE) == PackageManager.PERMISSION_GRANTED
+    fun canWrite(c: Context) = c.packageManager.checkPermission(HomeConfig.WRITE_SECURE, c.packageName) == PackageManager.PERMISSION_GRANTED
 }

@@ -99,12 +99,14 @@ class WebGameActivity : ComponentActivity() {
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(v: WebView, u: String) { if (errorCard != null) return; loaded(); web.removeCallbacks(timeout) }
                 override fun onPageCommitVisible(v: WebView, u: String) { web.removeCallbacks(timeout); web.postDelayed(pageIn, 5000) }   // the page answered: a slow picture or script is no network failure
+                @android.annotation.TargetApi(26)   // the system calls this only on API 26+
                 override fun onRenderProcessGone(v: WebView, d: android.webkit.RenderProcessGoneDetail): Boolean {   // low memory killed it: a card, not the app closing
                     Log.w(TAG, "renderer gone, crash=${d.didCrash()}")
                     failCard(R.string.web_fail_gone); gone = true
                     dev.tvremote.tvui.WebEnd.end(web)
                     return true
                 }
+                @android.annotation.TargetApi(23)   // the system calls this only on API 23+
                 override fun onReceivedError(v: WebView, r: WebResourceRequest, e: WebResourceError) { if (r.isForMainFrame) { Log.w(TAG, "page error ${e.errorCode} ${e.description} ${r.url}"); failCard(R.string.web_fail_net) } }
                 override fun onReceivedHttpError(v: WebView, r: WebResourceRequest, e: WebResourceResponse) {
                     if (r.isForMainFrame) Log.w(TAG, "page http ${e.statusCode} ${r.url}")

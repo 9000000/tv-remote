@@ -36,15 +36,15 @@ internal class KeepAwake(private val c: Context) {
 
     /** Called when the screen goes off or on, and when the rule changes ([off]: the screen is off). */
     @Synchronized                                                      // the screen's broadcasts and the rule's HTTP threads
-    fun check(off: Boolean = !c.getSystemService(PowerManager::class.java).isInteractive) {
+    fun check(off: Boolean = !(c.getSystemService(android.content.Context.POWER_SERVICE) as PowerManager).isInteractive) {
         if (off && on(c)) hold() else release()
     }
 
     @Suppress("DEPRECATION")
     private fun hold() {
         if (cpu?.isHeld == true) return
-        cpu = c.getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tvsetup:awake").apply { setReferenceCounted(false); acquire() }
-        wifi = try { c.applicationContext.getSystemService(WifiManager::class.java).createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "tvsetup:awake").apply { setReferenceCounted(false); acquire() } } catch (e: Exception) { null }
+        cpu = (c.getSystemService(android.content.Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tvsetup:awake").apply { setReferenceCounted(false); acquire() }
+        wifi = try { (c.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as WifiManager).createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "tvsetup:awake").apply { setReferenceCounted(false); acquire() } } catch (e: Exception) { null }
         Log.i("KeepAwake", "holding")
     }
 

@@ -40,7 +40,7 @@ object NetVideo {
         return try {
             k.connectTimeout = 8_000; k.readTimeout = 15_000
             if (k.responseCode != 200) return false
-            val len = k.contentLengthLong
+            val len = (k.getHeaderField("content-length")?.toLongOrNull() ?: -1L)
             if (len > MAX || (len > 0 && free < len * 2 + 100L * 1024 * 1024)) return false   // room for it and to spare, as for the library
             var n = 0L
             tmp.outputStream().use { o -> k.inputStream.use { s ->

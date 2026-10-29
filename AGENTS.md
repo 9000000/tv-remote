@@ -113,7 +113,8 @@ Unit tests alone do not count; report what was tested where and what could not b
 - **Keep the computer usable:** at most two emulators; heavy steps (Gradle, ffmpeg, `audit.js`) one at a time through
   `dev/test/light.sh <cmd>`, never several with `&`; no video background left looping on the TV emulator (~9.5 cores).
 - Unit tests: `node --test app/shared/tests/ app/games/tests/ dev/themes/test/` (also the pre-push hook: `git config core.hooksPath dev/hooks`),
-  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest` (+ the app you changed). A red speed budget
+  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest` (+ the app you changed); `:<app>:lintDebug` checks
+  only NewApi (minSdk 21: a newer call needs an SDK check; release.sh runs them all). A red speed budget
   (`PerfBudgetTest`, `perf_budget.test.js`) is a regression to find and fix, not a baseline to raise.
 
 ## Handy facts

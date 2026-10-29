@@ -22,7 +22,7 @@ internal fun open(ip: String, port: Int, timeoutMs: Int, via: android.net.Networ
  */
 internal fun Context.reachAroundVpn() {
     val cm = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-    dev.tvremote.core.Diagnose.bindUdp = { s -> try { lanNetwork()?.bindSocket(s) } catch (ignored: Exception) { } }   // the self-check's search for a TV at a new address
+    dev.tvremote.core.Diagnose.bindUdp = { s -> try { if (android.os.Build.VERSION.SDK_INT >= 22) lanNetwork()?.bindSocket(s) } catch (ignored: Exception) { } }   // the self-check's search for a TV at a new address
     Lan.wifi = wifi@{
         if (android.os.Build.VERSION.SDK_INT < 23) return@wifi null  // no activeNetwork: as before
         val out = try { cm.getNetworkCapabilities(cm.activeNetwork) } catch (e: Exception) { null }

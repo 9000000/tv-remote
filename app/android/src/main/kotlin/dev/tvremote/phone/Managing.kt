@@ -287,7 +287,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
                     out = FileOutputStream(f)
                     result = T("pc.saved_file", "path" to f.absolutePath)
                 }
-                val total = c.contentLengthLong
+                val total = c.getHeaderField("content-length")?.toLongOrNull() ?: -1L
                 out.use { o -> c.inputStream.use { input ->
                     val b = ByteArray(65536)
                     var done = 0L

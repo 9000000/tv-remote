@@ -22,7 +22,7 @@ import dev.tvremote.core.adb.TvShell
  */
 internal class DnsWatch(private val c: Context, private val adb: () -> Adb?) {
     private val ui = Handler(Looper.getMainLooper())
-    private val cm = c.getSystemService(ConnectivityManager::class.java)
+    private val cm = c.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     @Volatile private var stopped = false
     @Volatile private var running = false
 

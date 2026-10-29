@@ -268,7 +268,7 @@ internal fun MainActivity.scan() {
                 }
             }
             val stopMdns = announced { ip -> Thread { seen(ip) }.start() }   // TVs also announce themselves; this finds the slow ones
-            val ssdp = Thread { Ssdp.find(3000, { so -> lan?.bindSocket(so) }) { f -> if (synchronized(found) { if (f.ip in found) false else found.add(f.ip) }) ui.post { foundList.addView(foundRow(f)) } } }.apply { start() }   // LG and Samsung TVs answer this
+            val ssdp = Thread { Ssdp.find(3000, { so -> if (android.os.Build.VERSION.SDK_INT >= 22) lan?.bindSocket(so) }) { f -> if (synchronized(found) { if (f.ip in found) false else found.add(f.ip) }) ui.post { foundList.addView(foundRow(f)) } } }.apply { start() }   // LG and Samsung TVs answer this
             val pool = Executors.newFixedThreadPool(96)
             for (net in nets) for (i in 1 until 255) {
                 val ip = net + i

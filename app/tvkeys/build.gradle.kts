@@ -37,7 +37,7 @@ android {
         }
         debug { if (keystore.exists()) signingConfig = signingConfigs.getByName("release") }     // same key as TV Setup's debug build
     }
-    lint { checkReleaseBuilds = false }
+    lint { checkReleaseBuilds = false; checkOnly += "NewApi" }        // lintDebug: a call newer than minSdk 21 (Android 5-6 boxes crashed); release.sh runs it
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
 }

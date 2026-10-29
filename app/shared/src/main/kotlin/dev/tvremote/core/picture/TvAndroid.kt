@@ -88,12 +88,13 @@ private class SurfaceScreen(private val surface: Surface) : Tv.Screen {
             for ((k, v) in keys) f.setInteger(k, v)
             t.start()
             val d = Dec(c, t)
-            c.setCallback(object : MediaCodec.Callback() {
+            val cb = object : MediaCodec.Callback() {
                 override fun onInputBufferAvailable(codec: MediaCodec, index: Int) { d.inputs.add(index) }
                 override fun onOutputBufferAvailable(codec: MediaCodec, index: Int, info: MediaCodec.BufferInfo) = shown(d, index, info)
                 override fun onError(codec: MediaCodec, e: MediaCodec.CodecException) { Log.w(TAG, "decoder error: $e"); if (dec === d) broken = true }
                 override fun onOutputFormatChanged(codec: MediaCodec, format: MediaFormat) {}
-            }, Handler(t.looper))
+            }
+            if (Build.VERSION.SDK_INT >= 23) c.setCallback(cb, Handler(t.looper)) else c.setCallback(cb)   // Android 5: no handler argument, the caller's looper or the main one
             c.configure(f, surface, null, 0)
             c.start()
             if (debug) Log.d(TAG, "decoder ${c.name} lowLatencySupported=$lowOk keys=$keys")

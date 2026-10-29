@@ -24,7 +24,7 @@ import dev.tvremote.core.ontv.Tailscale
  */
 internal class TailscaleWatch(private val c: Context, private val adb: () -> Adb?) {
     private val ui = Handler(Looper.getMainLooper())
-    private val cm = c.getSystemService(ConnectivityManager::class.java)
+    private val cm = c.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     @Volatile private var vpnUp = false
     @Volatile private var vpnLost = 0L                                 // when a VPN last went away: the update kills it first
     @Volatile private var stopped = false

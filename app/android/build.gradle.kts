@@ -43,7 +43,7 @@ android {
         noCompress += "jar"
         ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~:!README.md"   // the default, and the notes beside the jars
     }
-    lint { checkReleaseBuilds = false }
+    lint { checkReleaseBuilds = false; checkOnly += "NewApi" }        // lintDebug: a call newer than minSdk 21 (Android 5-6 boxes crashed); release.sh runs it
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }
     sourceSets["main"].java.srcDirs("../shared/conscrypt", "../shared/src/selfupdate/kotlin", "../shared/src/marks/kotlin")             // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt); SelfUpdate.stage: the shared download + install session

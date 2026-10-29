@@ -41,7 +41,7 @@ internal object QuietUpdate {
         val f = file(c, r.version)
         c.cacheDir.listFiles { x -> x.name.startsWith("quiet-") && x != f }?.forEach { it.delete() }
         if (f.exists()) return
-        if (c.getSystemService(ConnectivityManager::class.java)?.isActiveNetworkMetered != false) { Log.i(TAG, "metered: later"); return }
+        if ((c.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)?.isActiveNetworkMetered != false) { Log.i(TAG, "metered: later"); return }
         val part = File(c.cacheDir, "quiet.part")
         try { r.download(part, null); part.renameTo(f); Log.i(TAG, "fetched ${r.version}") }
         catch (e: Exception) { part.delete(); Log.w(TAG, "fetch ${r.version}: $e") }   // offline, a bad file: next time

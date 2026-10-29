@@ -74,7 +74,7 @@ object ReminderNotice {
 
     fun fire(c: Context, item: Reminders.Item) {
         Reminders.done(c, item.key())
-        val pm = c.getSystemService(PowerManager::class.java)
+        val pm = (c.getSystemService(Context.POWER_SERVICE) as PowerManager)
         if (!pm.isInteractive) return                                  // standby: the TV is not woken, nothing stays pending
         ui.post {
             val a = front?.get()
@@ -139,7 +139,7 @@ object ReminderNotice {
 
     private fun overlay(c: Context, item: Reminders.Item) {
         dismiss?.invoke()
-        val wm = c.getSystemService(WindowManager::class.java)
+        val wm = (c.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
         val card = card(c, item)
         val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
         // focusable only while it is there: it takes the keys (OK / Back) and gives them back when it goes
@@ -155,7 +155,7 @@ object ReminderNotice {
     }
 
     private fun notify(c: Context, item: Reminders.Item) {
-        val nm = c.getSystemService(NotificationManager::class.java)
+        val nm = (c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel("remind", c.getString(R.string.remind_channel), NotificationManager.IMPORTANCE_HIGH))
         val pi = PendingIntent.getActivity(c, item.key().hashCode(), open(c, item), PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0))
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(c, "remind") else @Suppress("DEPRECATION") Notification.Builder(c).setPriority(Notification.PRIORITY_HIGH)

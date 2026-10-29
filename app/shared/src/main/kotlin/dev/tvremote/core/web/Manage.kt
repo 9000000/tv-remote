@@ -502,7 +502,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         for (line in listing.getOrElse(2) { "" }.jsplit("\n")) {
             val t = line.trim()
             if (t.startsWith("Package [")) at = t.substring(9, t.indexOf(']').coerceAtLeast(9))
-            else if (t.startsWith("versionName=") && at != null) { if (t != "versionName=null") versions.putIfAbsent(at, t.substring(12)); at = null }   // the first: an updated system app's own, not the factory one listed later
+            else if (t.startsWith("versionName=") && at != null) { if (t != "versionName=null") versions.getOrPut(at) { t.substring(12) }; at = null }   // the first: an updated system app's own, not the factory one listed later
         }
         val off = (listing.getOrElse(1) { "" }).jsplit("\n").filter { it.startsWith("package:") }.map { it.substring(8).trim() }.toSet()
         for (line in listing[0].jsplit("\n") + (if (system) emptyList() else off.map { "package:$it" }))

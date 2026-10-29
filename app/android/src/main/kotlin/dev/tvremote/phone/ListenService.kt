@@ -89,9 +89,11 @@ class ListenService : Service() {
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val open = PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), flags)
-        fun button(icon: Int, words: String, what: String, code: Int) =
-            Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, icon), words,
-                PendingIntent.getService(this, code, Intent(this, ListenService::class.java).setAction(what), flags)).build()
+        fun button(icon: Int, words: String, what: String, code: Int): Notification.Action {
+            val pi = PendingIntent.getService(this, code, Intent(this, ListenService::class.java).setAction(what), flags)
+            return if (Build.VERSION.SDK_INT >= 23) Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, icon), words, pi).build()
+            else @Suppress("DEPRECATION") Notification.Action.Builder(icon, words, pi).build()   // the Icon constructor is 23+
+        }
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, "listen") else Notification.Builder(this)
         b.setSmallIcon(R.drawable.ic_headphones).setContentTitle(name).setContentText(line.ifEmpty { T("listen_service.listening_to_the_tv") })
             .setContentIntent(open).setOngoing(true).setVisibility(Notification.VISIBILITY_PUBLIC)

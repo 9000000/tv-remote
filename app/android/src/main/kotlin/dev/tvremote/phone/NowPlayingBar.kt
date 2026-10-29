@@ -139,6 +139,7 @@ internal class PlayingBar(private val a: MainActivity) {
             a.frame.addView(this, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER).apply { leftMargin = a.dp(24); rightMargin = a.dp(24) })
         }
     }
+    @android.annotation.TargetApi(24)   // the caller below turns it off under 24
     private fun checkBlack() {
         val shown = o.optString("state", "none") != "none" && a.stage.visibility == View.VISIBLE && a.surface.visibility == View.VISIBLE &&
             a.surface.holder.surface.isValid && android.os.Build.VERSION.SDK_INT >= 24

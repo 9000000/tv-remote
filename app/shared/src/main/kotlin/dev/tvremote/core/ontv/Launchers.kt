@@ -204,7 +204,7 @@ object Launchers {
         try {
             if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
             val md = MessageDigest.getInstance("SHA-256")
-            val total = c.contentLengthLong
+            val total = c.getHeaderField("content-length")?.toLongOrNull() ?: -1L   // not contentLengthLong: API 24
             var done = 0L
             c.inputStream.use { input -> FileOutputStream(to).use { out ->
                 val buf = ByteArray(1 shl 16)

@@ -139,7 +139,7 @@ private fun MainActivity.screenCard(ip: String): View {
     card.background = box(CARD, 14)
     card.clipToOutline = true
     card.isClickable = true
-    card.foreground = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x33FFFFFF), null, box(Color.WHITE, 14))
+    if (android.os.Build.VERSION.SDK_INT >= 23) card.foreground = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x33FFFFFF), null, box(Color.WHITE, 14))
     card.setOnClickListener { connectSaved(ip) }
     card.setOnLongClickListener { askRemove(ip); true }
 

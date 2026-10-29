@@ -275,7 +275,7 @@ object ControlCenter {
         private fun btState(): String {
             val on = try { (a.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter?.isEnabled == true } catch (e: Exception) { false }
             if (!on) return a.getString(R.string.cc_off)
-            val audio = try {
+            val audio = if (Build.VERSION.SDK_INT < 23) null else try {
                 (a.getSystemService(Context.AUDIO_SERVICE) as AudioManager).getDevices(AudioManager.GET_DEVICES_OUTPUTS).firstOrNull {
                     it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || (Build.VERSION.SDK_INT >= 31 && (it.type == AudioDeviceInfo.TYPE_BLE_HEADSET || it.type == AudioDeviceInfo.TYPE_BLE_SPEAKER))
                 }?.productName?.toString()?.takeIf { it.isNotBlank() }

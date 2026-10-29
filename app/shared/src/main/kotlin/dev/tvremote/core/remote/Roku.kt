@@ -122,7 +122,8 @@ class Roku(@Suppress("UNUSED_PARAMETER") dir: File, private val host: String, pr
     override fun text(t: String) {
         if (closed) return
         run {
-            for (ch in t.codePoints().toArray()) {
+            var i = 0
+            while (i < t.length) { val ch = t.codePointAt(i); i += Character.charCount(ch)                   // not codePoints(): API 24
                 if (!ready()) return@run
                 post("/keypress/Lit_" + URLEncoder.encode(String(Character.toChars(ch)), "UTF-8").replace("+", "%20"))
                 Thread.sleep(30)

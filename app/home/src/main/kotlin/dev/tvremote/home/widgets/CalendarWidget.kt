@@ -1,5 +1,6 @@
 package dev.tvremote.home.widgets
 
+import dev.tvremote.home.locale0
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -27,7 +28,7 @@ import java.util.Date
 internal fun Widgets.calendarHalf(widget: LinearLayout, f: Facts, room: Int) {
     val c = f.cal ?: return
     val r = a.resources
-    val loc = resources.configuration.locales[0]
+    val loc = resources.locale0()
     val now = Date()
     val d = c.moon
     val month = r.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
@@ -51,7 +52,7 @@ internal fun Widgets.calendarHalf(widget: LinearLayout, f: Facts, room: Int) {
 /** StandBy's Date: the weekday in red over the month's name, the day as the widget's figure, the lunar date under it. */
 internal fun Widgets.calendarDate(widget: LinearLayout, f: Facts) {
     val c = f.cal ?: return
-    val loc = resources.configuration.locales[0]
+    val loc = resources.locale0()
     val now = Date()
     val d = c.moon
     val month = a.resources.getStringArray(R.array.lunar_month)[d.month - 1] + if (d.leap) a.getString(R.string.lunar_leap) else ""
@@ -77,7 +78,7 @@ internal fun Widgets.calendar(widget: LinearLayout, f: Facts, width: Int, maxH: 
     title.addView(text(r.getStringArray(R.array.cal_month)[c.grid.month - 1], 16f, ACCENT).apply { typeface = BOLD })
     title.addView(text(" " + c.grid.year, 16f, 0x80FFFFFF.toInt()).apply { typeface = MEDIUM })
     if (inner >= dp(320)) title.addView(text(lunar, 12f, 0x99FFFFFF.toInt()).apply { gravity = Gravity.END }, LayoutParams(0, -2, 1f))
-    val view = Month(this@calendar, a, c, Calendar.getInstance(resources.configuration.locales[0]).firstDayOfWeek, inner / 7f, maxH - dp(8))
+    val view = Month(this@calendar, a, c, Calendar.getInstance(resources.locale0()).firstDayOfWeek, inner / 7f, maxH - dp(8))
     widget.addView(title)
     // in a fixed-height widget the month takes all that is left under the title, and the widget gives it some of its padding:
     // six weeks of a long month need every dp there is

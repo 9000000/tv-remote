@@ -78,7 +78,7 @@ class BrowseActivity : Activity() {
         if (b == null) Thread { Pins.mend(applicationContext) }.start()   // pins made with no logo get it (not on io: the world index may download)
         val d = { v: Number -> TvUi.dp(this, v).toInt() }
         val mx = resources.getDimension(R.dimen.tv_margin_x).toInt(); val my = resources.getDimension(R.dimen.tv_margin_y).toInt()   // app/DESIGN-TV.md
-        val root = LinearLayout(this).apply { setBackgroundColor(getColor(R.color.tv_bg)) }
+        val root = LinearLayout(this).apply { @Suppress("DEPRECATION") setBackgroundColor(resources.getColor(R.color.tv_bg)) }
 
         rail = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(mx, my, d(12), my) }
         root.addView(ScrollView(this).apply { addView(rail); isVerticalScrollBarEnabled = false; clipToPadding = false },
@@ -257,9 +257,9 @@ class BrowseActivity : Activity() {
             } else {
                 main.post { if (loading && country == cc) state.loading(getString(R.string.loading_read), 100) }
                 if (iptv.isNotEmpty()) { show(list, if (known) nameOf() else country.uppercase(), doc?.let { Categories.categorize(it, list.byChannel()) }, true) }
-                val cats = if (doc == null || fresh) java.util.concurrent.CompletableFuture.runAsync { Categories.refresh(this, country, fresh) } else null   // beside the providers
+                val cats = if (doc == null || fresh) Providers.async { Categories.refresh(this, country, fresh) } else null   // beside the providers
                 list = Providers.merge(this, country, iptv, fresh)
-                if (cats != null) { cats.join(); doc = Categories.current(this, country) }
+                if (cats != null) { Providers.join(cats); doc = Categories.current(this, country) }
                 val l2 = full(list, doc)
                 val res = doc?.let { Categories.categorize(it, l2.byChannel()) }
                 show(l2, nameOf(), res, false)
@@ -414,7 +414,7 @@ class BrowseActivity : Activity() {
 
     private fun header(text: String) = listOf(Channel(HDR, text, "", "", ""))
 
-    private fun hideKeys(v: View) { getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(v.windowToken, 0) }
+    private fun hideKeys(v: View) { (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0) }
 
     /** Focus to the first result card (not the section header); stays in the field when there is none. */
     private fun firstCard() {
@@ -755,7 +755,7 @@ class BrowseActivity : Activity() {
                 }
                 list.adapter = ad
                 // Back / the keyboard's action key leave the field for the results (the selected country, else the first); Down and Up cross between them
-                val imm = getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                val imm = (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
                 val toList = fun(): Boolean {
                     if (now.isEmpty()) return false
                     val at = now.indexOfFirst { it.code == cc }.coerceAtLeast(0)

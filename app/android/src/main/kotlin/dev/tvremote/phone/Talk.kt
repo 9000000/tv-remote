@@ -65,9 +65,9 @@ internal class Talk(private val a: MainActivity) {
     // ------------------------------------------------------------ open / close
     fun open() {
         if (overlay != null) return
-        if (a.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (a.packageManager.checkPermission(Manifest.permission.RECORD_AUDIO, a.packageName) != PackageManager.PERMISSION_GRANTED) {
             Popup.Builder(a).setTitle(T("talk.title")).setMessage(T("talk.why_mic"))
-                .setPositiveButton(T("common.ok")) { _, _ -> a.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), ASK_MIC) }
+                .setPositiveButton(T("common.ok")) { _, _ -> if (Build.VERSION.SDK_INT >= 23) a.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), ASK_MIC) }   // below 23 it is granted at install
                 .setNegativeButton(T("common.cancel"), null).show()
             return
         }

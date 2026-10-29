@@ -109,8 +109,8 @@ object Mdns {
 
         fun add(records: List<Record>, from: String) {
             for (r in records) when (r.type) {
-                PTR -> if (r.name.equals("$type.local", true)) { instances.add(r.target); sender.putIfAbsent(r.target, from) }
-                SRV -> { srv[r.name] = r; sender.putIfAbsent(r.name, from) }
+                PTR -> if (r.name.equals("$type.local", true)) { instances.add(r.target); sender.getOrPut(r.target) { from } }
+                SRV -> { srv[r.name] = r; sender.getOrPut(r.name) { from } }
                 A -> addr[r.name.lowercase()] = r.ip
             }
         }

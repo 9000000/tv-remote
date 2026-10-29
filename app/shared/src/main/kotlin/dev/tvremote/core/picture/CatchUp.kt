@@ -43,7 +43,8 @@ class CatchUp(private val lagMs: Long, private val fresh: () -> Unit) {
             val it = q.iterator()
             while (it.hasNext()) { val p = it.next(); if (p === key) break; if (p.kind == 2 || p.kind == 3) { it.remove(); gone++ } }
         } else {
-            q.removeIf { (it.kind == 2 || it.kind == 3).also { drop -> if (drop) gone++ } }
+            val it = q.iterator()                                     // not removeIf: API 24, and phones run Android 5
+            while (it.hasNext()) { val p = it.next(); if (p.kind == 2 || p.kind == 3) { it.remove(); gone++ } }
             skipping = true
             if (now - resetAt >= RESET_MS) { resetAt = now; resets++; fresh() }
         }

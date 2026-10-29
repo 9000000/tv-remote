@@ -59,7 +59,7 @@ class PairActivity : Activity() {
         card.addView(line(T("pair.the_code_is_good"), 15, Color.rgb(140, 150, 163), false), gap(22))
         val cancel = TextView(this).apply {                           // something to land on: OK on the remote cancels, as Back does
             text = T("common.cancel"); textSize = 18f; gravity = Gravity.CENTER; isFocusable = true; isClickable = true
-            fun paint(f: Boolean) { background = box(if (f) Color.WHITE else getColor(R.color.tv_card), 14); setTextColor(if (f) Color.BLACK else Color.WHITE) }
+            fun paint(f: Boolean) { background = box(if (f) Color.WHITE else @Suppress("DEPRECATION") resources.getColor(R.color.tv_card), 14); setTextColor(if (f) Color.BLACK else Color.WHITE) }
             paint(false); setOnFocusChangeListener { _, f -> paint(f) }
             setOnClickListener { RemoteService.cancelPairing(); finish() }
         }

@@ -35,7 +35,7 @@ object YouTube {
 
     private fun query(q: String?): Map<String, String> {
         val m = HashMap<String, String>()
-        for (kv in q.orEmpty().split('&')) { val e = kv.indexOf('='); if (e > 0) m.putIfAbsent(kv.substring(0, e), try { java.net.URLDecoder.decode(kv.substring(e + 1), "UTF-8") } catch (x: Exception) { "" }) }
+        for (kv in q.orEmpty().split('&')) { val e = kv.indexOf('='); if (e > 0) m.getOrPut(kv.substring(0, e)) { try { java.net.URLDecoder.decode(kv.substring(e + 1), "UTF-8") } catch (x: Exception) { "" } } }
         return m
     }
 

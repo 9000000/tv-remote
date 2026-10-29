@@ -20,7 +20,7 @@ class PadService : Service() {
     override fun attachBaseContext(b: Context) = super.attachBaseContext(Lang.wrap(b))   // the notification in the app's language
     override fun onBind(i: Intent?): IBinder? = null
     override fun onStartCommand(i: Intent?, flags: Int, id: Int): Int {
-        val nm = getSystemService(NotificationManager::class.java)
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) nm.createNotificationChannel(NotificationChannel(CH, getString(R.string.pad_channel), NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, LibraryActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CH) else Notification.Builder(this)
@@ -35,7 +35,9 @@ class PadService : Service() {
     companion object {
         private const val CH = "pad"
         private const val ID = 8780
-        fun start(ctx: Context) { try { Intent(ctx, PadService::class.java).let { if (Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(it) else ctx.startService(it) } } catch (e: Exception) { } }   // API 26 call: a NoSuchMethodError is not an Exception
+        // a plain start (an activity is in front, so it is allowed), then startForeground: startForegroundService made a refused
+        // startForeground, or a Stop before onStartCommand, crash the app ("did not then call startForeground", census 3d96a7ea)
+        fun start(ctx: Context) { try { ctx.startService(Intent(ctx, PadService::class.java)) } catch (e: Exception) { } }
         fun stop(ctx: Context) { try { ctx.stopService(Intent(ctx, PadService::class.java)) } catch (e: Exception) { } }
     }
 }

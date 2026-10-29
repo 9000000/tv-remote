@@ -22,6 +22,11 @@ import java.text.Normalizer
  * URL is a link of ours, "<provider>:<key>", turned into the real one only when played ([resolve]): those carry a token.
  */
 object Providers {
+    /** [f] on a thread of its own; CompletableFuture is API 24, and TV Channels runs on Android 5-6 boxes (census 8f22ae15). */
+    fun <T> async(f: () -> T): java.util.concurrent.FutureTask<T> = java.util.concurrent.FutureTask(f).also { Thread(it, "channels-async").apply { isDaemon = true }.start() }
+    /** Its result, or what it threw (as join did). */
+    fun <T> join(t: java.util.concurrent.FutureTask<T>): T = try { t.get() } catch (e: java.util.concurrent.ExecutionException) { throw e.cause ?: e }
+
     private val BASES = listOf("https://tvremote.pages.dev/channels/", "https://raw.githubusercontent.com/HoangTran0410/tv-remote/main/docs/channels/")
     private const val DAY = 24 * 3600_000L
 
@@ -88,14 +93,14 @@ object Providers {
     fun merge(c: Context, cc: String, iptv: List<Channel>, fresh: Boolean): List<Channel> {
         val ps = all(c).filter { it.country == cc && it.o.has("list") }
         if (ps.isEmpty()) return iptv
-        val byName = HashMap<String, Channel>(); for (ch in iptv) byName.putIfAbsent(key(ch.name), ch)
+        val byName = HashMap<String, Channel>(); for (ch in iptv) byName.getOrPut(key(ch.name)) { ch }
         val before = HashMap<String, MutableList<Channel>>()             // a provider's stream to put ahead of a channel's own
         val after = ArrayList<Channel>()
-        val gots = ps.map { p -> java.util.concurrent.CompletableFuture.supplyAsync {          // each provider is its own server: asked together, not one after another
+        val gots = ps.map { p -> async {          // each provider is its own server: asked together, not one after another
             Catalog.cached(c, "prov-${p.id}-$cc.json", "", fresh, null) { channelsJson(p) }?.let { fromJson(it) }.orEmpty()
         } }
         for ((p, g) in ps.zip(gots)) {
-            val got = g.join()
+            val got = join(g)
             val own = ArrayList<Channel>()
             for (ch in got) {
                 val k = ch.url.substringAfter(':')
@@ -106,7 +111,7 @@ object Providers {
                 val s = ch.copy(id = same.id, name = same.name, logo = logo, group = same.group)
                 if (p.first) before.getOrPut(same.id) { ArrayList() }.add(s) else after.add(s)
             }
-            for (ch in own) byName.putIfAbsent(key(ch.name), ch)       // a later provider's same channel joins this one: VTVgo's Nghệ An under VieON's, not a second card
+            for (ch in own) byName.getOrPut(key(ch.name)) { ch }       // a later provider's same channel joins this one: VTVgo's Nghệ An under VieON's, not a second card
         }
         val out = ArrayList<Channel>(iptv.size + after.size)
         val done = HashSet<String>()

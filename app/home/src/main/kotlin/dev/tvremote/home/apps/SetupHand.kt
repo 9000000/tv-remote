@@ -21,6 +21,7 @@ object SetupHand {
         val out = b?.getString("json")?.let { try { JSONObject(it) } catch (e: Exception) { null } }
         @Suppress("DEPRECATION") val go = b?.getParcelable<PendingIntent>("go")
         if (go != null) try {
+            if (Build.VERSION.SDK_INT < 23) { go.send(); return out }   // ActivityOptions.makeBasic and send(…, options) are 23+
             val o = ActivityOptions.makeBasic()
             if (Build.VERSION.SDK_INT >= 34) o.setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
             go.send(a, 0, null, null, null, null, o.toBundle())

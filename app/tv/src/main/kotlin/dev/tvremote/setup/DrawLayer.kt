@@ -98,7 +98,7 @@ internal object DrawLayer {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT)
         return try {
-            c.getSystemService(WindowManager::class.java).addView(b, lp)
+            (c.getSystemService(android.content.Context.WINDOW_SERVICE) as WindowManager).addView(b, lp)
             view = b
             b
         } catch (e: Exception) {
@@ -111,7 +111,7 @@ internal object DrawLayer {
         ui.removeCallbacks(idle)
         val b = view ?: return
         view = null
-        try { app?.getSystemService(WindowManager::class.java)?.removeView(b) } catch (e: Exception) { }
+        try { (app?.getSystemService(android.content.Context.WINDOW_SERVICE) as? WindowManager)?.removeView(b) } catch (e: Exception) { }
     }
 
     /** The strokes and pictures, kept in 0..10000 of the screen so they fit it whatever its size. */

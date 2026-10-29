@@ -113,6 +113,7 @@ object Guard {
         stamps.addLast(now); while (stamps.size > BURST) stamps.removeFirst()
         val burst = stamps.size >= BURST && now - stamps.first() < BURST_MS
         if (GuardLogic.goneWindow(t)) { Log.w("Guard", "a dialog of a closed screen: $t"); return true }
+        if (GuardLogic.systemFault(t)) { Log.w("Guard", "Android's own error: $t"); return true }
         if (GuardLogic.inLifecycle(t) || burst) { save(Looper.getMainLooper().thread, t, died = true); return false }
         report(Looper.getMainLooper().thread, t)
         return true

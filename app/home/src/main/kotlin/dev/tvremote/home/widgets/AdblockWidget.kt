@@ -29,7 +29,7 @@ internal object Adblock {
     private fun prefs(c: Context) = c.getSharedPreferences("adblock", Context.MODE_PRIVATE)
 
     fun supported() = Build.VERSION.SDK_INT >= HomeConfig.ADBLOCK_MIN_SDK
-    fun canWrite(c: Context) = c.checkSelfPermission(HomeConfig.WRITE_SECURE) == PackageManager.PERMISSION_GRANTED
+    fun canWrite(c: Context) = c.packageManager.checkPermission(HomeConfig.WRITE_SECURE, c.packageName) == PackageManager.PERMISSION_GRANTED
     private fun get(c: Context, k: String) = try { Settings.Global.getString(c.contentResolver, k) } catch (e: Exception) { null }
 
     /** The ad-blocking host Private DNS names now, else null. */
@@ -73,9 +73,9 @@ internal object Adblock {
      * old way and passed (FPT box: every Private DNS fails there, yet the widget stayed on and the TV lost the Internet): first wait
      * until the network says it uses [target], then past InetAddress's own 2 s cache, then ask.
      */
-    @Suppress("DEPRECATION")
+    @Suppress("DEPRECATION") @android.annotation.TargetApi(28)   // only after supported(): Private DNS is Android 9+
     private fun resolves(c: Context, target: String): Boolean {
-        val cm = c.getSystemService(android.net.ConnectivityManager::class.java)
+        val cm = c.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
         val taken = System.currentTimeMillis() + 6000
         while (System.currentTimeMillis() < taken) {
             val lp = cm?.activeNetwork?.let { cm.getLinkProperties(it) }
