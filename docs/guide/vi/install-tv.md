@@ -24,4 +24,4 @@ Link trực tiếp: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/re
 - TV chỉ có **Gỡ lỗi không dây** (không có cổng 5555)? Mở trang web của TV, bấm **📡 Ghép bằng Gỡ lỗi không dây**: xem “[Gỡ lỗi không dây](wireless.md)”.
 - Màn hình chính của TV Setup có dòng mã ghép (6 số) và menu có mục **Quên mọi khóa ADB**.
 - Cài nhầm TV Setup lên điện thoại? App mời mở app điện thoại, hoặc chọn **Vẫn dùng ở đây**.
-- Hàng ba ô **TV Home**, **TV Channels**, **TV Games** trên màn hình chính ghi **Đã cài**, **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.
+- Hàng ba ô **TV Home**, **TV Channels**, **TV Games** trên màn hình chính ghi **số bản** (vd v0.9.0), **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.

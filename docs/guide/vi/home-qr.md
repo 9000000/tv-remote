@@ -14,4 +14,4 @@ Mã QR to ngay màn hình chính, quét từ ghế sofa: Wi-Fi cho khách, link 
 - Không cần app TV Remote, không cần mã ghép đôi. Mã dùng một lần, phiên 60 phút, tự đóng sau 10 phút không dùng.
 - Đóng mã QR trên TV để xem thử: điện thoại vẫn đang cài tiếp được; chỉ mã cũ hết dùng.
 - Phiên hết hạn: mở lại **Quản lý từ điện thoại** trên TV, quét mã mới.
-- Ô app trên lưới (kể cả lối tắt ghim) gỡ được bằng **Gỡ khỏi lưới**: xem [Thêm và gỡ ô](home-add.md).
+- Ô app trên lưới (kể cả lối tắt ghim) gỡ được bằng **Bỏ khỏi màn hình chính**: xem [Thêm và gỡ ô](home-add.md).

@@ -44,3 +44,10 @@ test('docs/guide/*.md match guide.html', () => {
   assert.deepStrictEqual(have.sort(), Object.keys(want).sort(), 'run: node dev/gen/guide_md.js');
   for (const [f, s] of Object.entries(want)) assert.strictEqual(fs.readFileSync(path.join(dir, f), 'utf8'), s, f + ' is stale: run node dev/gen/guide_md.js');
 });
+
+test('every topic has data-v, data-src and an entry in docs/data/since.json (release.sh stamps both)', () => {
+  const since = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../docs/data/since.json'), 'utf8')).topics;
+  const bad = [...HTML.matchAll(/<article class="topic" id="([^"]+)"([^>]*)>/g)]
+    .filter(([, id, attrs]) => !(id in since) || !/ data-v="[^"]+"/.test(attrs) || !/ data-src="/.test(attrs)).map(([, id]) => id);
+  assert.deepStrictEqual(bad, []);
+});

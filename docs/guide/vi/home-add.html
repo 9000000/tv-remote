@@ -4,7 +4,7 @@ Một bảng để thêm, chia nhóm: app chưa có trên lưới, ghim kênh / 
 
 1. Trên lưới, bấm ô **＋ Thêm** (hoặc tab TV → Tùy chỉnh → **Thêm vào màn hình chính**).
 2. Lối tắt đã ghim (VTV1...) hiện trong danh sách có dấu tích: bấm để gỡ hoặc ghim lại. Mục vừa thêm nằm cuối lưới, đang chọn sẵn để di chuyển ngay.
-3. Gỡ: giữ OK trên ô → **Trên màn hình chính** → **Bỏ khỏi lưới**. Lối tắt gỡ là gỡ hẳn, kể cả ghim của hệ thống.
+3. Gỡ: giữ OK trên ô → **Trên màn hình chính** → **Bỏ khỏi màn hình chính**. Lối tắt gỡ là gỡ hẳn, kể cả ghim của hệ thống.
 
 - Gỡ cài đặt một app (như TV Channels) thì lối tắt và live widget của nó tự rời lưới, dock, thứ tự và bảng chọn, cả khi gỡ lúc TV Home không chạy.
 - Hàng **Xem tiếp** là phim xem dở ở app khác, cuộn ngang. Giữ OK trên một ô: **Vị trí hàng**, **Ghim vào lưới**, hoặc **Không hiện mục của** app đó.

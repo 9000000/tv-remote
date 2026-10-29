@@ -7,7 +7,7 @@ TV chậm? Tối ưu giúp mở app nhanh hơn. Không gỡ gì cả, và **Hoà
 3. Bấm **⚡ Chạy tối ưu** và xác nhận.
 4. Không ưng? Bấm **↩ Hoàn tác**.
 
-> 💡 Android TV và Google TV đều đổi được màn hình chính. Sau khi đổi, app kiểm tra nút Home: TV không cho đổi thì màn hình chính cũ được bật lại.
+> 💡 Android TV và Google TV đều đổi được màn hình chính. TV không cho đổi hẳn thì TV Setup vẫn cho nút Home mở màn hình chính đã chọn.
 
 > 💡 Mất màn hình chính sau khi tối ưu? Trên TV: Cài đặt → Ứng dụng → Ứng dụng hệ thống → Android TV Home (hoặc Google TV Home) → **Bật**.
 

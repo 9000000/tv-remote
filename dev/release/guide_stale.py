@@ -30,10 +30,10 @@ except (OSError, ValueError):
     SINCE = {}
 for tid, v, src in re.findall(r'<article class="topic" id="([^"]+)" data-v="([^"]+)" data-src="([^"]*)"', html):
     if tid not in SINCE: print(f"{tid}: no entry in docs/data/since.json (add it: \"since\": \"next\")", file=sys.stderr)
-    paths = [full(x) for x in src.split()]
+    paths = [full(x) for x in src.split() if x != "docs/guide.html"]   # its own text changes in every guide edit: no signal
     gone = [p for p in paths if not os.path.exists(os.path.join(ROOT, p))]
-    if v == "next":
-        log = ""                                                     # checked against main: not released yet
+    if v == "next" or not paths:
+        log = ""                                                     # nothing in the code it follows (git log -- with no path = every commit); "next": read on main, not released yet
     elif not git("tag", "-l", "v" + v):
         log = f"(no tag v{v})"
     else:

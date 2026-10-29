@@ -24,4 +24,4 @@ Direct links: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases
 - A TV with **Wireless debugging** only (no port 5555)? Open the TV's web page and press **📡 Pair with Wireless debugging**: see “[Wireless debugging](wireless.md)”.
 - TV Setup's main screen shows the pairing code (6 digits) and its menu has **Forget all ADB keys**.
 - TV Setup on a phone by mistake? It offers the phone app, or **Use it here anyway**.
-- The row of three tiles on the main screen, **TV Home**, **TV Channels** and **TV Games**, says **Installed**, **Not installed** or **Update**: press to open, install or update, no ADB needed.
+- The row of three tiles on the main screen, **TV Home**, **TV Channels** and **TV Games**, shows **the version** (e.g. v0.9.0), **Not installed** or **Update**: press to open, install or update, no ADB needed.

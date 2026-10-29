@@ -14,4 +14,4 @@ Big QR codes on the home screen, readable from the sofa: guest Wi-Fi, a menu lin
 - No TV Remote app and no pairing code. The code works once, the session lasts 60 minutes and closes after 10 idle ones.
 - Closing the QR on the TV to look at it: the phone carries on; only the old code stops working.
 - Session over: open **Manage from phone** on the TV again and scan the new code.
-- Tiles on the grid (pinned shortcuts too) come off with **Remove from grid**: see [Add and remove tiles](home-add.md).
+- Tiles on the grid (pinned shortcuts too) come off with **Remove from the grid**: see [Add and remove tiles](home-add.md).

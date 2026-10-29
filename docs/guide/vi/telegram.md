@@ -17,6 +17,6 @@ Lệnh:
 /say Ăn cơm nhé  /shot  /remote  /help
 ```
 
-Chat mới ghép chỉ có quyền **Điều khiển**; chủ TV nâng lên **Toàn quyền** trong danh sách chat.
+Chat mới ghép chỉ có quyền **Chỉ remote**; chủ TV nâng lên **Toàn quyền** trong danh sách chat.
 
 Ảnh chụp màn hình đi qua máy chủ Telegram. Dừng bất cứ lúc nào: **Không bật**, **Xoá token** (quên luôn chat) hoặc xoá từng chat.

@@ -95,7 +95,7 @@ Direct links: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases
 - A TV with **Wireless debugging** only (no port 5555)? Open the TV's web page and press **📡 Pair with Wireless debugging**: see “[Wireless debugging](#wireless)”.
 - TV Setup's main screen shows the pairing code (6 digits) and its menu has **Forget all ADB keys**.
 - TV Setup on a phone by mistake? It offers the phone app, or **Use it here anyway**.
-- The row of three tiles on the main screen, **TV Home**, **TV Channels** and **TV Games**, says **Installed**, **Not installed** or **Update**: press to open, install or update, no ADB needed.
+- The row of three tiles on the main screen, **TV Home**, **TV Channels** and **TV Games**, shows **the version** (e.g. v0.9.0), **Not installed** or **Update**: press to open, install or update, no ADB needed.
 
 ## Open the TV's web page (iPhone, any browser)
 
@@ -400,7 +400,7 @@ A slow TV? Optimize makes apps open faster. Nothing is uninstalled, and **Undo**
 3. Tap **⚡ Run optimize** and confirm.
 4. Not happy? Tap **↩ Undo**.
 
-> 💡 Works on Android TV and Google TV. After the swap the app checks where Home goes: if the TV will not allow it, the old home screen comes back on.
+> 💡 Works on Android TV and Google TV. Where the TV will not let it change, TV Setup still makes Home open the one you picked.
 
 > 💡 Lost the home screen after optimizing? On the TV: Settings → Apps → System apps → Android TV Home (or Google TV Home) → **Enable**.
 
@@ -531,7 +531,7 @@ Big QR codes on the home screen, readable from the sofa: guest Wi-Fi, a menu lin
 - No TV Remote app and no pairing code. The code works once, the session lasts 60 minutes and closes after 10 idle ones.
 - Closing the QR on the TV to look at it: the phone carries on; only the old code stops working.
 - Session over: open **Manage from phone** on the TV again and scan the new code.
-- Tiles on the grid (pinned shortcuts too) come off with **Remove from grid**: see [Add and remove tiles](#home-add).
+- Tiles on the grid (pinned shortcuts too) come off with **Remove from the grid**: see [Add and remove tiles](#home-add).
 
 ## Live widgets in TV Home's app grid
 
@@ -560,7 +560,7 @@ One panel to add, in groups: apps not on the grid, pinned channels / videos, liv
 
 1. On the grid press the **＋ Add** tile (or TV tab → Customize → **Add to home screen**).
 2. Pinned shortcuts (VTV1...) show with a check mark: press to unpin or pin again. A new item lands at the end of the grid, already picked so you can move it.
-3. Remove: hold OK on a tile → **On the home screen** → **Take off the grid**. A shortcut stays gone, its system pin too.
+3. Remove: hold OK on a tile → **On the home screen** → **Remove from the grid**. A shortcut stays gone, its system pin too.
 
 - Uninstall an app (such as TV Channels) and its shortcuts and live widgets leave the grid, dock, order and picker by themselves, even if it was removed while TV Home was not running.
 - The **Play Next** row is what you left half-watched in other apps, scrolling sideways. Hold OK on one: **Row position**, **Pin to the grid**, or **Don't show** that app's items.
@@ -598,15 +598,15 @@ A theme changes the whole home screen in one press: background, widgets, widget 
 
 ### Tips
 
-- Switching from an unsaved look keeps it as **Previous look**, so you can go back.
+- Switching from an unsaved look keeps it as **Before this theme**, so you can go back.
 - Hold OK on a theme (web: the ⓘ button) to see what it sets.
 - Ready-made themes update from the website, no new TV Home needed.
 
 ## Quick settings (TV Home)
 
-The Settings button on the top bar opens a panel in Customize's style: Network (Wi-Fi name), Inputs (or Bluetooth when the TV has no inputs), Sleep timer, Kids lock, TV settings, Customize.
+The Settings button on the top bar opens a panel in Customize's style: Network (Wi-Fi name), Inputs (or Bluetooth when the TV has no inputs), Sleep timer, Kids mode, TV settings, Customize.
 
-Kids lock: tap to turn on; when on, a tap opens the PIN screen to turn it off. Needs TV Setup (greyed without it). Round buttons: Clear RAM, Turn off the TV (Screensaver, Screen off, Restart, Power off).
+Kids mode: tap to turn on; when on, a tap (asks the PIN) picks the apps or turns it off. Needs TV Setup (greyed without it). Round buttons: Clear RAM, Turn off the TV (Screensaver, Screen off, Restart, Power off).
 
 Customize → Look → **Show only plugged-in HDMI/AV inputs** (off by default): empty ports go in More inputs.
 
@@ -925,7 +925,7 @@ Once unlocked it stays open until another app comes up or the TV turns off; open
 3. Save the 8 **backup codes** when adding Authenticator (each works once). If a child may know the PIN: change it, or turn it off once Authenticator is on.
 4. **Open 30 min / 1 hour / 2 hours / Rest of today**, **Lock now**, and the **📺 Total TV time** card per day (+30 min when needed).
 
-> 💡 TV Home → **Quick settings** has a **Kids lock** tile; turning it off asks the PIN.
+> 💡 TV Home → **Quick settings** has a **Kids mode** tile; turning it off asks the PIN.
 
 ## App schedule: days and hours
 
@@ -969,7 +969,7 @@ Message your own bot to turn the TV off or on, set the volume, open apps, take a
 
 1. In Telegram open **@BotFather**, send `/newbot`, pick a name and a username ending in `bot`.
 2. BotFather returns a **token** (`123456789:AAH…`). Whoever has it controls the bot: share it with no one.
-3. 🛠️ Settings on the TV or its web page → **Control from Telegram** → **Allow**, paste the token, **Save**.
+3. 🛠️ Settings on the TV or its web page → **Control by Telegram** → **On**, paste the token, **Save**.
 4. Press **Make pairing code**: a 6-digit code shows in Settings and on the TV screen, single use, 5 minutes.
 5. Open the bot (private chat or group), send `/pair 123456`. Unknown chats get no answer at all.
 6. Five wrong tries cancel the code and lock pairing for 15 minutes; a new code unlocks.
@@ -982,9 +982,9 @@ Commands:
 /say Ăn cơm nhé  /shot  /remote  /help
 ```
 
-A new chat gets **Remote** rights; the owner can raise it to **Full** in the chat list.
+A new chat gets **Remote only** rights; the owner can raise it to **Full access** in the chat list.
 
-Screenshots pass through Telegram's servers. Stop any time: **Don't allow**, **Remove token** (forgets chats too) or remove one chat.
+Screenshots pass through Telegram's servers. Stop any time: **Off**, **Remove token** (forgets chats too) or remove one chat.
 
 ## Telegram: alerts and bedtime
 
@@ -998,7 +998,7 @@ More bot commands, and the TV messages you when something happens. A paired chat
 
 1. **/apps** shows today's most used apps; **/usage** gives the top 5 and the total screen time.
 2. **/now** tells what is playing, with a screenshot button. **/channel** opens a channel in TV Channels.
-3. **/bedtime**, **/limits**, **/schedule** show the rules. A **Full** chat can switch bedtime, block or unblock an app; every change has an **Undo** button.
+3. **/bedtime**, **/limits**, **/schedule** show the rules. A **Full access** chat can switch bedtime, block or unblock an app; every change has an **Undo** button.
 4. **/alerts** picks what the TV sends by itself: TV on or off, app closed, bedtime, sleep timer, a new device. At most one per kind per minute.
 
 In **🛠️ Settings** you see the bot's status, a QR to pair with one scan, each chat with its rights and alerts, and a 7-day history. The words of /type and /say are never kept.

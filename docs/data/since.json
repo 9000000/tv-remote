@@ -48,6 +48,7 @@
   "channels": {"since": "0.16.0"},
   "games": {"since": "0.17.0"},
   "privacy": {"since": "0.17.0"},
+  "tracking-other": {"since": "0.33.0"},
   "draw": {"since": "0.1.0"},
   "photo": {"since": "0.1.0"},
   "screenshot": {"since": "0.1.0"},

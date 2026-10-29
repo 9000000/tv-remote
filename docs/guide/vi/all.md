@@ -95,7 +95,7 @@ Link trực tiếp: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/re
 - TV chỉ có **Gỡ lỗi không dây** (không có cổng 5555)? Mở trang web của TV, bấm **📡 Ghép bằng Gỡ lỗi không dây**: xem “[Gỡ lỗi không dây](#wireless)”.
 - Màn hình chính của TV Setup có dòng mã ghép (6 số) và menu có mục **Quên mọi khóa ADB**.
 - Cài nhầm TV Setup lên điện thoại? App mời mở app điện thoại, hoặc chọn **Vẫn dùng ở đây**.
-- Hàng ba ô **TV Home**, **TV Channels**, **TV Games** trên màn hình chính ghi **Đã cài**, **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.
+- Hàng ba ô **TV Home**, **TV Channels**, **TV Games** trên màn hình chính ghi **số bản** (vd v0.9.0), **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.
 
 ## Mở trang web của TV (iPhone, trình duyệt)
 
@@ -251,7 +251,7 @@ Trên app điện thoại, nút **Thu nhỏ hình** cạnh toàn màn hình th�
 
 Clipboard là chỗ TV giữ chữ vừa sao chép. Dùng để xem chữ trên TV, lấy về máy, hoặc đưa chữ lên TV.
 
-1. Thêm phím → **Mở trên TV** → **Clipboard của TV**.
+1. Thêm phím → **Mở trên TV** → **Bộ nhớ tạm của TV**.
 2. Xem chữ TV đang sao chép. Bấm **Chép về máy** để lấy về.
 3. Muốn đưa chữ lên TV: gõ chữ, gửi lên, rồi dán vào ô đang gõ trên TV.
 
@@ -400,7 +400,7 @@ TV chậm? Tối ưu giúp mở app nhanh hơn. Không gỡ gì cả, và **Hoà
 3. Bấm **⚡ Chạy tối ưu** và xác nhận.
 4. Không ưng? Bấm **↩ Hoàn tác**.
 
-> 💡 Android TV và Google TV đều đổi được màn hình chính. Sau khi đổi, app kiểm tra nút Home: TV không cho đổi thì màn hình chính cũ được bật lại.
+> 💡 Android TV và Google TV đều đổi được màn hình chính. TV không cho đổi hẳn thì TV Setup vẫn cho nút Home mở màn hình chính đã chọn.
 
 > 💡 Mất màn hình chính sau khi tối ưu? Trên TV: Cài đặt → Ứng dụng → Ứng dụng hệ thống → Android TV Home (hoặc Google TV Home) → **Bật**.
 
@@ -531,7 +531,7 @@ Mã QR to ngay màn hình chính, quét từ ghế sofa: Wi-Fi cho khách, link 
 - Không cần app TV Remote, không cần mã ghép đôi. Mã dùng một lần, phiên 60 phút, tự đóng sau 10 phút không dùng.
 - Đóng mã QR trên TV để xem thử: điện thoại vẫn đang cài tiếp được; chỉ mã cũ hết dùng.
 - Phiên hết hạn: mở lại **Quản lý từ điện thoại** trên TV, quét mã mới.
-- Ô app trên lưới (kể cả lối tắt ghim) gỡ được bằng **Gỡ khỏi lưới**: xem [Thêm và gỡ ô](#home-add).
+- Ô app trên lưới (kể cả lối tắt ghim) gỡ được bằng **Bỏ khỏi màn hình chính**: xem [Thêm và gỡ ô](#home-add).
 
 ## Live widget trong lưới app của TV Home
 
@@ -560,7 +560,7 @@ Một bảng để thêm, chia nhóm: app chưa có trên lưới, ghim kênh / 
 
 1. Trên lưới, bấm ô **＋ Thêm** (hoặc tab TV → Tùy chỉnh → **Thêm vào màn hình chính**).
 2. Lối tắt đã ghim (VTV1...) hiện trong danh sách có dấu tích: bấm để gỡ hoặc ghim lại. Mục vừa thêm nằm cuối lưới, đang chọn sẵn để di chuyển ngay.
-3. Gỡ: giữ OK trên ô → **Trên màn hình chính** → **Bỏ khỏi lưới**. Lối tắt gỡ là gỡ hẳn, kể cả ghim của hệ thống.
+3. Gỡ: giữ OK trên ô → **Trên màn hình chính** → **Bỏ khỏi màn hình chính**. Lối tắt gỡ là gỡ hẳn, kể cả ghim của hệ thống.
 
 - Gỡ cài đặt một app (như TV Channels) thì lối tắt và live widget của nó tự rời lưới, dock, thứ tự và bảng chọn, cả khi gỡ lúc TV Home không chạy.
 - Hàng **Xem tiếp** là phim xem dở ở app khác, cuộn ngang. Giữ OK trên một ô: **Vị trí hàng**, **Ghim vào lưới**, hoặc **Không hiện mục của** app đó.
@@ -606,7 +606,7 @@ Một chủ đề đổi cả màn hình chính trong một lần bấm: hình n
 
 Nút Cài đặt trên thanh trên mở bảng cùng kiểu Tùy chỉnh: Mạng (tên Wi-Fi), Nguồn vào (hoặc Bluetooth nếu TV không có nguồn vào), Hẹn giờ tắt, Khoá trẻ em, Cài đặt TV, Tùy chỉnh.
 
-Khoá trẻ em: chạm để bật, bật rồi thì chạm mở màn hình mã PIN để tắt. Cần TV Setup (không có thì mờ). Nút tròn: Dọn RAM, Tắt TV (Màn chờ, Tắt màn hình, Khởi động lại, Tắt hẳn).
+Khoá trẻ em: chạm để bật; bật rồi thì chạm (hỏi mã PIN) để chọn app hoặc tắt. Cần TV Setup. Nút tròn: Dọn RAM, Tắt TV (Màn chờ, Tắt màn hình, Khởi động lại, Tắt hẳn).
 
 Tùy chỉnh → Giao diện → **Chỉ hiện cổng HDMI/AV đang cắm** (mặc định tắt): cổng trống nằm trong Nguồn vào khác.
 
@@ -982,7 +982,7 @@ Lệnh:
 /say Ăn cơm nhé  /shot  /remote  /help
 ```
 
-Chat mới ghép chỉ có quyền **Điều khiển**; chủ TV nâng lên **Toàn quyền** trong danh sách chat.
+Chat mới ghép chỉ có quyền **Chỉ remote**; chủ TV nâng lên **Toàn quyền** trong danh sách chat.
 
 Ảnh chụp màn hình đi qua máy chủ Telegram. Dừng bất cứ lúc nào: **Không bật**, **Xoá token** (quên luôn chat) hoặc xoá từng chat.
 
@@ -1228,5 +1228,5 @@ Màn hình Quản lý trong app điện thoại dùng trình duyệt của Andro
 | Tailscale không ra link | Chờ thêm rồi bấm lại **🔑** ([Tailscale](#away)). |
 | Play Protect cảnh báo | Chọn “Vẫn cài”. Mã nguồn công khai. |
 | Fire TV: nút Home / Alexa chết, các phím khác vẫn chạy | Cài đặt ban đầu chưa xong: app tự báo ở đầu trang, bấm **Sửa** (đặt `user_setup_complete` = 1). |
-| Cài đặt của TV đứng ở trang Chuyển văn bản thành giọng nói | Chạy lệnh `pm clear com.google.android.tts` (mục Dòng lệnh, hoặc `adb shell`); giọng đọc tải lại ở lần dùng đầu. |
+| Cài đặt của TV đứng ở trang Chuyển văn bản thành giọng nói | Chạy lệnh `pm clear com.google.android.tts` (mục Terminal, hoặc `adb shell`); giọng đọc tải lại ở lần dùng đầu. |
 | Trang web của TV không hiện mã ghép | TV không có ADB nên chưa tự hiện được: mở app TV Setup trên TV, mã ở màn hình chính (2 phút). Xem [Mở trang web của TV](#web-iphone). |
