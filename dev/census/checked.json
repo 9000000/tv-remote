@@ -9,10 +9,20 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
- "03776095643e4e96a8e381de|0.30.0": {
-  "at": "2026-10-28T14:05:29+07:00",
+ "00de8c6c546d5066099a0fa8|0.32.1": {
+  "at": "2026-10-29T17:19:38+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "03776095643e4e96a8e381de|0.30.0": {
+  "at": "2026-10-29T17:19:55+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "03776095643e4e96a8e381de|0.32.1": {
+  "at": "2026-10-29T17:19:55+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "05a960b8701c5d39240e4c3e|0.27.0": {
   "at": "2026-10-27T09:37:01+07:00",
@@ -54,6 +64,11 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "10008337d9a0f8f648c7fce1|0.32.1": {
+  "at": "2026-10-29T17:19:55+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "10beb007bf91c5ebda6acc25|0.25.0": {
   "at": "2026-10-27T09:37:02+07:00",
   "n": 1,
@@ -70,14 +85,29 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "11dae087510cdce770d7ff44|0.31.0": {
-  "at": "2026-10-28T14:05:31+07:00",
+  "at": "2026-10-29T17:19:55+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "11dae087510cdce770d7ff44|0.32.1": {
+  "at": "2026-10-29T17:19:55+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "11dae087510cdce770d7ff44|0.33.1": {
+  "at": "2026-10-29T17:19:55+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "11e6a1d8790c4769373b5dbb|0.27.0": {
-  "at": "2026-10-27T09:37:28+07:00",
+  "at": "2026-10-29T17:19:39+07:00",
   "n": 1,
-  "note": "zaloJSV2: injected by the Zalo in-app browser, not ours"
+  "note": "zaloJSV2 injected by a TV browser, not ours"
+ },
+ "11e6a1d8790c4769373b5dbb|0.32.1": {
+  "at": "2026-10-29T17:19:39+07:00",
+  "n": 1,
+  "note": "zaloJSV2 injected by a TV browser, not ours"
  },
  "13ebb1a66fdaf61270829f5a|0.26.3": {
   "at": "2026-10-28T14:05:32+07:00",
@@ -94,6 +124,26 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "15bc83da3a291a861c407efa|0.32.1": {
+  "at": "2026-10-29T17:19:56+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "163f74012b79a1773923e506|0.33.1": {
+  "at": "2026-10-29T17:19:39+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "166d72e6a7eb039a3715a57a|0.33.1": {
+  "at": "2026-10-29T17:19:40+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "1687964a36ac08f836317d80|0.32.1": {
+  "at": "2026-10-29T17:19:56+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "18d5207d7465e70cbd3ae5b1|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
   "n": 1,
@@ -105,44 +155,59 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "1b64c0fdb7081f015b2765c2|0.22.1": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 1,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.23.0": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 2,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.24.0": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 5,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.24.1": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 2,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.25.0": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 4,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.0": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 1,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.1": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 6,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1b64c0fdb7081f015b2765c2|0.26.3": {
-  "at": "2026-10-28T14:05:21+07:00",
+  "at": "2026-10-29T17:19:27+07:00",
+  "n": 5,
+  "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
+ },
+ "1bfd183ebabe1f558e4b349e|0.33.1": {
+  "at": "2026-10-29T17:19:40+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "1d068b0e2ad4d8683265d6a9|0.32.1": {
+  "at": "2026-10-29T17:19:27+07:00",
   "n": 4,
-  "note": "already fixed: setup.js checks typeof fleetCheck"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "1d068b0e2ad4d8683265d6a9|0.33.1": {
+  "at": "2026-10-29T17:19:27+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "1d1586341fa4c7bfe6945938|0.17.0": {
   "at": "2026-10-28T14:05:17+07:00",
@@ -150,9 +215,24 @@
   "note": "fixed: TV Home's bg executor drops jobs after onDestroy's shutdown (DiscardPolicy)"
  },
  "1d6f4d6ca98627c06c8cca53|0.30.0": {
-  "at": "2026-10-28T14:05:32+07:00",
+  "at": "2026-10-29T17:19:57+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "1d6f4d6ca98627c06c8cca53|0.32.1": {
+  "at": "2026-10-29T17:19:57+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "1eaf9599017372e7ef226194|0.31.0": {
+  "at": "2026-10-29T17:19:57+07:00",
+  "n": 1,
+  "note": "fixed in 314c0f33 (Adb ArrayList(streams.values))"
+ },
+ "21d6ea2f3f739402aeb51852|0.32.1": {
+  "at": "2026-10-29T17:19:32+07:00",
+  "n": 2,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "2762d2d3012a1454188ebd57|0.11.0": {
   "at": "2026-10-28T14:05:20+07:00",
@@ -194,10 +274,20 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "2df6318a25d093214bc16108|0.32.1": {
+  "at": "2026-10-29T17:19:58+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "304d571eb8351582e87856f4|0.26.3": {
   "at": "2026-10-26T21:47:43+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
+ },
+ "312bbcd02ded9c242b05435d|0.32.1": {
+  "at": "2026-10-29T17:19:30+07:00",
+  "n": 3,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "3165ca140d8765602735689f|0.23.0": {
   "at": "2026-10-26T21:47:37+07:00",
@@ -214,10 +304,20 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
- "3525468061a5c692ec2b7a8e|0.30.0": {
-  "at": "2026-10-28T14:05:33+07:00",
+ "331ced4ea9c75dd5ff72fb72|0.33.1": {
+  "at": "2026-10-29T17:19:41+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "3525468061a5c692ec2b7a8e|0.30.0": {
+  "at": "2026-10-29T17:19:58+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "3525468061a5c692ec2b7a8e|0.32.1": {
+  "at": "2026-10-29T17:19:58+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "39112b90c5ee2dd78e4de160|0.25.0": {
   "at": "2026-10-27T09:37:06+07:00",
@@ -239,15 +339,45 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
- "3de729f6815ae508958555a8|0.28.0": {
-  "at": "2026-10-28T14:05:34+07:00",
+ "3a7f7e5a379246b2cfa355c6|0.33.1": {
+  "at": "2026-10-29T17:19:41+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "3afaec513cd201a684ad227b|0.32.1": {
+  "at": "2026-10-29T17:19:59+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "3b01e23e7f103596508b6746|0.31.0": {
+  "at": "2026-10-29T17:19:41+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "3b92aa84e5c9e5989f62d1f8|0.31.0": {
+  "at": "2026-10-29T17:19:59+07:00",
+  "n": 1,
+  "note": "fixed in 314c0f33 (IR import capped 1 MB)"
+ },
+ "3d96a7ea5daf9ac8790c3f07|0.13.1": {
+  "at": "2026-10-29T17:19:42+07:00",
+  "n": 1,
+  "note": "fixed in 314c0f33 (PadService plain start)"
+ },
+ "3de729f6815ae508958555a8|0.28.0": {
+  "at": "2026-10-29T17:19:42+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "3de729f6815ae508958555a8|0.30.0": {
-  "at": "2026-10-28T14:05:34+07:00",
+  "at": "2026-10-29T17:19:42+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "3de729f6815ae508958555a8|0.33.1": {
+  "at": "2026-10-29T17:19:42+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "3df75f21109cfe64c6abe060|0.30.0": {
   "at": "2026-10-28T14:05:34+07:00",
@@ -304,10 +434,35 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "45cfe265b35478a34a5dd8dc|0.32.1": {
+  "at": "2026-10-29T17:20:00+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "4664ee61b8bdc5497e1638b0|0.32.1": {
+  "at": "2026-10-29T17:20:00+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "478a387890933579fecf99b4|0.32.1": {
+  "at": "2026-10-29T17:20:01+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "47baed67085a7343b6f1e186|0.30.0": {
   "at": "2026-10-28T14:05:36+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "4823c22806ac9e3c15350b9f|0.19.0": {
+  "at": "2026-10-29T17:19:30+07:00",
+  "n": 3,
+  "note": "fixed in 314c0f33 (Customize shots DiscardPolicy)"
+ },
+ "484af8de7532da839ffb6936|0.32.1": {
+  "at": "2026-10-29T17:20:01+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "49414a3dd12a8a0d4a59e726|0.26.2": {
   "at": "2026-10-27T09:37:08+07:00",
@@ -315,9 +470,14 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "4a246e0d976dd69f7dab894c|0.26.3": {
-  "at": "2026-10-27T09:37:09+07:00",
+  "at": "2026-10-29T17:19:28+07:00",
   "n": 2,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "4a246e0d976dd69f7dab894c|0.32.1": {
+  "at": "2026-10-29T17:19:28+07:00",
+  "n": 3,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "4ab694b37c47fbba0c8b073a|0.25.0": {
   "at": "2026-10-28T14:05:37+07:00",
@@ -329,10 +489,20 @@
   "n": 1,
   "note": "adbd restarting on the TV (init.svc.adbd=restarting), port 5555 refused; same as 05a960b8; not our code"
  },
+ "4ccc484580e6ccb279185260|0.19.0": {
+  "at": "2026-10-29T17:19:31+07:00",
+  "n": 3,
+  "note": "fixed in 314c0f33 (Guard systemFault: assist refused by Android)"
+ },
  "4ccd741c906da1f4d5e07f1b|0.26.2": {
   "at": "2026-10-27T09:37:09+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "4dd85a42bd586b391688123b|0.32.1": {
+  "at": "2026-10-29T17:20:02+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "4edb09196527cb498fe7af5a|0.31.0": {
   "at": "2026-10-28T14:05:37+07:00",
@@ -350,19 +520,29 @@
   "note": "fixed: WorkService calls startForeground first; a stop before it came up waits for it (WorkService.stop)"
  },
  "5255e1fda001cda94f5657bc|0.30.0": {
-  "at": "2026-10-28T14:05:38+07:00",
+  "at": "2026-10-29T17:19:32+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "5255e1fda001cda94f5657bc|0.32.1": {
+  "at": "2026-10-29T17:19:32+07:00",
+  "n": 2,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "535993e358ec33bffb4a2ab7|0.27.0": {
-  "at": "2026-10-28T14:05:38+07:00",
+  "at": "2026-10-29T17:19:43+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "535993e358ec33bffb4a2ab7|0.30.0": {
-  "at": "2026-10-28T14:05:38+07:00",
+  "at": "2026-10-29T17:19:43+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "535993e358ec33bffb4a2ab7|0.33.1": {
+  "at": "2026-10-29T17:19:43+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "53c851be292645defe2ebe29|0.25.0": {
   "at": "2026-10-27T09:37:10+07:00",
@@ -374,15 +554,30 @@
   "n": 2,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "55209ee33992f6defe5cd82a|0.32.0": {
+  "at": "2026-10-29T17:20:02+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "55209ee33992f6defe5cd82a|0.32.1": {
+  "at": "2026-10-29T17:20:02+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "58e80942ee619021d01ddea4|0.29.0": {
   "at": "2026-10-27T09:37:11+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "5b47665e5391015e7bcf0337|0.23.0": {
-  "at": "2026-10-26T21:47:41+07:00",
+  "at": "2026-10-29T17:19:33+07:00",
   "n": 1,
-  "note": "old version (<=0.24): gone in current page"
+  "note": "fixed in 314c0f33 (showTab waits for DOMContentLoaded)"
+ },
+ "5b47665e5391015e7bcf0337|0.31.0": {
+  "at": "2026-10-29T17:19:33+07:00",
+  "n": 2,
+  "note": "fixed in 314c0f33 (showTab waits for DOMContentLoaded)"
  },
  "5bff425f65d93c72f20a0551|0.31.0": {
   "at": "2026-10-28T14:05:39+07:00",
@@ -390,9 +585,19 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "5c3d20915ff953ae9d0d2071|0.30.0": {
-  "at": "2026-10-28T14:05:39+07:00",
+  "at": "2026-10-29T17:20:03+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "5c3d20915ff953ae9d0d2071|0.32.1": {
+  "at": "2026-10-29T17:20:03+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "5d45b4ecf8bcf041b9118638|0.32.1": {
+  "at": "2026-10-29T17:20:03+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "5df1b3d619bed9fd987a0aad|0.26.3": {
   "at": "2026-10-28T14:05:40+07:00",
@@ -414,10 +619,25 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "60f3943d3568f80a06549460|0.33.1": {
+  "at": "2026-10-29T17:19:44+07:00",
+  "n": 1,
+  "note": "fixed in 314c0f33 (setup.js dlTip)"
+ },
+ "6153eb8f0509f1f0ef331d1b|0.33.1": {
+  "at": "2026-10-29T17:19:44+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "62a1d553ea172cf0d150520a|0.30.0": {
   "at": "2026-10-28T14:05:40+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "630851a66dd88f88ce3eb053|0.18.0": {
+  "at": "2026-10-29T17:19:45+07:00",
+  "n": 1,
+  "note": "fixed in 314c0f33 (Guard systemFault: TextClock)"
  },
  "64978197464de830da805923|0.25.0": {
   "at": "2026-10-27T09:37:13+07:00",
@@ -429,40 +649,50 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "66117b3e1febeea1e420d98a|0.32.1": {
+  "at": "2026-10-29T17:20:04+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "6643ac5ba371539b73349499|0.26.3": {
   "at": "2026-10-26T21:47:45+07:00",
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
  "67c022dfb5a21bcb3a3560b8|0.24.1": {
-  "at": "2026-10-28T14:05:41+07:00",
+  "at": "2026-10-29T17:20:04+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "67c022dfb5a21bcb3a3560b8|0.26.2": {
-  "at": "2026-10-28T14:05:41+07:00",
+  "at": "2026-10-29T17:20:04+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "67c022dfb5a21bcb3a3560b8|0.26.3": {
-  "at": "2026-10-28T14:05:41+07:00",
+  "at": "2026-10-29T17:20:04+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "67c022dfb5a21bcb3a3560b8|0.29.0": {
-  "at": "2026-10-28T14:05:41+07:00",
+  "at": "2026-10-29T17:20:04+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "67c022dfb5a21bcb3a3560b8|0.30.0": {
-  "at": "2026-10-28T14:05:41+07:00",
+  "at": "2026-10-29T17:20:04+07:00",
   "n": 4,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "67c022dfb5a21bcb3a3560b8|0.31.0": {
-  "at": "2026-10-28T14:05:41+07:00",
+  "at": "2026-10-29T17:20:04+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "67c022dfb5a21bcb3a3560b8|0.32.1": {
+  "at": "2026-10-29T17:20:04+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "6a301ce35b080b921814a52a|0.29.0": {
   "at": "2026-10-28T14:05:22+07:00",
@@ -470,9 +700,14 @@
   "note": "left: Android-x86 VM, overflow inside Runtime.exec, no app frame"
  },
  "6ab3cb0c2d5cd811a0c51b91|0.24.1": {
-  "at": "2026-10-27T09:37:14+07:00",
+  "at": "2026-10-29T17:20:05+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "6ab3cb0c2d5cd811a0c51b91|0.32.1": {
+  "at": "2026-10-29T17:20:05+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "6b2b5368c5ee63755ac02afc|0.29.0": {
   "at": "2026-10-28T14:05:42+07:00",
@@ -509,15 +744,30 @@
   "n": 2,
   "note": "old version (<=0.24): gone in current page"
  },
- "6e74bfe9ce7c98065828fe28|0.29.0": {
-  "at": "2026-10-28T14:05:18+07:00",
+ "6d6f82b70a9b06137276e6b6|0.32.1": {
+  "at": "2026-10-29T17:20:05+07:00",
   "n": 1,
-  "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "6d8f04f39a2f104ab667121f|0.33.1": {
+  "at": "2026-10-29T17:19:45+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "6dacec2975b1bb386c15d443|0.32.1": {
+  "at": "2026-10-29T17:20:06+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "6e74bfe9ce7c98065828fe28|0.29.0": {
+  "at": "2026-10-29T17:19:35+07:00",
+  "n": 2,
+  "note": "old setup 0.29.0; fixed in 2943a609 (goneWindow)"
  },
  "6e74bfe9ce7c98065828fe28|0.30.0": {
-  "at": "2026-10-28T14:05:18+07:00",
+  "at": "2026-10-29T17:19:35+07:00",
   "n": 1,
-  "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
+  "note": "old setup 0.29.0; fixed in 2943a609 (goneWindow)"
  },
  "6ee3614a8b9bcabc17846802|0.29.0": {
   "at": "2026-10-28T14:05:42+07:00",
@@ -535,39 +785,64 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "72197a51e589326b53120179|0.28.0": {
-  "at": "2026-10-28T14:05:43+07:00",
+  "at": "2026-10-29T17:20:06+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "72197a51e589326b53120179|0.29.0": {
-  "at": "2026-10-28T14:05:43+07:00",
+  "at": "2026-10-29T17:20:06+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "72197a51e589326b53120179|0.31.0": {
-  "at": "2026-10-28T14:05:43+07:00",
+  "at": "2026-10-29T17:20:06+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "72197a51e589326b53120179|0.32.1": {
+  "at": "2026-10-29T17:20:06+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "72f479fc5e46b710d40d7e11|0.28.0": {
-  "at": "2026-10-27T12:52:42+07:00",
+  "at": "2026-10-29T17:19:33+07:00",
   "n": 3,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test"
  },
  "72f479fc5e46b710d40d7e11|0.29.0": {
-  "at": "2026-10-27T12:52:42+07:00",
+  "at": "2026-10-29T17:19:33+07:00",
   "n": 1,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test"
+ },
+ "72f479fc5e46b710d40d7e11|0.33.1": {
+  "at": "2026-10-29T17:19:33+07:00",
+  "n": 2,
+  "note": "our test"
  },
  "74e9dd24769f68fce154098f|0.26.3": {
   "at": "2026-10-27T09:37:17+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "768f27f158deb2344eee289b|0.33.1": {
+  "at": "2026-10-29T17:19:46+07:00",
+  "n": 1,
+  "note": "our test"
+ },
  "79d301739f47300b62afcc99|0.24.0": {
   "at": "2026-10-26T21:47:42+07:00",
   "n": 1,
   "note": "old version (<=0.24): gone in current page"
+ },
+ "7cf9011759eb60d1071330ae|0.32.1": {
+  "at": "2026-10-29T17:20:07+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "7e4f66aa5d11a64666081bad|0.31.0": {
+  "at": "2026-10-29T17:19:46+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "80076832323d6921ebcd2475|0.13.1": {
   "at": "2026-10-26T21:47:47+07:00",
@@ -579,35 +854,80 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
+ "822b0111c9f2158f9464d890|0.32.1": {
+  "at": "2026-10-29T17:20:07+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "82bbd4343b46d5b4f2b8ec5e|0.30.0": {
   "at": "2026-10-28T14:05:17+07:00",
   "n": 1,
   "note": "fixed: homeOnce's second shell inside the try"
  },
- "86af8cb18d7c1247988aba2e|0.26.3": {
-  "at": "2026-10-28T14:05:43+07:00",
+ "82ecf342060dd7e72d3c6463|0.32.1": {
+  "at": "2026-10-29T17:20:08+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "851970ad88ae206fa9b4fc6c|0.32.1": {
+  "at": "2026-10-29T17:19:47+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "86af8cb18d7c1247988aba2e|0.26.3": {
+  "at": "2026-10-29T17:19:47+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "86af8cb18d7c1247988aba2e|0.31.0": {
-  "at": "2026-10-28T14:05:43+07:00",
+  "at": "2026-10-29T17:19:47+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "86af8cb18d7c1247988aba2e|0.33.1": {
+  "at": "2026-10-29T17:19:47+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "86e0f0317c01d63472f141c3|0.30.0": {
-  "at": "2026-10-28T14:05:44+07:00",
+  "at": "2026-10-29T17:19:35+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "86e0f0317c01d63472f141c3|0.31.0": {
-  "at": "2026-10-28T14:05:44+07:00",
+  "at": "2026-10-29T17:19:35+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "86e0f0317c01d63472f141c3|0.32.1": {
+  "at": "2026-10-29T17:19:35+07:00",
+  "n": 2,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "89c864c5bcda91e3bdbc548e|0.32.1": {
+  "at": "2026-10-29T17:19:48+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "8aff9164518fc3b45b398c2d|0.32.1": {
+  "at": "2026-10-29T17:20:08+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "8d835efbc4285a9e53433733|0.31.0": {
   "at": "2026-10-28T14:05:44+07:00",
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "8f22ae153e0767895dc5fd31|0.13.0": {
+  "at": "2026-10-29T17:20:09+07:00",
+  "n": 1,
+  "note": "fixed in 314c0f33 (no CompletableFuture; lint NewApi gate)"
+ },
+ "906a0223c8663b59890cc67d|0.32.1": {
+  "at": "2026-10-29T17:20:09+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "90bc60d1687a8726a7af224d|0.29.0": {
   "at": "2026-10-28T14:05:45+07:00",
@@ -655,9 +975,19 @@
   "note": "fixed in 5d4096ec"
  },
  "95489089c325e820b1fe3f24|0.29.0": {
-  "at": "2026-10-27T12:52:42+07:00",
+  "at": "2026-10-29T17:19:48+07:00",
   "n": 1,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test"
+ },
+ "95489089c325e820b1fe3f24|0.33.1": {
+  "at": "2026-10-29T17:19:48+07:00",
+  "n": 1,
+  "note": "our test"
+ },
+ "95d5e6768511cdb3e3fa935a|0.32.1": {
+  "at": "2026-10-29T17:19:49+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "9696ea1b86da0f777e461096|0.26.0": {
   "at": "2026-10-27T09:37:17+07:00",
@@ -669,30 +999,60 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "99c0fdd3111273770ef39822|0.32.1": {
+  "at": "2026-10-29T17:20:10+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "9fae8eef259fdd7309a272c5|0.32.1": {
+  "at": "2026-10-29T17:20:10+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "a11df287c4b27a276b8f644e|0.27.0": {
   "at": "2026-10-27T09:37:18+07:00",
   "n": 2,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "a301db96eb9605ab2e155ea0|0.30.0": {
-  "at": "2026-10-28T14:05:46+07:00",
+  "at": "2026-10-29T17:20:11+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a301db96eb9605ab2e155ea0|0.31.0": {
-  "at": "2026-10-28T14:05:46+07:00",
+  "at": "2026-10-29T17:20:11+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a301db96eb9605ab2e155ea0|0.32.1": {
+  "at": "2026-10-29T17:20:11+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a38760813faef8c6824637a7|0.32.1": {
+  "at": "2026-10-29T17:20:11+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a3f667697fbe6c1df462f460|0.28.0": {
-  "at": "2026-10-28T14:05:46+07:00",
+  "at": "2026-10-29T17:20:12+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a3f667697fbe6c1df462f460|0.31.0": {
+  "at": "2026-10-29T17:20:12+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a468264ed0a50f4f2ddd7dce|0.26.3": {
-  "at": "2026-10-27T09:37:18+07:00",
+  "at": "2026-10-29T17:20:12+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a468264ed0a50f4f2ddd7dce|0.30.0": {
+  "at": "2026-10-29T17:20:12+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a54cc4711ab55a41b38bd0ab|0.29.0": {
   "at": "2026-10-28T14:05:47+07:00",
@@ -700,14 +1060,19 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "a61105e296172cd1c6bf213f|0.30.0": {
-  "at": "2026-10-28T14:05:47+07:00",
+  "at": "2026-10-29T17:19:36+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a61105e296172cd1c6bf213f|0.31.0": {
-  "at": "2026-10-28T14:05:47+07:00",
-  "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "at": "2026-10-29T17:19:36+07:00",
+  "n": 2,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a61105e296172cd1c6bf213f|0.32.1": {
+  "at": "2026-10-29T17:19:36+07:00",
+  "n": 2,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "a6d1fca490c3d9fc86469d7b|0.29.0": {
   "at": "2026-10-28T14:05:48+07:00",
@@ -718,6 +1083,26 @@
   "at": "2026-10-28T14:05:49+07:00",
   "n": 2,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+ },
+ "a7967957521e813d21074e5d|0.32.1": {
+  "at": "2026-10-29T17:20:12+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a7fbc1009aba63431ffc50ee|0.32.1": {
+  "at": "2026-10-29T17:20:13+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "a92d71c8c0a61098b0a9872c|0.32.1": {
+  "at": "2026-10-29T17:20:13+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "acdba55882fadd0770660405|0.32.1": {
+  "at": "2026-10-29T17:19:33+07:00",
+  "n": 2,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "b10448044da52feadeb9ccdb|0.26.2": {
   "at": "2026-10-28T14:05:21+07:00",
@@ -730,14 +1115,19 @@
   "note": "left: NPE inside system_server, platform"
  },
  "b1ccd0d29d66cdd753d27562|0.27.0": {
-  "at": "2026-10-28T14:05:19+07:00",
-  "n": 1,
-  "note": "fixed: FleetStatus.round no computeIfAbsent (Android 7+ lambda) on Android 6"
+  "at": "2026-10-29T17:19:37+07:00",
+  "n": 2,
+  "note": "phone 0.27.0 Android 6 NoClassDef: NewApi class, gated by lint since 314c0f33"
  },
  "b2bad9122a9b4f430c6f151b|0.25.0": {
-  "at": "2026-10-27T09:37:19+07:00",
+  "at": "2026-10-29T17:20:14+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "b2bad9122a9b4f430c6f151b|0.32.1": {
+  "at": "2026-10-29T17:20:14+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "b3dbb5ec6f1c76a39a24c383|0.29.0": {
   "at": "2026-10-27T09:37:19+07:00",
@@ -745,14 +1135,19 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "b5217008041ee98e6efd9bc7|0.28.0": {
-  "at": "2026-10-27T12:52:43+07:00",
+  "at": "2026-10-29T17:19:34+07:00",
   "n": 3,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test (page body replaced on 8771/8769)"
  },
  "b5217008041ee98e6efd9bc7|0.29.0": {
-  "at": "2026-10-27T12:52:43+07:00",
+  "at": "2026-10-29T17:19:34+07:00",
   "n": 1,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test (page body replaced on 8771/8769)"
+ },
+ "b5217008041ee98e6efd9bc7|0.33.1": {
+  "at": "2026-10-29T17:19:34+07:00",
+  "n": 2,
+  "note": "our test (page body replaced on 8771/8769)"
  },
  "b6a3b10f364db6b1b1f97649|0.23.0": {
   "at": "2026-10-26T21:47:35+07:00",
@@ -765,19 +1160,34 @@
   "note": "fixed in 5d4096ec"
  },
  "b6f2dbac085dd251c785a738|0.26.2": {
-  "at": "2026-10-28T14:05:23+07:00",
+  "at": "2026-10-29T17:20:14+07:00",
   "n": 1,
-  "note": "left: zaloJSV2 is injected by the TV's browser, not ours"
+  "note": "zaloJSV2 injected by a TV browser, not ours"
  },
  "b6f2dbac085dd251c785a738|0.29.0": {
-  "at": "2026-10-28T14:05:23+07:00",
+  "at": "2026-10-29T17:20:14+07:00",
   "n": 1,
-  "note": "left: zaloJSV2 is injected by the TV's browser, not ours"
+  "note": "zaloJSV2 injected by a TV browser, not ours"
+ },
+ "b6f2dbac085dd251c785a738|0.32.1": {
+  "at": "2026-10-29T17:20:14+07:00",
+  "n": 1,
+  "note": "zaloJSV2 injected by a TV browser, not ours"
+ },
+ "b8f3039e0ff6163a120cbe22|0.32.1": {
+  "at": "2026-10-29T17:20:15+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "bb235b5156d5dfe6f4b07f66|0.31.0": {
-  "at": "2026-10-28T14:05:49+07:00",
+  "at": "2026-10-29T17:20:15+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "bb235b5156d5dfe6f4b07f66|0.32.1": {
+  "at": "2026-10-29T17:20:15+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "bb6aa51a71dd220857d39503|0.24.1": {
   "at": "2026-10-27T09:37:20+07:00",
@@ -789,6 +1199,11 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "bdd0c4231f36809fd578acec|0.33.1": {
+  "at": "2026-10-29T17:19:49+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "bfab67fedfb3a98f63f639d0|0.25.0": {
   "at": "2026-10-27T09:37:20+07:00",
   "n": 1,
@@ -798,6 +1213,16 @@
   "at": "2026-10-26T21:47:47+07:00",
   "n": 1,
   "note": "M_ID: injected by a browser add-on, not ours"
+ },
+ "c0bfb12d81e70c025266ebbb|0.32.1": {
+  "at": "2026-10-29T17:20:16+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "c1c835f8856d2ea2eb4d8120|0.32.1": {
+  "at": "2026-10-29T17:20:16+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "c2ce1b1434df896de8fd1d70|0.23.0": {
   "at": "2026-10-26T21:47:34+07:00",
@@ -814,10 +1239,20 @@
   "n": 1,
   "note": "fixed in 5d4096ec"
  },
- "c373576682d59c3aa492f81e|0.26.3": {
-  "at": "2026-10-27T09:37:21+07:00",
+ "c312b6737adb0c365df6eb6a|0.32.1": {
+  "at": "2026-10-29T17:20:17+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "c373576682d59c3aa492f81e|0.26.3": {
+  "at": "2026-10-29T17:20:17+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "c373576682d59c3aa492f81e|0.30.0": {
+  "at": "2026-10-29T17:20:17+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "c478fe63f0120d08264658ae|0.29.0": {
   "at": "2026-10-28T14:05:50+07:00",
@@ -839,6 +1274,11 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "c8b1a76e698805857a4abbc6|0.32.1": {
+  "at": "2026-10-29T17:20:18+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "c9ed129e030fd9374b14cfd4|0.26.3": {
   "at": "2026-10-26T21:47:46+07:00",
   "n": 1,
@@ -850,19 +1290,29 @@
   "note": "fixed: Guard ignores a dialog shown/dismissed after its screen is gone (GuardLogic.goneWindow)"
  },
  "cb86f676dfffbcf108630018|0.28.0": {
-  "at": "2026-10-27T12:52:43+07:00",
+  "at": "2026-10-29T17:19:34+07:00",
   "n": 3,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test"
  },
  "cb86f676dfffbcf108630018|0.29.0": {
-  "at": "2026-10-27T12:52:43+07:00",
+  "at": "2026-10-29T17:19:34+07:00",
   "n": 1,
-  "note": "dev test instance (port 8769) reloaded mid-edit; element exists in index.html; not users"
+  "note": "our test"
+ },
+ "cb86f676dfffbcf108630018|0.33.1": {
+  "at": "2026-10-29T17:19:34+07:00",
+  "n": 2,
+  "note": "our test"
  },
  "cc0ca3bfdda49c7e255d18ca|0.29.0": {
-  "at": "2026-10-28T14:05:51+07:00",
+  "at": "2026-10-29T17:19:50+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "cc0ca3bfdda49c7e255d18ca|0.33.1": {
+  "at": "2026-10-29T17:19:50+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "cdd3314554f5edfde8ff4338|0.26.3": {
   "at": "2026-10-26T21:47:44+07:00",
@@ -874,10 +1324,35 @@
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
+ "cedafe90cec01d6382f4d473|0.33.1": {
+  "at": "2026-10-29T17:19:50+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "cf638452843273d51ba6f9f8|0.32.1": {
+  "at": "2026-10-29T17:20:18+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "cf87cae60c0cbbe263db681e|0.25.0": {
   "at": "2026-10-27T09:37:22+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "d0fb97e9ca36d5d5e23cd843|0.32.1": {
+  "at": "2026-10-29T17:20:19+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "d4981b4c69906b1cfd2ae4c6|0.32.0": {
+  "at": "2026-10-29T17:20:19+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "d4981b4c69906b1cfd2ae4c6|0.32.1": {
+  "at": "2026-10-29T17:20:19+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "d789ac9288fd162e56189f10|0.28.0": {
   "at": "2026-10-27T09:37:26+07:00",
@@ -885,19 +1360,39 @@
   "note": "launcher picker: Play link opened with adb.shell on the click thread; moved to a Thread (next release)"
  },
  "d8b23f67ace7d1ad4be28a63|0.25.0": {
-  "at": "2026-10-28T14:05:52+07:00",
+  "at": "2026-10-29T17:20:20+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "d8b23f67ace7d1ad4be28a63|0.26.0": {
-  "at": "2026-10-28T14:05:52+07:00",
+  "at": "2026-10-29T17:20:20+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "d8b23f67ace7d1ad4be28a63|0.26.2": {
+  "at": "2026-10-29T17:20:20+07:00",
+  "n": 3,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "d8b23f67ace7d1ad4be28a63|0.29.0": {
-  "at": "2026-10-28T14:05:52+07:00",
+  "at": "2026-10-29T17:20:20+07:00",
   "n": 2,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "d8b23f67ace7d1ad4be28a63|0.31.0": {
+  "at": "2026-10-29T17:20:20+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "d8b23f67ace7d1ad4be28a63|0.33.1": {
+  "at": "2026-10-29T17:20:20+07:00",
+  "n": 3,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "da40de8404c38b5a96c57331|0.13.0": {
+  "at": "2026-10-29T17:19:37+07:00",
+  "n": 2,
+  "note": "NPE inside system_server TaskRecord, not ours"
  },
  "da6214721e9abe7601758e7a|0.26.3": {
   "at": "2026-10-26T21:47:45+07:00",
@@ -915,9 +1410,14 @@
   "note": "fixed in 5d4096ec"
  },
  "decee121efc0fe71ad60b7df|0.26.3": {
-  "at": "2026-10-27T09:37:23+07:00",
+  "at": "2026-10-29T17:19:29+07:00",
   "n": 2,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "decee121efc0fe71ad60b7df|0.32.1": {
+  "at": "2026-10-29T17:19:29+07:00",
+  "n": 3,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "defef3515cb89aabff4263f5|0.26.2": {
   "at": "2026-10-26T21:47:34+07:00",
@@ -928,6 +1428,16 @@
   "at": "2026-10-26T21:47:34+07:00",
   "n": 3,
   "note": "fixed in 5d4096ec"
+ },
+ "dfc28007278d921d44ba5c2f|0.32.1": {
+  "at": "2026-10-29T17:19:51+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "dfdd79c843105878c62a3295|0.32.1": {
+  "at": "2026-10-29T17:20:20+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "e183da6cf42d4c2e775d5eee|0.23.0": {
   "at": "2026-10-26T21:47:42+07:00",
@@ -940,9 +1450,19 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "e2ac20416e441327a8535260|0.30.0": {
-  "at": "2026-10-28T14:05:53+07:00",
+  "at": "2026-10-29T17:20:21+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "e2ac20416e441327a8535260|0.32.1": {
+  "at": "2026-10-29T17:20:21+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "e2f8d5a2501a256d93afb738|0.32.1": {
+  "at": "2026-10-29T17:20:21+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "e3535283ab456e068ad89a4b|0.30.0": {
   "at": "2026-10-28T14:05:18+07:00",
@@ -954,15 +1474,25 @@
   "n": 1,
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
+ "e79672e1ff8459fb2088df18|0.32.1": {
+  "at": "2026-10-29T17:20:22+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
  "ec35e370d1f1ed3547aef3ac|0.30.0": {
   "at": "2026-10-28T14:05:10+07:00",
   "n": 1,
   "note": "fixed: Marks.text keeps the character when the drawable file is gone (APK replaced under a running app)"
  },
  "ee57e878f33619a603accc6d|0.25.0": {
-  "at": "2026-10-27T09:37:24+07:00",
+  "at": "2026-10-29T17:20:22+07:00",
   "n": 1,
-  "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "ee57e878f33619a603accc6d|0.32.1": {
+  "at": "2026-10-29T17:20:22+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "f03fa6b922541471343a37b2|0.30.0": {
   "at": "2026-10-28T14:05:53+07:00",
@@ -975,14 +1505,39 @@
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
  "f450a91c33294b34be468f07|0.30.0": {
-  "at": "2026-10-28T14:05:54+07:00",
+  "at": "2026-10-29T17:20:23+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "f450a91c33294b34be468f07|0.31.0": {
+  "at": "2026-10-29T17:20:23+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "f450a91c33294b34be468f07|0.32.1": {
+  "at": "2026-10-29T17:20:23+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "f450a91c33294b34be468f07|0.33.1": {
+  "at": "2026-10-29T17:20:23+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "f47e3e4ff3e9c81406ab9094|0.31.0": {
-  "at": "2026-10-28T14:05:54+07:00",
+  "at": "2026-10-29T17:19:52+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "f47e3e4ff3e9c81406ab9094|0.33.1": {
+  "at": "2026-10-29T17:19:52+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "f513fbbed682f62f0ff2366c|0.33.1": {
+  "at": "2026-10-29T17:19:53+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "f577d1fc6dd6c2b3c4b8c4fe|0.26.2": {
   "at": "2026-10-27T09:37:24+07:00",
@@ -995,9 +1550,14 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "f65f13a2f87c6c56c3da7e9a|0.28.0": {
-  "at": "2026-10-28T14:05:55+07:00",
+  "at": "2026-10-29T17:20:24+07:00",
   "n": 1,
-  "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "f65f13a2f87c6c56c3da7e9a|0.31.0": {
+  "at": "2026-10-29T17:20:24+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
  "fad2a14ed1bb2056883cbfb5|0.28.0": {
   "at": "2026-10-27T09:37:25+07:00",
@@ -1008,5 +1568,20 @@
   "at": "2026-10-27T09:37:25+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "feb2d5b073f08602a64375ac|0.33.1": {
+  "at": "2026-10-29T17:19:54+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "fec42ebcbb1fade527fad3a4|0.32.0": {
+  "at": "2026-10-29T17:20:24+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "ffa18ba1fcda7fec4ccfe4bc|0.33.1": {
+  "at": "2026-10-29T17:19:54+07:00",
+  "n": 1,
+  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  }
 }
