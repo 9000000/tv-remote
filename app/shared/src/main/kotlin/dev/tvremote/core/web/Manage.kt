@@ -721,6 +721,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         var out = link.get().shell(TvShell.TVSET_READ, 60000).replace("\r\n", "\n")
         val rec = try { LauncherSwap({ sh(it) }).state() } catch (e: IOException) { null }
         if (rec?.active == true) for (p in rec.off) if (p in Setup.LAUNCHER && !out.contains("$p/")) out += "\nlauncher $p/"
+        // the key way: Android still names its own launcher, Home opens this one (dev/flows/home-screen.md)
+        if (rec?.why == LauncherSwap.KEY && rec.state == "kept" && out.lines().any { it.trim() == "launcher ${rec.comp}" }) out = out.replace(Regex("(?m)^home .*$"), "home ${rec.comp}")
         return HttpServer.Response.json(JSONObject().put("text", out))
     }
 
@@ -748,7 +750,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 return HttpServer.Response.json(JSONObject().put("text", "home $say"))
             }
         } else return text(TvShell.tvset("home", value), 60000)
-        val now = swap.homeNow()
+        val now = swap.homeOpens()
         return HttpServer.Response.json(JSONObject().put("text", "home " + if (now.substringBefore('/') == pkg) value else now))
     }
 

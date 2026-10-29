@@ -13,6 +13,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Đổi màn hình chính trên box ZTE (B866F): không tắt launcher gốc nữa, vì box tự khôi phục cài đặt gốc khi thiếu nó; nút Home do TV Setup chuyển. Tối ưu TV giữ lại vài gói mà tắt đi là TV hỏng (Dangbei, ZTE).
 - Remote cho TV LG, Samsung, Roku, VIDAA: Thêm › Tiện ích › **Tắt theo dõi** mở Cài đặt của TV và hiện đường dẫn tới từng công tắc (theo dõi nội dung đang xem, quảng cáo, micro).
 - Trang hướng dẫn: nút **Chép hướng dẫn cho AI**, dán vào ChatGPT, Claude, Gemini… để AI dẫn từng bước. AI đọc bản Markdown (mục lục một dòng mỗi mục, rồi chỉ trang cần), ít hơn ~25 lần so với đọc cả trang.
+- Đổi màn hình chính (Tối ưu TV, kho launcher, trang Cài đặt): TV không cho đổi hẳn (TCL giữ Wi-Fi trong trình cài đặt, tự giành lại Home, bo MOKA, Chromecast, ZTE) thì nút Home vẫn mở launcher đã chọn, qua TV Setup, không còn báo "đã quay lại" (issue #9). Mọi trường hợp ghi trong `dev/flows/home-screen.md`.
 
 **English**
 - Phone and computer apps: opening the remote while the TV is in standby turns it on again, as before 0.32.1; only TV Setup's background link never presses Power.
@@ -21,6 +22,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Home screen on a ZTE box (B866F): its own launcher stays on, since the box factory-resets without it; TV Setup sends the Home key instead. Optimize TV keeps a few packages that break the TV when off (Dangbei, ZTE).
 - Remote for LG, Samsung, Roku, VIDAA TVs: More › Tools › **Turn off tracking** opens the TV's Settings and shows the path to each switch (what you watch, ads, mic).
 - User guide: a **Copy the guide for AI** button to paste into ChatGPT, Claude, Gemini… so it walks you through. The AI reads a Markdown copy (one line per topic, then only the page it needs), ~25x fewer tokens than the whole page.
+- Changing the home screen (Optimize TV, the launcher gallery, the Settings page): where the TV will not let it change fully (a TCL whose setup wizard holds the Wi-Fi or takes Home back, MOKA boards, Chromecast, ZTE), Home still opens the chosen launcher through TV Setup, with no "went back" notice (issue #9). Every case is in `dev/flows/home-screen.md`.
 
 ## 0.32.1 - 2026-10-28
 

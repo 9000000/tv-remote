@@ -19,7 +19,7 @@ import org.json.JSONObject
  * look turns off again what is on again (on the same firmware an app on again was turned on by the person). Only what that file names
  * (the person chose those apps), never a new app; Undo empties the file, so Undo ends this too. A package that comes back again within
  * a day of our turning it off is given up (the firmware fights back, as MOKA / Kalley do for the setup wizard) and left alone.
- * A swap to TV Home ([LauncherSwap.REC]) that Home no longer lands on is put back with the swap's own set-home-activity; the
+ * A swap to TV Home ([LauncherSwap.REC]; not the key way, dev/flows/home-screen.md) that Home no longer lands on is put back with the swap's own set-home-activity; the
  * [LauncherGuard] only rolls a broken one back, it never takes Home again.
  */
 internal class Reoptimize(private val c: Context, private val adb: () -> Adb?) {
@@ -95,7 +95,7 @@ internal class Reoptimize(private val c: Context, private val adb: () -> Adb?) {
     /** TV Home was made the home screen and Home lands on another launcher now: choose it again. True when it did. */
     private fun homeBack(sh: (String) -> String): Boolean {
         val s = LauncherSwap(sh)
-        val r = s.state()?.takeIf { it.state == "kept" && it.pkg == "dev.tvremote.home" && it.comp.contains('/') } ?: return false
+        val r = s.state()?.takeIf { it.state == "kept" && it.pkg == "dev.tvremote.home" && it.comp.contains('/') && it.why != LauncherSwap.KEY } ?: return false   // the key filter's Home survives updates
         val now = s.homeNow()
         if (now.substringBefore('/') == r.pkg || LauncherSwap.badHome(now)) return false   // already Home, or the guard's case
         sh("cmd package set-home-activity ${r.comp} 2>/dev/null")

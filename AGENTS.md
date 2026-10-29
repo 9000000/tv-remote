@@ -12,6 +12,7 @@ Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). This file holds t
 | `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast, profiling a weak TV box (`tvperf/`) |
 | `dev/release/` | the six version numbers, the user guide's `data-v`, release.sh, SHA256SUMS |
 | `dev/workflows/` | step-by-step recipes: add a TV Home widget, a remote key, a `/api` route, a language |
+| `dev/flows/` | **what the apps do, case by case**, for features with many TV-dependent paths (the home screen swap) |
 
 ## What this is
 
@@ -37,6 +38,9 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
 
 ## Rules that matter
 
+- **A feature with a flow file (`dev/flows/`) is changed through it:** read the flow first, find the row (the case) the fault
+  belongs to, fix that step, and update the flow in the same commit. Never a fix from one small piece of code: the cases fight.
+  `dev/flows/check.js` (a test and the pre-push hook) fails on a flow that names what the code lacks, or code changed without it.
 - **Fix a fault where it comes from, not with a "never do X" line.** A mistake found (by the user or a test) is fixed at its
   source: one name, one shared map, a script, a test that fails. A rule in these files says how things are built and why;
   a ban is written only when nothing can enforce it, and then with the reason.

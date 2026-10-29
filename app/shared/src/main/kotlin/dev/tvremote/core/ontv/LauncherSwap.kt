@@ -13,6 +13,8 @@ import java.io.IOException
  *     is its own: Android deletes those with it (an FPT Play box, Android 14: no network, no ADB), see [wifiSafe];
  *  3. it is made the home LAST (Android forgets that choice whenever the set of home screens changes);
  *  4. Home is asked where it goes: anywhere else and everything is put back at once.
+ * Where the TV will not let the home screen change, TV Setup's key filter sends Home there instead ([byKey]). Every case, in order,
+ * with what the person sees: dev/flows/home-screen.md (read it before changing this file; change it with this file).
  * What was turned off, and the home before, are kept ON THE TV in [REC] before anything is touched, so a way back exists even if the
  * phone or computer that started it is gone: [rollback] puts back exactly that. After the swap the record waits for the person's
  * Keep ("pending", [CONFIRM_SEC] seconds, like a display-resolution change), and [LauncherWatch] keeps looking for a launcher that
@@ -44,20 +46,25 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
          */
         val NO_SWAP = setOf("moka", "kalley", "prismplus", "prism+")
 
+        /** Every [Rec.why] and [via]: the flow's "Cases" list (dev/flows/check.js keeps them equal). */
+        val WHYS = listOf("crash", "home", "timeout", "interrupted", "user", "wifi", "wifi_unknown", "cast", "zte", "board", "boot", "key")
+        /** [Rec.why] of a launcher Home reaches through TV Setup's key filter, nothing turned off ([byKey]). */
+        const val KEY = "key"
+
         /** The words (their id) for why a swap was put back ([Rec.why]): one table for TV Setup, the page and the computer's settings. */
         /** The whys where the swap was refused before anything stayed changed: the TV kept its launcher, it did not "go back". */
-        val REFUSED = setOf("wifi", "wifi_unknown", "cast", "board", "boot")
+        val REFUSED = setOf("wifi", "wifi_unknown", "cast", "zte", "board", "boot")
         /** The notice's words for a swap put back with [why]: "kept its launcher" for a refusal, "went back" for an undone swap. */
         fun backId(why: String): String = if (why in REFUSED) "core.fr_launcher_kept" else "core.fr_launcher_back"
 
         fun whyId(why: String): String =
-            if (why in setOf("crash", "home", "timeout", "interrupted", "wifi", "wifi_unknown", "cast", "board", "boot")) "launcher.why_$why" else "launcher.why_user"
+            if (why in WHYS && why != "user" && why != KEY) "launcher.why_$why" else "launcher.why_user"
 
         /** The saved Wi-Fi networks and who saved each (`cname=<name>:<uid>`), one shell call: the same lines on Android 9 and 14. */
         const val WIFI_OWNERS = "dumpsys wifi 2>/dev/null | grep -oE 'cname=[^ ]*|ID: [0-9]+ SSID|WifiConfigManager' | sort -u"
         /** Google's own players, where a phone's cast says "Untrusted device" once the wizard is off (cleanyourtv): Home is not taken there. */
         val CAST_HOSTS = setOf("sabrina", "boreal", "kirkwood")
-        const val ZTE_WATCHDOG = "com.control.device"                 // see keyOnly
+        const val ZTE_WATCHDOG = "com.control.device"                 // see keyWhy
 
         /**
          * Whether the wizard ([uid] its uid) can go off without the TV going offline: false when a saved network is its own (saved during
@@ -105,6 +112,9 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     /** What the Home button opened when [take] gave up because Home did not land on the new launcher: the app holding it. */
     var opened = ""
         private set
+    /** Why the last [take] used TV Setup's key filter, not the swap (cast / zte / board / boot / wifi / wifi_unknown / home); "" for a swap. */
+    var via = ""
+        private set
 
     fun tvNow(): Long = sh("date +%s").trim().toLongOrNull() ?: (System.currentTimeMillis() / 1000)
 
@@ -127,6 +137,9 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
 
     fun homeNow(): String = last(sh(RESOLVE_HOME))
 
+    /** What the Home button opens for the person: the launcher of a kept key-way record, else the HOME role ([homeNow]). */
+    fun homeOpens(): String = state()?.takeIf { it.why == KEY && it.state == "kept" && it.comp in homes() }?.comp ?: homeNow()
+
     /** Turned off one command per shell call (chained, some TVs' pm stopped after the first), and kept for Setup's Undo. */
     private fun turnOff(p: String) {
         sh("pm disable-user --user 0 $p")
@@ -141,18 +154,11 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     @Throws(IOException::class)
     fun take(pkg: String, confirmSec: Int = 0, before: String = ""): Boolean {
         if (!PKG.matches(pkg)) throw IOException("bad package name")
-        refused = ""; opened = ""
+        refused = ""; opened = ""; via = ""
         val all = homes()
         val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
-        if (keyOnly()) return byKey(pkg, ours)
-        if (sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP }) {
-            log("this TV brings its setup wizard back at every boot"); refused = "board"; return false
-        }
-        // Android starts Home before the first unlock: with no FallbackHome to stand in, a launcher that cannot start then left a Vision
-        // (CVTE, Android 13) on a black screen at every boot (cleanyourtv). TV Home can
-        if (all.none { "FallbackHome" in it } && sh("dumpsys package $pkg 2>/dev/null | grep -c DIRECT_BOOT_AWARE").trim().toIntOrNull() == 0) {
-            log("no FallbackHome, and the launcher cannot start before the unlock"); refused = "boot"; return false
-        }
+        if (state()?.why == KEY) dropKey()                            // flow row 1: the launcher picked before lets go of Home
+        keyWhy(all, pkg)?.let { return byKey(pkg, it) }               // rows 2-5: the swap could break the TV
         // [before]: read before its APK went in. Android 9 forgets the home chosen when a new launcher is installed (a BRAVIA then
         // answered its picker), and only Android 10+ keeps it as a role
         val prev = before.takeIf { it.contains('/') && !badHome(it) } ?: homeNow()
@@ -174,13 +180,13 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
                     true -> null; false -> "wifi"; null -> "wifi_unknown"
                 }
             }
-            if (no != null) { log("wizard stays: $no"); rollback(no, gone); return false }
+            if (no != null) { log("wizard stays: $no"); rollback(no, gone); return byKey(pkg, no) }   // rows 6-7
             // first in the record, so a rollback turns it on last: back on before launcherx, its RecoveryActivity takes Home, and a reboot
             // there factory-reset a Xiaomi MiTV-MOSR4 (cleanyourtv)
             val off = stuck + gone.filter { it.substringBefore('/') !in stuck }   // its screens stayed on: nothing of theirs to turn back on
             save(Rec(pkg, ours, prev, off, now, "swapping", 0, ""))
             for (p in stuck) turnOff(p)
-            if (homes().any { it.substringBefore('/') in stuck }) { log("wizard home stays"); opened = stuck[0]; rollback("home", off); return false }
+            if (homes().any { it.substringBefore('/') in stuck }) { log("wizard home stays"); opened = stuck[0]; rollback("home", off); return byKey(pkg, "home") }
         }
         for (p in gone - wizard) turnOff(p)
         sh("cmd package set-home-activity $ours 2>/dev/null")
@@ -196,38 +202,57 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         }
         opened = (if (shown == "-") homeNow() else shown).substringBefore('/')
         rollback("home", gone)
-        return false
+        return byKey(pkg, "home")                                     // row 8: a TCL Google TV keeps launcherx on Home (issue #9)
+    }
+
+    /**
+     * Why the swap must not be tried on this TV (flow rows 2-5), or null. The [all] home screens, the launcher [pkg].
+     * cast: a Chromecast's casting needs the wizard. zte: a ZTE box factory-resets with no system launcher on. board: a MOKA board's
+     * wizard comes back each boot (a boot loop with launcherx off). boot: no FallbackHome and a launcher that cannot start before
+     * the unlock (a Vision, CVTE, Android 13: black screen at every boot, cleanyourtv).
+     */
+    private fun keyWhy(all: List<String>, pkg: String): String? = when {
+        cast() -> "cast"
+        sh("pm path $ZTE_WATCHDOG 2>/dev/null").contains("package:") -> "zte"
+        sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP } -> "board"
+        all.none { "FallbackHome" in it } && sh("dumpsys package $pkg 2>/dev/null | grep -c DIRECT_BOOT_AWARE").trim().toIntOrNull() == 0 -> "boot"
+        else -> null
     }
 
     private fun cast(): Boolean = sh("getprop ro.product.device").trim().lowercase() in CAST_HOSTS
 
     /**
-     * Where the TV's own launcher must stay on: a Chromecast ([cast]), or a ZTE box (B866F) whose ControlDevice, a minute after a boot
-     * with no system launcher on, broadcasts FACTORY_RESET and wipes it (cleanyourtv #2318); the shell cannot turn that watchdog off.
-     */
-    private fun keyOnly(): Boolean = cast() || sh("pm path $ZTE_WATCHDOG 2>/dev/null").contains("package:")
-
-    /**
-     * A ZTE box with its reset watchdog: nothing of the TV's may go off ([keyOnly]), so the same way as here.
-     * A Chromecast or Google TV Streamer: the swap would need the first-run setup app off, which breaks casting from a phone ("cast"),
-     * and launcherx keeps Home whatever the role says. Nothing is turned off: the role is set and TV Setup's key filter sends Home
-     * to [pkg] (HomeKey there, rule "homekey"). An older TV Setup is asked to update ([SetupNeed.Missing]); [dropKey] undoes it.
+     * The key way (dev/flows/home-screen.md): nothing of the TV's goes off; the role is set (not for "boot": Android starts the role
+     * before the unlock) and TV Setup's key filter sends Home to [pkg] (HomeKey there, rule "homekey"). Kept as a record with why
+     * [KEY], so the watchdog guards a launcher that crashes and [rollback] lets Home pass again. [why]: the case, kept as [via].
+     * An older or no TV Setup: [SetupNeed.Missing], every client's one Install / Update question. False, with [refused], when TV
+     * Setup did not take the rule.
      */
     @Throws(IOException::class)
-    private fun byKey(pkg: String, ours: String): Boolean {
+    fun byKey(pkg: String, why: String): Boolean {
+        val ours = homes().firstOrNull { it.startsWith("$pkg/") } ?: return false
         val have = SetupNeed.have(sh)
         if (!SetupNeed.ok(have, "homekey")) throw SetupNeed.Missing("homekey", have)
-        sh("cmd package set-home-activity $ours 2>/dev/null")
+        val prev = state()?.takeIf { it.why != KEY }?.prev?.takeIf { it.contains('/') } ?: homeNow()   // after a rollback: the one before it
+        if (why != "boot") sh("cmd package set-home-activity $ours 2>/dev/null")
         val st = RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", pkg))
-        if (st.optString("homekey") != pkg) { log("TV Setup did not take Home: $st"); refused = "cast"; return false }
+        if (st.optString("homekey") != pkg) { log("TV Setup did not take Home: $st"); refused = why; return false }
+        save(Rec(pkg, ours, prev, emptyList(), tvNow(), "kept", 0, KEY))
+        via = why
         sh("am start -n $ours")
-        log("Home by TV Setup's key filter")
+        log("Home by TV Setup's key filter: $why")
         return true
     }
 
-    /** Home back to the TV's own launcher where [byKey] sent it elsewhere; nothing on other TVs or with no TV Setup that knows the rule. */
+    /**
+     * The key filter lets Home pass again. A Chromecast or ZTE box sent there by a version before the record kept the key way
+     * (0.32.1 and older) has no record: those are told by the TV itself.
+     */
     fun dropKey() {
-        try { if (keyOnly() && SetupNeed.ok(SetupNeed.have(sh), "homekey")) RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", "")) } catch (e: Exception) { }
+        try {
+            val key = state()?.why == KEY || cast() || sh("pm path $ZTE_WATCHDOG 2>/dev/null").contains("package:")
+            if (key && SetupNeed.ok(SetupNeed.have(sh), "homekey")) RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", ""))
+        } catch (e: Exception) { }
     }
 
     /** The person's Keep: the swap stays, and only the watch is left. */
@@ -241,6 +266,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     @Throws(IOException::class)
     fun rollback(why: String, known: List<String>? = null) {         // known: what the swap under way turned off, if the TV kept no record
         val r = state()
+        if (r?.why == KEY) dropKey()                                  // the key way: Home passes to the TV's own again
         val off = r?.off ?: known ?: (Setup.LAUNCHER.toList() + Setup.WIZARD).filter { it in installedOff() }
         for (p in off.reversed()) sh("pm enable --user 0 $p")        // home screens before the wizard
         val back = backTo(r, off)
@@ -307,15 +333,18 @@ class LauncherWatch(private val sh: (String) -> String) {
     fun check(): String? {
         val r = swap.state()?.takeIf { it.active } ?: return null
         val now = swap.tvNow()
+        val key = r.why == LauncherSwap.KEY                           // Home is the key filter's: where Android sends it does not matter
         val why = when {
             r.state == "swapping" -> if (now - r.at > STALE) "interrupted" else null
             r.state == "pending" && now > r.until + GRACE -> "timeout"
-            LauncherSwap.badHome(swap.homeNow()) -> "home"
-            r.state != "swapping" && swap.wizardBack(r) -> "home"
+            !key && LauncherSwap.badHome(swap.homeNow()) -> "home"
+            !key && r.state != "swapping" && swap.wizardBack(r) -> "home"
             looping(crashes(sh("logcat -b crash -d -v epoch 2>/dev/null"), r.pkg), r.at) -> "crash"
             else -> null
         } ?: return null
         swap.rollback(why)
+        // the TV took Home back (a TCL turns its wizard on again): the key filter sends it to the launcher instead, nothing to tell
+        if (why == "home" && try { swap.byKey(r.pkg, "home") } catch (e: IOException) { false }) return null
         return why
     }
 }

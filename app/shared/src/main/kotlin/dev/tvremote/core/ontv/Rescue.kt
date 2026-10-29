@@ -18,7 +18,7 @@ object Rescue {
      */
     fun run(sh: (String) -> String, mustKeep: (String) -> Boolean = { Setup.mustKeep(it) }): JSONObject {
         val front = Foreground.parse(sh(Foreground.CMD))
-        val home = LauncherSwap.last(sh(LauncherSwap.RESOLVE_HOME)).substringBefore('/')
+        val home = LauncherSwap(sh).homeOpens().substringBefore('/')     // TV Home by TV Setup's key filter too (`input` passes the filter by)
         val keyboard = sh("settings get secure default_input_method").trim().substringBefore('/')
         val stop = shouldStop(front, home, keyboard, mustKeep)
         if (stop) sh("am force-stop " + front)                        // the name came from dumpsys: letters, digits, dots only

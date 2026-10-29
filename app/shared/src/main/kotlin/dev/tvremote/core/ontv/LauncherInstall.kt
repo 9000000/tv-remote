@@ -72,6 +72,8 @@ class LauncherInstall(private val adb: Adb, private val dir: File, private val g
                 try { Setup.report("launcher:" + why.ifEmpty { "?" }, adb.shell(Setup.ABOUT), e.pkg + (if (swap.opened.isNotEmpty()) " (Home opens ${swap.opened})" else "")) } catch (x: IOException) { }
             throw IOException(if (why in LauncherSwap.REFUSED) "launcher:rolledback:$why" else "launcher:home")   // what the person can act on
         }
+        if (swap.via in setOf("home", "wifi_unknown"))               // Home by the key filter on a TV the swap does not know yet: to the census too
+            try { Setup.report("launcher:key:" + swap.via, adb.shell(Setup.ABOUT), e.pkg + (if (swap.opened.isNotEmpty()) " (Home opens ${swap.opened})" else "")) } catch (x: IOException) { }
         return swap.state()?.state ?: "kept"
     }
 

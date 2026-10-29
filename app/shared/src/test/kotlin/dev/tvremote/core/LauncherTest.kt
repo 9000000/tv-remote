@@ -31,6 +31,7 @@ class LauncherTest {
         var maker = "Google\nGoogle"
         var bootAware: String? = null                                  // dumpsys's count of DIRECT_BOOT_AWARE; null: the TV says nothing
         var rec = ""
+        var crash = ""                                                 // logcat -b crash -v epoch
         var clock = 1000L
         val said = mutableListOf<String>()
         fun home(): String {
@@ -53,6 +54,7 @@ class LauncherTest {
                 cmd.contains("DIRECT_BOOT_AWARE") -> bootAware ?: ""
                 cmd.startsWith("input keyevent 3") -> "  mFocusedApp=ActivityRecord{4f1 u0 ${focus ?: home()} t7}"
                 cmd == "date +%s" -> (clock).toString()
+                cmd.startsWith("logcat -b crash") -> crash
                 cmd == LauncherSwap.WIFI_OWNERS -> wifi
                 cmd == "getprop ro.product.device" -> device
                 cmd.startsWith("pm path ") -> cmd.removePrefix("pm path ").substringBefore(' ').let { if (it in installed) "package:/system_ext/app/$it.apk" else "" }
@@ -71,6 +73,16 @@ class LauncherTest {
                 else -> ""
             }
         }
+    }
+
+    /** The key way (dev/flows/home-screen.md): TV Setup's rule has Home, nothing of the TV's is off, the record says why. */
+    private fun keyWay(tv: Tv, s: LauncherSwap, via: String, saidBy: LauncherSwap = s) {   // saidBy: the instance that took it (the watchdog's own)
+        assertEquals(via, "com.new.home", tv.homekey)
+        assertEquals(via, setOf("com.google.android.tvlauncher"), tv.disabled)   // as before the swap
+        val r = s.state()!!
+        assertEquals(via, LauncherSwap.KEY, r.why); assertEquals(via, "kept", r.state); assertTrue(via, r.off.isEmpty())
+        if (saidBy === s) assertEquals(via, via, s.via)
+        assertEquals(via, "com.new.home/.Home", s.homeOpens())
     }
 
     @Test fun swapMakesItHomeAndRecordsWhatWentOff() {
@@ -116,22 +128,20 @@ class LauncherTest {
         assertEquals("timeout", s.state()!!.why)
     }
 
-    @Test fun aMokaBoardIsToldWhyAndNothingIsTouched() {            // Kalley / PRISM+: the wizard returns at every boot, a loop at the logo
-        for (maker in listOf("MOKA\nKalley", "Google\nPRISM+")) {
+    @Test fun aMokaBoardGetsHomeByTheKeyFilterAndNothingIsTouched() {   // Kalley / PRISM+: the wizard returns at every boot, a loop at the logo
+        for (maker in listOf("MOKA\nKalley", "Google\nPRISM+", "MOKA\nKALLEY")) {
             val tv = Tv(); tv.maker = maker; val s = LauncherSwap({ tv.sh(it) })
-            assertFalse(s.take("com.new.home", 30))
-            assertEquals("board", s.refused)
-            assertEquals("launcher.why_board", LauncherSwap.whyId(s.refused))
+            assertTrue(s.take("com.new.home", 30))
             assertTrue(tv.said.none { it.startsWith("pm disable") })
-            assertEquals(null, s.state())                               // no record: the watchdog has nothing to guard
+            keyWay(tv, s, "board")
         }
     }
 
-    @Test fun aHomeThatDoesNotLandIsPutBackAtOnce() {
+    @Test fun aHomeThatDoesNotLandIsPutBackAndTheKeyFilterHasIt() {   // a TV that ignores the choice
         val tv = Tv(pick = false); val s = LauncherSwap({ tv.sh(it) })
-        assertFalse(s.take("com.new.home", 30))
-        assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
-        assertEquals("rolledback", s.state()!!.state)
+        assertTrue(s.take("com.new.home", 30))
+        keyWay(tv, s, "home")
+        assertEquals(Setup.LAUNCHERX + "/.Home", s.state()!!.prev)     // the way back: the home before the swap, not the one tried
     }
 
     @Test fun aWizardWhoseHomeCannotGoOffGoesWholeWhenTheWifiIsNotItsOwn() {   // every Google TV: the shell may not turn one screen off
@@ -146,40 +156,48 @@ class LauncherTest {
         assertEquals(Setup.LAUNCHERX, tv.home().substringBefore('/'))
     }
 
-    @Test fun aWizardHoldingTheWifiStaysAndTheSwapSaysWhy() {
+    @Test fun aWizardHoldingTheWifiLeavesHomeToTheKeyFilter() {     // a TCL Google TV (issue #9): off, the TV would lose its Wi-Fi
         for ((wifi, why) in listOf("WifiConfigManager\nID: 0 SSID\ncname=$WIZ:10039" to "wifi",
                 "WifiConfigManager\nID: 0 SSID\ncname=com.google.uid.shared:10039" to "wifi",   // its uid under a shared name
                 "" to "wifi_unknown", "WifiConfigManager\nID: 0 SSID" to "wifi_unknown")) {
             val tv = Tv().apply { wizardLocked = true; this.wifi = wifi }; val s = LauncherSwap({ tv.sh(it) })
-            assertFalse(s.take("com.new.home", 30))
-            assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
+            assertTrue(s.take("com.new.home", 30))
             assertFalse(tv.said.any { it == "pm disable-user --user 0 $WIZ" })
-            assertEquals(why, s.state()!!.why)
+            keyWay(tv, s, why)
         }
     }
 
     @Test fun aChromecastKeepsItsWizardForCastingAndTvSetupTakesHome() {
         val tv = Tv().apply { wizardLocked = true; device = "sabrina" }; val s = LauncherSwap({ tv.sh(it) })
         assertTrue(s.take("com.new.home", 30))                        // HomeKey in TV Setup sends Home there
-        assertEquals("com.new.home", tv.homekey)
         assertTrue(tv.said.none { it.startsWith("pm disable") })      // nothing off: casting keeps working
-        assertNull(s.state())                                         // no swap record, no watchdog
+        keyWay(tv, s, "cast")
         s.dropKey(); assertEquals("", tv.homekey)
     }
 
     @Test fun aZteBoxWithItsResetWatchdogKeepsItsLauncherOn() {     // B866F: no system launcher a minute after a boot = factory reset
         val tv = Tv().apply { installed += LauncherSwap.ZTE_WATCHDOG }; val s = LauncherSwap({ tv.sh(it) })
         assertTrue(s.take("com.new.home", 30))
-        assertEquals("com.new.home", tv.homekey)
         assertTrue(tv.said.none { it.startsWith("pm disable") })
-        s.dropKey(); assertEquals("", tv.homekey)
+        keyWay(tv, s, "zte")
     }
 
-    @Test fun aChromecastWithAnOlderTvSetupIsAskedToUpdateIt() {
-        val tv = Tv().apply { device = "sabrina"; setup = "0.26.2" }; val s = LauncherSwap({ tv.sh(it) })
-        val e = try { s.take("com.new.home"); null } catch (x: SetupNeed.Missing) { x }
-        assertEquals("homekey", e?.feature)
-        assertTrue(tv.said.none { it.startsWith("pm disable") || it.startsWith("am broadcast") })
+    @Test fun aChromecastSentByAnOlderVersionWithNoRecordStillLetsHomePass() {   // 0.32.1 and older kept no record of the key way
+        val tv = Tv().apply { device = "sabrina"; homekey = "com.new.home" }
+        LauncherSwap({ tv.sh(it) }).dropKey()
+        assertEquals("", tv.homekey)
+    }
+
+    @Test fun aTvSetupTooOldForTheKeyFilterIsAskedForAndNothingStaysOff() {
+        val cases = listOf<Pair<String, Tv.() -> Unit>>("cast" to { device = "sabrina" }, "board" to { maker = "MOKA\nKalley" },
+            "wifi" to { wizardLocked = true; wifi = "WifiConfigManager\nID: 0 SSID\ncname=$WIZ:10039" }, "home" to { focus = "$WIZ/.Recovery" })
+        for ((what, set) in cases) for (have in listOf("0.26.2", "")) {
+            val tv = Tv().apply { setup = have; set() }; val s = LauncherSwap({ tv.sh(it) })
+            val e = try { s.take("com.new.home"); null } catch (x: SetupNeed.Missing) { x }
+            assertEquals(what, "homekey", e?.feature)                 // every client's one Install / Update TV Setup question
+            assertEquals(what, setOf("com.google.android.tvlauncher"), tv.disabled)
+            assertNull(what, tv.homekey)
+        }
     }
 
     @Test fun wifiOwners() {
@@ -189,17 +207,20 @@ class LauncherTest {
         assertEquals(null, LauncherSwap.wifiSafe("", "10039"))
     }
 
-    @Test fun theWizardWholeBackOnAfterABootRollsBack() {           // an Acer's firmware turns it on at every cold boot (cleanyourtv)
-        val tv = Tv().apply { wizardLocked = true }; val s = LauncherSwap({ tv.sh(it) })
+    @Test fun theWizardWholeBackOnAfterABootGoesToTheKeyFilter() {   // an Acer's firmware turns it on at every cold boot (cleanyourtv), a TCL within seconds
+        val tv = Tv().apply { wizardLocked = true }; val s = LauncherSwap({ tv.sh(it) }); val w = LauncherWatch { tv.sh(it) }
         assertTrue(s.take("com.new.home", 0))
-        assertNull(LauncherWatch { tv.sh(it) }.check())
+        assertNull(w.check())
         tv.disabled -= WIZ
-        assertEquals("home", LauncherWatch { tv.sh(it) }.check())
+        assertNull(w.check())                                         // put back, and Home by the key filter: nothing to tell
+        keyWay(tv, s, "home", saidBy = LauncherSwap({ tv.sh(it) }))
+        tv.chosen = "$WIZ/.Home"                                      // wherever Android sends Home now, the filter has it
+        assertNull(w.check()); assertEquals("com.new.home", tv.homekey)
     }
 
     @Test fun everyReasonHasWords() {
         val vi = java.io.File("i18n/vi.json").readText(); val en = java.io.File("i18n/en.json").readText()
-        for (w in listOf("crash", "home", "timeout", "interrupted", "user", "wifi", "wifi_unknown", "cast", "?"))
+        for (w in LauncherSwap.WHYS + "?")
             assertTrue(w, "\"${LauncherSwap.whyId(w)}\"" in vi && "\"${LauncherSwap.whyId(w)}\"" in en)
     }
 
@@ -277,35 +298,52 @@ class LauncherTest {
     @Test fun homeIsWhatTheHomeKeyOpensNotOnlyTheRole() {          // the role named the launcher, Home went to RecoveryActivity
         val tv = Tv(); tv.focus = "$WIZ/.RecoveryActivity"
         val s = LauncherSwap({ tv.sh(it) })
-        assertFalse(s.take("com.new.home", 30))
-        assertEquals("rolledback", s.state()!!.state)
-        assertFalse(Setup.LAUNCHERX in tv.disabled)
+        assertTrue(s.take("com.new.home", 30))
+        keyWay(tv, s, "home")
+        assertEquals(WIZ, s.opened)
         assertEquals("com.x/.Main", LauncherSwap.focused("  mFocusedApp=ActivityRecord{1a2b u0 com.x/.Main t12}"))
         assertEquals("", LauncherSwap.focused("mFocusedApp=null"))
     }
 
-    @Test fun aTvThatBringsItsWizardBackAtBootIsNeverSwapped() {    // a Kalley by MOKA looped at the logo
-        val tv = Tv(); tv.maker = "MOKA\nKALLEY"
-        assertFalse(LauncherSwap({ tv.sh(it) }).take("com.new.home", 30))
-        assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
-        assertTrue(tv.said.none { it.startsWith("pm disable") })
-    }
 
     @Test fun noFallbackHomeNeedsALauncherThatStartsBeforeTheUnlock() {
-        val tv = Tv(); tv.bootAware = "0"
-        assertFalse(LauncherSwap({ tv.sh(it) }).take("com.new.home", 30))
-        assertTrue(tv.said.none { it.startsWith("pm disable") })
+        val tv = Tv(); tv.bootAware = "0"; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 30))
+        assertTrue(tv.said.none { it.startsWith("pm disable") || it.startsWith("cmd package set-home-activity") })   // Android starts the role before the unlock
+        assertEquals("boot", s.via); assertEquals("com.new.home", tv.homekey)
         val ok = Tv(); ok.bootAware = "1"
         assertTrue(LauncherSwap({ ok.sh(it) }).take("com.new.home", 30))
     }
 
-    @Test fun theWizardsHomeBackOnAfterABootRollsBack() {
+    @Test fun theWizardsHomeBackOnAfterABootGoesToTheKeyFilter() {
         val tv = Tv(); val s = LauncherSwap({ tv.sh(it) })
         assertTrue(s.take("com.new.home", 0))
         assertNull(LauncherWatch { tv.sh(it) }.check())
         tv.disabled -= "$WIZ/.Home"                                    // the firmware turned it on again
-        assertEquals("home", LauncherWatch { tv.sh(it) }.check())
+        assertNull(LauncherWatch { tv.sh(it) }.check())
         assertFalse(Setup.LAUNCHERX in tv.disabled)
+        assertEquals("com.new.home", tv.homekey)
+    }
+
+    @Test fun theKeyWayIsGuardedForCrashesOnly() {
+        val tv = Tv().apply { maker = "MOKA\nKalley" }; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 0))
+        tv.crash = (0..1).joinToString("\n") { "${1_700_000_000 + it}.000  1234  1234 E AndroidRuntime: Process: com.new.home, PID: 1234" }
+        assertEquals("crash", LauncherWatch { tv.sh(it) }.check())
+        assertEquals("", tv.homekey)                                  // Home passes to the TV's own again
+        assertEquals("rolledback", s.state()!!.state)
+    }
+
+    @Test fun theWayBackFromTheKeyFilterLetsHomePassAndANewPickReplacesIt() {
+        val tv = Tv().apply { maker = "MOKA\nKalley" }; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 30))
+        s.rollback("user")
+        assertEquals("", tv.homekey); assertEquals("rolledback", s.state()!!.state)
+        assertEquals(Setup.LAUNCHERX + "/.Home", s.homeOpens())
+        assertTrue(s.take("com.new.home", 30))                        // row 1: a pick after a key-way one
+        tv.maker = "Google\nGoogle"
+        assertTrue(s.take("com.new.home", 30))                        // a real swap now: the old rule goes first
+        assertEquals("", tv.homekey); assertEquals("pending", s.state()!!.state); assertEquals("", s.via)
     }
 
     @Test fun anAppHoldingTheTvsInputsIsNeverTurnedOff() {

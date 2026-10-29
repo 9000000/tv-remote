@@ -235,7 +235,9 @@ class SetupTest {
     @Test fun homeThatWillNotMoveGetsItsHomeScreensBack() {
         val tv = FakeTv(true, *Setup.LAUNCHER, *Setup.WIZARD, Setup.HOME_PKG, "com.brand.home")
         tv.homes["com.brand.home"] = 5                                 // a brand's own home screen, not on our lists
-        tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList()))
+        // the key filter would send Home to TV Home (dev/flows/home-screen.md row 8): no TV Setup here, so its one question
+        val e = try { tv.setup().apply(Setup.Choice(anim = false, home = true, disable = emptyList())); null } catch (x: dev.tvremote.core.ontv.SetupNeed.Missing) { x }
+        assertEquals("homekey", e?.feature)
         assertTrue(tv.disabled.isEmpty())
         assertEquals("com.brand.home", tv.home())
     }

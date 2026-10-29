@@ -284,7 +284,9 @@ class Setup internal constructor(private val adb0: Adb?, private val dir: File?,
             try { adb?.shell(dev.tvremote.home.HomeConfig.GRANT_WIFI + "cmd package compile -m speed -f $HOME_PKG >/dev/null 2>&1", 120000) } catch (e: IOException) {}
         }
         if (takeHome()) {
-            log.line(t("optimize.home_screen", "home" to last(sh(RESOLVE_HOME))))
+            log.line(t("optimize.home_screen", "home" to LauncherSwap(sh).homeOpens()))
+            if (via == "wifi") log.line(t("launcher.key_wifi"))       // the key filter has Home: a full swap after the Wi-Fi is the system's (flow row 6)
+            if (via in setOf("home", "wifi_unknown")) report("home:key:$via", opened, emptyMap())   // TVs the swap does not know yet
             log.line(t("optimize.done_press_home_see"))
         } else {
             log.line(t("optimize.home_kept", "home" to homeNow()))
@@ -350,14 +352,15 @@ class Setup internal constructor(private val adb0: Adb?, private val dir: File?,
     /**
      * TV Home takes Home, by the same steps as any launcher of the gallery ([LauncherSwap]: the TV's own home screens off with the
      * wizard first, the new one made the home last, then Home is asked where it goes). Anywhere else (a brand's own home screen we do
-     * not know, Fire OS, a TV that ignores the choice) and the home screens come back on: a Home button that lands on a setup wizard
-     * or a picker is worse than the old home screen. Recorded on the TV, so the watchdog of TV Setup guards it too.
+     * not know, Fire OS, a TV that ignores the choice) and the home screens come back on, and TV Setup's key filter sends Home to TV Home
+     * instead (dev/flows/home-screen.md). Recorded on the TV, so the watchdog of TV Setup guards it too.
      */
     private fun takeHome(): Boolean {
         val s = LauncherSwap(sh)
-        return s.take(HOME_PKG).also { ok -> refused = if (ok) "" else s.refused.ifEmpty { s.state()?.takeIf { it.state == "rolledback" }?.why ?: "" }; opened = s.opened }
+        return s.take(HOME_PKG).also { ok -> refused = if (ok) "" else s.refused.ifEmpty { s.state()?.takeIf { it.state == "rolledback" }?.why ?: "" }; opened = s.opened; via = s.via }
     }
     private var refused = ""
+    private var via = ""                                              // why TV Setup's key filter has Home, not the swap (LauncherSwap.via)
     private var opened = ""                                           // what the Home button opened instead of TV Home
 
     private fun keyboardNow(): String = sh("settings get secure default_input_method").trim()
@@ -389,7 +392,7 @@ class Setup internal constructor(private val adb0: Adb?, private val dir: File?,
         for (p in undoable())
             if (has(p.substringBefore('/'))) { sh("pm enable --user 0 $p"); on++ }   // p may be one screen of an app (the wizard's Home)
         sh("rm -f $OFF_LIST")
-        LauncherSwap(sh).forget()
+        LauncherSwap(sh).let { s -> if (s.state()?.why == LauncherSwap.KEY) s.rollback("user") else s.dropKey(); s.forget() }   // the key filter lets Home pass
         sh("for k in $ANIM; do settings put global \$k 1.0; done")
         log.line(t("optimize.re_enabled_apps_google", "n" to on))
         log.line(t("optimize.tvhome_tailscale_settings_left"))
