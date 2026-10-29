@@ -18,6 +18,8 @@ THEMES_URL overrides the worker's address (a local `wrangler dev`). Needs sips (
 """
 import argparse, base64, html, json, os, re, shutil, subprocess, sys, tempfile, unicodedata, urllib.parse, urllib.request, webbrowser
 
+import home_keys   # noqa: E402 (next to this file)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 URL = os.environ.get("THEMES_URL", "https://tvr-themes.99-hoangtran.workers.dev").rstrip("/")
 TOKEN_FILE = os.environ.get("THEMES_TOKEN_FILE", os.path.expanduser("~/.tv-remote-release/themes-admin-token"))
@@ -32,8 +34,7 @@ LOOK = "mist"   # the list's drawn stand-in for a photo wall (sign_themes.py wan
 
 
 # The worker's rules (dev/themes/src/logic.js), ported for --local: keep the same.
-THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle", "wopt",
-              "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]
+THEME_KEYS = home_keys.theme_keys()
 MAX_PREVIEW, MAX_WALL, MAX_CONF, ALLOWED_HOST = 150_000, 1_000_000, 8192, "tvremote.pages.dev"
 MAX_PHOTO = 360_000   # logic.js MAX_PHOTO: each photo of a rotation
 

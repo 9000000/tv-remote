@@ -2,7 +2,7 @@
 # The node tests before anything leaves: a push to main deploys docs/ (Cloudflare Pages), and a script that does not parse
 # went out once (syntax.test.js). About 3 s. Set up once per clone: git config core.hooksPath dev/hooks
 cd "$(git rev-parse --show-toplevel)" || exit 1
-node --test app/shared/tests/ app/games/tests/ >/tmp/tvr-prepush.log 2>&1 && exit 0
+node --test app/shared/tests/ app/games/tests/ dev/themes/test/ >/tmp/tvr-prepush.log 2>&1 && exit 0
 grep -E "^not ok|SyntaxError|^# fail" /tmp/tvr-prepush.log | head -20
 echo "pre-push: node tests failed (full log /tmp/tvr-prepush.log); git push --no-verify skips them"
 exit 1

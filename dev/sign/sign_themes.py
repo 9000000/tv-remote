@@ -11,6 +11,8 @@ read; HomeThemesTest fails when the packed copy differs). Nothing here uploads: 
 """
 import json, time, os, re, subprocess, sys
 
+import home_keys
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LIST = os.path.join(ROOT, "docs", "home", "themes.json")
 KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/launchers.key"))
@@ -18,8 +20,7 @@ LOOKS = ["dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", 
          "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss"]   # HomeConfig.ART + PLAIN: what a tile's picture can be drawn from
 TAGS = {"video", "slideshow", "photo", "art", "minimal", "vietnam", "kids", "night", "nature", "city", "community"}   # docs/js/themes.js
 TILE = re.compile(r"tile:[a-z][a-z0-9_.]*/[a-z0-9_]+")
-THEME_KEYS = ["wall", "walls", "wurl", "wmode", "wsnap", "wkeep", "wevery", "shade", "vsound", "vvol", "widgets", "wsize", "wstyle", "wopt",
-              "cols", "rows", "focus", "motion", "anim", "clock24", "greet"]   # HomeConfig.THEME_KEYS
+THEME_KEYS = home_keys.theme_keys()
 
 
 def fail(m):
@@ -95,4 +96,5 @@ def main():
     print("signed %s: %d themes (%s)" % (LIST, len(d["themes"]), ", ".join(t["id"] for t in d["themes"])))
 
 
-main()
+if __name__ == "__main__":
+    main()

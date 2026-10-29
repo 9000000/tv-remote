@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { validate, flags, clean, senderHash, tokenOk, sizeOf, THEME_KEYS, MAX_BODY, MAX_PHOTO, MAX_PREVIEW } from "../src/logic.js";
 
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0]).toString("base64");
@@ -81,4 +82,10 @@ test("the app's caps fit the worker's (ThemeShare.kt): a preview of 150 * 1024 b
   assert.ok(num("PREVIEW_MAX") <= MAX_PREVIEW, "PREVIEW_MAX " + num("PREVIEW_MAX") + " > " + MAX_PREVIEW);
   assert.ok(num("PHOTO_MAX") <= MAX_PHOTO, "PHOTO_MAX " + num("PHOTO_MAX") + " > " + MAX_PHOTO);
   assert.ok(num("BODY_MAX") <= MAX_BODY, "BODY_MAX " + num("BODY_MAX") + " > " + MAX_BODY);
+});
+
+test("THEME_KEYS = HomeConfig.THEME_KEYS + wstyle", () => {
+  const kt = readFileSync(new URL("../../../app/shared/src/home/kotlin/dev/tvremote/home/HomeConfig.kt", import.meta.url), "utf8");
+  const list = kt.match(/val THEME_KEYS = listOf\(([\s\S]*?)\)/)[1].match(/"\w+"/g).map((s) => s.slice(1, -1));
+  assert.deepEqual(THEME_KEYS, [...list, "wstyle"]);
 });
