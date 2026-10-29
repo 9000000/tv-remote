@@ -11,13 +11,18 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Sockets to a TV on the home network. A VPN on the phone that takes every packet (most do, an exit node too) leaves the TV
- * out of reach while it sits one metre away; RustDesk goes around it on the Wi-Fi itself, and so does this. Only the phone
- * sets [wifi], and only while a VPN is up: elsewhere (the computer app, TV Setup) every socket is a plain one, as before.
+ * out of reach while it sits one metre away; RustDesk goes around it on the Wi-Fi itself, and so does this. So does a phone
+ * whose way out is its mobile data while the Wi-Fi is still on (Wi-Fi "without Internet", or Android's switch to mobile data
+ * when the Wi-Fi is weak): a plain socket to 192.168.x goes to the carrier, and every saved TV said "no answer" while the
+ * Wi-Fi scan, on the Wi-Fi itself, found them. Only the phone sets [wifi], and only then: elsewhere (the computer app, TV Setup)
+ * every socket is a plain one, as before.
  * Only a literal private address goes around: names and Tailscale's 100.64/10 are what the VPN is there for.
  */
 object Lan {
-    /** The Wi-Fi (or Ethernet) under the VPN. */
+    /** The Wi-Fi (or Ethernet) under the VPN, or beside the mobile data. */
     interface Wifi {
+        /** A VPN is the way out (else the mobile data): only then is "let the LAN through in the VPN app" the advice. */
+        val vpn: Boolean get() = true
         /** Puts [s] on the Wi-Fi; throws when the VPN forbids it (Android's "Block connections without VPN"). */
         fun bind(s: Socket)
         /** [ip] is inside the Wi-Fi's own subnet: meant for the room, not for a network behind the VPN. */
@@ -25,7 +30,7 @@ object Lan {
         fun open(url: URL): URLConnection
     }
 
-    /** Asked at each connect (VPNs come and go): null with no VPN up, or no Wi-Fi under it. */
+    /** Asked at each connect (VPNs and networks come and go): null when the Wi-Fi is the way out, or there is no Wi-Fi. */
     @Volatile var wifi: () -> Wifi? = { null }
 
     /** In the error when neither way reached the TV with a VPN up: Errors.say asks to let the LAN through in the VPN app. */
@@ -75,6 +80,7 @@ object Lan {
                 return dial(host, port, ms, if (around) w else null, made).also { viaWifi[host] = around }
             } catch (e: IOException) { if (err == null) err = e }
         }
+        if (!w.vpn) throw err!!
         throw ConnectException("$BLOCKED ($host:$port: $err)").apply { initCause(err) }
     }
 

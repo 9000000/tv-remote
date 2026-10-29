@@ -139,6 +139,8 @@ reset() {
   "$ADB" -s "$PHONE" shell am force-stop dev.tvremote.phone
   if "$ADB" -s "$PHONE" shell "[ -f $f ]"; then
     "$ADB" -s "$PHONE" shell "sed -i 's|<string name=\"ips\">[^<]*</string>|<string name=\"ips\">10.0.2.2</string>|' $f"
+    # a test of another brand (a fake Roku on the host) leaves 10.0.2.2 saved as that brand: every probe then asks its ports, not ADB
+    "$ADB" -s "$PHONE" shell "sed -E -i '/name=\"(kind|name):10\.0\.2\.2\"/d' $f"
   fi
   "$ADB" -s "$PHONE" shell am start -n dev.tvremote.phone/.MainActivity >/dev/null
   echo "✓ the phone app's TVs: 10.0.2.2 (the TV emulator) only"

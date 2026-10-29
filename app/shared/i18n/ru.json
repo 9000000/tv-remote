@@ -2047,6 +2047,7 @@
  "picker.reachable_at_home": "● доступен дома",
  "picker.no_answer_you_are": "○ нет ответа · вы не в Wi‑Fi телевизора",
  "picker.no_answer_tv_off": "○ нет ответа · ТВ выкл.?",
+ "picker.trying_again": "○ нет ответа · пробуем ещё раз…",
  "picker.remove_this_tv_from": "Удалить этот ТВ из списка?",
  "picker.nothing_changes_on_the": "На ТВ ничего не меняется. Чтобы снова использовать, сканируйте или введите IP как в первый раз.",
  "picker.remove": "Удалить",

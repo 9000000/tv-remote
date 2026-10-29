@@ -17,16 +17,18 @@ internal fun open(ip: String, port: Int, timeoutMs: Int, via: android.net.Networ
 } catch (e: Exception) { false }
 
 /**
- * Tells the shared core how to go around a VPN (Lan): while one is up, a TV at a home address is dialed on the Wi-Fi under
- * it. Set from every way into the app (the screens, the widget's and tiles' Headless, the services); setting it twice is fine.
+ * Tells the shared core how to go around a VPN or the mobile data (Lan): while either is the way out, a TV at a home address
+ * is dialed on the Wi-Fi. Set from every way into the app (the screens, the widget's and tiles' Headless, the services); setting it twice is fine.
  */
 internal fun Context.reachAroundVpn() {
     val cm = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
     dev.tvremote.core.Diagnose.bindUdp = { s -> try { lanNetwork()?.bindSocket(s) } catch (ignored: Exception) { } }   // the self-check's search for a TV at a new address
     Lan.wifi = wifi@{
         if (android.os.Build.VERSION.SDK_INT < 23) return@wifi null  // no activeNetwork: as before
-        val vpn = try { cm.getNetworkCapabilities(cm.activeNetwork)?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) == true } catch (e: Exception) { false }
-        if (!vpn) return@wifi null
+        val out = try { cm.getNetworkCapabilities(cm.activeNetwork) } catch (e: Exception) { null }
+        val vpn = out?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) == true
+        val wifiOut = out != null && !vpn && (out.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || out.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET))
+        if (wifiOut) return@wifi null                                 // plain sockets reach the room: as before
         @Suppress("DEPRECATION")
         val n = cm.allNetworks.firstOrNull { n ->
             cm.getNetworkCapabilities(n)?.let { c ->
@@ -35,6 +37,7 @@ internal fun Context.reachAroundVpn() {
             } == true
         } ?: return@wifi null
         object : Lan.Wifi {
+            override val vpn = vpn
             override fun bind(s: Socket) = n.bindSocket(s)
             override fun onLink(ip: java.net.InetAddress) = cm.getLinkProperties(n)?.linkAddresses?.any { Lan.inSubnet(ip, it.address, it.prefixLength) } == true
             override fun open(url: java.net.URL): java.net.URLConnection = n.openConnection(url)

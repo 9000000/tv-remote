@@ -1978,6 +1978,7 @@
  "picker.reachable_at_home": "● kết nối được trong nhà",
  "picker.no_answer_you_are": "○ không thấy · bạn ở ngoài Wi-Fi của TV",
  "picker.no_answer_tv_off": "○ không thấy · TV tắt?",
+ "picker.trying_again": "○ không thấy · đang thử lại…",
  "picker.remove_this_tv_from": "Xóa TV này khỏi danh sách?",
  "picker.nothing_changes_on_the": "Không đổi gì trên TV. Muốn dùng lại thì quét hoặc nhập IP như lần đầu.",
  "picker.remove": "Xóa",

@@ -99,8 +99,10 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     // Each saved TV says whether it answers right now, so nobody has to tap it to find out; the wake button appears only when it does not.
     internal val savedRows = HashMap<String, Pair<Button, View>>()
     internal val reach = HashMap<String, Boolean>()                    // absent: not checked yet
+    internal val trying = HashSet<String>()                            // TVs that did not answer, being asked again right now
     internal val awayFrom = HashMap<String, Boolean>()                 // a TV that is off can only be woken from its own Wi-Fi
     internal val probe = Runnable { probeSaved() }
+    internal var netWatch: android.net.ConnectivityManager.NetworkCallback? = null   // PickerScreen.kt: a network came or went, ask again
 
     // ---- RemoteScreen.kt
     internal lateinit var remote: LinearLayout
@@ -838,14 +840,14 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
     /** Home or recents: with the picture floating it goes on in Android's PiP (Pip.kt). */
     override fun onUserLeaveHint() { super.onUserLeaveHint(); pipLeaveHint() }
 
-    override fun onResume() { super.onResume(); wasPip = false; airResume(); probe.run(); resumeUpdate() }
+    override fun onResume() { super.onResume(); wasPip = false; airResume(); probe.run(); watchNetworks(true); resumeUpdate() }
 
     override fun onPictureInPictureModeChanged(inPip: Boolean, c: Configuration) {
         super.onPictureInPictureModeChanged(inPip, c)
         pipChanged(inPip)
     }
 
-    override fun onPause() { airStop(); ui.removeCallbacks(probe); statusPause(); super.onPause() }
+    override fun onPause() { airStop(); ui.removeCallbacks(probe); watchNetworks(false); statusPause(); super.onPause() }
 
     // ---------------------------------------------------------------- managing the TV: apps, files, installs, health, terminal
     @Deprecated("Deprecated in Java")

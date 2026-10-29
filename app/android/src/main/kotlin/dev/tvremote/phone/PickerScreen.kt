@@ -116,26 +116,45 @@ internal fun MainActivity.save(ip: String, model: String) {
 /** Asks each saved TV, every 8 s while the picker shows, whether it answers, and through which of its addresses. */
 internal fun MainActivity.probeSaved() {
     ui.removeCallbacks(probe)
-    if (host == null && !waking) for (ip in savedIps()) Thread {
-        // the saved address first, then the TV's other one: its Tailscale IP when away, its home IP when at home
-        val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
-            .firstOrNull { h -> kindOf(ip).let { k -> if (k != Remote.Kind.ANDROID) Remote.Kind.ports(k).any { open(h, it, 1500) } else open(h, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(h, 6466, 1500) } }
-        val up = via != null
-        val lan = pref("lan:$ip")
-        val away = lan.isNotEmpty() && !Wol.sameNetwork(lan)   // the phone is not on the TV's own Wi-Fi
-        ui.post { if (via != null) route[ip] = via else route.remove(ip); reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
-    }.start()
+    if (host == null && !waking) for (ip in savedIps()) {
+        if (reach[ip] == false && trying.add(ip)) showReach(ip, false)   // says it is trying again, not only that it failed
+        Thread {
+            val t0 = System.currentTimeMillis()
+            // the saved address first, then the TV's other one: its Tailscale IP when away, its home IP when at home
+            val via = listOf(ip, pref("ts:$ip"), pref("lan:$ip")).filter { it.isNotEmpty() }.distinct()
+                .firstOrNull { h -> kindOf(ip).let { k -> if (k != Remote.Kind.ANDROID) Remote.Kind.ports(k).any { open(h, it, 1500) } else open(h, 5555, 2500) || prefs.getBoolean("atv:$ip", false) && open(h, 6466, 1500) } }
+            val up = via != null
+            if (!up) try { Thread.sleep((1000 - (System.currentTimeMillis() - t0)).coerceAtLeast(0)) } catch (e: InterruptedException) { }   // a refused port answers at once: "trying again" must still be seen
+            val lan = pref("lan:$ip")
+            val away = lan.isNotEmpty() && !Wol.sameNetwork(lan)   // the phone is not on the TV's own Wi-Fi
+            ui.post { trying.remove(ip); if (via != null) route[ip] = via else route.remove(ip); reach[ip] = up; awayFrom[ip] = away; showReach(ip, up) }
+        }.start()
+    }
     ui.postDelayed(probe, 8000)
     if (host == null && !waking) statusStart()                // TvStatus.kt: on / standby / app under each name, its own 10 s round
+}
+
+/** Asks the saved TVs again as soon as the Wi-Fi comes back, a VPN goes up or down, or the phone moves to the mobile data and back,
+ *  instead of after the next 8 s round (or never, when the old answer is what the user keeps reading). */
+internal fun MainActivity.watchNetworks(on: Boolean) {
+    val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    netWatch?.let { try { cm.unregisterNetworkCallback(it) } catch (e: Exception) { } }
+    netWatch = null
+    if (!on) return
+    val again = Runnable { if (host == null) probe.run() }
+    val cb = object : android.net.ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(n: android.net.Network) { ui.removeCallbacks(again); ui.postDelayed(again, 1500) }   // a burst of changes: one round
+        override fun onLost(n: android.net.Network) { ui.removeCallbacks(again); ui.postDelayed(again, 1500) }
+    }
+    try { cm.registerNetworkCallback(android.net.NetworkRequest.Builder().build(), cb); netWatch = cb } catch (e: Exception) { }
 }
 
 /** The plain line under a saved TV: still asking, answering (and through which address), or not. */
 internal fun MainActivity.reachWords(ip: String, up: Boolean?): String = when (up) {
     null -> T("picker.checking")
+    false -> if (ip in trying) T("picker.trying_again") else if (awayFrom[ip] == true) T("picker.no_answer_you_are") else T("picker.no_answer_tv_off")
     true -> route[ip].let { r -> if (r == null || r == ip) T("picker.reachable")
         else if (r.startsWith("100.")) T("picker.reachable_through_tailscale") else T("picker.reachable_at_home") }
-    false -> if (awayFrom[ip] == true) T("picker.no_answer_you_are")
-        else T("picker.no_answer_tv_off")
 }
 
 internal fun MainActivity.showReach(ip: String, up: Boolean?) {
@@ -215,6 +234,8 @@ internal fun MainActivity.scan() {
     scanBtn.isEnabled = false
     scanBtn.setBusy(T("picker.scanning"))
     foundList.removeAllViews()
+    probe.run()                                                   // the saved TVs are asked again too: the button is also "refresh"
+    val saved = savedIps().toSet()
     Thread {
         val nets = ArrayList<String>()
         val found = Collections.synchronizedList(ArrayList<String>())
@@ -241,6 +262,7 @@ internal fun MainActivity.scan() {
             val seen = { ip: String ->
                 if (synchronized(found) { if (ip in found) false else found.add(ip) }) {
                     val adb = open(ip, 5555, 900, lan)
+                    if (ip in saved && adb && host == null) ui.post { route[ip] = ip; reach[ip] = true; showReach(ip, true) }   // found here: not "no answer" above
                     val n = name(ip).ifEmpty { dev.tvremote.core.remote.Ssdp.castName(ip) }
                     ui.post { foundList.addView(foundRow(ip, n, adb)) }   // shown as soon as it answers, not after the whole network
                 }

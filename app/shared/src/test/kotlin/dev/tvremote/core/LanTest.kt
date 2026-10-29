@@ -18,7 +18,7 @@ class LanTest {
     private val real = Lan.dial
     @After fun back() { Lan.dial = real; Lan.wifi = { null }; Lan.forget() }
 
-    private class Wifi(val subnet: String, val prefix: Int) : Lan.Wifi {
+    private class Wifi(val subnet: String, val prefix: Int, override val vpn: Boolean = true) : Lan.Wifi {
         override fun bind(s: Socket) {}
         override fun onLink(ip: InetAddress) = Lan.inSubnet(ip, InetAddress.getByName(subnet), prefix)
         override fun open(url: URL): URLConnection = throw IOException("not here")
@@ -77,5 +77,13 @@ class LanTest {
         assertTrue(e!!.message!!.contains(Lan.BLOCKED))
         assertTrue(Errors.say(e, "en").contains("VPN"))
         assertTrue(Errors.say(e, "vi").contains("VPN"))
+    }
+
+    @Test fun withTheMobileDataAsTheWayOutATvOnTheWifiIsDialedOnTheWifi() {
+        Lan.wifi = { Wifi("192.168.1.0", 24, vpn = false) }         // Wi-Fi "without Internet", or switched to 4G while it is weak
+        assertEquals(listOf(true), tries("192.168.1.20") { it }.first)
+        val (tried, e) = tries("192.168.1.21") { false }
+        assertEquals(listOf(true, false), tried)
+        assertTrue("no VPN to blame: $e", e != null && !e.message!!.contains(Lan.BLOCKED))
     }
 }

@@ -19,7 +19,7 @@ import argparse, datetime, json, os, re, sys, time, urllib.error, urllib.parse, 
 
 URL = "https://tvr-census.99-hoangtran.workers.dev"
 SH = ["cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME",   # the home screens
-      "dumpsys activity activities", "dumpsys meminfo", "dumpsys deviceidle", "settings list global",
+      "dumpsys activity activities", "dumpsys meminfo", "dumpsys deviceidle", "settings list global", "settings list secure",
       "getprop", "logcat -d -v time"]                       # TV Setup cuts each to what the worker takes, a log keeps its end
 ALL = ["/api/about", "/api/state", "/api/diagnose", "/api/setup/version", "/api/wirelog", "/api/rules", "/api/apps",
        "/api/support/prefs", "/api/support/logcat"] + ["/api/support/sh?c=" + urllib.parse.quote(c, safe="") for c in SH]

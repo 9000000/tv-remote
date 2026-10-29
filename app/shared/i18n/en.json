@@ -2062,6 +2062,7 @@
  "picker.reachable_at_home": "● reachable at home",
  "picker.no_answer_you_are": "○ no answer · you are off the TV’s Wi-Fi",
  "picker.no_answer_tv_off": "○ no answer · TV off?",
+ "picker.trying_again": "○ no answer · trying again…",
  "picker.remove_this_tv_from": "Remove this TV from the list?",
  "picker.nothing_changes_on_the": "Nothing changes on the TV. To use it again, scan or type its IP as the first time.",
  "picker.remove": "Remove",
