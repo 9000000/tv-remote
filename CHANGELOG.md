@@ -4,6 +4,11 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+- TV Games: a TV remote that calls itself a joystick (the FPT Play remote: one axis, its mic) no longer takes a player's seat, and a game pad that takes a seat starts with no name instead of the last phone's.
+- TV Games: the lobby can send a player out: Up picks a seat, OK sends them out (Back keeps everyone); the phone says so and joins again on a tap. A pad page closed for good frees its seat at once.
+
 ## 0.35.1 - 2026-10-29
 
 Web 0.35.1 · Phone app 0.33.1 · TV app 0.34.1 · TV Home 0.20.1 · TV Channels 0.15.1 · TV Games 0.14.0

@@ -9,6 +9,7 @@ import android.graphics.drawable.GradientDrawable
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
@@ -37,6 +38,8 @@ class LobbyView(
     private val panel = FrameLayout(act)
     private val chips = ArrayList<Chip>()
     private val joined = HashSet<Int>()
+    /** The seat picked with the D-pad to send its player out (OK), 0 = none: OK starts the game. */
+    var picked = 0; private set
     private val held = Array(4) { LinkedHashSet<String>() }
     private val watchTv = act.label("", 16f, 0xFF9AA3B8.toInt())
     private val warnTv = act.label("", 18f, 0xFFFBBF24.toInt())
@@ -197,6 +200,7 @@ class LobbyView(
     /** Seats from the server: who is in, their names, pings and Ready; and the one action. */
     fun render() {
         val ps = server.lobbyPlayers().associateBy { it.slot }
+        if (picked !in ps) picked = 0
         val w = server.watching(); watchTv.text = if (w > 0) act.getString(R.string.lobby_watch, w) else ""
         val ok = !LobbyRule.tooFew(ps.values.toList(), min)
         if (ok) {
@@ -207,7 +211,12 @@ class LobbyView(
             action.background = round(0x26FFFFFF, 99, 2, 0x55FFFFFF); actionKey.setTextColor(0xFF8892A6.toInt()); actionTv.setTextColor(0xFFFBBF24.toInt())
             actionTv.text = act.resources.getQuantityString(R.plurals.need_more, missing, missing)
         }
-        subHint.text = if (ps.isEmpty()) act.getString(R.string.hint_ready) else ""
+        subHint.text = if (ps.isEmpty()) act.getString(R.string.hint_ready) else act.getString(R.string.lobby_kick_hint)
+        if (picked > 0) {                                              // OK now sends the picked player out, not the game off
+            action.background = capsule(KICK); actionKey.setTextColor(Color.WHITE); actionTv.setTextColor(Color.WHITE)
+            actionTv.text = act.getString(R.string.lobby_kick, server.nameOf(picked) ?: act.getString(R.string.player_plain, picked))
+            subHint.text = act.getString(R.string.lobby_kick_back)
+        }
         chips.forEachIndexed { i, r ->
             val p = ps[i + 1]; val c = PLAYER_COLORS[i]
             if (p == null) {
@@ -219,7 +228,7 @@ class LobbyView(
                 return@forEachIndexed
             }
             r.avatar.text = (server.nameOf(i + 1)?.trim()?.take(1)?.uppercase()?.ifEmpty { null } ?: (i + 1).toString())
-            r.box.background = GradientDrawable().apply { setColor(if (p.ready) (accent and 0x00FFFFFF) or 0x40000000 else 0xCC151A25.toInt()); cornerRadius = shapeR; setStroke(act.dp(2), if (p.ready) accent else (c and 0x00FFFFFF) or 0x99000000.toInt()) }
+            r.box.background = GradientDrawable().apply { setColor(if (p.ready) (accent and 0x00FFFFFF) or 0x40000000 else 0xCC151A25.toInt()); cornerRadius = shapeR; if (p.slot == picked) setStroke(act.dp(4), Color.WHITE) else setStroke(act.dp(2), if (p.ready) accent else (c and 0x00FFFFFF) or 0x99000000.toInt()) }
             (r.avatar.background as GradientDrawable).setColor(c); r.avatar.setTextColor(Color.WHITE)
             r.name.text = server.nameOf(p.slot) ?: act.getString(R.string.player_plain, p.slot); r.name.setTextColor(Color.WHITE)
             val ms = server.pingOf(p.slot)
@@ -234,6 +243,21 @@ class LobbyView(
             if (joined.add(p.slot) && animOn) r.avatar.animate().cancel().also { r.avatar.scaleX = 1.35f; r.avatar.scaleY = 1.35f; r.avatar.animate().scaleX(1f).scaleY(1f).setDuration(260).start() }   // one pop when a phone joins
         }
     }
+
+    /** A D-pad key moves the pick among the seated players (2 per row); down from the bottom, or Back, drops it. False = not a move. */
+    fun move(keyCode: Int): Boolean {
+        val seated = server.lobbyPlayers().map { it.slot }.sorted()
+        val to = when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> if (picked == 0) seated.lastOrNull { it > 2 } ?: seated.firstOrNull() ?: 0 else if (picked - 2 in seated) picked - 2 else picked
+            KeyEvent.KEYCODE_DPAD_DOWN -> if (picked == 0) 0 else if (picked + 2 in seated) picked + 2 else 0
+            KeyEvent.KEYCODE_DPAD_LEFT -> if (picked == 0) 0 else seated.lastOrNull { it < picked } ?: picked
+            KeyEvent.KEYCODE_DPAD_RIGHT -> if (picked == 0) 0 else seated.firstOrNull { it > picked } ?: picked
+            else -> return false
+        }
+        if (to != picked) { picked = to; render() }
+        return true
+    }
+    fun unpick() { if (picked != 0) { picked = 0; render() } }
 
     private fun glyph(b: String) = mapOf("UP" to "\u25B2", "DOWN" to "\u25BC", "LEFT" to "\u25C0", "RIGHT" to "\u25B6")[b] ?: b
 
@@ -262,5 +286,6 @@ class LobbyView(
 
     /** Sizes in canvas dp (x 1.92 = px at 1080p): QR card 320 square (~615 px), 2 x 2 chips 56 high, one 56 high action, Back 15 sp. */
     companion object { const val DW = 900; const val DH = 520; const val FOOT = 36; const val QR = 320; const val HERO_W = 128; const val HERO_H = 72; const val CHIP_H = 56; const val AVATAR = 36
-        val CHIP_EMPTY = 0x3310141D }   // the seat nobody took: a dark veil, not a player colour
+        val CHIP_EMPTY = 0x3310141D     // the seat nobody took: a dark veil, not a player colour
+        val KICK = 0xFFDC2626.toInt() }  // OK sends a player out: red, not the game's accent
 }

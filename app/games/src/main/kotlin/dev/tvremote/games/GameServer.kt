@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import java.io.BufferedInputStream
 import java.io.File
@@ -290,22 +291,47 @@ class GameServer private constructor(private val ctx: Context) {
         var fresh = false
         val r: Int
         synchronized(slots) {
+            if (dev in sentOff) return -1
             var i = slots.indexOfFirst { it.dev == dev }
             if (i < 0) {
                 val now = SystemClock.uptimeMillis()
                 i = slots.indexOfFirst { it.conn == null && it.dev < 0 && !reserved(it, now) }
-                if (i >= 0) { slots[i].dev = dev; slots[i].cid = null; fresh = true }
+                if (i >= 0) { slots[i].dev = dev; slots[i].cid = null; slots[i].name = null; fresh = true }   // not the last phone's name
             }
             r = i
         }
-        if (fresh) notifyPlayers()
+        if (fresh) { saveSeats(); notifyPlayers() }
         return r
+    }
+
+    private val sentOff = HashSet<Int>()                   // physical pads the TV sent off: their keys take no seat again until unplugged
+
+    /**
+     * The TV sends player [player] (1..4) out of the room: a phone hears {kicked} and waits for a tap to join again (a seat as any
+     * new phone gets, not this one kept), a physical pad gives up its seat for good.
+     */
+    fun kick(player: Int) {
+        if (player !in 1..MAX) return
+        synchronized(slots) {
+            val i = player - 1; val s = slots[i]
+            release(i)
+            s.conn?.let { it.text("{\"kicked\":true}"); it.bye() }
+            if (s.dev >= 0) sentOff.add(s.dev)
+            Log.i(TAG, "kick p$player"); s.conn = null; s.dev = -1; s.cid = null; s.name = null; s.ready = false; s.ping = -1; s.offset = Long.MIN_VALUE
+        }
+        saveSeats(); notifyPlayers(); presence.padsChanged(); onReady()
+    }
+
+    /** A page closed for good ("bye"): its seat is free at once, not kept the 30 s a dropped link gets. */
+    private fun leave(i: Int, c: Conn) {
+        synchronized(slots) { val s = slots[i]; if (s.conn === c) { s.cid = null; s.name = null } }
+        saveSeats()
     }
 
     /** Free the slots of pads that were unplugged. */
     fun padGone(present: (Int) -> Boolean) {
         var any = false
-        synchronized(slots) { slots.forEach { if (it.dev >= 0 && !present(it.dev)) { it.dev = -1; any = true } } }
+        synchronized(slots) { slots.forEach { if (it.dev >= 0 && !present(it.dev)) { it.dev = -1; any = true } }; sentOff.removeAll { !present(it) } }
         if (any) notifyPlayers()
     }
 
@@ -508,6 +534,7 @@ class GameServer private constructor(private val ctx: Context) {
                             slot >= 0 && msg.startsWith("name") -> rename(slot, msg.substring(4))
                             msg.startsWith("n ") -> nav(msg.substring(2).trim())
                             msg == "open" -> presence.open()
+                            slot >= 0 && msg == "bye" -> { leave(slot, c); break }
                             slot >= 0 && msg == "reload" && webMode -> onReload()
                             slot >= 0 && msg.startsWith("a ") -> msg.split(' ').let { if (it.size == 3) axis(slot, (it[1].toIntOrNull() ?: 0) / 100f, (it[2].toIntOrNull() ?: 0) / 100f) }
                             slot >= 0 && msg.startsWith("t ") -> onText(slot + 1, msg.substring(2).take(200))
@@ -548,11 +575,14 @@ class GameServer private constructor(private val ctx: Context) {
 
         /**
          * A game pad of its own, not the TV remote: some boxes' remotes say GAMEPAD too (FPT's IR remote rtk-ir-hw), and taken
-         * as a pad one key gave it seat 1, so a card game moved the hand off the screen. A pad has sticks or presses pad buttons.
+         * as a pad one key gave it seat 1, so a card game moved the hand off the screen. A pad has sticks or presses pad buttons. A
+         * stick is an X or hat axis: the FPT Play Bluetooth remote says JOYSTICK for one GENERIC_1 axis (its mic), and every press of it
+         * took a seat under the name of the phone that sat there last.
          */
         fun isPad(ev: KeyEvent): Boolean {
             val d = ev.device ?: return false
-            return d.sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
+            return d.sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
+                (d.getMotionRange(MotionEvent.AXIS_X) != null || d.getMotionRange(MotionEvent.AXIS_HAT_X) != null) ||
                 (ev.source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD && KeyEvent.isGamepadButton(ev.keyCode))
         }
         /** A stick as D-pad directions: 8-way, dead zone .35. */

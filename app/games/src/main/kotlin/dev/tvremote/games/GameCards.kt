@@ -194,9 +194,12 @@ class GameCards(
     fun key(ev: KeyEvent): Boolean {
         val up = ev.action == KeyEvent.ACTION_UP
         if (lobby) {                                          // nothing reaches the game yet; OK starts it, Back goes to the library
-            if (up) when (ev.keyCode) {
-                KeyEvent.KEYCODE_BACK -> onQuit()
-                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> ok()
+            val lv = lobbyView
+            if (!up) { lv?.move(ev.keyCode); return true }                 // up / down / left / right pick a player to send out
+            when (ev.keyCode) {
+                KeyEvent.KEYCODE_BACK -> if ((lv?.picked ?: 0) > 0) lv?.unpick() else onQuit()
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER ->
+                    lv?.picked?.takeIf { it > 0 }?.let { lv.unpick(); server.kick(it) } ?: ok()
             }
             return true
         }
