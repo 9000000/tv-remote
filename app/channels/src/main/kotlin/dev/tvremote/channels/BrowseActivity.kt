@@ -300,6 +300,12 @@ class BrowseActivity : Activity() {
         })
         if (catRes != null) add(TvUi.row(this, R.drawable.ic_home, getString(R.string.home)) { goHome() }, false)   // back to the shelves
         add(TvUi.row(this, R.drawable.ic_search, getString(R.string.search)) { enterSearch() }, group == SEARCH)   // an action: OK only, moving onto it opens nothing
+        // sections, each with its title: what the person keeps (its "+" last), their m3u links (the same), settings, then the country's kinds
+        fun section(title: String, line: Boolean = true) {
+            if (line) rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply { topMargin = dp(10); bottomMargin = dp(2) })
+            rail.addView(TvUi.text(this, title, 13f, TvUi.DIM).apply { setPadding(dp(12), dp(8), 0, dp(4)) })
+        }
+        section(getString(R.string.my_groups))
         val favs = Store.favourites(this).byChannel().size
         add(TvUi.row(this, R.drawable.ic_star, getString(R.string.favourites), if (favs > 0) "$favs" else "") { pick(FAVS) }.held(Store.FAV), group == FAVS, FAVS)
         val rem = Reminders.all(this).size
@@ -308,17 +314,16 @@ class BrowseActivity : Activity() {
             val n = g.channels.byChannel().size
             add(TvUi.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
         }
-        val lists = Store.playlists(this)
-        if (lists.isNotEmpty()) {                                     // the person's own m3u links (typed here, or set from a phone or computer), one row each
-            rail.addView(TvUi.text(this, getString(R.string.your_lists), 13f, TvUi.DIM).apply { setPadding(dp(12), dp(10), 0, dp(4)) })
-            for (l in lists) {
-                val n = plData[l.id]?.channels?.byChannel()?.size
-                add(TvUi.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }.heldList(l.id), group == PL + l.id, PL + l.id)
-            }
+        add(newGroup().let { t -> TvUi.row(this, t.icon, t.label) { t.go() } }, false)
+        section(getString(R.string.your_lists))                       // the person's own m3u links (typed here, or set from a phone or computer)
+        for (l in Store.playlists(this)) {
+            val n = plData[l.id]?.channels?.byChannel()?.size
+            add(TvUi.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }.heldList(l.id), group == PL + l.id, PL + l.id)
         }
-        for (t in tools()) add(TvUi.row(this, t.icon, t.label) { t.go() }, false)
-        rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
-            val m = TvUi.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
+        addLink()?.let { t -> add(TvUi.row(this, t.icon, t.label) { t.go() }, false) }
+        section(getString(R.string.settings))
+        for (t in settings()) add(TvUi.row(this, t.icon, t.label) { t.go() }, false)
+        if (all.isNotEmpty()) section(countryName.ifEmpty { getString(R.string.all) })
         if (all.isNotEmpty()) {
         add(TvUi.row(this, R.drawable.ic_tv, getString(R.string.all), "${all.size}") { pick(ALL) }, group == ALL, ALL)
         all.groupingBy { it.first().group }.eachCount().entries.sortedByDescending { it.value }.forEach { (g, n) ->
@@ -523,10 +528,10 @@ class BrowseActivity : Activity() {
 
     private class Tool(val icon: Int, val label: String, val go: () -> Unit)
 
-    /** The actions both the rail and the "⋯" menu end with: one list, so the two never offer different things. */
-    private fun tools() = listOfNotNull(
-        if (Store.playlists(this).size < Edit.MAX_LISTS) Tool(R.drawable.ic_link, getString(R.string.list_add)) { addList() } else null,
-        Tool(R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } },
+    /** The actions the rail and the "⋯" menu share, made once so the two never offer different things. */
+    private fun newGroup() = Tool(R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }
+    private fun addLink() = if (Store.playlists(this).size < Edit.MAX_LISTS) Tool(R.drawable.ic_link, getString(R.string.list_add)) { addList() } else null
+    private fun settings() = listOf(
         Tool(R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() },
         Tool(R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() },
         Tool(R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) })
@@ -542,7 +547,10 @@ class BrowseActivity : Activity() {
         if (lists.isNotEmpty()) item(R.drawable.ic_files, getString(R.string.your_lists), "${lists.size}") { playlists() }
         val rem = Reminders.all(this).size
         if (rem > 0) item(R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }
-        for (t in tools()) item(t.icon, t.label, go = t.go)
+        for (t in listOfNotNull(newGroup(), addLink())) item(t.icon, t.label, go = t.go)
+        val dp = { n: Int -> TvUi.dp(this, n).toInt() }
+        box.addView(TvUi.text(this, getString(R.string.settings), 13f, TvUi.DIM).apply { setPadding(dp(12), dp(10), 0, dp(4)) })
+        for (t in settings()) item(t.icon, t.label, go = t.go)
         dlg.show()
         box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
     }
