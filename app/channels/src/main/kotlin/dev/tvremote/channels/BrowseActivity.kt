@@ -316,11 +316,7 @@ class BrowseActivity : Activity() {
                 add(TvUi.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }.heldList(l.id), group == PL + l.id, PL + l.id)
             }
         }
-        if (lists.size < Edit.MAX_LISTS) add(TvUi.row(this, R.drawable.ic_link, getString(R.string.list_add)) { addList() }, false)
-        add(TvUi.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
-        add(TvUi.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
-        add(TvUi.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
-        add(TvUi.row(this, R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() }, false)
+        for (t in tools()) add(TvUi.row(this, t.icon, t.label) { t.go() }, false)
         rail.addView(View(this).apply { setBackgroundColor(0x22FFFFFF) }, LinearLayout.LayoutParams(-1, 1).apply {
             val m = TvUi.dp(this@BrowseActivity, 10).toInt(); topMargin = m; bottomMargin = m })
         if (all.isNotEmpty()) {
@@ -525,6 +521,16 @@ class BrowseActivity : Activity() {
         }
     }
 
+    private class Tool(val icon: Int, val label: String, val go: () -> Unit)
+
+    /** The actions both the rail and the "⋯" menu end with: one list, so the two never offer different things. */
+    private fun tools() = listOfNotNull(
+        if (Store.playlists(this).size < Edit.MAX_LISTS) Tool(R.drawable.ic_link, getString(R.string.list_add)) { addList() } else null,
+        Tool(R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } },
+        Tool(R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() },
+        Tool(R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() },
+        Tool(R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) })
+
     /** Everything that is not "watch a channel", out of the way of the shelves: opened by "⋯" or the Menu key. */
     private fun homeMenu() {
         val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 380)
@@ -532,16 +538,11 @@ class BrowseActivity : Activity() {
         fun item(icon: Int, label: String, count: String = "", go: () -> Unit) = box.addView(TvUi.row(this, icon, label, count) { dlg.dismiss(); go() })
         item(R.drawable.ic_tv, getString(R.string.all_channels), "${all.size}") { pick(ALL) }
         item(R.drawable.ic_folder, getString(R.string.my_groups), Store.groups(this).size.takeIf { it > 0 }?.toString() ?: "") { myGroups() }
-        item(R.drawable.ic_plus, getString(R.string.new_group)) {
-            ask(getString(R.string.new_group), "") { Store.addGroup(this, it); Toast.makeText(this, R.string.group_made, Toast.LENGTH_LONG).show() }
-        }
         val lists = Store.playlists(this)
-        item(R.drawable.ic_files, getString(R.string.your_lists), if (lists.isNotEmpty()) "${lists.size}" else "") { playlists() }
+        if (lists.isNotEmpty()) item(R.drawable.ic_files, getString(R.string.your_lists), "${lists.size}") { playlists() }
         val rem = Reminders.all(this).size
         if (rem > 0) item(R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }
-        item(R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }
-        item(R.drawable.ic_subtitle, getString(R.string.lang, langName(Lang.pref(this)))) { languages() }
-        item(R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }
+        for (t in tools()) item(t.icon, t.label, go = t.go)
         dlg.show()
         box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
     }
