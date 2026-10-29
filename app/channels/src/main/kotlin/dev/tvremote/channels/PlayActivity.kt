@@ -158,6 +158,9 @@ class PlayActivity : Activity() {
         spin.visibility = View.VISIBLE
         io.execute {
             val favs = Store.favourites(this).byChannel()
+            // then the person's groups, then the channel last played (an m3u link's, kept whole): TV Home's Keep watching opens it
+            val group = Store.groups(this).firstOrNull { g -> g.channels.any { it.id == id } }
+            val last = Store.lastChannel(this)?.takeIf { it.id == id }
             // its own country's list, else the one on show: Vietnam's list carries iptv-org's "Cinemax.us" too (its "also" channels)
             val (cc, country) = listOf(Ids.country(id), Store.country(this)).filter { it.isNotEmpty() }.distinct().asSequence()
                 .map { it to Catalog.channels(this, it).byChannel() }.firstOrNull { (_, l) -> l.any { it.first().id == id } } ?: ("" to emptyList())
@@ -166,6 +169,8 @@ class PlayActivity : Activity() {
                 when {
                     country.isNotEmpty() -> Lineup.set(country, cc.uppercase())
                     favs.any { it.first().id == id } -> Lineup.set(favs, getString(R.string.favourites))
+                    group != null -> Lineup.set(group.channels.byChannel(), group.name)
+                    last != null -> Lineup.set(listOf(listOf(last)), last.name)
                     else -> { spin.visibility = View.GONE; fail(getString(R.string.not_found)); return@post }
                 }
                 tune(Lineup.indexOf(id))
@@ -292,6 +297,7 @@ class PlayActivity : Activity() {
 
     /** Every stream of this channel failed: OK on the message tries them all again from the first. */
     private fun retryAll() {
+        if (streams.isEmpty()) { open(intent); return }               // "not found" / a bad link: look again, never a spinner on nothing
         problem.visibility = View.GONE; spin.visibility = View.VISIBLE
         stream = 0; asProgressive = false; retried = false
         start()
@@ -408,7 +414,13 @@ class PlayActivity : Activity() {
     private fun isMediaKey(k: Int) = k == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || k == KeyEvent.KEYCODE_MEDIA_PAUSE || k == KeyEvent.KEYCODE_MEDIA_PLAY
     private fun togglePause() { player?.let { if (it.isPlaying) it.pause() else it.play() } }
 
-    override fun onStart() { super.onStart(); started = true; if (player == null && streams.isNotEmpty()) start() }
+    override fun onStart() {
+        super.onStart(); started = true
+        // onStop dropped their timers: the banner would stay on the picture, a half-typed number on screen
+        if (info.visibility == View.VISIBLE) { main.removeCallbacks(hideInfo); main.postDelayed(hideInfo, 5000) }
+        typed = ""; digits.visibility = View.GONE
+        if (player == null && streams.isNotEmpty()) start()
+    }
 
     override fun onStop() {
         super.onStop()

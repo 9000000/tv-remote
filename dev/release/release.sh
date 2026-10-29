@@ -77,7 +77,7 @@ if ! grep -q "^## $VER " CHANGELOG.md; then
   python3 - "$VER" "$(date +%F)" "$(cat app/android/VERSION)" "$(cat app/tv/VERSION)" "$(cat app/home/VERSION)" "$(cat app/channels/VERSION)" "$(cat app/games/VERSION)" <<'PY'
 import sys
 v, day, phone, tv, home, channels, games = sys.argv[1:]
-s = open("CHANGELOG.md").read().replace("## Unreleased\n", f"## {v} - {day}\n\nWeb {v} · app điện thoại {phone} · app TV {tv} · TV Home {home} · TV Channels {channels} · TV Games {games}\n", 1)
+s = open("CHANGELOG.md").read().replace("## Unreleased\n", f"## {v} - {day}\n\nWeb {v} · Phone app {phone} · TV app {tv} · TV Home {home} · TV Channels {channels} · TV Games {games}\n", 1)
 open("CHANGELOG.md", "w").write(s)
 PY
 fi

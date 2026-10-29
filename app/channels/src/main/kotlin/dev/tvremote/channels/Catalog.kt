@@ -25,12 +25,13 @@ object Catalog {
 
     /** Only iptv-org's playlist of [cc], the part a screen can show first (the providers' channels wait on more requests); [progress] as in [cached]. */
     fun iptv(c: Context, cc: String, fresh: Boolean = false, progress: ((Long, Long) -> Unit)? = null): List<Channel> =
-        cached(c, "m3u-$cc.m3u", "$BASE/iptv/countries/$cc.m3u", fresh, progress)?.let { M3u.parse(it) }.orEmpty()
+        cached(c, "m3u-$cc.m3u", "$BASE/iptv/countries/$cc.m3u", fresh, progress, valid = { it.isEmpty() || it.trimStart('\uFEFF', ' ', '\r', '\n').startsWith("#EXTM3U") })
+            ?.let { M3u.parse(it) }.orEmpty()
 
     /** Every country iptv-org knows, by name in the TV's language where Java has it ("Việt Nam"), with its flag. */
     fun countries(c: Context): List<Country> {
-        val text = cached(c, "countries.json", "$BASE/api/countries.json", false) ?: return emptyList()
-        val a = org.json.JSONArray(text)
+        val text = cached(c, "countries.json", "$BASE/api/countries.json", false, valid = { it.trimStart().startsWith("[") }) ?: return emptyList()
+        val a = try { org.json.JSONArray(text) } catch (e: org.json.JSONException) { return emptyList() }
         val lang = Lang.locale()
         return (0 until a.length()).map { a.getJSONObject(it) }.map { o ->
             val code = o.optString("code")
@@ -47,12 +48,14 @@ object Catalog {
 
     /**
      * The copy in files/ when younger than a day (or offline), else the network's ([load], or GET [url]). Null: never fetched and offline.
-     * [progress] (bytes so far, bytes in all or -1) is told of a GET of [url] as it comes in, for a bar.
+     * [progress] (bytes so far, bytes in all or -1) is told of a GET of [url] as it comes in, for a bar. An answer [valid] refuses (a
+     * hotel Wi-Fi's sign-in page, answered 200 for any address) counts as offline: kept a day, it would be the list until tomorrow.
      */
-    fun cached(c: Context, name: String, url: String, fresh: Boolean, progress: ((Long, Long) -> Unit)? = null, load: (() -> String?)? = null): String? {
+    fun cached(c: Context, name: String, url: String, fresh: Boolean, progress: ((Long, Long) -> Unit)? = null,
+               valid: (String) -> Boolean = { true }, load: (() -> String?)? = null): String? {
         val f = File(c.filesDir, name)
         if (!fresh && young(c, name)) return f.readText()
-        val got = try { load?.invoke() ?: if (load == null) get(url, progress) else null } catch (e: Exception) { null }
+        val got = try { load?.invoke() ?: if (load == null) get(url, progress) else null } catch (e: Exception) { null }?.takeIf(valid)
         if (got != null) { File(c.filesDir, "$name.tmp").apply { writeText(got); renameTo(f) }; return got }
         return if (f.exists()) f.readText() else null
     }

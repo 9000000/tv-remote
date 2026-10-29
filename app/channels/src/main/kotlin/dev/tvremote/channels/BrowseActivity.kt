@@ -355,6 +355,7 @@ class BrowseActivity : Activity() {
     }
 
     private fun pick(g: String) {
+        if (isList(g) && plData[g.removePrefix(PL)]?.ok == false) plData.remove(g.removePrefix(PL))   // failed (offline?): opening it again asks again
         homeMode = false; group = g; buildRail(); filter()
         intoGrid()
     }
@@ -455,7 +456,8 @@ class BrowseActivity : Activity() {
             if (idx != null && names.isEmpty()) names = Catalog.countries(this).associate { it.code to "${it.flag} ${it.name}" }
             main.post {
                 if (isDestroyed || n != gseq || group != SEARCH) return@post
-                others = res; otherState = if (idx == null) OFFLINE else DONE
+                val here = all.mapTo(HashSet()) { it.first().id.substringBefore('@') }   // the country's list carries some (its "also" ones): not twice
+                others = res.filter { it.first().id.substringBefore('@') !in here }; otherState = if (idx == null) OFFLINE else DONE
                 filter()
             }
         }
@@ -778,9 +780,9 @@ class BrowseActivity : Activity() {
         }
         val ok = {
             val t = f.text.toString().trim()
-            val bad = if (t.isEmpty()) null else check(t)
-            if (bad != null) Toast.makeText(this, bad, Toast.LENGTH_LONG).show()
-            else if (t.isNotEmpty()) { dlg.dismiss(); done(if (url) t else t.take(40)) }
+            val bad = if (t.isEmpty()) hint else check(t)                // empty: say what goes there and go back to the field, never a silent OK
+            if (bad != null) { Toast.makeText(this, bad, Toast.LENGTH_LONG).show(); if (t.isEmpty()) f.requestFocus() }
+            else { dlg.dismiss(); done(if (url) t else t.take(40)) }
         }
         f.setOnEditorActionListener { _, _, _ -> ok(); true }
         box.addView(f, LinearLayout.LayoutParams(-1, TvUi.dp(this, 46).toInt()).apply { bottomMargin = TvUi.dp(this@BrowseActivity, 8).toInt() })

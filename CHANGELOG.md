@@ -6,13 +6,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 
-**Tiếng Việt**
-- TV Channels: thêm link m3u ngay trên TV (mục **Thêm link m3u**; mở app TV Remote trên điện thoại để dán link cho nhanh), bấm Menu trên một danh sách để đổi tên hoặc xoá. Trước đây chỉ thêm được từ app điện thoại, app máy tính hoặc web của TV.
-- TV Channels: kênh Cinemax (luồng Mỹ trong danh sách Việt Nam) hiện nhầm lịch phát sóng của Cinemax Việt Nam (TV360): lịch theo tên giờ chỉ dùng cho kênh của đúng nước đó. Link mở thẳng một kênh như vậy (ghim, nhắc lịch) trước báo "không còn trong danh sách", giờ mở được.
-
-**English**
 - TV Channels: add an m3u link on the TV itself (**Add an m3u link**; open the TV Remote app on your phone to paste it quickly), Menu on a list renames or deletes it. Before, links could only be added from the phone app, the computer app or the TV web page.
 - TV Channels: Cinemax (the US feed in Vietnam's list) showed Vietnam's Cinemax guide from TV360: a guide matched by name now applies only to that country's channels. A link straight to such a channel (a pin, a reminder) said it was gone; it opens now.
+- TV Channels: with the network down, channels were marked "not working" for 6 hours and logos never came back; now nothing is marked offline. A list that failed once is asked again when opened; a broken iptv-org answer (a captive Wi-Fi page) no longer replaces the saved list.
+- TV Channels: search no longer lists a channel twice (this country and "Other countries"); OK on an empty link box says what to type.
+- TV Channels: a play link (TV Home pin, Play Next) to a channel in your groups or the last one watched opens it; Retry after "not found" looks again; the info banner no longer stays up after coming back to the app.
 
 ## 0.34.0 - 2026-10-29
 

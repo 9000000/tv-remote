@@ -31,6 +31,6 @@ Read with the root [AGENTS.md](../../../AGENTS.md).
   the TV's locale), `Words.get(r.lang, "id")` for words a page asked for (`r.lang`: the page's `tvr-lang` cookie). No new
   `t("vi", "en")` pairs. What the server sends comes in the page's language already; an English error from a TV or a library
   gets its words in `friendly()` (`js/core.js`).
-  README.md (English) and README.vi.md (Vietnamese) are kept in step; CHANGELOG entries and release notes are written in both languages.
+  README.md (English) and README.vi.md (Vietnamese) are kept in step; CHANGELOG entries and release notes are written in English only.
 
 The design reference these rules come from: [DESIGN.md](DESIGN.md).

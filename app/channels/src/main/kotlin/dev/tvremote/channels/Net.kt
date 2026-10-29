@@ -92,8 +92,9 @@ object Logos {
 
     private fun work(j: Job) {
         j.started = true
-        val b = try { fromDisk(j.url) ?: fromNet(j.url) } catch (e: Throwable) { null }
-        if (b != null) cache?.put(j.url, b) else synchronized(missing) { missing.add(j.url) }
+        var net = false
+        val b = try { fromDisk(j.url) ?: fromNet(j.url) } catch (e: java.io.IOException) { net = true; null } catch (e: Throwable) { null }
+        if (b != null) cache?.put(j.url, b) else if (!net) synchronized(missing) { missing.add(j.url) }   // offline: the next screen asks again
         main.post {
             pending.remove(j.url)
             for (i in j.views.indices) {
@@ -198,10 +199,15 @@ object Probe {
         if (!synchronized(asked) { (asked[ch.url]?.let { t - it > 6 * 3600_000L } ?: true).also { if (it) asked[ch.url] = t } }) return
         pool.execute {
             val ok = try { answers(ch, Providers.resolve(c, ch.url)) } catch (e: Throwable) { false }
+            if (!ok && !online(c)) { synchronized(asked) { asked.remove(ch.url) }; return@execute }   // offline says nothing of the stream: asked again later
             Store.setAlive(c, ch.url, ok)
             main.post { done(ok) }
         }
     }
+
+    @Suppress("DEPRECATION")                                          // activeNetworkInfo: the one call from Android 5 on
+    fun online(c: android.content.Context) =
+        (c.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).activeNetworkInfo?.isConnected == true
 
     fun answers(ch: Channel, playable: String = ch.url): Boolean {
         var url = playable

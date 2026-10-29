@@ -68,7 +68,7 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
   builds `res/values-<lang>` from them, `app/gradle/i18n.gradle`). **A new language = its files in that folder + one line in
   `langs.json`**, nothing else: no `strings.xml`, no language list in code (Kotlin reads `dev.tvremote.i18n.Langs`, generated from
   `langs.json`). No new `t("vi", "en")` pairs. `tests/i18n.test.js` keeps the files in step. README.md / README.vi.md in step;
-  CHANGELOG and release notes in both languages. (`docs/`, the website, stays vi/en.)
+  CHANGELOG and release notes in English only (the user, 2026-10-29). (`docs/`, the website, stays vi/en.)
 - **Off = nothing runs:** a new option defaults to off (or today's behaviour); with it off no receiver, service, thread, timer, alarm or file write runs for it (app/home/AGENTS.md).
 - **Users first:** automatic where possible; an error only after every fallback failed, in words a person can act on
   (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show progress and can be cancelled.
@@ -93,7 +93,7 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
 - Release only when the user says so, once what it carries is tested; keep GitHub Actions runs few (nothing runs on push). TV Setup
   updates itself and the TV apps quietly (`AutoUpdate`), so a release costs TVs little, but a bad one spreads with nobody pressing
   anything; the Phone and Computer apps ask, so not two versions of either on one day. Details: dev/release/AGENTS.md.
-- Notes go under `## Unreleased` in `CHANGELOG.md` (**Tiếng Việt** and **English**) as features land. A change to what a
+- Notes go under `## Unreleased` in `CHANGELOG.md` (English only, plain `- ` bullets) as features land. A change to what a
   `docs/guide.html` topic describes: update it and set `data-v="next"`.
 - Push without asking once tested and committed (a push deploys `docs/` at once). Sub-agents never push.
 - **Issues:** a reply that says a fix is "in the next release" gets the label `next-release`. `dev/admin/issues.js` (run by the
