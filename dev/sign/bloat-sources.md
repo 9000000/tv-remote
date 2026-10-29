@@ -5,7 +5,18 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-29**, upstream at `985bbd14` (272 commits after `6ffa7fa5`, v3.1; mostly addons/ and launcher/; 36 `debloat.txt`,
+Last read: **2026-10-29 (evening)**, upstream at `42fe7b09d6` (230 commits after `985bbd14`; mostly addons/, the launcher's Halloween
+look, tests; 27 `debloat.txt`, 6 new, 81 packages no list had). Into bloat.json: SUGGEST Sharp `sharplabs.dmt.aas.analyticsservice`
+(telemetry), `jp.co.sharp.av.android.epopdemo` (shop demo); KEEP `com.youview.poa` (Freeview Play: off took BBC iPlayer, ITVX,
+Channel 4 and 5 off a UK Sony, they are HbbTV web apps it opens). Already ours: TCL `showmode` (sound modes, upstream now keeps it too).
+Not taken: Sony `sonyselect` / `discovery` / `bivlinfo` (store and content rows: choices), the rest of Sony `b2b.*`, BRAVIA CAM parts,
+DLNA / Miracast / AirCast receivers, TCL `channelplus` (an owner turned it back on: its FAST channels leave Live TV), `messagebox`,
+`appmarket2`, `onetimeinitializer`, Google `katniss` / `play.games` / `videos` / `music` (user apps), Philips NetTV market apps.
+Facts not acted on (no such TV to try on): a Xiaomi Mi TV 4A's firmware GlobalKey answers Input (178) by starting tvlauncher's
+`InputsPanelActivity` by name, so with tvlauncher off the key is dead while its handler is alive (our KeyFix takes a key only when
+its global handler is gone: #2446); on an onn 4K box and a Hisense lushan the gear sends KEYCODE_NOTIFICATION (83), answered by
+launcherx, dead with it off; Xiaomi China firmware (MiTV-MFTR0) injects a short Menu press as a cancelled pair, flags 0x7531 (#1637).
+Before that: **2026-10-29**, upstream at `985bbd14` (272 commits after `6ffa7fa5`, v3.1; mostly addons/ and launcher/; 36 `debloat.txt`,
 14 new, 35 packages no list had before). Into bloat.json: SUGGEST Sharp `analyticsservice`, `storedemoapplication`, `cocorovision`
 (screen / key reports), the PAI installers `autoinstalls.config.sharp.av` / `.vestel.malin`, `hotack.screensaversdk` (ad screensaver);
 KEEP `com.android.toofifi` (the AirPlay / Cast / DLNA receiver, hotack-l018), `com.dangbei.dbdownloadrefs` (off: system_server dies,

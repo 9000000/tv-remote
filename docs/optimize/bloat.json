@@ -94,7 +94,9 @@
     "jp.co.sharp.av.android.analyticsservice": "Sharp usage analytics",
     "jp.co.sharp.av.android.storedemoapplication": "Sharp store demo",
     "jp.co.sharp.av.android.cocorovision": "Sharp COCORO VISION (viewing reports)",
-    "com.hotack.screensaversdk": "Hotack ad screensaver"
+    "com.hotack.screensaversdk": "Hotack ad screensaver",
+    "com.sharplabs.dmt.aas.analyticsservice": "Sharp analytics",
+    "jp.co.sharp.av.android.epopdemo": "Sharp shop demo"
   },
   "drop": [
     "com.xm.webcontent"
@@ -135,7 +137,8 @@
     "com\\.dangbei\\.dbdownloadrefs",
     "com\\.control\\.device",
     "com\\.ztestb\\.basecomp",
-    "tv\\.upgrade\\.service"
+    "tv\\.upgrade\\.service",
+    "com\\.youview\\.poa"
   ],
   "factory": [
     "com\\.skyworth\\.testtime",
