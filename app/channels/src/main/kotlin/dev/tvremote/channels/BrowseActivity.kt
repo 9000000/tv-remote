@@ -309,13 +309,14 @@ class BrowseActivity : Activity() {
             add(TvUi.row(this, R.drawable.ic_folder, g.name, if (n > 0) "$n" else "") { pick(MINE + g.id) }.held(g.id), group == MINE + g.id, MINE + g.id)
         }
         val lists = Store.playlists(this)
-        if (lists.isNotEmpty()) {                                     // the person's own m3u links (set from a phone or computer), one row each
+        if (lists.isNotEmpty()) {                                     // the person's own m3u links (typed here, or set from a phone or computer), one row each
             rail.addView(TvUi.text(this, getString(R.string.your_lists), 13f, TvUi.DIM).apply { setPadding(dp(12), dp(10), 0, dp(4)) })
             for (l in lists) {
                 val n = plData[l.id]?.channels?.byChannel()?.size
-                add(TvUi.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }, group == PL + l.id, PL + l.id)
+                add(TvUi.row(this, R.drawable.ic_files, l.name, if (n != null && n > 0) "$n" else "") { pick(PL + l.id) }.heldList(l.id), group == PL + l.id, PL + l.id)
             }
         }
+        if (lists.size < Edit.MAX_LISTS) add(TvUi.row(this, R.drawable.ic_link, getString(R.string.list_add)) { addList() }, false)
         add(TvUi.row(this, R.drawable.ic_plus, getString(R.string.new_group)) { ask(getString(R.string.new_group), "") { pick(MINE + Store.addGroup(this, it)) } }, false)
         add(TvUi.row(this, R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }, false)
         add(TvUi.row(this, R.drawable.ic_refresh, getString(R.string.refresh)) { load(true) }, false)
@@ -333,6 +334,7 @@ class BrowseActivity : Activity() {
 
     /** A row of one of the person's groups: Menu or a long press opens [groupMenu]. */
     private fun View.held(gid: String) = apply { tag = "grp:$gid"; isLongClickable = true; setOnLongClickListener { groupMenu(gid); true } }
+    private fun View.heldList(id: String) = apply { tag = "pl:$id"; isLongClickable = true; setOnLongClickListener { listMenu(id); true } }
 
     /**
      * [g] set: a group or category, opened on OK or Right (it is then the selected row, its channels on the right); moving
@@ -534,7 +536,7 @@ class BrowseActivity : Activity() {
             ask(getString(R.string.new_group), "") { Store.addGroup(this, it); Toast.makeText(this, R.string.group_made, Toast.LENGTH_LONG).show() }
         }
         val lists = Store.playlists(this)
-        if (lists.isNotEmpty()) item(R.drawable.ic_files, getString(R.string.your_lists), "${lists.size}") { playlists() }
+        item(R.drawable.ic_files, getString(R.string.your_lists), if (lists.isNotEmpty()) "${lists.size}" else "") { playlists() }
         val rem = Reminders.all(this).size
         if (rem > 0) item(R.drawable.ic_bell, getString(R.string.remind_list), "$rem") { remindList() }
         item(R.drawable.ic_globe, countryName.ifEmpty { getString(R.string.country) }) { countries() }
@@ -561,13 +563,62 @@ class BrowseActivity : Activity() {
         box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
     }
 
-    /** The person's own m3u links, one row each. */
+    /** The person's own m3u links: OK on one opens its menu (open, rename, delete), and a new link is added here. */
     private fun playlists() {
         val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 380)
         TvUi.sheetTitle(box, getString(R.string.your_lists))
-        for (l in Store.playlists(this)) box.addView(TvUi.row(this, R.drawable.ic_files, l.name) { dlg.dismiss(); pick(PL + l.id) })
+        val lists = Store.playlists(this)
+        for (l in lists) box.addView(TvUi.row(this, R.drawable.ic_files, l.name) { dlg.dismiss(); listMenu(l.id) })
+        if (lists.size < Edit.MAX_LISTS) box.addView(TvUi.row(this, R.drawable.ic_link, getString(R.string.list_add)) { dlg.dismiss(); addList() })
         dlg.show()
         box.post { box.getChildAt(1)?.requestFocus() }              // the first row is where the D-pad starts
+    }
+
+    /** An m3u link typed on the TV (the phone app's typing box opens with the TV's keyboard, so a pasted link is quick); named by its host. */
+    private fun addList() {
+        ask(getString(R.string.list_add), "", getString(R.string.list_url_hint), url = true, note = getString(R.string.list_add_note),
+            check = { u ->
+                val now = Store.playlists(this)
+                when {
+                    !Edit.validUrl(u) -> getString(R.string.list_bad)
+                    now.any { it.url == u } -> getString(R.string.list_dup)
+                    now.size >= Edit.MAX_LISTS -> getString(R.string.list_max, Edit.MAX_LISTS)
+                    else -> null
+                }
+            }) { u ->
+            val p = Store.Playlist(Edit.listId(u), java.net.URI(u).host.removePrefix("www.").take(Edit.MAX_NAME), u)
+            Store.setPlaylists(this, Store.playlists(this) + p)
+            pick(PL + p.id)
+        }
+    }
+
+    /** One of the person's links: open it, rename it, or delete it (asked again, Keep first, as a group is). */
+    private fun listMenu(id: String) {
+        val l = Store.playlist(this, id) ?: return
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog)
+        TvUi.sheetTitle(box, l.name)
+        val host = java.net.URI(l.url).host ?: ""
+        if (host != l.name) box.addView(TvUi.text(this, host, 14f, TvUi.DIM).apply { setPadding(TvUi.dp(this@BrowseActivity, 12).toInt(), 0, 0, TvUi.dp(this@BrowseActivity, 8).toInt()) })   // the host only: the link may carry a token
+        box.addView(TvUi.row(this, R.drawable.ic_play, getString(R.string.open)) { dlg.dismiss(); pick(PL + id) })
+        box.addView(TvUi.row(this, R.drawable.ic_pen, getString(R.string.rename)) {
+            dlg.dismiss()
+            ask(getString(R.string.rename), l.name, getString(R.string.list_name)) { n -> Store.setPlaylists(this, Store.playlists(this).map { if (it.id == id) Store.Playlist(id, n, it.url) else it }); buildRail(); filter() }
+        })
+        box.addView(TvUi.row(this, R.drawable.ic_trash, getString(R.string.list_delete)) {
+            dlg.dismiss()
+            val (sure, b) = TvUi.sheet(this, R.style.Dialog)
+            TvUi.sheetTitle(b, getString(R.string.list_delete_ask, l.name))
+            b.addView(TvUi.row(this, R.drawable.ic_close, getString(R.string.keep)) { sure.dismiss() })
+            b.addView(TvUi.row(this, R.drawable.ic_trash, getString(R.string.list_delete)) {
+                sure.dismiss()
+                Store.setPlaylists(this, Store.playlists(this).filter { it.id != id }); plData.remove(id)
+                if (group == PL + id) group = ALL
+                buildRail(); filter()
+            })
+            sure.show()
+        })
+        dlg.show()
+        box.post { (0 until box.childCount).map { box.getChildAt(it) }.firstOrNull { it.isFocusable }?.requestFocus() }   // Open
     }
 
     private fun langName(l: String) = dev.tvremote.i18n.Langs.NAMES[l] ?: getString(R.string.lang_auto)
@@ -706,14 +757,22 @@ class BrowseActivity : Activity() {
         dlg.show()
     }
 
-    /** A name, typed: OK keeps it (not when empty), Back leaves it. */
-    private fun ask(title: String, now: String, done: (String) -> Unit) {
-        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, 420)
+    /** A name (or, [url], a link), typed: OK keeps it (not when empty; [check] may refuse it in one line), Back leaves it. */
+    private fun ask(title: String, now: String, hint: String = getString(R.string.group_name), url: Boolean = false, note: String? = null,
+                    check: (String) -> String? = { null }, done: (String) -> Unit) {
+        val (dlg, box) = TvUi.sheet(this, R.style.Dialog, if (url) 560 else 420)
         TvUi.sheetTitle(box, title)
-        val f = TvUi.field(this, getString(R.string.group_name), 16f, EditorInfo.IME_ACTION_DONE, TvUi.FIELD_REST, TvUi.R_FIELD, 14, 7).apply {
+        if (note != null) box.addView(TvUi.text(this, note, 14f, TvUi.DIM).apply { setPadding(0, 0, 0, TvUi.dp(this@BrowseActivity, 8).toInt()) })
+        val f = TvUi.field(this, hint, 16f, EditorInfo.IME_ACTION_DONE, TvUi.FIELD_REST, TvUi.R_FIELD, 14, 7).apply {
+            if (url) inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
             setText(now); setSelection(now.length)
         }
-        val ok = { val t = f.text.toString().trim(); if (t.isNotEmpty()) { dlg.dismiss(); done(t.take(40)) } }
+        val ok = {
+            val t = f.text.toString().trim()
+            val bad = if (t.isEmpty()) null else check(t)
+            if (bad != null) Toast.makeText(this, bad, Toast.LENGTH_LONG).show()
+            else if (t.isNotEmpty()) { dlg.dismiss(); done(if (url) t else t.take(40)) }
+        }
         f.setOnEditorActionListener { _, _, _ -> ok(); true }
         box.addView(f, LinearLayout.LayoutParams(-1, TvUi.dp(this, 46).toInt()).apply { bottomMargin = TvUi.dp(this@BrowseActivity, 8).toInt() })
         box.addView(TvUi.row(this, R.drawable.ic_check, getString(R.string.ok)) { ok() })
@@ -823,6 +882,7 @@ class BrowseActivity : Activity() {
             val at = grid.findContainingViewHolder(v)?.bindingAdapterPosition ?: -1
             if (at in shown.indices) { if (shown[at].first().id != HDR) actions(shown[at]); return true }
             (v.tag as? String)?.takeIf { k == KeyEvent.KEYCODE_MENU && it.startsWith("grp:") }?.let { groupMenu(it.removePrefix("grp:")); return true }
+            (v.tag as? String)?.takeIf { k == KeyEvent.KEYCODE_MENU && it.startsWith("pl:") }?.let { listMenu(it.removePrefix("pl:")); return true }
         }
         if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) e.startTracking()
         return super.onKeyDown(k, e)

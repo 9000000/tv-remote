@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Channels: thêm link m3u ngay trên TV (mục **Thêm link m3u**; mở app TV Remote trên điện thoại để dán link cho nhanh), bấm Menu trên một danh sách để đổi tên hoặc xoá. Trước đây chỉ thêm được từ app điện thoại, app máy tính hoặc web của TV.
+
+**English**
+- TV Channels: add an m3u link on the TV itself (**Add an m3u link**; open the TV Remote app on your phone to paste it quickly), Menu on a list renames or deletes it. Before, links could only be added from the phone app, the computer app or the TV web page.
+
 ## 0.34.0 - 2026-10-29
 
 Web 0.34.0 · app điện thoại 0.33.0 · app TV 0.34.0 · TV Home 0.20.0 · TV Channels 0.14.0 · TV Games 0.14.0

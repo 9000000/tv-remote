@@ -6,7 +6,7 @@ An app on the TV that plays channels from iptv-org's public lists and VieON's fr
 2. Type a channel's name and press **Open**, or say “open channel BBC News”.
 3. Arrange favorites and groups here, not with the D-pad: **TV channels** card → **Manage channels**. Saved at once; the TV updates at once. Needs a newer TV Channels.
 4. **Export** / **Import** copy favorites and groups to another TV: merge or replace. The country picker has a search and each country's number of channels.
-5. Your own m3u links: **Manage channels** → **🔗 Your links**, paste up to 5. The TV fetches daily, shown under **Your lists**.
+5. Your own m3u links (up to 5): on the TV, TV Channels → **Add an m3u link**, or **Manage channels** → **🔗 Your links**.
 6. On the TV: ▲▼ changes channel, OK shows info, OK again the list, ▶ shows what is on, ▶ again the guide. Hold OK on a channel: its guide, add it to a group, pin it to the home screen.
 
 | On the TV | How |

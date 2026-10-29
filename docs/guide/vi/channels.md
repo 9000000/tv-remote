@@ -6,7 +6,7 @@ App trên TV phát kênh từ danh sách công khai của iptv-org và các kên
 2. Gõ tên kênh rồi bấm **Mở**, hoặc nói “mở kênh VTV1”.
 3. Sắp yêu thích và nhóm trên điện thoại hoặc máy tính: thẻ **Kênh TV** → **Quản lý kênh**. Lưu ngay, TV cập nhật ngay. Cần TV Channels mới.
 4. **Xuất file** / **Nhập file** chép yêu thích và nhóm sang TV khác: gộp hoặc thay thế. Ô chọn quốc gia có tìm kiếm và số kênh của từng nước.
-5. Link m3u của bạn: **Quản lý kênh** → **🔗 Link của bạn**, dán tối đa 5 link. TV tải mỗi ngày, hiện ở **Danh sách của bạn**.
+5. Link m3u của bạn (tối đa 5): trên TV, TV Channels → **Thêm link m3u**, hoặc **Quản lý kênh** → **🔗 Link của bạn**.
 6. Trên TV: ▲▼ đổi kênh, OK hiện thông tin, OK nữa mở danh sách, ▶ hiện chương trình đang chiếu, ▶ nữa mở lịch. Giữ OK trên một kênh: lịch phát sóng, thêm vào nhóm, ghim ra màn hình chính.
 
 | Trên TV | Cách dùng |
