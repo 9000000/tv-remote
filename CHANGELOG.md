@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.35.1 - 2026-10-29
+
+Web 0.35.1 · Phone app 0.33.1 · TV app 0.34.1 · TV Home 0.20.1 · TV Channels 0.15.1 · TV Games 0.14.0
 
 - TV Channels: holding Up / Down (or CH+ / CH-) changes one channel per press, not one per key repeat; a play link without the feed (`tvchannels://play/VTV1.vn`) opens the channel.
 - Web page: an error from a script the browser itself puts in the page no longer shows the error box or is reported.
