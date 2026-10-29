@@ -9,6 +9,7 @@ section.ggroup{padding:0}
 .gfind .vi,.gfind .en{flex:1}
 .gfind .gk{position:static;transform:none}
 .gside .gai{margin-top:-8px}   /* under the search box, scrolls with the menu */
+.gfind.gai{font-weight:600}
 .gside .gfind:not(.gai){position:sticky;top:0;z-index:1;box-shadow:0 0 0 8px var(--bg)}   /* stays in reach while the menu scrolls */
 .gmob{display:none}
 .gdlg{position:fixed;inset:0;z-index:90;display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 16px}

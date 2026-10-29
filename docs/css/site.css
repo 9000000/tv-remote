@@ -265,3 +265,8 @@ footer a{color:var(--muted);white-space:nowrap}footer a:hover{color:var(--text)}
 .motion-go::before{content:"";position:absolute;left:25px;top:20px;border-style:solid;border-width:12px 0 12px 20px;border-color:transparent transparent transparent #fff}
 .motion-go:hover{background:rgba(59,110,245,.85)}
 
+
+/* "Copy the guide for AI" (js/ai.js): the way most people get an answer, so it stands out from the buttons beside it */
+.btn.gai,.gfind.gai{color:var(--text);border-color:transparent;background:linear-gradient(var(--card2),var(--card2)) padding-box,linear-gradient(120deg,var(--blue),var(--orange)) border-box;box-shadow:0 2px 12px -6px rgba(91,140,255,.6)}
+.btn.gai svg,.gfind.gai svg{color:var(--orange)}
+.btn.gai:hover,.gfind.gai:hover{color:var(--text);border-color:transparent;box-shadow:0 2px 14px -5px rgba(255,163,26,.6)}
