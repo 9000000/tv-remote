@@ -205,7 +205,7 @@ class GameActivity : ComponentActivity() {
     }
 
     override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
-        if (ev.source and InputDevice.SOURCE_JOYSTICK == 0 || cards.paused || cards.lobby) return super.dispatchGenericMotionEvent(ev)
+        if (ev.source and InputDevice.SOURCE_JOYSTICK == 0 || !GameServer.hasStick(ev.device) || cards.paused || cards.lobby) return super.dispatchGenericMotionEvent(ev)   // a remote's mic axis is no stick
         val port = server.padPort(ev.deviceId)
         if (port < 0) return true
         retro.sendMotionEvent(GLRetroView.MOTION_SOURCE_DPAD, ev.getAxisValue(MotionEvent.AXIS_HAT_X), ev.getAxisValue(MotionEvent.AXIS_HAT_Y), port)

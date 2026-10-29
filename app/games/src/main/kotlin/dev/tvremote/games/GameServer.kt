@@ -581,10 +581,11 @@ class GameServer private constructor(private val ctx: Context) {
          */
         fun isPad(ev: KeyEvent): Boolean {
             val d = ev.device ?: return false
-            return d.sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
-                (d.getMotionRange(MotionEvent.AXIS_X) != null || d.getMotionRange(MotionEvent.AXIS_HAT_X) != null) ||
+            return hasStick(d) ||
                 (ev.source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD && KeyEvent.isGamepadButton(ev.keyCode))
         }
+        fun hasStick(d: InputDevice?): Boolean = d != null && d.sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
+            (d.getMotionRange(MotionEvent.AXIS_X) != null || d.getMotionRange(MotionEvent.AXIS_HAT_X) != null)
         /** A stick as D-pad directions: 8-way, dead zone .35. */
         fun dirs(x: Float, y: Float): Set<String> {
             val r = HashSet<String>()
