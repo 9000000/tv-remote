@@ -40,7 +40,7 @@ def paths(app):
         out += [':(exclude)app/shared/i18n/apps/*/%s.json' % m[:-5] for m in sorted(os.listdir(os.path.join(ROOT, 'app/shared/i18n/apps/en')))
                 if m.endswith('.json') and m[:-5] not in words(app)]   # another app's words (TV Channels') are no phone update
     elif app == 'desktop':
-        out += ['app/shared/' + p for p in named(app, only_src=False)]
+        out += ['app/shared/' + p for p in named(app, only_src=False)] + [':(exclude)app/shared/i18n/apps']   # packed without the native apps' words (build.gradle.kts)
     else:
         out += ['app/shared/' + p for p in mine] + ['app/shared/i18n/langs.json'] + ['app/shared/i18n/apps/*/%s.json' % m for m in sorted(words(app))]
     return out
