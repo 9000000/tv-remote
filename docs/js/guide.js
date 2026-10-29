@@ -265,8 +265,8 @@
     }
     var name = function(x){ return esc(textOf(x.querySelector("h3"), lang).replace(/^\S+\s/, "")); };
     var p = topics[k - 1], n = topics[k + 1];
-    pager.innerHTML = (p ? '<a class="pv" href="#' + p.id + '" data-t="' + p.id + '"><small>← ' + PREV[lang] + '</small>' + name(p) + '</a>' : '')
-      + (n ? '<a class="nx" href="#' + n.id + '" data-t="' + n.id + '"><small>' + NEXT[lang] + ' →</small>' + name(n) + '</a>' : '');
+    pager.innerHTML = (p ? '<a class="gprev" href="#' + p.id + '" data-t="' + p.id + '"><small>← ' + PREV[lang] + '</small>' + name(p) + '</a>' : '')
+      + (n ? '<a class="gnext" href="#' + n.id + '" data-t="' + n.id + '"><small>' + NEXT[lang] + ' →</small>' + name(n) + '</a>' : '');
     paintSince(t, lang);
     var v = t.dataset.v, ver = document.querySelector(".gver");    // "next": checked against main, stamped by release.sh
     ver.hidden = !v || v === "next"; ver.textContent = ver.hidden ? "" : FOR[lang] + v;

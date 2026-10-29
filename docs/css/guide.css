@@ -109,7 +109,7 @@ html:not(.gr) .gmain{visibility:hidden;animation:gr 0s 2s forwards}
 .gpager a{display:grid;gap:2px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-weight:600;font-size:15px;min-width:0}
 .gpager a:hover{border-color:var(--blue)}
 .gpager small{color:var(--dim);font-size:12px;font-weight:500}
-.gpager .nx{text-align:right;grid-column:2}
+.gpager .gnext{text-align:right;grid-column:2}
 .gfoot{padding:24px 0;border-top:1px solid var(--line)}
 .gfoot>div{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 .gend{text-align:center;color:var(--muted);padding:24px 0}
@@ -216,7 +216,7 @@ html:not(.gr) .gmain{visibility:hidden;animation:gr 0s 2s forwards}
   .gdlg{padding:8px}
   .gdlg-box{max-height:calc(100vh - 16px)}
   .gpager{grid-template-columns:1fr}
-  .gpager .nx{grid-column:1}
+  .gpager .gnext{grid-column:1}
   .topic{padding:18px 16px;border-radius:14px}
   .gk{display:none}
   .ga{padding:10px}
