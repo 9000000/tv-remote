@@ -55,6 +55,7 @@ class LauncherTest {
                 cmd == "date +%s" -> (clock).toString()
                 cmd == LauncherSwap.WIFI_OWNERS -> wifi
                 cmd == "getprop ro.product.device" -> device
+                cmd.startsWith("pm path ") -> cmd.removePrefix("pm path ").substringBefore(' ').let { if (it in installed) "package:/system_ext/app/$it.apk" else "" }
                 cmd.startsWith("dumpsys package ${RulesClient.SETUP}") -> "    versionName=$setup"
                 cmd.startsWith("am broadcast") && cmd.contains("RulesReceiver") -> {
                     val d = org.json.JSONObject(String(java.util.Base64.getDecoder().decode(cmd.substringAfter("--es set ").substringBefore(' '))))
@@ -163,6 +164,14 @@ class LauncherTest {
         assertEquals("com.new.home", tv.homekey)
         assertTrue(tv.said.none { it.startsWith("pm disable") })      // nothing off: casting keeps working
         assertNull(s.state())                                         // no swap record, no watchdog
+        s.dropKey(); assertEquals("", tv.homekey)
+    }
+
+    @Test fun aZteBoxWithItsResetWatchdogKeepsItsLauncherOn() {     // B866F: no system launcher a minute after a boot = factory reset
+        val tv = Tv().apply { installed += LauncherSwap.ZTE_WATCHDOG }; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 30))
+        assertEquals("com.new.home", tv.homekey)
+        assertTrue(tv.said.none { it.startsWith("pm disable") })
         s.dropKey(); assertEquals("", tv.homekey)
     }
 

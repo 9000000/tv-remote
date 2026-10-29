@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updated": "2026-10-27",
+  "updated": "2026-10-29",
   "about": "Optimize TV's additions to Bloat.kt, read from the site: suggest (package -> name, ticked by default), drop (no longer suggested), keep and factory (Java regexes, only added). Edit, run dev/sign/sign_bloat.py, commit both files.",
   "suggest": {
     "android.autoinstalls.config.askey.tvbox": "Askey app installer",
@@ -88,7 +88,13 @@
     "com.pptv.newtvad": "PPTV ads",
     "com.pptv.push.service": "PPTV push",
     "com.inspur.adservice": "Inspur ad service",
-    "com.smartdevice.demonow": "Shop demo"
+    "com.smartdevice.demonow": "Shop demo",
+    "android.autoinstalls.config.sharp.av": "Sharp app installer",
+    "android.autoinstalls.config.vestel.malin": "Vestel app installer",
+    "jp.co.sharp.av.android.analyticsservice": "Sharp usage analytics",
+    "jp.co.sharp.av.android.storedemoapplication": "Sharp store demo",
+    "jp.co.sharp.av.android.cocorovision": "Sharp COCORO VISION (viewing reports)",
+    "com.hotack.screensaversdk": "Hotack ad screensaver"
   },
   "drop": [
     "com.xm.webcontent"
@@ -124,7 +130,12 @@
     "com\\.tcl\\.providers\\.config",
     "com\\.tpv\\.tvinput",
     "com\\.realtek\\.(dtv|tv\\.atv)",
-    "com\\.realsil\\.ota"
+    "com\\.realsil\\.ota",
+    "com\\.android\\.toofifi",
+    "com\\.dangbei\\.dbdownloadrefs",
+    "com\\.control\\.device",
+    "com\\.ztestb\\.basecomp",
+    "tv\\.upgrade\\.service"
   ],
   "factory": [
     "com\\.skyworth\\.testtime",

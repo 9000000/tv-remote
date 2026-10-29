@@ -57,6 +57,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         const val WIFI_OWNERS = "dumpsys wifi 2>/dev/null | grep -oE 'cname=[^ ]*|ID: [0-9]+ SSID|WifiConfigManager' | sort -u"
         /** Google's own players, where a phone's cast says "Untrusted device" once the wizard is off (cleanyourtv): Home is not taken there. */
         val CAST_HOSTS = setOf("sabrina", "boreal", "kirkwood")
+        const val ZTE_WATCHDOG = "com.control.device"                 // see keyOnly
 
         /**
          * Whether the wizard ([uid] its uid) can go off without the TV going offline: false when a saved network is its own (saved during
@@ -143,7 +144,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         refused = ""; opened = ""
         val all = homes()
         val ours = all.firstOrNull { it.startsWith("$pkg/") } ?: run { log("no home activity"); return false }   // not a launcher
-        if (cast()) return byKey(pkg, ours)
+        if (keyOnly()) return byKey(pkg, ours)
         if (sh("getprop ro.product.manufacturer; getprop ro.product.brand").lowercase().split("\n").any { it.trim() in NO_SWAP }) {
             log("this TV brings its setup wizard back at every boot"); refused = "board"; return false
         }
@@ -201,6 +202,13 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
     private fun cast(): Boolean = sh("getprop ro.product.device").trim().lowercase() in CAST_HOSTS
 
     /**
+     * Where the TV's own launcher must stay on: a Chromecast ([cast]), or a ZTE box (B866F) whose ControlDevice, a minute after a boot
+     * with no system launcher on, broadcasts FACTORY_RESET and wipes it (cleanyourtv #2318); the shell cannot turn that watchdog off.
+     */
+    private fun keyOnly(): Boolean = cast() || sh("pm path $ZTE_WATCHDOG 2>/dev/null").contains("package:")
+
+    /**
+     * A ZTE box with its reset watchdog: nothing of the TV's may go off ([keyOnly]), so the same way as here.
      * A Chromecast or Google TV Streamer: the swap would need the first-run setup app off, which breaks casting from a phone ("cast"),
      * and launcherx keeps Home whatever the role says. Nothing is turned off: the role is set and TV Setup's key filter sends Home
      * to [pkg] (HomeKey there, rule "homekey"). An older TV Setup is asked to update ([SetupNeed.Missing]); [dropKey] undoes it.
@@ -219,7 +227,7 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
 
     /** Home back to the TV's own launcher where [byKey] sent it elsewhere; nothing on other TVs or with no TV Setup that knows the rule. */
     fun dropKey() {
-        try { if (cast() && SetupNeed.ok(SetupNeed.have(sh), "homekey")) RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", "")) } catch (e: Exception) { }
+        try { if (keyOnly() && SetupNeed.ok(SetupNeed.have(sh), "homekey")) RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", "")) } catch (e: Exception) { }
     }
 
     /** The person's Keep: the swap stays, and only the watch is left. */

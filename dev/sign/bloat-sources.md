@@ -5,7 +5,20 @@ before launcherx, check Home, roll back) come from these. Read them again now an
 `dev/sign/sign_bloat.py`, commit, push: every app reads it from the site when Optimize TV opens, no release needed), and now and
 then fold that list into Bloat.kt and empty it. The site's list can add suggestions, drop them, and only add to keep / factory.
 
-Last read: **2026-10-27**, upstream at `6ffa7fa5` (388 commits after `f592b6d2db`). Into bloat.json: SUGGEST PPTV `newtvad` (ads) /
+Last read: **2026-10-29**, upstream at `985bbd14` (272 commits after `6ffa7fa5`, v3.1; mostly addons/ and launcher/; 36 `debloat.txt`,
+14 new, 35 packages no list had before). Into bloat.json: SUGGEST Sharp `analyticsservice`, `storedemoapplication`, `cocorovision`
+(screen / key reports), the PAI installers `autoinstalls.config.sharp.av` / `.vestel.malin`, `hotack.screensaversdk` (ad screensaver);
+KEEP `com.android.toofifi` (the AirPlay / Cast / DLNA receiver, hotack-l018), `com.dangbei.dbdownloadrefs` (off: system_server dies,
+#2286), ZTE `com.control.device` / `ztestb.basecomp` / `tv.upgrade.service` (#2318). Into LauncherSwap: a ZTE box with
+`com.control.device` (B866F) factory-resets a minute after a boot with no system launcher on, so Home goes by TV Setup's key filter there
+(`keyOnly`), as on a Chromecast. Not taken: Sharp portals and services (`aquoscity`, `chranking`, `cocoroguide`, `tvremote`, the camera,
+DLNA), Coocaa themes, casting / DLNA / Miracast receivers, ANT+, `htc.clearmemory`, `mtc.emanual` (the FAV key opens it), `nordvpn`,
+Paravi / U-NEXT, `zeasn ... vstoresubclient` (maybe the only store). Facts not acted on: China-market Xiaomi (`nemo`, PatchWall,
+`ro.formovie.launcher_type`) drops every non-system HOME (#2415: TV Home cannot be Home there, our check after the swap rolls it back);
+after a system_server hang `dumpsys` prints "Service dumps disabled" until a reboot; a local-VPN ad blocker dies after boot on small
+TVs (cached-app kill). Non-Android TVs (Samsung, LG, Roku, Vizio, VIDAA): upstream has no tool, only cleanyour.tv/not-android, menu
+paths to turn ACR / ads off by hand plus DNS blocklists (HaGeZi per brand).
+Before that: **2026-10-27**, upstream at `6ffa7fa5` (388 commits after `f592b6d2db`). Into bloat.json: SUGGEST PPTV `newtvad` (ads) /
 `push.service`, `inspur.adservice` (operator ads), `smartdevice.demonow` (shop demo); FACTORY `arcelik.tv.rctest` (the other new factory
 apps match FACTORY already). Not suggested: TCL `interactive` / `ttvs` (upstream calls them analytics; we keep them: the Source key,
 728595ce). Into Setup.PROTECTED: the bare AOSP `android.ext.services` / `android.ext.shared` (#1711). Checked, ours had it: setupwraith
