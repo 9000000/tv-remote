@@ -6,6 +6,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 
+- TV Channels: holding Up / Down (or CH+ / CH-) changes one channel per press, not one per key repeat; a play link without the feed (`tvchannels://play/VTV1.vn`) opens the channel.
 - Web page: an error from a script the browser itself puts in the page no longer shows the error box or is reported.
 - Phone and computer apps: a TV showing TV Channels, TV Home or TV Games said "Showing Dev"; it names the app now.
 

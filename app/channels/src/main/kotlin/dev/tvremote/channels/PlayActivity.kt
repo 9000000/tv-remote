@@ -162,8 +162,12 @@ class PlayActivity : Activity() {
             val group = Store.groups(this).firstOrNull { g -> g.channels.any { it.id == id } }
             val last = Store.lastChannel(this)?.takeIf { it.id == id }
             // its own country's list, else the one on show: Vietnam's list carries iptv-org's "Cinemax.us" too (its "also" channels)
-            val (cc, country) = listOf(Ids.country(id), Store.country(this)).filter { it.isNotEmpty() }.distinct().asSequence()
-                .map { it to Catalog.channels(this, it).byChannel() }.firstOrNull { (_, l) -> l.any { it.first().id == id } } ?: ("" to emptyList())
+            // a link without the feed ("VTV1.vn", typed or from an older client) takes the channel's first feed
+            val hit = { l: List<List<Channel>> -> (l.firstOrNull { it.first().id == id }
+                ?: l.firstOrNull { '@' !in id && it.first().id.substringBefore('@') == id })?.first()?.id }
+            val (cc, country, found) = listOf(Ids.country(id), Store.country(this)).filter { it.isNotEmpty() }.distinct().asSequence()
+                .map { Catalog.channels(this, it).byChannel().let { l -> Triple(it, l, hit(l)) } }.firstOrNull { it.third != null } ?: Triple("", emptyList(), null)
+            val want = found ?: id
             main.post {
                 if (isDestroyed) return@post
                 when {
@@ -173,7 +177,7 @@ class PlayActivity : Activity() {
                     last != null -> Lineup.set(listOf(listOf(last)), last.name)
                     else -> { spin.visibility = View.GONE; fail(getString(R.string.not_found)); return@post }
                 }
-                tune(Lineup.indexOf(id))
+                tune(Lineup.indexOf(want))
             }
         }
     }
@@ -390,6 +394,7 @@ class PlayActivity : Activity() {
             return super.onKeyDown(k, e)
         }
         if (single && k != KeyEvent.KEYCODE_BACK && k != KeyEvent.KEYCODE_DPAD_CENTER && k != KeyEvent.KEYCODE_ENTER && !isMediaKey(k)) return super.onKeyDown(k, e)
+        if (e.repeatCount > 0 && k in ZAP_KEYS) return true            // held: one channel per press (the user), not a stream per repeat
         when (k) {
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> tune(at + 1)
             KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> tune(at - 1)
@@ -466,6 +471,8 @@ class PlayActivity : Activity() {
     }
 
     companion object {
+        private val ZAP_KEYS = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_UP,
+            KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_PAGE_DOWN)
         private val PROGRESSIVE = Regex("""\.(mp4|ts|mkv|webm|mp3|aac|flv)$""", RegexOption.IGNORE_CASE)
     }
 }
