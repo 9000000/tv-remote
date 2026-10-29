@@ -41,7 +41,7 @@ object SupportDump {
 
     /** This app's own log: no permission needed for its own lines. */
     fun logcat(): String = try {
-        val p = ProcessBuilder("logcat", "-d", "-t", "400", "-v", "time", "--pid=" + android.os.Process.myPid()).redirectErrorStream(true).start()
+        val p = ProcessBuilder("logcat", "-d", "-t", "3000", "-v", "time", "--pid=" + android.os.Process.myPid()).redirectErrorStream(true).start()
         val out = p.inputStream.bufferedReader().use { it.readText() }
         p.waitFor()
         "[logcat]\n" + Scrub.blank(out)
@@ -79,6 +79,7 @@ object SupportDump {
         if (!allowed(c)) return 403 to "not a read-only command: $c"
         val adb = RemoteService.adb() ?: return 503 to "no ADB on this TV (state ${RemoteService.adbState()})"
         // Scrub.text: emails and addresses out too, a dump may name the person's account
-        return try { 200 to Scrub.text(adb.shell("$c 2>&1", 25000)) } catch (e: Exception) { 0 to (e.message ?: e.javaClass.simpleName) }
+        // cut to what the worker takes (a whole logcat is megabytes: refused, the owner got "answer not delivered"); a log keeps its end
+        return try { 200 to Support.fit(Scrub.text(adb.shell("$c 2>&1", 25000)), Support.MAX_ANSWER, tail = c.startsWith("logcat")) } catch (e: Exception) { 0 to (e.message ?: e.javaClass.simpleName) }
     }
 }

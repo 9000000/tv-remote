@@ -20,6 +20,7 @@ import java.net.URL
  */
 object Support {
     const val MINUTES = 30
+    const val MAX_ANSWER = 200_000                                    // bytes as sent; the worker keeps 256 KB (src/support.js MAX_ANSWER)
     private const val PREFS = "support"
     private const val KIND = "support"
     // read-only answers worth having from afar; never the clipboard, files, the screen or anything that acts
@@ -113,7 +114,9 @@ object Support {
                         val (status, text) = answer(c, a.optString("path"), token)
                         asked++
                         WireLog.all.add("·", "support GET ${a.optString("path").take(120)} -> $status")
-                        val sent = post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", status).put("body", text))
+                        val answer = JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", status).put("body", text)
+                        // a slow link or a busy box lost one answer of 12 KB (a Viettel ZTE box, 2026-10-29): once more before giving up
+                        val sent = post("${base()}/answer", answer) ?: run { Thread.sleep(2000); post("${base()}/answer", answer) }
                         if (sent == null || sent.has("error"))           // refused or lost: say so, or the owner waits for nothing
                             post("${base()}/answer", JSONObject().put("code", code).put("key", key).put("id", a.optInt("id")).put("status", 0).put("body", "answer not delivered ($status, ${text.length} chars)"))
                     }
@@ -129,8 +132,8 @@ object Support {
         val route = path.substringBefore('?')
         when (route) {                                                // no route of the server: read here (SupportDump)
             "/api/support/sh" -> return SupportDump.shell(java.net.URLDecoder.decode(path.substringAfter("c=", "").substringBefore('&'), "UTF-8"))
-            "/api/support/prefs" -> return 200 to fit(SupportDump.prefs(c), 200_000, tail = false)
-            "/api/support/logcat" -> return 200 to fit(SupportDump.logcat(), 200_000, tail = true)
+            "/api/support/prefs" -> return 200 to fit(SupportDump.prefs(c), MAX_ANSWER, tail = false)
+            "/api/support/logcat" -> return 200 to fit(SupportDump.logcat(), MAX_ANSWER, tail = true)
         }
         if (route !in ROUTES || ".." in path) return 403 to "not allowed for support: $route"
         return try {
@@ -140,7 +143,7 @@ object Support {
                 c.setRequestProperty("Cookie", RemoteService.SELF_COOKIE + "=" + token)
                 val code = c.responseCode
                 val text = (if (code < 400) c.inputStream else c.errorStream)?.use { it.readBytes().toString(Charsets.UTF_8) } ?: ""
-                code to fit(Scrub.blank(text), 200_000, tail = false)
+                code to fit(Scrub.blank(text), MAX_ANSWER, tail = false)
             } finally { c.disconnect() }
         } catch (e: Exception) { 0 to (e.message ?: e.javaClass.simpleName) }
     }
@@ -161,7 +164,7 @@ object Support {
     private fun post(to: String, body: JSONObject): JSONObject? = try {
         val c = URL(to).openConnection() as HttpURLConnection
         try {
-            c.connectTimeout = 6000; c.readTimeout = 10000
+            c.connectTimeout = 6000; c.readTimeout = 20000                  // an answer of 200 KB from a slow box
             c.requestMethod = "POST"; c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
             c.outputStream.use { it.write(body.toString().toByteArray()) }

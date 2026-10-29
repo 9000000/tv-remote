@@ -4,7 +4,9 @@
   support.py                         the last 50 codes: when sent, which TV, whether it lets you look now
   support.py CODE                    what the TV sent (its facts and log)
   support.py CODE /api/state         while the TV lets support look: GET that route on the TV, print the answer
-  support.py CODE --all              the usual reads in one go: about, state, diagnose, setup/version, wirelog
+  support.py CODE --all              everything at once: about, state, diagnose, setup/version, wirelog, rules, apps, the prefs,
+                                     TV Setup's log, and the TV's state over ADB (home screens, what is on screen, memory, the whole logcat)
+  support.py CODE --all --out DIR    the same, one file per answer in DIR, and one line each here (agents: read the files, not the screen)
   support.py CODE sh "dumpsys package dev.tvremote.setup.keys"   any read-only command (TV Setup newer than 0.26.2: settings, dumpsys,
                                      getprop, pm list/dump, appops get, logcat -d); /api/support/prefs, /api/support/logcat
   support.py CODE sh "getevent -pl"            a remote's keys (TV Setup newer than 0.26.3): what each remote declares; also
@@ -13,10 +15,14 @@
   support.py --delete CODE           forget it
   support.py --url http://127.0.0.1:8798   a local `wrangler dev`
 """
-import argparse, datetime, json, os, sys, time, urllib.error, urllib.parse, urllib.request
+import argparse, datetime, json, os, re, sys, time, urllib.error, urllib.parse, urllib.request
 
 URL = "https://tvr-census.99-hoangtran.workers.dev"
-ALL = ["/api/about", "/api/state", "/api/diagnose", "/api/setup/version", "/api/wirelog"]
+SH = ["cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME",   # the home screens
+      "dumpsys activity activities", "dumpsys meminfo", "dumpsys deviceidle", "settings list global",
+      "getprop", "logcat -d -v time"]                       # TV Setup cuts each to what the worker takes, a log keeps its end
+ALL = ["/api/about", "/api/state", "/api/diagnose", "/api/setup/version", "/api/wirelog", "/api/rules", "/api/apps",
+       "/api/support/prefs", "/api/support/logcat"] + ["/api/support/sh?c=" + urllib.parse.quote(c, safe="") for c in SH]
 
 
 def token():
@@ -65,6 +71,7 @@ def main():
     ap.add_argument("path", nargs="?")
     ap.add_argument("cmd", nargs="?")
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--out")
     ap.add_argument("--delete", action="store_true")
     ap.add_argument("--url", default=URL)
     a = ap.parse_args()
@@ -83,6 +90,12 @@ def main():
     if a.path or a.all:
         for p in ([a.path] if a.path else ALL):
             r = ask(base, a.code, p)
+            if a.out:
+                os.makedirs(a.out, exist_ok=True)
+                f = os.path.join(a.out, re.sub(r"[^\w.-]+", "_", urllib.parse.unquote(p).replace("/api/support/sh?c=", "sh_").replace("/api/", ""))[:80] + ".txt")
+                open(f, "w").write(r.get("body", ""))
+                print(f"{r.get('status')}  {len(r.get('body', '')):>7} chars  {f}")
+                continue
             print(f"== {p}  ({r.get('status')})")
             print(r.get("body", ""))
         return
