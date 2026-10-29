@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.34.0 - 2026-10-29
+
+Web 0.34.0 · app điện thoại 0.33.0 · app TV 0.34.0 · TV Home 0.20.0 · TV Channels 0.14.0 · TV Games 0.14.0
 
 **Tiếng Việt**
 - App điện thoại: TV cùng Wi-Fi bị báo "không thấy · TV tắt?" khi điện thoại đi Internet bằng 4G (Wi-Fi "không có Internet", hoặc Wi-Fi yếu nên máy tự chuyển sang 4G): app giờ luôn gọi TV qua Wi-Fi. TV chưa trả lời thì hiện "đang thử lại…"; mạng vừa đổi là hỏi lại ngay; bấm Quét Wi-Fi cũng làm mới các TV đã lưu.
