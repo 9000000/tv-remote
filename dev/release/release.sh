@@ -36,27 +36,29 @@ fi
 git fetch -q --tags origin || { echo "git fetch --tags failed: the last tag decides every number"; exit 1; }   # a tag made on another clone / by a past run: without it LAST is one release behind and that release is made again
 LAST=$(git describe --tags --abbrev=0 2>/dev/null || true)
 next() { python3 -c 'import sys; a = [int(x) for x in sys.argv[1].split(".")]; i = {"major": 0, "minor": 1}.get(sys.argv[2], 2); a[i] += 1; a[i + 1:] = [0] * (2 - i); print(".".join(map(str, a)))' "$1" "${BUMP:-patch}"; }
-# "changed": dev/release/code_changed.py, code beyond comments (a path renamed in comments is no update)
+# "changed": dev/release/code_changed.py, code beyond comments (a path renamed in comments is no update), in what the app's own
+# build.gradle.kts compiles (dev/release/app_paths.py) plus the extra paths given
+changed() { local a=$1; shift; local p=(); while IFS= read -r l; do p+=("$l"); done < <(dev/release/app_paths.py "$a"); dev/release/code_changed.py "$LAST" "${p[@]}" "$@"; }
 if [ -n "$LAST" ]; then
   [ "$(cat VERSION)" = "${LAST#v}" ] && next "$(cat VERSION)" > VERSION
   for a in android tv; do                                             # changed code must come with a new number, or nobody gets it
     [ -z "$SKIP_CHECK" ] || continue
     old=$(git show "$LAST:app/$a/VERSION" 2>/dev/null || true)
-    more=app/shared; [ "$a" = tv ] && more=app/tvkeys                 # TV Setup Keys (the accessibility add-on) rides inside tv-setup.apk with TV Setup's number
-    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && dev/release/code_changed.py "$LAST" "app/$a" app/shared $more ":(exclude)app/$a/*.apk" ":(exclude)app/$a/tests" ":(exclude)app/shared/tests"; then
+    more=; [ "$a" = tv ] && more=app/tvkeys                 # TV Setup Keys (the accessibility add-on) rides inside tv-setup.apk with TV Setup's number
+    if [ -n "$old" ] && [ "$old" = "$(cat app/$a/VERSION)" ] && changed "$a" $more; then
       next "$old" > "app/$a/VERSION"
     fi
   done
   old=$(git show "$LAST:app/home/VERSION" 2>/dev/null || true)          # TV Home: its own code and the settings' shape, not the rest of app/shared
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/home/VERSION)" ] && dev/release/code_changed.py "$LAST" app/home app/shared/src/home ":(exclude)app/home/*.apk"; then
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/home/VERSION)" ] && changed home; then
     next "$old" > app/home/VERSION
   fi
   old=$(git show "$LAST:app/channels/VERSION" 2>/dev/null || true)      # TV Channels: its code, the packed providers list and app/shared/src/sign
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && dev/release/code_changed.py "$LAST" app/channels docs/channels app/shared/src/sign ":(exclude)app/channels/*.apk"; then
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/channels/VERSION)" ] && changed channels docs/channels; then
     next "$old" > app/channels/VERSION
   fi
   old=$(git show "$LAST:app/games/VERSION" 2>/dev/null || true)         # TV Games: its code, the packed games list and app/shared/src/sign
-  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/games/VERSION)" ] && dev/release/code_changed.py "$LAST" app/games docs/games/games.json docs/games/games.json.sig app/shared/src/sign ":(exclude)app/games/*.apk"; then
+  if [ -z "$SKIP_CHECK" ] && [ -n "$old" ] && [ "$old" = "$(cat app/games/VERSION)" ] && changed games docs/games/games.json docs/games/games.json.sig; then
     next "$old" > app/games/VERSION
   fi
 fi
@@ -98,7 +100,7 @@ git push -q origin HEAD                                               # the rele
 DESK=$VER
 if [ -n "$LAST" ]; then
   BUILT=$(gh release download "$LAST" -p versions.json -O - | python3 -c 'import json, sys; d = json.load(sys.stdin); print(d["web"])')
-  if [ -n "$NO_DESKTOP" ] || ! dev/release/code_changed.py "v$BUILT" app/desktop app/shared ":(exclude)app/shared/tests" >/dev/null; then DESK=$BUILT; fi
+  if [ -n "$NO_DESKTOP" ] || ! LAST="v$BUILT" changed desktop >/dev/null; then DESK=$BUILT; fi
 fi
 ./app/android/build.sh && ./app/tv/build.sh && ./app/home/build.sh && ./app/channels/build.sh && ./app/games/build.sh
 unzip -l app/tv/build/tv-setup.apk | grep -q 'assets/tvkeys.apk' || { echo "tv-setup.apk has no assets/tvkeys.apk (TV Setup Keys, the add-on with the accessibility services): not releasing"; exit 1; }
