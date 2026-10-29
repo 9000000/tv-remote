@@ -23,6 +23,13 @@ RETURNING first`;
 const RESULTS = `UPDATE tvs SET adb=COALESCE(?4, adb), video=COALESCE(?5, video), optimize=COALESCE(?6, optimize)
 WHERE h = ?1 AND brand = ?2 AND model = ?3`;
 
+// An install that comes back with another version: counted on the day of its first ping with it (the apps ping once a day, so a
+// same-day update shows the next day), per (from, to), as how many installs update each day. Run before UPSERT, which writes the new v;
+// a ping that UPSERT does not count (same day) writes it below, or the next ping would count the same update again
+const UPDATED = `INSERT INTO updates (day, app, src, dst, n) SELECT ?4, ?5, v, ?6, 1 FROM tvs
+WHERE h = ?1 AND brand = ?2 AND model = ?3 AND app = ?5 AND v IS NOT NULL AND v <> '' AND ?6 <> '' AND v <> ?6
+ON CONFLICT (day, app, src, dst) DO UPDATE SET n = n + 1`;
+
 // counts the day's first counted ping: active always, new when the install was first seen today
 const DAY = `INSERT INTO days (day, app, active, new) VALUES (?1, ?2, 1, ?3)
 ON CONFLICT (day, app) DO UPDATE SET active = COALESCE(active, 0) + 1, new = new + excluded.new`;
@@ -117,12 +124,15 @@ async function handle(req, env) {
       if (!r) return json({ error: "bad body" }, 400);
       const h = await hashId(r.id);
       const day = today();
+      const up = await env.DB.prepare(UPDATED).bind(h, r.brand, r.model, day, r.app, r.v).run();
       const row = await env.DB.prepare(UPSERT)
         .bind(h, r.brand, r.model, r.device, r.board, r.hw, r.soc, r.android, r.sdk, r.leanback, r.app, r.v, r.adb, r.video, r.optimize, day)
         .first();
       if (row) await env.DB.prepare(DAY).bind(day, r.app, row.first === day ? 1 : 0).run();
       else if (r.adb != null || r.video != null || r.optimize != null)
         await env.DB.prepare(RESULTS).bind(h, r.brand, r.model, r.adb, r.video, r.optimize).run();
+      if (!row && up.meta && up.meta.changes > 0)
+        await env.DB.prepare("UPDATE tvs SET v = ?4 WHERE h = ?1 AND brand = ?2 AND model = ?3").bind(h, r.brand, r.model, r.v).run();
       return new Response(null, { status: 204 });
     }
 

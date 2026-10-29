@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS days (
   PRIMARY KEY (day, app)
 ) WITHOUT ROWID;
 
+-- Installs that came back with another version (src/index.js UPDATED), per UTC day and (from, to): how many update each day.
+-- The Phone and Computer apps ask before updating, so theirs is about how many people pressed Update; TV Setup / TV Home update quietly.
+CREATE TABLE IF NOT EXISTS updates (
+  day     TEXT NOT NULL,       -- YYYY-MM-DD (UTC), the first ping with the new version
+  app     TEXT NOT NULL,
+  src     TEXT NOT NULL,       -- the version before
+  dst     TEXT NOT NULL,       -- the version now (lower than src = went back)
+  n       INTEGER NOT NULL,
+  PRIMARY KEY (day, app, src, dst)
+) WITHOUT ROWID;
+
 -- What GET /v1/tvs answers, worked out once an hour by the cron (src/index.js refresh): a page view reads this one row, not every install.
 CREATE TABLE IF NOT EXISTS summary (
   k     TEXT PRIMARY KEY,      -- 'tvs'
