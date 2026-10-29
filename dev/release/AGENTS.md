@@ -14,7 +14,7 @@ The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0
 (they had reached 2.24.2): `Release.legacy()` counts 1.3.0 … 2.x as older than every new number, `versionCode` is 100000 + the number
 so Android installs over the old APKs, and `release.sh` stops before 1.3.0 until `legacy()` is removed.
 
-- What counts as an app's code is what its own `build.gradle.kts` compiles (`dev/release/app_paths.py`): `app/shared` for the phone and TV apps less the `app/shared/src/<dir>` they never build (`tvui` is TV only), the parts of `app/shared/src` each TV app names, everything the computer app names.
+- What counts as an app's code is what its own `build.gradle.kts` compiles (`dev/release/app_paths.py`): `app/shared` for the phone and TV apps less the `app/shared/src/<dir>` they never build (`tvui` is TV only), the parts of `app/shared/src` each TV app names, everything the computer app names; of `app/shared/i18n/apps/<lang>/`, only the modules the app builds its words from (`extra["i18nApps"]`): TV Channels' words are no phone or TV Setup update.
 - **TV Setup Keys rides with TV Setup's number** (`app/tvkeys` changed = `app/tv/VERSION` goes up; release.sh sees it and refuses a `tv-setup.apk` without `assets/tvkeys.apk`; `KeyFixTest` checks the asset is packed, signed, and that the manifest of `app/tv` declares no accessibility service). Never give the add-on a number or a release file of its own.
 - **The user guide** (`docs/guide.html`, one `<article class="topic">` per topic) says which release each topic was checked
   against (`data-v`) and which app files can make it wrong (`data-src`, short paths: `web/`, `core/`, `phone/`, `tv/`, `pc/`).

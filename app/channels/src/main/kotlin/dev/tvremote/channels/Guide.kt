@@ -21,13 +21,18 @@ class Show(val title: String, val start: Long, val end: Long) {
 object Guide {
     private const val KEEP = 6 * 3600_000L
     private const val MISS = 20 * 60_000L
+    @Volatile private var pruned = false
     private val mem = HashMap<String, Pair<Long, List<Show>>>()       // channel id -> (asked at, shows); empty: none
 
     /** Where [ch]'s guide is asked: a provider and its id there, or null. Reads the providers' list: not on the main thread. */
-    fun source(c: Context, ch: List<Channel>): Pair<Providers.Provider, String>? {
-        for (p in Providers.all(c)) {
+    fun source(c: Context, ch: List<Channel>): Pair<Providers.Provider, String>? = source(Providers.all(c), ch)
+
+    /** A name means the provider's own channel only for a channel of its country (or of none: a person's own list): iptv-org's
+     *  "Cinemax.us" in Vietnam's list is the US feed, and TV360's "Cinemax" guide is Vietnam's, other films at other times. */
+    fun source(ps: List<Providers.Provider>, ch: List<Channel>): Pair<Providers.Provider, String>? {
+        for (p in ps) {
             if (p.o.optString("guide").isEmpty()) continue
-            ch.firstNotNullOfOrNull { p.guides[Providers.key(it.name)] }?.let { return p to it }
+            ch.filter { it.country.isEmpty() || it.country == p.country }.firstNotNullOfOrNull { p.guides[Providers.key(it.name)] }?.let { return p to it }
             ch.firstOrNull { it.url.startsWith(p.id + ":") && it.guide.isNotEmpty() }?.let { return p to it.guide }
         }
         return null
@@ -51,6 +56,7 @@ object Guide {
     private fun read(c: Context, p: Providers.Provider, ref: String): List<Show> {
         val kind = Providers.kind(p) ?: return emptyList()
         val dir = File(c.cacheDir, "guide").apply { mkdirs() }
+        if (!pruned) { pruned = true; dir.listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 2 * 24 * 3600_000L }?.forEach { it.delete() } }   // past days' files, once a run
         val out = ArrayList<Show>()
         for (d in 0 until p.o.optInt("days", 1).coerceIn(1, 3)) {
             val day = day(p, d)

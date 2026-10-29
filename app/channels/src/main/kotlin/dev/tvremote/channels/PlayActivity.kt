@@ -158,11 +158,13 @@ class PlayActivity : Activity() {
         spin.visibility = View.VISIBLE
         io.execute {
             val favs = Store.favourites(this).byChannel()
-            val country = Ids.country(id).takeIf { it.isNotEmpty() }?.let { Catalog.channels(this, it).byChannel() }.orEmpty()
+            // its own country's list, else the one on show: Vietnam's list carries iptv-org's "Cinemax.us" too (its "also" channels)
+            val (cc, country) = listOf(Ids.country(id), Store.country(this)).filter { it.isNotEmpty() }.distinct().asSequence()
+                .map { it to Catalog.channels(this, it).byChannel() }.firstOrNull { (_, l) -> l.any { it.first().id == id } } ?: ("" to emptyList())
             main.post {
                 if (isDestroyed) return@post
                 when {
-                    country.any { it.first().id == id } -> Lineup.set(country, Ids.country(id).uppercase())
+                    country.isNotEmpty() -> Lineup.set(country, cc.uppercase())
                     favs.any { it.first().id == id } -> Lineup.set(favs, getString(R.string.favourites))
                     else -> { spin.visibility = View.GONE; fail(getString(R.string.not_found)); return@post }
                 }

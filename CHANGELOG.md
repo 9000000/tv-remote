@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Channels: thêm link m3u ngay trên TV (mục **Thêm link m3u**; mở app TV Remote trên điện thoại để dán link cho nhanh), bấm Menu trên một danh sách để đổi tên hoặc xoá. Trước đây chỉ thêm được từ app điện thoại, app máy tính hoặc web của TV.
+- TV Channels: kênh Cinemax (luồng Mỹ trong danh sách Việt Nam) hiện nhầm lịch phát sóng của Cinemax Việt Nam (TV360): lịch theo tên giờ chỉ dùng cho kênh của đúng nước đó. Link mở thẳng một kênh như vậy (ghim, nhắc lịch) trước báo "không còn trong danh sách", giờ mở được.
 
 **English**
 - TV Channels: add an m3u link on the TV itself (**Add an m3u link**; open the TV Remote app on your phone to paste it quickly), Menu on a list renames or deletes it. Before, links could only be added from the phone app, the computer app or the TV web page.
+- TV Channels: Cinemax (the US feed in Vietnam's list) showed Vietnam's Cinemax guide from TV360: a guide matched by name now applies only to that country's channels. A link straight to such a channel (a pin, a reminder) said it was gone; it opens now.
 
 ## 0.34.0 - 2026-10-29
 

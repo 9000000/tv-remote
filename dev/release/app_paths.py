@@ -7,7 +7,7 @@ app for code it never compiles (the same fix would have made a second phone app 
 
 android / tv build on :shared, so they take app/shared whole, less each app/shared/src/<dir> that neither they nor :shared name.
 desktop (the computer app, JVM, no :shared) takes every app/shared/... it names, the web page and the words too.
-The TV apps take only the app/shared/src/... they name; TV Home's packed copy of the web page (packHomeWeb) is not counted, as before.
+The TV apps take only the app/shared/src/... they name, and the words of the i18n modules they build from (extra["i18nApps"]); TV Home's packed copy of the web page (packHomeWeb) is not counted, as before.
 """
 import os
 import re
@@ -21,6 +21,14 @@ def named(app, only_src=True):
     return sorted(set(re.findall(r'"\.\./shared/(%s[^"]+)"' % ('src/' if only_src else ''), s)))
 
 
+def words(app):
+    """The app/shared/i18n/apps/<lang>/<module>.json modules its strings come from (extra["i18nApps"]); TV Setup packs TV Setup Keys."""
+    s = open(os.path.join(ROOT, 'app', app, 'build.gradle.kts')).read()
+    m = re.search(r'extra\["i18nApps"\]\s*=\s*listOf\(([^)]*)\)', s)
+    mods = set(re.findall(r'"(\w+)"', m.group(1))) if m else set()
+    return mods | (words('tvkeys') if app == 'tv' else set())
+
+
 def paths(app):
     out = ['app/' + app, ':(exclude)app/%s/*.apk' % app, ':(exclude)app/%s/tests' % app]
     mine = named(app)
@@ -29,10 +37,12 @@ def paths(app):
         used = {p.split('/')[1] for p in mine} | set(re.findall(r'"src/(\w+)/', shared)) | {'main'}
         out += ['app/shared', ':(exclude)app/shared/tests', ':(exclude)app/shared/src/test']
         out += [':(exclude)app/shared/src/' + d for d in sorted(os.listdir(os.path.join(ROOT, 'app/shared/src'))) if d not in used and d != 'test']
+        out += [':(exclude)app/shared/i18n/apps/*/%s.json' % m[:-5] for m in sorted(os.listdir(os.path.join(ROOT, 'app/shared/i18n/apps/en')))
+                if m.endswith('.json') and m[:-5] not in words(app)]   # another app's words (TV Channels') are no phone update
     elif app == 'desktop':
         out += ['app/shared/' + p for p in named(app, only_src=False)]
     else:
-        out += ['app/shared/' + p for p in mine]
+        out += ['app/shared/' + p for p in mine] + ['app/shared/i18n/langs.json'] + ['app/shared/i18n/apps/*/%s.json' % m for m in sorted(words(app))]
     return out
 
 
