@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Setup, cho hỗ trợ xem: log và trạng thái máy lớn (cả logcat của TV) giờ gửi được, cắt bớt phần cũ thay vì báo "không gửi được"; gửi lỗi thì thử lại một lần.
+
+**English**
+- TV Setup, letting support look: big logs and dumps (the TV's whole logcat too) now arrive, cut to their newest part instead of "answer not delivered"; a lost answer is sent once more.
+
 ## 0.33.1 - 2026-10-29
 
 Web 0.33.1 · app điện thoại 0.32.1 · app TV 0.33.1 · TV Home 0.19.1 · TV Channels 0.13.1 · TV Games 0.13.1
