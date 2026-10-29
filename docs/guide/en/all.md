@@ -408,8 +408,8 @@ Change the TV's home screen. First is [TV Home](#home), this project's own.
 
 - **Use the TV's own launcher**: the original launcher, at any time.
 - Google TV: picking a launcher also turns the Google TV launcher off, so the remote's Home key opens the one you picked. **Use the TV's own launcher** puts it back.
-- The TV says the Wi-Fi belongs to its first-run setup: in Settings > Network, **Forget** the network, join it again, then try once more.
-- Chromecast: its launcher stays so casting works; TV Setup makes Home open the one picked.
+- A TV that will not let it change fully (Chromecast, TCL, Kalley, ZTE…): TV Setup makes Home open the one picked; a long press opens the TV's own.
+- Wi-Fi owned by the first-run setup: **Forget** it, join again, run it again for a full change.
 - Sony BRAVIA, Xiaomi (PatchWall) and older Android TV: picking a launcher also turns the maker's own off, so the Home key no longer goes back to it. TV Setup redoes it if the stock one returns.
 - A launcher that crashes twice in a row: TV Setup puts the old one back.
 - Tagged **Google Play**: press **Open in Google Play**, install on the TV, then **Use**.
@@ -419,7 +419,6 @@ Change the TV's home screen. First is [TV Home](#home), this project's own.
 ### Tips
 
 - The gallery opens in about 0.4 s: the list first, pictures as they arrive.
-- Kalley, PRISM+: the old home screen stays, and why.
 
 ## TV Home, the project's home screen
 
