@@ -135,4 +135,5 @@ else
 fi
 dev/release/sums.sh "v$VER"                                                   # the signed list of every file, last: until it is there no app offers this release
 gh release view "v$VER" --json assets -q '.assets[].name'
+echo; node dev/admin/issues.js || true                                  # issues labelled next-release: this release is what they wait for
 echo; dev/release/churn.sh || true                                           # how settled the /api is: says when 1.0 is worth thinking about

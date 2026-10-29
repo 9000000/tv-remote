@@ -96,6 +96,9 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
 - Notes go under `## Unreleased` in `CHANGELOG.md` (**Tiếng Việt** and **English**) as features land. A change to what a
   `docs/guide.html` topic describes: update it and set `data-v="next"`.
 - Push without asking once tested and committed (a push deploys `docs/` at once). Sub-agents never push.
+- **Issues:** a reply that says a fix is "in the next release" gets the label `next-release`. `dev/admin/issues.js` (run by the
+  session hooks and at the end of release.sh) lists open issues whose last word is not ours, and `next-release` issues once a release
+  is out: answer them (say it is out, drop the label).
 - PRs, issues and comments on other people's repos (cleanyourtv …): no "Generated with" line or session link.
 
 ## Testing
