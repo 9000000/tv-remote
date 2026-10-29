@@ -1,6 +1,6 @@
 # Hướng dẫn TV Remote (cho trợ lý AI)
 
-Điều khiển Android TV / Google TV (và LG, Samsung, Roku, VIDAA) không qua máy chủ nào: app điện thoại, app máy tính, trang web của TV và các app trên TV. Tìm mục dưới đây rồi chỉ đọc trang của mục đó. Tất cả trong một file: [all.md](all.md). Bản cho người đọc: https://tvremote.pages.dev/guide
+Điều khiển Android TV / Google TV (và LG, Samsung, Roku, VIDAA) không qua máy chủ nào: app điện thoại, app máy tính, trang web của TV và các app trên TV. Tìm mục dưới đây rồi chỉ đọc trang của mục đó. Bản cho người đọc: https://tvremote.pages.dev/guide
 
 ## Bắt đầu
 - [Dùng cho ai](uses.md): Tìm dòng giống bạn, bấm từng mục để xem cách làm. Đa số cần TV Setup trên TV. _(dung cho ai doi tuong gia dinh tre em homestay khach san phong cho thue quan ca phe cua hang ong ba nguoi gia mat remote use cases who families hotels cafe kids grandparents)_

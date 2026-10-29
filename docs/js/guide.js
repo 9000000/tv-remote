@@ -192,12 +192,12 @@
     var id = new URLSearchParams(location.search).get("t") || location.hash.slice(1), t = id && document.getElementById(id), here = t && t.classList.contains("topic") ? base + t.id + ".md" : "";
     return vi
       ? "Tôi có câu hỏi về TV Remote (điều khiển Android TV / Google TV, LG, Samsung, Roku, VIDAA từ điện thoại hoặc máy tính).\n"
-        + "Hướng dẫn cho AI: " + base + "index.md (mỗi mục một dòng). Đọc file đó trước, rồi chỉ mở trang của mục cần dùng; cả hướng dẫn trong một file: " + base + "all.md.\n"
+        + "Hướng dẫn cho AI: " + base + "index.md (mỗi mục một dòng). Đọc file đó trước, rồi chỉ mở trang của mục cần dùng.\n"
         + (here ? "Tôi đang xem mục: " + here + "\n" : "")
         + "Trả lời đúng việc tôi hỏi, theo hướng dẫn. Cần biết TV hay thiết bị của tôi thì hỏi. Có nhiều bước thì đưa từng bước, nói rõ làm trên app hay màn hình nào, chờ tôi báo xong mới sang bước tiếp.\n\n"
         + "Câu hỏi của tôi: "
       : "I have a question about TV Remote (control an Android TV / Google TV, LG, Samsung, Roku or VIDAA TV from a phone or computer).\n"
-        + "The guide for AI: " + base + "index.md (one line per topic). Read it first, then open only the topics you need; everything in one file: " + base + "all.md.\n"
+        + "The guide for AI: " + base + "index.md (one line per topic). Read it first, then open only the topics you need.\n"
         + (here ? "I am reading: " + here + "\n" : "")
         + "Answer what I ask, from the guide. Ask about my TV or device only when it matters. For several steps, give one at a time, saying which app or screen it happens in, and wait until I say it worked.\n\n"
         + "My question: ";

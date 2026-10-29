@@ -11,8 +11,8 @@ const SITE = 'https://tvremote.pages.dev';
 const OUT = path.join(ROOT, 'docs/guide');
 const LANGS = ['en', 'vi'];
 const HEAD = {
-  en: { title: 'TV Remote user guide (for AI agents)', how: 'Remote control for Android TV / Google TV (and LG, Samsung, Roku, VIDAA) with no server in between: a phone app, a computer app, a web page served by the TV, and TV apps. Find the topic below, then read only its page. Everything at once: [all.md](all.md). The same guide for people: ' + SITE + '/guide' },
-  vi: { title: 'Hướng dẫn TV Remote (cho trợ lý AI)', how: 'Điều khiển Android TV / Google TV (và LG, Samsung, Roku, VIDAA) không qua máy chủ nào: app điện thoại, app máy tính, trang web của TV và các app trên TV. Tìm mục dưới đây rồi chỉ đọc trang của mục đó. Tất cả trong một file: [all.md](all.md). Bản cho người đọc: ' + SITE + '/guide' },
+  en: { title: 'TV Remote user guide (for AI agents)', how: 'Remote control for Android TV / Google TV (and LG, Samsung, Roku, VIDAA) with no server in between: a phone app, a computer app, a web page served by the TV, and TV apps. Find the topic below, then read only its page. The same guide for people: ' + SITE + '/guide' },
+  vi: { title: 'Hướng dẫn TV Remote (cho trợ lý AI)', how: 'Điều khiển Android TV / Google TV (và LG, Samsung, Roku, VIDAA) không qua máy chủ nào: app điện thoại, app máy tính, trang web của TV và các app trên TV. Tìm mục dưới đây rồi chỉ đọc trang của mục đó. Bản cho người đọc: ' + SITE + '/guide' },
 };
 
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', rsaquo: '›', larr: '←', rarr: '→', middot: '·', hellip: '…', ndash: '–', mdash: '—', times: '×', copy: '©' };
