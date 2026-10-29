@@ -47,7 +47,8 @@ object FleetStatus {
     private val KNOWN = mapOf("com.google.android.youtube.tv" to "YouTube", "com.google.android.youtube.tvunplugged" to "YouTube TV",
         "com.netflix.ninja" to "Netflix", "com.amazon.amazonvideo.livingroom" to "Prime Video", "com.disney.disneyplus" to "Disney+",
         "com.google.android.apps.youtube.music" to "YouTube Music", "com.spotify.tv.android" to "Spotify", "com.plexapp.android" to "Plex",
-        "org.xbmc.kodi" to "Kodi", "com.android.tv.settings" to "Settings", "com.android.vending" to "Play Store", "dev.tvremote.setup" to "TV Setup")
+        "org.xbmc.kodi" to "Kodi", "com.android.tv.settings" to "Settings", "com.android.vending" to "Play Store", "dev.tvremote.setup" to "TV Setup") +
+        dev.tvremote.core.ontv.Bundle.apps.associate { it.pkg to it.name }   // ours: "dev.tvremote.channels" read as "Dev"
     private val NOISE = setOf("com", "org", "net", "tv", "android", "app", "apps", "google", "tvapp", "ninja", "livingroom")
 
     /** A TV's launcher is "home": the page says it in the person's language, so no word here. */

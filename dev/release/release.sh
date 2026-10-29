@@ -91,7 +91,7 @@ python3 dev/release/stamp_since.py "$VER" "$(date +%F)"          # docs/data/sin
 NOTES=$(awk -v v="## $VER " 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md)
 [ -n "$NOTES" ] || { echo "CHANGELOG.md has no section for $VER"; exit 1; }
 if [ -n "$(git status --porcelain)" ]; then
-  git commit -qam "Release v$VER (app điện thoại $(cat app/android/VERSION), app TV $(cat app/tv/VERSION))"
+  git commit -qam "Release v$VER (phone app $(cat app/android/VERSION), TV app $(cat app/tv/VERSION))"
   echo "numbers: web $VER, phone $(cat app/android/VERSION), TV $(cat app/tv/VERSION)"
 fi
 git push -q origin HEAD                                               # the release is made from what GitHub has

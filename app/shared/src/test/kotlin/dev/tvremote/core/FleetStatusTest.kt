@@ -52,6 +52,7 @@ class FleetStatusTest {
     @Test fun appNames() {
         assertEquals("YouTube", FleetStatus.appName("com.google.android.youtube.tv"))
         assertEquals("Hbo", FleetStatus.appName("com.hbo.hbonow"))
+        assertEquals("TV Channels", FleetStatus.appName("dev.tvremote.channels"))
         assertEquals("Foo", FleetStatus.appName("tv.foo.player"))
         assertTrue(FleetStatus.isHome("com.google.android.tvlauncher"))
         assertFalse(FleetStatus.isHome("com.netflix.ninja"))
