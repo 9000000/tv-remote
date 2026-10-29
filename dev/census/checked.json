@@ -14,6 +14,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "029730d62a668d07e4544e63|0.34.0": {
+  "at": "2026-10-29T18:31:17+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
  "03776095643e4e96a8e381de|0.30.0": {
   "at": "2026-10-29T17:19:55+07:00",
   "n": 1,
@@ -195,9 +200,14 @@
   "note": "pc 0.26.3 tvstatMount: guarded since (setup.js)"
  },
  "1bfd183ebabe1f558e4b349e|0.33.1": {
-  "at": "2026-10-29T17:19:40+07:00",
+  "at": "2026-10-29T18:31:18+07:00",
   "n": 1,
-  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
+ "1bfd183ebabe1f558e4b349e|0.34.0": {
+  "at": "2026-10-29T18:31:18+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
  },
  "1d068b0e2ad4d8683265d6a9|0.32.1": {
   "at": "2026-10-29T17:19:27+07:00",
@@ -275,9 +285,19 @@
   "note": "fixed in 5d4096ec"
  },
  "2df6318a25d093214bc16108|0.32.1": {
-  "at": "2026-10-29T17:19:58+07:00",
+  "at": "2026-10-29T18:31:19+07:00",
   "n": 1,
-  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
+ "2df6318a25d093214bc16108|0.32.5": {
+  "at": "2026-10-29T18:31:19+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
+ "2df6318a25d093214bc16108|0.32.6": {
+  "at": "2026-10-29T18:31:19+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
  },
  "304d571eb8351582e87856f4|0.26.3": {
   "at": "2026-10-26T21:47:43+07:00",
@@ -485,9 +505,14 @@
   "note": "setup report, not a crash: ADB not reachable (refused = debugging off, allow = prompt not answered, tls = Wireless debugging pairing)"
  },
  "4cacc103078f5e6b7266801e|0.29.0": {
-  "at": "2026-10-27T12:52:44+07:00",
+  "at": "2026-10-29T18:31:19+07:00",
   "n": 1,
-  "note": "adbd restarting on the TV (init.svc.adbd=restarting), port 5555 refused; same as 05a960b8; not our code"
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
+ "4cacc103078f5e6b7266801e|0.34.0": {
+  "at": "2026-10-29T18:31:19+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
  },
  "4ccc484580e6ccb279185260|0.19.0": {
   "at": "2026-10-29T17:19:31+07:00",
@@ -528,6 +553,11 @@
   "at": "2026-10-29T17:19:32+07:00",
   "n": 2,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+ },
+ "52ad8714d4c28394d69bd949|0.32.1": {
+  "at": "2026-10-29T18:31:17+07:00",
+  "n": 1,
+  "note": "not our code: minified script the browser injected into the TV web page; errbox now drops stacks whose every frame is the page itself"
  },
  "535993e358ec33bffb4a2ab7|0.27.0": {
   "at": "2026-10-29T17:19:43+07:00",
@@ -659,6 +689,11 @@
   "n": 1,
   "note": "Safari with stale HTML + new JS (auto.js stopped at #supgo); 1 install, left"
  },
+ "67b6ae315c3b66df4877b275|0.32.1": {
+  "at": "2026-10-29T18:31:20+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
  "67c022dfb5a21bcb3a3560b8|0.24.1": {
   "at": "2026-10-29T17:20:04+07:00",
   "n": 1,
@@ -743,6 +778,11 @@
   "at": "2026-10-26T21:47:40+07:00",
   "n": 2,
   "note": "old version (<=0.24): gone in current page"
+ },
+ "6d3fd1a68f8079203661e09d|0.34.0": {
+  "at": "2026-10-29T18:31:20+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
  },
  "6d6f82b70a9b06137276e6b6|0.32.1": {
   "at": "2026-10-29T17:20:05+07:00",
@@ -1174,6 +1214,11 @@
   "n": 1,
   "note": "zaloJSV2 injected by a TV browser, not ours"
  },
+ "b779b4615f95859a880cd207|0.33.1": {
+  "at": "2026-10-29T18:31:21+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
  "b8f3039e0ff6163a120cbe22|0.32.1": {
   "at": "2026-10-29T17:20:15+07:00",
   "n": 1,
@@ -1325,9 +1370,14 @@
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
  },
  "cedafe90cec01d6382f4d473|0.33.1": {
-  "at": "2026-10-29T17:19:50+07:00",
+  "at": "2026-10-29T18:31:21+07:00",
   "n": 1,
-  "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
+ "cedafe90cec01d6382f4d473|0.34.0": {
+  "at": "2026-10-29T18:31:21+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
  },
  "cf638452843273d51ba6f9f8|0.32.1": {
   "at": "2026-10-29T17:20:18+07:00",
@@ -1479,6 +1529,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "e94dd9684f447e3743727f48|0.33.1": {
+  "at": "2026-10-29T18:31:22+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
+ },
  "ec35e370d1f1ed3547aef3ac|0.30.0": {
   "at": "2026-10-28T14:05:10+07:00",
   "n": 1,
@@ -1563,6 +1618,11 @@
   "at": "2026-10-27T09:37:25+07:00",
   "n": 1,
   "note": "AdbReport: ADB not linked on the user's TV (debugging off / refused / not paired), not a code fault"
+ },
+ "fb819a31cc30c81e4fc3629f|0.34.0": {
+  "at": "2026-10-29T18:31:22+07:00",
+  "n": 1,
+  "note": "ADB off / not allowed / unpaired on the user's TV: TV Setup's own notice, no code fault"
  },
  "fbceab7d03188e5e17141936|0.28.0": {
   "at": "2026-10-27T09:37:25+07:00",
