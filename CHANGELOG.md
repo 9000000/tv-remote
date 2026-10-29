@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - App điện thoại và máy tính: mở remote khi TV đang chờ lại bật TV lên như trước 0.32.1; chỉ phần chạy nền của TV Setup là không bấm nút nguồn.
+- TV Hisense (VIDAA): ghép nối thử tiếp cách đăng nhập khác khi TV không hiện mã hoặc ngắt kết nối, và không lỡ mã truy cập TV gửi sớm (góp ý ở issue #8).
 
 **English**
 - Phone and computer apps: opening the remote while the TV is in standby turns it on again, as before 0.32.1; only TV Setup's background link never presses Power.
+- Hisense (VIDAA) TVs: pairing tries the next kind of login when the TV shows no code or hangs up, and keeps a token the TV sends early (issue #8).
 
 ## 0.32.1 - 2026-10-28
 

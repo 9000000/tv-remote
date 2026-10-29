@@ -177,9 +177,11 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
             protocol in 1 until 3000 -> listOf("remotenow", "middle", "modern", "static")
             else -> listOf("modern", "middle", "remotenow", "static")
         }
+        var why: IOException? = null
         for (p in profiles) {
             val (user, pass) = if (p == "static") STATIC_USER to STATIC_PASS else credentials(me, ts, p)
             val m = try { session(user, pass) } catch (e: MqttLite.Rejected) { continue }
+            catch (e: IOException) { if (!portOpen()) throw e; why = e; continue }   // some firmwares hang up on a login they do not take instead of refusing it (issue #8)
             pairing = m; pairUser = user; pairStatic = p == "static"
             val shown = if (p == "static") expect(8000, { it.endsWith("/ui_service/data/authentication") }) { m.publish(ui("gettvstate")) }
             else (0 until 3).firstNotNullOfOrNull {
@@ -187,16 +189,20 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
                     m.publish(ui("vidaa_app_connect"), """{"app_version":2,"connect_result":0,"device_type":"Mobile App"}""")
                 }
             }
-            if (shown == null) { m.close(); pairing = null; throw IOException("the TV did not show a code") }
+            if (shown == null) { m.close(); pairing = null; why = IOException("the TV did not show a code"); continue }   // logged in, no code: the next kind may show it (issue #8)
             WireLog.all.add("←", "VIDAA $host shows its code ($p)")
             return
         }
-        throw IOException("the TV did not take any kind of login")
+        throw why ?: IOException("the TV did not take any kind of login")
     }
 
     /** IllegalArgumentException: wrong code. Saves the token the TV gives; [connect] then logs in with it. */
     override fun finishPairing(code: String) {
         val m = pairing ?: throw IllegalStateException("startPairing first")
+        // listened for before the code goes: some firmwares send the token as soon as they take the code, before asked (issue #8)
+        val token = ArrayBlockingQueue<Pair<String, String>>(1)
+        val tokenWait = { t: String -> t.endsWith("/platform_service/data/tokenissuance") || t.endsWith("/platform_service/data/gettoken") } to token
+        waits.add(tokenWait)
         try {
             val n = code.filter { it.isDigit() }.toIntOrNull() ?: throw IllegalArgumentException("wrong code")
             val (topic, said) = expect(15_000, { it.endsWith("/ui_service/data/authenticationcode") || it.endsWith("/ui_service/data/authenticationcodeclose") }) {
@@ -208,15 +214,16 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
                 save(JSONObject().put("profile", "legacy").put("user", STATIC_USER).put("access", STATIC_PASS))
                 return
             }
-            val (_, tokens) = expect(15_000, { it.endsWith("/platform_service/data/tokenissuance") || it.endsWith("/platform_service/data/gettoken") }) {
+            val (_, tokens) = token.poll() ?: run {
                 m.publish(platform("gettoken", "data"), """{"refreshtoken":""}""")
                 m.publish(ui("authenticationcodeclose"))
+                token.poll(15_000, TimeUnit.MILLISECONDS)
             } ?: throw IOException("the TV gave no token")
             val t = json(tokens)?.takeIf { it.optString("accesstoken").isNotEmpty() } ?: throw IOException("the TV gave no token")
             save(fromTokens(t).put("profile", "dynamic").put("user", pairUser))
             WireLog.all.add("←", "VIDAA $host paired")
         } finally {
-            m.close(); pairing = null
+            waits.remove(tokenWait); m.close(); pairing = null
         }
     }
 

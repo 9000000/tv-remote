@@ -29,6 +29,9 @@ class VidaaTest {
     private val got: MutableList<String> = Collections.synchronizedList(ArrayList())   // "action payload" the TV received
     private val logins: MutableList<String> = Collections.synchronizedList(ArrayList())
     private var legacy = false                                        // an old TV: the fixed login, no code
+    private var hangUps = 0                                           // logins hung up on (no CONNACK), as some firmwares refuse
+    private var silent = 0                                            // logins taken that never show a code
+    private var tokenEarly = false                                    // the token comes as soon as the code is taken, unasked
     private var server: ServerSocket? = null
     private val dir: File = Files.createTempDirectory("vidaa").toFile()
 
@@ -54,6 +57,8 @@ class VidaaTest {
         fun s(): String { val n = ((body[at].toInt() and 0xff) shl 8) or (body[at + 1].toInt() and 0xff); val r = String(body, at + 2, n); at += 2 + n; return r }
         val cid = s(); val user = s(); val pass = s()
         logins.add("$user $pass")
+        if (user != Vidaa.STATIC_USER && synchronized(this) { hangUps-- > 0 }) return
+        val mute = user != Vidaa.STATIC_USER && synchronized(this) { silent-- > 0 }
         val ok = when {
             user == Vidaa.STATIC_USER -> legacy
             pass == "ACC1" || pass == "REF1" -> true
@@ -72,10 +77,13 @@ class VidaaTest {
             got.add("$action $payload".trim())
             fun say(t: String, p: String) = publish(out, mobile + t, p)
             when (action) {
-                "vidaa_app_connect" -> say("/ui_service/data/authentication", "")
+                "vidaa_app_connect" -> if (!mute) say("/ui_service/data/authentication", "")
                 "gettvstate" -> if (pass == Vidaa.STATIC_PASS && !legacy) say("/ui_service/data/authentication", "") else say("/ui_service/data/gettvstate", """{"statetype":"app","name":"Netflix"}""")
-                "authenticationcode" -> say("/ui_service/data/authenticationcode", if (payload.contains("1234")) """{"result":1}""" else """{"result":0}""")
-                "gettoken" -> say("/platform_service/data/tokenissuance", """{"accesstoken":"ACC1","refreshtoken":"REF1","accesstoken_time":${System.currentTimeMillis() / 1000},"accesstoken_duration_day":2}""")
+                "authenticationcode" -> if (tokenEarly && payload.contains("1234")) {
+                    say("/platform_service/data/tokenissuance", """{"accesstoken":"ACC1","refreshtoken":"REF1","accesstoken_time":${System.currentTimeMillis() / 1000},"accesstoken_duration_day":2}""")
+                    say("/ui_service/data/authenticationcode", """{"result":1}""")
+                } else say("/ui_service/data/authenticationcode", if (payload.contains("1234")) """{"result":1}""" else """{"result":0}""")
+                "gettoken" -> if (!tokenEarly) say("/platform_service/data/tokenissuance", """{"accesstoken":"ACC1","refreshtoken":"REF1","accesstoken_time":${System.currentTimeMillis() / 1000},"accesstoken_duration_day":2}""")
                 "applist" -> say("/ui_service/data/applist", """[{"appId":"3","name":"Netflix","url":"netflix","storeType":0},{"appId":"7","name":"YouTube","url":"youtube"}]""")
                 "sourcelist" -> say("/ui_service/data/sourcelist", """[{"sourceid":"4","sourcename":"HDMI 2","displayname2":"PlayStation","is_signal":"1"},{"sourceid":"0","sourcename":"TV"}]""")
                 "getvolume" -> say("/platform_service/data/getvolume", """{"volume_type":0,"volume_value":17}""")
@@ -152,6 +160,34 @@ class VidaaTest {
         again.connect {}
         assertTrue(again.ready())
         again.close()
+    }
+
+    // issue #8: a firmware that takes one kind of login but shows no code, hangs up instead of refusing, or sends the token unasked
+    @Test fun aLoginThatShowsNoCodeTriesTheNextKind() {
+        silent = 1
+        val v = Vidaa(dir, "127.0.0.1", start())
+        v.startPairing(); v.finishPairing("1234")
+        assertEquals(2, logins.size)
+        v.close()
+    }
+
+    @Test fun aTvThatHangsUpOnALoginIsTriedWithTheNextKind() {
+        hangUps = 2                                                   // both ways of the first kind (TLS, then plain)
+        val v = Vidaa(dir, "127.0.0.1", start())
+        v.startPairing(); v.finishPairing("1234")
+        v.connect {}
+        assertTrue(v.ready())
+        v.close()
+    }
+
+    @Test fun aTokenSentBeforeItIsAskedForIsKept() {
+        tokenEarly = true
+        val v = Vidaa(dir, "127.0.0.1", start())
+        v.startPairing(); v.finishPairing("1234")
+        assertTrue(seen().none { it.startsWith("gettoken") })
+        v.connect {}
+        assertTrue(logins.last().endsWith(" ACC1"))
+        v.close()
     }
 
     @Test fun anOldTvTakesTheFixedLoginWithoutACode() {
