@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Writes the user guide for AI agents: docs/guide/<lang>/index.md (every topic, one line each), docs/guide/<lang>/<id>.md (one topic)
+// Writes the user guide for AI agents: docs/guide/<lang>/index.md (every topic, one line each), docs/guide/<lang>/<id>.md (one topic),
+// each also as <name>.html (what the copied prompt names: chat apps' readers open pages, not .md)
 // and docs/guide/<lang>/all.md (all of them), from docs/guide.html (the one source). An agent reads the index (~3k tokens), then only
 // the topics it needs, instead of the whole page (~80k tokens of HTML and animations). The guide's "Copy for AI" button points here.
 // Run after editing guide.html; app/shared/tests/guide.test.js fails when these files differ from this output.
@@ -106,6 +107,18 @@ function topics(html) {
   return out;
 }
 
+/**
+ * The same text as a page: the chat apps' web readers (ChatGPT, Gemini) open HTML but refused the .md ("cannot load this Markdown
+ * format"). The Markdown stays as it is inside <pre>, its links made real, extensionless as Cloudflare Pages serves them.
+ */
+function page(md, lang) {
+  const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const title = esc(md.match(/^# (.*)/)[1]);
+  const body = esc(md).replace(/\[([^\]]+)\]\(([\w-]+)\.md\)/g, (m, t, id) => '[<a href="' + (id === 'index' ? './' : id) + '">' + t + '</a>]');
+  return '<!doctype html><html lang="' + lang + '"><meta charset="utf-8"><meta name="viewport" content="width=device-width">'
+    + '<title>' + title + '</title><pre style="white-space:pre-wrap;font:15px/1.5 sans-serif;max-width:760px;margin:24px auto;padding:0 16px">' + body + '</pre></html>\n';
+}
+
 function build() {
   const html = fs.readFileSync(path.join(ROOT, 'docs/guide.html'), 'utf8');
   const files = {};
@@ -129,6 +142,7 @@ function build() {
     files[lang + '/index.md'] = index.join('\n') + '\n';
     files[lang + '/all.md'] = '# ' + HEAD[lang].title + '\n\n' + all.join('\n') ;
   }
+  for (const f of Object.keys(files)) if (!f.endsWith('/all.md')) files[f.replace(/\.md$/, '.html')] = page(files[f], f.slice(0, 2));
   return files;
 }
 

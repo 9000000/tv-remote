@@ -1,0 +1,23 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Điều khiển TV bằng Telegram</title><pre style="white-space:pre-wrap;font:15px/1.5 sans-serif;max-width:760px;margin:24px auto;padding:0 16px"># Điều khiển TV bằng Telegram
+
+Nhắn bot của riêng bạn để tắt/bật TV, chỉnh tiếng, mở app, chụp màn hình. Bot chạy trong TV Setup, không mở cổng ra Internet.
+
+1. Trong Telegram, mở **@BotFather**, gửi `/newbot`, đặt tên và username kết thúc bằng `bot`.
+2. BotFather trả về một **token** (`123456789:AAH…`). Ai có token là điều khiển được bot: đừng chia sẻ.
+3. 🛠️ Cài đặt trên TV hoặc trang web của TV → **Điều khiển bằng Telegram** → **Cho dùng**, dán token, **Lưu**.
+4. Bấm **Tạo mã ghép đôi**: mã 6 số hiện trong Cài đặt và trên màn hình TV, dùng một lần, 5 phút.
+5. Mở bot (chat riêng hoặc nhóm), gửi `/pair 123456`. Chat lạ gửi gì bot cũng im lặng.
+6. Sai 5 lần: mã bị huỷ và khoá ghép đôi 15 phút; tạo mã mới để mở khoá.
+
+Lệnh:
+
+```
+/status  /off  /on  /vol 30  /key HOME
+/open netflix  /scene Xem phim  /timer 30 (0 = huỷ/cancel)
+/say Ăn cơm nhé  /shot  /remote  /help
+```
+
+Chat mới ghép chỉ có quyền **Điều khiển**; chủ TV nâng lên **Toàn quyền** trong danh sách chat.
+
+Ảnh chụp màn hình đi qua máy chủ Telegram. Dừng bất cứ lúc nào: **Không bật**, **Xoá token** (quên luôn chat) hoặc xoá từng chat.
+</pre></html>
