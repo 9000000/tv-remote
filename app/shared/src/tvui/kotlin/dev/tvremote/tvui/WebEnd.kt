@@ -1,6 +1,8 @@
 package dev.tvremote.tvui
 
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.ViewGroup
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebView
@@ -14,6 +16,7 @@ import android.webkit.WebViewClient
  */
 object WebEnd {
     private val live = java.util.Collections.newSetFromMap(java.util.WeakHashMap<WebView, Boolean>())
+    private val main = Handler(Looper.getMainLooper())
 
     fun <T : WebView> made(v: T): T { live.add(v); return v }
 
@@ -28,8 +31,11 @@ object WebEnd {
         step { v.stopLoading() }
         step { v.onPause() }
         step { v.removeAllViews() }
-        if (live.isEmpty()) step { if (Build.VERSION.SDK_INT >= 29) v.webViewRenderProcess?.terminate() }
+        // a page replaced by a new one (TV Home's web wall given another address, issue #1) is ended just before the new one is made,
+        // which then joins the same renderer: ended now, it took the new page with it. Asked again once the caller is done.
+        val r = if (Build.VERSION.SDK_INT >= 29) try { v.webViewRenderProcess } catch (e: Throwable) { null } else null
         step { v.destroy() }
+        if (r != null) main.post { if (live.isEmpty()) step { r.terminate() } }
     }
 
     /** What a WebView that is going away is told: its renderer's end is not a crash (the default answer kills the app). */

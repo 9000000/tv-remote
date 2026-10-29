@@ -4,6 +4,14 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+**Tiếng Việt**
+- TV Home, hình nền là trang web (chạy thật): đổi sang địa chỉ khác thì cứ lần thứ hai trang mới không hiện, chỉ còn nền màu tới 2 phút (issue #1). Trang mới giờ hiện ngay mỗi lần đổi.
+
+**English**
+- TV Home, a live web page as the background: every other change of address left the gradient instead of the new page for up to 2 minutes (issue #1). The new page now shows at once every time.
+
 ## 0.33.0 - 2026-10-29
 
 Web 0.33.0 · app điện thoại 0.32.0 · app TV 0.33.0 · TV Home 0.19.0 · TV Channels 0.13.0 · TV Games 0.13.0
