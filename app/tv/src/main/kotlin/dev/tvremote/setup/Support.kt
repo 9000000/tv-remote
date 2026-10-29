@@ -15,7 +15,7 @@ import java.net.URL
  * worker (dev/census/src/support.js) on a press, and the TV shows the 8-digit code to read out. [open]: for [MINUTES] the owner
  * may GET a few of this app's own read-only routes (`dev/census/support.py CODE /api/state`); the TV asks the worker every 2 s,
  * runs them on its own server with a pass of its own, listed among the paired devices while it lasts, and stops when the time
- * is up, on Stop, or when TV Setup restarts. Nothing is ever pressed or changed: GET only, [ROUTES] only, plus [SupportDump]'s
+ * is up or on Stop. TV Setup restarting (it updates itself quietly, a weak box kills it) picks the same code up again ([resume]). Nothing is ever pressed or changed: GET only, [ROUTES] only, plus [SupportDump]'s
  * settings, own log and read-only commands (`support.py CODE sh "dumpsys package x"`), so a new feature needs no new field here.
  */
 object Support {
@@ -70,16 +70,35 @@ object Support {
             val code = send(app, version) ?: return@Thread said(null)   // always fresh: the facts of now with the code
             val key = lastKey
             val r = post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", MINUTES))?.takeIf { it.has("live") } ?: return@Thread said(null)
-            stopThread()
-            until = ends(r, System.currentTimeMillis() + MINUTES * 60_000L)
-            asked = 0; this.code = code; liveKey = key
-            forgetPass(app)                                           // a second press before the first returned: one pass, not two
-            val token = Paired.add(app, KIND, "Hỗ trợ / Support $code", "relay", false)
-            val t = Thread({ loop(app, code, key, token) }, "support").apply { isDaemon = true }
-            thread = t; t.start()                                     // assigned first: the loop runs only while it is [thread]
+            asked = 0
+            run(app, code, key, ends(r, System.currentTimeMillis() + MINUTES * 60_000L))
             WireLog.all.add("·", "support open $code for $MINUTES min")
             said(code)
         }, "support-start").apply { isDaemon = true }.start()
+    }
+
+    private fun run(app: Context, code: String, key: String, end: Long) {
+        stopThread()
+        until = end; this.code = code; liveKey = key
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("live_code", code).putString("live_key", key).putLong("live_until", end).apply()
+        forgetPass(app)                                               // a second press before the first returned: one pass, not two
+        val token = Paired.add(app, KIND, "Hỗ trợ / Support $code", "relay", false)
+        val t = Thread({ loop(app, code, key, token) }, "support").apply { isDaemon = true }
+        thread = t; t.start()                                         // assigned first: the loop runs only while it is [thread]
+    }
+
+    /**
+     * At start: support that was open when TV Setup stopped goes on with the same code (an update mid-session left the owner
+     * asking a TV that had quietly stopped), else its pass is not kept. The worker's answer to the first poll sets the end again.
+     */
+    fun resume(c: Context) {
+        if (open()) return
+        val app = c.applicationContext
+        val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val code = p.getString("live_code", "") ?: ""; val key = p.getString("live_key", "") ?: ""; val end = p.getLong("live_until", 0)
+        if (code.isEmpty() || end <= System.currentTimeMillis()) { forgetPass(app); return }
+        run(app, code, key, end)
+        WireLog.all.add("·", "support goes on after a restart, $code")
     }
 
     /** Stops at once: the worker is told (best effort), the pass is forgotten. */
@@ -90,11 +109,9 @@ object Support {
         until = 0
         stopThread()
         forgetPass(app)
+        p.edit().remove("live_until").apply()
         if (code.isNotEmpty()) Thread({ post("${base()}/live", JSONObject().put("code", code).put("key", key).put("minutes", 0)) }, "support-stop").apply { isDaemon = true }.start()
     }
-
-    /** At start: a pass left by a TV Setup that was killed while open is not kept. */
-    fun clean(c: Context) = forgetPass(c)
 
     private fun forgetPass(c: Context) { Paired.list(c).filter { it.kind == KIND }.forEach { Paired.forget(c, it.id) } }
 
@@ -124,7 +141,7 @@ object Support {
                 Thread.sleep(2000)
             }
         } catch (e: InterruptedException) { return }
-        if (thread === me) { thread = null; until = 0; forgetPass(c) }
+        if (thread === me) { thread = null; until = 0; forgetPass(c); c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("live_until").apply() }
     }
 
     /** One GET on this app's own server, as a paired browser would, only [ROUTES]; or a [SupportDump] read. */

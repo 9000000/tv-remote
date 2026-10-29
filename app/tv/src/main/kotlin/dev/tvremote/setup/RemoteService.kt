@@ -359,7 +359,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         running = this
         DimLayer.restore(this)
-        if (!Support.open()) Support.clean(this)                         // a support pass left by a TV Setup that was killed while open
+        Support.resume(this)                                          // support open when TV Setup stopped (an update, a kill) goes on
         dev.tvremote.core.WireLog.app = "TV Setup " + (try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "" }) +
             " (TV web page, Android " + Build.VERSION.RELEASE + ")"
         val server = HttpServer(this)

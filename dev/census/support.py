@@ -5,7 +5,8 @@
   support.py CODE                    what the TV sent (its facts and log)
   support.py CODE /api/state         while the TV lets support look: GET that route on the TV, print the answer
   support.py CODE --all              everything at once: about, state, diagnose, setup/version, wirelog, rules, apps, the prefs,
-                                     TV Setup's log, and the TV's state over ADB (home screens, what is on screen, memory, the whole logcat)
+                                     health, stats, playing, caps, paired, tailscale, TV Setup's log, and the TV's state over ADB
+                                     (home screens, what is on screen, memory, settings, network, remotes, getprop, the whole logcat)
   support.py CODE --all --out DIR    the same, one file per answer in DIR, and one line each here (agents: read the files, not the screen)
   support.py CODE sh "dumpsys package dev.tvremote.setup.keys"   any read-only command (TV Setup newer than 0.26.2: settings, dumpsys,
                                      getprop, pm list/dump, appops get, logcat -d); /api/support/prefs, /api/support/logcat
@@ -20,8 +21,11 @@ import argparse, datetime, json, os, re, sys, time, urllib.error, urllib.parse, 
 URL = "https://tvr-census.99-hoangtran.workers.dev"
 SH = ["cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME",   # the home screens
       "dumpsys activity activities", "dumpsys meminfo", "dumpsys deviceidle", "settings list global", "settings list secure",
+      "dumpsys connectivity",                                # which network is the way out, Wi-Fi validated or not, VPN
+      "dumpsys input",                                       # the remotes and keyboards plugged in, what has focus
       "getprop", "logcat -d -v time"]                       # TV Setup cuts each to what the worker takes, a log keeps its end
 ALL = ["/api/about", "/api/state", "/api/diagnose", "/api/setup/version", "/api/wirelog", "/api/rules", "/api/apps",
+       "/api/health", "/api/stats", "/api/playing", "/api/caps", "/api/paired", "/api/tailscale",
        "/api/support/prefs", "/api/support/logcat"] + ["/api/support/sh?c=" + urllib.parse.quote(c, safe="") for c in SH]
 
 
@@ -54,7 +58,8 @@ def when(ms, now):
     return f"{int(s)} s ago" if abs(s) < 120 else f"{int(s / 60)} min ago" if abs(s) < 7200 else datetime.datetime.fromtimestamp(ms / 1000).strftime("%Y-%m-%d %H:%M")
 
 
-def ask(base, code, path, wait=40):
+def ask(base, code, path, wait=None):
+    wait = wait or (100 if "/api/support/" in path else 40)  # a dump: up to 25 s on the TV's ADB, then 200 KB up from a slow box
     q = call(base, "/v1/support/ask", body={"code": code, "path": path}, method="POST")
     end = time.time() + wait
     while time.time() < end:

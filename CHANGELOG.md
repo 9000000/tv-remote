@@ -9,10 +9,12 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 **Tiếng Việt**
 - App điện thoại: TV cùng Wi-Fi bị báo "không thấy · TV tắt?" khi điện thoại đi Internet bằng 4G (Wi-Fi "không có Internet", hoặc Wi-Fi yếu nên máy tự chuyển sang 4G): app giờ luôn gọi TV qua Wi-Fi. TV chưa trả lời thì hiện "đang thử lại…"; mạng vừa đổi là hỏi lại ngay; bấm Quét Wi-Fi cũng làm mới các TV đã lưu.
 - TV Setup, cho hỗ trợ xem: log và trạng thái máy lớn (cả logcat của TV) giờ gửi được, cắt bớt phần cũ thay vì báo "không gửi được"; gửi lỗi thì thử lại một lần.
+- TV Setup, cho hỗ trợ xem: TV Setup tự cập nhật hay bị tắt giữa chừng thì việc cho xem vẫn chạy tiếp với đúng mã cũ (trước đây lặng lẽ dừng); đã bấm Dừng thì không mở lại.
 
 **English**
 - Phone app: a TV on the same Wi-Fi showed "no answer · TV off?" while the phone went online through mobile data (Wi-Fi "without Internet", or a weak Wi-Fi the phone switched away from): the app now always reaches the TV on the Wi-Fi. A TV that does not answer shows "trying again…"; a network change asks again at once; Scan Wi-Fi also refreshes the saved TVs.
 - TV Setup, letting support look: big logs and dumps (the TV's whole logcat too) now arrive, cut to their newest part instead of "answer not delivered"; a lost answer is sent once more.
+- TV Setup, letting support look: when TV Setup updates itself or is killed mid-way, support goes on with the same code (it used to stop quietly); after Stop it stays stopped.
 
 ## 0.33.1 - 2026-10-29
 
