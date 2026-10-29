@@ -30,6 +30,7 @@
 /demo/img/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-# the guide for AI agents (dev/gen/guide_md.js): plain text in UTF-8, so a browser or fetch tool shows the Vietnamese right
+# the guide for AI agents (dev/gen/guide_md.js): plain text in UTF-8, so a browser or fetch tool shows the Vietnamese right;
+# text/plain, not text/markdown: Gemini's URL reader refuses types it does not list, and markdown is not one
 /guide/*
-  Content-Type: text/markdown; charset=utf-8
+  Content-Type: text/plain; charset=utf-8
