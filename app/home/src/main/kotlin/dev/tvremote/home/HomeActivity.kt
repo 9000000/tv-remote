@@ -135,6 +135,7 @@ class HomeActivity : Activity() {
     private var scrollAnim: ObjectAnimator? = null
     private val zoom by lazy { Zoom(this) }
     private var away = false                                        // really left (stopped), not just paused: only then does the screen come in again
+    private var dreamt = false                                      // a screensaver was over Home: it comes back without [enter]
     private var trimmed = false                                     // the pictures were let go for memory while away ([trim])
     private var shownKey = ""                                       // what the tiles were built from: the same again builds nothing
     private var tileCache = HashMap<String, Tile>()                 // a tile is made once per app and size, then moved
@@ -330,7 +331,11 @@ class HomeActivity : Activity() {
         Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
         zoom.back()                                                   // the plate that grew over the opened app shrinks into its tile
         clockAndDay()
-        if (away && Motion.on) enter(false)                           // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then
+        // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then. After a screensaver
+        // Android 14 resumes Home while its window is still hidden and holds the fade at its start: the clock and the grid stayed
+        // invisible for seconds, the glass alone on screen (FPT Play box); the screensaver was the cover, Home is simply there
+        if (away && Motion.on && !dreamt) enter(false)
+        dreamt = false
         away = false
         if (trimmed && !locked) untrim()                              // a trim queued while away landed between onStart and here (away still true): blurred wallpaper, no banners, until Home was left again (a Coocaa)
         appsSince()
@@ -856,7 +861,7 @@ class HomeActivity : Activity() {
     private val tick = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
             // a screensaver over Home: Android 11+ stops the activity, older TVs only lay a window over it and the video went on decoding
-            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { video?.stop(); WebWall.sleep(web); return }
+            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { dreamt = true; video?.stop(); WebWall.sleep(web); return }
                 Intent.ACTION_DREAMING_STOPPED -> { if (!away) { video?.start(); WebWall.wake(web) }; return } }   // the live page sleeps under it too: it was drawing frames nobody sees
             clockAndDay(); bingCheck()                                // Bing: a new day's picture seen while Home stays on
         }

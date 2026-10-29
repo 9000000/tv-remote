@@ -11,6 +11,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Phone and computer apps: a TV showing TV Channels, TV Home or TV Games said "Showing Dev"; it names the app now.
 - Hisense / Toshiba (VIDAA): pairing said "the TV did not show a code" while the code was on screen, on firmwares that refuse wildcard MQTT subscriptions; every answer is now subscribed by name too.
 - Phone app: the remote and Settings screens no longer stretch and bounce when swiped past their end.
+- TV Home: right after the screensaver, the home screen could show only the wallpaper and an empty focus frame for a few seconds (Android 14, FPT Play box); it now comes back whole.
 
 ## 0.35.0 - 2026-10-29
 
