@@ -135,7 +135,6 @@ class HomeActivity : Activity() {
     private var scrollAnim: ObjectAnimator? = null
     private val zoom by lazy { Zoom(this) }
     private var away = false                                        // really left (stopped), not just paused: only then does the screen come in again
-    private var dreamt = false                                      // a screensaver was over Home: it comes back without [enter]
     private var trimmed = false                                     // the pictures were let go for memory while away ([trim])
     private var shownKey = ""                                       // what the tiles were built from: the same again builds nothing
     private var tileCache = HashMap<String, Tile>()                 // a tile is made once per app and size, then moved
@@ -299,7 +298,7 @@ class HomeActivity : Activity() {
         })
         if (Store.suggestOff(this)) { Store.suggestOff(this, false); conf = Store.change(this, JSONObject().put("showSuggest", false)) }   // the old "hide" flag is now the setting everyone sees
         loadApps()
-        if (Motion.on) enter(true)
+        if (Motion.on) enter()
         if (reopen) { reopen = false; ui.post { customize("lang") } }
     }
 
@@ -331,11 +330,8 @@ class HomeActivity : Activity() {
         Motion.read(this, conf)                                       // the system's "remove animations" may have changed while away
         zoom.back()                                                   // the plate that grew over the opened app shrinks into its tile
         clockAndDay()
-        // Home pressed on the home screen pauses and resumes it without stopping: nothing may flicker then. After a screensaver
-        // Android 14 resumes Home while its window is still hidden and holds the fade at its start: the clock and the grid stayed
-        // invisible for seconds, the glass alone on screen (FPT Play box); the screensaver was the cover, Home is simply there
-        if (away && Motion.on && !dreamt) enter(false)
-        dreamt = false
+        // back from an app or a screensaver: no fade-in ([enter] is the first start only). The zoom above is the way back; a fade
+        // from alpha 0 while onResume reloads left the wallpaper and the glass alone for seconds on the FPT Play box (Android 14)
         away = false
         if (trimmed && !locked) untrim()                              // a trim queued while away landed between onStart and here (away still true): blurred wallpaper, no banners, until Home was left again (a Coocaa)
         appsSince()
@@ -700,13 +696,13 @@ class HomeActivity : Activity() {
         }
     }
 
-    /** The screen comes in: the clock and the buttons ease down, the grid rises (only a fade when coming back from an app). */
-    private fun enter(slide: Boolean) {
-        val d = if (slide) dp(14).toFloat() else 0f
+    /** The screen comes in on the first start: the clock and the buttons ease down, the grid rises. */
+    private fun enter() {
+        val d = dp(14).toFloat()
         head.alpha = 0f; head.translationY = -d
         grid.alpha = 0f; grid.translationY = d
-        head.animate().alpha(1f).translationY(0f).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
-        grid.animate().alpha(1f).translationY(0f).setStartDelay(if (slide) 70 else 0).setDuration(if (slide) 420 else 240).setInterpolator(Motion.glide).withLayer().start()
+        head.animate().alpha(1f).translationY(0f).setDuration(420).setInterpolator(Motion.glide).withLayer().start()
+        grid.animate().alpha(1f).translationY(0f).setStartDelay(70).setDuration(420).setInterpolator(Motion.glide).withLayer().start()
     }
 
     /** Scrolls to [y] gliding (one animation at a time, the last target wins); at once when motion is off. */
@@ -861,7 +857,7 @@ class HomeActivity : Activity() {
     private val tick = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) {
             // a screensaver over Home: Android 11+ stops the activity, older TVs only lay a window over it and the video went on decoding
-            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { dreamt = true; video?.stop(); WebWall.sleep(web); return }
+            when (i.action) { Intent.ACTION_DREAMING_STARTED -> { video?.stop(); WebWall.sleep(web); return }
                 Intent.ACTION_DREAMING_STOPPED -> { if (!away) { video?.start(); WebWall.wake(web) }; return } }   // the live page sleeps under it too: it was drawing frames nobody sees
             clockAndDay(); bingCheck()                                // Bing: a new day's picture seen while Home stays on
         }
