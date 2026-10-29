@@ -32,6 +32,7 @@ class VidaaTest {
     private var hangUps = 0                                           // logins hung up on (no CONNACK), as some firmwares refuse
     private var silent = 0                                            // logins taken that never show a code
     private var tokenEarly = false                                    // the token comes as soon as the code is taken, unasked
+    private var noWildcard = false                                    // a firmware that refuses "#" subscriptions: only exact topics get answers
     private var server: ServerSocket? = null
     private val dir: File = Files.createTempDirectory("vidaa").toFile()
 
@@ -68,14 +69,20 @@ class VidaaTest {
         send(out, 0x20, byteArrayOf(0, if (ok) 0 else 5))
         if (!ok) return
         val mobile = "/remoteapp/mobile/$cid"
+        val subs = HashSet<String>()
         while (true) {
             val (h, b) = read(inp) ?: return
+            if (h shr 4 == 8) {                                       // SUBSCRIBE: id, then (topic, QoS) each
+                var i = 2
+                while (i < b.size) { val n = ((b[i].toInt() and 0xff) shl 8) or (b[i + 1].toInt() and 0xff); subs.add(String(b, i + 2, n)); i += 3 + n }
+                continue
+            }
             if (h shr 4 != 3) continue
             val n = ((b[0].toInt() and 0xff) shl 8) or (b[1].toInt() and 0xff)
             val topic = String(b, 2, n); val payload = String(b, 2 + n, b.size - 2 - n)
             val action = topic.substringAfterLast('/')
             got.add("$action $payload".trim())
-            fun say(t: String, p: String) = publish(out, mobile + t, p)
+            fun say(t: String, p: String) { if (mobile + t in subs || (!noWildcard && "$mobile/#" in subs)) publish(out, mobile + t, p) }
             when (action) {
                 "vidaa_app_connect" -> if (!mute) say("/ui_service/data/authentication", "")
                 "gettvstate" -> if (pass == Vidaa.STATIC_PASS && !legacy) say("/ui_service/data/authentication", "") else say("/ui_service/data/gettvstate", """{"statetype":"app","name":"Netflix"}""")
@@ -187,6 +194,16 @@ class VidaaTest {
         assertTrue(seen().none { it.startsWith("gettoken") })
         v.connect {}
         assertTrue(logins.last().endsWith(" ACC1"))
+        v.close()
+    }
+
+    @Test fun aTvThatRefusesWildcardSubscriptionsStillAnswers() {   // issue #8: the code was on screen, the app said none was
+        noWildcard = true
+        val v = Vidaa(dir, "127.0.0.1", start())
+        v.startPairing(); v.finishPairing("1234")
+        v.connect {}
+        waitFor { v.model.isNotEmpty() && v.volume != null }
+        assertEquals("65U8K", v.model)
         v.close()
     }
 

@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Dark or light, picked in MainActivity.onCreate from Settings → Appearance; the manifest's default is the dark one -->
-    <style name="AppDark" parent="@android:style/Theme.DeviceDefault.NoActionBar" />
-    <style name="AppLight" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar" />
+    <!-- Dark or light, picked in MainActivity.onCreate from Settings → Appearance; the manifest's default is the dark one.
+         No overscroll stretch (Android 12+) on any scroller: the remote fits one screen and stretching it felt loose (issue #8);
+         every ScrollView / WebView the app makes takes its style from here, so none is set one by one -->
+    <style name="AppDark" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:scrollViewStyle">@style/StillScroll</item>
+        <item name="android:horizontalScrollViewStyle">@style/StillScrollSide</item>
+        <item name="android:webViewStyle">@style/StillWeb</item>
+    </style>
+    <style name="AppLight" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:scrollViewStyle">@style/StillScroll</item>
+        <item name="android:horizontalScrollViewStyle">@style/StillScrollSide</item>
+        <item name="android:webViewStyle">@style/StillWeb</item>
+    </style>
+    <style name="StillScroll" parent="@android:style/Widget.DeviceDefault.ScrollView"><item name="android:overScrollMode">never</item></style>
+    <style name="StillScrollSide" parent="@android:style/Widget.DeviceDefault.HorizontalScrollView"><item name="android:overScrollMode">never</item></style>
+    <style name="StillWeb" parent="@android:style/Widget.DeviceDefault.WebView"><item name="android:overScrollMode">never</item></style>
 </resources>

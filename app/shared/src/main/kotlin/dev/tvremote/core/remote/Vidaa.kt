@@ -141,7 +141,9 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
             } catch (e: Exception) { m.close(); failed(e); continue }
             WireLog.all.add("←", "VIDAA $host connected ($way)")
             remember("tls", way)
-            m.subscribe("/remoteapp/mobile/$cid/#")
+            // the wildcard, and each answer by name: some firmwares refuse a wildcard (SUBACK 128) and send nothing through it
+            // (issue #8: the TV showed its code, we never heard); one packet, the TV answers each topic on its own
+            m.subscribe(*(listOf("/remoteapp/mobile/$cid/#") + MINE.map { "/remoteapp/mobile/$cid/$it" }).toTypedArray())
             return m
         }
         return null
@@ -438,6 +440,10 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
         const val STATIC_USER = "hisenseservice"
         const val STATIC_PASS = "multimqttservice"
         private const val BROADCAST = "/remoteapp/mobile/broadcast/"
+        /** Every answer [message] and the waits read, under our own topic: subscribed by name too (see [login]). */
+        internal val MINE = listOf("authentication", "authenticationcode", "authenticationcodeclose", "vidaa_app_connect",
+            "gettvstate", "state", "sourcelist", "applist").map { "ui_service/data/$it" } +
+            listOf("tokenissuance", "gettoken", "getvolume", "getdeviceinfo", "gettvinfo").map { "platform_service/data/$it" }
         private const val PATTERN = "38D65DC30F45109A369A86FCE866A85B"
         private const val MODERN_SALT = "h!i@s#\$v%i^d&a*a"
         private const val STANDARD_SALT = "h*i&s%e!r^v0i1c9"
