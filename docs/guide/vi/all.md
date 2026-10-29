@@ -1,5 +1,23 @@
 # Hướng dẫn TV Remote (cho trợ lý AI)
 
+## Dùng cho ai
+
+Tìm dòng giống bạn, bấm từng mục để xem cách làm. Đa số cần [TV Setup](#install-tv) trên TV.
+
+| Ai | Dùng gì |
+| --- | --- |
+| 👨‍👩‍👧 Gia đình có trẻ nhỏ | [Chế độ trẻ em, khóa app](#lock), [giờ đi ngủ](#bedtime), [giới hạn giờ xem](#limits), [lịch mở app](#schedule), [con xin mở qua Telegram](#telegram) |
+| 🏨 Homestay, khách sạn, phòng cho thuê | [khóa Cài đặt TV bằng PIN](#lock), [màn hình chào](#welcome), [TV Home không quảng cáo](#home), [nhiều TV một lúc](#many), [tình trạng mọi TV](#tv-status), [quản lý từ xa](#away) |
+| ☕ Quán cà phê, cửa hàng, phòng chờ | [một nút làm nhiều việc](#scenes), [lịch mở app](#schedule), [giữ kết nối khi tắt TV](#awake), [Home Assistant, Siri](#hook) |
+| 👵 Ông bà, người lớn tuổi | [màn hình chính gọn](#home), [nói để tìm](#voice), [con cháu xem màn hình](#picture), [giúp từ xa](#away), [chia sẻ remote](#share) |
+| 🧹 Muốn TV nhanh, sạch, riêng tư | [Tối ưu TV](#optimize), [kiểm tra quyền riêng tư](#privacy), [đổi màn hình chính](#launchers), [đổi phím remote](#keymap) |
+| 🎮 Chơi game, xem kênh | [TV Games](#games), [điện thoại làm tay cầm](#gamepad), [TV Channels](#channels) |
+| 📱 Mất hoặc hỏng remote | [điện thoại làm remote](#remote), [hồng ngoại](#ir), [chuột bay](#air) |
+
+### Mẹo
+
+- Homestay: **Khóa app bằng mã PIN** có nút **Khóa luôn Cài đặt TV**, khách không vào được Cài đặt để đổi hay gỡ gì.
+
 ## Cài app điện thoại (Android)
 
 Cách dễ nhất: chưa cần cài gì lên TV, bấm phím được ngay ([xem](#nokeys)). Bật ADB để có thêm hình TV, app, tệp.

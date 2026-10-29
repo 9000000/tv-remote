@@ -1,5 +1,23 @@
 # TV Remote user guide (for AI agents)
 
+## Who uses it for what
+
+Find the row like you and open each item for the steps. Most need [TV Setup](#install-tv) on the TV.
+
+| Who | What to use |
+| --- | --- |
+| 👨‍👩‍👧 Families with young kids | [Kids mode, app locks](#lock), [bedtime](#bedtime), [daily limits](#limits), [app schedule](#schedule), [kids ask through Telegram](#telegram) |
+| 🏨 Homestays, hotels, rentals | [lock TV Settings with a PIN](#lock), [welcome screen](#welcome), [ad-free TV Home](#home), [many TVs at once](#many), [every TV's status](#tv-status), [manage from afar](#away) |
+| ☕ Cafés, shops, waiting rooms | [one button, many steps](#scenes), [app schedule](#schedule), [stay reachable when off](#awake), [Home Assistant, Siri](#hook) |
+| 👵 Grandparents | [a simple home screen](#home), [search by voice](#voice), [family sees the screen](#picture), [help from afar](#away), [share the remote](#share) |
+| 🧹 A fast, clean, private TV | [Optimize TV](#optimize), [privacy check](#privacy), [change the home screen](#launchers), [remap remote keys](#keymap) |
+| 🎮 Games and channels | [TV Games](#games), [phone as a gamepad](#gamepad), [TV Channels](#channels) |
+| 📱 Lost or broken remote | [phone as the remote](#remote), [infrared](#ir), [air mouse](#air) |
+
+### Tips
+
+- Homestays: **Lock apps with a PIN** has a **Lock the TV's Settings too** button, so guests cannot change or remove anything there.
+
 ## Install the phone app (Android)
 
 The easiest way: nothing to install on the TV, the keys work at once ([see](#nokeys)). Turn on ADB for the picture, apps and files.

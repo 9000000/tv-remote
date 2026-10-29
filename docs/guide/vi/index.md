@@ -3,6 +3,7 @@
 Điều khiển Android TV / Google TV (và LG, Samsung, Roku, VIDAA) không qua máy chủ nào: app điện thoại, app máy tính, trang web của TV và các app trên TV. Tìm mục dưới đây rồi chỉ đọc trang của mục đó. Tất cả trong một file: [all.md](all.md). Bản cho người đọc: https://tvremote.pages.dev/guide
 
 ## Bắt đầu
+- [Dùng cho ai](uses.md): Tìm dòng giống bạn, bấm từng mục để xem cách làm. Đa số cần TV Setup trên TV. _(dung cho ai doi tuong gia dinh tre em homestay khach san phong cho thue quan ca phe cua hang ong ba nguoi gia mat remote use cases who families hotels cafe kids grandparents)_
 - [Cài app điện thoại (Android)](install-phone.md): Cách dễ nhất: chưa cần cài gì lên TV, bấm phím được ngay (xem). Bật ADB để có thêm hình TV, app, tệp. _(tv remote apk dien thoai android)_
 - [Cài app máy tính](install-pc.md): Tải bản cho máy bạn (link bên dưới) rồi giải nén. _(mac windows linux zip tar webkit unverified developer)_
 - [Bấm phím khi TV chưa mở ADB](nokeys.md): Chưa bật ADB vẫn điều khiển được. App điện thoại và app máy tính bấm phím bằng giao thức Android TV Remote của Google, nên nhiều TV dùng… _(atv remote protocol 6466 6467 khong adb ghep remote ma 6 ky tu bam nut khong an pairing)_

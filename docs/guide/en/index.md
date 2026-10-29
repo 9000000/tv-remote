@@ -3,6 +3,7 @@
 Remote control for Android TV / Google TV (and LG, Samsung, Roku, VIDAA) with no server in between: a phone app, a computer app, a web page served by the TV, and TV apps. Find the topic below, then read only its page. Everything at once: [all.md](all.md). The same guide for people: https://tvremote.pages.dev/guide
 
 ## Get started
+- [Who uses it for what](uses.md): Find the row like you and open each item for the steps. Most need TV Setup on the TV. _(dung cho ai doi tuong gia dinh tre em homestay khach san phong cho thue quan ca phe cua hang ong ba nguoi gia mat remote use cases who families hotels cafe kids grandparents)_
 - [Install the phone app (Android)](install-phone.md): The easiest way: nothing to install on the TV, the keys work at once (see). Turn on ADB for the picture, apps and files. _(tv remote apk dien thoai android)_
 - [Install the computer app](install-pc.md): Download the build for your computer (links below) and unpack it. _(mac windows linux zip tar webkit unverified developer)_
 - [Keys before ADB is on](nokeys.md): You can still control the TV before ADB is on. The phone and computer apps send keys with Google's Android TV Remote protocol, so many… _(atv remote protocol 6466 6467 khong adb ghep remote ma 6 ky tu bam nut khong an pairing)_

@@ -31,6 +31,11 @@ test(`no topic over ${TOPIC_MAX} words of prose`, () => {
 });
 
 // docs/guide/ (the guide for AI agents) is written by dev/gen/guide_md.js from guide.html: run it after editing the page
+test('the side list names every topic once', () => {
+  const side = HTML.slice(HTML.indexOf('gs-group'), HTML.indexOf('<section class="ggroup"'));
+  assert.deepStrictEqual([...side.matchAll(/data-t="([^"]+)"/g)].map((m) => m[1]).sort(), topics.map((t) => t.id).sort());
+});
+
 test('docs/guide/*.md match guide.html', () => {
   const { build } = require('../../../dev/gen/guide_md.js');
   const dir = path.join(__dirname, '../../../docs/guide');
