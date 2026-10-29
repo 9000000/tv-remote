@@ -45,6 +45,7 @@ internal class LauncherGuard(private val c: Context, private val adb: () -> Adb?
         val w = LauncherWatch({ sh(it) })
         active = w.active()
         if (!active) return
+        HomeKey.landed(c)                                             // the key way: the TV's own home came up by itself (no ADB: Usage)
         val why = w.check() ?: return
         active = false
         notice(why)

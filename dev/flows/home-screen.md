@@ -66,6 +66,10 @@ Cases (`app/shared/src/main/kotlin/dev/tvremote/core/ontv/LauncherSwap.kt:WHYS`)
 | swap | the launcher was uninstalled | rollback `home` (no launcher for the key way) | notice | `watchdogRollsBackOnABadHomeAndOnlyAfterKeepToo` |
 | swap or key | the launcher crashed twice in 5 min | rollback `crash` | notice | `theKeyWayIsGuardedForCrashesOnly` |
 | key | where Android sends Home | ignored: Home is the filter's | | `theWizardWholeBackOnAfterABootGoesToTheKeyFilter` |
+| key | the TV's own home screen came to the front by itself in the last few seconds (Back out of an app, an app closing; an AOC), not after a long Home: `LauncherWatch.cameHome` | `HomeKey.landed` opens the launcher picked | the launcher picked | `theTvsOwnHomeComingUpByItselfOpensTheLauncherPickedInTheKeyWay` |
+
+Key way at boot and on waking (`HomeKey.trigger`, before the watchdog starts): the TV's own home screen on the screen (Google's
+launchers, or any of `HomeKey.own`: an AOC's launcher was not one of Google's, so it stayed after a reboot) opens the launcher picked.
 
 ## The way back: always `LauncherSwap.rollback`
 

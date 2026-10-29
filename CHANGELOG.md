@@ -8,9 +8,11 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 **Tiếng Việt**
 - TV Home, hình nền là trang web (chạy thật): đổi sang địa chỉ khác thì cứ lần thứ hai trang mới không hiện, chỉ còn nền màu tới 2 phút (issue #1). Trang mới giờ hiện ngay mỗi lần đổi.
+- TV không cho đổi màn hình chính (TV Setup chuyển nút Home sang TV Home): khởi động lại TV, hay bấm Back thoát khỏi một app (ví dụ cài đặt Wi-Fi mở từ TV Home) là lại về màn hình chính của TV, gặp trên TV AOC. Giờ TV Home tự mở lại ngay; nhấn giữ Home vẫn vào màn hình chính của TV.
 
 **English**
 - TV Home, a live web page as the background: every other change of address left the gradient instead of the new page for up to 2 minutes (issue #1). The new page now shows at once every time.
+- TVs where the home screen cannot be swapped (TV Setup sends Home to TV Home): a restart, or Back out of an app (Wi-Fi settings opened from TV Home), landed on the TV's own home screen again, seen on an AOC TV. TV Home now comes back at once; holding Home still opens the TV's own.
 
 ## 0.33.0 - 2026-10-29
 

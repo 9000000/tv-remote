@@ -281,6 +281,20 @@ class LauncherTest {
         assertFalse(LauncherWatch.looping(listOf(1760000000L, 1760000400L), 0))  // more than five minutes apart
     }
 
+    @Test fun theTvsOwnHomeComingUpByItselfOpensTheLauncherPickedInTheKeyWay() {   // an AOC: Back out of Wi-Fi settings landed on its launcher
+        val homes = LauncherWatch.ownHomes(listOf("com.tpv.launcher/com.tpv.launcher.Main", "dev.tvremote.home/dev.tvremote.home.HomeActivity",
+            "com.android.tv.settings/com.android.tv.settings.system.FallbackHome", "android/com.android.internal.app.ResolverActivity"), "dev.tvremote.home")
+        assertEquals(setOf("com.tpv.launcher/com.tpv.launcher.Main"), homes)
+        val wifi = 1000L to "com.android.tv.settings/com.android.tv.settings.connectivity.NetworkActivity"
+        val own = 5000L to "com.tpv.launcher/com.tpv.launcher.Main"
+        assertTrue(LauncherWatch.cameHome(listOf(wifi, own), homes, 0, 7000))
+        assertFalse(LauncherWatch.cameHome(listOf(own, wifi), homes, 0, 7000))               // the settings in front: theirs
+        assertFalse(LauncherWatch.cameHome(listOf(own), homes, 0, 5000 + LauncherWatch.FRESH_MS + 1))   // up long ago: the person stays there
+        assertFalse(LauncherWatch.cameHome(listOf(own), homes, 4000, 7000))                  // a long Home asked for the TV's own
+        assertFalse(LauncherWatch.cameHome(listOf(5000L to "com.android.tv.settings/com.android.tv.settings.system.FallbackHome"), homes, 0, 7000))
+        assertFalse(LauncherWatch.cameHome(emptyList(), homes, 0, 7000))
+    }
+
     @Test fun factoryHomes() {
         assertTrue(LauncherSwap.factory("com.mtk.factorytest/.Home"))
         assertTrue(LauncherSwap.badHome("com.oem.FactoryMode/.Main"))

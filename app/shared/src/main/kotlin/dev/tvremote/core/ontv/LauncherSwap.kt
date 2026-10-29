@@ -316,6 +316,23 @@ class LauncherWatch(private val sh: (String) -> String) {
             if ((m.groupValues[2].ifEmpty { m.groupValues[3] }) == pkg) m.groupValues[1].toLong() else null
         }.toList()
 
+        const val FRESH_MS = 6_000L                                   // two of TV Setup's looks (LauncherGuard, every 3 s) and some
+        const val LONG_MS = 10_000L                                   // after a long Home: the TV's own was asked for
+
+        /** The TV's own home screens beside [picked], from all HOME activities ("pkg/cls"): never Android's picker, the wizard, the fallback. */
+        fun ownHomes(all: List<String>, picked: String): Set<String> = all.filter { it.substringBefore('/') != picked && !LauncherSwap.badHome(it) }.toSet()
+
+        /**
+         * Key way: the TV's own home screen came up by itself, so the launcher picked opens over it. Android goes there wherever
+         * the role points on some TVs: at boot, on Back out of an app, when an app closes (an AOC: Back out of Wi-Fi settings
+         * opened from TV Home). [fronts]: when and which activity ("pkg/cls") came to the front lately, oldest first;
+         * [longAt]: the last long Home, which is the person asking for the TV's own.
+         */
+        fun cameHome(fronts: List<Pair<Long, String>>, homes: Set<String>, longAt: Long, now: Long): Boolean {
+            val (at, comp) = fronts.lastOrNull() ?: return false
+            return comp in homes && now - at in 0..FRESH_MS && (longAt == 0L || at - longAt !in 0..LONG_MS)
+        }
+
         /** Whether [times] holds [CRASHES] crashes within [WINDOW_SEC] of each other, none before [since]. */
         fun looping(times: List<Long>, since: Long): Boolean {
             val t = times.filter { it >= since }.sorted()

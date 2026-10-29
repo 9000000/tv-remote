@@ -1,7 +1,9 @@
 package dev.tvremote.setup
 
+import android.app.usage.UsageEvents
 import android.content.Context
 import android.content.Intent
+import dev.tvremote.core.ontv.LauncherWatch
 import dev.tvremote.core.T
 
 /**
@@ -30,10 +32,12 @@ internal object HomeKey {
         .takeIf { i -> try { c.packageManager.resolveActivity(i, 0) != null } catch (e: Exception) { false } }
 
     /** The TV's own long press of Home: `input` injects after the filter, so it reaches the system as if the filter were not there. */
-    fun longPress() { Thread({ try { RemoteService.adb()?.shell("input keyevent --longpress $CODE", 5000) } catch (e: Exception) { } }, "homekey-long").apply { isDaemon = true }.start() }
+    @Volatile private var longAt = 0L                                  // the last long press: the TV's own was asked for
+
+    fun longPress() { longAt = System.currentTimeMillis(); Thread({ try { RemoteService.adb()?.shell("input keyevent --longpress $CODE", 5000) } catch (e: Exception) { } }, "homekey-long").apply { isDaemon = true }.start() }
 
     /**
-     * The TV started or woke on Google TV's own home screen (Android opens it, not the key): the launcher picked comes up instead,
+     * The TV started or woke on its own home screen (Google's, or any [own]: an AOC's; Android opens it, not the key): the launcher picked comes up instead,
      * a little later than the home screen and before AutoOpen's app, which then opens over it as on any TV.
      */
     fun trigger(c: Context, event: String) {                          // only over that home screen: a TV that woke into an input or an app keeps it
@@ -43,9 +47,26 @@ internal object HomeKey {
                 val p = pkg(c) ?: return@Thread
                 val front = Usage.front(c)
                 android.util.Log.i("HomeKey", "$event: on screen '$front'")              // adb logcat -s HomeKey
-                if (front in dev.tvremote.core.ontv.Setup.LAUNCHER) try { c.startActivity(intent(c, p)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return@Thread) } catch (e: Exception) { }
+                if (front in dev.tvremote.core.ontv.Setup.LAUNCHER || front in own(c, p).map { it.substringBefore('/') }) try { c.startActivity(intent(c, p)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return@Thread) } catch (e: Exception) { }
             }, "homekey-boot").apply { isDaemon = true }.start()
         }, if (event == "boot") 5000L else 1200L)
+    }
+
+    /** The TV's own home screens ("pkg/cls"), the one the person picked left out. */
+    fun own(c: Context, picked: String): Set<String> = try {
+        val all = c.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0).map { it.activityInfo.packageName + "/" + it.activityInfo.name }
+        LauncherWatch.ownHomes(all, picked)
+    } catch (e: Exception) { emptySet() }
+
+    /** One look from [LauncherGuard]: the TV's own home screen just came up by itself (Back out of an app, an app closing), the launcher picked opens over it. */
+    fun landed(c: Context) {
+        val p = pkg(c) ?: return
+        val now = System.currentTimeMillis()
+        val fronts = ArrayList<Pair<Long, String>>()
+        try { Usage.events(c, now - LauncherWatch.FRESH_MS, now) { e -> if (e.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND) fronts += e.timeStamp to "${e.packageName}/${e.className}" } } catch (e: Exception) { return }
+        if (!LauncherWatch.cameHome(fronts, own(c, p), longAt, now)) return
+        android.util.Log.i("HomeKey", "back on '${fronts.last().second}'")   // adb logcat -s HomeKey
+        try { c.startActivity(intent(c, p)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return) } catch (e: Exception) { }
     }
 
     /** "TV Setup opened YouTube (Red key)": the person knows the TV did not jump by itself (VTVgo on screen, a key pressed, YouTube came). */
