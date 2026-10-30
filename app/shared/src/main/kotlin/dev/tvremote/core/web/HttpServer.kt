@@ -12,6 +12,9 @@ import java.net.Socket
 import java.net.URLDecoder
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.Semaphore
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLServerSocket
@@ -119,7 +122,7 @@ class HttpServer(private val handler: Handler) {
             (it as SSLServerSocket).enabledProtocols = it.supportedProtocols.filter { p -> p in ok }.toTypedArray()
         }
         secure = tls != null
-        s.reuseAddress = true
+        s.reuseAddress = !System.getProperty("os.name", "").startsWith("Windows")   // there it lets a second server take a live port
         s.bind(if (localOnly) InetSocketAddress(InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)), port) else InetSocketAddress(port))
         server = s
         Thread({
@@ -167,10 +170,12 @@ class HttpServer(private val handler: Handler) {
                 if (len >= 0) h.append("Content-Length: ").append(len).append("\r\n")
                 for ((k, v) in out.headers) h.append(k).append(": ").append(v).append("\r\n")
                 if (out.sendBuffer > 0) try { sock.sendBufferSize = out.sendBuffer } catch (ignored: Exception) { }
-                val o = sock.getOutputStream()
-                o.write(bytes(h.append("\r\n").toString()))
-                if (stream != null) stream.write(o) else o.write(out.body)
-                o.flush()
+                val o = Stall(sock)                               // a browser that stops reading must not hold this thread and slot for ever
+                try {
+                    o.write(bytes(h.append("\r\n").toString()))
+                    if (stream != null) stream.write(o) else o.write(out.body)
+                    o.flush()
+                } finally { o.done() }
                 // the body a handler did not want (POST /api/pair/start's "{}"), read before closing: a socket closed with bytes
                 // unread sends a reset, and over a real network that throws away the reply the browser had not taken in yet
                 try { (r?.body as? Left)?.let { sock.soTimeout = 2000; it.skipAll(30_000) } } catch (ignored: IOException) { }
@@ -183,7 +188,68 @@ class HttpServer(private val handler: Handler) {
         }
     }
 
+    /**
+     * The reply's output: a write that makes no progress for [writeStallMs] (the peer's window stays shut) gets the socket closed,
+     * so the write throws and the handler's own cleanup runs (Feeds.pump stops the viewer). Time between writes does not count
+     * (a handler slow to make its next bytes), only a write call that is blocked; big writes go in 16 KB pieces so a slow
+     * reader that keeps taking bytes is never cut.
+     */
+    private class Stall(private val sock: Socket) : OutputStream() {
+        private val o = sock.getOutputStream()
+        @Volatile var since = 0L                                      // nanoTime when the piece being written began, 0 = not writing
+        @Volatile var cut = false
+
+        init { watch(this) }
+
+        override fun write(b: Int) = piece { o.write(b) }
+
+        override fun write(b: ByteArray, off: Int, len: Int) {
+            var i = 0
+            while (i < len) { val n = minOf(16384, len - i); piece { o.write(b, off + i, n) }; i += n }
+        }
+
+        override fun flush() = piece { o.flush() }
+
+        private inline fun piece(f: () -> Unit) {
+            since = System.nanoTime().coerceAtLeast(1)
+            try { f() } finally { since = 0 }
+        }
+
+        fun done() { live.remove(this) }
+
+        fun check(now: Long, limit: Long) {
+            val s = since
+            if (s != 0L && now - s > limit) { cut = true; try { sock.close() } catch (ignored: Exception) { } }
+        }
+    }
+
     companion object {
+        /** How long one write may be blocked before the connection is cut (a variable so a test need not wait 30 s). */
+        @Volatile internal var writeStallMs = 30_000L
+
+        private val live: MutableSet<Stall> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+        private val armed = AtomicBoolean(false)
+        // one thread for all connections, started on the first reply and gone again 10 s after the last one: nothing runs with no connection
+        private val sweeper: ScheduledThreadPoolExecutor by lazy {
+            ScheduledThreadPoolExecutor(1) { r -> Thread(r, "http-stall").apply { isDaemon = true } }.apply {
+                setKeepAliveTime(10, TimeUnit.SECONDS); allowCoreThreadTimeOut(true)
+            }
+        }
+
+        private fun watch(c: Stall) {
+            live.add(c)
+            if (armed.compareAndSet(false, true)) sweep()
+        }
+
+        private fun sweep() {
+            val every = (writeStallMs / 4).coerceIn(50, 5000)
+            sweeper.schedule({
+                val now = System.nanoTime()
+                for (c in live) c.check(now, writeStallMs * 1_000_000L)
+                if (live.isEmpty()) { armed.set(false); if (live.isNotEmpty() && armed.compareAndSet(false, true)) sweep() } else sweep()
+            }, every, TimeUnit.MILLISECONDS)
+        }
+
         /** Request line and headers; the body stays in the stream for the handler. */
         private fun read(input: InputStream): Request? {
             val head = ByteArrayOutputStream()

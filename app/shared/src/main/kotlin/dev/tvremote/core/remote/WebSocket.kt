@@ -88,12 +88,13 @@ class WebSocket private constructor(private val sock: Socket) : Closeable {
         @Throws(IOException::class)
         fun open(host: String, port: Int, path: String, secure: Boolean, timeoutMs: Int = 4000): WebSocket {
             val plain = dev.tvremote.core.Lan.connect(host, port, timeoutMs)
-            plain.soTimeout = timeoutMs
-            val s: Socket = if (!secure) plain else {
-                val ctx = SSLContext.getInstance("TLS").apply { init(null, arrayOf(TRUST_ANY), RANDOM) }
-                (ctx.socketFactory.createSocket(plain, host, port, true) as SSLSocket).also { it.startHandshake() }
-            }
+            var s: Socket = plain                                      // the plain one is closed on any failure below, handshake included
             try {
+                plain.soTimeout = timeoutMs
+                if (secure) {
+                    val ctx = SSLContext.getInstance("TLS").apply { init(null, arrayOf(TRUST_ANY), RANDOM) }
+                    s = (ctx.socketFactory.createSocket(plain, host, port, true) as SSLSocket).also { it.startHandshake() }
+                }
                 val nonce = B64.encode(ByteArray(16).also { RANDOM.nextBytes(it) })
                 val req = "GET $path HTTP/1.1\r\nHost: $host:$port\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n" +
                     "Sec-WebSocket-Key: $nonce\r\nSec-WebSocket-Version: 13\r\nOrigin: http://$host\r\n\r\n"
@@ -115,6 +116,7 @@ class WebSocket private constructor(private val sock: Socket) : Closeable {
                 return WebSocket(s)
             } catch (e: Exception) {
                 try { s.close() } catch (ignored: Exception) { }
+                try { plain.close() } catch (ignored: Exception) { }
                 throw if (e is IOException) e else IOException(e.message ?: e.javaClass.simpleName, e)
             }
         }

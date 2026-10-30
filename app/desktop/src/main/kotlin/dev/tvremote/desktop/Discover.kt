@@ -53,8 +53,9 @@ object Discover {
     /** Online Android peers on the tailnet, by Tailscale IP; [Peer.lan]: its home IP, when this computer reaches it directly there. */
     fun tailscalePeers(): Map<String, Peer> = try {
         val p = ProcessBuilder(TAILSCALE, "status", "--json").redirectError(ProcessBuilder.Redirect.DISCARD).also { it.environment()["TAILSCALE_BE_CLI"] = "1" }.start()
+        // waited first: a stuck CLI must not hold the scan in a read (its JSON is small, it fits the pipe meanwhile)
+        if (!p.waitFor(8, TimeUnit.SECONDS)) { p.destroyForcibly(); throw java.io.IOException("tailscale status timed out") }
         val text = p.inputStream.bufferedReader().readText()
-        if (!p.waitFor(8, TimeUnit.SECONDS)) p.destroyForcibly()
         val peers = JSONObject(text).optJSONObject("Peer") ?: JSONObject()
         peers.keys().asSequence().mapNotNull { peers.optJSONObject(it) }
             .filter { it.optString("OS") == "android" && it.optBoolean("Online") && (it.optJSONArray("TailscaleIPs")?.length() ?: 0) > 0 }

@@ -830,6 +830,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val adb = link.get()
         val cancel = current.get()
         if (length > 0) ensureRoom(dest.substringBeforeLast('/', "/").ifEmpty { "/" }, length, factor)
+        val existed = length < 0 && try { adb.shell("test -e " + Adb.q(dest) + " && echo y").trim() == "y" } catch (e: Exception) { true }
         try {
             val feed = { s: Adb.Stream ->
                 cancel?.onStop { s.close() }                              // a write waiting on a slow TV lets go at once
@@ -856,7 +857,10 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             }
             if (want != null) throw IOException("the TV did not store the whole file (is its storage full?)")
         } catch (e: Exception) {                                          // stopped, cut, or the TV full: nothing half written is left
-            try { Thread.sleep(200); adb.shell("rm -f " + Adb.q(dest)) } catch (ignored: Exception) { }
+            // the known size goes to dest.part and moves in whole, so a good file already at dest is not ours to delete; a chunked
+            // write goes straight to dest, which is only ours when it was not there before
+            val junk = if (length >= 0) "$dest.part" else if (existed) null else dest
+            if (junk != null) try { Thread.sleep(200); adb.shell("rm -f " + Adb.q(junk)) } catch (ignored: Exception) { }
             if (cancel?.stopped == true && e !is Cancelled) throw Cancelled()   // the Stop broke the stream first: still a stop, not an error
             throw e
         }

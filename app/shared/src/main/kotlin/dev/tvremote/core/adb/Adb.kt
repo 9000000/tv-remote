@@ -452,7 +452,7 @@ class Adb(private val dir: File) : Closeable {
         if (dead) throw IOException("adb connection lost")
         val s = synchronized(this) { Stream(nextId++) }
         streams[s.local] = s
-        send(OPEN, s.local, 0, (service + "\u0000").toByteArray())
+        try { send(OPEN, s.local, 0, (service + "\u0000").toByteArray()) } catch (e: IOException) { streams.remove(s.local); throw e }
         try {
             // no answer at all: the connection died quietly (the phone slept, Wi-Fi or VPN changed); drop it so the next call dials
             // again. A TV still sending on other streams is only slow: a weak box writing two APKs at once took over 10 s to open a

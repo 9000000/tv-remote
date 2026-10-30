@@ -31,6 +31,15 @@ class SavedTest {
         assertEquals("{not json", f.readText())                    // reading never destroys the file
     }
 
+    @Test fun unreadableFileIsKeptAsBadBeforeTheNextSave() {
+        val f = dir.newFile("tvs.json")
+        f.writeText("{not json")
+        val s = Saved(f)
+        s.upsert(JSONObject().put("host", "192.0.2.9"), null)
+        s.save()                                                   // overwrites tvs.json, as the page's next change would
+        assertEquals("{not json", java.io.File(dir.root, "tvs.json.bad").readText())
+    }
+
     @Test fun upsertThenRemove() {
         val f = dir.newFile("tvs.json")
         val s = Saved(f)

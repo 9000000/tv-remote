@@ -29,6 +29,8 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
     @Volatile private var found: Release? = null
     @Volatile private var state = "idle"                              // idle, checking, downloading, ready, installing, error
     @Volatile private var pct = 0
+    private val installing = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val swapping = java.util.concurrent.atomic.AtomicBoolean(false)
     @Volatile private var error = ""
     @Volatile private var fresh: File? = null                         // the new app, unpacked in [work]
 
@@ -119,16 +121,17 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
     }
 
     /** "Cập nhật": swaps the downloaded app in and opens it; downloads it first if it is not here yet (after an error). */
-    fun install() {
+    @Synchronized fun install() {
         require(found != null) { "no update" }
         require(writable) { "cannot replace the app here" }
+        if (state == "installing" || !installing.compareAndSet(false, true)) return   // a second press: the first is on its way
         val ready = state == "ready"
         state = if (ready) "installing" else "downloading"            // the page shows it from this very answer
         Thread({
             if (!ready) synchronized(dl) { download() }       // after the one in the background: it finds that one's
-            if (!ready && state != "ready") return@Thread
+            if (!ready && state != "ready") { installing.set(false); return@Thread }
             state = "installing"
-            if (swap(true)) quit() else state = "error"
+            if (swap(true)) quit() else { state = "error"; installing.set(false) }
         }, "update-install").apply { isDaemon = true }.start()
     }
 
@@ -137,6 +140,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
 
     /** Starts the script that waits for this process to end, puts the new app where the old one was, and opens it ([open]). */
     private fun swap(open: Boolean): Boolean {
+        if (!swapping.compareAndSet(false, true)) return true         // already started (Update, then quitting): one script only
         val old = root ?: return false
         val new = fresh ?: return false
         val dir = work ?: return false
@@ -164,6 +168,7 @@ class Updater(private val version: String, res: File?, private val quit: () -> U
         } catch (e: Exception) {
             error = e.message ?: e.javaClass.simpleName
             println("update swap: $error")
+            swapping.set(false)
             false
         }
     }

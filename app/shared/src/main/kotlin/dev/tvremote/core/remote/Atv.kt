@@ -69,8 +69,10 @@ class Atv(dir: File, private val host: String) : Remote, CodePairing {
     /** Asks the TV to show its code. Then [finishPairing] with what the person reads there. */
     override fun startPairing() {
         WireLog.all.add("·", "remote $host pairing")
+        try { sock?.close() } catch (ignored: Exception) { }              // a retry must not leave the last attempt's socket open
         val s = dial(6467)
         sock = s
+        try { s.soTimeout = 15000 } catch (ignored: Exception) { }        // the pairing path only: a TV that stops answering must not hold this for ever
         fun step(field: Int, body: ByteArray, expect: Int) {
             send(s, Pb().int(1, 2).int(2, 200).msg(field, body).bytes())
             answer(s, expect)

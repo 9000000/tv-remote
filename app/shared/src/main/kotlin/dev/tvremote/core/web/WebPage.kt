@@ -16,7 +16,7 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
             cache[name] ?: try {
                 var b = open(name).use { it.readBytes() }
                 if (name == "index.html") b = page(String(b, Charsets.UTF_8)).toByteArray(Charsets.UTF_8)
-                b.also { if (cache.size < 60) cache[name] = it }
+                b.also { if (room(cache, it.size)) cache[name] = it }
             } catch (e: Exception) { null }
         } ?: return null
         val type = when (name.substringAfterLast('.')) {
@@ -36,14 +36,18 @@ class WebPage(private val open: (String) -> java.io.InputStream, private val cor
         zipped[name] ?: run {
             val b = java.io.ByteArrayOutputStream(plain.size / 3)
             java.util.zip.GZIPOutputStream(b).use { it.write(plain) }
-            b.toByteArray().takeIf { it.size < plain.size }.also { if (it != null && zipped.size < 60) zipped[name] = it }
+            b.toByteArray().takeIf { it.size < plain.size }.also { if (it != null && room(zipped, it.size)) zipped[name] = it }
         }
     }
+
+    /** Whether one more file fits: by bytes, not a count (the page has ~80 files, 1.4 MB, and a count that falls short re-reads and re-zips the rest on every request). */
+    private fun room(m: Map<String, ByteArray>, add: Int) = m.size < 256 && m.values.sumOf { it.size } + add <= BUDGET
 
     private fun page(html: String): String =
         LINK.replace(html.replaceFirst("<html ", "<html data-core=\"$core\" ")) { it.groupValues[1] + "?v=" + stamp + "\"" }
 
     private companion object {
+        const val BUDGET = 4 shl 20
         val FILE = Regex("index\\.html|css/[a-z0-9_-]+\\.css|stats\\.js|jmuxer\\.min\\.js|js/[a-z0-9_-]+\\.js|manifest\\.json|remote\\.json|i18n/(?:[a-z]{2,3}|langs)\\.json|icon-[a-z0-9]+\\.png|voice/phrases\\.json")   // manifest and icons: "Add to Home screen"; remote.json: the remote's keys, which the Phone app reads too
         val GZIP = Regex("(?i)(^|[\\s,])gzip\\s*(,|;(?!\\s*q=0(\\.0*)?\\s*(,|$))|$)")   // "gzip" as a token, not "gzip;q=0"
         val LINK = Regex("((?:src|href)=\"(?:css/[^\"?]+|stats\\.js|js/[^\"?]+))\"")

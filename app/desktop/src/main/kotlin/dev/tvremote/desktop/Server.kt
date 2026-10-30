@@ -46,7 +46,8 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     val version = try { File(repo, "VERSION").readText().trim() } catch (e: IOException) { "" }
     init {
         WireLog.app = "TV Remote $version (computer)"
-        dev.tvremote.core.Census.init("pc", version, object : dev.tvremote.core.Census.Store {
+        // a test run (TVS_FILE, AGENTS.md "Build and run") is no install: its counts and the errors a test provokes stay out of the census
+        if (System.getenv("TVS_FILE") == null) dev.tvremote.core.Census.init("pc", version, object : dev.tvremote.core.Census.Store {
             override fun get(key: String): String? = saved.census.optString(key).takeIf { it.isNotEmpty() }
             override fun put(key: String, value: String) { saved.census = saved.census.put(key, value); saved.save() }
         })

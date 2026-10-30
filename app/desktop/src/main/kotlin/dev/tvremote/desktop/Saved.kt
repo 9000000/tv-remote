@@ -16,7 +16,13 @@ class Saved(private val file: File) {
     private val cfg: JSONObject = load()
 
     private fun load(): JSONObject {
-        val c = try { JSONObject(file.readText()) } catch (e: Exception) { JSONObject() }
+        val c = try { JSONObject(file.readText()) } catch (e: Exception) {
+            if (file.exists()) {                                       // unreadable is not empty: the next save would overwrite every saved TV
+                println("tvs.json unreadable (${e.message}): kept as tvs.json.bad")
+                try { Files.copy(file.toPath(), File(file.parentFile, file.name + ".bad").toPath(), StandardCopyOption.REPLACE_EXISTING) } catch (x: Exception) { }
+            }
+            JSONObject()
+        }
         if (!c.has("current")) c.put("current", "")
         if (c.optJSONArray("tvs") == null) c.put("tvs", JSONArray())
         fold(c)
