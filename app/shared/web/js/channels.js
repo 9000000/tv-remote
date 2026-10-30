@@ -1,4 +1,4 @@
-// 📺 TV Channels (app/channels), the iptv-org player, from here (Channels.kt): put on the TV or updated from the latest release,
+// 📺 TV Channels (app/tvchannels), the iptv-org player, from here (Channels.kt): put on the TV or updated from the latest release,
 // and a channel opened by its name: the app finds it itself (tvchannels://find/<name>), or shows its search when none fits.
 let chanNow = null;
 onTvChange(() => { chanNow = null; chanCard(); });

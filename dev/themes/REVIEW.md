@@ -22,7 +22,7 @@ Nothing here commits or pushes. `free_slots` = room left under `READY_MAX` (120)
 
 ## After approving
 1. Look at the new `docs/img/themes/<id>.webp` once.
-2. `node --test app/shared/tests/` and `./gradlew :home:testDebugUnitTest` (HomeThemesTest keeps the packed copy equal; bump `app/home/VERSION` if the packed copy changed).
+2. `node --test app/shared/tests/` and `./gradlew :tvhome:testDebugUnitTest` (HomeThemesTest keeps the packed copy equal; bump `app/tvhome/VERSION` if the packed copy changed).
 3. Commit exactly the `git add` paths printed (for a PR folder also `git rm -r` it).
 4. Push follows AGENTS.md ("Push without asking once tested"; `docs/` deploys the site at once; the site-push memory says the owner tests first).
 5. Tell the owner what you approved / rejected, one line each with the reason.

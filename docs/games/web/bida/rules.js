@@ -1,5 +1,5 @@
 'use strict';
-// Bi-a (8-ball pool) physics, rules and bot: pure, loadable by node (app/games/tests/bida.test.js). Units: the table is 800 x 400, a ball's radius 10.
+// Bi-a (8-ball pool) physics, rules and bot: pure, loadable by node (app/tvgames/tests/bida.test.js). Units: the table is 800 x 400, a ball's radius 10.
 // Physics is a fixed step of 1/240 s on typed arrays (nothing allocated per step); friction slows a ball by a constant plus a part of its speed.
 // A game `g` = BD.create(); the shooter (g.turn) places the cue ball when g.hand, then BD.shoot(g, angle, power 0..1), calls BD.step(g) until it
 // returns false (or BD.run), then BD.settle(g) judges the shot: fouls (scratch, no ball hit, wrong ball first, nothing reached a rail), groups

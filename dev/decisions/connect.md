@@ -87,7 +87,7 @@ Why some code looks odd ([the list](../DECISIONS.md)).
   2. Send TV Setup's download link as a link over that protocol: the box asks "Open with" → Downloader (Downloader itself from its
      Play Store page: the box refused opening apps by package name).
   3. Allow Downloader to install unknown apps → Install → open TV Setup.
-  4. TV Setup starts `ACTION_APPLICATION_DEVELOPMENT_SETTINGS` itself (`app/tv/.../setup/MainActivity.kt` ~684): the screen opens
+  4. TV Setup starts `ACTION_APPLICATION_DEVELOPMENT_SETTINGS` itself (`app/tvsetup/.../setup/MainActivity.kt` ~684): the screen opens
      without the guarded 7 taps. Turn on **USB debugging** only (Wireless debugging is not used) → port 5555 → "Always allow" per device.
 - Settings intents sent from outside (over the remote protocol) were ignored by the box: it has to be an app on the box that opens it.
   This is the "Bật ADB giúp tôi" flow / Downloader code (README.vi.md "Bước này không bắt buộc").

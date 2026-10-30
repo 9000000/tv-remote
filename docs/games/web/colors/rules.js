@@ -1,5 +1,5 @@
 'use strict';
-// Bài màu (colour cards) rules and bots, no screen (node tests load this file too: app/games/tests/colors.test.js).
+// Bài màu (colour cards) rules and bots, no screen (node tests load this file too: app/tvgames/tests/colors.test.js).
 // Ported from gamehub24's Uno.ts (the same author): 108 cards, 7 each, match colour or number / kind, Skip, Reverse (a Skip with
 // two players), +2, Wild, Wild +4 (always allowed). Like gamehub, no stacking: a +2 / +4 makes the next player draw and lose the
 // turn at once. Drawing: one card; if it can be played, play it or pass. The last card played wins; "Uno!" is called for you.

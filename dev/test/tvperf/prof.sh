@@ -13,6 +13,6 @@ sleep 1.5
 for x in "$@"; do $A input keyevent $x; sleep 0.45; done
 wait
 adb -s $D pull /data/local/tmp/perf.data $S/$N.data > /dev/null
-python3 $SP/report_sample.py -i $S/$N.data --proguard-mapping-file $R/app/home/build/outputs/mapping/release/mapping.txt > $S/$N.txt 2>/dev/null
+python3 $SP/report_sample.py -i $S/$N.data --proguard-mapping-file $R/app/tvhome/build/outputs/mapping/release/mapping.txt > $S/$N.txt 2>/dev/null
 python3 $H/agg.py $S/$N.txt dev.tvremote.home 'tvremote' ${TOP:-25}
 $A input keyevent HOME

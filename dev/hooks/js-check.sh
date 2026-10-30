@@ -6,9 +6,9 @@ case "$f" in *.js) ;; *) exit 0 ;; esac
 [ -f "$f" ] || exit 0
 cd "$(git -C "$(dirname "$f")" rev-parse --show-toplevel 2>/dev/null)" || exit 0
 if ! out=$(node --check "$f" 2>&1); then echo "$out" | head -15 >&2; echo "js-check: $f does not parse" >&2; exit 2; fi
-case "$f" in */app/shared/*|*/app/games/*|*/docs/*) ;; *) exit 0 ;; esac
+case "$f" in */app/shared/*|*/app/tvgames/*|*/docs/*) ;; *) exit 0 ;; esac
 log=$(mktemp)
-if node --test app/shared/tests/ app/games/tests/ >"$log" 2>&1; then rm -f "$log"; exit 0; fi
+if node --test app/shared/tests/ app/tvgames/tests/ >"$log" 2>&1; then rm -f "$log"; exit 0; fi
 grep -E "^not ok|SyntaxError|ReferenceError|^# fail|error:" "$log" | head -20 >&2
 echo "js-check: node tests fail after editing $f (full log $log)" >&2
 exit 2

@@ -50,8 +50,8 @@ test('a video goes to its own route with its name, the bytes counted', async () 
 });
 
 test('every route TV Home answers is one its server has', () => {
-  // ManageServer.kt (app/home) names each /h/ route in its `when`; a route the page asks and the TV lacks would be a 404 in the field
-  const kt = fs.readFileSync(path.join(__dirname, '../../home/src/main/kotlin/dev/tvremote/home/manage/ManageServer.kt'), 'utf8');
+  // ManageServer.kt (app/tvhome) names each /h/ route in its `when`; a route the page asks and the TV lacks would be a 404 in the field
+  const kt = fs.readFileSync(path.join(__dirname, '../../tvhome/src/main/kotlin/dev/tvremote/home/manage/ManageServer.kt'), 'utf8');
   const d = HOME_PATHS.direct;
   for (const p of [d.read, d.drop, d.photo, d.video.split('?')[0], d.app.meta.split('?')[0], d.app.icon.split('?')[0]]) assert.ok(kt.includes('"' + p + '"'), p + ' is not served by ManageServer.kt');
 });
@@ -74,7 +74,7 @@ test('media and theme file addresses: host over /api/home, direct over /h', () =
 
 // home_pin.js came with pin.* words the page was never given: the box showed "pin.title" (FPT box, 2026-10-27)
 test('the words TV Home packs for its page cover every id its scripts name', () => {
-  const kts = fs.readFileSync(path.join(__dirname, '../../home/build.gradle.kts'), 'utf8');
+  const kts = fs.readFileSync(path.join(__dirname, '../../tvhome/build.gradle.kts'), 'utf8');
   const list = (name) => [...kts.match(new RegExp('val ' + name + ' = listOf\\(([^)]*)\\)'))[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
   const words = list('homeWebWords');
   const missing = [];

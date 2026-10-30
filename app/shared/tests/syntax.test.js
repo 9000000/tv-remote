@@ -9,7 +9,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const DIRS = ['app/shared/web', 'app/games/src/main/assets', 'app/home/src/main/assets', 'app/tv/src/main/assets', 'app/channels/src/main/assets', 'docs'];
+const DIRS = ['app/shared/web', 'app/tvgames/src/main/assets', 'app/tvhome/src/main/assets', 'app/tvsetup/src/main/assets', 'app/tvchannels/src/main/assets', 'docs'];
 const SKIP = /(^|\/)(node_modules|vendor|lib)\/|\.min\.js$/;   // others' code, kept as they ship it
 
 function files(dir, out = []) {

@@ -1,4 +1,4 @@
-// 🏠 TV Home, the project's own launcher (app/home), set up from here (Home.kt → HomeReceiver on the TV): favourite apps in
+// 🏠 TV Home, the project's own launcher (app/tvhome), set up from here (Home.kt → HomeReceiver on the TV): favourite apps in
 // their order, apps left off its grid, the background (a built-in one or a photo from this device), the clock. Each change
 // is sent at once and shows on the TV's screen as it comes.
 let homeNow = null;
@@ -265,7 +265,7 @@ async function homeOpen() {
   // right over the pictures, filled: a tile among thirty went unseen, and in the head over "Change automatically" nobody
   // looked back up for it (eyes go down to the pictures)
   const upload = el('button', { type: 'button', className: 'primary', textContent: T('home.upload'), onclick: () => window.ONTV && homeLink.canQr ? homeLink.qr() : file.click() });   // on the TV: TV Home's QR, a photo comes from a phone
-  // a video or GIF as the background (HomeConfig vid:..., vfps / vres; no sound: a wall is a picture; app/home wall/Videos.kt): the media library
+  // a video or GIF as the background (HomeConfig vid:..., vfps / vres; no sound: a wall is a picture; app/tvhome wall/Videos.kt): the media library
   const vfile = el('input', { type: 'file', accept: 'video/mp4,video/webm,image/gif,.mp4,.webm,.gif', hidden: true, onchange: async () => {
     const f = vfile.files[0]; vfile.value = ''; if (!f) return;
     const mx = (r.video || {}).max || 0;

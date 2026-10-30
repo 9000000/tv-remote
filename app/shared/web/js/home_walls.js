@@ -1,4 +1,4 @@
-// 🏞️ TV Home's drawn backgrounds, as the page's small previews: the SAME recipe the TV paints (app/home WallArt.kt), written once
+// 🏞️ TV Home's drawn backgrounds, as the page's small previews: the SAME recipe the TV paints (app/tvhome WallArt.kt), written once
 // as data (HomeConfig's WallSpec.kt holds a copy: tests/home_walls.test.js fails when the two differ) and drawn by two small
 // painters that do the same maths. Every size is a share of the picture: x, r of its width, y of its height.
 //   bg     the sky: colour stops [hex, at] along a straight line at `ang` degrees (0 = top to bottom, 90 = left to right)

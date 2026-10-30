@@ -1,4 +1,4 @@
-/* Demo only (loaded before pad.js, which is an unchanged copy of app/games/src/main/assets/pad/pad.js):
+/* Demo only (loaded before pad.js, which is an unchanged copy of app/tvgames/src/main/assets/pad/pad.js):
    - WebSocket is a stand-in that talks to the demo page (docs/demo/games.html) with postMessage instead of the TV's server;
    - a mouse press becomes the touch events pad.js listens to;
    - the language, the fullscreen and the layouts.json request are fixed so that nothing reaches for a TV. */

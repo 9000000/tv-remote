@@ -3,9 +3,9 @@
 app compiles (a fix in app/shared/src/tvui reached TV Home but release.sh watched only app/shared/src/home, issue #1), nor bump an
 app for code it never compiles (the same fix would have made a second phone app version on one day).
 
-  dev/release/app_paths.py <android|tv|home|channels|games|tvapps|desktop>   -> git pathspecs, one per line
+  dev/release/app_paths.py <android|tvsetup|tvhome|tvchannels|tvgames|tvapps|desktop>   -> git pathspecs, one per line
 
-android / tv build on :shared, so they take app/shared whole, less each app/shared/src/<dir> that neither they nor :shared name.
+android / tvsetup build on :shared, so they take app/shared whole, less each app/shared/src/<dir> that neither they nor :shared name.
 desktop (the computer app, JVM, no :shared) takes every app/shared/... it names, the web page and the words too.
 The TV apps take only the app/shared/src/... they name, and the words of the i18n modules they build from (extra["i18nApps"]); TV Home's packed copy of the web page (packHomeWeb) is not counted, as before.
 """
@@ -26,13 +26,13 @@ def words(app):
     s = open(os.path.join(ROOT, 'app', app, 'build.gradle.kts')).read()
     m = re.search(r'extra\["i18nApps"\]\s*=\s*listOf\(([^)]*)\)', s)
     mods = set(re.findall(r'"(\w+)"', m.group(1))) if m else set()
-    return mods | (words('tvkeys') if app == 'tv' else set())
+    return mods | (words('tvkeys') if app == 'tvsetup' else set())
 
 
 def paths(app):
     out = ['app/' + app, ':(exclude)app/%s/*.apk' % app, ':(exclude)app/%s/tests' % app]
     mine = named(app)
-    if app in ('android', 'tv'):
+    if app in ('android', 'tvsetup'):
         shared = open(os.path.join(ROOT, 'app/shared/build.gradle.kts')).read()
         used = {p.split('/')[1] for p in mine} | set(re.findall(r'"src/(\w+)/', shared)) | {'main'}
         out += ['app/shared', ':(exclude)app/shared/tests', ':(exclude)app/shared/src/test']

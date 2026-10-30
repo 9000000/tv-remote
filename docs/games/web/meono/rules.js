@@ -1,5 +1,5 @@
 'use strict';
-// Mèo nổ (Boom Cats): the rules and the bots, no screen and no clock (node tests load this file too: app/games/tests/meono.test.js).
+// Mèo nổ (Boom Cats): the rules and the bots, no screen and no clock (node tests load this file too: app/tvgames/tests/meono.test.js).
 // Ported from gamehub24's ExplodingKittens.ts (the same author), base game only (no expansion cards): attack, skip, favor,
 // shuffle, see the future, nope, defuse, five cats (pair = steal a random card, three = name a card and steal it).
 // The game is a state machine, `G.phase`: play (the turn player plays cards or draws), target (picks a victim), name (three of a

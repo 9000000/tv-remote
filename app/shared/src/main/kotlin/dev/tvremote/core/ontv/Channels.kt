@@ -7,7 +7,7 @@ import java.io.IOException
 import java.net.URLEncoder
 
 /**
- * TV Channels (app/channels), the iptv-org player, from the phone or the computer: whether it is on the TV, putting it there
+ * TV Channels (app/tvchannels), the iptv-org player, from the phone or the computer: whether it is on the TV, putting it there
  * (or a newer one) from the latest release, and a channel opened by its name. That app knows nothing of this one: everything
  * goes through its public link, tvchannels://find/<words>, where it picks the channel itself (or shows its search).
  *   read: {installed: false, latest} or {installed, version, latest (a newer one in the latest release, when there is one)}
@@ -29,7 +29,7 @@ object Channels {
     fun install(adb: Adb, dir: File?, lang: String, go: () -> Boolean = { true }): JSONObject = app.install(adb, dir, lang, go)
 
     /**
-     * Favourites and groups, through a broadcast only the shell can send (ChannelsReceiver in app/channels), like [Home.call].
+     * Favourites and groups, through a broadcast only the shell can send (ChannelsReceiver in app/tvchannels), like [Home.call].
      * [change]: the whole state by channel id ({favs: [id], groups: [{id, name, ch: [id]}]}), saved first; [cc]: that country's
      * channels too (fresh: read again from the network); [countries]: the countries' names. The answer is the receiver's
      * (favs, groups, country, list, countries) with `installed`; a TV Channels from before the receiver has `receiver: false`.

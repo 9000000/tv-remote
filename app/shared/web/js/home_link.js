@@ -1,6 +1,6 @@
 // 🏠 Where TV Home's settings page talks to: the one seam between the page (home.js) and the TV Home on the TV.
 //   host    the app that serves the page (TV Setup, the phone, the computer) asks TV Home over ADB: its /api/home... routes
-//   direct  the page is TV Home's own (app/home, "Manage from phone": home.html): TV Home answers /h/... itself, no ADB, no TV Setup
+//   direct  the page is TV Home's own (app/tvhome, "Manage from phone": home.html): TV Home answers /h/... itself, no ADB, no TV Setup
 // The page asks the same questions either way; HomeConfig's rules (clean / merge) run on the TV in both. A route a side does not
 // have is null here and the page hides what needs it (an update through ADB; the wallpaper gallery, which the hosts download).
 const HOME_PATHS = {

@@ -134,7 +134,7 @@ flowchart TB
     CORE["app/shared/src<br/>Kotlin core: Adb, Tv, Atv, Manage, Draw..."]
     PH["📱 Phone app · app/android<br/>remote screen: its own Kotlin<br/>Manage screen: the web UI (phone)"]
     PC["💻 Computer app · app/desktop<br/>window: the web UI (pc)"]
-    TVA["📺 TV app · app/tv<br/>TV web page: the web UI (tv)"]
+    TVA["📺 TV app · app/tvsetup<br/>TV web page: the web UI (tv)"]
     CORE --> PH & PC & TVA
     UI --> PH & PC & TVA
 ```
@@ -155,7 +155,7 @@ app/shared/web/  THE web UI (Computer app, TV web page, the Phone app's Manage s
 app/shared/src/  Kotlin core: ADB, picture and sound (scrcpy), each brand's remote, /api
 app/desktop/     Computer app (Kotlin JVM; window = the system's web view)
 app/android/     Phone app (remote screen in Kotlin, Manage screen = the web UI)
-app/tv/          TV app (TV Setup) + TV web page
+app/tvsetup/          TV app (TV Setup) + TV web page
 app/gradle/      Gradle build of all Kotlin (open it in Android Studio)
 dev/  docs/      dev tools · the site
 tvs.json, cert.pem, key.pem, *.jks, .cache/      your own data, never in git
@@ -163,13 +163,13 @@ tvs.json, cert.pem, key.pem, *.jks, .cache/      your own data, never in git
 
 | Task | Command |
 |---|---|
-| Web tests | `node --test app/shared/tests/ app/games/tests/` |
-| Kotlin tests | `cd app/gradle && ./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest :tv:testDebugUnitTest` |
+| Web tests | `node --test app/shared/tests/ app/tvgames/tests/` |
+| Kotlin tests | `cd app/gradle && ./gradlew :shared:testDebugUnitTest :android:testDebugUnitTest :tvsetup:testDebugUnitTest` |
 | Build the Computer app | `cd app/gradle && ./gradlew :desktop:installDist` |
 | Run it (window / browser) | `app/desktop/build/install/desktop/bin/desktop --window` · without `--window` it prints a link with the `?k=` key |
 | Run a test copy (real TVs untouched) | `TVS_FILE=/tmp/x.json TVR_KEYS=/tmp/keys TVR_PASS=testtest app/desktop/build/install/desktop/bin/desktop --port 8769`, open `http://127.0.0.1:8769/?k=testtest` (curl: header `x-tvr-pass`) |
 | Package for people | `./gradlew :desktop:packageApp` → `app/desktop/build/package/` |
-| Android APKs | `app/android/build.sh`, `app/tv/build.sh` → `app/*/build/*.apk` |
+| Android APKs | `app/android/build.sh`, `app/tvsetup/build.sh` → `app/*/build/*.apk` |
 | Emulators: create / start + build + install / install only / reset / stop | `dev/test/emu.sh create` · `emu.sh` · `emu.sh install` · `emu.sh reset` · `emu.sh stop` |
 
 Editing `app/shared/web` needs only a page reload; Kotlin needs a rebuild. Inside the repo the app uses the repo's `tvs.json` and ADB keys in `.cache/keys`, apart from an installed copy. In the emulators the TV is `10.0.2.2` from the phone emulator and `127.0.0.1` from the Computer app (`10.0.2.15` on the virtual TV means nothing outside it); accept "Allow USB debugging?" in the TV emulator's window. They open only the ADB port, so the Android TV Remote pairing can't be tried there. Other checks: `dev/test/contrast.py`, `dev/shots/shots.py`.

@@ -7,7 +7,7 @@
 //
 //   node dev/test/gamebots/run.js [game ...] [--players=2] [--cap=180] [--jobs=3] [--out=DIR]
 //   needs puppeteer-core: installed OUTSIDE the repo, GAMEBOTS_NODE=<dir with node_modules/puppeteer-core> (default below)
-//   Chrome: CHROME=<path> (default the macOS app). The page gets the REAL app/games/src/main/assets/tvpad.js on a fake bridge (page.js).
+//   Chrome: CHROME=<path> (default the macOS app). The page gets the REAL app/tvgames/src/main/assets/tvpad.js on a fake bridge (page.js).
 const fs = require('fs'), path = require('path'), http = require('http');
 const REPO = path.resolve(__dirname, '../../..'), WEB = path.join(REPO, 'docs/games/web');
 const SCRATCH = '/private/tmp/claude-501/-Users-hoangtran-Desktop-Github/818eb7ba-5b31-444e-81f2-e599faff06df/scratchpad';
@@ -67,7 +67,7 @@ async function bot1(browser, port, game) {
   page.on('response', (r) => { if (r.status() >= 400 && !/favicon/.test(r.url())) err('http ' + r.status() + ': ' + r.url().slice(-60)); });
   const cfg = { ...spec, game, players: Array.from({ length: PLAYERS }, (_, i) => i + 1) };
   // page.js installs the fake TVPadNative first, then the real tvpad.js builds window.tvpad on it
-  await page.evaluateOnNewDocument('window.__botCfg=' + JSON.stringify(cfg) + ';\n' + fs.readFileSync(path.join(__dirname, 'page.js'), 'utf8') + '\n' + fs.readFileSync(path.join(REPO, 'app/games/src/main/assets/tvpad.js'), 'utf8'));
+  await page.evaluateOnNewDocument('window.__botCfg=' + JSON.stringify(cfg) + ';\n' + fs.readFileSync(path.join(__dirname, 'page.js'), 'utf8') + '\n' + fs.readFileSync(path.join(REPO, 'app/tvgames/src/main/assets/tvpad.js'), 'utf8'));
   const ev = (f) => page.evaluate(f);
   const shot = async (n) => { try { await page.screenshot({ path: path.join(dir, n + '.png') }); } catch (e) { err('screenshot ' + n + ': ' + e.message); } };
   const rafRate = async (ms) => { const a = await ev(() => __bot.raf); await sleep(ms); const b = await ev(() => __bot.raf); return +((b - a) / (ms / 1000)).toFixed(1); };
@@ -134,7 +134,7 @@ async function lobbyShots(port, game, tag) {
     for (const n of [0, 1, 4]) for (let attempt = 0; attempt < 3; attempt++) try {
       const page = await browser.newPage(); await page.setViewport({ width: +(opt.size || '1920x1080').split('x')[0], height: +(opt.size || '1920x1080').split('x')[1] });
       const cfg = { ...GAMES[game], game, players: Array.from({ length: n }, (_, i) => i + 1) };
-      await page.evaluateOnNewDocument('window.__botCfg=' + JSON.stringify(cfg) + ';\n' + fs.readFileSync(path.join(__dirname, 'page.js'), 'utf8') + '\n' + fs.readFileSync(path.join(REPO, 'app/games/src/main/assets/tvpad.js'), 'utf8'));
+      await page.evaluateOnNewDocument('window.__botCfg=' + JSON.stringify(cfg) + ';\n' + fs.readFileSync(path.join(__dirname, 'page.js'), 'utf8') + '\n' + fs.readFileSync(path.join(REPO, 'app/tvgames/src/main/assets/tvpad.js'), 'utf8'));
       await page.goto(`http://127.0.0.1:${port}/${game}/${opt.qr ? '?lobbyqr=1' : ''}`, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch((e) => console.log(game, n, e.message)); await sleep(2500);
       fs.mkdirSync(path.join(OUT, game), { recursive: true });
       await page.screenshot({ path: path.join(OUT, game, `lobby-${n}-${tag}${opt.qr ? '-qr' : ''}${opt.size ? '-' + opt.size : ''}.png`) }); await page.close(); break;

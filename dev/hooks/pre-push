@@ -4,7 +4,7 @@
 cd "$(git rev-parse --show-toplevel)" || exit 1
 # a commit that changed a flow's code without its dev/flows/*.md (dev/flows/README.md)
 if git rev-parse -q --verify '@{u}' >/dev/null; then node dev/flows/check.js --commits '@{u}..HEAD' || { echo "pre-push: a flow is stale (above)"; exit 1; }; fi
-node --test app/shared/tests/ app/games/tests/ dev/themes/test/ >/tmp/tvr-prepush.log 2>&1 && exit 0
+node --test app/shared/tests/ app/tvgames/tests/ dev/themes/test/ >/tmp/tvr-prepush.log 2>&1 && exit 0
 grep -E "^not ok|SyntaxError|^# fail" /tmp/tvr-prepush.log | head -20
 echo "pre-push: node tests failed (full log /tmp/tvr-prepush.log); git push --no-verify skips them"
 exit 1

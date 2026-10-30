@@ -25,7 +25,7 @@ under the file of its part (one `## ` heading each), and a line here. Code point
 - One shared UI set for the TV apps (`app/shared/src/tvui`)
 - TV Setup declares no accessibility service (TV Setup Keys add-on)
 - One "open target" for keys, power-on and the home grid (`Target`, `js/target.js`)
-- Usage events and a clock that ran ahead (`app/tv` `Usage.kt`, 2026-10-26)
+- Usage events and a clock that ran ahead (`app/tvsetup` `Usage.kt`, 2026-10-26)
 
 ## [TV Setup features](decisions/tv-setup.md)
 
@@ -49,7 +49,7 @@ under the file of its part (one `## ` heading each), and a line here. Code point
 - TV Home's settings page: groups, one save for the order, a session that outlives its QR (`js/home.js`, `js/home_order.js`, `Access.kt`, `WebCheck.kt`)
 - TV Home compiled ahead (`Home.kt`, `LauncherInstall.kt`, `Setup.kt`, TV Setup `HomeCompile.kt`, 2026-10-24)
 - Launcher gallery opening (`MainActivity.chooseLauncher`, `Launchers.fetch/thumb`, `SignedList.kept`, 2026-10-24)
-- TV Home: video and GIF backgrounds (`app/home` wall/Videos.kt, Transcode.kt, VideoWall.kt)
+- TV Home: video and GIF backgrounds (`app/tvhome` wall/Videos.kt, Transcode.kt, VideoWall.kt)
 - TV Home themes (2026-10-24)
 
 ## [TV Channels and TV Games](decisions/channels-games.md)

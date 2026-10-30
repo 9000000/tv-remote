@@ -10,7 +10,7 @@ body = json.dumps(data, separators=(',', ':'))
 (root / 'app/shared/src/home/kotlin/dev/tvremote/home/WallSpec.kt').write_text('''package dev.tvremote.home
 
 /**
- * The recipes of TV Home's drawn backgrounds ([HomeConfig.ART]), as data: the TV paints them (app/home wall/WallArt.kt) and the page
+ * The recipes of TV Home's drawn backgrounds ([HomeConfig.ART]), as data: the TV paints them (app/tvhome wall/WallArt.kt) and the page
  * draws its small previews from the same numbers (js/home_walls.js, which also says what each field means). The two copies are kept
  * equal by tests/home_walls.test.js, so a preview is the picture the TV shows. Made by dev/gen/gen_wallspec.py: edit the page's, not this.
  */

@@ -1,7 +1,7 @@
 # The TV apps' design system
 
-Rules for any UI change in **TV Setup** (`app/tv`), **TV Home** (`app/home`), **TV Channels** (`app/channels`) and **TV Games**
-(`app/games`), plus the **Phone app's native screens** (last section). They describe what the code does today. Where the apps
+Rules for any UI change in **TV Setup** (`app/tvsetup`), **TV Home** (`app/tvhome`), **TV Channels** (`app/tvchannels`) and **TV Games**
+(`app/tvgames`), plus the **Phone app's native screens** (last section). They describe what the code does today. Where the apps
 disagree, see [Known drift](#7-known-drift): don't make it worse, and don't start a new variant.
 The shared values are copied into each app's `res/values/tv_style.xml` (this file replaced `dev/TV_STYLE.md`).
 

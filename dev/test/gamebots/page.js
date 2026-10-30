@@ -1,5 +1,5 @@
 // Runs INSIDE the game page, before any of its scripts (run.js injects it after `window.__botCfg = {...}` and the real
-// app/games/src/main/assets/tvpad.js). Two parts:
+// app/tvgames/src/main/assets/tvpad.js). Two parts:
 //  1. a fake TVPadNative, so the REAL tvpad.js builds window.tvpad on top of it (the page sees exactly the API it sees on the TV);
 //     it records every layout / say / vibrate the game sends.
 //  2. the brains: per-game players that press buttons, move the stick / pointer, answer choices and play cards at human speed

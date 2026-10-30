@@ -8,7 +8,7 @@ Cores: Phone app (`phone`), Computer app (`pc`), TV web page (`tv`). Read first:
    in a helper under `app/shared/src/main/kotlin/dev/tvremote/core/ontv/`. All three cores then answer it.
 2. **Only some cores.** Computer app: `route()` in `app/desktop/src/main/kotlin/dev/tvremote/desktop/Server.kt`; mind its sets
    `OURS` / `NATIVE_TOO` (what an LG or Samsung TV may call). TV web page: `route()` in
-   `app/tv/src/main/kotlin/dev/tvremote/setup/RemoteService.kt` (and `PASSIVE` if it must not count as use). Phone app: the Manage
+   `app/tvsetup/src/main/kotlin/dev/tvremote/setup/RemoteService.kt` (and `PASSIVE` if it must not count as use). Phone app: the Manage
    screen is the same web UI served by the in-app core (`app/android/src/main/kotlin/dev/tvremote/phone/Managing.kt`); a
    native-only call goes in the phone's own Kotlin.
 3. **Caller**: the page calls `api()` in `app/shared/web/js/core.js` (a page script asks the owner of the state, see "The page's
@@ -21,7 +21,7 @@ Cores: Phone app (`phone`), Computer app (`pc`), TV web page (`tv`). Read first:
 5. **Needs ADB or another capability?** Mark the UI `data-needs="adb"` (or `needs` in `remote.json`) so it hides without it.
 6. **Tests**: a Kotlin unit test beside `app/shared/src/test/kotlin/dev/tvremote/core/ManagePathsTest.kt` for the logic; a page
    test in `app/shared/tests/` when the JS changed; then `node --test app/shared/tests/` and
-   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest :desktop:test :android:testDebugUnitTest`.
+   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tvsetup:testDebugUnitTest :desktop:test :android:testDebugUnitTest`.
 7. Docs: README / README.vi "Three apps and a web page" table kept true; `docs/guide.html` topic `data-v="next"`; CHANGELOG in
    both languages.
 

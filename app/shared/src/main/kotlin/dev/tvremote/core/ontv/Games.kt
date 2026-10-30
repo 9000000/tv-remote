@@ -5,7 +5,7 @@ import java.io.File
 import java.io.IOException
 
 /**
- * TV Games (app/games), retro and web games played with phones as pads, from the phone or the computer: whether it is on the TV,
+ * TV Games (app/tvgames), retro and web games played with phones as pads, from the phone or the computer: whether it is on the TV,
  * putting it there (or a newer one) from the latest release, and opening it. Playing needs no ADB and no TV Setup: the app serves
  * its own pad page (a QR on the TV), so ADB is only for installing it from here. See [OwnApp] for the state's shape (`soon`:
  * the latest release has no tv-games.apk yet).

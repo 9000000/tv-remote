@@ -1,5 +1,5 @@
 'use strict';
-// Cờ cá ngựa (Ludo): the rules and the bot, no screen (node tests load this file too: app/games/tests/cangua.test.js).
+// Cờ cá ngựa (Ludo): the rules and the bot, no screen (node tests load this file too: app/tvgames/tests/cangua.test.js).
 // Ported from gamehub24's Ludo.ts (the same author): 52 track cells, 4 horses a seat, a 6 takes a horse out of the stable,
 // landing on a cell with others' horses kicks them home unless the cell is safe (starts and the star 8 cells on), a 6 rolls
 // again, exact roll to reach the end. gamehub's rolls favour a 6 while no horse is out; so do these.

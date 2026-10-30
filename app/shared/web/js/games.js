@@ -1,4 +1,4 @@
-// 🎮 TV Games (app/games) from here (Games.kt): put on the TV or updated from the latest release, and opened. Playing needs no ADB
+// 🎮 TV Games (app/tvgames) from here (Games.kt): put on the TV or updated from the latest release, and opened. Playing needs no ADB
 // (the app serves its own pad page, a QR on the TV); ADB is only for installing it from here. A release without tv-games.apk yet
 // answers `soon`, said plainly instead of failing.
 let gameNow = null;

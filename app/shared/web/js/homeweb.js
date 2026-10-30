@@ -1,5 +1,5 @@
 // 🏠 TV Home's own settings page (home.html): the same home.js as the other pages, with the few things core.js gives them here.
-// TV Home serves it (app/home ManageServer, "Manage from phone") to a phone on the same Wi-Fi: no ADB, no TV Setup, one TV, so there
+// TV Home serves it (app/tvhome ManageServer, "Manage from phone") to a phone on the same Wi-Fi: no ADB, no TV Setup, one TV, so there
 // is no TV list, no pairing and no state to refresh. The session is a cookie the TV set when the QR's one-time key was used.
 window.HOME_DIRECT = true;
 window.APP_PATHS = HOME_PATHS.direct.app;                             // the names and pictures of apps come from TV Home itself (appicon.js)

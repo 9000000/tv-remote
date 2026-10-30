@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installs APKs on a TV the way a person expects to find it afterwards.
-#   dev/test/tvinstall.sh <serial> <apk>...     e.g. dev/test/tvinstall.sh 192.168.100.154:5555 app/home/build/tv-home.apk
+#   dev/test/tvinstall.sh <serial> <apk>...     e.g. dev/test/tvinstall.sh 192.168.100.154:5555 app/tvhome/build/tv-home.apk
 # Why: `adb install -r` of TV Home kills the running launcher and the TV falls into whatever app is under it (the FPT box
 # landed in TV Channels, 2026-10-24). When TV Home was the home screen before, it is set again and HOME pressed in the same go.
 set -u

@@ -9,7 +9,7 @@ import java.io.File
 import java.io.IOException
 
 /**
- * TV Home, this project's launcher (app/home), set up from the phone or the computer: its favourites, hidden apps, background
+ * TV Home, this project's launcher (app/tvhome), set up from the phone or the computer: its favourites, hidden apps, background
  * and clock, through a broadcast only the shell can send (HomeReceiver there), like [RulesClient]. The settings' shape and
  * limits are [HomeConfig], compiled into both sides.
  *   read:   {installed: false} or {installed, version, home (the TV's home is TV Home now), config, apps: [{pkg, label}], photo,

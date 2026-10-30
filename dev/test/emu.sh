@@ -115,14 +115,14 @@ install() {
   find_devices
   [ -n "$TV$PHONE" ] || { echo "No emulator running: dev/test/emu.sh start"; exit 1; }
   if [ -n "$TV" ]; then
-    "$ROOT/app/tv/build.sh" >/dev/null
-    "$ADB" -s "$TV" install -r "$ROOT/app/tv/build/tv-setup.apk" | tail -1 | sed "s/^/TV Setup → $TV: /"
-    "$ROOT/app/home/build.sh" >/dev/null                             # TV Home, the launcher: installed, not made the home (the gallery does that)
-    "$ADB" -s "$TV" install -r "$ROOT/app/home/build/tv-home.apk" | tail -1 | sed "s/^/TV Home → $TV: /"
-    "$ROOT/app/channels/build.sh" >/dev/null                         # TV Channels, the iptv-org player
-    "$ADB" -s "$TV" install -r "$ROOT/app/channels/build/tv-channels.apk" | tail -1 | sed "s/^/TV Channels → $TV: /"
-    "$ROOT/app/games/build.sh" >/dev/null                            # TV Games, retro + web games with phones as pads
-    "$ADB" -s "$TV" install -r "$ROOT/app/games/build/tv-games.apk" | tail -1 | sed "s/^/TV Games → $TV: /"
+    "$ROOT/app/tvsetup/build.sh" >/dev/null
+    "$ADB" -s "$TV" install -r "$ROOT/app/tvsetup/build/tv-setup.apk" | tail -1 | sed "s/^/TV Setup → $TV: /"
+    "$ROOT/app/tvhome/build.sh" >/dev/null                             # TV Home, the launcher: installed, not made the home (the gallery does that)
+    "$ADB" -s "$TV" install -r "$ROOT/app/tvhome/build/tv-home.apk" | tail -1 | sed "s/^/TV Home → $TV: /"
+    "$ROOT/app/tvchannels/build.sh" >/dev/null                         # TV Channels, the iptv-org player
+    "$ADB" -s "$TV" install -r "$ROOT/app/tvchannels/build/tv-channels.apk" | tail -1 | sed "s/^/TV Channels → $TV: /"
+    "$ROOT/app/tvgames/build.sh" >/dev/null                            # TV Games, retro + web games with phones as pads
+    "$ADB" -s "$TV" install -r "$ROOT/app/tvgames/build/tv-games.apk" | tail -1 | sed "s/^/TV Games → $TV: /"
   fi
   if [ -n "$PHONE" ]; then
     "$ROOT/app/android/build.sh" >/dev/null

@@ -6,7 +6,7 @@
 // tests/home_media.test.js runs it with no page.
 const HOME_MEDIA_MAX = 60 * 1048576;                                // one photo or video in a file (ThemeFile.MEDIA_MAX)
 const HOME_MEDIA_FILE_MAX = 130 * 1048576;                          // a whole file: one video at the cap + ten photos, in base64
-const HOME_MEDIA_HOSTS = {                                          // NetPicture.HOSTS / WebVideo.HOSTS (app/home wall/), loop.html's lists
+const HOME_MEDIA_HOSTS = {                                          // NetPicture.HOSTS / WebVideo.HOSTS (app/tvhome wall/), loop.html's lists
   photo: ['tvremote.pages.dev', 'upload.wikimedia.org', 'images.pexels.com', 'images.unsplash.com'],
   video: ['tvremote.pages.dev', 'upload.wikimedia.org', 'videos.pexels.com'],
 };

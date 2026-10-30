@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * TV Home's settings, the one place their shape and limits are written: the launcher (app/home) keeps them, the phone and
+ * TV Home's settings, the one place their shape and limits are written: the launcher (app/tvhome) keeps them, the phone and
  * the computer change them over ADB (core/ontv/Home.kt → HomeReceiver). Compiled into both sides, so they never disagree.
  *   dock    favourite apps in their order, at most [DOCK_MAX]
  *   hidden  apps left off the grid
@@ -18,7 +18,7 @@ import org.json.JSONObject
  *   wurl    the page the "web" wall shows (an Immich Kiosk, a dashboard): only http:// or https:// (LAN pages are mostly plain http),
  *           at most [WURL_MAX]; anything else is dropped. "web" with no good wurl is an unknown wall: the default gradient. "web" is
  *           never turned through: choosing it makes [walls] just that one, and a set sent with it elsewhere loses it
- *   vid:<8 hex> a wall too: a looping video or animated GIF from TV Home's media library (app/home wall/Videos.kt: the file is
+ *   vid:<8 hex> a wall too: a looping video or animated GIF from TV Home's media library (app/tvhome wall/Videos.kt: the file is
  *           `videos/<id>.mp4` there, GIFs are turned into mp4 on arrival). Any such id is accepted here; whether its file is there is the
  *           launcher's to know ([Walls.usable]), so a deleted one is skipped by the rotation and falls to Night when shown
  *   vfps, vres  how a GIF or a heavy video is made light at upload ([VFPS], [VRES]); "" = the source's own / the screen's own size. Applies to the next uploads
@@ -151,7 +151,7 @@ object HomeConfig {
     private const val ORDER_MAX = 800
     /** Plain gradients (HomeActivity.wallColors). */
     val PLAIN = listOf("night", "ocean", "dusk", "forest", "aurora", "black", "sunset", "ember", "plum", "midnight", "teal", "slate", "graphite", "navy", "wine", "moss")
-    /** Scenes TV Home draws itself, no picture file (WallSpec; app/home wall/WallArt.kt). */
+    /** Scenes TV Home draws itself, no picture file (WallSpec; app/tvhome wall/WallArt.kt). */
     val ART = listOf("dawn", "peaks", "dunes", "waves", "candy", "peach", "meadow", "mist", "bokeh", "canyon")
     /** The person's own wall: a colour or a gradient they make ([wcol], [wdir]). */
     const val OWN = "own"
@@ -255,7 +255,7 @@ object HomeConfig {
     // (a person whose own photo is the point). The clock has no tonal form (its face and theme are its look)
     val LOOKS = listOf("glass", "tonal", "solid", "none")
     private val BARE = listOf("glass", "solid", "none")
-    /** What a widget really implements (the drawing code in app/home widgets): the options below are all it offers, every combination is drawn. */
+    /** What a widget really implements (the drawing code in app/tvhome widgets): the options below are all it offers, every combination is drawn. */
     fun options(k: String): List<Opt> {
         val size = Opt("size", "choice", SIZES, defaultSize(k), "wsize")
         return when {
@@ -369,7 +369,7 @@ object HomeConfig {
     /** Remote keys a person may give an app. Colour keys: no app answers them in general. Numbers: only on TV Home's own screen. */
     val KEY_COLOURS = listOf(183, 184, 185, 186)                        // PROG_RED, GREEN, YELLOW, BLUE
     val KEY_NUMBERS = (7..16).toList()                                  // KEYCODE_0 .. KEYCODE_9
-    /** The keys the stock launcher answered (app/tv KeyFix.RULES; a test there holds the two lists equal): free once their handler is gone; the app buttons (190, 191, 195: KeyFix.APP_KEYS) even while it works. */
+    /** The keys the stock launcher answered (app/tvsetup KeyFix.RULES; a test there holds the two lists equal): free once their handler is gone; the app buttons (190, 191, 195: KeyFix.APP_KEYS) even while it works. */
     val KEY_DEAD = listOf(170, 178, 190, 191, 195, 192, 284, 176)
     fun keyAllowed(code: Int) = code in KEY_COLOURS || code in KEY_NUMBERS || code in KEY_DEAD
     /** "keyapps" as code to package, the codes allowed and the packages real names. */

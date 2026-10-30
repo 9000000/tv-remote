@@ -23,7 +23,7 @@ test('not a string: empty', () => {
 // A TV box's old WebView (before Chrome 62/64) or Safari before 16.4 cannot parse a lookbehind or a named group: the whole file
 // fails ("invalid group specifier name", census 0f54fa44: js/home_pin.js in TV Setup's Manage screen on an HK1 box). Every script a phone's browser loads is checked, not only scrub.js.
 test('no page script uses a lookbehind or a named group (old WebView, old Safari)', () => {
-  const dirs = [path.join(__dirname, '../web/js'), path.join(__dirname, '../../games/src/main/assets/pad')];
+  const dirs = [path.join(__dirname, '../web/js'), path.join(__dirname, '../../tvgames/src/main/assets/pad')];
   const bad = dirs.flatMap((d) => fs.readdirSync(d).filter((f) => f.endsWith('.js')).map((f) => path.join(d, f)))
     .filter((f) => /\(\?<[=!A-Za-z]/.test(fs.readFileSync(f, 'utf8').replace(/^\s*\/\/.*$/gm, '').replace(/ \/\/ .*$/gm, '')))
     .map((f) => path.relative(path.join(__dirname, '../..'), f));

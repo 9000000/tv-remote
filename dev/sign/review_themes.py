@@ -460,7 +460,7 @@ def main():
     if added:
         paths = git_paths(added)
         print("\nNext (nothing committed): git add " + " ".join(paths))
-        print("Also bump app/home/VERSION if the packed copy changed (HomeThemesTest keeps it equal).")
+        print("Also bump app/tvhome/VERSION if the packed copy changed (HomeThemesTest keeps it equal).")
 
 
 if __name__ == "__main__":

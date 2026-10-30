@@ -1,6 +1,6 @@
 // A photo made the TV's shape: the crop (centred cover by default, moved by drag, widened by pinch or wheel), drawn small for a
 // preview and at the TV's size for sending. ONE copy for the page's "Tải ảnh của bạn" (js/home.js) and for the page TV Home
-// serves to a phone (app/home/.../PhotoServer.kt; its build copies this file, so the two never differ).
+// serves to a phone (app/tvhome/.../PhotoServer.kt; its build copies this file, so the two never differ).
 // A view is { z, cx, cy, whole }: zoom (1 = the photo just covers the frame) and the crop's centre as fractions of the photo; whole: no
 // crop, the photo sent as it is (HomeConfig "wfit" contain: TV Home shows it whole over itself blurred, a portrait photo's way).
 

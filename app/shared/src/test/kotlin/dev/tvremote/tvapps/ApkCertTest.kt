@@ -54,7 +54,7 @@ class ApkCertTest {
     }
 
     @Test fun matchesApksignerOnARealApk() {                             // a built APK when there is one: the same digest apksigner prints
-        val apk = File("../home/build/tv-home.apk").takeIf { it.isFile } ?: return
+        val apk = File("../tvhome/build/tv-home.apk").takeIf { it.isFile } ?: return
         val expect = System.getenv("TVR_CERT_HOME") ?: return
         assertEquals(listOf(expect.lowercase()), ApkCert.read(apk)["v2"])
     }

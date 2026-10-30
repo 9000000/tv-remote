@@ -1,5 +1,5 @@
 'use strict';
-// Gomoku rules and the bot, with no DOM so node can test them (app/games/tests/caro.test.js). Free style: 5 or more in a row wins.
+// Gomoku rules and the bot, with no DOM so node can test them (app/tvgames/tests/caro.test.js). Free style: 5 or more in a row wins.
 // The board is a flat array of N*N cells, 0 empty, 1 X, 2 O; a cell is y * N + x.
 const Caro = (() => {
   const N = 15, DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];

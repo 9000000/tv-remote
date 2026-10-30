@@ -125,7 +125,7 @@ Measured on emulator-5554 (TV Setup, open → list drawn): 2.5–3.6 s before, ~
 - `Launchers.facts` asks its six questions in one shell round trip; facts, `pm list packages` and the home lookup run side by side (Adb multiplexes streams on one connection).
 - Not measured on a real box: the FPT box runs a release-signed build, a debug install would need an uninstall (its rules lost).
 
-## TV Home: video and GIF backgrounds (`app/home` wall/Videos.kt, Transcode.kt, VideoWall.kt)
+## TV Home: video and GIF backgrounds (`app/tvhome` wall/Videos.kt, Transcode.kt, VideoWall.kt)
 
 - **Library, not a file:** `<ext files>/videos/<hex8>.mp4` + `<hex8>.jpg` (poster, first frame) + `index.json`; the wall id is `vid:<hex8>`. `Walls.file()` gives the poster, so the screensaver, blurred cards and thumbnails need no change. `Videos.delete` refuses a video the setting uses or any `Videos.refs` hook (themes) keeps. Max 200 MB sent, 12 kept, free space >= 2x the file + 100 MB.
 - **Player:** platform MediaPlayer + SurfaceView behind the grid (no library; APK 2.0 MB before and after; TextureView was the first version, see the A/B below). The poster is the window background plus an ImageView over the SurfaceView's hole, so no black flash; released in onStop (an app over it: player count 1 -> 0 on the emulator), restarted in onStart. Looping gap not measurable on the emulator.

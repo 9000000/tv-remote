@@ -58,7 +58,7 @@ lazy frame (`<tab>.html?embed=1&lang=`; the frame reports its height, and OK on 
   that page's memory, so Reset (or a reload) starts again. Install, remove, reboot and the like answer "this is a demo". The picture is a
   drawn screen as screenshots (video is not faked). The page's synchronous reads (words, `remote.json`) are put into `index.html` of the
   app by the worker, since Chrome does not send those to a worker.
-- **TV Home** (`home.html`): drawn by hand after `app/home` (clock, dock, grid, long-press menu, wallpapers from `home/*.jpg`) and a made-up
+- **TV Home** (`home.html`): drawn by hand after `app/tvhome` (clock, dock, grid, long-press menu, wallpapers from `home/*.jpg`) and a made-up
   "before" screen (an illustration). OK on the TV Channels / TV Games tile opens that tab. Own apps use the real `banner.png` (`img/banner-*.png`,
   copies: refresh with the apps' banners).
 - **TV Channels** (`channels.html` + `channels-data.js`): 38 channels of iptv-org (public streams) in three sets (International, Vietnam, USA):
@@ -69,7 +69,7 @@ lazy frame (`<tab>.html?embed=1&lang=`; the frame reports its height, and OK on 
 - **Look of the TV pages:** taken from real 1920 x 1080 captures of the TV emulator (`img/shot-*.jpg`, `img/tv-home-screen.jpg` = the Remote demo's TV picture, clean TV Home). `home-walls.js` is a verbatim copy of `app/shared/web/js/home_walls.js` (the drawn walls): keep it in sync. Games: the pads sit beside the TV from 900 px, under it on a phone.
 - **TV Games** (`games.html` + `pad/`): the library with the catalog's real pictures (`games/img`), and the real quiz (`games/web/quiz`,
   put in a frame with a `window.tvpad` stand-in) played with one or two phones. The phone is the app's real pad page: `pad/pad.js`, `pad.css`,
-  `pingmath.js` are unchanged copies of `app/games/src/main/assets/pad/` (and `webgames/_lib/`), `pad/index.html` is its page without the
+  `pingmath.js` are unchanged copies of `app/tvgames/src/main/assets/pad/` (and `webgames/_lib/`), `pad/index.html` is its page without the
   manifest; `pad/demo-pad.js` swaps the WebSocket for postMessage to `games.html` (which plays the TV's side of `GameServer.kt`'s protocol),
   turns a mouse press into touches and fixes the language. Refresh the copies after a change to the pad (`cp`, then check `demo-pad.js`
   still matches `connect()`). No NES player here: an NES game shows a card saying so.

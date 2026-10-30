@@ -88,7 +88,7 @@ test('index.html: each word has an id, and keeps the words vi.json gives it', ()
 const kotlin = () => {                                          // the apps' Kotlin and Java ask for the same ids (Words.kt)
   const out = [], walk = (d) => { for (const f of fs.readdirSync(d, { withFileTypes: true })) {
     if (f.isDirectory()) { if (f.name !== 'build') walk(path.join(d, f.name)); } else if (/\.(kt|java)$/.test(f.name)) out.push(fs.readFileSync(path.join(d, f.name), 'utf8')); } };
-  for (const app of ['android', 'tv', 'shared', 'desktop']) { const d = path.join(web, '../..', app, 'src/main'); if (fs.existsSync(d)) walk(d); }
+  for (const app of ['android', 'tvsetup', 'shared', 'desktop']) { const d = path.join(web, '../..', app, 'src/main'); if (fs.existsSync(d)) walk(d); }
   return out.join('\n');
 };
 
@@ -158,7 +158,7 @@ test('apps/<lang>/<module>.json: every language of langs.json has every module w
 
 test('no hand-written strings.xml: the words of the native apps come from i18n/apps (app/gradle/i18n.gradle)', () => {
   const bad = [];
-  for (const a of ['android', 'channels', 'games', 'home', 'tvapps', 'tvkeys']) {
+  for (const a of ['android', 'tvchannels', 'tvgames', 'tvhome', 'tvapps', 'tvkeys']) {
     const res = path.join(__dirname, '../..', a, 'src/main/res');
     for (const d of fs.existsSync(res) ? fs.readdirSync(res) : []) if (d.startsWith('values')) for (const f of fs.readdirSync(path.join(res, d)))
       if (/<(string|plurals|string-array)\b/.test(fs.readFileSync(path.join(res, d, f), 'utf8'))) bad.push(`app/${a}/src/main/res/${d}/${f}`);

@@ -1,7 +1,7 @@
 # Web games design system (TV Games)
 
 Rules for every page in `docs/games/web/<game>/` and for what such a page asks of the phone pad
-(`app/games/src/main/assets/pad`). Read with `app/games/WEBGAMES.md` (the `window.tvpad` API, lobby, wire).
+(`app/tvgames/src/main/assets/pad`). Read with `app/tvgames/WEBGAMES.md` (the `window.tvpad` API, lobby, wire).
 Values below are what the code does today; where games differ, the **reference** is named and a new game follows it.
 Existing differences are listed in "Known drift" at the end: do not copy them.
 
@@ -15,7 +15,7 @@ References: **table / card / board games** -> `tienlen/` (+ `_lib/table.js`); **
 | Screen | A TV, 3 m away, 1280x720 up to 4K. Size everything from the viewport (`vh`), or draw on a fixed 1280x720 stage that is scaled (Kit canvas, cangua `#stage`). Never fixed `px` on a page that is not scaled. | `_lib/credit.js:16-26` (vh), `_lib/kit.css:10`, `cangua/cangua.js:227` |
 | Inputs | The TV remote (arrows, Enter = OK, Back belongs to TV Games), phones through `window.tvpad`, Bluetooth pads (Gamepad API), the keyboard for player 1 off the TV. Every screen is usable with arrows + OK alone. | `_lib/kit.js:99-145`, `_lib/table.js:202-230` |
 | No pointer | A TV has no mouse: `cursor:none` on `html,body`; no hover states, no click-only controls. A click may exist only as an extra (desktop tests, `pointer.js` mouse = player 1). | `tienlen/tienlen.css:3`, `_lib/pointer.js:30-35` |
-| Old WebView | TV Games runs from Android 5 (`app/games/build.gradle.kts:15`). Plain ES2017 JS (no `?.`, `??`, `catch {}`; `games_design.test.js`), `'use strict'`, no modules, no build step. CSS no newer than what `_lib` uses (custom properties, `inset`, `aspect-ratio`, flex/grid). | `_lib/*.js` |
+| Old WebView | TV Games runs from Android 5 (`app/tvgames/build.gradle.kts:15`). Plain ES2017 JS (no `?.`, `??`, `catch {}`; `games_design.test.js`), `'use strict'`, no modules, no build step. CSS no newer than what `_lib` uses (custom properties, `inset`, `aspect-ratio`, flex/grid). | `_lib/*.js` |
 | Plain browser | Without `tvpad` the page says what it is for (`nopad.js`, after an 800 ms grace for an old WebView), and a Kit game can still be tried with the keyboard. | `_lib/nopad.js:38-40` |
 | Language | vi / en by `navigator.language` (`startsWith('vi')`), nothing else. Every word comes from one words object. | `_lib/table.js:32-43`, `_lib/kit.js:10,15-18` |
 | Offline-ish | Each game is its own folder of plain files, served by the site; no CDN, no web font, no network call other than a data file next to the page (quiz `bank.json`, last good copy in `localStorage`). | `quiz/quiz.js:14-15` |
@@ -189,7 +189,7 @@ cut a big world into a few meshes so the ones out of view are skipped; ground in
 
 ## 7. Checklist before done
 
-- [ ] `node --test app/games/tests/` (`games_design.test.js` checks ES2017, no `translate:`/`scale:` properties, no other hosts, cursor hidden, qr.js then nopad.js, one set of seat colours); `node --check` every JS file; `rules.js` exercised in node (no DOM) for a few hundred random games.
+- [ ] `node --test app/tvgames/tests/` (`games_design.test.js` checks ES2017, no `translate:`/`scale:` properties, no other hosts, cursor hidden, qr.js then nopad.js, one set of seat colours); `node --check` every JS file; `rules.js` exercised in node (no DOM) for a few hundred random games.
 - [ ] Serve the site: `dev/test/serve_docs.py` (http://localhost:8000/games/web/<id>/).
 - [ ] Playwright (`npm install --prefix dev playwright`), Chromium at **1280x720** and **1920x1080**, with a fake `tvpad`
       added by `page.addInitScript` before the page runs; copy the shim of the site's demo (`docs/demo/games.html:150-153`):

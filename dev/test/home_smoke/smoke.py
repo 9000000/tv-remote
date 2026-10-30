@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
-RES = os.path.join(ROOT, "app", "home", "src", "main", "res")
+RES = os.path.join(ROOT, "app", "tvhome", "src", "main", "res")
 HOME_PKG, SETUP_PKG = "dev.tvremote.home", "dev.tvremote.setup"
 SCREEN = (1920, 1080)
 

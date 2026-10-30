@@ -13,9 +13,9 @@ if [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; then OUT="$1"; shift; fi
 adb -s "$SERIAL" get-state >/dev/null 2>&1 || { echo "$SERIAL is not connected"; exit 2; }
 
 if [ "${BUILD:-0}" = 1 ]; then
-  (cd "$ROOT/app/gradle" && ./gradlew -q :home:assembleDebug :tv:assembleDebug)
-  adb -s "$SERIAL" install -r "$ROOT/app/home/build/outputs/apk/debug/home-debug.apk" | tail -1
-  adb -s "$SERIAL" install -r "$ROOT/app/tv/build/outputs/apk/debug/tv-debug.apk" | tail -1
+  (cd "$ROOT/app/gradle" && ./gradlew -q :tvhome:assembleDebug :tvsetup:assembleDebug)
+  adb -s "$SERIAL" install -r "$ROOT/app/tvhome/build/outputs/apk/debug/tvhome-debug.apk" | tail -1
+  adb -s "$SERIAL" install -r "$ROOT/app/tvsetup/build/outputs/apk/debug/tvsetup-debug.apk" | tail -1
   adb -s "$SERIAL" shell cmd package set-home-activity dev.tvremote.home/.HomeActivity >/dev/null
 fi
 # TV Home must be the HOME: Google TV's own launcher outranks it on the HOME intent, so it is switched off on this emulator

@@ -12,7 +12,7 @@ from PIL import Image, ImageChops, ImageDraw
 
 RADIUS = 0.22                                                         # of the side, close to iOS / macOS app icons
 ROUNDED = ["app/shared/web/icon-512.png", "app/shared/web/icon-192.png", "docs/img/icon.png",
-           "app/android/src/main/res/drawable/icon.png", "app/tv/src/main/res/drawable/icon.png"]
+           "app/android/src/main/res/drawable/icon.png", "app/tvsetup/src/main/res/drawable/icon.png"]
 
 
 def rounded(img):

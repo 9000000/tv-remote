@@ -11,10 +11,10 @@ android {
     lint { checkOnly += "NewApi" }                                   // the same check as the apps (release.sh): this code runs on their Android 5-6 too
     // assets/scrcpy-server.jar is started on the TV for the picture and the input; web/index.html is the page the apps serve
     sourceSets["main"].assets.srcDirs("assets", "web", layout.buildDirectory.dir("generated/assets/i18n"))   // + i18n/: the page's words (below)
-    sourceSets["main"].java.srcDirs("src/home/kotlin")                 // HomeConfig: TV Home's settings, compiled into app/home too
-    sourceSets["main"].java.srcDirs("src/guard/kotlin", "src/guard/android")   // Guard: the error guard, compiled into app/home, channels and games too
-    sourceSets["main"].java.srcDirs("src/report/kotlin")               // Report + Scrub: the sending core, compiled into app/home, channels and games too
-    sourceSets["main"].java.srcDirs("src/sign/kotlin")                 // Ed25519: compiled into app/channels too (its signed providers.json)
+    sourceSets["main"].java.srcDirs("src/home/kotlin")                 // HomeConfig: TV Home's settings, compiled into app/tvhome too
+    sourceSets["main"].java.srcDirs("src/guard/kotlin", "src/guard/android")   // Guard: the error guard, compiled into app/tvhome, channels and games too
+    sourceSets["main"].java.srcDirs("src/report/kotlin")               // Report + Scrub: the sending core, compiled into app/tvhome, channels and games too
+    sourceSets["main"].java.srcDirs("src/sign/kotlin")                 // Ed25519: compiled into app/tvchannels too (its signed providers.json)
     sourceSets["main"].java.srcDirs("src/tvapps/kotlin")                // TV Apps' list and APK checks: compiled into app/tvapps too
     compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
     kotlinOptions { jvmTarget = "11" }

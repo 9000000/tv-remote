@@ -1,16 +1,16 @@
 # Add a TV Home widget
 
-Read first: [app/home/AGENTS.md](../../app/home/AGENTS.md) (widgets, "Every element has its own small menu"),
+Read first: [app/tvhome/AGENTS.md](../../app/tvhome/AGENTS.md) (widgets, "Every element has its own small menu"),
 [app/DESIGN-TV.md](../../app/DESIGN-TV.md) ("Tonal widgets"). Model to copy: `adblock` (a widget with an action) or `lunar` (display only).
 
 1. **Key and options**, the ONE shape file `app/shared/src/home/kotlin/dev/tvremote/home/HomeConfig.kt`: add the key to `WIDGETS`
    (the order is the default order) and to `TONAL` if it takes the tonal look. Anything beyond size / look: a case in
    `options(k)` (`Opt` id, values, default). A widget not for every Android: gate it in `schema(sdk)` like `ADBLOCK_MIN_SDK`.
    Update the KDoc list of widgets at the top of the file. It is compiled into :shared, :desktop and :home, so all three see it.
-2. **Draw it** in `app/home/src/main/kotlin/dev/tvremote/home/widgets/`: a `<Name>Widget.kt` beside `AdblockWidget.kt`, then the
+2. **Draw it** in `app/tvhome/src/main/kotlin/dev/tvremote/home/widgets/`: a `<Name>Widget.kt` beside `AdblockWidget.kt`, then the
    `when (k)` branches in `Widgets.kt` (build, `BIG` if it has a big size, the click at `setOnClickListener`). Data from TV Setup:
    HomeInfo (needs `SetupNeed.MIN`, see [api-route.md](api-route.md)); without it the widget says to install or update TV Setup.
-3. **TV side screens**: `app/home/src/main/kotlin/dev/tvremote/home/Customize.kt` (the Widgets list: icon, name id, subtitle id),
+3. **TV side screens**: `app/tvhome/src/main/kotlin/dev/tvremote/home/Customize.kt` (the Widgets list: icon, name id, subtitle id),
    `WidgetSettings.kt` (the options dialog is built from `options(k)`; add a row only for a note) and `HomeActivity.kt`
    (`elementMenu` items use the SAME `HomeConfig` keys Customize writes; the widget is a focus stop, also in edit mode).
 4. **The web page**: `app/shared/web/js/home.js`: `HOME_WIDGETS` (same order as `WIDGETS`) and `HOME_WIDGET_WORDS`. Options render
@@ -23,7 +23,7 @@ Read first: [app/home/AGENTS.md](../../app/home/AGENTS.md) (widgets, "Every elem
    ([dev/release/AGENTS.md](../release/AGENTS.md)).
 8. **Tests**: a case in `app/shared/tests/home_opts.test.js` (options and defaults) or a new test like
    `app/shared/tests/home_adblock.test.js`; then `node --test app/shared/tests/` and
-   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :home:testDebugUnitTest`.
+   `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tvhome:testDebugUnitTest`.
 9. **Look at it**: `dev/test/emu.sh` (TV emulator), screenshot the widget in each size, focused, its menu and in Customize
    ([dev/test/AGENTS.md](../test/AGENTS.md)).
 

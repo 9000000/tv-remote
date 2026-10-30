@@ -8,7 +8,7 @@ Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md) (the list; each pa
 |---|---|
 | `app/shared/web/` | the page's rules: `remote.json`, the tab shapes, icons, the page's state, i18n |
 | `app/shared/` | the Kotlin core's packages, other brands (LG, Samsung), the Downloader codes list |
-| `app/android/` `app/tv/` `app/tvkeys/` `app/home/` `app/channels/` `app/games/` `app/tvapps/` `app/desktop/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
+| `app/android/` `app/tvsetup/` `app/tvkeys/` `app/tvhome/` `app/tvchannels/` `app/tvgames/` `app/tvapps/` `app/desktop/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
 | `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast, profiling a weak TV box (`tvperf/`) |
 | `dev/release/` | the six version numbers, the user guide's `data-v`, release.sh, SHA256SUMS |
 | `dev/workflows/` | step-by-step recipes: add a TV Home widget, a remote key, a `/api` route, a language |
@@ -22,11 +22,11 @@ Remote control for Android TV / Google TV with no server in between. Always call
 |---|---|---|---|
 | **Phone app** (App điện thoại) | `app/android` | `phone` | "TV Remote" for Android: native remote screen, Manage screen = the web UI |
 | **Computer app** (App máy tính) | `app/desktop` (JVM) | `pc` | "TV Remote" for Mac, Windows, Linux: `Server.kt` on `127.0.0.1:8765` in its own window |
-| **TV app** (App TV) | `app/tv` | | on the TV, shown as "TV Setup" (keep that label: installed TVs, Downloader codes, file names) |
-| **TV web page** (Web của TV) | `app/tv` `RemoteService` | `tv` | the web UI TV Setup serves on 8765 for any browser, after a 6-digit code |
-| **TV Home** | `app/home` | | the project's launcher (`dev.tvremote.home`), set up from every client over ADB |
-| **TV Channels** | `app/channels` | | iptv-org's free channels; others reach it only by its links (`tvchannels://…`) |
-| **TV Games** | `app/games` | | retro (libretro, GPL-3) and web games, phones as pads, own server on 8780 |
+| **TV app** (App TV) | `app/tvsetup` | | on the TV, shown as "TV Setup" (keep that label: installed TVs, Downloader codes, file names) |
+| **TV web page** (Web của TV) | `app/tvsetup` `RemoteService` | `tv` | the web UI TV Setup serves on 8765 for any browser, after a 6-digit code |
+| **TV Home** | `app/tvhome` | | the project's launcher (`dev.tvremote.home`), set up from every client over ADB |
+| **TV Channels** | `app/tvchannels` | | iptv-org's free channels; others reach it only by its links (`tvchannels://…`) |
+| **TV Games** | `app/tvgames` | | retro (libretro, GPL-3) and web games, phones as pads, own server on 8780 |
 | **TV Apps** | `app/tvapps` | | free open-source TV apps from a signed list (`docs/apps/`), each pinned to its maker's certificate; also the page's TV Apps card |
 
 What each can do: README "Three apps and a web page" / README.vi "Ba app và một trang web"; keep that table true when a
@@ -70,7 +70,7 @@ lists), release/, admin/; `gen/optimize_images.py` never touches `docs/home/` an
   `langs.json`**, nothing else: no `strings.xml`, no language list in code (Kotlin reads `dev.tvremote.i18n.Langs`, generated from
   `langs.json`). No new `t("vi", "en")` pairs. `tests/i18n.test.js` keeps the files in step. README.md / README.vi.md in step;
   CHANGELOG and release notes in English only (the user, 2026-10-29). (`docs/`, the website, stays vi/en.)
-- **Off = nothing runs:** a new option defaults to off (or today's behaviour); with it off no receiver, service, thread, timer, alarm or file write runs for it (app/home/AGENTS.md).
+- **Off = nothing runs:** a new option defaults to off (or today's behaviour); with it off no receiver, service, thread, timer, alarm or file write runs for it (app/tvhome/AGENTS.md).
 - **Users first:** automatic where possible; an error only after every fallback failed, in words a person can act on
   (`Errors.kt`, `friendly()` in `js/core.js`). Choices look like buttons. Long waits show progress and can be cancelled.
 - **Never commit** `cert.pem`, `key.pem`, `tvs.json`, `*.jks` (they pair with or sign for real devices). Never expose port 8765 to the Internet (away from home: Tailscale).
@@ -113,8 +113,8 @@ Unit tests alone do not count; report what was tested where and what could not b
   `status`). In the phone app the TV is `10.0.2.2`. By hand and the pitfalls: dev/test/AGENTS.md.
 - **Keep the computer usable:** at most two emulators; heavy steps (Gradle, ffmpeg, `audit.js`) one at a time through
   `dev/test/light.sh <cmd>`, never several with `&`; no video background left looping on the TV emulator (~9.5 cores).
-- Unit tests: `node --test app/shared/tests/ app/games/tests/ dev/themes/test/` (also the pre-push hook: `git config core.hooksPath dev/hooks`),
-  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tv:testDebugUnitTest` (+ the app you changed); `:<app>:lintDebug` checks
+- Unit tests: `node --test app/shared/tests/ app/tvgames/tests/ dev/themes/test/` (also the pre-push hook: `git config core.hooksPath dev/hooks`),
+  `cd app/gradle && ./gradlew :shared:testDebugUnitTest :tvsetup:testDebugUnitTest` (+ the app you changed); `:<app>:lintDebug` checks
   only NewApi (minSdk 21: a newer call needs an SDK check; release.sh runs them all). A red speed budget
   (`PerfBudgetTest`, `perf_budget.test.js`) is a regression to find and fix, not a baseline to raise.
 

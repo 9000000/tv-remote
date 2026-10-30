@@ -353,8 +353,8 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
 
     // ---------------------------------------------------------------- commands
 
-    private fun ui(action: String) = "/remoteapp/tv/ui_service/$cid/actions/$action"
-    private fun platform(action: String, under: String = "actions") = "/remoteapp/tv/platform_service/$cid/$under/$action"
+    private fun ui(action: String) = "/remoteapp/tvsetup/ui_service/$cid/actions/$action"
+    private fun platform(action: String, under: String = "actions") = "/remoteapp/tvsetup/platform_service/$cid/$under/$action"
 
     private val out = Executors.newSingleThreadExecutor { Thread(it, "vidaa-out").apply { isDaemon = true } }   // keys come from the UI thread
 
@@ -369,7 +369,7 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
     override fun key(code: Int, direction: Int) {
         if (direction == Atv.UP) return                               // the TV takes taps only
         val name = KEYS[code] ?: return
-        send("/remoteapp/tv/remote_service/$cid/actions/sendkey", name)
+        send("/remoteapp/tvsetup/remote_service/$cid/actions/sendkey", name)
         if (code == 26 && isOn != null) isOn = !isOn!!
     }
 

@@ -7,10 +7,11 @@ short for the app folders). A topic is listed when one of its files changed sinc
   dev/release/guide_stale.py          the list, with the commits
   dev/release/guide_stale.py -q       only the topic ids (release.sh)"""
 import json, os, re, subprocess, sys
+from renamed import before
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 P = {"web/": "app/shared/web/", "core/": "app/shared/src/main/kotlin/dev/tvremote/core/",
-     "phone/": "app/android/src/main/kotlin/dev/tvremote/phone/", "tv/": "app/tv/src/main/kotlin/dev/tvremote/setup/",
+     "phone/": "app/android/src/main/kotlin/dev/tvremote/phone/", "setup/": "app/tvsetup/src/main/kotlin/dev/tvremote/setup/",
      "pc/": "app/desktop/src/main/kotlin/dev/tvremote/desktop/"}
 
 def full(x):
@@ -22,6 +23,15 @@ def git(*a):
     return subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()
 
 quiet = "-q" in sys.argv
+
+
+def moved_out(log):
+    """git log --name-status less the commits that only moved files (R100: the folder rename), as "  <hash> <subject>" lines."""
+    out = []
+    for c in log.split("\x01")[1:]:
+        head, *files = c.strip("\n").split("\n")
+        if any(f.strip() and not f.startswith("R100") for f in files): out.append(head)
+    return "\n".join(out)
 html = open(os.path.join(ROOT, "docs/guide.html"), encoding="utf-8").read()
 stale = 0
 try:
@@ -37,7 +47,7 @@ for tid, v, src in re.findall(r'<article class="topic" id="([^"]+)" data-v="([^"
     elif not git("tag", "-l", "v" + v):
         log = f"(no tag v{v})"
     else:
-        log = git("log", "--format=  %h %s", f"v{v}..HEAD", "--", *[p for p in paths if p not in gone])
+        log = moved_out(git("log", "-M", "--name-status", "--format=%x01  %h %s", f"v{v}..HEAD", "--", *dict.fromkeys(q for p in paths if p not in gone for q in (p, before(p)))))
     if log or gone:
         stale += 1
         if quiet: print(tid); continue

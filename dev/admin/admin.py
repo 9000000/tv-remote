@@ -82,7 +82,7 @@ def theme_approve(tid):
     rt.call("/v1/admin/%s/done" % tid, "POST", token)
     paths = rt.git_paths([i])
     cmd = "git add " + " ".join(paths) + '\ngit commit -m "TV Home: community theme %s"' % t["name"].replace('"', "'")
-    return 200, {"id": i, "files": paths, "cmd": cmd, "log": log, "note": "Nhớ tăng app/home/VERSION nếu bản đóng gói trong APK đổi."}
+    return 200, {"id": i, "files": paths, "cmd": cmd, "log": log, "note": "Nhớ tăng app/tvhome/VERSION nếu bản đóng gói trong APK đổi."}
 
 
 class H(BaseHTTPRequestHandler):

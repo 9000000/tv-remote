@@ -2,7 +2,7 @@
 """dev/sign/sign_providers.py: checks docs/channels/providers.json and signs it (providers.json.sig, Ed25519, base64).
 
 The list tells TV Channels where else to find channels besides iptv-org (VieON, ...): each entry's "kind" is code in
-app/channels (Providers.kt); its addresses, headers and the "on" switch are here, so a provider that moves or blocks the app is
+app/tvchannels (Providers.kt); its addresses, headers and the "on" switch are here, so a provider that moves or blocks the app is
 fixed or turned off by editing this file, with no new APK. It is signed with the launcher list's key (LAUNCHERS_KEY, default
 ~/.tv-remote-release/launchers.key): both are files of the site that tell the TVs what to fetch.
 

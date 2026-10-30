@@ -6,7 +6,7 @@ them on a TV home reads as one brand (the user, 2026-10-25: four banners, four s
 
 Writes app/<x>/src/main/res/drawable/banner.png (320x180) for TV Setup, TV Home, TV Channels, TV Games and TV Apps, icon.png (192) for
 the last four (TV Setup's icon is the project's logo: dev/gen/round_icons.py), and the copies: TV Setup's More TV apps row
-(app/tv/.../eco_*.png), TV Home's TV Setup suggestion (suggest_setup.png) and the site's demo (docs/demo/img/banner-*.png). Drawn at 4x and scaled down. Needs Pillow."""
+(app/tvsetup/.../eco_*.png), TV Home's TV Setup suggestion (suggest_setup.png) and the site's demo (docs/demo/img/banner-*.png). Drawn at 4x and scaled down. Needs Pillow."""
 import pathlib
 from PIL import Image, ImageDraw, ImageFont
 
@@ -101,9 +101,10 @@ def font(weight, size):
 
 
 small, big = font("Semibold", 26 * K), font("Bold", 36 * K)
+DIR = {"tv": "tvsetup", "home": "tvhome", "channels": "tvchannels", "games": "tvgames"}   # glyph and eco_*.png names -> app folder
 for app, (name, a, b) in APPS.items():
     mid = tuple((a[i] + b[i]) // 2 for i in range(3))
-    out = ROOT / f"app/{app}/src/main/res/drawable"
+    out = ROOT / f"app/{DIR.get(app, app)}/src/main/res/drawable"
     ban = tile(320 * K, 180 * K, 0, a, b).convert("RGB")
     d = ImageDraw.Draw(ban)
     glyph(app, d, 72 * K, 90 * K, 80 * K, mid)
@@ -112,9 +113,9 @@ for app, (name, a, b) in APPS.items():
     ban = ban.resize((320, 180), Image.LANCZOS)
     ban.save(out / "banner.png")
     if app == "tv":                                                  # TV Home's suggestion tile for it, while it is not installed
-        ban.save(ROOT / "app/home/src/main/res/drawable/suggest_setup.png")
+        ban.save(ROOT / "app/tvhome/src/main/res/drawable/suggest_setup.png")
     if app != "tv":
-        ban.save(ROOT / f"app/tv/src/main/res/drawable/eco_{app}.png")
+        ban.save(ROOT / f"app/tvsetup/src/main/res/drawable/eco_{app}.png")
         icon = tile(192 * K, 192 * K, 44 * K, a, b)
         glyph(app, ImageDraw.Draw(icon), 96 * K, 96 * K, 120 * K, mid)
         icon.resize((192, 192), Image.LANCZOS).save(out / "icon.png")
