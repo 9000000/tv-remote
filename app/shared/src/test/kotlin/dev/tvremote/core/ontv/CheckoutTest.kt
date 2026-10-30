@@ -11,7 +11,7 @@ import org.junit.Test
 class CheckoutTest {
     @Test fun blockListRefusesWhatTheTvOrThisProjectNeeds() {
         val never = listOf(
-            "dev.tvremote.setup", "dev.tvremote.home", "dev.tvremote.channels", "dev.tvremote.games", "dev.tvremote.phone",   // TV Setup, TV Home, TV Channels, TV Games, ours
+            "dev.tvremote.setup", "dev.tvremote.home", "dev.tvremote.channels", "dev.tvremote.games", "dev.tvremote.apps", "dev.tvremote.phone",   // TV Setup, TV Home, Channels, Games, Apps, ours
             "com.google.android.apps.tv.launcherx", "com.google.android.tvlauncher", "com.google.android.tvrecommendations",      // launchers
             "com.google.android.gms", "com.google.android.gsf", "com.android.vending", "com.android.systemui",                    // Play services / Store, system
             "com.android.settings", "com.android.tv.settings", "android", "com.android.providers.settings",                      // settings

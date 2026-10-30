@@ -44,7 +44,7 @@ Everything goes straight from your device to the TV: no cloud, no sign-up. Every
 | A Mac | **Computer app** (*TV Remote*, about 20 MB) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) | |
 | Windows 10 / 11 | **Computer app** | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) | |
 | Linux | **Computer app** | [x64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) | |
-| Optional, on the TV | TV Home · TV Channels · TV Games | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) · [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) · [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) | **`4356026`** · **`8135635`** · **`2294968`** |
+| Optional, on the TV | TV Home · TV Channels · TV Games · TV Apps | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) · [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) · [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) · [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk) | **`4356026`** · **`8135635`** · **`2294968`** |
 
 Codes go in the **Downloader** app on the TV and always point at the latest release.
 
@@ -112,6 +112,7 @@ Free, no ads, each on its own: install from the phone or computer app (TV tab), 
 | 🏠 **TV Home** | A home screen with no ads and no suggested rows (0.2 MB): your apps, widgets, wallpapers, themes, YouTube channels and videos pinned from a link, set up from the phone | [→](https://tvremote.pages.dev/guide?lang=en#home) |
 | 📺 **TV Channels** | Free TV channels from everywhere (iptv-org, VieON), programme guide, reminders, favourites | [→](https://tvremote.pages.dev/guide?lang=en#channels) |
 | 🎮 **TV Games** | Retro and web games, up to 4 phones as pads; card and board games with each hand on its own phone | [→](https://tvremote.pages.dev/guide?lang=en#games) |
+| 📦 **TV Apps** | Free, open-source TV apps (SmartTube, Kodi, VLC, Jellyfin…), each checked against its maker's signature, one press to install | [→](https://tvremote.pages.dev/guide?lang=en#tvapps) |
 
 <details>
 <summary><b>How the apps fit together</b></summary>
@@ -133,6 +134,7 @@ flowchart LR
     home["TV Home<br/><small>home screen</small>"]
     channels["TV Channels<br/><small>channel player</small>"]
     games["TV Games<br/><small>installed over ADB</small>"]
+    tvapps["TV Apps<br/><small>free apps for the TV</small>"]
   end
   subgraph ext["Outside services"]
     github["GitHub"]
@@ -144,12 +146,13 @@ flowchart LR
   clients -.->|"3 command"| home
   clients -.->|"4 play link"| channels
   clients -->|"5 install"| games
-  home ==>|"6 data"| setup
-  setup -.->|"7 ADB"| adb
-  setup -->|"8 helper"| helper
-  clients ==>|"9 APK"| github
-  phone -->|"10 install link"| downloader
-  clients -.->|"11 remote"| tailscale
+  tvapps -->|"6 install"| setup
+  home ==>|"7 data"| setup
+  setup -.->|"8 ADB"| adb
+  setup -->|"9 helper"| helper
+  clients ==>|"10 APK"| github
+  phone -->|"11 install link"| downloader
+  clients -.->|"12 remote"| tailscale
 ```
 <!-- apps-map:end -->
 </details>

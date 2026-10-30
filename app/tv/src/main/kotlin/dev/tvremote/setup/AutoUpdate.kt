@@ -11,6 +11,7 @@ import dev.tvremote.core.ontv.Channels
 import dev.tvremote.core.ontv.Games
 import dev.tvremote.core.ontv.Home
 import dev.tvremote.core.ontv.SetupUpdate
+import dev.tvremote.core.ontv.TvApps
 import dev.tvremote.home.HomeConfig
 import dev.tvremote.update.Release
 import dev.tvremote.update.UpdatePlan
@@ -23,7 +24,7 @@ import java.io.File
  * The install is [SetupUpdate]'s: a new version that does not start well is replaced by the old one, data and all, and never
  * tried again. Android 9 and older cannot put the old one back: there a version that fails is only noted, and the phone or
  * computer app, which sees TV Setup missing or broken, offers to install the next one (SetupBanner).
- * It also updates TV Home, TV Channels and TV Games when they are on the TV ([ownApps], every [UpdatePlan.CHECK], sooner when one
+ * It also updates TV Home, TV Channels, TV Games and TV Apps when they are on the TV ([ownApps], every [UpdatePlan.CHECK], sooner when one
  * had to wait): those carry SelfUpdate but leave a new release to this for [UpdatePlan.GRACE] when HomeInfo "updates" says it is
  * on and has ADB, so their own Update popup is the exception; a copy from before SelfUpdate never asked at all.
  */
@@ -114,10 +115,11 @@ internal class AutoUpdate(private val c: Context, private val version: String, p
             if (!ok) waited = true
             return ok
         }
-        Channels.refresh(); Games.refresh()                           // asked again now, not from the 6 h the pages keep
+        Channels.refresh(); Games.refresh(); TvApps.refresh()                           // asked again now, not from the 6 h the pages keep
         for ((pkg, state, install) in listOf(
             Triple(Channels.PKG, { Channels.state(sh) }, { Channels.install(a, dir, Words.lang) { free(Channels.PKG, true) } }),
-            Triple(Games.PKG, { Games.state(sh) }, { Games.install(a, dir, Words.lang) { free(Games.PKG, true) } }))) {
+            Triple(Games.PKG, { Games.state(sh) }, { Games.install(a, dir, Words.lang) { free(Games.PKG, true) } }),
+            Triple(TvApps.PKG, { TvApps.state(sh) }, { TvApps.install(a, dir, Words.lang) { free(TvApps.PKG, true) } }))) {
             try {
                 val s = state()
                 if (s.optBoolean("installed") && s.has("latest")) {

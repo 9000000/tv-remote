@@ -93,8 +93,8 @@ class MainActivity : Activity() {
     private inner class Eco(val app: dev.tvremote.core.ontv.Bundle.App, banner: Int) :
         dev.tvremote.tvui.TvTile(this@MainActivity, dp(ECO_W), { n -> (n.toFloat() * resources.displayMetrics.density).roundToInt() }) {
         init { name.visibility = View.GONE }                          // what it does goes in the words beside it
-        val key = app.pkg.substringAfterLast('.')                    // home, channels, games
-        val sub = when (key) { "home" -> T("eco.home_sub"); "channels" -> T("eco.channels_sub"); else -> T("eco.games_sub") }   // what it is, beside the banners while focused
+        val key = app.pkg.substringAfterLast('.')                    // home, channels, games, apps
+        val sub = when (key) { "home" -> T("eco.home_sub"); "channels" -> T("eco.channels_sub"); "apps" -> T("eco.tvapps_sub"); else -> T("eco.games_sub") }   // what it is, beside the banners while focused
         override val glassy get() = false                         // no gliding glass on this screen: the ring
         var on = false; private set
         var version = ""; private set                               // on this TV ("" when not)
@@ -290,12 +290,12 @@ class MainActivity : Activity() {
             val row = LinearLayout(this)
             row.clipChildren = false
             row.gravity = Gravity.CENTER_VERTICAL
-            val pics = mapOf("home" to R.drawable.eco_home, "channels" to R.drawable.eco_channels, "games" to R.drawable.eco_games)
+            val pics = mapOf("home" to R.drawable.eco_home, "channels" to R.drawable.eco_channels, "games" to R.drawable.eco_games, "apps" to R.drawable.eco_tvapps)
             eco = dev.tvremote.core.ontv.Bundle.apps.mapNotNull { a -> pics[a.pkg.substringAfterLast('.')]?.let { Eco(a, it) } }   // an app with no banner here yet is left out
             eco.forEachIndexed { i, e -> row.addView(e, LinearLayout.LayoutParams(-2, -2).apply { if (i > 0) leftMargin = dp(14) }) }
-            ecoNote = text("", 12, MUTED, false).also { it.maxLines = 4; it.ellipsize = TextUtils.TruncateAt.END }
-            row.addView(ecoNote, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(18) })
+            ecoNote = text("", 12, MUTED, false).also { it.minLines = 2; it.maxLines = 2; it.ellipsize = TextUtils.TruncateAt.END }   // two lines held: no jump on focus
             left.addView(row, margins(top = 14))
+            left.addView(ecoNote, margins(top = 6))                   // under the banners: four of them leave no room beside
             ecoPaint()
         }
 

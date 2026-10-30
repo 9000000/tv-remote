@@ -4,10 +4,11 @@ Read with the root [AGENTS.md](../../AGENTS.md).
 
 ## Versions and releases
 
-Six numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
+Seven numbers, each bumped only when its part changes: `VERSION` (every release; the tag and the computer app), `app/android/VERSION`, `app/tv/VERSION`,
 `app/home/VERSION` (TV Home: its code changed, `app_paths.py`; its key `app/home/signing.jks`, backed up by `dev/release/keys.sh`),
 `app/channels/VERSION` (TV Channels: `app/channels` changed; `app/channels/signing.jks`, also in `dev/release/keys.sh`),
-`app/games/VERSION` (TV Games: `app/games` or its packed `docs/games/games.json` changed; `app/games/signing.jks`, also in `dev/release/keys.sh`).
+`app/games/VERSION` (TV Games: `app/games` or its packed `docs/games/games.json` changed; `app/games/signing.jks`, also in `dev/release/keys.sh`),
+`app/tvapps/VERSION` (TV Apps: `app/tvapps` changed; its list `docs/apps/apps.json` is read from the site, not packed; `app/tvapps/signing.jks`, also in `dev/release/keys.sh`).
 
 The apps are an alpha: the numbers stay 0.x until the user calls a release 1.0.0. Patch (the default) for fixes and small changes,
 `BUMP=minor` for a release with new features, `BUMP=major` only when the user says so. The numbers restarted at 0.1.0 in October 2026

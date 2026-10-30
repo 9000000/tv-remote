@@ -8,7 +8,7 @@ Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md) (the list; each pa
 |---|---|
 | `app/shared/web/` | the page's rules: `remote.json`, the tab shapes, icons, the page's state, i18n |
 | `app/shared/` | the Kotlin core's packages, other brands (LG, Samsung), the Downloader codes list |
-| `app/android/` `app/tv/` `app/tvkeys/` `app/home/` `app/channels/` `app/games/` `app/desktop/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
+| `app/android/` `app/tv/` `app/tvkeys/` `app/home/` `app/channels/` `app/games/` `app/tvapps/` `app/desktop/` | that app's files (TV Home: which path draws each background; TV Setup: the rules on the TV) |
 | `dev/test/` | emulators by hand, speed budgets, smoke / layout / audit / contrast, profiling a weak TV box (`tvperf/`) |
 | `dev/release/` | the six version numbers, the user guide's `data-v`, release.sh, SHA256SUMS |
 | `dev/workflows/` | step-by-step recipes: add a TV Home widget, a remote key, a `/api` route, a language |
@@ -27,6 +27,7 @@ Remote control for Android TV / Google TV with no server in between. Always call
 | **TV Home** | `app/home` | | the project's launcher (`dev.tvremote.home`), set up from every client over ADB |
 | **TV Channels** | `app/channels` | | iptv-org's free channels; others reach it only by its links (`tvchannels://…`) |
 | **TV Games** | `app/games` | | retro (libretro, GPL-3) and web games, phones as pads, own server on 8780 |
+| **TV Apps** | `app/tvapps` | | free open-source TV apps from a signed list (`docs/apps/`), each pinned to its maker's certificate; also the page's TV Apps card |
 
 What each can do: README "Three apps and a web page" / README.vi "Ba app và một trang web"; keep that table true when a
 feature lands on only some of them. The Phone, TV and Computer apps speak ADB themselves (`Adb.kt`) and push `scrcpy-server`

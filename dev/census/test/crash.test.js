@@ -61,5 +61,5 @@ test("sameSecret", async () => {
 });
 
 test("validateCrash: TV Home, Channels and Games report too", () => {
-  for (const app of ["home", "channels", "games"]) assert.equal(validateCrash(body({ app })).app, app);
+  for (const app of ["home", "channels", "games", "tvapps"]) assert.equal(validateCrash(body({ app })).app, app);
 })

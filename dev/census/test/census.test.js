@@ -72,7 +72,7 @@ test("validate: Android emulators are not counted", () => {
 });
 
 test("validate: TV Home, TV Channels and TV Games are known apps; an unknown one is not", () => {
-  for (const app of ["home", "channels", "games"]) assert.equal(validate(ping({ app })).app, app);
+  for (const app of ["home", "channels", "games", "tvapps"]) assert.equal(validate(ping({ app })).app, app);
   assert.equal(validate(ping({ app: "karaoke" })), null);
 })
 

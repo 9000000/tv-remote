@@ -3,7 +3,7 @@
   "view": { "w": 1000, "h": 560 },
   "groups": [
     { "id": "clients", "name": { "vi": "Ngoài TV", "en": "Outside the TV" }, "x": 20, "y": 30, "w": 230, "h": 300, "lx": 36, "ly": 52 },
-    { "id": "tv", "name": { "vi": "Trên TV", "en": "On the TV" }, "x": 430, "y": 30, "w": 550, "h": 400, "lx": 964, "ly": 52, "end": true },
+    { "id": "tv", "name": { "vi": "Trên TV", "en": "On the TV" }, "x": 430, "y": 30, "w": 550, "h": 420, "lx": 964, "ly": 52, "end": true },
     { "id": "ext", "name": { "vi": "Bên ngoài", "en": "Outside services" }, "x": 20, "y": 440, "w": 390, "h": 100, "lx": 36, "ly": 462 }
   ],
   "nodes": [
@@ -16,6 +16,7 @@
     { "id": "home", "group": "tv", "name": { "vi": "TV Home", "en": "TV Home" }, "sub": { "vi": "màn hình chính", "en": "home screen" }, "logo": "img/app-home.png", "x": 700, "y": 190, "w": 200 },
     { "id": "channels", "group": "tv", "name": { "vi": "TV Channels", "en": "TV Channels" }, "sub": { "vi": "trình phát kênh", "en": "channel player" }, "logo": "img/app-channels.png", "x": 700, "y": 300, "w": 200 },
     { "id": "games", "group": "tv", "name": { "vi": "TV Games", "en": "TV Games" }, "sub": { "vi": "cài qua ADB", "en": "installed over ADB" }, "logo": "img/app-games.png", "x": 460, "y": 350, "w": 170 },
+    { "id": "tvapps", "group": "tv", "name": { "vi": "TV Apps", "en": "TV Apps" }, "sub": { "vi": "app miễn phí cho TV", "en": "free apps for the TV" }, "logo": "img/app-tvapps.png", "x": 700, "y": 380, "w": 200 },
     { "id": "github", "group": "ext", "name": { "vi": "GitHub", "en": "GitHub" }, "glyph": "github", "x": 40, "y": 476, "w": 110, "h": 50 },
     { "id": "downloader", "group": "ext", "name": { "vi": "Downloader", "en": "Downloader" }, "glyph": "download", "x": 164, "y": 476, "w": 110, "h": 50 },
     { "id": "tailscale", "group": "ext", "name": { "vi": "Tailscale", "en": "Tailscale" }, "glyph": "net", "x": 288, "y": 476, "w": 110, "h": 50 }
@@ -46,6 +47,11 @@
       "what": { "vi": "Cài, mở và cập nhật TV Games", "en": "Install, open and update TV Games" },
       "how": { "vi": "Cài APK qua ADB", "en": "Installing the APK over ADB" },
       "missing": { "vi": "Thẻ ghi “sắp có”. Chưa có mã Downloader, nên cần bật ADB trên TV trước.", "en": "The card says “coming soon”. There is no Downloader code yet, so ADB must be on first." } },
+    { "from": "tvapps", "to": "setup", "p": [902, 404, 902, 104], "dir": "v", "bend": 50, "told": "ok",
+      "tag": { "vi": "cài", "en": "install" },
+      "what": { "vi": "Cài app trong danh sách mà TV không hỏi", "en": "Installs an app from the list with no question on the TV" },
+      "how": { "vi": "TV Apps nhờ TV Setup cài qua ADB trên cùng TV", "en": "TV Apps asks TV Setup on the same TV to install it over ADB" },
+      "missing": { "vi": "Android hỏi trước mỗi lần cài, sau khi cho phép TV Apps cài app.", "en": "Android asks before each install, once TV Apps is allowed to install apps." } },
     { "from": "home", "to": "setup", "p": [800, 190, 800, 126], "dir": "v", "told": "silent",
       "tag": { "vi": "dữ liệu", "en": "data" },
       "what": { "vi": "Nút nguồn; thẻ dùng app, hẹn giờ, CPU; huy hiệu trên ô app của TV Home", "en": "The power button; usage, timer and CPU cards; badges on TV Home's app tiles" },
@@ -83,6 +89,7 @@
     { "app": "home", "code": "4356026", "other": { "vi": "Tab TV trên trang web, hoặc kho launcher trong TV Setup", "en": "The TV tab on the web page, or the launcher store in TV Setup" } },
     { "app": "channels", "code": "8135635", "other": { "vi": "Tab TV: “Cài TV Channels” (tự cấp quyền hiện trên app khác)", "en": "The TV tab: “Install TV Channels” (grants the draw-over-apps permission itself)" } },
     { "app": "games", "code": "2294968", "other": { "vi": "Chỉ từ thẻ “TV games” trong tab TV, cần ADB", "en": "Only from the “TV games” card in the TV tab, which needs ADB" } },
+    { "app": "tvapps", "code": null, "other": { "vi": "TV Setup tự cài khi có ADB, hoặc từ hàng app TV trong TV Setup", "en": "TV Setup installs it once it has ADB, or from its row of TV apps" } },
     { "app": "desktop", "code": null, "other": { "vi": "Tệp zip ở trang tải về", "en": "The zip on the download page" } }
   ]
 }

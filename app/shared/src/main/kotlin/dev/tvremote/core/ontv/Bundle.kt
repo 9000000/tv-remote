@@ -6,7 +6,7 @@ import java.io.File
 import java.io.IOException
 
 /**
- * The project's TV apps TV Setup puts on the TV by itself once it has ADB: the site and its ads show TV Home, Channels and Games,
+ * The project's TV apps TV Setup puts on the TV by itself once it has ADB: the site and its ads show TV Home, Channels, Games and Apps,
  * while the install guide only installs TV Setup, and nobody went looking for the rest (the user, 2026-10-25). TV Setup then
  * swaps the home to TV Home once, behind the TV's own Keep / Go back question (MainActivity.homeOnce).
  */
@@ -19,7 +19,8 @@ object Bundle {
     val apps = listOf(
         App("TV Home", HomeConfig.PKG, "home", Launchers.SELF_APK) { a, d, l -> home.install(a, d, l) },
         App("TV Channels", Channels.PKG, "channels", Channels.APK) { a, d, l -> Channels.install(a, d, l) },
-        App("TV Games", Games.PKG, "games", Games.APK) { a, d, l -> Games.install(a, d, l) })
+        App("TV Games", Games.PKG, "games", Games.APK) { a, d, l -> Games.install(a, d, l) },
+        App("TV Apps", TvApps.PKG, "tvapps", TvApps.APK) { a, d, l -> TvApps.install(a, d, l) })
 
     /** The ones not on the TV, in one shell call. */
     @Throws(IOException::class)

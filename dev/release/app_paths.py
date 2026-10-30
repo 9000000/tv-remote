@@ -3,7 +3,7 @@
 app compiles (a fix in app/shared/src/tvui reached TV Home but release.sh watched only app/shared/src/home, issue #1), nor bump an
 app for code it never compiles (the same fix would have made a second phone app version on one day).
 
-  dev/release/app_paths.py <android|tv|home|channels|games|desktop>   -> git pathspecs, one per line
+  dev/release/app_paths.py <android|tv|home|channels|games|tvapps|desktop>   -> git pathspecs, one per line
 
 android / tv build on :shared, so they take app/shared whole, less each app/shared/src/<dir> that neither they nor :shared name.
 desktop (the computer app, JVM, no :shared) takes every app/shared/... it names, the web page and the words too.

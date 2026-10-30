@@ -48,7 +48,7 @@ Mọi thứ đi thẳng từ máy bạn tới TV: không qua đám mây, không 
 | Mac | **App máy tính** (*TV Remote*, khoảng 20 MB) | [TV-Remote-mac.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-mac.zip) | |
 | Windows 10 / 11 | **App máy tính** | [TV-Remote-windows-x64.zip](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-windows-x64.zip) | |
 | Linux | **App máy tính** | [x64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-x64.tar.gz) · [arm64](https://github.com/HoangTran0410/tv-remote/releases/latest/download/TV-Remote-linux-arm64.tar.gz) | |
-| Tùy chọn, trên TV | TV Home · TV Channels · TV Games | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) · [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) · [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) | **`4356026`** · **`8135635`** · **`2294968`** |
+| Tùy chọn, trên TV | TV Home · TV Channels · TV Games · TV Apps | [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk) · [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk) · [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk) · [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk) | **`4356026`** · **`8135635`** · **`2294968`** |
 
 Mã nhập trong app **Downloader** trên TV, luôn trỏ tới bản mới nhất.
 
@@ -116,6 +116,7 @@ Miễn phí, không quảng cáo, cài riêng từng cái: từ app điện tho�
 | 🏠 **TV Home** | Màn hình chính không quảng cáo, không hàng gợi ý (0,2 MB): app của bạn, widget, hình nền, chủ đề, ghim kênh / video YouTube từ link, chỉnh từ điện thoại | [→](https://tvremote.pages.dev/guide#home) |
 | 📺 **TV Channels** | Kênh truyền hình miễn phí khắp nơi (iptv-org, VieON), lịch phát sóng, nhắc giờ, kênh yêu thích | [→](https://tvremote.pages.dev/guide#channels) |
 | 🎮 **TV Games** | Game retro và web, tối đa 4 điện thoại làm tay cầm; bài và cờ, bài của ai nằm trên điện thoại người đó | [→](https://tvremote.pages.dev/guide#games) |
+| 📦 **TV Apps** | App miễn phí, mã nguồn mở cho TV (SmartTube, Kodi, VLC, Jellyfin…), kiểm đúng chữ ký nhà làm app, bấm một lần là cài | [→](https://tvremote.pages.dev/guide#tvapps) |
 
 <details>
 <summary><b>Các app kết nối với nhau thế nào</b></summary>
@@ -137,6 +138,7 @@ flowchart LR
     home["TV Home<br/><small>màn hình chính</small>"]
     channels["TV Channels<br/><small>trình phát kênh</small>"]
     games["TV Games<br/><small>cài qua ADB</small>"]
+    tvapps["TV Apps<br/><small>app miễn phí cho TV</small>"]
   end
   subgraph ext["Bên ngoài"]
     github["GitHub"]
@@ -148,12 +150,13 @@ flowchart LR
   clients -.->|"3 lệnh"| home
   clients -.->|"4 phát link"| channels
   clients -->|"5 cài"| games
-  home ==>|"6 dữ liệu"| setup
-  setup -.->|"7 ADB"| adb
-  setup -->|"8 helper"| helper
-  clients ==>|"9 APK"| github
-  phone -->|"10 link cài"| downloader
-  clients -.->|"11 từ xa"| tailscale
+  tvapps -->|"6 cài"| setup
+  home ==>|"7 dữ liệu"| setup
+  setup -.->|"8 ADB"| adb
+  setup -->|"9 helper"| helper
+  clients ==>|"10 APK"| github
+  phone -->|"11 link cài"| downloader
+  clients -.->|"12 từ xa"| tailscale
 ```
 <!-- apps-map:end -->
 </details>

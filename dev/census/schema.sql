@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS tvs_model ON tvs (brand, model);
 -- Fed by the ping's upsert (it returns a row only for the first counted ping of the day), for the growth chart.
 CREATE TABLE IF NOT EXISTS days (
   day     TEXT NOT NULL,       -- YYYY-MM-DD (UTC)
-  app     TEXT NOT NULL,       -- setup | phone | pc | home | channels | games
+  app     TEXT NOT NULL,       -- setup | phone | pc | home | channels | games | tvapps
   active  INTEGER,             -- NULL on days before the table existed (only `new` could be rebuilt from tvs.first)
   new     INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (day, app)
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS summary (
 CREATE TABLE IF NOT EXISTS crashes (
   sig     TEXT NOT NULL,
   v       TEXT NOT NULL,
-  app     TEXT NOT NULL,       -- setup | phone | pc | home | channels | games
+  app     TEXT NOT NULL,       -- setup | phone | pc | home | channels | games | tvapps
   loc     TEXT NOT NULL,       -- kotlin | page
   kind    TEXT NOT NULL,       -- exception class / error name
   msg     TEXT, stack TEXT,

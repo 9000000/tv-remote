@@ -99,7 +99,7 @@ object Store {
         return true
     }
     /** The project's own TV apps: first in the dock when they come, so a person sees what goes with TV Home (the user, 2026-10-25). */
-    val OWN = listOf("dev.tvremote.setup", "dev.tvremote.games", "dev.tvremote.channels")
+    val OWN = listOf("dev.tvremote.setup", "dev.tvremote.games", "dev.tvremote.channels", "dev.tvremote.apps")
 
     /**
      * Each of [OWN] installed, once: put in the dock after the others of [OWN] at its front (the grid's front when the dock is full),

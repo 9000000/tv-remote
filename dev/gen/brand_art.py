@@ -114,8 +114,7 @@ for app, (name, a, b) in APPS.items():
     if app == "tv":                                                  # TV Home's suggestion tile for it, while it is not installed
         ban.save(ROOT / "app/home/src/main/res/drawable/suggest_setup.png")
     if app != "tv":
-        if app != "tvapps":                                          # not in TV Setup's More TV apps row (yet)
-            ban.save(ROOT / f"app/tv/src/main/res/drawable/eco_{app}.png")
+        ban.save(ROOT / f"app/tv/src/main/res/drawable/eco_{app}.png")
         icon = tile(192 * K, 192 * K, 44 * K, a, b)
         glyph(app, ImageDraw.Draw(icon), 96 * K, 96 * K, 120 * K, mid)
         icon.resize((192, 192), Image.LANCZOS).save(out / "icon.png")

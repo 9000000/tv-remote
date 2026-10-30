@@ -42,7 +42,7 @@
     });
     map.edges.forEach(function(e, i){
       var p = e.p, b = e.bend || 0, d;
-      if (e.dir === "v") d = "M" + p[0] + " " + p[1] + " C" + p[0] + " " + (p[1] + (p[3] - p[1]) / 2) + " " + p[2] + " " + (p[1] + (p[3] - p[1]) / 2) + " " + p[2] + " " + p[3];
+      if (e.dir === "v") d = "M" + p[0] + " " + p[1] + " C" + (p[0] + b) + " " + (p[1] + (p[3] - p[1]) / 2) + " " + (p[2] + b) + " " + (p[1] + (p[3] - p[1]) / 2) + " " + p[2] + " " + p[3];   // bend: sideways
       else d = "M" + p[0] + " " + p[1] + " C" + (p[0] + (p[2] - p[0]) / 2) + " " + (p[1] + b) + " " + (p[0] + (p[2] - p[0]) / 2) + " " + (p[3] + b) + " " + p[2] + " " + p[3];
       s += '<path class="e ' + e.told + '" data-i="' + (i + 1) + '" d="' + d + '" marker-end="url(#am-' + e.told + ')"/><path class="hit" data-i="' + (i + 1) + '" tabindex="0" role="button" d="' + d + '"/>';
     });
@@ -62,7 +62,7 @@
       s += "</g>";
     });
     map.edges.forEach(function(e, i){
-      var p = e.p, mx = (p[0] + p[2]) / 2, my = (p[1] + p[3]) / 2 + (e.dir === "v" ? 0 : 0.75 * (e.bend || 0));
+      var p = e.p, mx = (p[0] + p[2]) / 2 + (e.dir === "v" ? 0.75 * (e.bend || 0) : 0), my = (p[1] + p[3]) / 2 + (e.dir === "v" ? 0 : 0.75 * (e.bend || 0));
       ["vi", "en"].forEach(function(l){
         var t = (i + 1) + " " + e.tag[l], w = Math.round(14 + 6.4 * t.length);
         s += '<g class="tag ' + l + '" data-i="' + (i + 1) + '"><rect x="' + Math.round(mx - w / 2) + '" y="' + (my - 9) + '" width="' + w + '" height="18" rx="5"/><text x="' + mx + '" y="' + (my + 4) + '" text-anchor="middle" fill="' + COLOR[e.told] + '">' + esc(t) + "</text></g>";
