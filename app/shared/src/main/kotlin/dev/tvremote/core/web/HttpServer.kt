@@ -89,6 +89,8 @@ class HttpServer(private val handler: Handler) {
         var body = ByteArray(0)
         var stream: Body? = null                                      // instead of body; length < 0 = unknown, sent until the connection closes
         var length = -1L
+        /** A file the person asked for (a download, a video played from the TV): a paused or backgrounded player stops reading for minutes, so the stall limit is [fileStallMs], not [writeStallMs]. */
+        var patient = false
         var sendBuffer = 0                                            // > 0: the socket's send buffer, kept small for a live stream (Feeds)
         val headers: MutableMap<String, String> = HashMap()
 
@@ -170,7 +172,7 @@ class HttpServer(private val handler: Handler) {
                 if (len >= 0) h.append("Content-Length: ").append(len).append("\r\n")
                 for ((k, v) in out.headers) h.append(k).append(": ").append(v).append("\r\n")
                 if (out.sendBuffer > 0) try { sock.sendBufferSize = out.sendBuffer } catch (ignored: Exception) { }
-                val o = Stall(sock)                               // a browser that stops reading must not hold this thread and slot for ever
+                val o = Stall(sock, out.patient)                               // a browser that stops reading must not hold this thread and slot for ever
                 try {
                     o.write(bytes(h.append("\r\n").toString()))
                     if (stream != null) stream.write(o) else o.write(out.body)
@@ -194,7 +196,7 @@ class HttpServer(private val handler: Handler) {
      * (a handler slow to make its next bytes), only a write call that is blocked; big writes go in 16 KB pieces so a slow
      * reader that keeps taking bytes is never cut.
      */
-    private class Stall(private val sock: Socket) : OutputStream() {
+    private class Stall(private val sock: Socket, private val patient: Boolean = false) : OutputStream() {
         private val o = sock.getOutputStream()
         @Volatile var since = 0L                                      // nanoTime when the piece being written began, 0 = not writing
         @Volatile var cut = false
@@ -217,7 +219,8 @@ class HttpServer(private val handler: Handler) {
 
         fun done() { live.remove(this) }
 
-        fun check(now: Long, limit: Long) {
+        fun check(now: Long) {
+            val limit = (if (patient) fileStallMs else writeStallMs) * 1_000_000L
             val s = since
             if (s != 0L && now - s > limit) { cut = true; try { sock.close() } catch (ignored: Exception) { } }
         }
@@ -227,7 +230,11 @@ class HttpServer(private val handler: Handler) {
         /** How long one write may be blocked before the connection is cut (a variable so a test need not wait 30 s). */
         @Volatile internal var writeStallMs = 30_000L
 
-        private val live: MutableSet<Stall> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+        /** The same for a reply marked [Response.patient]. There is no Range support, so a cut file is lost, not resumed. */
+        @Volatile internal var fileStallMs = 600_000L
+
+        // not ConcurrentHashMap.newKeySet(): API 24, and minSdk is 21 (:shared:lintDebug NewApi, the companion would crash on Android 5/6)
+        private val live: MutableSet<Stall> = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<Stall, Boolean>())
         private val armed = AtomicBoolean(false)
         // one thread for all connections, started on the first reply and gone again 10 s after the last one: nothing runs with no connection
         private val sweeper: ScheduledThreadPoolExecutor by lazy {
@@ -245,7 +252,7 @@ class HttpServer(private val handler: Handler) {
             val every = (writeStallMs / 4).coerceIn(50, 5000)
             sweeper.schedule({
                 val now = System.nanoTime()
-                for (c in live) c.check(now, writeStallMs * 1_000_000L)
+                for (c in live) c.check(now)
                 if (live.isEmpty()) { armed.set(false); if (live.isNotEmpty() && armed.compareAndSet(false, true)) sweep() } else sweep()
             }, every, TimeUnit.MILLISECONDS)
         }

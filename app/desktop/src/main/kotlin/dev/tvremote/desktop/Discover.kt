@@ -5,6 +5,7 @@ import dev.tvremote.core.remote.Ssdp
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.IOException
 import java.net.ConnectException
 import java.net.Inet4Address
 import java.net.InetSocketAddress
@@ -51,11 +52,15 @@ object Discover {
     class Peer(val name: String, val lan: String)
 
     /** Online Android peers on the tailnet, by Tailscale IP; [Peer.lan]: its home IP, when this computer reaches it directly there. */
-    fun tailscalePeers(): Map<String, Peer> = try {
-        val p = ProcessBuilder(TAILSCALE, "status", "--json").redirectError(ProcessBuilder.Redirect.DISCARD).also { it.environment()["TAILSCALE_BE_CLI"] = "1" }.start()
-        // waited first: a stuck CLI must not hold the scan in a read (its JSON is small, it fits the pipe meanwhile)
-        if (!p.waitFor(8, TimeUnit.SECONDS)) { p.destroyForcibly(); throw java.io.IOException("tailscale status timed out") }
-        val text = p.inputStream.bufferedReader().readText()
+    fun tailscalePeers(cli: String = TAILSCALE, waitSeconds: Long = 8): Map<String, Peer> = try {
+        val p = ProcessBuilder(cli, "status", "--json").redirectError(ProcessBuilder.Redirect.DISCARD).also { it.environment()["TAILSCALE_BE_CLI"] = "1" }.start()
+        // read while it runs, waited after: a JSON bigger than the pipe (many peers) would block the CLI in write() until the wait
+        // ran out, and the scan would find no peers; a stuck CLI is still cut after the wait
+        val buf = java.io.ByteArrayOutputStream()
+        val reader = Thread { try { p.inputStream.copyTo(buf) } catch (ignored: IOException) { } }.apply { isDaemon = true; start() }
+        if (!p.waitFor(waitSeconds, TimeUnit.SECONDS)) { p.destroyForcibly(); throw IOException("tailscale status timed out") }
+        reader.join(2000)
+        val text = buf.toString("UTF-8")
         val peers = JSONObject(text).optJSONObject("Peer") ?: JSONObject()
         peers.keys().asSequence().mapNotNull { peers.optJSONObject(it) }
             .filter { it.optString("OS") == "android" && it.optBoolean("Online") && (it.optJSONArray("TailscaleIPs")?.length() ?: 0) > 0 }

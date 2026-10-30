@@ -76,16 +76,21 @@ function mark(src, j) {
 }
 // `stop`: what ■ Dừng does for this job (abort the upload, tell the server to end the install or download); without it no button.
 // Gives back its row, so a job can put its own buttons there (a launcher's Keep / Go back).
+// A job's title and result in the viewer's language from the parts the server sends (kind, name, dest); an id T does not have
+// yet, or an older server, keeps the title / msg as sent.
+const JOB_T = { download: 'files.job_download', install: 'files.install_name', upload: 'files.job_upload' };
+function jobTitle(j) { const k = JOB_T[j.kind]; return k && j.name ? T(k, { name: j.name }) : j.title; }
+function jobMsg(j) { const w = j.status === 'done' && j.dest ? T('files.saved_to', { dest: j.dest }) : 'files.saved_to'; return w !== 'files.saved_to' ? w : j.msg; }
 function showJob(j, label, stop) {
   let row = jobEls[j.id];
   if (!row) {
     put('#jobscard', 'hidden', false); $('#jobscard').open = true;
     row = jobEls[j.id] = { root: el('div', { className: 'job' }), msg: el('div', { className: 'msg' }), bar: el('i'), stop: null };
     if (stop) row.stop = el('button', { className: 'small', type: 'button', textContent: T('page.stop'), title: T('files.stop_this'), onclick: (e) => { e.currentTarget.disabled = true; row.msg.textContent = T('files.stopping'); stop(); } });
-    row.root.append(el('div', { className: 'jobhead' }, el('div', { textContent: label || j.title }), row.stop), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root);
+    row.root.append(el('div', { className: 'jobhead' }, el('div', { textContent: label || jobTitle(j) }), row.stop), row.msg, el('div', { className: 'bar' }, row.bar)); $('#jobs').prepend(row.root);
   }
   if (row.stop) row.stop.hidden = j.status !== 'running';
-  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' && !j.said ? T('files.stopped') : j.msg; row.bar.style.width = j.pct + '%';   // said: the job's own words for how it ended
+  row.root.className = 'job ' + j.status; row.msg.textContent = j.status === 'cancelled' && !j.said ? T('files.stopped') : jobMsg(j); row.bar.style.width = j.pct + '%';   // said: the job's own words for how it ended
   row.bar.parentElement.classList.toggle('busy', j.status === 'running' && !(j.pct >= 0));   // size unknown: moving, not stuck at 0
   row.status = j.status; row.pct = j.pct;
   // folded away, the title still tells how far things are
@@ -111,7 +116,7 @@ async function trackJob(j, label, after, src) {
   }
   mark(src, j);
   if (j.status === 'error') { j.msg = friendly(j.msg); showJob(j, label); }
-  toast(j.status === 'done' ? T('files.done_msg', { msg: j.msg }) : j.status === 'cancelled' ? T('files.stopped') : T('files.error_msg', { msg: j.msg }));
+  toast(j.status === 'done' ? T('files.done_msg', { msg: jobMsg(j) }) : j.status === 'cancelled' ? T('files.stopped') : T('files.error_msg', { msg: j.msg }));
   if (j.status === 'done' && after) after(j);
   if (j.status === 'done' && filesLoaded) loadFiles(cwd);
   if (j.status === 'done') { appsStale(); if (/install/.test(j.title)) loadQuick(); }
@@ -163,7 +168,7 @@ async function upload(file, kind, dest, after, src) {
 // "Cast" a file: copy it to the TV's Download folder, then have the TV open it with its own viewer or player.
 $('#castfile').addEventListener('change', (e) => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  upload(f, 'file', '/sdcard/Download', async (j) => { const p = /^saved (.+)$/.exec(j.msg || ''); if (await api('/api/file/open', { path: p ? p[1] : '/sdcard/Download/' + f.name })) toast(T('files.opened_on_tv', { name: f.name })); });
+  upload(f, 'file', '/sdcard/Download', async (j) => { const p = /^saved (.+)$/.exec(j.msg || ''); if (await api('/api/file/open', { path: j.dest || (p ? p[1] : '/sdcard/Download/' + f.name) })) toast(T('files.opened_on_tv', { name: f.name })); });
 });
 async function startJob(path, data, label, src) { if (src) src.dataset.busy = '⏳'; const r = await api(path, data); if (r) trackJob(r, label, undefined, src); else mark(src, {}); }
 $('#fetchf').addEventListener('submit', (e) => { e.preventDefault(); const u = $('#fetchurl').value.trim(); if (u) { startJob('/api/fetch', { url: u, dest: '/sdcard/Download' }); $('#fetchurl').value = ''; } });

@@ -171,7 +171,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val adb = link.get()
                     val size = adb.shell("stat -c %s " + Adb.q(path) + " 2>/dev/null").trim()
                     if (!size.matches(DIGITS)) throw IOException("home:media_missing")
-                    return HttpServer.Response.stream(if (path.endsWith(".mp4")) "video/mp4" else "image/jpeg", size.toLong()) { o -> pipe(adb.exec("cat " + Adb.q(path) + " 2>/dev/null"), o) }
+                    return HttpServer.Response.stream(if (path.endsWith(".mp4")) "video/mp4" else "image/jpeg", size.toLong()) { o -> pipe(adb.exec("cat " + Adb.q(path) + " 2>/dev/null"), o) }.also { it.patient = true }
                 }
                 "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
@@ -787,7 +787,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     private fun backup(pkg: String): HttpServer.Response {
         TvShell.backup(pkg)                                           // checks the name before it reaches a header
         val adb = link.get()
-        val out = HttpServer.Response.stream("application/x-tar", -1) { o -> pipe(adb.exec(TvShell.backup(pkg)), o) }
+        val out = HttpServer.Response.stream("application/x-tar", -1) { o -> pipe(adb.exec(TvShell.backup(pkg)), o) }.also { it.patient = true }
         out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''$pkg-backup.tar"   // the phone's WebView reads this form
         return out
     }
@@ -802,6 +802,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val out = HttpServer.Response.stream(if (inline) mime(path).replace("*/*", "application/octet-stream") else "application/octet-stream", size.toLong()) { o ->
             pipe(adb.exec("cat " + Adb.q(path) + " 2>/dev/null"), o)
         }
+        out.patient = true
         if (!inline) out.headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + URLEncoder.encode(path.substring(path.lastIndexOf('/') + 1), "UTF-8").replace("+", "%20")
         return out
     }
@@ -830,8 +831,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
         val adb = link.get()
         val cancel = current.get()
         if (length > 0) ensureRoom(dest.substringBeforeLast('/', "/").ifEmpty { "/" }, length, factor)
-        val existed = length < 0 && try { adb.shell("test -e " + Adb.q(dest) + " && echo y").trim() == "y" } catch (e: Exception) { true }
         try {
+            var sent = 0L
             val feed = { s: Adb.Stream ->
                 cancel?.onStop { s.close() }                              // a write waiting on a slow TV lets go at once
                 val b = ByteArray(65536)
@@ -841,26 +842,35 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                     val n = input.read(b, 0, if (length < 0) b.size else minOf(b.size.toLong(), length - done).toInt())
                     if (n < 0) break
                     s.write(b, 0, n)
-                    done += n
+                    done += n; sent = done
                     if (job != null && length > 0) try { job.put("pct", (done * 90 / length).toInt()) } catch (ignored: Exception) { }
                 }
                 if (length >= 0 && done < length) throw IOException("upload cut short")
             }
             if (length >= 0) adb.put(dest, length, true, null, feed)                  // the size known: the stream stays open until it is all there
-            else adb.writeTo(dest).use(feed)
-            val want = if (length >= 0) length.toString() else null       // cat finishes writing shortly after the stream closes
+            else {                                                    // chunked: aside too, so a failure never truncates a good file at dest
+                adb.writeTo("$dest.part").use(feed)
+                var stored = false
+                for (i in 0 until 40) {                               // cat finishes writing shortly after the stream closes
+                    cancel?.check()
+                    if (adb.shell("stat -c %s " + Adb.q("$dest.part") + " 2>/dev/null").trim() == sent.toString()) { stored = true; break }
+                    try { Thread.sleep(150) } catch (e: InterruptedException) { break }
+                }
+                if (!stored) throw IOException("the TV did not store the whole file (is its storage full?)")
+                if (!adb.shell("mv -f " + Adb.q("$dest.part") + " " + Adb.q(dest) + " && echo ok").trim().endsWith("ok")) throw IOException("the TV could not store the file")
+                return
+            }
+            val want = length.toString()
             for (i in 0 until 40) {
                 cancel?.check()
                 val got = adb.shell("stat -c %s " + Adb.q(dest) + " 2>/dev/null").trim()
-                if (if (want == null) got.matches(DIGITS) && i > 1 else got == want) return
+                if (got == want) return
                 try { Thread.sleep(150) } catch (e: InterruptedException) { break }
             }
-            if (want != null) throw IOException("the TV did not store the whole file (is its storage full?)")
+            throw IOException("the TV did not store the whole file (is its storage full?)")
         } catch (e: Exception) {                                          // stopped, cut, or the TV full: nothing half written is left
-            // the known size goes to dest.part and moves in whole, so a good file already at dest is not ours to delete; a chunked
-            // write goes straight to dest, which is only ours when it was not there before
-            val junk = if (length >= 0) "$dest.part" else if (existed) null else dest
-            if (junk != null) try { Thread.sleep(200); adb.shell("rm -f " + Adb.q(junk)) } catch (ignored: Exception) { }
+            // every upload goes to dest.part and moves in whole, so a good file already at dest is never ours to delete or truncate
+            try { Thread.sleep(200); adb.shell("rm -f " + Adb.q("$dest.part")) } catch (ignored: Exception) { }
             if (cancel?.stopped == true && e !is Cancelled) throw Cancelled()   // the Stop broke the stream first: still a stop, not an error
             throw e
         }
@@ -892,7 +902,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
      */
     private fun upload(r: HttpServer.Request): JSONObject {
         val name = safeName(r.q("name"))
-        val done = { title: String, msg: String -> JSONObject().put("id", "u" + nextJob.getAndIncrement()).put("title", title).put("status", "done").put("pct", 100).put("msg", msg) }
+        // kind + name (+ dest): what the page words in its own language (title and msg stay for older pages and the Phone app)
+        val done = { title: String, msg: String -> JSONObject().put("id", "u" + nextJob.getAndIncrement()).put("title", title).put("status", "done").put("pct", 100).put("msg", msg)
+            .put("kind", title.substringBefore(' ')).put("name", name) }
         val uid = r.q("uid").take(64)                                 // the page's name for this upload: POST /api/cancel {id} stops it
         val cancel = Cancel()
         if (uid.isNotEmpty()) stops[uid] = cancel
@@ -904,7 +916,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
             if (r.q("kind") == "welcome") { welcomeUpload(r, name); return done("welcome $name", Words.get(r.lang, "welcome.saved")) }
             val dest = safePath(r.q("dest")) + "/" + name
             push(r.body, r.length, dest, null)
-            return done("upload $name", "saved $dest")
+            return done("upload $name", "saved $dest").put("dest", dest)
         } finally {
             current.remove()
             if (uid.isNotEmpty()) stops.remove(uid)
@@ -953,8 +965,11 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     // ---------------------------------------------------------------- installs and downloads (jobs the page polls)
     private fun interface Work { fun run(job: JSONObject): String }
 
-    private fun job(title: String, work: Work): JSONObject {
+    /** [kind] + [name]: the same title as structured parts for the page to word (files.job_<kind>), the title staying for old pages. */
+    private fun job(title: String, work: Work): JSONObject = job(title, null, null, work)
+    private fun job(title: String, kind: String?, name: String?, work: Work): JSONObject {
         val j = JSONObject().put("id", nextJob.getAndIncrement().toString()).put("title", title).put("status", "running").put("pct", 0).put("msg", "")
+        if (kind != null) j.put("kind", kind).put("name", name ?: "")
         jobs[j.getString("id")] = j
         while (jobs.size > 20) jobs.remove(jobs.keys.iterator().next())
         val what = title.substringBefore(' ').takeIf { it in setOf("install", "update", "tailscale") } ?: "work"
@@ -1020,7 +1035,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     }
 
     private fun installPath(path: String): JSONObject =
-        job("install " + path.substring(path.lastIndexOf('/') + 1)) { j ->
+        job("install " + path.substring(path.lastIndexOf('/') + 1), "install", path.substring(path.lastIndexOf('/') + 1)) { j ->
             j.put("pct", 50)
             sh("stat -c %s " + Adb.q(path) + " 2>/dev/null").trim().toLongOrNull()?.let { ensureRoom("/data", it, 1) }   // pm installs a copy of it
             pmInstall(path)
@@ -1166,7 +1181,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     /** This device downloads the link and passes it on to the TV, into Download or straight into the installer. */
     private fun fetch(url: String, install: Boolean): JSONObject {
         if (!url.matches(Regex("(?i)https?://\\S+"))) throw IllegalArgumentException("only http/https links")
-        return job((if (install) "install " else "download ") + (if (url.length > 60) url.substring(0, 60) else url)) { j ->
+        val shown = if (url.length > 60) url.substring(0, 60) else url
+        return job((if (install) "install " else "download ") + shown, if (install) "install" else "download", shown) { j ->
             // TV Setup itself, the first time: the release's file, checked against its signed SHA256SUMS like every update
             val setup = if (install && url.endsWith("/releases/latest/download/tv-setup.apk"))
                 Release.newer("0", "tv", "tv-setup.apk") ?: throw IOException(Release.UNSIGNED) else null
@@ -1185,7 +1201,7 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 val md = MessageDigest.getInstance("SHA-256")
                 DigestInputStream(c.inputStream, md).use { push(it, len, dest, j, if (install) 2 else 1) }
                 if (setup != null) try { setup.check(md) } catch (e: IOException) { sh("rm -f $TMP_APK"); throw e }
-                if (!install) "saved $dest"
+                if (!install) { j.put("dest", dest); "saved $dest" }
                 else try { pmInstall(dest) } finally { sh("rm -f $TMP_APK") }
             } finally {
                 c.disconnect()

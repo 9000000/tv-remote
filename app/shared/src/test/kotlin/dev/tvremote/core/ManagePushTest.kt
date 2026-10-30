@@ -28,6 +28,7 @@ class ManagePushTest {
     /** A TV that answers the ADB packets in memory; [shells] collects the shell commands it was asked. */
     private class FakeTv(val exists: Boolean) {
         val shells = CopyOnWriteArrayList<String>()
+        val services = CopyOnWriteArrayList<String>()
         val toClient = LinkedBlockingQueue<ByteArray>()
         private var remote = 100
         private val ids = HashMap<Int, Int>()
@@ -45,6 +46,7 @@ class ManagePushTest {
                 when (cmd) {
                     0x4e45504f -> {                                   // OPEN: a shell answers and ends, an exec stays open
                         val svc = String(data).trimEnd('\u0000')
+                        services.add(svc)
                         val r = remote++
                         ids[a0] = r
                         toClient.add(pack(0x59414b4f, r, a0))
@@ -104,10 +106,17 @@ class ManagePushTest {
     }
 
     @Test fun chunkedFailureKeepsAFileThatWasThereBefore() {
-        assertFalse(upload(FakeTv(exists = true), -1, "/sdcard/Download/b.bin"))
+        val tv = FakeTv(exists = true)
+        assertFalse(upload(tv, -1, "/sdcard/Download/b.bin"))
+        assertTrue(tv.shells.contains("rm -f " + Adb.q("/sdcard/Download/b.bin.part")))      // no half file stays
+        assertFalse("no probe round trip", tv.shells.any { it.startsWith("test -e") })
+        assertTrue("written aside, never straight to dest", tv.services.contains("exec:cat > " + Adb.q("/sdcard/Download/b.bin.part")))
+        assertFalse(tv.services.contains("exec:cat > " + Adb.q("/sdcard/Download/b.bin")))
     }
 
-    @Test fun chunkedFailureRemovesWhatItStartedItself() {
-        assertTrue(upload(FakeTv(exists = false), -1, "/sdcard/Download/c.bin"))
+    @Test fun chunkedFailureLeavesNoPartFile() {
+        val tv = FakeTv(exists = false)
+        assertFalse(upload(tv, -1, "/sdcard/Download/c.bin"))
+        assertTrue(tv.shells.contains("rm -f " + Adb.q("/sdcard/Download/c.bin.part")))
     }
 }
