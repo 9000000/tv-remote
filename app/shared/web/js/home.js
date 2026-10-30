@@ -33,7 +33,6 @@ const homeKeyName = (code) => HOME_KEY_WORDS[code] ? T(HOME_KEY_WORDS[code]) : S
 const homeThemeName = (t) => (t.names || {})[window.LANG] || (t.names || {}).en || t.id;   // a ready-made theme's name in the page's language (the signed list's)
 const HOME_THEME_KEYS = ['wall', 'walls', 'wurl', 'wmode', 'wsnap', 'wkeep', 'wevery', 'shade', 'wfit', 'widgets', 'wsize', 'wopt', 'cols', 'rows', 'focus', 'motion', 'anim', 'clock24', 'greet'];   // HomeConfig.THEME_KEYS
 const HOME_THEME_FILE_MAX = 32768;                                 // a theme file is a few KB; more is not one
-const homeOwnWall = (k) => /^(photo\d*|vid:.*)$/.test(String(k));    // the person's own picture or video: it stays on the TV, a file cannot carry it
 const HOME_THEMES_MAX = 12;                                           // HomeConfig.THEMES_MAX
 const HOME_PHOTO_MAX = 10;                                            // HomeConfig.PHOTO_MAX
 let homeShots = { mine: {}, ready: {}, now: null };                  // the theme previews' backgrounds (TV Home's themeshots), by theme id; now: {key, jpg} the wall in use
@@ -799,12 +798,6 @@ async function homeOpen() {
     toast(T(re.lost ? 'home.theme_imported_wall' : 'home.theme_imported', { name }));
   });
   const themeLine = el('div', { className: 'group' }, themeName, el('div', { className: 'actions' }, themeSave, themeImport, themeFile), el('div', { className: 'line' }, themeJob, themeStop));
-  const wallFace = (k) => {
-    if (HOME_WALLS[k]) { const dot = el('i'); dot.style.setProperty('--c', 'linear-gradient(135deg,' + HOME_WALLS[k] + ')'); return dot; }
-    if (HOME_ART_IDS.includes(k)) { const cv = el('canvas', { width: 128, height: 72 }); homeArtPaint(cv.getContext('2d'), 128, 72, k); return el('i', {}, cv); }
-    const p = (r.photos || []).find((x) => x.id === k) || ((r.video || {}).items || []).map((v) => ({ id: v.id, v: v.added })).find((x) => x.id === k), t = p && homeThumbs[k + ':' + p.v];
-    return el('i', t ? {} : { className: 'add' }, t ? el('img', { src: 'data:image/jpeg;base64,' + t, alt: '' }) : k === 'bing' ? '🌐' : k === 'web' ? '🖥️' : /^vid:/.test(k) ? '🎬' : '🖼️');
-  };
   const homeFaceIO = () => homeFaceIO.io || (homeFaceIO.io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { homeFaceIO.io.unobserve(e.target); const f = e.target.paintNow; e.target.paintNow = null; e.target.dataset.lazy = ''; if (f) f(); } }, { rootMargin: '300px 0px' }));
   // a theme's preview (homeThemePaint): a small canvas of its own home screen, the background picture TV Home kept for it under it; made once per look
   const themeFace = (id, conf, mine, look, tiles) => {

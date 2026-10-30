@@ -113,18 +113,24 @@ const STALE = T('core.stale');
 // only past 150 ms so quick calls do not flicker). Counted from the end of the click handler, or from the yes to an ask() in it.
 let clicked = null, clickedAt = Infinity;
 document.addEventListener('click', (e) => { clicked = e.target.closest && e.target.closest('button'); clickedAt = Infinity; setTimeout(() => { clickedAt = performance.now(); }, 0); }, true);
-async function api(path, data, quiet) {
+async function api(path, data, quiet, ms) {
   if (path === '/api/key' && typeof snapKey === 'function') snapKey();   // every key of every button comes through here: screenshot mode looks again soon after
   const b = clicked && !clicked.dataset.busy && !clicked.ownRing && performance.now() - clickedAt < 1000 ? clicked : null;
   if (b) { b.classList.add('busy'); b.busyN = (b.busyN || 0) + 1; }
-  try { return await call(path, data, quiet); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }
+  try { return await call(path, data, quiet, ms); } finally { if (b && !--b.busyN) b.classList.remove('busy'); }
 }
 // "adb:allow", "adb: <Java's words>": what a person can do about it
 const adbWords = (status, e) => status === 503 && /^adb/.test(e) && !/adb (pair|tls)/.test(e)
   ? (/allow/.test(e) ? T('core.adb_allow') : T('core.adb_not_yet')) : e;
-async function call(path, data, quiet) {
+// A read that must not hang (a TV gone silent holds the socket): ms opts in, never for an upload, a download, an install or a wait
+// on slow TV work, which end when they end. AbortSignal.timeout is missing in old WebViews: a timer and a controller do the same.
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) return AbortSignal.timeout(ms);
+  const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal;
+}
+async function call(path, data, quiet, ms) {
   try {
-    const r = await fetch(path, data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : undefined);
+    const r = await fetch(path, { ...(data ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : {}), ...(ms ? { signal: timeoutSignal(ms) } : {}) });
     if (r.status === 401 && CORE === 'tv') { refresh(); return null; }   // this browser is no longer paired with the TV
     if (!r.ok) {
       let e = r.statusText; try { e = (await r.json()).error || e; } catch {}
@@ -341,11 +347,14 @@ let stateMiss = 0, adbSoon = 0, adbSoonMs = 125;
 // and a key pressed while the page loaded (the TV's PIN typed just before Manage opened) reached warmTv first: "stopped is not defined"
 let stopped = false;
 function serverStopped() { stopped = true; }
+let refreshSeq = 0;                                                  // a slower older read must not undo a newer one (tvChanged would fire twice)
 async function refresh() {
   if (stopped) return;
   let locked = false;
   if (invited) { inviteBad = !await invited; invited = null; }     // the invite first: then this very read is let in
-  const s = await fetch('/api/state').then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
+  const seq = ++refreshSeq;
+  const s = await fetch('/api/state', { signal: timeoutSignal(6000) }).then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
+  if (seq !== refreshSeq) return;
   if (CORE === 'tv') setLocked(locked, s);
   if (locked && inviteBad) { inviteBad = false; put('#pairerr', 'textContent', T('core.qr_expired')); }
   if (locked) return;
@@ -598,7 +607,8 @@ function setLocked(on, s) {
 }
 $('#pairstart').addEventListener('click', async () => {
   const r = await api('/api/pair/start', {}); if (!r) return;
-  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', T(r.shown === false ? 'core.code_open_setup' : 'core.code_2min'));   // false: the TV could not put it up $('#paircode').value = ''; $('#paircode').focus();
+  put('#pairf', 'hidden', false); put('#pairerr', 'textContent', T(r.shown === false ? 'core.code_open_setup' : 'core.code_2min'));   // false: the TV could not put it up
+  $('#paircode').value = ''; $('#paircode').focus();
 });
 $('#pairf').addEventListener('submit', async (e) => {
   e.preventDefault();

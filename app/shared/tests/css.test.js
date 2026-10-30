@@ -78,3 +78,30 @@ test('on / chosen is a tint, never the full accent fill', () => {
     for (const [p, v] of r.decl) if (/^background/.test(p) && /var\(--accent\)/.test(v)) bad.push(`${r.line} ${s} { ${p}: ${v} }`);
   assert.deepEqual(bad, [], 'draw it with the selected rule in css/kit.css (var(--sel)), not var(--accent)');
 });
+
+test('every var(--x) is a token, and none carries a colour fallback', () => {
+  // DESIGN.md section 7: a name nobody defines draws nothing (the picker's chosen card used var(--text), so its marker was invisible)
+  // and var(--x, #hex) hides that. Defined = declared in some css/*.css, or set by a script (grep setProperty in js/) or the phone app.
+  const jsSet = ['--c', '--h', '--w', '--cols', '--gap', '--pip-h', '--cover-b'], ar = ['--ar'];   // --ar: set inline by the widget preview
+  const css = styles.texts.map(blank).join('\n');
+  const defined = new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]).concat(jsSet, ar));
+  const bad = [];
+  for (const m of css.matchAll(/var\((--[\w-]+)\s*(,\s*(#|rgb|hsl)[^)]*)?/g)) {
+    const line = css.slice(0, m.index).split('\n').length;
+    if (!defined.has(m[1])) bad.push(`line ${line}: ${m[1]} is not defined`);
+    if (m[2]) bad.push(`line ${line}: ${m[0]}) has a colour fallback`);
+  }
+  assert.deepEqual(bad, [], 'use a token from css/base.css (or color-mix of one); a look it lacks is added there first');
+});
+
+test('the log warning colour is the --warn token, not a hex', () => {
+  assert.ok(all.some((r) => r.sels.includes('.logpre .lW') && r.decl.some(([p, v]) => p === 'color' && v === 'var(--warn)')));
+});
+
+test('small controls keep a 44px hit area', () => {
+  const has = (sel) => all.some((r) => r.sels.some((s) => s.endsWith(sel + '::after')) && r.decl.some(([p, v]) => p === 'inset' && /^-(8|12)px$/.test(v)));
+  assert.ok(has('.wallx'), '.wallx (20px) needs ::after { inset:-12px }');
+  assert.ok(has('.chstar'), '.chstar (28px) needs ::after { inset:-8px }');
+  const mini = all.find((r) => r.sels.includes('.seg.mini button'));
+  assert.equal(mini.decl.find(([p]) => p === 'min-height')[1], 'var(--ctl-sm)');
+});

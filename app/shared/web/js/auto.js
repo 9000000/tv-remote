@@ -1,7 +1,7 @@
 // Automation tab: TV Setup's sleep timer, bedtime and daily app limits (they run on the TV itself, see app/tvsetup .../Rules.kt),
 // and scenes, one button that does several things (each remote keeps its own list, see Scenes.kt).
 const SETUP_APK = 'https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk';
-let RULES = null, rulesSkew = 0, rulesBusy = false;
+let RULES = null, rulesSkew = 0, rulesBusy = false, rulesGen = 0;                                      // rulesGen: an answer from the old TV is dropped
 const pad2 = (n) => String(n).padStart(2, '0');
 const clock = (t) => { const d = new Date(t - rulesSkew); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };   // a moment on the TV's clock, in this device's
 // short, for a line in a list: 25p, 3g30, 2g
@@ -11,7 +11,9 @@ const mins = (m) => m < 60 ? T('auto.min_n', { n: m }) : m % 60 ? T('auto.hours_
 async function loadRules(change, quiet) {
   if (rulesBusy && !change) return;
   rulesBusy = true;
-  const r = await api('/api/rules', change || null, quiet);
+  const gen = rulesGen;
+  const r = await api('/api/rules', change || null, quiet, change ? 0 : 15000);
+  if (gen !== rulesGen) return null;
   rulesBusy = false;
   if (!r) return null;
   RULES = r; if (r.now) rulesSkew = r.now - Date.now();
@@ -303,7 +305,7 @@ async function installSetupApk() {
 
 // ---------- TV Setup's and TV Home's updates (SetupUpdate.kt, Home.kt): one bar on every remote; the TV puts an old TV Setup back if a new one does not work ----------
 let setupBusy = false, setupChecked = '', homeLatest = '', homeHas = '';         // setupChecked: the TV whose versions were looked at
-onTvChange(() => { setupChecked = ''; homeLatest = ''; homeHas = ''; put('#setupupd', 'hidden', true); });
+onTvChange(() => { rulesGen++; rulesBusy = false; RULES = null; setupChecked = ''; homeLatest = ''; homeHas = ''; put('#setupupd', 'hidden', true); });
 const seenUndo = () => { try { return localStorage.getItem('setupUndo') || ''; } catch (e) { return ''; } };
 // "Later" is per version ("tv:0.15.0", "home:0.2.0") until a time; a newer version is offered again at once
 const laterAll = () => { try { return JSON.parse(localStorage.getItem('updLater') || '{}') || {}; } catch (e) { return {}; } };

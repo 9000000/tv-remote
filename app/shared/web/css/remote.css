@@ -69,7 +69,7 @@
 }
 .seg.mini { margin:0; flex:none; overflow:visible; }   /* two choices never need to scroll; WebKit shrank a scroller with flex:none to 25 px */
 .seg.mini::before, .seg.mini::after { display:none; }
-.seg.mini button { flex:none; min-height:28px; font-size:12px; }
+.seg.mini button { flex:none; min-height:var(--ctl-sm); font-size:12px; }
 .vol { display:flex; align-items:center; gap:8px; margin-top:12px; }
 .vol button { min-height:44px; width:44px; padding:0; flex:none; font-size:17px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
 .vol .ic { width:20px; height:20px; }
@@ -99,7 +99,7 @@
 .drawbar .sizes input { flex:1; min-width:0; accent-color:var(--accent); }
 .drawbar .dotbox { width:52px; height:52px; display:flex; align-items:center; justify-content:center; flex:none; }
 #drawdot { width:12px; height:12px; border-radius:50%; background:#ff3b30; box-shadow:0 0 0 1px rgba(255,255,255,.35); }
-.drawbar .swatch { width:32px; height:32px; min-height:0; padding:0; border-radius:50%; background:var(--c); border:2px solid var(--line, #444); }
+.drawbar .swatch { width:32px; height:32px; min-height:0; padding:0; border-radius:50%; background:var(--c); border:2px solid var(--line); }
 .drawbar .swatch.on { outline:3px solid var(--accent); outline-offset:2px; }
 #picbar { justify-content:flex-end; }
 /* how many devices watch / listen (the count includes this one): only once there are others */
@@ -201,7 +201,7 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
   background:rgba(0,0,0,.6); color:#fff; font-size:10px; line-height:1; display:grid; place-items:center; }   /* small, over the picture: it never hides the face */
 .fchips.homewalls .wallcell .wallx.info { left:7px; right:auto; }
 .fchips.homeevery { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; overflow:visible; }
-.fchips.homeevery button { white-space:nowrap; min-width:0; }
+.fchips.homeevery button { white-space:normal; min-width:0; line-height:1.2; }   /* "Each time Home opens" wraps instead of being cut in 3 columns */
 .homegal { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:8px; }
 .homegal button { display:flex; flex-direction:column; gap:4px; padding:4px; height:auto; text-align:center; min-width:0; }
 .homegal img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:6px; display:block; }
@@ -226,14 +226,14 @@ section.card.old:not(.rc):not(.playing) > * + * { margin-top:var(--gap); }   /* 
 .packview s.pale { background:var(--wpale); }
 .packview s.solid { background:var(--wsolid); color:#fff; }
 .packview s.none { background:none; box-shadow:inset 0 0 0 1px var(--btn-hi); }   /* no card: only its place */
-.packview s.mark { outline:2px solid var(--text); outline-offset:1px; }
+.packview s.mark { outline:2px solid var(--ink); outline-offset:1px; }
 dialog.wset .card { width:min(520px, 94vw); }
 .wset .wstrip { padding:4px 3px; }
 .wset .packview { height:72px; }
 .wset .packview s { display:flex; align-items:center; padding:0 8px; min-width:0; }
 .wset .packview s em { font-style:normal; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }   /* the card's name in its block */
 .wset .packview s.tonal, .wset .packview s.pale { color:var(--wink); }
-.wset .wstage { display:flex; justify-content:center; align-items:center; height:160px; border-radius:var(--r, 12px); background:var(--btn); padding:14px; }   /* the card at the chosen options */
+.wset .wstage { display:flex; justify-content:center; align-items:center; height:160px; border-radius:var(--radius); background:var(--btn); padding:14px; }   /* the card at the chosen options */
 .wset .wopts { display:flex; flex-direction:column; gap:10px; }
 .wset .wopt { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 .wset .wopt .lbl { font-weight:600; }
@@ -334,3 +334,4 @@ dialog.ask.homeweb .card { width:min(560px, 94vw); }
 .homeask .hsect .hsplit { border:0; border-top:1px dashed var(--line); margin:4px 0; width:100%; }
 .homewalls .nowtag { align-self:center; padding:0 8px; border-radius:8px; background:var(--accent); color:var(--accent-ink); font-size:11px; font-weight:700; }   /* the wall on screen now, apart from the lit tiles = in the rotation */
 .homeask .hsect > h3:not(:first-child), .homeask .hsect > .card-head:not(:first-child) { margin-top:6px; }   /* a group title sits closer to its own chips than to the row above */
+.fchips.homewalls .wallcell .wallx::after { content:''; position:absolute; inset:-12px; }   /* drawn 20px, hit area 44px (the parent .wallcell is relative; the first-child button stays under the photo) */

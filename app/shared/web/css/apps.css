@@ -17,7 +17,7 @@
 .aihint { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:10px; }
 .aihint button { padding:0 14px; }
 .aihint .muted { font-size:12px; }
-#aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line, #333); border-radius:10px; padding:10px; resize:vertical; }
+#aitext { width:100%; box-sizing:border-box; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:10px; resize:vertical; }
 #appslist .item.off .appicon, #appslist .item.off .nameline > span:first-child { opacity:.5; }
 .appsoff { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
 .appsoff summary { cursor:pointer; font-weight:600; color:var(--muted); padding:6px 0; }
@@ -44,7 +44,7 @@
 .logbox { width:min(980px, 96vw); display:flex; flex-direction:column; gap:8px; }
 .logpre { font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:8px 10px; height:min(65vh, 640px); overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; }
 .logpre .lE, .logpre .lF { color:var(--bad); }
-.logpre .lW { color:#c98a00; }
+.logpre .lW { color:var(--warn); }
 .logpre .lV, .logpre .lD { color:var(--muted); }
 /* chooseApp(): the TV's apps as tiles in a modal; appChoice(): the one picked, as a button in a form */
 dialog.ask.appchoose .card { width:min(640px, 94vw); }
@@ -62,7 +62,7 @@ button.appchoice span { overflow:hidden; text-overflow:ellipsis; white-space:now
 .chm .item { flex-wrap:nowrap; }
 .chm .item .name { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .chm .item .acts { flex:none; }
-.chm .chlogo { flex:none; width:40px; height:30px; display:grid; place-items:center; border-radius:6px; background:var(--card2, rgba(127,127,127,.14)); overflow:hidden; }
+.chm .chlogo { flex:none; width:40px; height:30px; display:grid; place-items:center; border-radius:6px; background:color-mix(in srgb, var(--ink) 8%, transparent); overflow:hidden; }
 .chm .chlogo img { max-width:100%; max-height:100%; object-fit:contain; }
 .chm .chmcats { margin:-6px; }
 .chm .chmcc { flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:flex-start; gap:10px; padding:0 14px; }
@@ -129,3 +129,4 @@ dialog.ask.qkpick .card { width:min(760px, 94vw); }
 .choosegrid2 .tile { cursor:pointer; color:var(--ink); }
 .choosegrid2 .tile[hidden] { display:none; }
 .qkbadge:not(.red):not(.green):not(.yellow):not(.blue):not(:empty) { background:var(--bg); border-radius:8px; padding:0 6px; line-height:18px; }   /* readable over a wide logo */
+.chm .chstar::after { content:''; position:absolute; inset:-8px; }   /* drawn 28px, hit area 44px; the star is absolute, so it is its own anchor */

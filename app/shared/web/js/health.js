@@ -221,15 +221,17 @@ function capsSummary(c) {
 }
 
 // 🗂️ all settings, under the Setup tab: read the first time it is opened (again after a failed read), searched as typed
-let setRows = [], setBusy = false;
-onTvChange(() => { setRows = []; $('#setlistbody').replaceChildren(); });
+let setRows = [], setBusy = false, setGen = 0;                         // setGen: a read from the old TV is dropped
+onTvChange(() => { setGen++; setBusy = false; setRows = []; $('#setlistbody').replaceChildren(); });
 let setFilter = 'all';                                               // all · edit (has a control) · view (locked or nothing to set)
 const setOpen = new Set();                                            // groups opened by hand: kept open as the list redraws
 async function loadSettings() {
   if (setRows.length || setBusy || ADB.state !== 'ready') return;
   setBusy = true;
   $('#setlistbody').replaceChildren(el('div', { className: 'muted', textContent: T('health.reading_from_the_tv') }));
-  const r = await api('/api/settings'); setBusy = false;
+  const gen = setGen, r = await api('/api/settings');
+  if (gen !== setGen) return;
+  setBusy = false;
   if (!r) { $('#setlistbody').replaceChildren(); return; }
   setRows = settingsRead(r.text); drawSettings();
 }

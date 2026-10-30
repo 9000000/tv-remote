@@ -33,7 +33,8 @@ async function openInstalled() {
 let quickLoaded = false, quickApps = [];                              // quickApps: the TV's apps, for the Open on the TV menu too
 async function loadQuick() {
   quickLoaded = true;
-  const r = await api('/api/apps', null, true);
+  const gen = appsGen, r = await api('/api/apps', null, true);
+  if (gen !== appsGen) return;                                       // the TV changed on the way (appsStale cleared quickLoaded; a newer read may be running)
   if (!r) { quickLoaded = false; return; }
   seedMeta(r.apps); quickApps = r.apps.map((a) => a.pkg);
   const missing = r.apps.filter((a) => !META.has(a.pkg));
@@ -42,6 +43,7 @@ async function loadQuick() {
     const note = el('div', { className: 'muted' }); $('#quick').replaceChildren(note);
     const tick = () => { note.textContent = T('apps.reading_names', { done, total: missing.length }); };
     tick(); await Promise.all(missing.map((a) => new Promise((ok) => onMeta(a.pkg, () => { done++; tick(); ok(); }))));
+    if (gen !== appsGen) return;
   }
   const tiles = r.apps.slice().sort((a, b) => appName(a.pkg).localeCompare(appName(b.pkg))).map((a) => {
     const icon = appIcon(a.pkg); icon.fill(META.get(a.pkg) || {});
@@ -57,7 +59,7 @@ let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;
 const appsStale = () => { quickLoaded = appsLoaded = false; };      // installed or removed elsewhere (files.js, Optimize TV): read again
 let appsGen = 0;                                                      // bumped when the TV changes: a list still on its way from the old TV is dropped
 onTvChange(() => {
-  appsGen++; appsSysBusy = false; appsStale(); META.clear(); metaFailed.clear(); appsIcons.clear();
+  appsGen++; appsSysBusy = false; quickApps = []; appsStale(); META.clear(); metaFailed.clear(); appsIcons.clear();
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: T('remote.apps_appear_when_adb') }));
   $('#appslist').replaceChildren();
 });
