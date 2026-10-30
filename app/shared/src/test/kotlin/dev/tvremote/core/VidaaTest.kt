@@ -94,7 +94,7 @@ class VidaaTest {
                 "applist" -> say("/ui_service/data/applist", """[{"appId":"3","name":"Netflix","url":"netflix","storeType":0},{"appId":"7","name":"YouTube","url":"youtube"}]""")
                 "sourcelist" -> say("/ui_service/data/sourcelist", """[{"sourceid":"4","sourcename":"HDMI 2","displayname2":"PlayStation","is_signal":"1"},{"sourceid":"0","sourcename":"TV"}]""")
                 "getvolume" -> say("/platform_service/data/getvolume", """{"volume_type":0,"volume_value":17}""")
-                "getdeviceinfo" -> say("/platform_service/data/getdeviceinfo", """{"model_name":"65U8K","brand":"Hisense","wifi_mac":"aa-bb-cc-00-11-22"}""")
+                "getdeviceinfo" -> say("/platform_service/data/getdeviceinfo", """{"model_name":"65U8K","brand":"Hisense","device_name":" Living room ","friendly_name":"x","wifi_mac":"aa-bb-cc-00-11-22"}""")
             }
         }
     }
@@ -147,8 +147,9 @@ class VidaaTest {
         assertTrue(v.ready())
         assertTrue(logins.last().endsWith(" ACC1"))
         waitFor { v.model.isNotEmpty() && v.volume != null && v.app.isNotEmpty() && v.mac.isNotEmpty() }   // the MAC comes on its own reply: under load it was still empty
-        assertEquals("65U8K", v.model); assertEquals(17, v.volume!!.first); assertEquals("Netflix", v.app); assertEquals(true, v.isOn)
+        assertEquals("Living room", v.model); assertEquals(17, v.volume!!.first); assertEquals("Netflix", v.app); assertEquals(true, v.isOn)
         assertEquals("AA:BB:CC:00:11:22", v.mac)
+        waitFor { File(dir, "vidaa-127.0.0.1.json").readText().contains("AA:BB:CC:00:11:22") }   // kept: standby needs it to wake the TV
         v.key(19, Atv.DOWN); v.key(19, Atv.UP); v.key(7, Atv.SHORT); v.key(999, Atv.SHORT)
         v.text("hi")
         assertEquals(listOf("3" to "Netflix", "7" to "YouTube"), v.apps().map { it.id to it.label })
@@ -167,6 +168,20 @@ class VidaaTest {
         again.connect {}
         assertTrue(again.ready())
         again.close()
+    }
+
+    @Test fun aTvInStandbyIsWokenByItsSavedMacThenGivenUpOnCleanly() {
+        val port = ServerSocket(0).use { it.localPort }               // nothing listens: the TV in standby
+        File(dir, "vidaa-127.0.0.1.json").writeText("""{"mac":"AA:BB:CC:00:11:22"}""")
+        val woken = Collections.synchronizedList(ArrayList<String>())
+        val v = Vidaa(dir, "127.0.0.1", port, { mac, lan -> woken.add("$mac $lan") }, 400, 50)
+        val t0 = System.currentTimeMillis()
+        try { v.connect {}; fail("connected to a closed port") } catch (e: IOException) { }
+        assertEquals(listOf("AA:BB:CC:00:11:22 127.0.0.1"), woken.toList())   // one packet round, not one per poll
+        assertTrue(System.currentTimeMillis() - t0 >= 400)            // it did wait
+        assertFalse(v.ready())
+        val none = Vidaa(Files.createTempDirectory("vidaa").toFile().also { it.deleteOnExit() }, "127.0.0.1", port, { _, _ -> fail("woke a TV with no saved MAC") }, 400, 50)
+        try { none.connect {}; fail("connected") } catch (e: IOException) { }
     }
 
     // issue #8: a firmware that takes one kind of login but shows no code, hangs up instead of refusing, or sends the token unasked
@@ -203,7 +218,7 @@ class VidaaTest {
         v.startPairing(); v.finishPairing("1234")
         v.connect {}
         waitFor { v.model.isNotEmpty() && v.volume != null }
-        assertEquals("65U8K", v.model)
+        assertEquals("Living room", v.model)
         v.close()
     }
 

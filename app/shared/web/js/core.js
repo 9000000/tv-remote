@@ -238,6 +238,7 @@ const FRIENDLY = [
   [/the update did not start on the TV/i, T('core.fr_update_not_started')],
   [/could not write the update script/i, T('core.fr_update_script_failed')],
   [/INSTALL_FAILED_NO_MATCHING_ABIS/i, T('core.fr_abi_mismatch')],
+  [/INSTALL_FAILED_VERIFICATION_FAILURE/i, T('core.fr_play_protect')],   // PlayProtect.kt
   // the launcher gallery (LauncherInstall.kt): the way it ended, in the order they can match
   [/launcher:rolledback:(\w+)/, (m) => T(LAUNCH_KEPT.includes(m[1]) ? 'core.fr_launcher_kept' : 'core.fr_launcher_back', { why: T(LAUNCH_WENT[m[1]] || 'launcher.why_user') })],
   [/launcher:home/, T('core.fr_launcher_home')],

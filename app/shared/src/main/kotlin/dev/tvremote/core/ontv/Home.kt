@@ -63,11 +63,13 @@ object Home {
         checked = null
         val r = latest(now.optString("version")) ?: return now
         val file = File(dir ?: File(System.getProperty("java.io.tmpdir")), "tv-home-${r.version}.apk")
+        PlayProtect.check(dir, r.sha256)                              // refused before: no new "Harmful app blocked" on the TV
         try {
             r.download(file, null)
             if (!go()) return now
             val shown = sh("dumpsys activity activities | grep -m1 -E 'topResumedActivity|mResumedActivity'").contains(HomeConfig.PKG + "/")
             val out = Setup(adb, dir, lang) { }.install(file)
+            PlayProtect.check(dir, r.sha256, out)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
             // the install kills the home on screen and Android does not start it again: the last app used came up in its place
             // (an FPT box showed TV Channels, nothing pressed). Also in standby (AutoUpdate's time), where it waited for the wake-up

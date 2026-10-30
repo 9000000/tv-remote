@@ -28,6 +28,7 @@ import javax.net.ssl.SSLSocket
 import javax.net.ssl.X509TrustManager
 import dev.tvremote.core.B64
 import dev.tvremote.core.WireLog
+import dev.tvremote.core.Wol
 
 /**
  * Hisense (and Toshiba) TVs on VIDAA OS: MQTT on port 36669, the way Hisense's own "VIDAA Smart TV" app talks to them (worked
@@ -37,7 +38,9 @@ import dev.tvremote.core.WireLog
  * [importCert]); [NO_CERT] when none of that worked. Pairing is a 4-digit code on the TV ([startPairing] / [finishPairing]), which gives a
  * token kept per TV in [dir]; TVs from before 2022 take a fixed login and no code.
  */
-class Vidaa(private val dir: File, private val host: String, private val port: Int = 36669) : Remote, CodePairing {
+class Vidaa(private val dir: File, private val host: String, private val port: Int = 36669,
+            private val wol: (mac: String, lan: String) -> Unit = { mac, lan -> Wol.send(mac, lan) },   // tests count the packets
+            private val wakeWaitMs: Long = 30_000, private val wakePollMs: Long = 2_000) : Remote, CodePairing {
     override val kind = Remote.Kind.VIDAA
     @Volatile override var model = ""
         private set
@@ -72,6 +75,7 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
 
     /** Blocks until keys go through. [Atv.NotPaired]: the TV wants its code first; [NO_CERT]: Hisense's certificate is missing. */
     override fun connect(onClosed: () -> Unit) {
+        wakeUp()
         val saved = load()
         if (saved != null) {
             val user = saved.optString("user")
@@ -92,6 +96,20 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
         if (asked != null) { remember("static", true); throw Atv.NotPaired() }
         save(JSONObject().put("profile", "legacy").put("user", STATIC_USER).put("access", STATIC_PASS))
         open(STATIC_USER, STATIC_PASS, onClosed)
+    }
+
+    /** A TV in standby refuses the port: with its MAC kept from an earlier visit, wake it and wait (up to [wakeWaitMs]) for the port; else go on, and the caller gets the usual error. */
+    private fun wakeUp() {
+        val m = (remembered("mac") as? String)?.takeIf { MAC.matches(it) } ?: return
+        if (mac.isEmpty()) mac = m
+        if (portOpen()) return
+        WireLog.all.add("→", "VIDAA $host refuses port $port: Wake-on-LAN to $m")
+        try { wol(m, host) } catch (e: Exception) { return }
+        val until = System.currentTimeMillis() + wakeWaitMs
+        while (System.currentTimeMillis() < until) {
+            try { Thread.sleep(wakePollMs) } catch (e: InterruptedException) { Thread.currentThread().interrupt(); return }
+            if (portOpen()) return
+        }
     }
 
     private fun forget(): Atv.NotPaired {
@@ -311,13 +329,15 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
     }
 
     private fun device(o: JSONObject) {
-        o.optString("model_name").ifEmpty { o.optString("model") }.takeIf { it.isNotBlank() }?.let { model = it.trim() }
+        (NAME_FIELDS.map { o.optString(it) } + o.optString("model_name") + o.optString("model"))   // the name the TV gives itself, set by its owner, before the model
+            .firstOrNull { it.isNotBlank() }?.let { model = it.trim() }
         o.optString("brand").ifEmpty { o.optString("manufacturer") }.takeIf { it.isNotBlank() }?.let { vendor = it.trim() }
         o.optString("firmware_version").ifEmpty { o.optString("sw_version") }.takeIf { it.isNotBlank() }?.let { version = it.trim() }
         if (mac.isEmpty()) for (k in o.keys()) {                      // the field's name changes between firmwares
             val v = o.optString(k)
             if ("mac" in k.lowercase() && MAC.matches(v)) { mac = v.uppercase().replace('-', ':'); break }
         }
+        if (mac.isNotEmpty()) remember("mac", mac)                    // standby refuses the port: connect needs it to wake the TV
     }
 
     /** Waits up to [ms] for a message whose topic [match]es, after [trigger]; (topic, payload) or null. */
@@ -419,7 +439,7 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
 
     private fun save(o: JSONObject) {
         val old = try { if (tokenFile.isFile) JSONObject(tokenFile.readText()) else JSONObject() } catch (e: Exception) { JSONObject() }
-        for (k in listOf("tls", "static")) if (!o.has(k) && old.has(k)) o.put(k, old.get(k))
+        for (k in listOf("tls", "static", "mac")) if (!o.has(k) && old.has(k)) o.put(k, old.get(k))
         dir.mkdirs(); tokenFile.writeText(o.toString())
     }
 
@@ -450,6 +470,8 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
         private const val TIME_XOR = 6239759785777146216L
         /** Passwords the certificate files in Hisense's apps have been locked with. */
         private val P12_PASSWORDS = listOf("186e990688070325a1c4b0ce275d2388", "", "remote", "hisense", "123456")
+        /** Where firmwares put the TV's own name (upstream hisense_vidaa reads the same four). */
+        private val NAME_FIELDS = listOf("devicename", "device_name", "friendly_name", "tv_name")
         private val MAC = Regex("(?i)^[0-9a-f]{2}([:-][0-9a-f]{2}){5}$")
 
         /** Android key codes to VIDAA's key names; what is missing is greyed. */
@@ -458,7 +480,7 @@ class Vidaa(private val dir: File, private val host: String, private val port: I
             24 to "KEY_VOLUMEUP", 25 to "KEY_VOLUMEDOWN", 164 to "KEY_MUTE", 85 to "KEY_PLAY", 126 to "KEY_PLAY", 127 to "KEY_PAUSE",
             86 to "KEY_STOP", 90 to "KEY_FORWARDS", 89 to "KEY_BACK", 166 to "KEY_CHANNELUP", 167 to "KEY_CHANNELDOWN",
             183 to "KEY_RED", 184 to "KEY_GREEN", 185 to "KEY_YELLOW", 186 to "KEY_BLUE", 175 to "KEY_SUBTITLE", 165 to "KEY_INFO",
-            170 to "KEY_LIVETV") + (0..9).associate { (7 + it) to "KEY_$it" }
+            170 to "KEY_LIVETV", 172 to "KEY_EPG", 284 to "KEY_APPS", 190 to "KEY_YOUTUBE", 191 to "KEY_NETFLIX", 195 to "KEY_PRIME") + (0..9).associate { (7 + it) to "KEY_$it" }
 
         private fun md5(s: String): String = MessageDigest.getInstance("MD5").digest(s.toByteArray(Charsets.UTF_8)).joinToString("") { "%02X".format(it) }
 

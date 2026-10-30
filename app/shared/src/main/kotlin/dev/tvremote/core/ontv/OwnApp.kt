@@ -53,10 +53,12 @@ class OwnApp(val pkg: String, val apk: String, private val versionKey: String, p
         val now = state(sh)
         val r = (if (now.has("latest")) seen?.release else null) ?: return now.also { if (!it.optBoolean("installed")) throw IOException(none) }
         val file = File(dir ?: File(System.getProperty("java.io.tmpdir")), apk.removeSuffix(".apk") + "-${r.version}.apk")
+        PlayProtect.check(dir, r.sha256)                              // refused before: no new "Harmful app blocked" on the TV
         try {
             r.download(file, null)
             if (!go()) return now
             val out = Setup(adb, dir, lang) { }.install(file)
+            PlayProtect.check(dir, r.sha256, out)
             if (!out.contains("Success")) throw IOException("launcher:install:" + out.trim().lines().lastOrNull().orEmpty().take(200))
             if (afterInstall.isNotEmpty()) sh(afterInstall)
         } finally { file.delete() }

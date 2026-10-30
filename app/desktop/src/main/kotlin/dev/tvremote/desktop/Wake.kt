@@ -2,9 +2,6 @@ package dev.tvremote.desktop
 
 import dev.tvremote.core.remote.Remote
 import org.json.JSONObject
-import java.net.DatagramPacket
-import java.net.DatagramSocket
-import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
 /**
@@ -21,7 +18,7 @@ object Wake {
         fun up() = host.isNotEmpty() && ports.any { Discover.portOpen(host, it, 1500) }
         if (up()) return Result(true, "TV already reachable")
         if (mac.isEmpty()) return Result(false, "No MAC address saved for this TV (save the TV in the web UI while ADB is connected).")
-        log.append("local broadcast: ${sendLocal(mac, tv.optString("lan"))} packets\n")
+        log.append("local broadcast: ${dev.tvremote.core.Wol.send(mac, tv.optString("lan"))} packets\n")
         val relayHost = tv.optString("relay_host")
         if (relayHost.isNotEmpty()) {
             try {
@@ -44,20 +41,5 @@ object Wake {
             Thread.sleep(3000)
         }
         return Result(false, log.append("TV did not come back. Check that 'Remote start' is enabled on the TV and that a machine on its network relayed the packet.").toString())
-    }
-
-    private fun sendLocal(mac: String, lan: String): Int {
-        val raw = mac.replace(":", "").replace("-", "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-        val pkt = ByteArray(6) { 0xff.toByte() } + (1..16).flatMap { raw.toList() }
-        val targets = listOf("255.255.255.255") + if (lan.count { it == '.' } == 3) listOf(lan.substringBeforeLast('.') + ".255") else emptyList()
-        var sent = 0
-        DatagramSocket().use { s ->
-            s.broadcast = true
-            for (ip in targets) for (port in listOf(9, 7)) try {
-                repeat(3) { s.send(DatagramPacket(pkt, pkt.size, InetAddress.getByName(ip), port)); sent++; Thread.sleep(100) }
-            } catch (ignored: Exception) {
-            }
-        }
-        return sent
     }
 }

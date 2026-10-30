@@ -1851,6 +1851,7 @@
  "core.fr_update_not_started": "The TV did not start the update. Try again; if it still does not, restart the TV.",
  "core.fr_update_script_failed": "Could not write the update file on the TV. Does it have free storage?",
  "core.fr_abi_mismatch": "This APK is for a different kind of chip than the TV’s. Get the build for the TV’s chip.",
+ "core.fr_play_protect": "Google Play Protect on the TV blocked this build. TV Setup installs the next one by itself when it comes out.",
  "core.fr_unsupported": "{brand} TVs cannot do this",
  "core.fr_storage_apk": "The TV has only {free} free, not enough to install this {size} APK (it needs at least {need}: the copy and the installed app). Remove some apps or files (Health / Files tab), then try again.",
  "core.fr_storage_file": "The TV has only {free} free, not enough for this {size} file (it needs at least {need}). Remove some apps or files (Health / Files tab), then try again.",

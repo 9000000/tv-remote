@@ -10,6 +10,8 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - TV Setup's Manage screen and the web page work again on TV boxes with an old WebView (and older iPhones): one piece of code they could not read stopped the page.
 - TV Home: a firmware that fails while pinning a shortcut no longer closes TV Home.
 - Phone app: turning "Listen on the phone" on and off at once no longer closes the app.
+- TV Setup: when Google Play Protect blocks one build of TV Home, TV Channels or TV Games, the automatic update no longer tries that file again every few hours (each try showed "Harmful app blocked" on the TV); the next release is tried by itself.
+- Hisense / Toshiba (VIDAA): a TV in standby is woken with Wake-on-LAN (its network address is kept from the first connection), the TV's own name is shown instead of the model, and the Guide, Apps, YouTube, Netflix and Prime Video keys work.
 
 ## 0.36.0 - 2026-10-30
 

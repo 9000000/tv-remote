@@ -1773,6 +1773,7 @@
  "core.fr_update_not_started": "TV chưa bắt đầu cập nhật được. Thử lại; vẫn vậy thì khởi động lại TV.",
  "core.fr_update_script_failed": "Không ghi được tệp cập nhật lên TV. TV còn bộ nhớ trống không?",
  "core.fr_abi_mismatch": "APK này dành cho loại chip khác với TV. Tải bản cho đúng loại chip của TV.",
+ "core.fr_play_protect": "Google Play Protect trên TV đã chặn bản này. TV Setup sẽ tự cài bản sau khi có.",
  "core.fr_unsupported": "TV {brand} không hỗ trợ",
  "core.fr_storage_apk": "TV chỉ còn trống {free}, không đủ cài APK {size} (cần trống ít nhất {need}: bản chép và app sau khi cài). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.",
  "core.fr_storage_file": "TV chỉ còn trống {free}, không đủ chép tệp {size} (cần trống ít nhất {need}). Xóa bớt app hoặc tệp (tab Sức khỏe / Tệp) rồi thử lại.",
