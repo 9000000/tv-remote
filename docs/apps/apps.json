@@ -1,0 +1,323 @@
+{
+  "v": 1,
+  "updated": "2026-10-30",
+  "cats": [
+    {
+      "id": "watch",
+      "name": {
+        "vi": "Xem",
+        "en": "Watch",
+        "ru": "Смотреть"
+      }
+    },
+    {
+      "id": "play",
+      "name": {
+        "vi": "Chơi",
+        "en": "Play",
+        "ru": "Играть"
+      }
+    },
+    {
+      "id": "tools",
+      "name": {
+        "vi": "Tiện ích",
+        "en": "Tools",
+        "ru": "Утилиты"
+      }
+    }
+  ],
+  "apps": [
+    {
+      "id": "smarttube",
+      "pkg": "org.smarttube.stable",
+      "name": "SmartTube",
+      "cat": "watch",
+      "desc": {
+        "vi": "YouTube cho TV, không quảng cáo, tự bỏ qua đoạn tài trợ.",
+        "en": "YouTube for the TV with no ads; skips sponsor segments.",
+        "ru": "YouTube для телевизора без рекламы, пропускает спонсорские вставки."
+      },
+      "icon": "icons/smarttube.png",
+      "source": "https://github.com/yuliskov/SmartTube",
+      "license": "MIT",
+      "min_sdk": 17,
+      "certs": [
+        "109735aa24fe85e2e1623ebb3b1ecc4bf4263f4c6374e4411d646bfa2eda482a"
+      ],
+      "apk": {
+        "arm64-v8a": {
+          "repo": "yuliskov/SmartTube",
+          "match": "SmartTube_stable_[\\d.]+_arm64-v8a\\.apk"
+        },
+        "armeabi-v7a": {
+          "repo": "yuliskov/SmartTube",
+          "match": "SmartTube_stable_[\\d.]+_armeabi-v7a\\.apk"
+        },
+        "x86": {
+          "repo": "yuliskov/SmartTube",
+          "match": "SmartTube_stable_[\\d.]+_x86\\.apk"
+        },
+        "universal": {
+          "repo": "yuliskov/SmartTube",
+          "match": "SmartTube_stable_[\\d.]+_universal\\.apk"
+        }
+      },
+      "icon_sha": "2c1ebb8f7d869ffb99cff9b4f2028d6f2cbe72e18a2c49dfde1312c19904109e"
+    },
+    {
+      "id": "tizentube",
+      "pkg": "io.gh.reisxd.tizentube.cobalt",
+      "name": "TizenTube",
+      "cat": "watch",
+      "desc": {
+        "vi": "Giao diện YouTube TV gốc, chặn quảng cáo, bỏ qua đoạn tài trợ.",
+        "en": "YouTube's own TV screens, with ads blocked and sponsor segments skipped.",
+        "ru": "Оригинальный YouTube для ТВ: без рекламы, без спонсорских вставок."
+      },
+      "notes": {
+        "vi": "Nặng (~150 MB).",
+        "en": "Large (~150 MB).",
+        "ru": "Большой (~150 МБ)."
+      },
+      "icon": "icons/tizentube.png",
+      "source": "https://github.com/reisxd/TizenTubeCobalt",
+      "license": "BSD-3-Clause",
+      "min_sdk": 24,
+      "certs": [
+        "378ea3935af1b95c32f6ce193f4ff7f420cdc2d7160c8c866d28d6a91042ec9a"
+      ],
+      "apk": {
+        "arm64-v8a": "https://github.com/reisxd/TizenTubeCobalt/releases/latest/download/cobalt-arm64.apk",
+        "armeabi-v7a": "https://github.com/reisxd/TizenTubeCobalt/releases/latest/download/cobalt-arm.apk"
+      },
+      "icon_sha": "7863773337556125350446fbbf85b618559a94edd5a62160e1cc9f3ab91f0db8"
+    },
+    {
+      "id": "kodi",
+      "pkg": "org.xbmc.kodi",
+      "name": "Kodi",
+      "cat": "watch",
+      "desc": {
+        "vi": "Trung tâm giải trí: phim trong máy, ổ mạng, thư viện có ảnh bìa.",
+        "en": "Media centre: files on the TV and network drives, a library with posters.",
+        "ru": "Медиацентр: файлы на ТВ и в сети, библиотека с обложками."
+      },
+      "icon": "icons/kodi.png",
+      "source": "https://github.com/xbmc/xbmc",
+      "license": "GPL-2.0-or-later",
+      "min_sdk": 21,
+      "certs": [
+        "f517b44b5db5e62a6c1ec55ba47526db7de0d61f6ba26a7987520e293499b8d5"
+      ],
+      "apk": {
+        "arm64-v8a": "https://mirrors.kodi.tv/releases/android/arm64-v8a/kodi-21.3-Omega-arm64-v8a.apk",
+        "armeabi-v7a": "https://mirrors.kodi.tv/releases/android/arm/kodi-21.3-Omega-armeabi-v7a.apk",
+        "x86": "https://mirrors.kodi.tv/releases/android/x86/kodi-21.3-Omega-x86.apk"
+      },
+      "icon_sha": "baf64b23c62b4024ac80f160be04671579962e9ba3eff5a0cf79d39b42b68a9b"
+    },
+    {
+      "id": "vlc",
+      "pkg": "org.videolan.vlc",
+      "name": "VLC",
+      "cat": "watch",
+      "desc": {
+        "vi": "Mở gần như mọi file phim, nhạc và luồng mạng.",
+        "en": "Plays almost any video, music file or network stream.",
+        "ru": "Воспроизводит почти любое видео, музыку и сетевые потоки."
+      },
+      "icon": "icons/vlc.png",
+      "source": "https://code.videolan.org/videolan/vlc-android",
+      "license": "GPL-3.0-or-later",
+      "min_sdk": 17,
+      "certs": [
+        "c8768d2cea0c4b622e419b4b4715981946821e4ebc035fb41776cad395a7f68e"
+      ],
+      "apk": {
+        "arm64-v8a": "https://get.videolan.org/vlc-android/3.7.1/VLC-Android-3.7.1-arm64-v8a.apk",
+        "armeabi-v7a": "https://get.videolan.org/vlc-android/3.7.1/VLC-Android-3.7.1-armeabi-v7a.apk",
+        "x86_64": "https://get.videolan.org/vlc-android/3.7.1/VLC-Android-3.7.1-x86_64.apk",
+        "x86": "https://get.videolan.org/vlc-android/3.7.1/VLC-Android-3.7.1-x86.apk"
+      },
+      "icon_sha": "2b9ce002cfdd78ba76684c11c3266be82a3888d8ce97c13b476bf662975afbc2"
+    },
+    {
+      "id": "jellyfin",
+      "pkg": "org.jellyfin.androidtv",
+      "name": "Jellyfin",
+      "cat": "watch",
+      "desc": {
+        "vi": "Xem phim, phim bộ, truyền hình từ máy chủ Jellyfin nhà bạn.",
+        "en": "Movies, shows and live TV from your own Jellyfin server.",
+        "ru": "Фильмы, сериалы и ТВ с вашего сервера Jellyfin."
+      },
+      "notes": {
+        "vi": "Cần máy chủ Jellyfin riêng.",
+        "en": "Needs your own Jellyfin server.",
+        "ru": "Нужен свой сервер Jellyfin."
+      },
+      "icon": "icons/jellyfin.png",
+      "source": "https://github.com/jellyfin/jellyfin-androidtv",
+      "license": "GPL-2.0-only",
+      "min_sdk": 21,
+      "certs": [
+        "d881796ed2a67ff6ef9f676828723c6b1fa18e09388962cba4abc4a594a69131"
+      ],
+      "apk": {
+        "universal": {
+          "repo": "jellyfin/jellyfin-androidtv",
+          "match": "jellyfin-androidtv-v[\\d.]+-release\\.apk"
+        }
+      },
+      "icon_sha": "5a644eb806c99ea6644d422c8c8a287e143033ec2b5d966d54195d84b7114e56"
+    },
+    {
+      "id": "just-player",
+      "pkg": "com.brouken.player",
+      "name": "Just Player",
+      "cat": "watch",
+      "desc": {
+        "vi": "Trình phát video gọn nhẹ, dễ dùng bằng remote.",
+        "en": "A simple video player made easy for the remote.",
+        "ru": "Простой видеоплеер, удобный с пультом."
+      },
+      "icon": "icons/just-player.png",
+      "source": "https://github.com/moneytoo/Player",
+      "license": "Unlicense",
+      "min_sdk": 23,
+      "certs": [
+        "3cb97dba57d3d0bc190bae5f1f3a841643bcd9399bc31028ce25775d93d0109d"
+      ],
+      "apk": {
+        "universal": {
+          "repo": "moneytoo/Player",
+          "match": "Just\\.Player\\.v[\\d.]+\\.apk"
+        }
+      },
+      "icon_sha": "0526433dd08d11d504e54bb940478d590efdad9ecc4ece09dad46d50b9636f4c"
+    },
+    {
+      "id": "nova",
+      "pkg": "org.courville.nova",
+      "name": "Nova Video Player",
+      "cat": "watch",
+      "desc": {
+        "vi": "Thư viện phim có ảnh bìa và thông tin, cho file trong máy và ổ mạng.",
+        "en": "A movie library with posters and details, for files on the TV and network drives.",
+        "ru": "Видеотека с обложками и описаниями для файлов на ТВ и в сети."
+      },
+      "icon": "icons/nova.png",
+      "source": "https://github.com/nova-video-player/aos-AVP",
+      "license": "Apache-2.0",
+      "min_sdk": 23,
+      "certs": [
+        "05af6804bcad9e7e6d22d2ffc39fca1857a4aeb4385097cad91b11e5bac1f615"
+      ],
+      "apk": {
+        "arm64-v8a": {
+          "repo": "nova-video-player/aos-AVP",
+          "match": "org\\.courville\\.nova-.*-arm64-v8a-release\\.apk"
+        },
+        "armeabi-v7a": {
+          "repo": "nova-video-player/aos-AVP",
+          "match": "org\\.courville\\.nova-.*-armeabi-v7a-release\\.apk"
+        },
+        "x86_64": {
+          "repo": "nova-video-player/aos-AVP",
+          "match": "org\\.courville\\.nova-.*-x86_64-release\\.apk"
+        },
+        "x86": {
+          "repo": "nova-video-player/aos-AVP",
+          "match": "org\\.courville\\.nova-.*-x86-release\\.apk"
+        }
+      },
+      "icon_sha": "2f76ceccd5db6be4fc7afe566b0d68ad2f498fdc75796751c82f3394f4f85123"
+    },
+    {
+      "id": "mpv",
+      "pkg": "is.xyz.mpv",
+      "name": "mpv",
+      "cat": "watch",
+      "desc": {
+        "vi": "Trình phát video nhẹ, mở được nhiều định dạng và phụ đề.",
+        "en": "A light video player for many formats and subtitles.",
+        "ru": "Лёгкий плеер для множества форматов и субтитров."
+      },
+      "icon": "icons/mpv.png",
+      "source": "https://github.com/mpv-android/mpv-android",
+      "license": "MIT",
+      "min_sdk": 23,
+      "certs": [
+        "fae7f9d02385cc24d96e88436603e23ea6aec7649ad1250abbb4837daab82fff"
+      ],
+      "apk": {
+        "arm64-v8a": "https://github.com/mpv-android/mpv-android/releases/latest/download/app-default-arm64-v8a-release.apk",
+        "armeabi-v7a": "https://github.com/mpv-android/mpv-android/releases/latest/download/app-default-armeabi-v7a-release.apk",
+        "x86_64": "https://github.com/mpv-android/mpv-android/releases/latest/download/app-default-x86_64-release.apk",
+        "x86": "https://github.com/mpv-android/mpv-android/releases/latest/download/app-default-x86-release.apk"
+      },
+      "icon_sha": "db0df6b9cf0642480cd45936f292bbbb709a5f78ac34e4df0596c47c5949af52"
+    },
+    {
+      "id": "moonlight",
+      "pkg": "com.limelight",
+      "name": "Moonlight",
+      "cat": "play",
+      "desc": {
+        "vi": "Chơi game trên máy tính, hình truyền sang TV.",
+        "en": "Play your computer's games on the TV.",
+        "ru": "Игры с компьютера на телевизоре."
+      },
+      "notes": {
+        "vi": "Máy tính cần chạy Sunshine (miễn phí).",
+        "en": "The computer needs Sunshine (free).",
+        "ru": "На компьютере нужен Sunshine (бесплатно)."
+      },
+      "icon": "icons/moonlight.png",
+      "source": "https://github.com/moonlight-stream/moonlight-android",
+      "license": "GPL-3.0",
+      "min_sdk": 21,
+      "certs": [
+        "d6ce3a4df15060fe488fe52441a549dee4ba199b36e2cb1ed9085cca8bfa1aca"
+      ],
+      "apk": {
+        "universal": "https://github.com/moonlight-stream/moonlight-android/releases/latest/download/app-nonRoot-release.apk"
+      },
+      "icon_sha": "e43465bce5ffbf8349347caab3f28047edb0fee32804f3500c4c327288f85c13"
+    },
+    {
+      "id": "localsend",
+      "pkg": "org.localsend.localsend_app",
+      "name": "LocalSend",
+      "cat": "tools",
+      "desc": {
+        "vi": "Gửi file giữa điện thoại, máy tính và TV qua Wi-Fi.",
+        "en": "Send files between phone, computer and TV over Wi-Fi.",
+        "ru": "Передача файлов между телефоном, компьютером и ТВ по Wi-Fi."
+      },
+      "icon": "icons/localsend.png",
+      "source": "https://github.com/localsend/localsend",
+      "license": "Apache-2.0",
+      "min_sdk": 24,
+      "certs": [
+        "3220c353a73cfbd0c2f3052471c445324cf452bcba26de1c473a52fe5c44e1d6"
+      ],
+      "apk": {
+        "arm64-v8a": {
+          "repo": "localsend/localsend",
+          "match": "LocalSend-[\\d.]+-android-arm64v8\\.apk"
+        },
+        "armeabi-v7a": {
+          "repo": "localsend/localsend",
+          "match": "LocalSend-[\\d.]+-android-arm32v7\\.apk"
+        },
+        "x86_64": {
+          "repo": "localsend/localsend",
+          "match": "LocalSend-[\\d.]+-android-x64\\.apk"
+        }
+      },
+      "icon_sha": "5c37c6ea508b29f1f53e89a3363a51304a4752bd55a4f35e5d96c27460cf2aec"
+    }
+  ]
+}

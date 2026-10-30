@@ -213,6 +213,11 @@
   <div class="panel" data-panel="kind" hidden><div id="kindtab"></div></div>
   <div class="panel" data-panel="apps" hidden>
     <div data-adb-banner></div>
+    <section class="card" data-adb-gated id="tvappscard">
+      <h2 data-i18n="tvapps.title">📦 Kho app</h2>
+      <p class="note" data-i18n="tvapps.note">App miễn phí, mã nguồn mở cho TV. Tải thẳng từ nhà làm app, cài một chạm.</p>
+      <div class="actions"><button class="primary" id="tvappsopen" data-i18n="tvapps.see">📦 Xem app</button></div>
+    </section>
     <section class="card" data-adb-gated>
       <div class="card-head"><h2 data-i18n="apps.installed_apps">📱 Ứng dụng đã cài</h2>
         <div class="tools">
@@ -535,6 +540,10 @@
   <div id="optbody" class="optbox"></div>
   <div class="actions"><button class="primary" id="optgo" data-i18n="optdlg.optimize">⚡ Chạy tối ưu</button><button id="optcancel" data-i18n="common.cancel">Hủy</button></div>
 </div></dialog>
+<dialog id="tvappsdlg"><div class="card assistbox">
+  <div class="card-head"><h2 data-i18n="tvapps.title">📦 Kho app</h2><button class="small iconbtn" id="tvappsclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div>
+  <div id="tvappsbody"></div>
+</div></dialog>
 <dialog id="launchdlg"><div class="card assistbox">
   <div class="card-head"><h2 data-i18n="launcher.dlg_title">🖼️ Thư viện launcher</h2><button class="small iconbtn" id="launchclose" title="Đóng" aria-label="Đóng" data-i18n-title="common.close" data-i18n-aria-label="common.close">✕</button></div>
   <div id="launchbody"></div>
@@ -626,6 +635,7 @@
 <script src="js/setup.js"></script>
 <script src="js/telegram.js"></script>
 <script src="js/launchers.js"></script>
+<script src="js/tvapps.js"></script>
 <script src="js/home_walls.js"></script>
 <script src="js/home_qr.js"></script>
 <script src="js/home_order.js"></script>

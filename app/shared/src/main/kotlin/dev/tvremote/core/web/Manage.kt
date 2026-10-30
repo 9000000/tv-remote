@@ -78,6 +78,18 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
     /** The Stop of the work the current thread is doing (set by [job], by an upload request, by [install] / [cast]). */
     private val current = ThreadLocal<Cancel?>()
     private val launcherApi by lazy { LauncherApi(link, dir, { t, w -> job(t, Work { w(it) }) }, { current.get() }) }
+    private val tvAppsApi by lazy { TvAppsApi(link, dir, { t, w -> job(t, Work { w(it) }) }, { current.get() }, { i, n, c -> install(i, n, null, c) }) }
+
+    /**
+     * The TV Apps app asking TV Setup (HomeInfo "tvapps") to install one app of the list over this ADB link, no question on the
+     * TV: [op] "install" (by the list's [id]) starts the page's own job, "job" reads it, "cancel" stops it.
+     */
+    fun tvApps(op: String, id: String): JSONObject = when (op) {
+        "install" -> tvAppsApi.install(id)
+        "job" -> jobs[id]?.let { snapshot(it) } ?: JSONObject().put("id", id).put("status", "error").put("msg", "no such job")
+        "cancel" -> { stops[id]?.stop(); JSONObject().put("ok", true) }
+        else -> throw IllegalArgumentException("op")
+    }
 
     private val working = java.util.concurrent.ConcurrentHashMap<Any, String>()
     /** Told when work starts or ends (the phone keeps itself running meanwhile, and asks before leaving the TV). */
@@ -274,6 +286,9 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "setup/version" -> return HttpServer.Response.json(setupVersion())
                 "setup/need" -> { SetupNeed.check(link.get(), r.q("f")); return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "downloader" -> return HttpServer.Response.json(dev.tvremote.core.Downloader.json())   // the Downloader codes the page tells people to type
+                "tvapps" -> return HttpServer.Response.json(tvAppsApi.list(r.q("fresh") == "1"))   // TV Apps: the free apps to install
+                "tvapps/icon" -> return tvAppsApi.icon(r.q("id"))
+                "tvapps/install" -> if (post) return HttpServer.Response.json(tvAppsApi.install(r.json().optString("id")))
                 "launchers" -> return HttpServer.Response.json(launcherApi.list())
                 "launcher/thumb" -> return launcherApi.thumb(r.q("id"))
                 "launcher/install" -> return HttpServer.Response.json(launcherApi.install(r.json().optString("id"), r.lang))

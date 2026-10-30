@@ -13,6 +13,7 @@ Never touched (the file name or bytes are pinned elsewhere, so a change breaks s
   docs/home/*        TV Home wallpapers + thumbnails: SHA-256 in docs/home/wallpapers.json, signed (dev/sign), already
                      1920x1080 progressive q82/90 (dev/gen/wallpapers.py). To shrink them, change the quality THERE and re-sign.
   docs/launchers/*   launcher gallery pictures: SHA-256 in docs/launchers/launchers.json, signed (dev/sign/sign_launchers.py).
+  docs/apps/*        TV Apps icons: SHA-256 in docs/apps/apps.json, signed (dev/sign/sign_apps.py).
 Lossless only (no re-encode): app icons / banners (app/**/res, icon-*.png, app/desktop) and anything under a `strict` rule
 below, so what Android, the stores or the icon builder read stays the same pixels.
 Formats and names never change: code and the site refer to files by name and extension.
@@ -31,7 +32,7 @@ ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=Tr
                       cwd=os.path.dirname(os.path.abspath(__file__))).stdout.strip()
 EXT = re.compile(r"\.(png|jpe?g|webp)$", re.I)
 # Hash-pinned or signed: never touched (see the docstring).
-PINNED = [re.compile(p) for p in (r"^docs/home/", r"^docs/launchers/")]
+PINNED = [re.compile(p) for p in (r"^docs/home/", r"^docs/launchers/", r"^docs/apps/")]
 # Lossless only: icons and banners with a strict spec.
 STRICT = [re.compile(p) for p in (r"^app/.*/res/", r"/icon[^/]*\.png$", r"^app/desktop/", r"/banner[^/]*\.png$", r"^docs/img/(app-|logo)[^/]*\.png$")]
 

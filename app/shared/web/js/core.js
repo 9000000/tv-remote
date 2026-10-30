@@ -241,6 +241,9 @@ const FRIENDLY = [
   [/INSTALL_FAILED_VERIFICATION_FAILURE/i, T('core.fr_play_protect')],   // PlayProtect.kt
   // the launcher gallery (LauncherInstall.kt): the way it ended, in the order they can match
   [/launcher:rolledback:(\w+)/, (m) => T(LAUNCH_KEPT.includes(m[1]) ? 'core.fr_launcher_kept' : 'core.fr_launcher_back', { why: T(LAUNCH_WENT[m[1]] || 'launcher.why_user') })],
+  [/apps:cert/, T('core.fr_tvapps_cert')],                         // AppList (TV Apps)
+  [/apps:noapk/, T('core.fr_tvapps_noapk')],
+  [/apps:offline/, T('core.fr_tvapps_offline')],
   [/launcher:home/, T('core.fr_launcher_home')],
   [/launcher:play/, T('core.fr_launcher_play')],
   [/launcher:self/, T('core.fr_launcher_self')],

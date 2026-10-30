@@ -180,7 +180,14 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             return JSONObject().put("silent", AutoUpdate.on(c) && (st == "ready" || (st == "unknown" && l?.failing() == false)))
         }
 
-        fun enabled(c: Context): Boolean = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
+        /** TV Apps' install through our ADB link (HomeInfo "tvapps", Manage.tvApps); null: no service or no link ready, the app installs it with Android's installer. */
+        fun tvApps(op: String, id: String): JSONObject? {
+            val s = running ?: return null
+            if (op == "install" && (try { s.link?.state() } catch (e: Exception) { null }) != "ready") return null
+            return s.manage?.tvApps(op, id)
+        }
+
+        fun enabled(c: Context): Boolean =c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("on", true)
 
         /** The service runs for the web remote, and also, with the web remote off, while timers or limits need watching. */
         fun wanted(c: Context): Boolean = enabled(c) || Rules.active(c)

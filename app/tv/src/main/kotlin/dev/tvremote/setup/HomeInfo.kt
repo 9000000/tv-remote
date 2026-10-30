@@ -33,6 +33,7 @@ import java.util.Locale
  * and "control" (HomeControl: the Control Center's sleep timer and kids mode on; `arg` "" | "sleep:<min>" | "kids:on"; {sleep_at, kids, pin, error?}).
  * and "webview" (to TV Home, Channels and Games by their key: no WebView on the TV, switch it back on; "result" fine / fixed / none / noadb / failed),
  * and "updates" (to TV Home, Channels and Games by their key, like "census": {silent} = auto-update is on and ADB is ready, so TV Setup installs their updates itself),
+ * and "tvapps" (to TV Apps by its key: `arg` {op: install | job | cancel, id}; one app of the signed list installed over our ADB link, RemoteService.tvApps; no answer = no ADB here),
  * Which apps a family watches is nobody else's business: only TV Home, signed by this project's key (or by this app's own,
  * a build signed with one key for both), gets an answer.
  */
@@ -44,6 +45,15 @@ class HomeInfo : ContentProvider() {
         if (method == "updates")                                       // read-only: will TV Setup install their updates by itself? (SelfUpdate waits for it, UpdatePlan.quiet)
             return if (censusCaller(c, Binder.getCallingUid()) || Binder.getCallingUid() == android.os.Process.SHELL_UID)   // shell: the phone / computer page asks over ADB (Manage)
                 Bundle().apply { putString("json", RemoteService.updatesState(c).toString()) } else null
+        if (method == "tvapps") {                                      // TV Apps: install one app of the signed list over our ADB link; `arg` {op, id}
+            if (!censusCaller(c, Binder.getCallingUid())) return null
+            val a = try { JSONObject(arg.orEmpty()) } catch (e: Exception) { return null }
+            val token = Binder.clearCallingIdentity()
+            try {
+                val out = try { RemoteService.tvApps(a.optString("op"), a.optString("id")) } catch (e: Exception) { JSONObject().put("status", "error").put("msg", e.message ?: "") }
+                return Bundle().apply { if (out != null) putString("json", out.toString()) }   // nothing: no ADB here, the app uses Android's installer
+            } finally { Binder.restoreCallingIdentity(token) }
+        }
         if (method == "webview") {                                     // TV Home / Channels / Games found no WebView: turn it back on (WebViewFix), may wait on ADB
             if (!censusCaller(c, Binder.getCallingUid())) return null
             val token = Binder.clearCallingIdentity()

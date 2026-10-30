@@ -5,6 +5,7 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
 ## Unreleased
+- TV Apps (Apps tab → Browse apps): free, open-source apps for the TV (SmartTube, TizenTube, Kodi, VLC, Jellyfin, Just Player, Nova, mpv, Moonlight, LocalSend), each downloaded from its maker's own release, checked against its maker's signing certificate and installed in one tap; the list is signed and updated on the site without a new release.
 - TV Home: the Control Center has a brightness bar (a sun icon; OK to change it, Left / Right in steps of 10 %, Back when done; 100 % = no tint) and a button beside it to pick the tint colour (Dark, Blue light filter, Yellow, Sepia, Night red, Blue; a colour picked while off comes on light, at 90 %); shown when TV Setup is new enough, so a dim left on is always one press from Home.
 - Remote: Dim the screen moves into More keys → Tools (sun icon); the Sleep timer menu has Screen off directly instead of a TV screen submenu.
 - TV Home: the weather map's layers are icon buttons with one line naming the focused one, plus Play / Pause for the forecast (Windy's own play button sat on the map, out of the remote's reach); the next days get their room back.

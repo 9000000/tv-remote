@@ -15,6 +15,7 @@ kotlin {
     sourceSets["main"].kotlin.srcDir("../shared/src/home/kotlin")     // HomeConfig: TV Home's settings
     sourceSets["main"].kotlin.srcDir("../shared/src/report/kotlin")   // Report + Scrub
     sourceSets["main"].kotlin.srcDir("../shared/src/sign/kotlin")     // Ed25519
+    sourceSets["main"].kotlin.srcDir("../shared/src/tvapps/kotlin")    // TV Apps: the list, the APK checks
     sourceSets["main"].kotlin.srcDir("../shared/src/guard/kotlin")    // GuardLogic: the text of an error report (the Android part, Guard.kt, stays out)
     sourceSets["main"].kotlin.srcDir("../shared/conscrypt")           // ConscryptBackend: TLS 1.3 for Wireless debugging (core/AdbTls.kt)
 }

@@ -10,7 +10,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * The site's signed lists (launchers, wallpapers, bloat, downloader, games, providers), read ONE way for every app: asked of the
+ * The site's signed lists (launchers, wallpapers, bloat, downloader, games, providers, TV Apps), read ONE way for every app: asked of the
  * site first and the repository's copy second, the signature (Ed25519, [KEYS], made by dev/sign/sign_*.py) checked before a byte
  * is used, a copy kept in files/ and the one packed in the APK as the fallbacks. Plain java, so :shared and the TV apps compile
  * this same file (no Android class; the packed copy is reached through a lambda).
