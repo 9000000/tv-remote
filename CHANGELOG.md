@@ -5,7 +5,7 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
 ## Unreleased
-- Scenes: "Add to TV Home" in the scene editor puts the scene on TV Home as a tile; opening the tile runs it on the TV (needs the next TV Setup; the Phone app, the Computer app and the TV web page all have the button).
+- Scenes: "Add to TV Home" in the scene editor puts the scene on TV Home as a tile; opening the tile runs it on the TV and TV Home's + Add lists the saved scenes under App shortcuts (needs the next TV Setup; the Phone app, the Computer app and the TV web page all have the button).
 - Pool: while the balls roll the shooter's phone says so instead of showing a Fire that does nothing.
 - TV Games web games: a name changed on the phone shows in the game at once (lobby, scores, turn lines).
 - Pool (TV Games): the cue holds still while A is held, so the press jolting the phone (Tilt, the Phone app's gyroscope pointer) no longer swings it; with ball in hand one press sets the ball down and a hold shoots at once.

@@ -2229,6 +2229,7 @@ class HomeActivity : Activity() {
      * apps are the choice grid (many ticked at once), not rows here.
      */
     private fun addPanel() {
+        Pins.refresh(this)                                       // an app's shortcuts change while Home sits (TV Setup's scenes): list what they are now, not as of the last start
         val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles") + Pins.list(this).map { it.pkg }   // a pinned shortcut is on the grid already
         fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
         val live = ArrayList<TvGlass.Item>(); val pins = ArrayList<TvGlass.Item>(); val rowsOff = ArrayList<TvGlass.Item>()

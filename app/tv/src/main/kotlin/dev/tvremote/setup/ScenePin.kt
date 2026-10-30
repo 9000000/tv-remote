@@ -53,6 +53,30 @@ internal object ScenePin {
         return b
     }
 
+    /**
+     * The scenes as the app's dynamic shortcuts, so TV Home's + Add lists them ("App shortcuts") and one is added with a few presses: same ids,
+     * intent and picture as [request]. The latest list replaces the one before (last save wins, wherever it was saved: this TV's own page, or
+     * a phone / computer through [Scenes.publishThroughSetup]). A scene that is gone leaves the list; a tile already on the grid keeps
+     * working, because it carries the scene itself. Nothing is published for an empty list on a TV that never had any.
+     */
+    fun publish(c: Context, scenes: JSONArray) {
+        val sm = if (Build.VERSION.SDK_INT >= 25) c.getSystemService(ShortcutManager::class.java) else return
+        try {
+            if (scenes.length() == 0 && sm.dynamicShortcuts.isEmpty()) return
+            val list = (0 until scenes.length()).mapNotNull { scenes.optJSONObject(it) }.take(maxOf(sm.maxShortcutCountPerActivity, 1)).map { sc ->
+                ShortcutInfo.Builder(c, id(sc)).setShortLabel(sc.optString("name")).setIntent(intent(c, sc)).setIcon(Icon.createWithBitmap(art(sc))).build()
+            }
+            sm.dynamicShortcuts = list
+        } catch (e: Exception) { }                                    // a launcher-less or rate-limited system: the pin button still works
+    }
+
+    /** On TV Setup's start: lists this TV's own saved scenes only when nothing is listed yet (the system keeps the list; a phone's later list must not be undone by a restart). */
+    fun publishFirst(c: Context, own: JSONArray) {
+        if (own.length() == 0 || Build.VERSION.SDK_INT < 25) return
+        try { if (c.getSystemService(ShortcutManager::class.java).dynamicShortcuts.isNotEmpty()) return } catch (e: Exception) { return }
+        publish(c, own)
+    }
+
     /** Asks the default home to pin [scene]. {pinned} when asked (TV Home takes it at once), {error} when this TV's home cannot. */
     fun request(c: Context, scene: JSONObject): JSONObject {
         val sm = if (Build.VERSION.SDK_INT >= 26) c.getSystemService(ShortcutManager::class.java) else null

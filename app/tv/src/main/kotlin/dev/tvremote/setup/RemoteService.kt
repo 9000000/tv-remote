@@ -357,6 +357,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
         dev.tvremote.core.scenes.VoicePhrases.start({ assets.open(it) }, filesDir)   // the page asks for the same words (voice/phrases.json)
         dev.tvremote.core.adb.Adb.holdFirstAsk(10000)                       // a phone turning ADB on asks first, then allows us too (AdbPrompt.helpSetup)
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        ScenePin.publishFirst(this, scenes())
         running = this
         DimLayer.restore(this)
         Support.resume(this)                                          // support open when TV Setup stopped (an update, a kill) goes on
@@ -597,7 +598,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
 
     /** The one scenes handler of every core (Scenes.Routes); here the list is kept in the preferences. */
     private val sceneRoutes by lazy {
-        Scenes.Routes({ scenes() }, { prefs.edit().putString("scenes", it.toString()).apply() }, { "adb:$adbState" }) {
+        Scenes.Routes({ scenes() }, { prefs.edit().putString("scenes", it.toString()).apply(); ScenePin.publish(this, it) }, { "adb:$adbState" }) {
             link?.let { l -> Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) } }
         }.also { it.pin = { sc -> ScenePin.request(this, sc) } }
     }

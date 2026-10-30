@@ -52,6 +52,12 @@ class RulesReceiver : BroadcastReceiver() {
                 resultData = Base64.encodeToString(ScenePin.request(c, Scenes.clean(JSONArray().put(change.optJSONObject("scene") ?: JSONObject())).optJSONObject(0) ?: JSONObject().put("error", "no scene")).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
                 return
             }
+            if (change.optString("do") == "scenes") {               // a phone / computer saved its scenes (Scenes.publishThroughSetup): the TV's + Add lists them
+                ScenePin.publish(c, Scenes.clean(change.optJSONArray("scenes") ?: JSONArray()))
+                resultCode = Activity.RESULT_OK
+                resultData = Base64.encodeToString("{\"ok\":true}".toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                return
+            }
             if (change.optString("do") == "key") {                  // a client's key (RulesClient.key): the real press's decision, else it sends the key itself
                 resultCode = Activity.RESULT_OK
                 resultData = Base64.encodeToString(JSONObject().put("acted", KeysBridge.press(c, change.optInt("code"))).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)

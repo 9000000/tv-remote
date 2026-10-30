@@ -112,13 +112,15 @@ object Scenes {
     class Routes(private val all: () -> JSONArray, private val save: (JSONArray) -> Unit, private val offline: () -> String, private val target: () -> Target?) {
         /** Set by a core that can offer a scene to TV Home ("Add to TV Home"): gets the cleaned scene, answers {ok} or {error}. Without it the route does not exist. */
         var pin: ((JSONObject) -> JSONObject)? = null
+        /** Set by a client that has ADB: told the saved list after each save ([publishThroughSetup]); not for the TV's own core, whose [save] publishes. */
+        var publish: ((JSONArray) -> Unit)? = null
         fun handle(r: HttpServer.Request): HttpServer.Response? = when {
             r.path == "/api/scenes" -> {
                 val post = r.method == "POST"
                 val list = if (post) r.json().optJSONArray("scenes") else null
                 if (post && list == null) HttpServer.Response.error(400, "scenes required")
                 else {
-                    if (list != null) save(clean(list))
+                    if (list != null) { val kept = clean(list); save(kept); publish?.invoke(kept) }
                     if (r.query.containsKey("download")) backup(all()) else HttpServer.Response.json(JSONObject().put("scenes", all()))
                 }
             }
@@ -138,6 +140,15 @@ object Scenes {
             } catch (e: SetupNeed.Missing) { HttpServer.Response.error(409, e.message.toString()) }
             catch (e: Exception) { HttpServer.Response.error(503, e.message ?: "no answer") }
         }
+    }
+
+    /**
+     * After a client saves its scenes: hands the list to TV Setup, which lists them in TV Home's + Add (ScenePin.publish). Best effort and
+     * quiet: no ADB, no TV Setup or an old one (no "scenes" action) just means no list there; the save itself never fails for it.
+     * Last save wins: this list replaces whatever TV Setup showed, even one saved on the TV's own page.
+     */
+    fun publishThroughSetup(sh: (String) -> String, saved: JSONArray) {
+        try { RulesClient.call(sh, JSONObject().put("do", "scenes").put("scenes", saved)) } catch (e: Exception) { }
     }
 
     /** From a client with ADB: asks TV Setup to offer [scene] to TV Home as a pinned tile (RulesReceiver "scenepin"). Throws [SetupNeed.Missing] when it is missing or old. */

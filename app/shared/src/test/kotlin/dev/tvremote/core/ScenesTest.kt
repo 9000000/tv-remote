@@ -209,6 +209,14 @@ class ScenesTest {
         assertNull(routes.handle(req("GET", "/api/other")))
     }
 
+    @Test fun savingTellsTheClientsPublisherTheCleanedList() {
+        var told: JSONArray? = null
+        val routes = Scenes.Routes({ JSONArray() }, { }, { "off" }) { null }
+        routes.publish = { told = it }
+        routes.handle(req("POST", "/api/scenes", JSONObject().put("scenes", JSONArray().put(JSONObject().put("id", "s1").put("name", "N").put("steps", steps("""{"do":"wake"}""", """{"do":"bogus"}"""))))))
+        assertEquals(1, told!!.getJSONObject(0).getJSONArray("steps").length())
+    }
+
     @Test fun pinRouteGivesTheHomeTheCleanedSceneAndExistsOnlyWhenACoreSetsIt() {
         val routes = Scenes.Routes({ JSONArray().put(saved) }, { }, { "off" }) { null }
         assertNull(routes.handle(req("POST", "/api/scene/pin", JSONObject().put("id", "s1"))))

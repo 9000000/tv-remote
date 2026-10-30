@@ -514,7 +514,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     /** Where the scenes live here and what runs them (the one handler of every core: Scenes.Routes). */
     private fun scenes(s: Session) = Scenes.Routes({ saved.scenes }, { saved.scenes = it; saved.save() }, { "TV not connected" }) {
         if (native(s)) RemoteSteps(s.need()) { wake(s, s.host) } else Scenes.Shell({ sh(s, it) })
-    }.also { it.pin = { sc -> Scenes.pinThroughSetup({ cmd -> sh(s, cmd) }, sc) } }
+    }.also { it.pin = { sc -> Scenes.pinThroughSetup({ cmd -> sh(s, cmd) }, sc) }; if (!native(s)) it.publish = { l -> Scenes.publishThroughSetup({ cmd -> sh(s, cmd) }, l) } }
 
     private fun wake(s: Session, host: String): Response {             // host: a saved TV from the list, not only the one in use
         val mine = host == s.host
