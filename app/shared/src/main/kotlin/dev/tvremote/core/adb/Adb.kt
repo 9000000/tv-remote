@@ -292,7 +292,7 @@ class Adb(private val dir: File) : Closeable {
             close0()
             while (ASKING[k] != null && !dead && System.currentTimeMillis() < end) Thread.sleep(400)
             if (dead) throw IOException("closed")
-            if (System.currentTimeMillis() >= end) throw IOException("timeout")
+            if (System.currentTimeMillis() >= end) throw IOException(UNANSWERED)
             dial(host, port)
             if (authenticate() == null) return true
         }
@@ -390,7 +390,7 @@ class Adb(private val dir: File) : Closeable {
             }
         }
         asking.close()
-        throw IOException("timeout")
+        throw IOException(UNANSWERED)
     }
 
     private fun dial(host: String, port: Int) {
@@ -605,6 +605,8 @@ class Adb(private val dir: File) : Closeable {
     }
 
     companion object {
+        /** The "Allow USB debugging?" question sat 3 minutes with no answer: not a network fault (Errors.say, TV Setup's LinkFailure). */
+        const val UNANSWERED = "the TV's allow question was not answered"
         private val ASKING = ConcurrentHashMap<String, Adb>()         // host:port -> the connection of this app whose question is on the TV
         private val PLAIN_ASKED = ConcurrentHashMap<String, Long>()   // host -> when 5555 was opened there for TV Setup (plainForSetup)
         private val ASKED = ConcurrentHashMap<String, Long>()         // host -> when this app last put its question on that TV

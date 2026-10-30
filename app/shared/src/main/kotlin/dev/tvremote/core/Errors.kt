@@ -30,7 +30,7 @@ object Errors {
             Regex("SSLHandshake|CertPathValidator|Chain validation|CERTIFICATE_VERIFY|not yet valid|expired", RegexOption.IGNORE_CASE).containsMatchIn(all) ->
                 t("errors.could_not_open_secure")
             all.contains(Lan.BLOCKED) -> t("errors.vpn_so_tv_at")
-            all.contains(dev.tvremote.core.adb.AdbLink.ASKING) -> t("errors.tv_asks_allow_usb")
+            all.contains(dev.tvremote.core.adb.Adb.UNANSWERED) || all.contains(dev.tvremote.core.adb.AdbLink.ASKING) -> t("errors.tv_asks_allow_usb")
             all.contains(dev.tvremote.core.adb.AdbLink.STILL) -> t("errors.still_connecting_tv_over")
             all.contains("UnknownHost") -> t("errors.tv_cannot_reach_internet")
             Regex("SocketTimeout|timed out|ConnectException|Connection reset", RegexOption.IGNORE_CASE).containsMatchIn(all) ->

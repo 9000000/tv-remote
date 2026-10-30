@@ -560,13 +560,12 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
             }
             "closed", "error" -> {                                    // ADB off, TV just booted, session dropped: keep trying
                 if (resting) return                                   // we closed it ourselves
-                // a refused port is ADB switched off (or not open on the network), the one case with a plain fix: said as "closed", not "error"
-                val refused = key == "error" && Regex("ECONNREFUSED|Connection refused", RegexOption.IGNORE_CASE).containsMatchIn(detail)
-                adbDetail = if (key == "error" && !refused) detail.take(200) else ""   // refused already has its plain words; the raw socket text only scared
-                adbState = if (key == "error" && !refused) "error" else if (refused) "refused" else "connecting"
+                val o = LinkFailure.of(key, detail, retryMs) { dev.tvremote.core.Errors.say(java.io.IOException(it), dev.tvremote.core.Words.lang) }
+                adbDetail = o.detail
+                adbState = o.state
                 tv = null
-                ui.removeCallbacks(retry); ui.postDelayed(retry, retryMs)
-                retryMs = minOf(retryMs * 2, 5 * 60_000L)              // ADB off for good: every 5 min at most, not a session every 5 s forever; a use tries at once
+                ui.removeCallbacks(retry); ui.postDelayed(retry, o.retryMs)
+                if (o.backoff) retryMs = minOf(retryMs * 2, 5 * 60_000L)   // ADB off for good: every 5 min at most, not a session every 5 s forever; a use tries at once
                 if (failSince == 0L) failSince = android.os.SystemClock.elapsedRealtime()
                 fails++
                 AdbReport.failing(this, adbState, detail, failSince, fails, version)   // never through for minutes: the census hears it once

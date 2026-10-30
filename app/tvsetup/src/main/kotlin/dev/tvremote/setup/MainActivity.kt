@@ -717,6 +717,13 @@ class MainActivity : Activity() {
                 connecting = false
                 ui {
                     ecoPaint()
+                    if ((e.message ?: "").contains(Adb.UNANSWERED)) {   // ADB is on; the question ran out of time: "turn on ADB" would send the person in circles
+                        setStatus(WARN, T("allow.the_tv_is_asking"), T("tv_main.tick_always_allow_then"))
+                        log("✗ " + reason(e))
+                        tiles[1].enable(true)
+                        tiles[1].view.requestFocus()
+                        return@ui
+                    }
                     setStatus(BAD, T("tv_main.no_adb_connection"), T("tv_main.turn_on_adb_debugging"))
                     val notPaired = (e.message ?: "").contains("not paired")   // no 5555, Wireless debugging on: the code is what is missing
                     val refused = notPaired || (e.message ?: "").contains("refused", ignoreCase = true)   // on this very TV a refused port is ADB off, never a slow network
