@@ -55,8 +55,9 @@ async function loadQuick() {
 // ---------- apps tab ----------
 let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsOffOpen = false;          // pkg -> { off, keep, version }
 const appsStale = () => { quickLoaded = appsLoaded = false; };      // installed or removed elsewhere (files.js, Optimize TV): read again
+let appsGen = 0;                                                      // bumped when the TV changes: a list still on its way from the old TV is dropped
 onTvChange(() => {
-  appsStale(); META.clear(); metaFailed.clear(); appsIcons.clear();
+  appsGen++; appsSysBusy = false; appsStale(); META.clear(); metaFailed.clear(); appsIcons.clear();
   $('#quick').replaceChildren(el('div', { className: 'muted', textContent: T('remote.apps_appear_when_adb') }));
   $('#appslist').replaceChildren();
 });
@@ -65,7 +66,8 @@ let appsFilter = 'all';
 let appsSys = null, appsSysBusy = false;                             // the system apps, read once a search needs them (the chip off): null = not read yet
 async function loadAppsSys() {
   if (appsSysBusy) return; appsSysBusy = true;
-  const r = await api('/api/apps?system=1', null, true);
+  const gen = appsGen, r = await api('/api/apps?system=1', null, true);
+  if (gen !== appsGen) return;
   appsSysBusy = false; appsSys = r ? r.apps : [];
   appsSys.forEach((a) => { if (!appsInfo.has(a.pkg)) appsInfo.set(a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }); });
   seedMeta(appsSys); renderApps();
@@ -84,11 +86,12 @@ const appTags = (p, i) => APPS_FILTERS.filter((f) => f[0] !== 'all' && f[2](p, i
   .map(([key, label, , why]) => el('span', { className: 'tag ' + key, textContent: label, title: why }));
 async function loadApps(quiet) {                                       // quiet: the list stays on screen while it is read again
   if (!quiet) $('#appslist').replaceChildren(el('div', { className: 'muted', textContent: T('apps.loading') }));
-  const r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
+  const gen = appsGen, r = await api('/api/apps' + ($('#appssys').checked ? '?system=1' : ''));
+  if (gen !== appsGen) return;
   if (!r) { if (!quiet) $('#appslist').replaceChildren(); return; }
   appsSys = null; appsLoaded = true; appsAll = r.apps.map((a) => a.pkg); appsInfo = new Map(r.apps.map((a) => [a.pkg, { off: !!a.off, keep: !!a.keep, version: a.version || '' }])); seedMeta(r.apps); renderApps();
   const b = await api('/api/apps/boot', null, true);                 // after the list: a tag is worth no wait
-  if (b) { appsBoot = bootRead(b.text); renderApps(); }
+  if (b && gen === appsGen) { appsBoot = bootRead(b.text); renderApps(); }
 }
 // The list is drawn again on every refresh (the open apps every few seconds): each app keeps its icon, so it does not go
 // back to a letter while its picture loads again

@@ -1,7 +1,8 @@
 // file explorer, uploads and jobs
 // ---------- files ----------
 let cwd = '/sdcard/Download', filesLoaded = false, fileItems = [], volumes = [];
-onTvChange(() => { cwd = '/sdcard/Download'; filesLoaded = false; $('#fileslist').replaceChildren(); });
+let filesGen = 0;                                                      // the newest call wins: a slow folder must not replace the one opened after it
+onTvChange(() => { filesGen++; cwd = '/sdcard/Download'; filesLoaded = false; $('#fileslist').replaceChildren(); });
 const KINDS = [
   ['🎬', 'video', /\.(mp4|mkv|avi|mov|webm|ts|m4v|wmv|flv)$/i], ['🎵', 'audio', /\.(mp3|flac|wav|m4a|ogg|aac|opus)$/i],
   ['🖼️', 'image', /\.(jpe?g|png|gif|webp)$/i], ['📦', 'apk', /\.apk$/i], ['🗜️', 'zip', /\.(zip|rar|7z|tar|gz|xz)$/i],
@@ -11,7 +12,8 @@ const join = (name) => cwd.replace(/\/$/, '') + '/' + name;
 async function fileAct(path, data, okMsg) { const r = await api(path, data); if (r) { if (okMsg) toast(okMsg); loadFiles(cwd); } return r; }
 
 async function loadFiles(path) {
-  const r = await api('/api/files?path=' + encodeURIComponent(path));
+  const gen = ++filesGen, r = await api('/api/files?path=' + encodeURIComponent(path));
+  if (gen !== filesGen) return;
   if (!r) { if (!filesLoaded && path !== '/sdcard') loadFiles('/sdcard'); return; }
   filesLoaded = true; cwd = r.path; fileItems = r.items; volumes = r.volumes || [];
   if (path !== cwd || $('#filesq').dataset.dir !== cwd) { $('#filesq').value = ''; $('#filesq').dataset.dir = cwd; }

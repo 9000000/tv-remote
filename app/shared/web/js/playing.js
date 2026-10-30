@@ -34,7 +34,7 @@ async function plDo(what, ms, btn) {
     const before = plSig(PL.o);
     if (!await call('/api/playing', { do: what, ms })) return;     // not sent: the toast says why, the button is free again
     for (let t = performance.now(); performance.now() - t < (what === 'seek' ? 600 : 2500);) {
-      await new Promise((r) => setTimeout(r, 400));
+      await sleep(400);
       const o = await call('/api/playing', null, true); if (!o) continue;
       PL.o = o; PL.at = performance.now(); plDraw();
       if (what === 'seek' || plSig(o) !== before) break;

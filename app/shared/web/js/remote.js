@@ -56,7 +56,7 @@ const needAdb = () => { if (ADB.state === 'ready') return false; toast(NATIVE() 
 const needAdbSoon = async () => {
   if (ADB.state === 'unknown' || !ADB.state) {
     toast(T('core.adb_connecting'));
-    for (let i = 0; i < 40 && (ADB.state === 'unknown' || !ADB.state); i++) await new Promise((r) => setTimeout(r, 200));
+    for (let i = 0; i < 40 && (ADB.state === 'unknown' || !ADB.state); i++) await sleep(200);
   }
   return needAdb();
 };
