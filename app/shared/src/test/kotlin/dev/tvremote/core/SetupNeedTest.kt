@@ -58,4 +58,11 @@ class SetupNeedTest {
         assertEquals("http://10.0.0.5:8780/?k=0123456789abcdef", g.padUrl("8780 0123456789abcdef\n", "10.0.0.5"))
         assertNull(g.padUrl("", "10.0.0.5")); assertNull(g.padUrl("8780 short", "10.0.0.5")); assertNull(g.padUrl("x 0123456789abcdef", "10.0.0.5"))
     }
+
+    @Test fun everyFeatureHasANameAndAVersion() {                  // MIN and name() tied: a feature without its words would show its raw id in the Update question
+        for ((f, v) in SetupNeed.MIN) {
+            assertTrue("$f: $v", v.matches(Regex("\\d+\\.\\d+\\.\\d+")))
+            for (lang in listOf("en", "vi")) assertTrue("$f has no name in $lang", SetupNeed.name(f, lang) != f)
+        }
+    }
 }

@@ -12,6 +12,16 @@ class ReleaseTest {
         assertTrue(Release.compare("0.1.0", "0.1") == 0)
     }
 
+    @Test fun compareTable() {                                      // today's behaviour, pinned
+        assertTrue(Release.compare("1.3.0", "1.2.99") < 0)         // 1.3.0 and up are the old numbering
+        assertEquals(0, Release.compare("0.2.0-debug", "0.2.0"))   // a suffix on a part is dropped
+        assertTrue(Release.compare("", "0.1.0") < 0)
+        assertTrue(Release.compare("3.0.0", "2.24.2") > 0)         // both old-numbered ones are not: 3.x is new
+        assertTrue(Release.compare("0.10.0", "0.9.9") > 0)
+        assertEquals(0, Release.compare(" 0.1.0 ", "0.1.0"))
+        assertEquals(0, Release.compare("x.y", "0.0"))             // malformed parts count as 0, never throw
+    }
+
     @Test fun beforeTheRestart() {                                  // 1.3.0 … 2.24.2 came before 0.1.0: every one of them is older
         assertTrue(Release.compare("0.1.0", "2.24.2") > 0)
         assertTrue(Release.compare("0.1.0", "1.3.0") > 0)

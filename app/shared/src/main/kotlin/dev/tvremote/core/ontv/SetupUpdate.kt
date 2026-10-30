@@ -21,6 +21,8 @@ object SetupUpdate {
     const val PKG = RulesClient.SETUP
     const val DIR = "/data/local/tmp/tvr-update"
     const val APK = "$DIR/new.apk"                                     // where a phone or computer puts the APK it brings
+    private const val CLOCK_SLACK = 60_000L                           // the TV and its script read the same clock; a minute for a step of it
+    const val FAILED_WAIT = 6 * 3_600_000L
     private val VERSION = Regex("[0-9]+(\\.[0-9]+)*")
 
     /** The version of TV Setup on the TV, "" when it has none. */
@@ -40,8 +42,13 @@ object SetupUpdate {
         return o.put("bad", bad)
     }
 
-    fun busy(s: JSONObject): Boolean =                                 // a script that died with the TV leaves "installing" behind: stale after 10 minutes
-        (s.optString("state") == "installing" || s.optString("state") == "checking") && System.currentTimeMillis() - s.optLong("at") < 600_000
+    /** Running: "installing" / "checking" and newer than 10 minutes. A stamp ahead of now (a clock that jumped back, 1970 on boot) is stale too: it would stay "busy" for ever. */
+    fun busy(s: JSONObject, now: Long = System.currentTimeMillis()): Boolean =   // a script that died with the TV leaves "installing" behind
+        (s.optString("state") == "installing" || s.optString("state") == "checking") && (now - s.optLong("at")) in -CLOCK_SLACK..600_000
+
+    /** The install of [version] failed lately here (storage full, a bad file...): wait, do not try every half hour. Older, or stamped ahead of now, is stale: try again. */
+    fun failedLately(s: JSONObject, version: String, now: Long = System.currentTimeMillis()): Boolean =
+        s.optString("state") == "failed" && s.optString("version") == version && (now - s.optLong("at")) in -CLOCK_SLACK..FAILED_WAIT
 
     fun bad(s: JSONObject, version: String): Boolean {
         val b = s.optJSONArray("bad") ?: return false

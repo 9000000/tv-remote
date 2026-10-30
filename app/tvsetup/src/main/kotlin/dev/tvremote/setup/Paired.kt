@@ -64,10 +64,14 @@ object Paired {
         l.forEach { written[it.id] = it.seen }
     }
 
-    /** Devices that are not seen for [WEB_DAYS] days are dropped (apps stay). */
+    /** A browser unseen for [WEB_DAYS] days. A clock before its creation is a box in the wrong year: nothing is known then, so it stays. */
+    internal fun stale(e: Entry, now: Long): Boolean = e.kind == "web" && now >= e.created && now - e.seen > WEB_DAYS * DAY
+
+    /** Devices that are not seen for [WEB_DAYS] days are dropped (apps stay). Nothing is dropped while the clock is known to be a day or more off (Clock): a box that booted a year ahead must not forget every browser. */
     private fun prune(c: Context, now: Long) {
+        if (Math.abs(Clock.driftMs(c)) >= DAY) return
         val l = all(c)
-        if (l.removeAll { it.kind == "web" && now - it.seen > WEB_DAYS * DAY }) save(c)
+        if (l.removeAll { stale(it, now) }) save(c)
     }
 
     @Synchronized fun count(c: Context): Int { prune(c, System.currentTimeMillis()); return all(c).size }
@@ -90,12 +94,12 @@ object Paired {
     fun check(c: Context, token: String, tls: Boolean): Hit? {
         if (token.isEmpty()) return null
         val now = System.currentTimeMillis()
-        prune(c, now)
+        prune(c, System.currentTimeMillis())
         val h = sha256(token).toByteArray()
         val e = all(c).firstOrNull { MessageDigest.isEqual(it.h.toByteArray(), h) } ?: return null
         if (e.tls && !tls) return null
         val renew = e.kind == "web" && now - e.seen > DAY
-        e.seen = now
+        e.seen = maxOf(e.seen, now)                                   // a clock set back never lowers it: the next look at a right clock would drop the pass
         if (renew || now - (written[e.id] ?: 0L) > WRITE_EVERY) save(c)
         return Hit(e, renew)
     }

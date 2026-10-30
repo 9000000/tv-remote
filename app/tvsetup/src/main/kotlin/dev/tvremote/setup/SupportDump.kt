@@ -20,7 +20,7 @@ object SupportDump {
     private val READ = listOf(
         Regex("getprop( [\\w.-]+)?"),
         Regex("settings (get (global|secure|system) [\\w.-]+|list (global|secure|system))"),
-        Regex("dumpsys( [\\w./:-]+)*"),
+        Regex("dumpsys( -t \\d{1,3})? (-l|[a-zA-Z][\\w./:-]*)( [\\w./:-]+)*"),   // a service is named: not the whole dump
         Regex("pm (list (packages|permissions|features|users|libraries)( -[a-zA-Z]+)*( [\\w.-]+)?|path [\\w.]+|dump [\\w.]+)"),
         Regex("appops get [\\w.]+( [\\w_:]+)?"),
         Regex("cmd package (resolve-activity|query-activities|query-services|query-receivers|list packages)( [\\w.:/=-]+)*"),
@@ -35,7 +35,7 @@ object SupportDump {
     private val ACTS = Regex("\\b(set|reset|unplug|enable|disable|force-idle|force-inactive|step|clear|kill|run|put|delete|write|unforce|--reset|start|stop|add|remove)\\b")
 
     // services whose dump carries a person's own words or accounts: never asked from afar
-    private val PRIVATE = Regex("^dumpsys (clipboard|notification|account|telecom|content|sms|contacts)\\b")
+    private val PRIVATE = Regex("(?<![\\w.-])(clipboard|notification|account|telecom|content|sms|contacts|private)(?![\\w.-])")   // as a word anywhere: after -t N or extra spaces too
 
     fun allowed(cmd: String): Boolean = cmd.length <= 200 && !SYNTAX.containsMatchIn(cmd) && READ.any { it.matches(cmd) } &&
         !(cmd.startsWith("dumpsys") && (ACTS.containsMatchIn(cmd) || PRIVATE.containsMatchIn(cmd)))

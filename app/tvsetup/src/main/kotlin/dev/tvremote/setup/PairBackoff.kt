@@ -14,7 +14,8 @@ class PairBackoff {
         prune(now)
         val p = peers[peer] ?: return 0
         val w = if (p.asked < FREE) 0L else minOf(30000L shl (p.asked - FREE).coerceAtMost(4), 5 * 60000L)
-        return maxOf(0L, w - (now - p.shown))
+        val age = now - p.shown
+        return if (age < 0) 0L else maxOf(0L, w - age)            // a clock set back: a mark ahead of it is stale, not a wait of years
     }
 
     /** The screen went up for [peer]. */
@@ -31,7 +32,7 @@ class PairBackoff {
 
     @Synchronized fun size(): Int = peers.size
 
-    private fun prune(now: Long) { peers.values.removeAll { now - it.shown > FORGET_MS } }
+    private fun prune(now: Long) { peers.values.removeAll { it.shown > now || now - it.shown > FORGET_MS } }
 
     companion object {
         const val FREE = 3

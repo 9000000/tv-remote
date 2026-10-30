@@ -36,4 +36,21 @@ class SetupUpdateTest {
         assertTrue(SetupUpdate.busy(SetupUpdate.parse("checking $now 2.19.0 2.18.0 \n|")))
         assertFalse(SetupUpdate.busy(SetupUpdate.parse("installing ${now - 3600} 2.19.0 2.18.0 \n|")))   // the TV restarted mid-way
     }
+
+    @Test fun stampAheadOfNowIsStale() {                            // a clock that jumped back must not leave "busy" for ever
+        val now = System.currentTimeMillis() / 1000
+        assertFalse(SetupUpdate.busy(SetupUpdate.parse("installing ${now + 86400} 2.19.0 2.18.0 \n|")))
+        assertTrue(SetupUpdate.busy(SetupUpdate.parse("installing ${now + 5} 2.19.0 2.18.0 \n|")))   // a few seconds of slack
+    }
+
+    @Test fun failedWaitsOnlyWhileRecent() {
+        val now = 1_800_000_000_000L
+        fun failed(ago: Long, v: String = "2.19.0") = SetupUpdate.parse("failed ${(now - ago) / 1000} $v 2.18.0 x\n|")
+        val h = 3_600_000L
+        assertFalse(SetupUpdate.failedLately(failed(7 * h), "2.19.0", now))        // old: try again
+        assertTrue(SetupUpdate.failedLately(failed(1 * h), "2.19.0", now))         // recent: wait
+        assertFalse(SetupUpdate.failedLately(failed(-24 * h), "2.19.0", now))      // stamped ahead of now: stale
+        assertFalse(SetupUpdate.failedLately(failed(1 * h, "2.19.1"), "2.19.0", now))   // another version
+        assertFalse(SetupUpdate.failedLately(SetupUpdate.parse("ok ${now / 1000} 2.19.0 2.18.0 \n|"), "2.19.0", now))
+    }
 }

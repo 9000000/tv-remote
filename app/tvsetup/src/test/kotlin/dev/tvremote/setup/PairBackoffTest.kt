@@ -38,4 +38,11 @@ class PairBackoffTest {
         for (i in 0 until 200) b.shown("p$i", 1000L)
         assertEquals(PairBackoff.MAX, b.size())
     }
+
+    @Test fun aClockSetBackLeavesNoWaitAndNoMark() {
+        val b = PairBackoff()
+        repeat(5) { b.shown("a", 10_000_000L) }
+        assertEquals(0, b.wait("a", 10_000_000L - 5_000_000L))    // the marks are ahead of it: stale
+        assertEquals(0, b.size())
+    }
 }

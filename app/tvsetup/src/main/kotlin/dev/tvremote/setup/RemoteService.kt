@@ -807,9 +807,9 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     @Synchronized @Throws(Exception::class)
     private fun pairOpen(peer: String, lang: String): HttpServer.Response? {
         val now = System.currentTimeMillis()
-        if (now - lastPairStart < 3000) return HttpServer.Response.error(429, "wait a moment")
+        if (now - lastPairStart in 0 until 3000) return HttpServer.Response.error(429, "wait a moment")
         // asking for code after code would give five guesses each: wrong guesses count across codes, and too many lock it
-        if (now < lockedUntil) return HttpServer.Response.error(429, Words.get(lang, "tv_server.locked_15"))
+        if (now < lockedUntil && lockedUntil - now <= 15 * 60000L) return HttpServer.Response.error(429, Words.get(lang, "tv_server.locked_15"))
         // /api/pair/start needs no pass (it is how a pass is got), so anyone on the network can call it: never pile a second
         // code screen on the first, and after a few that nobody finished, wait longer and longer (30 s, 1, 2, 4, 5 min)
         if (pairingCode() != null && PairActivity.showing) return HttpServer.Response.json(JSONObject().put("ok", true).put("seconds", ((codeUntil - now) / 1000).toInt()))

@@ -13,6 +13,9 @@ import android.widget.Toast
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.core.adb.Adb.Companion.q
 
+/** The marks that decide a warning, as Guard keeps them between looks. */
+internal data class Marks(val bedWarnedAt: Long, val totalWarnedAt: Long, val ramQuietUntil: Long)
+
 /**
  * Enforces [Rules] on the TV, from RemoteService. A check runs every few seconds to a minute (sooner when a deadline is close):
  * standby when the sleep timer ends or during bedtime (each after a minute's warning on screen, [WarnActivity]), and an app
@@ -46,6 +49,17 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
             devices() and 0x8000 != 0                                 // AudioSystem.DEVICE_OUT_REMOTE_SUBMIX
         } catch (e: Throwable) {
             try { recording() } catch (e2: Throwable) { false }       // no such method on Android 5-6 either
+        }
+
+        /**
+         * A mark ahead of the clock is from a clock that has since gone back (a box that booted in the wrong year): "warned a minute
+         * ago" or "quiet for half an hour" would then hold for a year. Forgotten, so the warning comes again; a quiet mark can never
+         * lawfully be more than its 30 minutes ahead. [lastStop] is read by both threads, so it is cleaned in one place for both.
+         */
+        internal fun sane(m: Marks, lastStop: MutableMap<String, Long>, now: Long): Marks {
+            lastStop.entries.removeAll { it.value > now }
+            return Marks(if (m.bedWarnedAt > now) 0L else m.bedWarnedAt, if (m.totalWarnedAt > now) 0L else m.totalWarnedAt,
+                if (m.ramQuietUntil > now + 30 * 60_000L) 0L else m.ramQuietUntil)
         }
 
         /** (total, available) memory in MB, from /proc/meminfo, which any app may read. */
@@ -129,6 +143,9 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val now = System.currentTimeMillis()
         val on = (c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive
         var next = 60_000L
+        var today: Pair<org.json.JSONObject, String>? = null           // one read of the day's usage events per check, for the total and the limits alike
+        val usedToday = { today ?: stats.today(now, true).also { today = it } }
+        sane(Marks(bedWarnedAt, totalWarnedAt, ramQuietUntil), lastStop, now).let { bedWarnedAt = it.bedWarnedAt; totalWarnedAt = it.totalWarnedAt; ramQuietUntil = it.ramQuietUntil }
 
         // ---- sleep timer
         val at = o.optLong("sleep_at")
@@ -168,7 +185,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
 
         // ---- the day's total on the TV (kids mode): a notice near the end, then like bedtime: a minute's grace with a place for a code, then standby
         if (on && Rules.totalMin(o, now) != null && Rules.unlockUntil(o, now) == 0L) {
-            val left = Rules.totalLeftSec(o, stats.today(now, true).first, Kids.free(c, now), now) ?: 1L
+            val left = Rules.totalLeftSec(o, usedToday().first, Kids.free(c, now), now) ?: 1L
             val warnMin = o.optJSONObject("total")?.optInt("warn", 5) ?: 5
             if (left <= 0) {
                 if (totalWarnedAt == 0L) { totalWarnedAt = now; warn("total", now + 60_000, ""); RemoteService.alert("limit", "app" to T("kids.total_name"), "why" to "limit") }
@@ -186,7 +203,7 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val limits = o.optJSONObject("limits")
         val capped = Rules.schedApps(o).any { o.optJSONObject("sched")?.optJSONObject(it)?.optInt("max") ?: 0 > 0 }   // a schedule's minutes count like a limit's
         if (on && Rules.unlockUntil(o, now) == 0L && (limits != null && limits.length() > 0 || capped)) {
-            val (used, front) = stats.today(now, true)
+            val (used, front) = usedToday()
             val limit = Rules.budget(o, front, now) ?: 0
             if (front.isNotEmpty() && limit > 0) {
                 val allowed = (limit + Rules.extra(o, front, now)) * 60L
@@ -222,8 +239,8 @@ internal class Guard(private val c: Context, private val adb: () -> Adb?) {
         val code = Rules.hasCode(o)
         if (apps.isEmpty() && !kids && sched.isEmpty() && !code) { eventsTo = 0; return 3_000 }   // off: forgets the apps it followed
         val now = System.currentTimeMillis()
+        lastStop.entries.removeAll { it.value > now }              
         if (pinAt > now) pinAt = 0L                                   // the clock went back (a box that booted in the wrong year): marks ahead of it held every check off
-        lastStop.entries.removeAll { it.value > now }
         if (!(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isInteractive) {
             unlocked = ""
             return 2_000
