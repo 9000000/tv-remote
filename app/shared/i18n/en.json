@@ -4182,5 +4182,10 @@
  "track.roku_mic": "Settings › Privacy › Microphone: block per channel",
  "track.vidaa_acr": "Settings › Advanced Settings › Enhanced Viewing › Automatic Content Recognition: Off",
  "track.vidaa_ads": "Same place: Personalized Ads and Content Recommendation off",
- "track.vidaa_mic": "System › Voice Service › Hands-Free: Off"
+ "track.vidaa_mic": "System › Voice Service › Hands-Free: Off",
+ "scenedlg.add_to_home": "📌 Add to TV Home",
+ "auto.pin_sent": "Added to TV Home: {name}",
+ "core.need_scenepin": "adding a scene to TV Home",
+ "scenepin.unsupported": "TV Home is not this TV's home screen yet. Make TV Home the home screen and try again.",
+ "scenepin.no_adb": "TV Setup has no ADB link yet, so the scene cannot run."
 }

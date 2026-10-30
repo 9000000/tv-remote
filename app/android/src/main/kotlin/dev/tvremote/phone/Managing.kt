@@ -238,7 +238,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
             return HttpServer.Response.json(JSONObject())
         }
         // this phone's scenes (the widget, tiles and shortcuts use them too); "Export" lands in the phone's Download folder
-        Scenes.Routes({ SceneStore.all(a) }, { SceneStore.save(a, it) }, { "adb: not connected" }) { link?.let { l -> Scenes.Shell({ l.get().shell(it) }) } }.handle(r)?.let { return it }
+        Scenes.Routes({ SceneStore.all(a) }, { SceneStore.save(a, it) }, { "adb: not connected" }) { link?.let { l -> Scenes.Shell({ l.get().shell(it) }) } }.also { rt -> link?.let { l -> rt.pin = { sc -> Scenes.pinThroughSetup({ l.get().shell(it) }, sc) } } }.handle(r)?.let { return it }
         if (r.path == "/api/watchers") {                               // the TV's own count: this phone's remote screen and PiP too
             val c = try { link?.get()?.shell(dev.tvremote.core.picture.Watchers.CMD)?.let { dev.tvremote.core.picture.Watchers.parse(it) } } catch (e: Exception) { null }
             return HttpServer.Response.json(if (c == null) JSONObject() else JSONObject().put("watch", c.watch).put("listen", c.listen))

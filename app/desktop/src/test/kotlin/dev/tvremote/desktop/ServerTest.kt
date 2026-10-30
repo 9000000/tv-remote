@@ -56,7 +56,7 @@ class ServerTest {
     @Test fun everyApiRequestWithoutTheKeyIsRefused() {
         val gets = listOf("/api/state", "/api/about", "/api/tvs", "/api/scenes", "/api/wirelog", "/api/update", "/api/screen", "/api/nope")
         for (p in gets) assertEquals(p, 403, req("GET", p).status)
-        val posts = listOf("/api/key", "/api/scene/run", "/api/scenes", "/api/tv/remove", "/api/shutdown", "/api/update", "/api/pair/start")
+        val posts = listOf("/api/key", "/api/scene/run", "/api/scene/pin", "/api/scenes", "/api/tv/remove", "/api/shutdown", "/api/update", "/api/pair/start")
         for (p in posts) assertEquals(p, 403, req("POST", p, json = JSONObject()).status)
     }
 

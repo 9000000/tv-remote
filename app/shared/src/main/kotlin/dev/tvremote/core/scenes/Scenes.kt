@@ -110,6 +110,8 @@ object Scenes {
      * Null from [handle]: not a scenes path.
      */
     class Routes(private val all: () -> JSONArray, private val save: (JSONArray) -> Unit, private val offline: () -> String, private val target: () -> Target?) {
+        /** Set by a core that can offer a scene to TV Home ("Add to TV Home"): gets the cleaned scene, answers {ok} or {error}. Without it the route does not exist. */
+        var pin: ((JSONObject) -> JSONObject)? = null
         fun handle(r: HttpServer.Request): HttpServer.Response? = when {
             r.path == "/api/scenes" -> {
                 val post = r.method == "POST"
@@ -122,8 +124,27 @@ object Scenes {
             }
             r.path == "/api/scene/run" && r.method == "POST" ->
                 runRequest(r.json(), { id -> all().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }.firstOrNull { it.optString("id") == id } }, offline(), target)
+            r.path == "/api/scene/pin" && r.method == "POST" && pin != null -> pinRequest(r.json(), pin!!)
             else -> null
         }
+
+        /** "Add to TV Home": [pin] gets the cleaned scene (the editor's own `id` / `name` / `icon` / `steps`, else a saved one by `id`) and answers {ok} or {error}. */
+        private fun pinRequest(d: JSONObject, pin: (JSONObject) -> JSONObject): HttpServer.Response {
+            val saved = all().let { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }.firstOrNull { !d.has("steps") && it.optString("id") == d.optString("id") }
+            val one = clean(JSONArray().put(saved ?: d)).optJSONObject(0) ?: return HttpServer.Response.error(400, "no scene")
+            return try {
+                val out = pin(one)
+                if (out.has("error")) HttpServer.Response.error(501, out.optString("error")) else HttpServer.Response.json(out)
+            } catch (e: SetupNeed.Missing) { HttpServer.Response.error(409, e.message.toString()) }
+            catch (e: Exception) { HttpServer.Response.error(503, e.message ?: "no answer") }
+        }
+    }
+
+    /** From a client with ADB: asks TV Setup to offer [scene] to TV Home as a pinned tile (RulesReceiver "scenepin"). Throws [SetupNeed.Missing] when it is missing or old. */
+    fun pinThroughSetup(sh: (String) -> String, scene: JSONObject): JSONObject {
+        val r = RulesClient.call(sh, JSONObject().put("do", "scenepin").put("scene", scene))
+        if (r.has("setup")) throw SetupNeed.Missing("scenepin", r.optString("have"))
+        return r
     }
 
     /** Keeps only what can be run: at most 24 scenes of 30 steps, known steps with sane values, short names. */

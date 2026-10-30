@@ -599,7 +599,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
     private val sceneRoutes by lazy {
         Scenes.Routes({ scenes() }, { prefs.edit().putString("scenes", it.toString()).apply() }, { "adb:$adbState" }) {
             link?.let { l -> Scenes.Shell({ l.get().shell(it) }) { m -> Rules.change(this, JSONObject().put("do", "sleep").put("minutes", m)) } }
-        }
+        }.also { it.pin = { sc -> ScenePin.request(this, sc) } }
     }
 
     private fun scenes(): JSONArray = try { JSONArray(prefs.getString("scenes", "[]")) } catch (e: Exception) { JSONArray() }
@@ -680,7 +680,7 @@ class RemoteService : Service(), Tv.Listener, HttpServer.Handler {
                 HttpServer.Response.json(st)
             } catch (e: CodeWrong) { HttpServer.Response.json(400, JSONObject().put("error", "code_wrong").put("clock", e.clock))
             } catch (e: IllegalArgumentException) { HttpServer.Response.error(400, e.message.toString()) }
-            "/api/scenes", "/api/scene/run" -> return sceneRoutes.handle(r)!!
+            "/api/scenes", "/api/scene/run", "/api/scene/pin" -> return sceneRoutes.handle(r)!!
             "/api/touch" -> {
                 val v = feeds.viewer?.takeIf { it.ready() } ?: return ok()   // no picture session: nothing to touch
                 return TvControl.touch(v, r.json())                          // the wheel (scroll) too, as on the computer

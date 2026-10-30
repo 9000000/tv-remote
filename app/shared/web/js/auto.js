@@ -563,6 +563,11 @@ $('#scenesave').addEventListener('click', async () => {
   if (await saveScenes(list)) { $('#scenedlg').close(); toast(T('auto.scene_saved', { name: sc.name })); }
 });
 $('#scenetry').addEventListener('click', () => { const sc = draftScene(); if (sc) runScene({ name: sc.name, steps: sc.steps }); });
+$('#scenepin').addEventListener('click', async () => {             // a tile on TV Home that runs this scene (TV Setup offers it to the home screen)
+  const sc = draftScene(); if (!sc) return;
+  const r = await api('/api/scene/pin', sc);
+  if (r && r.ok) toast(T('auto.pin_sent', { name: sc.name }));
+});
 $('#scenedel').addEventListener('click', async () => { if (editing && await ask(T('auto.scene_delete_ask', { name: editing.name }), { ok: T('auto.delete'), danger: true }) && await saveScenes(SCENES.filter((x) => x.id !== editing.id))) $('#scenedlg').close(); });
 $('#sceneclose').addEventListener('click', () => $('#scenedlg').close());
 $('#scenenew').addEventListener('click', () => editScene(null));

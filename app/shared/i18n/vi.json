@@ -4038,5 +4038,10 @@
  "track.roku_mic": "Settings › Privacy › Microphone: chặn từng kênh",
  "track.vidaa_acr": "Cài đặt › Cài đặt nâng cao › Enhanced Viewing › Automatic Content Recognition: Tắt",
  "track.vidaa_ads": "Cùng chỗ đó: tắt Personalized Ads và Content Recommendation",
- "track.vidaa_mic": "Hệ thống › Voice Service › Hands-Free: Tắt"
+ "track.vidaa_mic": "Hệ thống › Voice Service › Hands-Free: Tắt",
+ "scenedlg.add_to_home": "📌 Thêm vào TV Home",
+ "auto.pin_sent": "Đã thêm vào TV Home: {name}",
+ "core.need_scenepin": "thêm cảnh vào TV Home",
+ "scenepin.unsupported": "TV Home chưa là màn hình chính của TV này. Hãy đặt TV Home làm màn hình chính rồi thử lại.",
+ "scenepin.no_adb": "TV Setup chưa kết nối được ADB nên chưa chạy được cảnh."
 }

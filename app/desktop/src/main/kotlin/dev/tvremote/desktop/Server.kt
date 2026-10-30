@@ -346,7 +346,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
                 if (host == s.host) switch(saved.current)
                 Response.ok()
             }
-            "/api/scenes", "/api/scene/run" -> scenes(s).handle(r)
+            "/api/scenes", "/api/scene/run", "/api/scene/pin" -> scenes(s).handle(r)
             "/api/fleet/do" -> {
                 val work = fleets.action(d.optString("action"), d.optString("pkg"))
                 val hosts = d.optJSONArray("hosts")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()
@@ -514,7 +514,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
     /** Where the scenes live here and what runs them (the one handler of every core: Scenes.Routes). */
     private fun scenes(s: Session) = Scenes.Routes({ saved.scenes }, { saved.scenes = it; saved.save() }, { "TV not connected" }) {
         if (native(s)) RemoteSteps(s.need()) { wake(s, s.host) } else Scenes.Shell({ sh(s, it) })
-    }
+    }.also { it.pin = { sc -> Scenes.pinThroughSetup({ cmd -> sh(s, cmd) }, sc) } }
 
     private fun wake(s: Session, host: String): Response {             // host: a saved TV from the list, not only the one in use
         val mine = host == s.host
@@ -675,7 +675,7 @@ class Server(private val repo: File, private val keys: File, private val pass: P
             "SLEEP", "WAKE")                                          // Sony ignores SLEEP sent over the remote protocol
         val OPENERS = setOf("MENU", "SETTINGS", "INPUT", "GUIDE", "LIVE", "YOUTUBE", "NETFLIX", "PRIME")   // keys that should bring up a screen of their own
         val OURS = setOf("/api/key", "/api/app", "/api/volume", "/api/text", "/api/clip", "/api/touch", "/api/type", "/api/wake", "/api/tv/select", "/api/tv/save",
-            "/api/tv/remove", "/api/voice", "/api/scenes", "/api/scene/run", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown", "/api/support/app",
+            "/api/tv/remove", "/api/voice", "/api/scenes", "/api/scene/run", "/api/scene/pin", "/api/fleet/do", "/api/assist", "/api/pair/start", "/api/pair/finish", "/api/vidaa/cert", "/api/shutdown", "/api/support/app",
             "/api/update")
         /** What the page reads from an LG or Samsung TV besides [OURS]. */
         /** What support may read of this server (SupportRelay): read-only, what a page shows. */

@@ -209,6 +209,21 @@ class ScenesTest {
         assertNull(routes.handle(req("GET", "/api/other")))
     }
 
+    @Test fun pinRouteGivesTheHomeTheCleanedSceneAndExistsOnlyWhenACoreSetsIt() {
+        val routes = Scenes.Routes({ JSONArray().put(saved) }, { }, { "off" }) { null }
+        assertNull(routes.handle(req("POST", "/api/scene/pin", JSONObject().put("id", "s1"))))
+        var got: JSONObject? = null
+        routes.pin = { got = it; JSONObject().put("ok", true) }
+        assertEquals(true, body(routes.handle(req("POST", "/api/scene/pin", JSONObject().put("id", "s1")))!!).getBoolean("ok"))   // a saved scene by id
+        assertEquals("s1", got!!.getString("id"))
+        routes.handle(req("POST", "/api/scene/pin", JSONObject().put("id", "e1").put("name", "Edit").put("steps", steps("""{"do":"wake"}""", """{"do":"bogus"}"""))))   // the editor's own, unsaved
+        assertEquals(1, got!!.getJSONArray("steps").length())
+        assertEquals("e1", got!!.getString("id"))
+        assertEquals(400, routes.handle(req("POST", "/api/scene/pin", JSONObject().put("id", "nope")))!!.status)
+        routes.pin = { throw SetupNeed.Missing("scenepin", "0.1.0") }
+        assertEquals(409, routes.handle(req("POST", "/api/scene/pin", JSONObject().put("id", "s1")))!!.status)
+    }
+
     @Test fun routesAnswerOfflineWithTheCoresOwnWords() {
         val routes = Scenes.Routes({ JSONArray().put(saved) }, { }, { "adb:none" }) { null }
         val r = routes.handle(req("POST", "/api/scene/run", JSONObject().put("id", "s1")))!!

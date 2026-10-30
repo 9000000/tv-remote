@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Base64
+import dev.tvremote.core.scenes.Scenes
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -43,6 +45,11 @@ class RulesReceiver : BroadcastReceiver() {
             if (change.optString("do") == "forget_web") {           // check-out (Checkout.kt): only the shell reaches this receiver (DUMP), as every client call here
                 resultCode = Activity.RESULT_OK
                 resultData = Base64.encodeToString(JSONObject().put("forgot", RemoteService.rotateWeb(c)).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                return
+            }
+            if (change.optString("do") == "scenepin") {             // a phone or computer's "Add to TV Home" on a scene (Scenes.pinThroughSetup)
+                resultCode = Activity.RESULT_OK
+                resultData = Base64.encodeToString(ScenePin.request(c, Scenes.clean(JSONArray().put(change.optJSONObject("scene") ?: JSONObject())).optJSONObject(0) ?: JSONObject().put("error", "no scene")).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
                 return
             }
             if (change.optString("do") == "key") {                  // a client's key (RulesClient.key): the real press's decision, else it sends the key itself
