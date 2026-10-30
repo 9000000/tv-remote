@@ -40,7 +40,7 @@ import dev.tvremote.update.SelfUpdate
  */
 class BrowseActivity : Activity() {
     override fun attachBaseContext(b: Context) = super.attachBaseContext(Lang.wrap(b))
-    private val io = Executors.newSingleThreadExecutor()
+    private val io = Executors.newSingleThreadExecutor(Providers.screenThread)
     private val main = Handler(Looper.getMainLooper())
     private lateinit var rail: LinearLayout
     private lateinit var grid: RecyclerView
@@ -69,7 +69,7 @@ class BrowseActivity : Activity() {
     private var otherState = IDLE
     private var gseq = 0
     private var names: Map<String, String> = emptyMap()            // country code -> "🇩🇪 Germany", for the cards of other countries
-    private val searcher = Executors.newSingleThreadExecutor()
+    private val searcher = Executors.newSingleThreadExecutor(Providers.screenThread)
     private val globalRun = Runnable { searchOthers() }
 
     override fun onCreate(b: Bundle?) {

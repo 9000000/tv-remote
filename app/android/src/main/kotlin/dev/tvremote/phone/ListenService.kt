@@ -52,6 +52,7 @@ class ListenService : Service() {
         current = this
         shown = null
         show(null, last)
+        synchronized(Companion) { up = true; if (stopAsked) { stopAsked = false; stopSelf() } }   // listening ended before this ran: see [stop]
         val wm = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         wifi = wm.createWifiLock(if (Build.VERSION.SDK_INT >= 29) WifiManager.WIFI_MODE_FULL_LOW_LATENCY else WifiManager.WIFI_MODE_FULL_HIGH_PERF, "tvremote:listen").apply { setReferenceCounted(false); acquire() }
     }
@@ -116,6 +117,7 @@ class ListenService : Service() {
     }
 
     override fun onDestroy() {
+        synchronized(Companion) { up = false }
         if (current === this) current = null
         session?.run { isActive = false; release() }
         wifi?.release()
@@ -125,6 +127,15 @@ class ListenService : Service() {
     companion object {
         const val STOP = "dev.tvremote.phone.STOP_LISTEN"
         @Volatile private var current: ListenService? = null
+        private var up = false                                        // past startForeground; both under the Companion's lock
+        private var stopAsked = false
+
+        /** Ends it. A stopService() before its onCreate ran makes Android 12+ throw "did not then call startForeground" (census
+         *  50c2bc6e, 🎧 on and off at once), so a service not up yet stops itself once it is, as WorkService does. */
+        fun stop(c: Context) = synchronized(Companion) { if (up) c.stopService(Intent(c, ListenService::class.java)) else stopAsked = true }
+
+        /** Before startForegroundService(): a stop asked of an earlier start that never came up does not end this one. */
+        fun starting() = synchronized(Companion) { stopAsked = false }
         private var shown: String? = null
         private var last = ""
         /** play, pause, next, prev for the TV, or [STOP]: set by the remote while it lives. */

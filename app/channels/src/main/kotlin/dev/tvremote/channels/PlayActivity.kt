@@ -44,8 +44,8 @@ import java.util.concurrent.Executors
 class PlayActivity : Activity() {
     override fun attachBaseContext(b: android.content.Context) = super.attachBaseContext(Lang.wrap(b))
     private val main = Handler(Looper.getMainLooper())
-    private val io = Executors.newSingleThreadExecutor()
-    private val guideIo = Executors.newSingleThreadExecutor()         // a slow guide never holds up a stream's address
+    private val io = Executors.newSingleThreadExecutor(Providers.screenThread)
+    private val guideIo = Executors.newSingleThreadExecutor(Providers.screenThread)         // a slow guide never holds up a stream's address
     private var started = false
     private var player: ExoPlayer? = null
     private lateinit var surface: SurfaceView

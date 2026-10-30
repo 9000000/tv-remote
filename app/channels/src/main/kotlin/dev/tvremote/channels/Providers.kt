@@ -24,6 +24,17 @@ import java.text.Normalizer
 object Providers {
     /** [f] on a thread of its own; CompletableFuture is API 24, and TV Channels runs on Android 5-6 boxes (census 8f22ae15). */
     fun <T> async(f: () -> T): java.util.concurrent.FutureTask<T> = java.util.concurrent.FutureTask(f).also { Thread(it, "channels-async").apply { isDaemon = true }.start() }
+    /**
+     * The thread of a screen's own executor: closing the screen (shutdownNow) interrupts a job waiting on the network or on [join],
+     * which ends that job, not the app (census 13b5562e: back pressed while the list loaded). Anything else still crashes as before.
+     */
+    val screenThread = java.util.concurrent.ThreadFactory { r ->
+        Thread(r).apply {
+            setUncaughtExceptionHandler { t, e ->
+                if (generateSequence(e) { it.cause }.none { it is InterruptedException }) Thread.getDefaultUncaughtExceptionHandler()?.uncaughtException(t, e)
+            }
+        }
+    }
     /** Its result, or what it threw (as join did). */
     fun <T> join(t: java.util.concurrent.FutureTask<T>): T = try { t.get() } catch (e: java.util.concurrent.ExecutionException) { throw e.cause ?: e }
 

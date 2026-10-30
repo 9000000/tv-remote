@@ -122,8 +122,8 @@ internal fun MainActivity.listenService(on: Boolean) {
     val i = Intent(this, ListenService::class.java)
     if (on) askNotifications()
     try {
-        if (!on) stopService(i)
-        else if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i)
+        if (!on) ListenService.stop(this)
+        else { ListenService.starting(); if (Build.VERSION.SDK_INT >= 26) startForegroundService(i) else startService(i) }
     } catch (ignored: Exception) {                                    // no notification allowed: the sound still plays while the app is open
     }
 }

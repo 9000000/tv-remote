@@ -122,4 +122,28 @@ class ProvidersTest {
         assertTrue(ps.first { it.kind == "vieon" }.o.optString("guide").contains("{id}"))
         assertTrue(Regex("\\d{4}-\\d{2}-\\d{2}").matches(Guide.day(tv360, 1)))
     }
+
+    // census 13b5562e: Back while the list waits on a FutureTask: shutdownNow interrupts it, which ends that job, not the app
+    @Test fun aScreenClosedWhileItsJobWaitsDoesNotCrash() {
+        val crashed = java.util.concurrent.atomic.AtomicReference<Throwable>()
+        val before = Thread.getDefaultUncaughtExceptionHandler()
+        val threads = ArrayList<Thread>()                                  // joined: their crash handler runs after the pool counts them done
+        val factory = java.util.concurrent.ThreadFactory { r -> Providers.screenThread.newThread(r).also { threads.add(it) } }
+        Thread.setDefaultUncaughtExceptionHandler { _, e -> crashed.set(e) }
+        try {
+            for (wrapped in listOf(true, false)) {                         // ThreadPoolExecutor wraps it in an Error; a bare one too
+                val io = java.util.concurrent.Executors.newSingleThreadExecutor(factory)
+                val waiting = java.util.concurrent.CountDownLatch(1)
+                val never = java.util.concurrent.FutureTask { Thread.sleep(60_000); 1 }
+                io.execute { waiting.countDown(); if (wrapped) Providers.join(never) else throw InterruptedException() }
+                waiting.await(); Thread.sleep(100)
+                io.shutdownNow(); threads.forEach { it.join(5000) }
+            }
+            assertNull(crashed.get())
+            val io = java.util.concurrent.Executors.newSingleThreadExecutor(factory)
+            io.execute { throw IllegalStateException("a real fault") }       // anything else still crashes as before
+            io.shutdown(); threads.forEach { it.join(5000) }
+            assertEquals("a real fault", crashed.get()?.message)
+        } finally { Thread.setDefaultUncaughtExceptionHandler(before) }
+    }
 }

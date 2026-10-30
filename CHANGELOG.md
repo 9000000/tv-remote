@@ -4,6 +4,13 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+- TV Channels: leaving the channel list while it still loads, or a TV with a full disk, no longer closes the app.
+- TV Setup's Manage screen and the web page work again on TV boxes with an old WebView (and older iPhones): one piece of code they could not read stopped the page.
+- TV Home: a firmware that fails while pinning a shortcut no longer closes TV Home.
+- Phone app: turning "Listen on the phone" on and off at once no longer closes the app.
+
 ## 0.36.0 - 2026-10-30
 
 Web 0.36.0 · Phone app 0.33.1 · TV app 0.34.1 · TV Home 0.20.1 · TV Channels 0.15.1 · TV Games 0.15.0

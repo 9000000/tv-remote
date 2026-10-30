@@ -20,7 +20,8 @@ class PinActivity : Activity() {
         val s = req?.takeIf { it.isValid && it.requestType == LauncherApps.PinItemRequest.REQUEST_TYPE_SHORTCUT }?.shortcutInfo
         when {
             s == null -> {}
-            req.accept() -> {
+            // some firmwares' system_server throws on accept (census d31494e5, NPE in ShortcutInfo): not pinned, no crash
+            runCatching { req.accept() }.getOrDefault(false) -> {
                 Pins.order(this, Pins.order(this).filter { it != Pins.key(s) } + Pins.key(s))
                 Toast.makeText(this, getString(R.string.pinned_here, s.shortLabel ?: ""), Toast.LENGTH_SHORT).show()
             }

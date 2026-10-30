@@ -4,9 +4,10 @@
 
 /** {kind: 'channel'|'video'|'playlist'|'short', url: the canonical https link, id: what to show when YouTube names nothing} or null. */
 function ytParse(text) {
-  const m = String(text || '').match(/(?<![\w.@-])(?:https?:\/\/)?(?:www\.|m\.|music\.)?(?:youtube\.com|youtu\.be)(?:[/?#][^\s]*)?/i);
+  // the link starts the text or follows something no host or address ends with; no lookbehind: a TV box's old WebView (before Chrome 62) or Safari before 16.4 cannot parse one
+  const m = String(text || '').match(/(?:^|[^\w.@-])((?:https?:\/\/)?(?:www\.|m\.|music\.)?(?:youtube\.com|youtu\.be)(?:[/?#][^\s]*)?)/i);
   if (!m) return null;
-  let u; try { u = new URL(/^https?:/i.test(m[0]) ? m[0] : 'https://' + m[0]); } catch { return null; }
+  let u; try { u = new URL(/^https?:/i.test(m[1]) ? m[1] : 'https://' + m[1]); } catch { return null; }
   const host = u.hostname.toLowerCase().replace(/^(www|m|music)\./, ''), path = u.pathname.replace(/\/+$/, ''), q = u.searchParams;
   const vid = (id) => /^[\w-]{6,20}$/.test(id || '') ? { kind: 'video', url: 'https://www.youtube.com/watch?v=' + id, id } : null;
   if (host === 'youtu.be') return vid(path.slice(1).split('/')[0]);

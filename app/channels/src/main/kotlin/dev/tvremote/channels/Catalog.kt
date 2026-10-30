@@ -56,7 +56,11 @@ object Catalog {
         val f = File(c.filesDir, name)
         if (!fresh && young(c, name)) return f.readText()
         val got = try { load?.invoke() ?: if (load == null) get(url, progress) else null } catch (e: Exception) { null }?.takeIf(valid)
-        if (got != null) { File(c.filesDir, "$name.tmp").apply { writeText(got); renameTo(f) }; return got }
+        if (got != null) {                                         // a full disk keeps no copy: this time's list still shows (census c9277726)
+            val tmp = File(c.filesDir, "$name.tmp")
+            try { tmp.writeText(got); tmp.renameTo(f) } catch (e: java.io.IOException) { tmp.delete() }
+            return got
+        }
         return if (f.exists()) f.readText() else null
     }
 
