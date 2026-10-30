@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.36.1 - 2026-10-30
+
+Web 0.36.1 · Phone app 0.33.2 · TV app 0.34.2 · TV Home 0.20.2 · TV Channels 0.15.2 · TV Games 0.15.1
 
 - TV Setup and the other apps: an error inside the TV's own system while a screen closes (seen on Allwinner H616 boxes) no longer shows an error box.
 - Home screen: where TV Setup has to take over the Home button (a TCL that keeps its setup app), Optimize TV and the launcher gallery now wait for TV Setup's key filter to really run, and say plainly when it did not start instead of "Home opens TV Home through TV Setup" (issue #9).
