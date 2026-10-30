@@ -263,7 +263,11 @@ internal class MiniPlayer(private val a: MainActivity) : FrameLayout(a) {
         a.managing.cover(px)
     }
 
-    init { closeBtn.setOnClickListener { a.closeMini() } }
+    init {
+        closeBtn.setOnClickListener { a.closeMini() }
+        // setFloat reports while the player is not laid out yet (top 0 = "upper half", nothing covered): the jobs card stayed under it
+        addOnLayoutChangeListener { _, _, t, _, b, _, ot, _, ob -> if (t != ot || b != ob) report() }
+    }
 
     private companion object { const val MIN = 0.35f }
 }

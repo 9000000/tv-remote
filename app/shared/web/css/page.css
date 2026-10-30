@@ -79,7 +79,7 @@ main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking 
 #jobscard { position:fixed; right:16px; bottom:calc(16px + var(--cover-b, 0px)); width:min(380px, calc(100vw - 32px)); max-height:min(46vh, 420px); overflow:auto; z-index:15; box-shadow:0 12px 36px rgba(0,0,0,.28); }
 body.pip #jobscard { bottom:calc(var(--pip-h, 0px) + 28px); z-index:16; }   /* above the TV's mini picture (screen.js measures it), not under it */
 @media (max-width:640px) { /* a sheet along the bottom, thumbs' reach */
-  #jobscard { left:8px; right:8px; width:auto; bottom:calc(8px + env(safe-area-inset-bottom, 0px)); max-height:40vh; border-radius:16px; }
+  #jobscard { left:8px; right:8px; width:auto; bottom:calc(8px + env(safe-area-inset-bottom, 0px) + var(--cover-b, 0px)); max-height:40vh; border-radius:16px; }
   body.pip #jobscard { bottom:calc(var(--pip-h, 0px) + 16px + env(safe-area-inset-bottom, 0px)); }
 }
 #jobsum { font-weight:600; color:var(--muted); }
