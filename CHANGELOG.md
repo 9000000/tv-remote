@@ -11,6 +11,15 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 - Downloaded lists (channels, guide, games, themes, links, wallpapers, Downloader codes) are fetched again on boxes that saved them while their clock was ahead; before, they looked fresh until that date came.
 - Phone app: the progress card (installs, downloads) rises above the floating TV picture on Manage instead of sitting under it with its Stop button hidden.
 - The app list and the file browser no longer show the previous TV's answer after switching TVs, or an older folder after opening two quickly.
+- Quick launch, Health > Settings and Automation no longer show (or edit) the previous TV's values after switching TVs; a TV that stops answering no longer leaves the page waiting for ever.
+- TV web page: after Start, the pairing-code box is cleared and ready to type in.
+- Phone app: when Android ends the Manage page's web view (low memory), the page loads again instead of the whole app closing; an update downloaded while the app was rebuilt still installs.
+- TV Setup: a clock that jumps (boxes that boot in the wrong year) no longer locks pairing, forgets web pairings, mutes bedtime and limit warnings, keeps "updating" for ever or skips a failed TV Setup update for good.
+- TV Home: Weather, Market and News refresh again after a clock jump; a web background no longer loads while Home is away; a video background that is too big or refused is not downloaded again on every loop.
+- TV Apps: an APK's old-style (v1) signature must match the maker's certificate too; Cancel pressed right after Install stops the install.
+- TV Channels: a stream that fails while the network is down is no longer marked dead for 6 hours; faster lists on weak boxes (favourites, search).
+- Uploading a file to the TV that fails or is stopped no longer deletes the file that was already there under that name.
+- Computer app: an unreadable TV list is kept as `tvs.json.bad` instead of being overwritten; pressing Update twice no longer starts two installs; a reply to a browser that stopped reading no longer holds the server.
 
 ## 0.37.1 - 2026-10-30
 

@@ -290,7 +290,7 @@ class PlayActivity : Activity() {
 
     private fun next(e: PlaybackException?) {
         main.removeCallbacks(slow)
-        if (!single) streams.getOrNull(stream)?.let { Store.setAlive(this, it.url, false) }
+        if (!single && shouldMarkDead(Probe.online(this))) streams.getOrNull(stream)?.let { Store.setAlive(this, it.url, false) }
         stream++; asProgressive = false; retried = false
         if (stream < streams.size) { start(); return }
         player?.stop()
@@ -476,3 +476,6 @@ class PlayActivity : Activity() {
         private val PROGRESSIVE = Regex("""\.(mp4|ts|mkv|webm|mp3|aac|flv)$""", RegexOption.IGNORE_CASE)
     }
 }
+
+/** A failed stream is marked dead (for 6 hours) only while the network is up: offline says nothing of the stream (as [Probe.check]). */
+internal fun shouldMarkDead(online: Boolean) = online

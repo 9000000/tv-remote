@@ -10,7 +10,31 @@ import org.json.JSONObject
  * and which streams answered lately ([Probe]).
  */
 object Store {
-    private fun p(c: Context) = c.getSharedPreferences("channels", Context.MODE_PRIVATE)
+    private fun p(c: Context): android.content.SharedPreferences {
+        val s = c.getSharedPreferences("channels", Context.MODE_PRIVATE)
+        if (!pruned) { pruned = true; val old = staleOk(s.all, System.currentTimeMillis()); if (old.isNotEmpty()) s.edit().apply { old.forEach { remove(it) } }.apply() }   // once per process: one key per stream URL piled up for ever
+        return s
+    }
+    @Volatile private var pruned = false
+
+    /** The "ok:<url>" keys whose answer is over 6 hours old: [alive] ignores them already, so they are only weight in the prefs file. */
+    internal fun staleOk(all: Map<String, *>, now: Long): List<String> =
+        all.filter { (k, v) -> k.startsWith("ok:") && (v !is Long || now - Math.abs(v) > OK_MS) }.keys.toList()
+    private const val OK_MS = 6 * 3600_000L
+
+    /** Whether [setAlive] has to write: not when the stream already stands as answered (a card re-bound or a stream restarted writes it again and again). */
+    internal fun needsAliveWrite(prev: Long, ok: Boolean, now: Long) = !(ok && prev > 0 && now - prev <= OK_MS)
+
+    /** The ids of the favourites, parsed once per change of the stored string (a card bound asks [isFavourite] for each channel). */
+    internal class IdCache(private val parse: (String) -> Set<String>) {
+        @Volatile private var last: Pair<String, Set<String>>? = null   // one object: a reader never pairs a string with another string's ids
+        @Volatile var parses = 0
+        fun ids(now: String): Set<String> {
+            last?.let { if (it.first == now) return it.second }
+            parses++; val v = parse(now); last = now to v; return v
+        }
+    }
+    private val favIds = IdCache { raw -> favouritesOf(raw).map { it.id }.toHashSet() }
 
     /** [f] runs when the favourites or groups change (ChannelsReceiver wrote them while the list is open); keep the returned listener until [unwatch]. */
     fun watch(c: Context, f: () -> Unit) = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, k -> if (k == "favs" || k == "groups" || k == "lists") f() }
@@ -20,11 +44,12 @@ object Store {
     fun country(c: Context): String = p(c).getString("country", null) ?: Catalog.home()
     fun setCountry(c: Context, cc: String) = p(c).edit().putString("country", cc).apply()
 
-    fun favourites(c: Context): List<Channel> {
-        val a = try { JSONArray(p(c).getString("favs", "[]")) } catch (e: Exception) { JSONArray() }
+    private fun favouritesOf(raw: String?): List<Channel> {
+        val a = try { JSONArray(raw ?: "[]") } catch (e: Exception) { JSONArray() }
         return (0 until a.length()).mapNotNull { read(a.optJSONObject(it)) }
     }
-    fun isFavourite(c: Context, id: String) = favourites(c).any { it.id == id }
+    fun favourites(c: Context): List<Channel> = favouritesOf(p(c).getString("favs", "[]"))
+    fun isFavourite(c: Context, id: String) = id in favIds.ids(p(c).getString("favs", "[]") ?: "[]")
     /** Adds [ch] (all its streams) or takes it away; true when it is a favourite now. */
     fun toggleFavourite(c: Context, ch: List<Channel>): Boolean {
         val id = ch.first().id
@@ -128,12 +153,14 @@ object Store {
     /** The stream's last check: true answered, false did not, null not checked in the last 6 hours. */
     fun alive(c: Context, url: String): Boolean? {
         val v = p(c).getLong("ok:$url", 0L)
-        if (v == 0L || System.currentTimeMillis() - Math.abs(v) > 6 * 3600_000L) return null
+        if (v == 0L || System.currentTimeMillis() - Math.abs(v) > OK_MS) return null
         return v > 0
     }
     fun setAlive(c: Context, url: String, ok: Boolean) {
         val t = System.currentTimeMillis()
-        p(c).edit().putLong("ok:$url", if (ok) t else -t).apply()
+        val s = p(c)
+        if (!needsAliveWrite(s.getLong("ok:$url", 0L), ok, t)) return
+        s.edit().putLong("ok:$url", if (ok) t else -t).apply()
     }
 
     private fun write(ch: Channel) = JSONObject().put("id", ch.id).put("name", ch.name).put("logo", ch.logo).put("group", ch.group)

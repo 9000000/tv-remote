@@ -69,12 +69,24 @@ object Catalog {
 
     fun layouts(c: Context): String = peek(c).optJSONObject("layouts")?.toString() ?: "{}"
 
+    private val NOT_FILE = Regex("[^A-Za-z0-9 ._-]")                  // built once: it ran for every homebrew entry on every lookup
+
+    /** The entries by the file name they get on the device (the first of two alike wins, as the old scan did). */
+    internal fun <T> byFile(entries: List<Pair<String, T>>): Map<String, T> = HashMap<String, T>().also { m -> entries.forEach { (n, e) -> n.replace(NOT_FILE, "").let { k -> if (k !in m) m[k] = e } } }
+
+    /** The homebrew entries by file name, rebuilt when [peek] hands a new list. */
+    private fun homebrewByFile(cat: JSONObject): Map<String, JSONObject> {
+        hb?.let { if (it.first === cat) return it.second }
+        val a = cat.optJSONArray("homebrew")
+        val m = byFile((0 until (a?.length() ?: 0)).mapNotNull { i -> a?.optJSONObject(i)?.let { it.optString("name") to it } })
+        return m.also { hb = cat to it }
+    }
+    @Volatile private var hb: Pair<JSONObject, Map<String, JSONObject>>? = null   // tied to the list object, so a new [mem] drops it
+
     /** The entry a downloaded homebrew ROM came from (its file is the sanitised name + extension, see LibraryActivity.getRom), or a web game by its address. */
     fun entryOf(c: Context, rom: String?, url: String?): JSONObject? {
         val cat = peek(c)
-        if (rom != null) cat.optJSONArray("homebrew")?.let { a ->
-            for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("name").replace(Regex("[^A-Za-z0-9 ._-]"), "") == rom.substringBeforeLast('.').removeSuffix(" (homebrew)")) return it }
-        }
+        if (rom != null) homebrewByFile(cat)[rom.substringBeforeLast('.').removeSuffix(" (homebrew)")]?.let { return it }
         if (url != null) cat.optJSONArray("web")?.let { a ->
             for (i in 0 until a.length()) a.optJSONObject(i)?.let { if (it.optString("url") == url) return it }
         }

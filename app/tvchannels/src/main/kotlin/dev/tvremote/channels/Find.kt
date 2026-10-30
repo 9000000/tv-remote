@@ -4,10 +4,13 @@ import java.text.Normalizer
 
 /** Finds a channel by the name a person says ("vtv1", "an giang 1") among a country's channels, without knowing iptv-org ids. */
 object Find {
+    private val MARKS = Regex("\\p{M}+")                                    // built once: fold runs for every channel of a list
+    private val OTHER = Regex("[^a-z0-9]+")
+
     /** Lower case, no accents (đ -> d), no punctuation, single spaces. */
     fun fold(s: String): String =
-        Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "")
-            .replace(Regex("[^a-z0-9]+"), " ").trim()
+        Normalizer.normalize(s.lowercase().replace('đ', 'd'), Normalizer.Form.NFD).replace(MARKS, "")
+            .replace(OTHER, " ").trim()
 
     /** 0 exact, 1 starts with the words ("vtv1" -> "VTV1 HD", not "VTV10"), 2 starts with, 3 every word present, 4 contained; null no match. Spaces are ignored too, so "vtv 1" == "vtv1". */
     fun tier(name: String, text: String): Int? {

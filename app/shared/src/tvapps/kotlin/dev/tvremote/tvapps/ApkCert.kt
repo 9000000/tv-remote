@@ -5,14 +5,20 @@ import java.io.IOException
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.security.GeneralSecurityException
 import java.security.MessageDigest
+import java.security.cert.CertificateFactory
+import java.util.zip.ZipFile
 
 /**
- * The certificates an APK says it is signed with (APK Signature Scheme v2 / v3 / v3.1 blocks), as SHA-256 hex. TV Apps pins
+ * The certificates an APK says it is signed with (APK Signature Scheme v2 / v3 / v3.1 blocks, and the v1 JAR signature's
+ * the .RSA / .DSA / .EC file in META-INF when the APK carries one), as SHA-256 hex. TV Apps pins
  * each app to its author's certificate instead of one file's SHA-256, so an author's new release needs no new list.
  * Reading the block does not check the signatures themselves: Android does that at install and refuses an APK whose block
  * does not sign its contents. So every signer of every scheme present must be a pinned one ([allPinned]): an old Android
- * reads v2 only, a new one v3, and a block of either signed by another key must not slip through. v1-only APKs are refused.
+ * reads v2 only, a new one v3, and a block of either signed by another key must not slip through. v1 counts too: Android
+ * 5-6 (minSdk 21) checks only the JAR signature, so a v1 signer by another key beside a pinned v2 block is refused.
+ * v1-only APKs are refused (a v2+ block is required).
  * Plain java (no Android class): :shared, the computer app and TV Apps compile this file.
  */
 object ApkCert {
@@ -21,7 +27,7 @@ object ApkCert {
     private const val V31 = 0x1b93ad61
     private val MAGIC = "APK Sig Block 42".toByteArray(Charsets.US_ASCII)
 
-    /** Scheme id ("v2" / "v3" / "v3.1") to the SHA-256 of each signer's certificate; empty when the APK has no signing block. */
+    /** Scheme id ("v1" / "v2" / "v3" / "v3.1") to the SHA-256 of each signer's certificate; empty when the APK has no signing block. */
     @Throws(IOException::class)
     fun read(apk: File): Map<String, List<String>> = RandomAccessFile(apk, "r").use { f ->
         val block = block(f) ?: return emptyMap()
@@ -33,13 +39,30 @@ object ApkCert {
             val name = when (id) { V2 -> "v2"; V3 -> "v3"; V31 -> "v3.1"; else -> null } ?: continue
             out[name] = signers(value, id != V2)
         }
+        v1(apk)?.let { out["v1"] = it }
         out
     }
 
-    /** True when the APK has a v2+ block and every signer in every scheme it carries is one of [pinned] (SHA-256 hex, any case). */
+    /** True when the APK has a v2+ block and every signer in every scheme it carries (v1 too) is one of [pinned] (SHA-256 hex, any case). */
     fun allPinned(certs: Map<String, List<String>>, pinned: Collection<String>): Boolean {
         val ok = pinned.map { it.lowercase().replace(":", "") }.toSet()
-        return certs.isNotEmpty() && certs.values.all { s -> s.isNotEmpty() && s.all { it in ok } }
+        return certs.keys.any { it != "v1" } && certs.values.all { s -> s.isNotEmpty() && s.all { it in ok } }
+    }
+
+    // the JAR signature: every certificate in each META-INF/*.RSA|DSA|EC (PKCS#7); null when the APK has none. An unreadable
+    // one throws, so the APK is refused rather than read as "no v1".
+    private fun v1(apk: File): List<String>? = ZipFile(apk).use { z ->
+        val out = ArrayList<String>()
+        for (e in z.entries()) {
+            val n = e.name.uppercase()
+            if (!n.startsWith("META-INF/") || n.indexOf('/', 9) >= 0 || !(n.endsWith(".RSA") || n.endsWith(".DSA") || n.endsWith(".EC"))) continue
+            if (e.size > 1 shl 20) throw IOException("bad signature file")
+            val certs = try { z.getInputStream(e).use { CertificateFactory.getInstance("X.509").generateCertificates(it) } }
+                        catch (x: GeneralSecurityException) { throw IOException("bad signature file") }
+            if (certs.isEmpty()) throw IOException("signature file without a certificate")
+            for (c in certs) out.add(sha256(c.encoded))
+        }
+        out.takeIf { it.isNotEmpty() }
     }
 
     // the block sits right before the central directory, which the end-of-central-directory record points to

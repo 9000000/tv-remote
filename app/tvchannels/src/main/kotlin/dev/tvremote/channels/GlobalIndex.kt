@@ -102,8 +102,10 @@ class GlobalIndex private constructor(private val lines: Array<String>, private 
             M3u.parseLines(m3u.lineSequence()) { ch -> out.write(line(ch)); out.write("\n") }
         }
 
+        private val TAIL = Regex("\\s*\\([^)]*\\)\\s*")
+
         /** A name without its "(United States)" / "(1080p)" tails: "Cartoon Network (United States)" -> "Cartoon Network". */
-        fun plain(name: String) = name.replace(Regex("\\s*\\([^)]*\\)\\s*"), " ").trim().ifEmpty { name }
+        fun plain(name: String) = name.replace(TAIL, " ").trim().ifEmpty { name }
 
         /** One channel as an index line (no newline). */
         fun line(ch: Channel) = listOf(ch.id, ch.name, Find.fold(ch.name), ch.group, ch.logo, ch.url, ch.quality,

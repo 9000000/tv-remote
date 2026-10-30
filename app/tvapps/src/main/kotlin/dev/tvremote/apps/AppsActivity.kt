@@ -39,6 +39,7 @@ import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /** The app, only to start the error guard and the anonymous error reports. */
 class TvAppsApp : Application() {
@@ -282,13 +283,15 @@ class AppsActivity : Activity() {
 
     private fun install(a: AppList.App) {
         val stop = AtomicBoolean(false)
-        var job: String? = null
-        val p = progress(a) { stop.set(true); job?.let { j -> work.execute { setup("cancel", j) } } }
+        val job = AtomicReference<String?>(null)
+        val p = progress(a) { stop.set(true); job.get()?.let { j -> work.execute { setup("cancel", j) } } }
         work.execute {
             val started = setup("install", a.id)
             if (started != null && started.optString("status") != "error" && started.optString("id").isNotEmpty()) {
-                job = started.getString("id")
-                viaSetup(a, p, started.getString("id")) { stop.get() }
+                val id = started.getString("id")
+                job.set(id)
+                if (stop.get()) setup("cancel", id)                    // Cancel came before the call returned: it saw no job to cancel
+                viaSetup(a, p, id) { stop.get() }
             } else ui.post { if (!stop.get()) { done(p); viaAndroid(a) } }
         }
     }
