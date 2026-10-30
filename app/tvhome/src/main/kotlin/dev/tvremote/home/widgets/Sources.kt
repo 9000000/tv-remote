@@ -57,7 +57,7 @@ object Sources {
         }
         val mine = bytes?.let { rev(it) } ?: -1
         bytes?.let { parse(String(it, Charsets.UTF_8)) }?.let { now = it }
-        if (System.currentTimeMillis() - f.lastModified() < DAY) return
+        if (dev.tvremote.guard.Age.fresh(f.lastModified(), DAY)) return
         Thread({
             try {
                 SignedList.fetch(BASES, NAME, 1 shl 18, connectMs = 6000, readMs = 8000) { list, sig, _ ->

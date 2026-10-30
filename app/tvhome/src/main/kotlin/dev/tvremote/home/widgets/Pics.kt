@@ -40,7 +40,7 @@ internal object Pics {
     private fun load(dir: File, url: String, w: Int): Bitmap? {
         dir.mkdirs()
         val f = File(dir, name(url))
-        if (!f.isFile || System.currentTimeMillis() - f.lastModified() > DAY) {
+        if (!f.isFile || !dev.tvremote.guard.Age.fresh(f.lastModified(), DAY)) {
             val b = Net.bytes(url, Net.PIC_CAP, 10000) ?: return null
             val t = File(dir, f.name + ".tmp"); t.writeBytes(b); t.renameTo(f)
             dir.listFiles()?.takeIf { it.size > 80 }?.sortedBy { it.lastModified() }?.take(it0(dir))?.forEach { it.delete() }   // the folder stays small

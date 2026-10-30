@@ -87,7 +87,7 @@ object Providers {
         mem?.let { if (System.currentTimeMillis() - it.first < DAY) return it.second }
         val f = File(c.filesDir, "providers.json")
         var fresh = true
-        val text = if (f.exists() && System.currentTimeMillis() - f.lastModified() < DAY) f.readText() else
+        val text = if (f.exists() && dev.tvremote.guard.Age.fresh(f.lastModified(), DAY)) f.readText() else
             fetchSigned()?.also { SignedList.keep(f, it.toByteArray(Charsets.UTF_8)) }
                 ?: run { fresh = false; null }
                 ?: f.takeIf { it.exists() }?.readText()

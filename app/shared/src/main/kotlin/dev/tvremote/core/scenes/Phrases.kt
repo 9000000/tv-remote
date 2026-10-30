@@ -81,7 +81,7 @@ object VoicePhrases {
         val f = dir?.let { File(it, "voice-phrases.json") }
         kept = f
         use(choose(null, f?.let { SignedList.kept(it) }, SignedList.packed(open, NAME)))
-        if (f != null && !(f.isFile && System.currentTimeMillis() - f.lastModified() < DAY)) Thread({ refresh() }, "voice-phrases").apply { isDaemon = true }.start()
+        if (f != null && !(f.isFile && dev.tvremote.guard.Age.fresh(f.lastModified(), DAY))) Thread({ refresh() }, "voice-phrases").apply { isDaemon = true }.start()
     }
 
     /** Reads the site's list now (blocks). True when it replaced what was in use. */

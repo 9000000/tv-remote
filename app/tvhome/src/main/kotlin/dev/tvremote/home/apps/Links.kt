@@ -152,7 +152,7 @@ object Links {
         }
         val mine = bytes?.let { rev(it) } ?: -1
         bytes?.let { parse(String(it, Charsets.UTF_8)) }?.let { now = it }
-        val old = System.currentTimeMillis() - f.lastModified() >= DAY
+        val old = !dev.tvremote.guard.Age.fresh(f.lastModified(), DAY)
         Thread({
             if (old) try {
                 SignedList.fetch(BASES, NAME, 1 shl 18, connectMs = 6000, readMs = 8000) { list, sig, _ ->

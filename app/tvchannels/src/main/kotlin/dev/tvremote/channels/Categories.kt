@@ -149,7 +149,7 @@ object Categories {
     fun alsoStale(c: Context, cc: String, doc: Doc?): Boolean {
         if (doc == null || doc.also.isEmpty()) return false
         val f = alsoFile(c, cc)
-        return !f.exists() || System.currentTimeMillis() - f.lastModified() >= DAY || try { f.bufferedReader().use { it.readLine() } != alsoKey(doc) } catch (e: IOException) { true }
+        return !f.exists() || !dev.tvremote.guard.Age.fresh(f.lastModified(), DAY) || try { f.bufferedReader().use { it.readLine() } != alsoKey(doc) } catch (e: IOException) { true }
     }
 
     /**
@@ -183,7 +183,7 @@ object Categories {
     /** Whether the kept answer for [cc] (a file, or "none") is over a day old or was never asked. */
     fun stale(c: Context, cc: String): Boolean {
         val f = file(c, cc).takeIf { it.exists() } ?: none(c, cc).takeIf { it.exists() } ?: return true
-        return System.currentTimeMillis() - f.lastModified() >= DAY
+        return !dev.tvremote.guard.Age.fresh(f.lastModified(), DAY)
     }
 
     /** Asks the site for [cc]'s file (when [force] or [stale]); keeps it if it parses. A 404 is remembered for a day; offline keeps the old copy. */

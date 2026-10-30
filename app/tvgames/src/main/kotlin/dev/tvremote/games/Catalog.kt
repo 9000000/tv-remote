@@ -55,7 +55,7 @@ object Catalog {
     fun refresh(c: Context, force: Boolean = false): Boolean {
         reached = false
         val f = File(c.filesDir, "games.json")
-        if (!force && f.exists() && System.currentTimeMillis() - f.lastModified() < DAY && dbg(c) == null) return false
+        if (!force && f.exists() && dev.tvremote.guard.Age.fresh(f.lastModified(), DAY) && dbg(c) == null) return false
         return try {
             SignedList.fetch(bases(c), "games.json", 1 shl 20, keys(c), connectMs = 6000, readMs = 8000) { list, sig, _ ->
                 val o = parse(String(list, Charsets.UTF_8)) ?: return@fetch null

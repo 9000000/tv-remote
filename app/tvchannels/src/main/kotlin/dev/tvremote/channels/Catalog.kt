@@ -44,7 +44,7 @@ object Catalog {
     fun home(): String = Lang.system().country.lowercase().ifEmpty { "us" }
 
     /** Whether files/[name] is a copy younger than a day: [cached] then answers without the network. */
-    fun young(c: Context, name: String): Boolean = File(c.filesDir, name).let { it.exists() && System.currentTimeMillis() - it.lastModified() < DAY }
+    fun young(c: Context, name: String): Boolean = File(c.filesDir, name).let { it.exists() && dev.tvremote.guard.Age.fresh(it.lastModified(), DAY) }
 
     /**
      * The copy in files/ when younger than a day (or offline), else the network's ([load], or GET [url]). Null: never fetched and offline.

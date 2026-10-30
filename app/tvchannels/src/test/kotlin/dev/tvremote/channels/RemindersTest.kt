@@ -21,4 +21,15 @@ class RemindersTest {
         val twin = Reminders.Item("a", "A", "News again", now + 10 * m)    // same channel and start
         assertEquals(listOf("a@${now + 10 * m}", "b@${now - 3 * m}"), Reminders.clean(listOf(keep, grace, old, twin), now).map { it.key() })
     }
+
+    /**
+     * A box that boots with its clock a year ahead calls [Reminders.rearm] then: every reminder looks long past. Rearming (and the alarm
+     * that uses one up) must never save a list cut by the clock, or all the others are gone for good.
+     */
+    @Test fun noSaveCutByTheClockOnBootOrWhenOneFires() {
+        val src = java.io.File("src/main/kotlin/dev/tvremote/channels/Reminders.kt").readText()
+        fun body(name: String) = src.lineSequence().first { "fun $name(" in it }
+        assertEquals(false, "save(" in body("rearm"))
+        for (n in listOf("done", "remove")) assertEquals(n, true, "stored(c)" in body(n) && "all(c)" !in body(n))
+    }
 }

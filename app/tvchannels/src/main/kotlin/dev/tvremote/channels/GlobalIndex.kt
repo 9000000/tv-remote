@@ -77,7 +77,7 @@ class GlobalIndex private constructor(private val lines: Array<String>, private 
         @Synchronized fun get(c: Context): GlobalIndex? {
             held?.let { return it }
             val f = File(c.filesDir, FILE)
-            if (!(f.exists() && System.currentTimeMillis() - f.lastModified() < DAY)) {
+            if (!(f.exists() && dev.tvremote.guard.Age.fresh(f.lastModified(), DAY))) {
                 val ok = try { download(c, f) } catch (e: Exception) { false }
                 if (!ok && !f.exists()) return null
             }

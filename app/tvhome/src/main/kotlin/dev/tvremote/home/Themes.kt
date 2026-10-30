@@ -53,7 +53,7 @@ object Themes {
         val app = c.applicationContext
         val f = File(app.filesDir, NAME)
         val now = System.currentTimeMillis()
-        if (asking || now - maxOf(f.lastModified(), askedAt) < maxAge) return
+        if (asking || dev.tvremote.guard.Age.fresh(maxOf(f.lastModified(), askedAt), maxAge, now)) return
         asking = true; askedAt = now                                  // a list the same as the kept one is not written: the time is kept here
         val have = try { app.packageManager.getPackageInfo(app.packageName, 0).versionName ?: "0" } catch (e: Exception) { "0" }
         val mine = rev

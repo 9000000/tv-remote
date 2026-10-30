@@ -32,13 +32,15 @@ object Reminders {
     /** [list] without the ones long past, and without doubles. */
     fun clean(list: List<Item>, now: Long): List<Item> = list.filter { it.start + GRACE > now }.distinctBy { it.key() }
 
-    fun all(c: Context, now: Long = System.currentTimeMillis()): List<Item> {
+    /** Every kept reminder as stored, past ones too: only a save may drop them, and a save only runs by the person (see [rearm]). */
+    private fun stored(c: Context): List<Item> {
         val a = try { JSONArray(Store.raw(c, "reminders") ?: "[]") } catch (e: Exception) { JSONArray() }
-        val list = (0 until a.length()).mapNotNull { a.optJSONArray(it) }.mapNotNull {
+        return (0 until a.length()).mapNotNull { a.optJSONArray(it) }.mapNotNull {
             try { Item(it.getString(0), it.getString(1), it.getString(2), it.getLong(3)) } catch (e: Exception) { null }
         }
-        return clean(list, now).sortedBy { it.start }
     }
+
+    fun all(c: Context, now: Long = System.currentTimeMillis()): List<Item> = clean(stored(c), now).sortedBy { it.start }
     private fun save(c: Context, l: List<Item>) =
         Store.putRaw(c, "reminders", JSONArray().apply { l.forEach { put(JSONArray().put(it.id).put(it.name).put(it.title).put(it.start)) } }.toString())
 
@@ -56,12 +58,15 @@ object Reminders {
         return true
     }
 
-    fun remove(c: Context, item: Item) { save(c, all(c).filter { it.key() != item.key() }); cancel(c, item) }
+    fun remove(c: Context, item: Item) { save(c, stored(c).filter { it.key() != item.key() }); cancel(c, item) }
     /** Used up: taken out when it fires. */
-    fun done(c: Context, key: String) { save(c, all(c).filter { it.key() != key }) }
+    fun done(c: Context, key: String) { save(c, stored(c).filter { it.key() != key }) }
 
-    /** Arms every kept reminder (after boot / update); the ones past are dropped. */
-    fun rearm(c: Context) { val l = all(c); save(c, l); l.forEach { arm(c, it) } }
+    /**
+     * Arms every kept reminder (after boot / update / the clock being set). It never saves: a box boots with its clock a year ahead,
+     * and a save here would have deleted every reminder as "long past"; they are armed again when the clock is corrected (TIME_SET).
+     */
+    fun rearm(c: Context) { all(c).forEach { arm(c, it) } }
 
     private fun pending(c: Context, it: Item, flags: Int = 0): PendingIntent? =
         PendingIntent.getBroadcast(c, it.key().hashCode(), Intent(c, ReminderReceiver::class.java).setData(Uri.parse("tvremind://" + Uri.encode(it.key())))

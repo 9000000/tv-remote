@@ -61,7 +61,7 @@ object Guide {
         for (d in 0 until p.o.optInt("days", 1).coerceIn(1, 3)) {
             val day = day(p, d)
             val f = File(dir, "${p.id}-${ref.filter { it.isLetterOrDigit() || it == '-' }}-$day.json")
-            val kept = f.takeIf { it.exists() && System.currentTimeMillis() - it.lastModified() < KEEP }?.let { fromJson(it.readText()) }
+            val kept = f.takeIf { it.exists() && dev.tvremote.guard.Age.fresh(it.lastModified(), KEEP) }?.let { fromJson(it.readText()) }
             val got = kept ?: try { kind.guide(p, ref, day) } catch (e: Exception) { null }?.also { if (it.isNotEmpty()) f.writeText(toJson(it)) }   // none yet (tomorrow comes out later in the day): asked again
             out += got ?: if (d == 0) f.takeIf { it.exists() }?.let { fromJson(it.readText()) }.orEmpty() else emptyList()
         }

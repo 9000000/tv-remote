@@ -92,7 +92,7 @@ object Thumbs {
                 }
                 if (have in REMOTE || (s.boxes.isEmpty() && s.img == null && s.page == null)) return@execute
                 val ms = miss(app, s.store)
-                if (ms.exists() && System.currentTimeMillis() - ms.lastModified() < (if (s.img != null) MIN30 else WEEK)) return@execute
+                if (ms.exists() && dev.tvremote.guard.Age.fresh(ms.lastModified(), if (s.img != null) MIN30 else WEEK)) return@execute
                 if (s.key in failed) return@execute
                 net.execute {
                     try {

@@ -99,7 +99,7 @@ object ThemeShots {
         if (!needs(conf)) return null
         val key = conf.optString("wall") + "|" + conf.optString("wurl") + "|" + conf.optString("wfit")   // wfit: the page's key has it when "fitOk"
         val f = File(dir(c), "now.jpg")
-        val fresh = nowKey == key && f.isFile && (conf.optString("wall") != HomeConfig.WEB || System.currentTimeMillis() - f.lastModified() < 600_000)
+        val fresh = nowKey == key && f.isFile && (conf.optString("wall") != HomeConfig.WEB || dev.tvremote.guard.Age.fresh(f.lastModified(), 600_000))
         if (!fresh && !nowBusy) {
             nowBusy = true
             val app = c.applicationContext

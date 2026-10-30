@@ -108,7 +108,7 @@ class AppsActivity : Activity() {
         })
     }
 
-    override fun onPause() { super.onPause(); unregisterReceiver(added) }
+    override fun onPause() { super.onPause(); try { unregisterReceiver(added) } catch (e: Exception) { } }   // onResume may have thrown above its registerReceiver
 
     private val added = object : BroadcastReceiver() {
         override fun onReceive(c: Context, i: Intent) { if (list != null) render() }

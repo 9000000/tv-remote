@@ -56,7 +56,7 @@ object Downloader {
         val d = dir ?: return
         val now = System.currentTimeMillis()
         val f = File(d, "downloader.json")
-        if (now - asked < 60_000 || (f.isFile && now - f.lastModified() < DAY)) return
+        if (now - asked < 60_000 || (f.isFile && dev.tvremote.guard.Age.fresh(f.lastModified(), DAY, now))) return
         asked = now
         Thread { refresh() }.apply { isDaemon = true }.start()
     }

@@ -51,7 +51,7 @@ object KeyList {
             try { SignedList.keep(f, packed, app.assets.open("$NAME.sig").use { String(it.readBytes(), Charsets.UTF_8) }); f.setLastModified(1) } catch (e: Exception) { }
         }
         bytes?.let { parse(String(it, Charsets.UTF_8)) }?.let { now = it }
-        if (System.currentTimeMillis() - f.lastModified() < DAY) return
+        if (dev.tvremote.guard.Age.fresh(f.lastModified(), DAY)) return
         Thread({
             try {
                 SignedList.fetch(BASES, NAME, 1 shl 16, connectMs = 6000, readMs = 8000) { list, sig, _ ->

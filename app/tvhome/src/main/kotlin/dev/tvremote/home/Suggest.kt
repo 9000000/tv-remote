@@ -40,7 +40,7 @@ object Suggest {
         val app = c.applicationContext
         val f = File(app.filesDir, NAME)
         if (items.isEmpty()) SignedList.kept(f)?.let { items = parse(it) }
-        if (asking || System.currentTimeMillis() - maxOf(f.lastModified(), askedAt) < maxAge && items.isNotEmpty()) return
+        if (asking || dev.tvremote.guard.Age.fresh(maxOf(f.lastModified(), askedAt), maxAge) && items.isNotEmpty()) return
         asking = true; askedAt = System.currentTimeMillis()
         Thread({
             try {
