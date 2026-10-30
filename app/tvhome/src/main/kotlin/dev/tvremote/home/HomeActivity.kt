@@ -178,8 +178,6 @@ class HomeActivity : Activity() {
             finish(); return
         }
         wantInputs = intent?.action == InputOpen.INPUTS
-        shortcutWatch = Pins.watch(this) { r -> bg.execute(r) }
-        if (!Pins.listed(this)) bg.execute { Pins.refresh(this) }       // the first Home: + Add has the apps' shortcuts to list
         Font.load(this)
         InputOpen.sync(this)
         if (intent?.action == HomeConfig.PHOTO_QR) window.decorView.post { if (!locked) PhotoScreen.show(this) {} }
@@ -193,6 +191,8 @@ class HomeActivity : Activity() {
             })
             return
         }
+        shortcutWatch = Pins.watch(this) { r -> bg.execute(r) }
+        if (!Pins.listed(this)) bg.execute { Pins.refresh(this) }       // the first Home: + Add has the apps' shortcuts to list
         Store.advance(this, true)                                     // a rotation on "each time Home is shown" (or one that fell due while away): before the first paint, so nothing is drawn twice
         conf = Store.get(this); readNames(); Pins.resize(pinW())
         val root = FrameLayout(this)

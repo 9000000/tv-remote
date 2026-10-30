@@ -804,6 +804,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "621ab2114e1bc6ad43680344|0.21.0": {
+  "at": "2026-10-30T17:32:05+07:00",
+  "n": 1,
+  "note": "direct boot: Pins read before the isUserUnlocked check (0.21.0); moved below it, DirectBootTest; fixed on main, needs a TV Home release"
+ },
  "62a1d553ea172cf0d150520a|0.30.0": {
   "at": "2026-10-30T09:08:14+07:00",
   "n": 1,
