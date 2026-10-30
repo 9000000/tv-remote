@@ -18,6 +18,11 @@ class HomeReceiver : BroadcastReceiver() {
     override fun onReceive(c: Context, i: Intent) {
         val pin = i.getStringExtra("pin")?.takeIf { it.isNotEmpty() }
         if (pin != null) return pinLink(c, pin)
+        i.getStringExtra("link")?.takeIf { it.isNotEmpty() }?.let { b ->      // "what opens this link": asked before a pin, answered at once
+            val a = try { HomeApi.link(c, JSONObject(String(Base64.decode(b, Base64.DEFAULT), Charsets.UTF_8))) } catch (e: Exception) { JSONObject().put("error", "pin_bad_link") }
+            resultCode = Activity.RESULT_OK; resultData = Base64.encodeToString(a.toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+            return
+        }
         val answer = try {
             val set = i.getStringExtra("set")?.takeIf { it.isNotEmpty() }?.let { JSONObject(String(Base64.decode(it, Base64.DEFAULT), Charsets.UTF_8)) }
             i.getStringExtra("addvideo")?.takeIf { Regex("in[a-z0-9]+\\.(mp4|webm|gif)").matches(it) }?.let { f ->

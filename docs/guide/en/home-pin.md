@@ -1,6 +1,6 @@
-# Pin YouTube to TV Home
+# Pin a link to TV Home
 
-Paste a channel, video or playlist link: pin it as a tile on the grid, or open it on the TV now.
+Paste a web, YouTube or app link: see which app the TV opens it with, then pin it as a tile or try it on the TV.
 
 1. TV tab → Home screen card → **Pin from YouTube**, paste the link, check the preview.
 2. Press **Pin to TV** or **Open on TV**.

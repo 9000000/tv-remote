@@ -164,6 +164,8 @@ class Manage(private val link: AdbLink, private val labels: Labels?, private val
                 "home/photo/qr" -> if (post) { dev.tvremote.core.ontv.Home.photoQr { sh(it) }; return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/photo/drop" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.drop(link.get(), r.json().optString("id")))
                 "home/pin" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.pin({ sh(it) }, r.json()))   // a YouTube link on TV Home's grid
+                "home/link" -> if (post) return HttpServer.Response.json(dev.tvremote.core.ontv.Home.link({ sh(it) }, r.json()))   // what the TV opens a pasted link with (the paste box's preview)
+                "home/link/open" -> if (post) { val j = r.json(); dev.tvremote.core.ontv.Home.openLink({ sh(it) }, j.optString("url"), j.optString("pkg").ifBlank { null }); return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "youtube/open" -> if (post) { dev.tvremote.core.ontv.Home.openYoutube({ sh(it) }, r.json().optString("url")); return HttpServer.Response.json(JSONObject().put("ok", true)) }
                 "home/update" -> if (post) return HttpServer.Response.json(at("install") { dev.tvremote.core.ontv.Home.update(link.get(), dir, r.lang) })
                 "channels" -> if (!post) return HttpServer.Response.json(dev.tvremote.core.ontv.Channels.state { sh(it) })   // TV Channels: on the TV, and a newer one

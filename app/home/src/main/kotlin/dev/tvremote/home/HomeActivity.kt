@@ -178,6 +178,8 @@ class HomeActivity : Activity() {
             finish(); return
         }
         wantInputs = intent?.action == InputOpen.INPUTS
+        shortcutWatch = Pins.watch(this) { r -> bg.execute(r) }
+        if (!Pins.listed(this)) bg.execute { Pins.refresh(this) }       // the first Home: + Add has the apps' shortcuts to list
         Font.load(this)
         InputOpen.sync(this)
         if (intent?.action == HomeConfig.PHOTO_QR) window.decorView.post { if (!locked) PhotoScreen.show(this) {} }
@@ -309,7 +311,10 @@ class HomeActivity : Activity() {
         recreate()
     }
 
+    private var shortcutWatch: Any? = null
+
     override fun onDestroy() {
+        Pins.unwatch(this, shortcutWatch)
         Customize.forget(this)
         if (locked) { try { unregisterReceiver(unlocked) } catch (e: Exception) { }; super.onDestroy(); return }
         Store.onChange = null; ThemeShots.live = null
@@ -2229,7 +2234,6 @@ class HomeActivity : Activity() {
      * apps are the choice grid (many ticked at once), not rows here.
      */
     private fun addPanel() {
-        Pins.refresh(this)                                       // an app's shortcuts change while Home sits (TV Setup's scenes): list what they are now, not as of the last start
         val hidden = Store.list(this, "hidden"); val onGrid = Store.list(this, "tiles") + Pins.list(this).map { it.pkg }   // a pinned shortcut is on the grid already
         fun icon(pkg: String) = try { packageManager.getApplicationIcon(pkg) } catch (e: Exception) { null }
         val live = ArrayList<TvGlass.Item>(); val pins = ArrayList<TvGlass.Item>(); val rowsOff = ArrayList<TvGlass.Item>()
@@ -2243,12 +2247,15 @@ class HomeActivity : Activity() {
             val l = Pins.report(this, JSONObject()).optJSONArray("pinsAvail")
             for (i in 0 until (l?.length() ?: 0)) { val o = l!!.getJSONObject(i); val k = o.getString("key")
                 if (k in onGrid || pins.size >= 40) continue
-                pins.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = icon(o.optString("app")) }) }
+                pins.add(TvGlass.Item(0, o.optString("title"), getString(R.string.add_pin), false, false) { addToGrid(k, true) }.also { it.picture = Pins.rowIcon(this, k, o.optString("app"), o.optLong("t")) ?: icon(o.optString("app")) }) }
         }
         val p = TvGlass.Panel(this, R.style.Menu, R.drawable.ic_left) { it.typeface = if (it.typeface?.isBold == true) Font.bold else Font.regular }
         fun top(at: Int) {
             val rows = ArrayList<TvGlass.Item>()
             rows.add(TvGlass.Item(R.drawable.ic_apps, getString(R.string.add_choose), getString(R.string.add_choose_hint, hidden.count { h -> apps.any { it.pkg == h } }), false, false) { open?.dismiss(); open = Picker.show(this, Picker.Mode.CHOOSE, getString(R.string.pk_choose_title)) })
+            if (Pins.can(this)) rows.add(TvGlass.Item(R.drawable.ic_link, getString(R.string.add_link), getString(R.string.add_link_hint), false, false) {   // any link: the QR to the paste page (a page, an app's deep link, YouTube)
+                open?.dismiss(); open = Picker.show(this, Picker.Mode.GRID, getString(R.string.add_link), only = "link", paste = true)
+            })
             val chans = ArrayList<TvGlass.Item>()                  // pins inside other apps (VTVgo, TV360, YouTube) and TV Channels: one group
             if (Pins.can(this)) for ((pkg, l) in Links.installed(this).groupBy { it.group })   // another app's channels (VTVgo, TV360): the picker with those alone
                 chans.add(TvGlass.Item(0, getString(if (l[0].any) R.string.add_from_app else R.string.add_app_channel, l[0].app), getString(if (l[0].any) R.string.add_from_hint else R.string.add_app_channel_hint, l.size), false, false) {

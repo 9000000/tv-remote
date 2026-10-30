@@ -121,4 +121,10 @@ button.on, .tabs button[aria-selected=true], .mitem.on, .item.pick.on { backgrou
 
 /* Pin from YouTube (js/home_pin.js): the preview card of the pasted link */
 .pinprev { border:1px solid var(--line); border-radius:10px; padding:8px; }
+.pinopens { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:8px; }
+.pinopens small { flex:1 0 100%; color:var(--muted); }
+.pinapp { display:inline-flex; align-items:center; gap:8px; padding:6px 12px 6px 6px; border-radius:10px; }
+.pinapp img, .pinlogo { width:28px; height:28px; border-radius:7px; flex:none; background:var(--btn); }
+.pinapp.on { outline:2px solid var(--accent, currentColor); }
+.pinapp:disabled { opacity:1; cursor:default; }
 .pinimg { flex:none; width:96px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; background:var(--btn); display:grid; place-items:center; color:var(--muted); }

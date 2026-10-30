@@ -2,6 +2,7 @@ package dev.tvremote.core.ontv
 import dev.tvremote.core.B64
 import dev.tvremote.core.adb.Adb
 import dev.tvremote.home.HomeConfig
+import dev.tvremote.home.LinkUrl
 import dev.tvremote.update.Release
 import org.json.JSONObject
 import java.io.File
@@ -156,14 +157,37 @@ object Home {
     /** Pins the link ([d]: url, name?, img?) on TV Home's grid; a TV Home from before pins answers without "pinOk" and gets `home:pin_old`. */
     @Throws(IOException::class)
     fun pin(sh: (String) -> String, d: JSONObject): JSONObject {
-        val u = youtubeUrl(d.optString("url")) ?: throw IOException("pin_bad_link")
+        val u = LinkUrl.clean(d.optString("url")) ?: throw IOException("pin_bad_link")
         val o = JSONObject().put("url", u)
+        d.optString("pkg").let { if (PKG.matches(it)) o.put("pkg", it) }     // the app the person picked to open this kind of link
         d.optString("name").trim().take(120).let { if (it.isNotEmpty()) o.put("name", it) }
         d.optString("img").let { if (it.startsWith("https://") && it.length < 400) o.put("img", it) }
         val r = call(sh, null, "--es pin " + B64.encode(o.toString().toByteArray(Charsets.UTF_8)))
         if (!r.optBoolean("installed")) throw IOException("home:missing")
         if (!r.optBoolean("pinOk") && r.optJSONObject("config")?.optBoolean("pinOk") != true) throw IOException("home:pin_old")
+        if (youtubeUrl(u) == null && !r.optBoolean("linkOk") && r.optJSONObject("config")?.optBoolean("linkOk") != true) throw IOException("home:pin_old")   // a TV Home from before any link: YouTube only
         return r
+    }
+
+    private val PKG = Regex("^[A-Za-z][\\w.]{0,150}$")
+
+    /** What the TV would do with the link ([d]: url): TV Home's answer {url, kind: app|browser|none, apps: [{pkg, label, logo}], choice}; an older TV Home gets `home:pin_old`. */
+    @Throws(IOException::class)
+    fun link(sh: (String) -> String, d: JSONObject): JSONObject {
+        val u = LinkUrl.clean(d.optString("url")) ?: throw IOException("pin_bad_link")
+        val r = call(sh, null, "--es link " + B64.encode(JSONObject().put("url", u).toString().toByteArray(Charsets.UTF_8)))
+        if (!r.optBoolean("installed")) throw IOException("home:missing")
+        if (!r.optBoolean("linkOk")) throw IOException("home:pin_old")
+        return r
+    }
+
+    /** Opens [url] once on the TV, as a link ("Try on the TV"): in [pkg] when given and a package name, else whatever the TV picks; never a bare VIEW that reaches a stub. */
+    @Throws(IOException::class)
+    fun openLink(sh: (String) -> String, url: String, pkg: String?) {
+        val u = LinkUrl.clean(url) ?: throw IOException("pin_bad_link")
+        val p = pkg?.takeIf { PKG.matches(it) }
+        val r = sh("am start -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d " + Adb.q(u) + (if (p != null) " -p $p" else "") + " 2>&1")
+        if (r.contains("Error") || r.lowercase().contains("unable to resolve")) throw IOException("pin_no_app")
     }
 
     /** Packages that take a YouTube link but are not a YouTube app: the framework's stub, downloaders, browsers (those also take any https page). */

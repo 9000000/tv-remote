@@ -12,7 +12,8 @@ class LinkActivity : android.app.Activity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         val url = intent.dataString.orEmpty()
-        if (url.startsWith("https://") && !LinkApps.open(this, url, LinkApps.groupFor(url))) Toast.makeText(this, R.string.link_no_app, Toast.LENGTH_LONG).show()
+        val g = LinkApps.groupFor(url)
+        if (LinkUrl.clean(url) == url && !LinkApps.open(this, url, g, browser = g != "youtube")) Toast.makeText(this, R.string.link_no_app, Toast.LENGTH_LONG).show()
         finish()
     }
 }

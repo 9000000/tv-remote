@@ -79,6 +79,8 @@ object YouTube {
 
     private const val UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 
+    internal fun getBytes(url: String, max: Int, stopAt: String? = null, ms: Int = 3500) = get(url, max, stopAt, ms)
+
     private fun get(url: String, max: Int, stopAt: String? = null, ms: Int = 3500): ByteArray? = try {
         (URL(url).openConnection() as HttpURLConnection).run {
             connectTimeout = ms; readTimeout = ms; instanceFollowRedirects = true

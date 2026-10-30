@@ -196,6 +196,9 @@ Customize panel hidden, the change applied behind it as it is made (`Customize.s
 it, ▲ ▼ move, OK closes; a colour row shows its chip (`SWATCH_EDGE`), walked through a fixed `PALETTE` (12 hues × deep / mid / soft +
 greys) instead of a free picker the D-pad cannot drive. The page's twin is `input[type=color]` (`app/shared/web/DESIGN.md`).
 
+### App badge on a shortcut's picture (TV Home)
+A shortcut (a scene, a channel, a game) is drawn with its OWN picture and its app's logo in the bottom-right corner, so a picture alone never leaves "which app opens this?" open: `Watch.corner` (logo 24 % of the picture's height on a wide card; on a shortcut's square picture 40 % of its side, with a thin dark ring so it reads on any picture; 11 % in from the edges (4 % at 40 %), a see-through dark plate, rounded like an app tile). Same on a wide pin's card, a square pin on the grid (`Pins.squareBadged`) and a row of + Add (`Pins.rowIcon`, 192 px, kept by key + the shortcut's `lastChangedTimestamp`). No badge when the picture already shows the app (Play Next items, a card that has it).
+
 ### Dialogs
 
 One look for every dialog in TV Setup and TV Home (`tvui/Tv.kt`, theme `R.style.TvSheet` from `tvui/res`; `:tv` and `:home` both include that res dir). Don't build another.

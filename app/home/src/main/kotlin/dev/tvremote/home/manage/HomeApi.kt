@@ -30,8 +30,14 @@ object HomeApi {
      * (pin_bad_link, pin_no_app, pin_failed). Blocking (the network, the system's pin call): never on the main thread.
      */
     fun pin(c: Context, req: JSONObject): String = try {
-        dev.tvremote.home.apps.YouTube.pin(c, req.optString("url"), req.optString("name").ifBlank { null }, req.optString("img").ifBlank { null })
+        val url = req.optString("url")
+        if (dev.tvremote.home.apps.YouTube.parse(url) != null)
+            dev.tvremote.home.apps.YouTube.pin(c, url, req.optString("name").ifBlank { null }, req.optString("img").ifBlank { null })
+        else dev.tvremote.home.apps.WebLink.pin(c, url, req.optString("name").ifBlank { null }, req.optString("pkg").ifBlank { null })   // any other http(s) link or app deep link
     } catch (e: Exception) { dev.tvremote.home.apps.YouTube.FAILED }
+
+    /** "What opens this link" (HomeReceiver extra "link", POST /h/link): [req] {"url"}; see [dev.tvremote.home.apps.WebLink.preview]. Quick, any thread. */
+    fun link(c: Context, req: JSONObject): JSONObject = dev.tvremote.home.apps.WebLink.preview(c, req.optString("url"))
 
     /** [set] changed first (HomeConfig.merge cleans it), [drop] one photo deleted first, [thumbs] the photos' small pictures too. */
     fun snapshot(c: Context, set: JSONObject?, drop: String?, thumbs: Boolean): JSONObject {
@@ -65,6 +71,7 @@ object HomeApi {
         }
         return JSONObject().put("version", c.packageManager.getPackageInfo(c.packageName, 0).versionName)
             .put("config", config).put("apps", apps)
+            .put("linkOk", true)                                    // takes any link and answers what opens it (/h/link): the page's preview asks first
             .put("pinOk", true)                                     // takes links to pin (/h/pin, HomeReceiver pin): clients check it, an older TV Home lacks it
             .put("photo", File(c.getExternalFilesDir(null), "wall.jpg").isFile)
             .put("photos", photos).put("thumbs", pictures).put("shots", shots)

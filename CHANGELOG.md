@@ -5,6 +5,8 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
 ## Unreleased
+- TV Home: pin any link, not only YouTube: a web page or an app's own link. The paste page first shows which app (name and logo) or browser the TV opens it with, lets you pick the default when several can, and has Try on the TV; nothing that opens it, or a link of a kind that could reach an app's hidden screens (intent:, file:, content:, javascript:), is not pinned. + Add has an Add a link row at the top; badges on shortcut pictures are 40 % of the picture and left off when the picture is the app's own icon.
+- TV Home: a shortcut in + Add and on the grid shows its own picture with its app's logo in a corner; + Add lists new shortcuts (a scene just saved) at once without reopening TV Home, and opens faster; the group is named "Scenes & shortcuts".
 - Scenes: "Add to TV Home" in the scene editor puts the scene on TV Home as a tile; opening the tile runs it on the TV and TV Home's + Add lists the saved scenes under App shortcuts (needs the next TV Setup; the Phone app, the Computer app and the TV web page all have the button).
 - Pool: while the balls roll the shooter's phone says so instead of showing a Fire that does nothing.
 - TV Games web games: a name changed on the phone shows in the game at once (lobby, scores, turn lines).

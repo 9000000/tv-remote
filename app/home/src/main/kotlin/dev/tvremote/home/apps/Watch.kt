@@ -154,10 +154,11 @@ object Watch {
      * place for its size and margin, for the Play Next row and the pinned shortcuts (Pins.badged): a pin's at 6 % touched the edge
      * of a focused tile; 11 % is past the 5 % the picture grows by inside it (TvTile). [lift] raises it (above a progress bar).
      */
-    fun corner(cv: Canvas, d: android.graphics.drawable.Drawable, w: Int, h: Int, lift: Float = 0f) {
-        val sz = h * 24 / 100; val m = h * 11 / 100
+    fun corner(cv: Canvas, d: android.graphics.drawable.Drawable, w: Int, h: Int, lift: Float = 0f, pct: Int = 24, ring: Boolean = false) {
+        val sz = h * pct / 100; val m = h * (if (pct > 24) 4 else 11) / 100
         val r = RectF((w - m - sz).toFloat(), h - m - sz - lift, (w - m).toFloat(), h - m - lift)
         cv.drawRoundRect(r, sz * .24f, sz * .24f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = BADGE_BG; setShadowLayer(sz * .12f, 0f, sz * .04f, SHADOW) })   // a white icon still reads on a white card
+        if (ring) cv.drawRoundRect(r, sz * .24f, sz * .24f, Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = maxOf(1f, sz * .05f); color = RING })   // a thin dark edge: reads on any picture
         roundIcon(cv, d, r)
     }
 
@@ -182,6 +183,7 @@ object Watch {
     private const val SHADE = 0xD9000000.toInt()                       // under a still's title
     private const val DIM = 0x8C0B0D12.toInt()                        // over a poster's blurred copy
     private const val SHADOW = 0x99000000.toInt()
+    private const val RING = 0xCC000000.toInt()
     private const val BADGE_BG = 0x66000000                            // under the corner icon: see-through, still reads on a white card
 
     private fun bytes(c: Context, u: Uri): ByteArray? = when (u.scheme) {

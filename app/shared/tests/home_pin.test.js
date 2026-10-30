@@ -1,7 +1,7 @@
 // node --test app/shared/tests/   "Pin from YouTube" (js/home_pin.js): which link is a channel, a video, a playlist or a short, and its canonical form
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ytParse } = require('../web/js/home_pin.js');
+const { ytParse, linkParse } = require('../web/js/home_pin.js');
 
 const W = 'https://www.youtube.com/';
 test('videos, in every spelling', () => {
@@ -23,4 +23,18 @@ test('channels: handle, id, custom, user; the tab after it is dropped', () => {
 test('not YouTube', () => {
   for (const s of ['', 'hello', 'https://example.com/watch?v=dQw4w9WgXcQ', 'https://notyoutube.com/@x', 'https://www.youtube.com/', 'https://www.youtube.com/feed/trending', 'https://youtu.be/'])
     assert.equal(ytParse(s), null, s);
+});
+
+test('linkParse: any http(s) page and any app deep link, YouTube keeps its canonical form', () => {
+  assert.deepEqual(linkParse('https://example.com/a?b=1#c'), { url: 'https://example.com/a?b=1#c' });
+  assert.deepEqual(linkParse('example.com/x'), { url: 'https://example.com/x' });
+  assert.deepEqual(linkParse('xem https://example.org/z nhé'), { url: 'https://example.org/z' });
+  assert.deepEqual(linkParse('vtvgo://channel/1'), { url: 'vtvgo://channel/1' });
+  assert.deepEqual(linkParse('NETFLIX://title/80100172'), { url: 'netflix://title/80100172' });
+  assert.equal(linkParse('https://youtu.be/dQw4w9WgXcQ').yt.kind, 'video');
+});
+test('linkParse: a pasted link never reaches an app\'s hidden screens', () => {
+  for (const s of ['intent://scan/#Intent;scheme=zxing;end', 'javascript:alert(1)', 'file:///sdcard/a.txt', 'content://media/external/1', 'data:text/html,x', 'FILE://x', 'android-app://com.x', 'about:blank'])
+    assert.deepEqual(linkParse(s), { bad: 'scheme' }, s);
+  for (const s of ['hello', 'https://user@evil.example/x', 'https://', 'mailto:a@b.c']) assert.equal(linkParse(s).url, undefined, s);
 });

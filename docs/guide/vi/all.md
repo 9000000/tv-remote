@@ -568,9 +568,9 @@ Một bảng để thêm, chia nhóm: app chưa có trên lưới, ghim kênh / 
 - Giữ OK trên bất kỳ phần tử nào (thời tiết, nút trên cùng, ＋ Thêm) mở menu nhỏ của nó, đổi là thấy ngay. **Sửa màn hình chính** cho chọn cả đồng hồ và widget; Back để thoát.
 - Lối tắt ghim cũng có mục **Di chuyển**, chung thứ tự với app.
 
-## Ghim YouTube lên TV Home
+## Ghim link lên TV Home
 
-Dán link kênh, video hay danh sách phát: ghim thành ô trên lưới, hoặc mở ngay trên TV.
+Dán link web, YouTube hoặc link app: xem TV mở bằng app nào, rồi ghim thành ô trên lưới hoặc thử mở ngay.
 
 1. Tab TV → thẻ Màn hình chính → **Ghim từ YouTube**, dán link, xem thẻ xem trước.
 2. Bấm **Ghim lên TV** hoặc **Mở trên TV**.

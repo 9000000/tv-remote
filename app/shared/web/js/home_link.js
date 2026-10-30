@@ -4,9 +4,9 @@
 // The page asks the same questions either way; HomeConfig's rules (clean / merge) run on the TV in both. A route a side does not
 // have is null here and the page hides what needs it (an update through ADB; the wallpaper gallery, which the hosts download).
 const HOME_PATHS = {
-  host: { read: '/api/home', drop: '/api/home/photo/drop', pin: '/api/home/pin', open: '/api/youtube/open', qr: '/api/home/photo/qr', update: '/api/home/update', walls: '/api/home/walls', wall: '/api/home/wall',
+  host: { read: '/api/home', drop: '/api/home/photo/drop', pin: '/api/home/pin', open: '/api/youtube/open', link: '/api/home/link', linkOpen: '/api/home/link/open', qr: '/api/home/photo/qr', update: '/api/home/update', walls: '/api/home/walls', wall: '/api/home/wall',
     photo: '/api/home/photo', video: '/api/home/video?name=', check: '/api/home/web/check?u=', share: '/api/home/theme/share', media: '/api/home/media?id=', themeFile: 'api/home/theme?download=1', app: { meta: '/api/app/meta?pkg=', icon: '/api/app/icon?pkg=' }, need: '/api/setup/need?f=' },
-  direct: { read: '/h/config', drop: '/h/photo/drop', pin: '/h/pin', open: null, qr: null, update: null, walls: null, wall: null,
+  direct: { read: '/h/config', drop: '/h/photo/drop', pin: '/h/pin', open: null, link: '/h/link', linkOpen: null, qr: null, update: null, walls: null, wall: null,
     photo: '/h/photo', video: '/h/video?name=', check: '/h/web/check?u=', share: null, media: '/h/media?id=', themeFile: null, app: { meta: '/h/app/meta?pkg=', icon: '/h/app/icon?pkg=' }, need: null },
 };
 
@@ -25,6 +25,8 @@ function homeLinkFor(direct, call, send) {
     write: (change) => call(p.read, change),
     drop: (id) => call(p.drop, { id }),
     pin: (data) => call(p.pin, data), open: (data) => via(p.open, data),   // a YouTube link onto the grid / played on the TV now (home_pin.js)
+    link: (data) => via(p.link, data, true),                          // what the TV opens a pasted link with: {kind: app|browser|none, apps, choice} (null: asked nothing, an older TV Home)
+    tryOpen: (data) => via(p.linkOpen, data),                         // a link opened once on the TV (any app or browser; the page's "Try on the TV")
     qr: (data) => via(p.qr, data || {}),
     update: () => via(p.update, {}),
     walls: (quiet) => via(p.walls, null, quiet),

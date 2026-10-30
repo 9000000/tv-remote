@@ -161,6 +161,7 @@ object ManageServer {
                     if (code == "ok") { Thread.sleep(800); json(out, onMain { HomeApi.snapshot(c, null, null, false) }, true) }   // the system confirms the pin through PinActivity first
                     else reply(out, if (code == "pin_bad_link") 400 else if (code == "pin_no_app") 409 else 502, "application/json", err(code))
                 }
+                post && req.path == "/h/link" -> json(out, HomeApi.link(c, JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8))), false)   // what opens a pasted link (WebLink.preview)
                 post && req.path == "/h/photo/drop" -> {
                     val id = JSONObject(String(read(req, MAX_JSON), Charsets.UTF_8)).optString("id")
                     if (!HomeConfig.isPhoto(id) && !HomeConfig.isVideo(id)) return@use reply(out, 400, "application/json", err("photo id"))

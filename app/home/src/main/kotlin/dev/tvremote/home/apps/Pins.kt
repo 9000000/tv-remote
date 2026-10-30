@@ -70,11 +70,15 @@ object Pins {
         val s = a.pin as ShortcutInfo
         val sharp = if (s.`package` == c.packageName) dev.tvremote.tvui.PinArt.own(c, s.id, fit)
             else if (s.`package` in OURS) dev.tvremote.tvui.PinArt.read(c, s.`package`, s.id, fit) else null   // the system's copy is ~127 px: ours keep a larger one
+        val sys = if (sharp != null) null else try { la(c)!!.getShortcutIconDrawable(s, c.resources.displayMetrics.densityDpi) } catch (e: Exception) { null }
         val d = sharp?.let { android.graphics.drawable.BitmapDrawable(c.resources, it) }
-            ?: try { la(c)!!.getShortcutIconDrawable(s, c.resources.displayMetrics.densityDpi) } catch (e: Exception) { null }
+            ?: sys
             ?: try { c.packageManager.getApplicationIcon(s.`package`) } catch (e: Exception) { null }   // the system lost its bitmap ("Icon file not found"): the app's own icon, not the hidden apps' eye
-        if (d != null && wide(d.intrinsicWidth, d.intrinsicHeight) && d.intrinsicWidth > 0) a.banner = badged(c, d, if (s.`package` != c.packageName) s.`package` else if (marked(c, s.id)) null else sourceOf(c, s.id)) else a.icon = d
+        if (d != null && wide(d.intrinsicWidth, d.intrinsicHeight) && d.intrinsicWidth > 0) a.banner = badged(c, d, if (s.`package` != c.packageName) s.`package` else if (marked(c, s.id)) null else sourceOf(c, s.id)) else a.icon = if (d != null && sys != null) squareBadged(c, d, badgeApp(c, s)) else d
     }
+
+    /** The app whose logo a square pin carries: the shortcut's app; for TV Home's own pins (Play Next) the app they came from, none when the picture has it. */
+    private fun badgeApp(c: Context, s: ShortcutInfo): String? = if (s.`package` != c.packageName) s.`package` else if (marked(c, s.id)) null else sourceOf(c, s.id)
 
     private val OURS = setOf("dev.tvremote.games", "dev.tvremote.channels")
 
@@ -201,8 +205,100 @@ object Pins {
     fun refresh(c: Context, apps: List<App> = Apps.list(c)) {
         val out = JSONArray()
         if (can(c)) for (a in apps) for (s in of(c, a.pkg).sortedBy { it.rank })
-            out.put(JSONObject().put("key", key(s)).put("title", (s.shortLabel ?: s.longLabel ?: s.id).toString()).put("app", a.pkg))
+            out.put(entry(s, a.pkg))
         prefs(c).edit().putString("avail", out.toString()).putBoolean("can", can(c)).apply()
+    }
+
+    private fun entry(s: ShortcutInfo, app: String) =
+        JSONObject().put("key", key(s)).put("title", (s.shortLabel ?: s.longLabel ?: s.id).toString()).put("app", app).put("t", s.lastChangedTimestamp)
+
+    /**
+     * One app's shortcuts changed (LauncherApps.Callback.onShortcutsChanged, registered by HomeActivity while it lives): only its entries of
+     * the stored list are replaced, in the place they were, so + Add shows them without asking every app again. Off the main thread.
+     */
+    fun refreshPkg(c: Context, pkg: String) {
+        if (!can(c)) return
+        val now = of(c, pkg).sortedBy { it.rank }.map { entry(it, pkg) }
+        val old = try { JSONArray(prefs(c).getString("avail", "[]")) } catch (e: Exception) { JSONArray() }
+        val out = JSONArray(); var at = -1
+        for (i in 0 until old.length()) { val o = old.getJSONObject(i); if (o.optString("app") == pkg) { if (at < 0) at = out.length() } else out.put(o) }
+        val merged = JSONArray(); val head = if (at < 0) out.length() else at
+        for (i in 0 until head) merged.put(out.get(i))
+        now.forEach { merged.put(it) }
+        for (i in head until out.length()) merged.put(out.get(i))
+        prefs(c).edit().putString("avail", merged.toString()).apply()
+    }
+
+    /** The stored list exists (a first Home has none until something refreshed it). */
+    fun listed(c: Context) = prefs(c).contains("avail")
+
+    /**
+     * Keeps the stored list fresh while Home lives: the system tells this home (the default launcher) when an app's shortcuts change
+     * (TV Setup's scenes after a save, a channel list), and only that app is asked again, then its pictures drawn once ([rowIcon]) so
+     * + Add finds everything ready. TV Home's own callback: no service, nothing runs when no app's shortcuts change. [bg] runs the work off the main thread.
+     * Returns what [unwatch] needs, or null (before Android 8, or not the default home).
+     */
+    @TargetApi(26)
+    fun watch(c: Context, bg: (Runnable) -> Unit): Any? {
+        if (Build.VERSION.SDK_INT < 26 || !can(c)) return null
+        val cb = object : LauncherApps.Callback() {
+            override fun onPackageRemoved(p: String, u: android.os.UserHandle) {}
+            override fun onPackageAdded(p: String, u: android.os.UserHandle) {}
+            override fun onPackageChanged(p: String, u: android.os.UserHandle) {}
+            override fun onPackagesAvailable(p: Array<out String>?, u: android.os.UserHandle, r: Boolean) {}
+            override fun onPackagesUnavailable(p: Array<out String>?, u: android.os.UserHandle, r: Boolean) {}
+            override fun onShortcutsChanged(p: String, shortcuts: MutableList<ShortcutInfo>, u: android.os.UserHandle) {
+                bg(Runnable {
+                    try { refreshPkg(c, p); for (s in of(c, p)) rowIcon(c, key(s), p, s.lastChangedTimestamp) } catch (e: Exception) { }
+                })
+            }
+        }
+        return try { la(c)!!.registerCallback(cb, android.os.Handler(android.os.Looper.getMainLooper())); cb } catch (e: Exception) { null }
+    }
+
+    @TargetApi(26)
+    fun unwatch(c: Context, token: Any?) { try { (token as? LauncherApps.Callback)?.let { la(c)?.unregisterCallback(it) } } catch (e: Exception) { } }
+
+    private val rowIcons = HashMap<String, android.graphics.drawable.Drawable>()   // drawn once per shortcut version: key + lastChangedTimestamp
+
+    /**
+     * A shortcut's own picture with its app's logo in a corner (Watch.corner, as on the wide pins), for + Add's rows. Kept by key and
+     * [stamp] ([ShortcutInfo.getLastChangedTimestamp]): opening the panel again draws nothing. Null: the system gave no picture (the row then shows the app's icon alone).
+     */
+    @TargetApi(26)
+    fun rowIcon(c: Context, key: String, app: String, stamp: Long): android.graphics.drawable.Drawable? {
+        val k = "$key@$stamp"
+        synchronized(rowIcons) { rowIcons[k]?.let { return it } }
+        val s = find(c, key) ?: return null
+        val d = try { la(c)!!.getShortcutIconDrawable(s, c.resources.displayMetrics.densityDpi) } catch (e: Exception) { null } ?: return null
+        val out = squareBadged(c, d, app)
+        synchronized(rowIcons) { rowIcons.keys.removeAll { it.substringBefore('@') == key }; rowIcons[k] = out }
+        return out
+    }
+
+    /** Both drawn at 16 px and compared: the same picture (some apps use their icon for a shortcut, with a different drawable object). Only ever called once per drawn icon, from the cache. */
+    private fun looksAlike(a: android.graphics.drawable.Drawable, b: android.graphics.drawable.Drawable): Boolean {
+        fun px(d: android.graphics.drawable.Drawable): IntArray {
+            val bm = android.graphics.Bitmap.createBitmap(16, 16, android.graphics.Bitmap.Config.ARGB_8888)
+            val old = d.copyBounds(); d.setBounds(0, 0, 16, 16); d.draw(android.graphics.Canvas(bm)); d.bounds = old
+            return IntArray(256).also { bm.getPixels(it, 0, 16, 0, 0, 16, 16) }
+        }
+        val x = px(a); val y = px(b); var diff = 0L
+        for (i in x.indices) for (sh in intArrayOf(0, 8, 16, 24)) diff += Math.abs(((x[i] shr sh) and 255) - ((y[i] shr sh) and 255))
+        return diff / (256 * 4) < 20
+    }
+
+    /** [d] on a square card with [source]'s icon in the corner; [d] alone when the app has no icon. */
+    fun squareBadged(c: Context, d: android.graphics.drawable.Drawable, source: String?): android.graphics.drawable.Drawable {
+        val icon = source?.let { try { c.packageManager.getApplicationIcon(it) } catch (e: Exception) { null } } ?: return d
+        val banner = try { c.packageManager.getApplicationBanner(source) } catch (e: Exception) { null }
+        if (looksAlike(d, icon) || (banner != null && looksAlike(d, banner))) return d       // the picture IS the app (TV Channels' Favorites): a badge would show it twice
+        val n = 192
+        val b = android.graphics.Bitmap.createBitmap(n, n, android.graphics.Bitmap.Config.ARGB_8888)
+        val cv = android.graphics.Canvas(b)
+        d.setBounds(0, 0, n, n); d.draw(cv)
+        Watch.corner(cv, icon, n, n, pct = 40, ring = true)   // 40 %: small on a 26 dp row, still which app
+        return android.graphics.drawable.BitmapDrawable(c.resources, b)
     }
 
     /** The config the clients read gains "pinsOk", "pinsAvail" [{key, title, app}] and "pinsCan" (only the home screen may start a shortcut). */
