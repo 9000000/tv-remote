@@ -3,15 +3,15 @@
 // layout: drag = turn the cue, hold A = charge, let go = shoot). Seats, bots, phones joining, the turn clock, scores and new game: _lib/table.js
 // (2 seats; players 3 and 4 only watch). The balls are real-time, so the TV runs its own fixed-step loop (rules.js) between turns.
 const W = Object.assign({}, Table.W, Table.VI ? {
-  solids: 'Bi màu', stripes: 'Bi sọc', openT: 'Bàn mở', hintAim: 'Kéo để xoay cơ · giữ A lấy lực · thả để đánh', hintPlace: 'Kéo để đặt bi cái · bấm A để xác nhận',
-  tvAim: '◀ ▶ xoay cơ · giữ OK lấy lực · thả OK để đánh', tvPlace: '◀ ▶ ▲ ▼ chuyển bi cái · OK xác nhận',
+  solids: 'Bi màu', stripes: 'Bi sọc', openT: 'Bàn mở', hintAim: 'Kéo để xoay cơ · giữ A lấy lực · thả để đánh', hintPlace: 'Kéo để đặt bi cái · chạm A để đặt · giữ A để đánh luôn',
+  tvAim: '◀ ▶ xoay cơ · giữ OK lấy lực · thả OK để đánh', tvPlace: '◀ ▶ ▲ ▼ chuyển bi cái · chạm OK để đặt · giữ OK để đánh luôn',
   badSpot: 'Chỗ này chưa đặt được bi', power: 'Lực', breakT: (n) => `${n} khai cuộc`, turnOf: (n) => `Lượt của ${n}`, goOn: (n) => `${n} đánh tiếp`,
   hand: (n) => `${n} được đặt bi cái`, takes: (n, g) => `${n} đánh ${g}`, watch: 'Bạn đang xem trận này',
   f: { scratch: 'Lỗi: bi cái xuống lỗ', nohit: 'Lỗi: không chạm bi nào', wrong: 'Lỗi: chạm sai bi đầu tiên', rail: 'Lỗi: không bi nào chạm băng' },
   why: { clear: (n) => `${n} đưa bi 8 xuống lỗ`, early: (n) => `${n} làm bi 8 xuống lỗ quá sớm`, foul: (n) => `${n} làm bi 8 xuống lỗ cùng lỗi` },
 } : {
-  solids: 'Solids', stripes: 'Stripes', openT: 'Open table', hintAim: 'Drag to turn the cue · hold A to charge · release to shoot', hintPlace: 'Drag to place the cue ball · press A to confirm',
-  tvAim: '◀ ▶ turn the cue · hold OK to charge · release OK to shoot', tvPlace: '◀ ▶ ▲ ▼ move the cue ball · OK to confirm',
+  solids: 'Solids', stripes: 'Stripes', openT: 'Open table', hintAim: 'Drag to turn the cue · hold A to charge · release to shoot', hintPlace: 'Drag to place the cue ball · tap A to set it · hold A to shoot',
+  tvAim: '◀ ▶ turn the cue · hold OK to charge · release OK to shoot', tvPlace: '◀ ▶ ▲ ▼ move the cue ball · tap OK to set it · hold OK to shoot',
   badSpot: 'The ball cannot go there', power: 'Power', breakT: (n) => `${n} breaks`, turnOf: (n) => `${n} to play`, goOn: (n) => `${n} shoots again`,
   hand: (n) => `${n} has the cue ball in hand`, takes: (n, g) => `${n} plays ${g}`, watch: 'You are watching this game',
   f: { scratch: 'Foul: cue ball in the pocket', nohit: 'Foul: no ball was hit', wrong: 'Foul: wrong ball hit first', rail: 'Foul: no ball reached a rail' },
@@ -22,7 +22,7 @@ const SC = 1.3, OX = 120, OY = 124, FONT = 'system-ui, Roboto, "Helvetica Neue",
 const COL = ['#fff', '#f6c915', '#1e5bd8', '#e0262c', '#6a2c91', '#f27a1a', '#138a3c', '#7b1d1d', '#111'];
 const cv = document.getElementById('c'), cx = cv.getContext('2d');
 const S = {
-  g: null, phase: 'idle', ang: 0, px: 0, py: 0, chg: 0, charging: false, bot: null, level: 1, lastA: 0, hold: 0,
+  g: null, phase: 'idle', ang: 0, px: 0, py: 0, chg: 0, charging: false, bot: null, level: 1, lastA: 0, hold: 0, setDown: false,
   k: [{ L: 0, R: 0, U: 0, D: 0, ax: 0, ay: 0 }, { L: 0, R: 0, U: 0, D: 0, ax: 0, ay: 0 }],
   msg: '', banner: '', bannerT: 0, shotId: 0, hinted: '', fireT: 0,
 };
@@ -71,10 +71,11 @@ function prompt(t) {
   S.hinted = key; t.say(t.turn, S.phase === 'place' ? W.hintPlace : W.hintAim);
   if (!(t.pad.has && t.pad.has('cards'))) t.seats.forEach((o) => { if (o !== t.turn) t.say(o, W.turnOf(t.name(t.turn))); });   // an older TV Games: a line instead of the note
 }
-function nearestBall() {
+// the cue points at the ball nearest to (x, y): the cue ball, or the spot it is being carried to with ball in hand
+function nearestBall(x = S.g.x[0], y = S.g.y[0]) {
   const g = S.g; let bd = 1e9, bi = 1;
-  for (let i = 1; i < 16; i++) { if (g.pot[i]) continue; const d = (g.x[i] - g.x[0]) ** 2 + (g.y[i] - g.y[0]) ** 2; if (d < bd) { bd = d; bi = i; } }
-  S.ang = Math.atan2(g.y[bi] - g.y[0], g.x[bi] - g.x[0]);
+  for (let i = 1; i < 16; i++) { if (g.pot[i]) continue; const d = (g.x[i] - x) ** 2 + (g.y[i] - y) ** 2; if (d < bd) { bd = d; bi = i; } }
+  S.ang = Math.atan2(g.y[bi] - y, g.x[bi] - x);
 }
 function fire() {
   S.phase = 'roll'; S.fireT = 0.5;
@@ -103,13 +104,18 @@ function aDown(seat) {
   if (seat !== table.turn || !myTurn() || now - S.lastA < 250) return;                // the phone's A and its mirrored key both arrive: once
   S.lastA = now;
   if (S.phase === 'place') {
-    if (BD.place(S.g, S.px, S.py)) { S.phase = 'aim'; nearestBall(); table.changed(); } else { table.say(seat, W.badSpot); table.buzz(seat, 120); }
-  } else { S.charging = true; S.chg = 0; }
+    // the same press sets the ball down and starts the charge: a tap leaves it there to aim, a hold shoots along the cue already
+    // shown. Setting it down with one press and charging with the next swung the cue at the first and ate it (the user, 2026-10-30)
+    if (!BD.place(S.g, S.px, S.py)) { table.say(seat, W.badSpot); table.buzz(seat, 120); return; }
+    S.phase = 'aim'; S.setDown = true; table.changed();
+  } else S.setDown = false;
+  S.charging = true; S.chg = 0;
 }
 function aUp(seat) {
   if (seat !== table.turn || !S.charging) return;
   S.charging = false;
-  if (S.chg < 0.04) { S.chg = 0; return; }
+  // a tap that set the ball down only sets it: the remote's OK, read through Hold, lasts ~0.3 s even when tapped
+  if (S.chg < (S.setDown ? 0.35 : 0.04)) { S.chg = 0; return; }
   fire();
 }
 
@@ -120,7 +126,10 @@ if (table.ok) {
     const s = e.player - 1;
     if (s !== table.turn || !myTurn() || e.dx == null) return;
     wake();
-    if (S.phase === 'place') { S.px += e.dx * 1.85; S.py += e.dy * 1.85; clampSpot(); } else S.ang = wrap(S.ang + (e.dx + e.dy * 0.3) * 0.003);
+    if (S.phase === 'place') { S.px += e.dx * 1.85; S.py += e.dy * 1.85; clampSpot(); nearestBall(S.px, S.py); }
+    // the aim stays put while A is held: the thumb's press jolts the phone, and the gyroscope (Tilt, the Phone app's pointer) read
+    // that as a turn, so the cue swung at every shot (the user, 2026-10-30)
+    else if (!S.charging) S.ang = wrap(S.ang + (e.dx + e.dy * 0.3) * 0.003);
   });
   pad.on('button', (e) => {
     const s = e.player - 1;
@@ -257,10 +266,10 @@ function human(dt) {
   const k = S.k[table.turn], g = S.g;
   let h = (k.R - k.L) || k.ax, v = (k.D - k.U) || k.ay;
   if (S.phase === 'place') {
-    if (h || v) { S.px += h * 220 * dt; S.py += v * 220 * dt; clampSpot(); }
+    if (h || v) { S.px += h * 220 * dt; S.py += v * 220 * dt; clampSpot(); nearestBall(S.px, S.py); }
     return;
   }
-  if (h) { S.hold += dt; S.ang = wrap(S.ang + h * (S.hold < 0.35 ? 0.12 : Math.min(0.9, 0.12 + (S.hold - 0.35) * 1.2)) * dt); } else S.hold = 0;
+  if (h && !S.charging) { S.hold += dt; S.ang = wrap(S.ang + h * (S.hold < 0.35 ? 0.12 : Math.min(0.9, 0.12 + (S.hold - 0.35) * 1.2)) * dt); } else S.hold = 0;
   if (S.charging) S.chg = Math.min(1, S.chg + dt / 1.1);
 }
 function logic(dt) {
@@ -362,7 +371,7 @@ function render() {
     if (g.zone === 'head') { cx.fillStyle = 'rgba(255,255,255,.07)'; cx.fillRect(OX, OY, BD.HEAD * SC, BD.H * SC); }
   } else if (!g.pot[0]) ballAt(0, g.x[0], g.y[0]);
   if (S.phase === 'aim' && !t.done) { guide(g); stick(g, OX + g.x[0] * SC, OY + g.y[0] * SC); powerBar(); }
-  else if (S.phase === 'place') powerBar();
+  else if (S.phase === 'place' && !t.done) { stick(g, OX + S.px * SC, OY + S.py * SC); powerBar(); }
   card(0); card(1);
   if (t.remote && t.turn === 0 && !t.done && !S.bot && (S.phase === 'aim' || S.phase === 'place')) {   // the remote seat has no phone line telling it the keys
     const hint = S.phase === 'place' ? W.tvPlace : W.tvAim; fit(hint, 20, 900, 700); cx.fillStyle = 'rgba(255,255,255,.75)'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(hint, 640, 108);

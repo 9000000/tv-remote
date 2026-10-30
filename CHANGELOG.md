@@ -4,6 +4,10 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
+## Unreleased
+
+- Pool (TV Games): the cue holds still while A is held, so the press jolting the phone (Tilt, the Phone app's gyroscope pointer) no longer swings it; with ball in hand one press sets the ball down and a hold shoots at once.
+
 ## 0.36.1 - 2026-10-30
 
 Web 0.36.1 · Phone app 0.33.2 · TV app 0.34.2 · TV Home 0.20.2 · TV Channels 0.15.2 · TV Games 0.15.1
