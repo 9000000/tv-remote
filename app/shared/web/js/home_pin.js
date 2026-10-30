@@ -70,7 +70,7 @@ async function homePin(first) {
   const doPin = el('button', { type: 'button', className: 'primary', textContent: T('pin.pin'), disabled: true });
   const doOpen = el('button', { type: 'button', textContent: T('pin.open'), disabled: true, hidden: homeLink.direct });   // TV Home's own page is a phone: it cannot open anything on the TV
   const kinds = { channel: T('pin.kind_channel'), video: T('pin.kind_video'), playlist: T('pin.kind_playlist'), short: T('pin.kind_short') };
-  let cur = null, seq = 0, pick = '';
+  let cur = null, seq = 0, pick = '', named = null;                                    // named(): the card's name again after a pick (a deep link is named after its app)
   const drawOpens = (r) => {                                                             // [r]: TV Home's answer {kind, apps: [{pkg, label, logo}], choice}
     opens.replaceChildren(); opens.hidden = !r;
     if (!r) return;
@@ -80,14 +80,14 @@ async function homePin(first) {
     const row = (a) => {
       const b = el('button', { type: 'button', className: 'pinapp' + (a.pkg === pick ? ' on' : ''), 'aria-pressed': String(a.pkg === pick), disabled: apps.length < 2 },
         a.logo ? el('img', { src: 'data:image/png;base64,' + a.logo, alt: '', width: 28, height: 28 }) : el('span', { className: 'pinlogo none' }), el('span', { textContent: a.label }));
-      b.addEventListener('click', () => { pick = a.pkg; drawOpens(r); });
+      b.addEventListener('click', () => { pick = a.pkg; drawOpens(r); if (named) named(); });
       return b;
     };
     opens.append(el('small', { textContent: r.kind === 'browser' ? T('pin.in_browser') : apps.length > 1 ? T('pin.pick') : T('pin.opens_with') }), ...apps.map(row));
   };
   const show = async () => {
     const n = ++seq, text = field.value.trim();
-    cur = null; doPin.disabled = doOpen.disabled = true; card.hidden = true; drawOpens(null);
+    cur = null; named = null; doPin.disabled = doOpen.disabled = true; card.hidden = true; drawOpens(null);
     const lk = linkParse(text);
     warn.hidden = !text || !!lk.url; warn.textContent = lk.bad === 'scheme' ? T('pin.bad_scheme') : T('pin.bad');
     if (!lk.url) return;
@@ -105,6 +105,11 @@ async function homePin(first) {
     const r = await pre;
     if (n !== seq) return;
     const known = r && !r.error && r.kind ? r : null; drawOpens(known);
+    named = () => {                                                                     // a deep link's host is the app's own word ("x", "open"): its tile is named after the app (WebLink.pin)
+      const app = known && !yt && !/^https?:/.test(lk.url) && (known.apps || []).find((a) => a.pkg === pick);
+      if (app) { cur = { ...cur, name: app.label }; draw({ name: app.label }); }
+    };
+    named();
     doPin.disabled = !!known && known.kind === 'none';                                   // nothing on this TV opens it: no pin, no try
     doOpen.disabled = doPin.disabled;
   };

@@ -73,12 +73,13 @@ async function askLink() {
   const v = await ask(T('remote.link'), { value: 'https://youtu.be/', ok: T('remote.open') });
   const l = v && normalizeLink(v);
   if (!l) return;
-  if (ytParse(l)) return homePin(l);                                  // YouTube: the Pin from YouTube box (Pin to TV or Open on TV), filled in
+  if (ytParse(l)) return homePin(l);                                  // YouTube: the pin box (Pin to TV or Open on TV), filled in
   if (isStream(l) && ADB.state === 'ready') {
     const c = await api('/api/channels', null, true);
     if (c && c.installed) return chanPlay(l);
     toast(T('remote.stream_needs_channels'));
   }
+  if (ADB.state === 'ready') return homePin(l);                       // any other link: what opens it on this TV, then Try on the TV or Pin to TV Home
   openOnTv(l, 'link');
 }
 // The picture takes a few seconds on the TV: its key turns until the file is saved, or the tap looks lost. A browser gets it

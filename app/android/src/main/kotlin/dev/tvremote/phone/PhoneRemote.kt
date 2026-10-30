@@ -42,7 +42,7 @@ internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "package" to act { askText(T("remote.package_id"), "org.videolan.vlc", T("apps.open")) { storePage(it) } },
     "link" to act { askText(T("remote.link"), "https://youtu.be/...", T("apps.open")) {
         val l = if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:").containsMatchIn(it)) it else "https://$it"
-        Home.youtubeUrl(l)?.let { yt -> askYoutube(yt) } ?: openLink(l)          // YouTube: Pin to TV or Open, as when it is shared to us
+        askLink(Home.youtubeUrl(l) ?: l) { openLink(l) }                    // the page's pin box, as when a link is shared to us
     } },
     "media" to act { pickMedia() },
     "file" to act { pickFile(arrayOf("audio/*", "video/*", "image/*")) },

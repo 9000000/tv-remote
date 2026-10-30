@@ -36,7 +36,8 @@ object WebLink {
         val g = LinkApps.groupFor(u)
         if (pkg != null && (LinkApps.handlers(c, u, g) + LinkApps.browsers(c, u)).any { it.pkg == pkg }) LinkApps.choose(c, g, pkg)
         val app = LinkApps.preview(c, u).apps.firstOrNull() ?: return YouTube.NO_APP
-        val label = name?.trim()?.takeIf { it.isNotEmpty() } ?: title(u) ?: android.net.Uri.parse(u).host?.removePrefix("www.")?.takeIf { it.isNotEmpty() } ?: u.substringAfter("://")
+        val web = u.startsWith("http")                                    // a deep link's "host" is the app's own word ("x", "open"): the app's name says more
+        val label = name?.trim()?.takeIf { it.isNotEmpty() } ?: (if (web) title(u) ?: android.net.Uri.parse(u).host?.removePrefix("www.")?.takeIf { it.isNotEmpty() } else app.label) ?: u.substringAfter("://")
         LinkApps.noteGroup(c, Pins.ownId(LinkApps.intent(c, u)), g, u)
         return when (Pins.pinIntent(c, app.pkg, label.take(80), LinkApps.intent(c, u), null)) {
             Pins.Made.FAIL -> YouTube.FAILED

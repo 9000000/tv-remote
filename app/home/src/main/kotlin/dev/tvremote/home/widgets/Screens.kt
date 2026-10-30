@@ -250,6 +250,9 @@ class WeatherMapActivity : Activity() {
     private fun applyLight() { web?.evaluateJavascript("try{W.store.set('particlesAnim','off')}catch(e){}", null) }
     /** A layer is a store value of the open page: no second page load (Windy's ~300 KB of scripts + tiles again). */
     private fun setLayer(l: String) { web?.evaluateJavascript("try{W.store.set('overlay','$l')}catch(e){}", null) }
+    /** Presses Windy's own play button under the map (the map never takes the focus, so the remote cannot reach it); [then]: playing now (its class `off` = paused; it stops by itself at the last hour). */
+    private fun togglePlay(then: (Boolean) -> Unit) { web?.evaluateJavascript("(function(){var b=document.getElementById('playpause');if(!b)return false;b.click();return !b.classList.contains('off')})()") { then(it == "true") } }
+    private var play: TextView? = null
 
     private fun url(layer: String) = "https://embed.windy.com/embed2.html?lat=$lat&lon=$lon&detailLat=$lat&detailLon=$lon&width=900&height=700&zoom=7&level=surface" +
         "&overlay=$layer&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
@@ -310,6 +313,10 @@ class WeatherMapActivity : Activity() {
             val c = pillButton(getString(w), k == "rain", ic, true) { show(k) }
             chips[k] = c; col.addView(c, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(6) })
         }
+        play = pillButton(getString(R.string.map_play), false, R.drawable.ic_play_pause, true) {
+            if (ready) togglePlay { on -> play?.let { it.text = getString(if (on) R.string.map_pause else R.string.map_play); setPillOn(it, on) } }
+        }
+        col.addView(play, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dpx(6); bottomMargin = dpx(6) })
         val days = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = true; setPadding(dpx(6), dpx(6), dpx(6), 0) }
         col.addView(days, LinearLayout.LayoutParams(-1, 0, 1f))
         days.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->                // a row that does not fit whole is hidden, never half shown

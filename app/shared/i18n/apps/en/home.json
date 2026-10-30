@@ -575,6 +575,8 @@
   "map_temp": "Temperature",
   "map_satellite": "Satellite",
   "map_pm": "PM2.5",
+  "map_play": "Play the forecast",
+  "map_pause": "Pause",
   "map_none": "No place yet: set the city in the weather widget",
   "map_loading": "Loading the map…",
   "mk_tr": "M",

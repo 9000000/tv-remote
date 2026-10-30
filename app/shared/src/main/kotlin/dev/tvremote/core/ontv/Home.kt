@@ -217,13 +217,4 @@ object Home {
             ?: throw IOException("pin_no_app")
         val r = sh("am start -a android.intent.action.VIEW -d " + Adb.q(u) + " -p " + pkg + " 2>&1")
         if (r.contains("Error") || r.lowercase().contains("unable to resolve")) throw IOException("pin_no_app")
-    }
-
-    /** The title and picture YouTube's oEmbed gives for the link, best effort ({} when it has none or cannot be reached). */
-    fun youtubeInfo(url: String): JSONObject = try {
-        val c = java.net.URL("https://www.youtube.com/oembed?format=json&url=" + java.net.URLEncoder.encode(url, "UTF-8")).openConnection() as java.net.HttpURLConnection
-        c.connectTimeout = 4000; c.readTimeout = 4000
-        val j = JSONObject(c.inputStream.use { String(it.readBytes(), Charsets.UTF_8) })
-        JSONObject().put("name", j.optString("title")).put("img", j.optString("thumbnail_url"))
-    } catch (e: Exception) { JSONObject() }
-}
+    }}
