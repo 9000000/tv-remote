@@ -264,7 +264,7 @@ class MainActivity : Activity(), Tv.Listener, SurfaceHolder.Callback {
         if (b != null) { host = b.getString("host"); entry = b.getString("entry"); keysAway = b.getBoolean("keys"); wasLive = host != null }   // Android ended the app while away
         if (keysAway && host != null) waitFor(title(entry ?: host!!), T("keys_only.reconnecting"))
         if (host != null) show(true)
-        takeShare(intent)
+        if (!takeShare(intent) && installResult(intent)) setIntent(Intent(this, MainActivity::class.java))   // an install answer that came while this was being recreated: not again after a rotation
         if (b != null && b.getBoolean("settings")) settings.visibility = View.VISIBLE
         if (b != null && b.getBoolean("about")) about.visibility = View.VISIBLE
         if (prefs.getBoolean("autoUpdate", true)) checkUpdate(false)

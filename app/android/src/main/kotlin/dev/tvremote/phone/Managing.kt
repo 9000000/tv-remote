@@ -43,7 +43,7 @@ import org.json.JSONObject
 internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpServer.Handler {
     private val view: LinearLayout = a.col()
     val shown get() = view.visibility == View.VISIBLE
-    private val web: WebView
+    private var web: WebView
     private val token = UUID.randomUUID().toString().replace("-", "")
     private var http: HttpServer? = null
     private var port = 0
@@ -53,9 +53,62 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var forHost: String? = null
     private var loaded = false                                        // the page is loaded for [forHost]
     private var picking: ValueCallback<Array<Uri>>? = null
+    private var destroyed = false
     private var pending: String? = null                               // what to do on the page once it has loaded (open's "then")
     private var coverB = 0                                            // CSS px of the page's bottom under the small player (Pip.kt)
     private val webPage by lazy { dev.tvremote.core.web.WebPage({ a.assets.open(it) }, "phone", a.version() + "-" + (try { a.packageManager.getPackageInfo(a.packageName, 0).lastUpdateTime / 1000 } catch (e: Exception) { 0L })) }
+
+    private fun makeWeb(): WebView {
+        val web = WebView(a)
+        web.setBackgroundColor(BG)
+        @Suppress("SetJavaScriptEnabled")
+        web.settings.javaScriptEnabled = true
+        web.settings.domStorageEnabled = true
+        web.webViewClient = object : WebViewClient() {            // the page's own links stay inside; the rest (Tailscale sign-in) go to the browser
+            override fun shouldOverrideUrlLoading(w: WebView?, req: android.webkit.WebResourceRequest?): Boolean {
+                val u = req?.url ?: return false
+                if (u.host == "127.0.0.1") return false
+                a.web(u.toString())
+                return true
+            }
+            override fun onRenderProcessGone(w: WebView?, d: android.webkit.RenderProcessGoneDetail?): Boolean {   // killed (low memory) or crashed: the default answer kills the whole app
+                if (w === this@Managing.web) a.ui.post { rebuild() }
+                return true
+            }
+            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; this@Managing.web.evaluateJavascript(it, null) }; cover(coverB, true) }
+        }
+        web.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
+                picking?.onReceiveValue(null)
+                picking = cb
+                try {
+                    @Suppress("DEPRECATION")
+                    a.startActivityForResult(params!!.createIntent(), PICK_FILE)
+                } catch (e: Exception) {
+                    picking = null
+                    return false
+                }
+                return true
+            }
+        }
+        web.setDownloadListener { url, _, disposition, _, _ -> saveToPhone(url, disposition) }
+        return web
+    }
+
+    /** The page's renderer is gone and its WebView is dead (API 26+): a fresh one, the page loaded again when it was on screen. */
+    private fun rebuild() {
+        if (destroyed) return                                         // the post came after the activity let go of this
+        val old = web
+        val at = view.indexOfChild(old)
+        if (at < 0) return
+        view.removeViewAt(at)
+        try { old.destroy() } catch (e: Exception) { }
+        web = makeWeb()
+        view.addView(web, at, LinearLayout.LayoutParams(-1, 0, 1f))
+        loaded = false
+        pending = null
+        if (view.visibility == View.VISIBLE) open(forHost)
+    }
 
     /** The small player floats over the page's bottom: its toast, error box and jobs card rise above it (`--cover-b`, css/page.css). */
     fun cover(px: Int, again: Boolean = false) {
@@ -77,35 +130,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         done.setOnClickListener { hide() }
         top.addView(done, LinearLayout.LayoutParams(a.dp(48), a.dp(40)))
         view.addView(top)
-        web = WebView(a)
-        web.setBackgroundColor(BG)
-        @Suppress("SetJavaScriptEnabled")
-        web.settings.javaScriptEnabled = true
-        web.settings.domStorageEnabled = true
-        web.webViewClient = object : WebViewClient() {            // the page's own links stay inside; the rest (Tailscale sign-in) go to the browser
-            override fun shouldOverrideUrlLoading(w: WebView?, req: android.webkit.WebResourceRequest?): Boolean {
-                val u = req?.url ?: return false
-                if (u.host == "127.0.0.1") return false
-                a.web(u.toString())
-                return true
-            }
-            override fun onPageFinished(w: WebView?, url: String?) { pending?.let { pending = null; web.evaluateJavascript(it, null) }; cover(coverB, true) }
-        }
-        web.webChromeClient = object : WebChromeClient() {
-            override fun onShowFileChooser(w: WebView?, cb: ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
-                picking?.onReceiveValue(null)
-                picking = cb
-                try {
-                    @Suppress("DEPRECATION")
-                    a.startActivityForResult(params!!.createIntent(), PICK_FILE)
-                } catch (e: Exception) {
-                    picking = null
-                    return false
-                }
-                return true
-            }
-        }
-        web.setDownloadListener { url, _, disposition, _, _ -> saveToPhone(url, disposition) }
+        web = makeWeb()
         view.addView(web, LinearLayout.LayoutParams(-1, 0, 1f))
         view.visibility = View.GONE
         root.addView(view, FrameLayout.LayoutParams(-1, -1))
@@ -205,6 +230,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     }
 
     fun destroy() {
+        destroyed = true
         close()
         http?.stop()
         web.destroy()

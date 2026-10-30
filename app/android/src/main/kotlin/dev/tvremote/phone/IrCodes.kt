@@ -15,7 +15,7 @@ internal object IrCodes {
     val KEYS = listOf("POWER", "HOME", "BACK", "UP", "DOWN", "LEFT", "RIGHT", "OK", "MENU", "SETTINGS", "VOL_UP", "VOL_DOWN", "MUTE", "CH_UP", "CH_DOWN",
         "INPUT", "PLAY_PAUSE", "STOP", "REWIND", "FFWD", "NEXT", "PREV", "INFO", "GUIDE", "SUBTITLE", "RED", "GREEN", "YELLOW", "BLUE", "NETFLIX", "YOUTUBE", "PRIME") + (0..9).map { it.toString() }
 
-    /** The keys "Dò mã" can try: one the box surely answers, whatever remote it came with. */
+    /** The keys "Find code" can try: one the box surely answers, whatever remote it came with. */
     val PROBES = listOf("POWER", "HOME", "VOL_UP", "MUTE")
 
     fun parse(text: String): List<IrProfile> {
@@ -46,7 +46,7 @@ internal object IrCodes {
     /** "NEC 4" of "NEC 4 8": a remote's codes share it (one TV's power-on and its toggle differ only in the command). A raw recording is its own. */
     private fun family(code: String): String = if (code.startsWith("RAW")) code else code.split(' ').take(2).joinToString(" ")
 
-    /** The profiles that answer to [key] differently: the first of each distinct code, with how many share it. Dò mã steps through these, not every model. */
+    /** The profiles that answer to [key] differently: the first of each distinct code, with how many share it. Find code steps through these, not every model. */
     fun distinct(all: List<IrProfile>, key: String): List<Pair<IrProfile, Int>> {
         val groups = LinkedHashMap<String, MutableList<IrProfile>>()
         for (p in all) p.keys[key]?.let { groups.getOrPut(it) { ArrayList() }.add(p) }

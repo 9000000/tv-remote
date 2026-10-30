@@ -3,7 +3,7 @@ package dev.tvremote.phone
 import dev.tvremote.core.adb.Adb
 import java.io.Closeable
 
-// Dò mã by itself: the phone sends each remote's code while the TV, over ADB, says whether its own IR eye got a key (getevent),
+// Find code by itself: the phone sends each remote's code while the TV, over ADB, says whether its own IR eye got a key (getevent),
 // so nobody has to watch the TV and tap "it reacted". Only for the device ADB reaches: a box's ADB cannot see the TV it is plugged
 // into, so that one is still found by hand (IrRemote.kt irFind).
 

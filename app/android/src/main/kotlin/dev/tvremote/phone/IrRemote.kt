@@ -182,7 +182,7 @@ internal fun MainActivity.irBack(): Boolean {
 
 private fun MainActivity.irUp() { if (irTarget().isEmpty() && IrState.page != "list") irList() else irHost.visibility = View.GONE }
 
-/** The remotes kept by name (a TV in the bedroom, the operator's box): one tap opens it, no finding again. Add opens the brands / Dò mã. */
+/** The remotes kept by name (a TV in the bedroom, the operator's box): one tap opens it, no finding again. Add opens the brands / Find code. */
 private fun MainActivity.irList() {
     IrState.onFind = false
     IrState.page = "list"
@@ -322,7 +322,7 @@ internal fun MainActivity.irRemote() {
     }
 }
 
-/** Dò mã: by itself on a TV ADB reaches (the one this remote is for, else the one picked), by hand on any other. */
+/** Find code: by itself on a TV ADB reaches (the one this remote is for, else the one picked), by hand on any other. */
 private fun MainActivity.irFindStart() {
     val android = { ip: String -> kindOf(ip) == dev.tvremote.core.remote.Remote.Kind.ANDROID }
     val t = irTarget()
@@ -474,7 +474,7 @@ private fun MainActivity.irDpad(p: IrProfile): View {
     return wrap
 }
 
-// ---------------------------------------------------------------- Dò mã: a device that is in no list
+// ---------------------------------------------------------------- Find code: a device that is in no list
 /**
  * Sends one key's code of every different remote in turn, one tap at a time; the one the device answers to is kept. Remotes that share
  * that code count as one step (a hundred Samsung models send the same power code).
