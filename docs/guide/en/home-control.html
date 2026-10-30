@@ -4,6 +4,10 @@ The Settings button on the top bar opens a panel in Customize's style: Network (
 
 Kids mode: tap to turn on; when on, a tap (asks the PIN) picks the apps or turns it off. Needs TV Setup (greyed without it). Round buttons: Clear RAM, Turn off the TV (Screensaver, Screen off, Restart, Power off).
 
+**Brightness** (sun icon): OK to change it, Left / Right in steps of 10 %, Back when done; 100 % = no tint.
+
+The **Tint color** button beside it: Dark, Blue light filter, Yellow, Sepia, Night red, Blue. Needs a newer TV Setup.
+
 Customize → Look → **Show only plugged-in HDMI/AV inputs** (off by default): empty ports go in More inputs.
 
 TV settings opens even on TVs that hide the standard Settings screen (HY300 projectors, Xiaomi, TCL, Fire TV).

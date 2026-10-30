@@ -6,7 +6,7 @@ TV Home has two more widgets that read their data straight from the source, with
 | --- | --- |
 | Market | SJC bar and 9999 ring gold, Vietcombank rates, optional Bitcoin. A box or a scrolling ticker. Refreshes ~20 min; offline it keeps the last numbers with their time |
 | News | Headlines and pictures from the RSS of VnExpress, Tuoi Tre, Thanh Nien, Dan Tri, VietnamNet (English TV: BBC, NPR, the Guardian, Al Jazeera). Add up to 5 RSS links of your own from the phone. OK opens a big-text reader |
-| Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5); Back closes |
+| Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5), a button per layer, **Play the forecast**; Back closes |
 | Recently opened | The last 4-6 apps; Left / Right pick, OK opens |
 | Ad blocking | OK turns an ad-blocking DNS on / off (AdGuard...). Not the ads inside YouTube videos. If the DNS fails, it goes back in ~10 s |
 

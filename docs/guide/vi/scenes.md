@@ -18,4 +18,6 @@ Một cảnh là chuỗi việc chạy một lần bấm. Ví dụ “Xem phim�
 
 Chạy cảnh từ **Thêm phím → Cảnh**, bằng giọng nói (nói tên cảnh), hoặc widget, ô Cài đặt nhanh, phím tắt trên điện thoại.
 
+**📌 Thêm vào TV Home** (trong cảnh): cảnh thành một ô trên TV Home, cũng có trong ＋ Thêm → **Cảnh & lối tắt**. Cần TV Setup mới.
+
 Sao lưu: **⬇️ Xuất file sao lưu** và **⬆️ Nhập từ file**.

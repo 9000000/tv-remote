@@ -81,7 +81,7 @@ A small app on the TV: it runs the TV's web page, the sleep timer, app limits an
 2. Open Downloader (allow file access if it asks), type **2397346** and choose **Go**.
 3. Choose **Install**. If the TV blocks unknown sources, choose Settings, allow Downloader, go back, install.
 4. Open **TV Setup**. If ADB is off, it opens the switch for you: turn on **ADB debugging**, come back, choose **Connection → Reconnect**.
-5. Once ADB works, TV Setup installs **TV Home**, **TV Channels** and **TV Games** itself, then asks whether to keep TV Home as the home screen (press nothing and the TV goes back).
+5. Once ADB works, TV Setup installs **TV Home**, **TV Channels**, **TV Games** and **TV Apps** itself, then asks whether to keep TV Home as the home screen (press nothing and the TV goes back).
 6. The TV shows a QR code and an address. Scan it (or see “[Open the TV's web page](#web-iphone)”).
 
 Direct links: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) · [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk).
@@ -95,7 +95,7 @@ Direct links: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases
 - A TV with **Wireless debugging** only (no port 5555)? Open the TV's web page and press **📡 Pair with Wireless debugging**: see “[Wireless debugging](#wireless)”.
 - TV Setup's main screen shows the pairing code (6 digits) and its menu has **Forget all ADB keys**.
 - TV Setup on a phone by mistake? It offers the phone app, or **Use it here anyway**.
-- The row of three tiles on the main screen, **TV Home**, **TV Channels** and **TV Games**, shows **the version** (e.g. v0.9.0), **Not installed** or **Update**: press to open, install or update, no ADB needed.
+- The row of four tiles on the main screen, **TV Home**, **TV Channels**, **TV Games** and **TV Apps**, shows **the version** (e.g. v0.9.0), **Not installed** or **Update**: press to open, install or update, no ADB needed.
 
 ## Open the TV's web page (iPhone, any browser)
 
@@ -216,7 +216,7 @@ While it floats, leaving for Home or another app (Android 8+) puts it in the sys
 | Volume · Channel | Two long pills; tap top or bottom. |
 | Mute · Play/Pause · Prev/Next · Seek | The media row. |
 | Speak | Say what the TV should do (e.g. open YouTube). Hold: the TV's Assistant. |
-| More keys | Open on the TV, Input, Air Mouse, Timer, Screenshot, Draw, Scenes, Notify, Settings, Subtitles, Info; **Tools**: TV, Guide, Share, Stop, TV Home, Infrared, game keys. |
+| More keys | Open on the TV, Input, Air Mouse, Timer, Screenshot, Draw, Scenes, Notify, Settings, Subtitles, Info; **Tools**: TV, Dim the screen, Guide, Share, Stop, TV Home, Infrared, game keys. |
 
 **Open on the TV** (in More keys): **Open an installed app** (pick it, with a search), **Get apps** (Play Store, YouTube, Kodi…), open a link, **Send to the TV** (photos, videos, music, clipboard).
 
@@ -502,7 +502,7 @@ TV Home has two more widgets that read their data straight from the source, with
 | --- | --- |
 | Market | SJC bar and 9999 ring gold, Vietcombank rates, optional Bitcoin. A box or a scrolling ticker. Refreshes ~20 min; offline it keeps the last numbers with their time |
 | News | Headlines and pictures from the RSS of VnExpress, Tuoi Tre, Thanh Nien, Dan Tri, VietnamNet (English TV: BBC, NPR, the Guardian, Al Jazeera). Add up to 5 RSS links of your own from the phone. OK opens a big-text reader |
-| Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5); Back closes |
+| Weather | OK opens Windy's map full screen at your city (rain, wind, temperature, satellite, PM2.5), a button per layer, **Play the forecast**; Back closes |
 | Recently opened | The last 4-6 apps; Left / Right pick, OK opens |
 | Ad blocking | OK turns an ad-blocking DNS on / off (AdGuard...). Not the ads inside YouTube videos. If the DNS fails, it goes back in ~10 s |
 
@@ -572,11 +572,12 @@ One panel to add, in groups: apps not on the grid, pinned channels / videos, liv
 
 Paste a web, YouTube or app link: see which app the TV opens it with, then pin it as a tile or try it on the TV.
 
-1. TV tab → Home screen card → **Pin from YouTube**, paste the link, check the preview.
-2. Press **Pin to TV** or **Open on TV**.
+1. TV tab → Home screen card → **📌 Pin a link**, paste the link, check the preview.
+2. Press **Pin to TV** or **Try on the TV**.
 
+- On the TV: **＋ Add → Add a link**.
 - In YouTube, Share → TV Remote asks Pin or Open.
-- Remote → Open on the TV → Open a link: a YouTube link asks Pin or Open too.
+- Remote → Open on the TV → Open a link: any link asks Pin or Try too.
 - A TV with a modded YouTube (SmartTube, TizenTube…) opens the right app.
 
 ## TV Home themes
@@ -607,6 +608,10 @@ A theme changes the whole home screen in one press: background, widgets, widget 
 The Settings button on the top bar opens a panel in Customize's style: Network (Wi-Fi name), Inputs (or Bluetooth when the TV has no inputs), Sleep timer, Kids mode, TV settings, Customize.
 
 Kids mode: tap to turn on; when on, a tap (asks the PIN) picks the apps or turns it off. Needs TV Setup (greyed without it). Round buttons: Clear RAM, Turn off the TV (Screensaver, Screen off, Restart, Power off).
+
+**Brightness** (sun icon): OK to change it, Left / Right in steps of 10 %, Back when done; 100 % = no tint.
+
+The **Tint color** button beside it: Dark, Blue light filter, Yellow, Sepia, Night red, Blue. Needs a newer TV Setup.
 
 Customize → Look → **Show only plugged-in HDMI/AV inputs** (off by default): empty ports go in More inputs.
 
@@ -888,7 +893,7 @@ To play it properly: **More keys → Open on the TV → Play a photo / video fro
 
 1. Tap **More keys → Sleep timer**, or open **⏰ Automation → 😴 Sleep timer**.
 2. Pick 30 minutes, 1 hour or 2 hours. Other lengths (15 min, 45 min, 1h30) and **Custom…** (minutes or a time like 23:30) are under **Other times**.
-3. To keep listening: **TV screen → Screen off / on**. The first key on the TV's remote only turns the screen back on; it does not open the app in focus.
+3. To keep listening: **Screen off / on**. The first key on the TV's remote only turns the screen back on; it does not open the app in focus.
 4. Cancel with **Cancel the timer**. Want more time: **15 more minutes**.
 
 > 💡 The timer lives on the TV, so it runs even when your phone is off.
@@ -973,6 +978,8 @@ A scene is a chain of steps run with one tap. For example “Movie”: turn on t
 | Sleep timer · Send a notification | Like the separate features. |
 
 Run a scene from **More keys → Scenes**, by voice (say its name), or from the phone's widget, Quick Settings tile or shortcut.
+
+**📌 Add to TV Home** (in the scene): the scene becomes a TV Home tile, also in ＋ Add → **Scenes & shortcuts**. Needs a newer TV Setup.
 
 Back up with **⬇️ Export a backup file** and **⬆️ Import from a file**.
 

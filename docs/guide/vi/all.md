@@ -81,7 +81,7 @@ App nhỏ trên TV: chạy trang web của TV, hẹn giờ tắt, giới hạn a
 2. Mở Downloader (cho phép truy cập tệp nếu nó hỏi), gõ mã **2397346** rồi chọn **Go**.
 3. Chọn **Install**. TV chặn nguồn lạ thì chọn Cài đặt, cho phép Downloader, quay lại, cài tiếp.
 4. Mở **TV Setup**. Chưa bật ADB thì app mở thẳng chỗ bật: bật **Gỡ lỗi ADB**, quay lại, chọn **Kết nối → Kết nối lại**.
-5. Có ADB, TV Setup tự cài **TV Home**, **TV Channels**, **TV Games** rồi hỏi giữ TV Home làm màn hình chính không (không bấm gì thì TV quay lại như cũ).
+5. Có ADB, TV Setup tự cài **TV Home**, **TV Channels**, **TV Games**, **TV Apps** rồi hỏi giữ TV Home làm màn hình chính không (không bấm gì thì TV quay lại như cũ).
 6. TV hiện mã QR và địa chỉ. Quét mã QR (hoặc xem “[Mở trang web của TV](#web-iphone)”).
 
 Link trực tiếp: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) · [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk).
@@ -95,7 +95,7 @@ Link trực tiếp: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/re
 - TV chỉ có **Gỡ lỗi không dây** (không có cổng 5555)? Mở trang web của TV, bấm **📡 Ghép bằng Gỡ lỗi không dây**: xem “[Gỡ lỗi không dây](#wireless)”.
 - Màn hình chính của TV Setup có dòng mã ghép (6 số) và menu có mục **Quên mọi khóa ADB**.
 - Cài nhầm TV Setup lên điện thoại? App mời mở app điện thoại, hoặc chọn **Vẫn dùng ở đây**.
-- Hàng ba ô **TV Home**, **TV Channels**, **TV Games** trên màn hình chính ghi **số bản** (vd v0.9.0), **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.
+- Hàng bốn ô **TV Home**, **TV Channels**, **TV Games**, **TV Apps** trên màn hình chính ghi **số bản** (vd v0.9.0), **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.
 
 ## Mở trang web của TV (iPhone, trình duyệt)
 
@@ -216,7 +216,7 @@ Trên app điện thoại, nút **Thu nhỏ hình** cạnh toàn màn hình th�
 | Âm lượng · Kênh | Hai nút dài, bấm trên hoặc dưới. |
 | Tắt tiếng · Phát/Dừng · Bài trước/sau · Tua | Hàng phím media. |
 | Nói | Nói điều muốn TV làm (vd: mở YouTube). Giữ: mở Trợ lý của TV. |
-| Thêm phím | Mở trên TV, Nguồn vào, Air Mouse, Hẹn giờ, Chụp màn hình, Vẽ, Cảnh, Thông báo, Cài đặt, Phụ đề, Thông tin; **Tiện ích**: TV, Lịch phát, Chia sẻ, Dừng, TV Home, Hồng ngoại, phím game. |
+| Thêm phím | Mở trên TV, Nguồn vào, Air Mouse, Hẹn giờ, Chụp màn hình, Vẽ, Cảnh, Thông báo, Cài đặt, Phụ đề, Thông tin; **Tiện ích**: TV, Giảm độ sáng, Lịch phát, Chia sẻ, Dừng, TV Home, Hồng ngoại, phím game. |
 
 **Mở trên TV** (trong Thêm phím): **Mở app đã cài** (chọn app, có ô tìm), **Tải app** (CH Play, YouTube, Kodi…), mở link, **Gửi lên TV** (ảnh, video, nhạc, clipboard).
 
@@ -502,7 +502,7 @@ TV Home có thêm hai widget lấy số liệu thẳng từ nguồn, không qua 
 | --- | --- |
 | Thị trường | Giá vàng SJC và nhẫn 9999, tỷ giá Vietcombank, tùy chọn Bitcoin. Dạng ô hoặc dòng chạy chữ. Làm mới ~20 phút; mất mạng thì giữ số cũ kèm giờ |
 | Tin tức | Tiêu đề và hình từ RSS của VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, VietnamNet (TV tiếng Anh: BBC, NPR, Guardian, Al Jazeera). Thêm tối đa 5 link RSS riêng từ điện thoại. Bấm OK mở bản đọc chữ to |
-| Thời tiết | Bấm OK: bản đồ Windy toàn màn hình tại thành phố của bạn (mưa, gió, nhiệt độ, vệ tinh, PM2.5); Back để đóng |
+| Thời tiết | Bấm OK: bản đồ Windy toàn màn hình tại thành phố của bạn (mưa, gió, nhiệt độ, vệ tinh, PM2.5), mỗi lớp một nút, **Xem diễn biến** chạy dự báo; Back để đóng |
 | Mở gần đây | 4-6 app vừa mở; Trái / Phải chọn, OK mở |
 | Chặn quảng cáo | OK bật / tắt DNS chặn quảng cáo (AdGuard…). Không chặn quảng cáo trong video YouTube. DNS không chạy thì ~10 giây sau tự trả về |
 
@@ -572,11 +572,12 @@ Một bảng để thêm, chia nhóm: app chưa có trên lưới, ghim kênh / 
 
 Dán link web, YouTube hoặc link app: xem TV mở bằng app nào, rồi ghim thành ô trên lưới hoặc thử mở ngay.
 
-1. Tab TV → thẻ Màn hình chính → **Ghim từ YouTube**, dán link, xem thẻ xem trước.
-2. Bấm **Ghim lên TV** hoặc **Mở trên TV**.
+1. Tab TV → thẻ Màn hình chính → **📌 Ghim link**, dán link, xem thẻ xem trước.
+2. Bấm **Ghim lên TV** hoặc **Thử trên TV**.
 
+- Trên TV: **＋ Thêm → Thêm link**.
 - Trong YouTube, bấm Chia sẻ → TV Remote để chọn Ghim hay Mở.
-- Remote → Mở trên TV → Mở link: link YouTube cũng hỏi Ghim hay Mở.
+- Remote → Mở trên TV → Mở link: link nào cũng hỏi Ghim hay Thử.
 - TV dùng bản YouTube chỉnh sửa (SmartTube, TizenTube…) vẫn mở đúng app.
 
 ## Chủ đề TV Home
@@ -607,6 +608,10 @@ Một chủ đề đổi cả màn hình chính trong một lần bấm: hình n
 Nút Cài đặt trên thanh trên mở bảng cùng kiểu Tùy chỉnh: Mạng (tên Wi-Fi), Nguồn vào (hoặc Bluetooth nếu TV không có nguồn vào), Hẹn giờ tắt, Khoá trẻ em, Cài đặt TV, Tùy chỉnh.
 
 Khoá trẻ em: chạm để bật; bật rồi thì chạm (hỏi mã PIN) để chọn app hoặc tắt. Cần TV Setup. Nút tròn: Dọn RAM, Tắt TV (Màn chờ, Tắt màn hình, Khởi động lại, Tắt hẳn).
+
+**Độ sáng** (biểu tượng mặt trời): OK để chỉnh, Trái / Phải mỗi lần 10 %, Back là xong; 100 % = không phủ.
+
+Nút **Màu lớp phủ** cạnh đó: Tối, Lọc ánh sáng xanh, Vàng, Nâu cổ, Đỏ đêm, Xanh. Cần TV Setup mới.
 
 Tùy chỉnh → Giao diện → **Chỉ hiện cổng HDMI/AV đang cắm** (mặc định tắt): cổng trống nằm trong Nguồn vào khác.
 
@@ -888,7 +893,7 @@ Muốn phát hẳn: **Thêm phím → Mở trên TV → Phát ảnh / video từ
 
 1. Bấm **Thêm phím → Hẹn giờ tắt**, hoặc vào tab **⏰ Tự động → 😴 Hẹn giờ tắt TV**.
 2. Chọn 30 phút, 1 giờ hay 2 giờ. Mốc khác (15p, 45p, 1g30) và **Tự chọn…** (số phút hay giờ như 23:30) nằm trong **Thời gian khác**.
-3. Muốn nghe tiếp nhạc: **Màn hình TV → Tắt / bật màn hình**. Phím đầu tiên trên remote của TV chỉ bật lại màn hình, không mở app đang chọn.
+3. Muốn nghe tiếp nhạc: **Tắt / bật màn hình**. Phím đầu tiên trên remote của TV chỉ bật lại màn hình, không mở app đang chọn.
 4. Hủy bằng **Hủy hẹn giờ**. Cần thêm giờ: **15 phút nữa**.
 
 > 💡 Hẹn giờ nằm trên TV, nên vẫn chạy khi điện thoại đã tắt.
@@ -973,6 +978,8 @@ Một cảnh là chuỗi việc chạy một lần bấm. Ví dụ “Xem phim�
 | Hẹn giờ tắt · Gửi thông báo | Như các tính năng riêng. |
 
 Chạy cảnh từ **Thêm phím → Cảnh**, bằng giọng nói (nói tên cảnh), hoặc widget, ô Cài đặt nhanh, phím tắt trên điện thoại.
+
+**📌 Thêm vào TV Home** (trong cảnh): cảnh thành một ô trên TV Home, cũng có trong ＋ Thêm → **Cảnh & lối tắt**. Cần TV Setup mới.
 
 Sao lưu: **⬇️ Xuất file sao lưu** và **⬆️ Nhập từ file**.
 

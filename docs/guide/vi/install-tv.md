@@ -10,7 +10,7 @@ App nhỏ trên TV: chạy trang web của TV, hẹn giờ tắt, giới hạn a
 2. Mở Downloader (cho phép truy cập tệp nếu nó hỏi), gõ mã **2397346** rồi chọn **Go**.
 3. Chọn **Install**. TV chặn nguồn lạ thì chọn Cài đặt, cho phép Downloader, quay lại, cài tiếp.
 4. Mở **TV Setup**. Chưa bật ADB thì app mở thẳng chỗ bật: bật **Gỡ lỗi ADB**, quay lại, chọn **Kết nối → Kết nối lại**.
-5. Có ADB, TV Setup tự cài **TV Home**, **TV Channels**, **TV Games** rồi hỏi giữ TV Home làm màn hình chính không (không bấm gì thì TV quay lại như cũ).
+5. Có ADB, TV Setup tự cài **TV Home**, **TV Channels**, **TV Games**, **TV Apps** rồi hỏi giữ TV Home làm màn hình chính không (không bấm gì thì TV quay lại như cũ).
 6. TV hiện mã QR và địa chỉ. Quét mã QR (hoặc xem “[Mở trang web của TV](web-iphone.md)”).
 
 Link trực tiếp: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-setup.apk) · [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk).
@@ -24,4 +24,4 @@ Link trực tiếp: [tv-setup.apk](https://github.com/HoangTran0410/tv-remote/re
 - TV chỉ có **Gỡ lỗi không dây** (không có cổng 5555)? Mở trang web của TV, bấm **📡 Ghép bằng Gỡ lỗi không dây**: xem “[Gỡ lỗi không dây](wireless.md)”.
 - Màn hình chính của TV Setup có dòng mã ghép (6 số) và menu có mục **Quên mọi khóa ADB**.
 - Cài nhầm TV Setup lên điện thoại? App mời mở app điện thoại, hoặc chọn **Vẫn dùng ở đây**.
-- Hàng ba ô **TV Home**, **TV Channels**, **TV Games** trên màn hình chính ghi **số bản** (vd v0.9.0), **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.
+- Hàng bốn ô **TV Home**, **TV Channels**, **TV Games**, **TV Apps** trên màn hình chính ghi **số bản** (vd v0.9.0), **Chưa cài** hoặc **Có bản mới**: bấm để mở, cài hay cập nhật, không cần ADB.

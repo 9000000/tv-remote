@@ -16,7 +16,7 @@ Trên app điện thoại, nút **Thu nhỏ hình** cạnh toàn màn hình th�
 | Âm lượng · Kênh | Hai nút dài, bấm trên hoặc dưới. |
 | Tắt tiếng · Phát/Dừng · Bài trước/sau · Tua | Hàng phím media. |
 | Nói | Nói điều muốn TV làm (vd: mở YouTube). Giữ: mở Trợ lý của TV. |
-| Thêm phím | Mở trên TV, Nguồn vào, Air Mouse, Hẹn giờ, Chụp màn hình, Vẽ, Cảnh, Thông báo, Cài đặt, Phụ đề, Thông tin; **Tiện ích**: TV, Lịch phát, Chia sẻ, Dừng, TV Home, Hồng ngoại, phím game. |
+| Thêm phím | Mở trên TV, Nguồn vào, Air Mouse, Hẹn giờ, Chụp màn hình, Vẽ, Cảnh, Thông báo, Cài đặt, Phụ đề, Thông tin; **Tiện ích**: TV, Giảm độ sáng, Lịch phát, Chia sẻ, Dừng, TV Home, Hồng ngoại, phím game. |
 
 **Mở trên TV** (trong Thêm phím): **Mở app đã cài** (chọn app, có ô tìm), **Tải app** (CH Play, YouTube, Kodi…), mở link, **Gửi lên TV** (ảnh, video, nhạc, clipboard).
 
