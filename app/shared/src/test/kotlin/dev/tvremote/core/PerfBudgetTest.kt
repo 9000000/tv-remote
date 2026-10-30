@@ -21,7 +21,7 @@ import java.util.Locale
  * a regression (a loop made quadratic, a regex built per call, a file read twice) by several times.
  * Baselines are local to the machine (dev/perf/.local/baseline-jvm.json, gitignored, keyed by OS / CPU count / JVM): the first run records
  * and passes, a clearly faster run lowers it. Red = find what got slower (git log on that function) and fix it. Only when slower is
- * intended: `TVR_PERF_UPDATE=1` re-records (say why in the commit). See dev/test/AGENTS.md and dev/DECISIONS.md "Speed budgets".
+ * intended: `TVR_PERF_UPDATE=1` re-records (say why in the commit). See dev/test/AGENTS.md and dev/decisions/testing.md "Speed budgets".
  */
 class PerfBudgetTest {
     private val root = generateSequence(File("").absoluteFile) { it.parentFile }.first { File(it, "dev/perf").isDirectory }

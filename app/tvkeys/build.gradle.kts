@@ -4,7 +4,7 @@ plugins {
 }
 
 // TV Setup Keys: the two accessibility services of TV Setup (the dead remote buttons, the key that wakes the screen), apart from it so TV Setup
-// itself declares none (Play Protect blocks an app that does, when it comes from a browser or Downloader; DECISIONS.md). It has NO number of its
+// itself declares none (Play Protect blocks an app that does, when it comes from a browser or Downloader; dev/decisions/apps.md "TV Setup declares no"). It has NO number of its
 // own: it is TV Setup's (app/tv/VERSION) and is packed inside tv-setup.apk, so the two always move together. Signed with TV Setup's key,
 // which is what lets them trust each other (a signature permission, KeysProtocol.PERMISSION).
 val appVersion = (System.getenv("VERSION_NAME") ?: file("../tv/VERSION").readText()).trim()

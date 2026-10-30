@@ -3,7 +3,7 @@
 #   dev/test/media.sh
 # One encode at a time, 2 threads each, through light.sh. The length is the SOURCE's (duration=8), never `-t` after it: palettegen
 # waits for the end of its input, so an endless testsrc2 cut by -t grows in memory until the system kills it, which with
-# full-thread encodes beside it froze the computer (dev/DECISIONS.md "Tests that froze the computer"). A clip already there is kept.
+# full-thread encodes beside it froze the computer (dev/decisions/testing.md "Tests that froze the computer"). A clip already there is kept.
 set -eu
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$ROOT/.cache/media"; mkdir -p "$OUT"

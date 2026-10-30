@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
  * A video's picture alone, for a wall with the sound off. The platform player paces the picture by the audio clock even when muted,
  * and at each turn of the loop it waits for the audio to start again: the picture stood still ~0.45 s per turn on the emulator (the
  * Pexels fireplace, 30 fps: one frame, then 273 ms of nothing) and seconds on the FPT box; the same file without its audio track
- * turned in one frame's time (dev/DECISIONS.md "TV Home: video"). Copied, not re-encoded (MediaExtractor -> MediaMuxer: seconds,
+ * turned in one frame's time (dev/decisions/tv-home.md "TV Home: video"). Copied, not re-encoded (MediaExtractor -> MediaMuxer: seconds,
  * no codec), into the cache, keyed by the file and its size; the file is played as it is until its copy is there.
  */
 object Silent {

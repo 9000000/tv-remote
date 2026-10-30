@@ -24,7 +24,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * The last line of defence of every Android app of the project (one file, compiled into each; why the looper is kept: DECISIONS.md).
+ * The last line of defence of every Android app of the project (one file, compiled into each; why the looper is kept: dev/decisions/apps.md "The error guard").
  * A throw nobody caught is saved to filesDir (guard-last.txt) and shown in a dialog with Copy (and Share on the phone), so what
  * broke is on the screen instead of the app vanishing. [install] goes in Application.onCreate.
  *  - other threads: saved + shown, the process lives;

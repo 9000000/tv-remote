@@ -19,7 +19,7 @@ import dev.tvremote.setup.keys.KeysProtocol
 
 /**
  * Gives a button back that only the stock launcher answered (see [KeyFix]). The accessibility service that sees the keys is the one of
- * the add-on TV Setup Keys (`app/tvkeys`, so that this app declares none: DECISIONS.md); it asks this bound service about every key it may
+ * the add-on TV Setup Keys (`app/tvkeys`, so that this app declares none: dev/decisions/apps.md "TV Setup declares no"); it asks this bound service about every key it may
  * care about ([KeysProtocol.INTEREST]) and does what it answers: taken or pass. Kept on in the secure settings by [KeyFix.sync] only
  * while such a key exists. The hot path is a lookup in a small array and nothing else; a key not in [plan] is passed at once, and
  * anything that goes wrong passes the key too.

@@ -4,7 +4,7 @@
 # Waits while the load is above the number of cores or memory is short, then runs it under `nice` with one lock, so
 # heavy steps of several agents queue up instead of piling on. Why: on 2026-10-24 six ffmpeg encodes started side by side
 # (x264 opens ~1.5 threads per core each) beside a TV emulator transcoding in software: load 84 on 12 cores, the emulator
-# crashed and the Mac froze (dev/DECISIONS.md "Tests that froze the computer").
+# crashed and the Mac froze (dev/decisions/testing.md "Tests that froze the computer").
 # Env: LIGHT_WAIT (s, default 600: then it runs anyway, said so), LIGHT_FREE (% memory free needed, default 15).
 set -u
 [ $# -gt 0 ] || { echo "usage: dev/test/light.sh <command> [args...]"; exit 2; }

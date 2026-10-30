@@ -1,0 +1,15 @@
+# Decisions: Tests and speed
+
+Why some code looks odd ([the list](../DECISIONS.md)).
+
+## Speed budgets (`PerfBudgetTest.kt`, `tests/perf_budget.test.js`, 2026-10-24)
+- **Why a budget suite, not a timer per function:** a test on every function is noise (each flaky on a busy laptop, each baseline to maintain). ~20 cases on the paths a person waits on (gallery opening, first page load, diagnosis, QR, words) catch the regressions that matter: a signature check repeated, a regex built per call, a file read twice, a loop made quadratic. `TVR_TRACE` stays the tool to measure a stage on a real TV; the budgets only say "something got much slower" so an agent looks.
+- **Rule: red only when the median is over 2x the baseline AND over baseline + a floor** (per case: ~0.02 ms for microsecond cases timed in batches of thousands, 1-5 ms for the others). The ratio ignores a slow machine day (medians moved 10-40% here); the floor ignores a 0.003 ms case becoming 0.007 ms, which nobody waits for. Samples: warm-up, then the median of 7-25 timed runs inside a 0.4-0.6 s box.
+- **Baselines are local, never committed:** people pull and run on other hardware, and a number from one Mac is wrong on another. `dev/perf/.local/baseline-{jvm,node}.json` (gitignored) is keyed by OS / arch / CPU count / JVM or node version; no entry = record and pass. A run under 0.8x of the baseline lowers it (it tracks improvements); it is raised only by `TVR_PERF_UPDATE=1`. Cost of this choice: a regression already present when a clone first runs is recorded as normal; the first run after pulling a slow commit on a new machine proves nothing.
+- Measured here (M-series Mac, JVM 17): Ed25519 verify 2.6 ms, `kept` with marker 0.11 ms vs full 2.2 ms, `Launchers.parse` 0.11 ms, page gzip cold 2 ms, Words cold load 1.5 ms. Checked: 6 runs in a row green; `Thread.sleep(3)` in `Launchers.parse` and a 3M-iteration loop in `qrModules` both turned it red with the name, baseline and how to update.
+
+
+## Tests that froze the computer (`dev/test/light.sh`, `media.sh`, `emu.sh` EMU_MAX, 2026-10-24)
+- **What happened:** an agent making test clips for TV Home's video background started 6 ffmpeg at once (4 x264 1080p encodes at full threads, 2 GIFs) beside the TV emulator transcoding in software. Load average reached 84 on 12 cores, the emulator crashed (21:40:53) and the 24 GB Mac stopped answering.
+- **Root cause, measured:** the GIFs. `-f lavfi -i testsrc2=… -t 20 -vf "split…palettegen…paletteuse"` never ends: `-t` cuts the output, but palettegen waits for the end of its INPUT, and testsrc2 has none, so it keeps every frame. One such ffmpeg was at 5.4 GB after 5 s; two of them ran. Same clip with `testsrc2=…:duration=8`: under 1 s, a few MB.
+- **Fixes:** `dev/test/media.sh` makes the test clips once in `.cache/media` (length in the source, one at a time, 2 threads; 6 clips in ~10 s); `dev/test/light.sh <cmd>` runs a heavy step under `nice` with one lock, after waiting while load > cores or memory free < 15 % (so the heavy steps of parallel agents queue); `emu.sh` refuses a third emulator (`EMU_MAX`, ~3 GB and 4 cores each). AGENTS.md "Testing" says to use them.

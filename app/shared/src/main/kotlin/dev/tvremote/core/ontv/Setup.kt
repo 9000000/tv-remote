@@ -35,7 +35,7 @@ class Setup internal constructor(private val adb0: Adb?, private val dir: File?,
             "com.sony.dtv.sonyselect", "tv.samba.ssm")
         /**
          * Disabled last, and only once FLauncher is installed, or Home would have nowhere to go. launcherx: Google TV's; leanbacklauncher:
-         * the older Android TVs'; mitv.tvhome: Xiaomi's PatchWall. Any of them on wins Home over the HOME role (DECISIONS.md), so a swap
+         * the older Android TVs'; mitv.tvhome: Xiaomi's PatchWall. Any of them on wins Home over the HOME role (dev/decisions/tv-home.md "The stock launcher wins"), so a swap
          * turns off each one that is on (cleanyourtv's list, tried on their TVs).
          */
         val LAUNCHER = arrayOf("com.google.android.tvrecommendations", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx",

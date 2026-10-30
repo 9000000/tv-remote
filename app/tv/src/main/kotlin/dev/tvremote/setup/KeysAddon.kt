@@ -8,7 +8,7 @@ import dev.tvremote.setup.keys.KeysProtocol
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * TV Setup Keys, the add-on that holds the accessibility services (`app/tvkeys`; why apart: DECISIONS.md, Play Protect). Its APK is
+ * TV Setup Keys, the add-on that holds the accessibility services (`app/tvkeys`; why apart: dev/decisions/apps.md "TV Setup declares no", Play Protect). Its APK is
  * packed inside this one (assets/tvkeys.apk, same version, same key) and put on the TV by this app over its own ADB link, the way
  * the shell installs anything, so no browser or Downloader ever carries it. Installed when a feature needs it ([KeyFix.sync]: a dead
  * key or the hold rule; the key that wakes the screen asks through [RulesReceiver]), and again whenever its version is not this app's.

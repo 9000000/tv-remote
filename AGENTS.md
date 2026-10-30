@@ -1,7 +1,7 @@
 # AGENTS.md
 
 A guide for agents (and people) changing this repo. User docs: [README.md](README.md) / [README.vi.md](README.vi.md).
-Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md). This file holds the rules for every app; each folder's
+Why some code looks odd: [dev/DECISIONS.md](dev/DECISIONS.md) (the list; each part in `dev/decisions/`). This file holds the rules for every app; each folder's
 `AGENTS.md` (loaded as its `CLAUDE.md` when you work there) holds its files and its own rules: read it before changing that part.
 
 | Folder | Its AGENTS.md has |

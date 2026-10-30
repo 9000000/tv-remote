@@ -191,7 +191,7 @@ object HomeConfig {
     const val VIDEO_MAX_BYTES = 200L * 1024 * 1024
     const val VIDEO_LIB_MAX = 12
     val VIDEO_EXT = listOf("mp4", "webm", "gif")
-    /** How a GIF or a heavy video is made light, for the NEXT uploads (originals are not kept: see DECISIONS.md): "" the source's own frame rate / the screen's own size, else frames a second / the short side in px. */
+    /** How a GIF or a heavy video is made light, for the NEXT uploads (originals are not kept: see dev/decisions/tv-home.md "TV Home: video"): "" the source's own frame rate / the screen's own size, else frames a second / the short side in px. */
     val VFPS = listOf("", "60", "30", "24", "15")
     val VRES = listOf("", "1080", "720", "480")
     /** Where a client puts a file before TV Home takes it in (HomeReceiver "addvideo" names it); the shell may write there. */

@@ -20,7 +20,7 @@ import java.util.zip.ZipOutputStream
 /**
  * "Install as a separate app": an APK whose package is built into the TV (a system app cannot be replaced or removed) is
  * rewritten as `<package>.copy` ([Axml.clone]) and signed again with a key of ours (Google's apksig, v1 + v2), then installed
- * beside the built-in one. Why `.copy` and one key per client: dev/DECISIONS.md.
+ * beside the built-in one. Why `.copy` and one key per client: dev/decisions/apps.md "The apps leaning on each other".
  */
 object AppCopy {
     const val SUFFIX = ".copy"

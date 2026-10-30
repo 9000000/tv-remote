@@ -13,7 +13,7 @@ Run them from the repo root (`dev/test/emu.sh`, `python3 dev/gen/gen_icons.py`);
 | `themes/` | the community theme queue (Cloudflare Worker + D1 `tvr-themes`); reviewed with `sign/review_themes.py` |
 | `release/` | releases, update keys and their backup (only when the maintainer says so) |
 
-Notes beside them: `DECISIONS.md` (why some code looks odd), `../app/DESIGN-TV.md` (the TV apps' shared look),
+Notes beside them: `DECISIONS.md` + `decisions/` (why some code looks odd), `../app/DESIGN-TV.md` (the TV apps' shared look),
 `sign/bloat-sources.md` (where Optimize TV's lists come from). Playwright for the Node scripts: `npm install --prefix dev playwright`.
 
 ## test/

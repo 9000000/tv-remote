@@ -188,7 +188,7 @@ object KeyFix {
 
     private const val PREFS = "keyfix"
     private const val PERM = "android.permission.WRITE_SECURE_SETTINGS"
-    /** The accessibility service lives in the add-on TV Setup Keys ([KeysAddon]), not here: this app declares none (DECISIONS.md). */
+    /** The accessibility service lives in the add-on TV Setup Keys ([KeysAddon]), not here: this app declares none (dev/decisions/apps.md "TV Setup declares no"). */
     val SERVICE = "${KeysProtocol.ADDON}/${KeysProtocol.ADDON}.KeyFixService"
 
     /** Wanted unless a person switched it off on TV Setup's screen. */

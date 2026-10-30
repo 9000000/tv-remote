@@ -26,7 +26,7 @@ import android.widget.TextView
 /**
  * THE look of the TV apps (app/DESIGN-TV.md): the tokens and the components, ONE copy. Compiled into all four TV apps
  * (TV Setup, TV Home, TV Channels, TV Games) through `srcDirs("../shared/src/tvui/kotlin")`: an app that needs a row, a sheet, a
- * panel, a pill or a field calls it here and never builds a look-alike (a hand-built copy is how they drifted, DECISIONS.md).
+ * panel, a pill or a field calls it here and never builds a look-alike (a hand-built copy is how they drifted, dev/decisions/apps.md "One shared UI set").
  * Plain Views: the apps must stay small and quick on a 1 GB TV box. Components take words and drawable ids, never string ids:
  * each app keeps its own strings and its own generated icons.
  *

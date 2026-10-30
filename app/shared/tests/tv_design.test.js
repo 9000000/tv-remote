@@ -83,7 +83,7 @@ test('Tv.kt\'s colours are tv_style.xml\'s, and it holds no raw colour outside a
   for (const f of walk(TVUI)) assert.strictEqual(raw(f), 0, `${path.basename(f)}: a raw colour: name it in Tv.kt`);
 });
 
-// The components live in tvui and nowhere else: a hand-built look-alike row / sheet / panel is how the apps drifted (DECISIONS.md, 2026-10-23).
+// The components live in tvui and nowhere else: a hand-built look-alike row / sheet / panel is how the apps drifted (dev/decisions/apps.md "One shared UI set", 2026-10-23).
 test('no app defines a component tvui already has', () => {
   const names = ['row', 'sheet', 'sheetTitle', 'sheetNote', 'states', 'ring', 'field', 'panel', 'panelBg', 'scrim', 'menuButton', 'withIcon',
     'pill', 'pillText', 'focusBg', 'heading', 'label'];   // (a game's own initials() / a pad button() are other things)

@@ -21,7 +21,7 @@ import java.io.File
  * A video (or a GIF made into one) as the background: a looping MediaPlayer on a SurfaceView behind the grid, with the same veil a
  * photo gets over it. The platform's player on purpose: it is hardware-decoded and costs no library (ExoPlayer is in TV Channels only).
  * A SurfaceView and not a TextureView: the decoder's frames go to the display compositor (an overlay where the box has one) and never
- * through Home's own GPU pass, so Home draws no frame for the video at all (dev/DECISIONS.md "TV Home: video", measured).
+ * through Home's own GPU pass, so Home draws no frame for the video at all (dev/decisions/tv-home.md "TV Home: video", measured).
  *
  * A SurfaceView is a hole in the window, black until its first frame: an ImageView with the poster (the first frame at the screen's
  * size, Home's own window background) covers it until the player shows one, and again whenever the player is let go, so Home never flashes black.
@@ -33,7 +33,7 @@ import java.io.File
  * The loop: `isLooping` stood still ~0.45 s a turn on the emulator and seconds on the FPT box, mostly the audio clock (the player
  * waits for the audio to start again, even muted): so the picture alone is played ([Silent]), and a second player made ready
  * [LEAD_MS] before the end (parsed, no surface) takes the surface when the first ends (completion -> first frame ~60 ms). A net video
- * plays from [NetVideo]'s file once it is there, so the turns after the first read no network (dev/DECISIONS.md "TV Home: video").
+ * plays from [NetVideo]'s file once it is there, so the turns after the first read no network (dev/decisions/tv-home.md "TV Home: video").
  *
  * It plays only while Home is on screen: [stop] (Home stopped: another app in front, screen off, memory short) releases the player and
  * with it the hardware decoder, which the app in front may need; [start] makes it again. No timer, no polling.
