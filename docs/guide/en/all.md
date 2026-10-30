@@ -27,7 +27,7 @@ The easiest way: nothing to install on the TV, the keys work at once ([see](#nok
 3. The first time the TV asks “Allow USB debugging?”: tick **Always allow** and OK. See [this part](#allow-usb).
 4. Done: the TV's picture is on the phone. ADB not on yet? [Keys still work](#nokeys).
 
-> 💡 The phone and the TV must be on the same Wi-Fi. The app tells you when a new version exists. Another Android device: Downloader code **2973135**.
+> 💡 The phone and the TV must be on the same Wi-Fi. The app tells you when a new version exists. Another Android device: Downloader code **2973135**. Direct link: [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk).
 
 > 💡 Updating inside the app: the first time Android asks for “Install unknown apps”. Tap **Open settings**, turn on “Allow from this source”, come back and it carries on. After that (Android 12+) it updates quietly.
 
@@ -490,7 +490,7 @@ Pick several; **Change background** rotates them.
 - A locked app shows a padlock, a limited one ⏳ and minutes left.
 - New version: **Update TV Home** card, settings kept.
 
-Only the TV's remote at hand: Downloader, code **4356026**, then pick TV Home as the home screen.
+TV remote only: Downloader, code **4356026**, then make TV Home the home screen. Direct link: [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk).
 
 Google TV: **Accounts & profiles** is empty while TV Home is in use. To switch profile: **Use the TV's own launcher**, switch, then pick TV Home again.
 
@@ -708,7 +708,7 @@ A channel that does not play tries its next stream by itself; when all fail, OK 
 
 A newer TV Channels is offered by the app itself: **Update now**, **Later** or **Skip this version**.
 
-Only the TV's remote at hand: install it with Downloader, code **8135635**.
+TV remote only: Downloader, code **8135635**. Direct link: [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk).
 
 ### Tips
 
@@ -716,7 +716,7 @@ Only the TV's remote at hand: install it with Downloader, code **8135635**.
 
 An app on the TV that plays retro and web games, with phones as pads (up to 4). Playing needs no ADB and no TV Setup: scan the QR on the TV with a phone.
 
-Only the TV's remote at hand: install it with Downloader, code **2294968**.
+TV remote only: Downloader, code **2294968**. Direct link: [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk).
 
 1. **TV** tab → **TV games** card → **Install TV Games** (needs ADB, only to install). Not in the latest release yet: the card says so.
 2. Press **Open TV Games**, then scan the QR on the TV with a phone to use it as a pad.
@@ -732,7 +732,7 @@ Only the TV's remote at hand: install it with Downloader, code **2294968**.
 
 A list of free, open-source TV apps (SmartTube, Kodi, VLC, Jellyfin…). Each comes straight from its maker's release and is installed only when it carries the maker's signature.
 
-Only the TV's remote at hand: install it with Downloader, code **1082201**.
+TV remote only: Downloader, code **1082201**. Direct link: [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk).
 
 1. From a phone or computer: **📱 Apps** tab → **📦 TV Apps** card → **Browse apps** → **Install** (needs ADB).
 2. On the TV: open the **TV Apps** app (TV Setup installs it once it has ADB, or from its row of TV apps). Pick a kind, pick an app, press OK. Hold OK: Open, Install again, Details.

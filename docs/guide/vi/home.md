@@ -50,6 +50,6 @@ Chọn nhiều hình rồi đặt **Đổi hình nền** (30 phút → mỗi l�
 - App bị khóa có ổ khóa, app có giới hạn hiện ⏳ phút còn lại.
 - Có bản mới: thẻ hiện **Cập nhật TV Home**, cài đặt được giữ.
 
-Chỉ có remote của TV: Downloader, mã **4356026**, rồi chọn TV Home làm màn hình chính.
+Chỉ có remote của TV: Downloader, mã **4356026**, rồi chọn TV Home làm màn hình chính. Link trực tiếp: [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk).
 
 Google TV: trang **Tài khoản và hồ sơ** trống khi dùng TV Home. Đổi hồ sơ: **Dùng launcher gốc của TV**, đổi, rồi chọn lại TV Home.

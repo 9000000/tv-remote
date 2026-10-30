@@ -21,6 +21,6 @@ Kênh không phát được thì app tự thử nguồn khác; hết nguồn th�
 
 Có bản mới, app tự hỏi: **Cập nhật ngay**, **Để sau** hoặc **Bỏ qua bản này**.
 
-Chỉ có remote của TV: cài bằng Downloader, mã **8135635**.
+Chỉ có remote của TV: cài bằng Downloader, mã **8135635**. Link trực tiếp: [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk).
 
 ### Mẹo

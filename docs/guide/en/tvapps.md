@@ -2,7 +2,7 @@
 
 A list of free, open-source TV apps (SmartTube, Kodi, VLC, Jellyfin…). Each comes straight from its maker's release and is installed only when it carries the maker's signature.
 
-Only the TV's remote at hand: install it with Downloader, code **1082201**.
+TV remote only: Downloader, code **1082201**. Direct link: [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk).
 
 1. From a phone or computer: **📱 Apps** tab → **📦 TV Apps** card → **Browse apps** → **Install** (needs ADB).
 2. On the TV: open the **TV Apps** app (TV Setup installs it once it has ADB, or from its row of TV apps). Pick a kind, pick an app, press OK. Hold OK: Open, Install again, Details.

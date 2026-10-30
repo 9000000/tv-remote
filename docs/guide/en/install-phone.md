@@ -7,7 +7,7 @@ The easiest way: nothing to install on the TV, the keys work at once ([see](noke
 3. The first time the TV asks “Allow USB debugging?”: tick **Always allow** and OK. See [this part](allow-usb.md).
 4. Done: the TV's picture is on the phone. ADB not on yet? [Keys still work](nokeys.md).
 
-> 💡 The phone and the TV must be on the same Wi-Fi. The app tells you when a new version exists. Another Android device: Downloader code **2973135**.
+> 💡 The phone and the TV must be on the same Wi-Fi. The app tells you when a new version exists. Another Android device: Downloader code **2973135**. Direct link: [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk).
 
 > 💡 Updating inside the app: the first time Android asks for “Install unknown apps”. Tap **Open settings**, turn on “Allow from this source”, come back and it carries on. After that (Android 12+) it updates quietly.
 

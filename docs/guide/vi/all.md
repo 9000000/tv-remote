@@ -27,7 +27,7 @@ Cách dễ nhất: chưa cần cài gì lên TV, bấm phím được ngay ([xem
 3. Lần đầu TV hỏi “Cho phép gỡ lỗi USB?”: tích **Luôn cho phép** rồi OK. Xem [phần này](#allow-usb).
 4. Xong: hình TV hiện trên điện thoại. TV chưa bật ADB thì vẫn [bấm phím được](#nokeys).
 
-> 💡 Điện thoại và TV phải cùng Wi-Fi. App tự báo khi có bản mới. Cài lên thiết bị Android khác: mã Downloader **2973135**.
+> 💡 Điện thoại và TV phải cùng Wi-Fi. App tự báo khi có bản mới. Cài lên thiết bị Android khác: mã Downloader **2973135**. Link trực tiếp: [tv-remote.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-remote.apk).
 
 > 💡 Cập nhật trong app: lần đầu Android hỏi quyền “Cài ứng dụng không rõ nguồn”. Bấm **Mở cài đặt**, bật “Cho phép từ nguồn này”, quay lại là xong. Sau đó (Android 12+) app tự cập nhật ngầm.
 
@@ -490,7 +490,7 @@ Chọn nhiều hình rồi đặt **Đổi hình nền** (30 phút → mỗi l�
 - App bị khóa có ổ khóa, app có giới hạn hiện ⏳ phút còn lại.
 - Có bản mới: thẻ hiện **Cập nhật TV Home**, cài đặt được giữ.
 
-Chỉ có remote của TV: Downloader, mã **4356026**, rồi chọn TV Home làm màn hình chính.
+Chỉ có remote của TV: Downloader, mã **4356026**, rồi chọn TV Home làm màn hình chính. Link trực tiếp: [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk).
 
 Google TV: trang **Tài khoản và hồ sơ** trống khi dùng TV Home. Đổi hồ sơ: **Dùng launcher gốc của TV**, đổi, rồi chọn lại TV Home.
 
@@ -708,7 +708,7 @@ Kênh không phát được thì app tự thử nguồn khác; hết nguồn th�
 
 Có bản mới, app tự hỏi: **Cập nhật ngay**, **Để sau** hoặc **Bỏ qua bản này**.
 
-Chỉ có remote của TV: cài bằng Downloader, mã **8135635**.
+Chỉ có remote của TV: cài bằng Downloader, mã **8135635**. Link trực tiếp: [tv-channels.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-channels.apk).
 
 ### Mẹo
 
@@ -716,7 +716,7 @@ Chỉ có remote của TV: cài bằng Downloader, mã **8135635**.
 
 App trên TV chơi game retro và game web, dùng điện thoại làm tay cầm (tối đa 4). Chơi không cần ADB hay TV Setup: quét mã QR trên TV bằng điện thoại.
 
-Chỉ có remote của TV: cài bằng Downloader, mã **2294968**.
+Chỉ có remote của TV: cài bằng Downloader, mã **2294968**. Link trực tiếp: [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk).
 
 1. Tab **TV** → thẻ **Game trên TV** → **Cài TV Games** (cần ADB, chỉ để cài). Chưa có trong bản phát hành mới nhất thì thẻ báo “có trong bản phát hành tới”.
 2. Bấm **Mở TV Games**, rồi quét QR trên TV bằng điện thoại để làm tay cầm.
@@ -732,7 +732,7 @@ Chỉ có remote của TV: cài bằng Downloader, mã **2294968**.
 
 Danh sách app miễn phí, mã nguồn mở cho TV (SmartTube, Kodi, VLC, Jellyfin…). Mỗi app tải thẳng từ bản phát hành của nhà làm app, và chỉ được cài khi đúng chữ ký của họ.
 
-Chỉ có remote của TV: cài bằng Downloader, mã **1082201**.
+Chỉ có remote của TV: cài bằng Downloader, mã **1082201**. Link trực tiếp: [tv-apps.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-apps.apk).
 
 1. Từ điện thoại hay máy tính: tab **📱 Ứng dụng** → thẻ **📦 Kho app** → **Xem app** → **Cài** (cần ADB).
 2. Trên TV: mở app **TV Apps** (TV Setup tự cài khi có ADB, hoặc ở hàng app TV của TV Setup). Chọn loại, chọn app, bấm OK. Giữ OK: Mở, Cài lại, Chi tiết.

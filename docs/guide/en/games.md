@@ -2,7 +2,7 @@
 
 An app on the TV that plays retro and web games, with phones as pads (up to 4). Playing needs no ADB and no TV Setup: scan the QR on the TV with a phone.
 
-Only the TV's remote at hand: install it with Downloader, code **2294968**.
+TV remote only: Downloader, code **2294968**. Direct link: [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk).
 
 1. **TV** tab → **TV games** card → **Install TV Games** (needs ADB, only to install). Not in the latest release yet: the card says so.
 2. Press **Open TV Games**, then scan the QR on the TV with a phone to use it as a pad.

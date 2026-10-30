@@ -50,6 +50,6 @@ Pick several; **Change background** rotates them.
 - A locked app shows a padlock, a limited one ⏳ and minutes left.
 - New version: **Update TV Home** card, settings kept.
 
-Only the TV's remote at hand: Downloader, code **4356026**, then pick TV Home as the home screen.
+TV remote only: Downloader, code **4356026**, then make TV Home the home screen. Direct link: [tv-home.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-home.apk).
 
 Google TV: **Accounts & profiles** is empty while TV Home is in use. To switch profile: **Use the TV's own launcher**, switch, then pick TV Home again.

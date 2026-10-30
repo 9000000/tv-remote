@@ -2,7 +2,7 @@
 
 App trên TV chơi game retro và game web, dùng điện thoại làm tay cầm (tối đa 4). Chơi không cần ADB hay TV Setup: quét mã QR trên TV bằng điện thoại.
 
-Chỉ có remote của TV: cài bằng Downloader, mã **2294968**.
+Chỉ có remote của TV: cài bằng Downloader, mã **2294968**. Link trực tiếp: [tv-games.apk](https://github.com/HoangTran0410/tv-remote/releases/latest/download/tv-games.apk).
 
 1. Tab **TV** → thẻ **Game trên TV** → **Cài TV Games** (cần ADB, chỉ để cài). Chưa có trong bản phát hành mới nhất thì thẻ báo “có trong bản phát hành tới”.
 2. Bấm **Mở TV Games**, rồi quét QR trên TV bằng điện thoại để làm tay cầm.
