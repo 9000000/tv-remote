@@ -61,8 +61,23 @@ internal fun Activity.pillButton(label: String, on: Boolean = false, icon: Int =
     }
 }
 
+/** An icon-only [pillButton] (a row of them takes the room of one labelled button); [name] is read out and shown by whoever lists it. */
+internal fun Activity.iconPill(icon: Int, name: String, on: Boolean = false, click: () -> Unit): ImageView {
+    val d = resources.displayMetrics.density
+    return ImageView(this).apply {
+        tag = on; contentDescription = name
+        setImageResource(icon); scaleType = ImageView.ScaleType.CENTER_INSIDE
+        val p = (12 * d).toInt(); setPadding(p, p, p, p)
+        isFocusable = true; isClickable = true
+        fun paint(f: Boolean) { background = pillBg(f, tag == true); setColorFilter(if (f) CHIP_FOCUS_INK else Color.WHITE) }
+        paint(false)
+        setOnFocusChangeListener { _, f -> paint(f) }
+        setOnClickListener { click() }
+    }
+}
+
 /** The one on-state of a [pillButton], kept in step with what it chooses. */
-internal fun Activity.setPillOn(v: TextView, on: Boolean) {
+internal fun Activity.setPillOn(v: View, on: Boolean) {
     v.tag = on
     v.background = pillBg(v.isFocused, on)
 }
@@ -242,7 +257,8 @@ class WeatherMapActivity : Activity() {
     private var lat = 0.0; private var lon = 0.0
     private val layers = listOf(Triple("rain", R.string.map_rain, R.drawable.ic_rain), Triple("wind", R.string.map_wind, R.drawable.ic_wind), Triple("temp", R.string.map_temp, R.drawable.ic_thermometer),
         Triple("satellite", R.string.map_satellite, R.drawable.ic_satellite), Triple("pm2p5", R.string.map_pm, R.drawable.ic_gauge))
-    private val chips = HashMap<String, TextView>()
+    private val chips = HashMap<String, ImageView>()
+    private var named: TextView? = null                                         // under the icons: the focused one's name, else the layer shown
     private var loading: View? = null
     private var layer = "rain"; private var ready = false; private var started = false
 
@@ -252,7 +268,8 @@ class WeatherMapActivity : Activity() {
     private fun setLayer(l: String) { web?.evaluateJavascript("try{W.store.set('overlay','$l')}catch(e){}", null) }
     /** Presses Windy's own play button under the map (the map never takes the focus, so the remote cannot reach it); [then]: playing now (its class `off` = paused; it stops by itself at the last hour). */
     private fun togglePlay(then: (Boolean) -> Unit) { web?.evaluateJavascript("(function(){var b=document.getElementById('playpause');if(!b)return false;b.click();return !b.classList.contains('off')})()") { then(it == "true") } }
-    private var play: TextView? = null
+    private var play: ImageView? = null
+    private fun nameNow() { named?.text = (currentFocus as? ImageView)?.contentDescription ?: getString(layers.first { it.first == layer }.second) }
 
     private fun url(layer: String) = "https://embed.windy.com/embed2.html?lat=$lat&lon=$lon&detailLat=$lat&detailLon=$lon&width=900&height=700&zoom=7&level=surface" +
         "&overlay=$layer&product=ecmwf&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1"
@@ -309,14 +326,23 @@ class WeatherMapActivity : Activity() {
         who.addView(label(place.optString("name"), 16f, if (fc != null) DIMC else Color.WHITE, fc == null).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
         head.addView(who, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = if (fc != null) dpx(10) else 0 })
         col.addView(head, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(12) })
-        for ((k, w, ic) in layers) {
-            val c = pillButton(getString(w), k == "rain", ic, true) { show(k) }
-            chips[k] = c; col.addView(c, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(6) })
+        // icons only, 3 to a row, and one line naming the focused one (or the layer shown): five labelled buttons left the days one row
+        val pills = ArrayList<ImageView>()
+        for ((k, w, ic) in layers) iconPill(ic, getString(w), k == "rain") { show(k) }.also { chips[k] = it; pills.add(it) }
+        play = iconPill(R.drawable.ic_play, getString(R.string.map_play)) {
+            if (ready) togglePlay { on ->
+                play?.let { it.setImageResource(if (on) R.drawable.ic_pause else R.drawable.ic_play); it.contentDescription = getString(if (on) R.string.map_pause else R.string.map_play); setPillOn(it, on) }
+                nameNow()
+            }
+        }.also { pills.add(it) }
+        for (row in pills.chunked(3)) {
+            val r = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            row.forEachIndexed { n, v -> r.addView(v, LinearLayout.LayoutParams(0, dpx(52), 1f).apply { if (n > 0) leftMargin = dpx(8) }) }
+            col.addView(r, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(8) })
         }
-        play = pillButton(getString(R.string.map_play), false, R.drawable.ic_play_pause, true) {
-            if (ready) togglePlay { on -> play?.let { it.text = getString(if (on) R.string.map_pause else R.string.map_play); setPillOn(it, on) } }
-        }
-        col.addView(play, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dpx(6); bottomMargin = dpx(6) })
+        for (v in pills) v.onFocusChangeListener.let { was -> v.setOnFocusChangeListener { x, f -> was?.onFocusChange(x, f); x.post { nameNow() } } }
+        named = label("", 16f, Color.WHITE, true).apply { gravity = Gravity.CENTER; setSingleLine(true); ellipsize = TextUtils.TruncateAt.END }
+        col.addView(named, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dpx(8) })
         val days = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = true; setPadding(dpx(6), dpx(6), dpx(6), 0) }
         col.addView(days, LinearLayout.LayoutParams(-1, 0, 1f))
         days.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->                // a row that does not fit whole is hidden, never half shown
@@ -342,7 +368,7 @@ class WeatherMapActivity : Activity() {
 
     private fun show(l: String) {
         for ((k, c) in chips) setPillOn(c, k == l)
-        layer = l
+        layer = l; nameNow()
         if (ready) setLayer(l) else if (!started) { started = true; web?.loadUrl(url(l)) }   // before the page is up onPageFinished applies `layer`
     }
 
