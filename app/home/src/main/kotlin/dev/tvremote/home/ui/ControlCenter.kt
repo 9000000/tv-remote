@@ -178,6 +178,7 @@ object ControlCenter {
             orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
             setPadding(dp(14), dp(12), dp(14), dp(12))
             background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_activated), TvGlass.glass(c, R_TILE, TvGlass.ROW_FOCUS, TvUi.RING_ACCENT))
                 addState(intArrayOf(android.R.attr.state_focused), TvGlass.glass(c, R_TILE, TvGlass.ROW_FOCUS, Color.WHITE))
                 addState(intArrayOf(), TvGlass.glass(c, R_TILE, TvGlass.ROW_FILL, TvGlass.ROW_EDGE))
             }
@@ -190,15 +191,31 @@ object ControlCenter {
 
         fun show(v: Int) { b = v; value.text = "$v%"; track.progress = v }
 
+        // OK starts changing the value, OK / Back / Up / Down end it (the user, 2026-10-30): at rest Left / Right
+        // move the focus like on any row, so the colour button beside it is one press away
+        private fun edit(on: Boolean) { isActivated = on; value.setTextColor(if (on) Color.WHITE else TvGlass.HINT) }
+
+        override fun onFocusChanged(gain: Boolean, dir: Int, prev: android.graphics.Rect?) { super.onFocusChanged(gain, dir, prev); if (!gain) edit(false) }
+
         override fun onKeyDown(code: Int, e: android.view.KeyEvent): Boolean {
+            when (code) {
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER, android.view.KeyEvent.KEYCODE_ENTER -> { edit(!isActivated); return true }
+                android.view.KeyEvent.KEYCODE_BACK -> if (isActivated) { edit(false); return true }
+                android.view.KeyEvent.KEYCODE_DPAD_UP, android.view.KeyEvent.KEYCODE_DPAD_DOWN -> edit(false)
+            }
+            if (!isActivated) return super.onKeyDown(code, e)
             val to = when (code) {
                 android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> minOf(100, (b / 10 + 1) * 10)
                 android.view.KeyEvent.KEYCODE_DPAD_LEFT -> maxOf(10, ((b + 9) / 10 - 1) * 10)
                 else -> return super.onKeyDown(code, e)
             }
             if (to != b) { show(to); moved(to) }
-            return true                                                // the ends keep the focus: Left / Right never leave the bar
+            return true                                                // while changing, the ends keep the focus
         }
+
+        // OK's up would click the bar (it is clickable for touch): the down already did the work
+        override fun onKeyUp(code: Int, e: android.view.KeyEvent) =
+            if (code == android.view.KeyEvent.KEYCODE_DPAD_CENTER || code == android.view.KeyEvent.KEYCODE_ENTER) true else super.onKeyUp(code, e)
     }
 
     /**

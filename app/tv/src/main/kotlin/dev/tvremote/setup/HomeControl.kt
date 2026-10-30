@@ -69,7 +69,7 @@ object HomeControl {
                 "dim" -> { val p = word.substringAfter(':').toInt()
                     if (!DimLayer.set(c, DimLayer.state(c).put("on", p > 0).also { if (p > 0) it.put("pct", p) })) error = "overlay" }
                 "dimc" -> { val st = DimLayer.state(c)
-                    if (!st.optBoolean("on")) st.put("pct", Dim.PCT)                   // off: the bar left it at its last step (10 %), too faint to see a colour come on
+                    if (!st.optBoolean("on")) st.put("pct", 10)                        // off: a light tint (the bar at 90 %; 40 % was too dark, the user 2026-10-30), raised on the bar
                     if (!DimLayer.set(c, st.put("on", true).put("color", word.substringAfter(':')))) error = "overlay" }
                 "pin", "manage", "keytest" -> if (!handOver && !open(c, screen(c, word)!!)) error = "failed"
                 else -> error = "bad"

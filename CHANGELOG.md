@@ -5,7 +5,7 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
 ## Unreleased
-- TV Home: the Control Center has a brightness bar (a sun icon, Left / Right in steps of 10 %, 100 % = no tint) and a button beside it to pick the tint colour (Dark, Blue light filter, Yellow, Sepia, Night red, Blue); shown when TV Setup is new enough, so a dim left on is always one press from Home.
+- TV Home: the Control Center has a brightness bar (a sun icon; OK to change it, Left / Right in steps of 10 %, Back when done; 100 % = no tint) and a button beside it to pick the tint colour (Dark, Blue light filter, Yellow, Sepia, Night red, Blue; a colour picked while off comes on light, at 90 %); shown when TV Setup is new enough, so a dim left on is always one press from Home.
 - Remote: Dim the screen moves into More keys → Tools (sun icon); the Sleep timer menu has Screen off directly instead of a TV screen submenu.
 - TV Home: the weather map's layers are icon buttons with one line naming the focused one, plus Play / Pause for the forecast (Windy's own play button sat on the map, out of the remote's reach); the next days get their room back.
 - Open a link on the remote (and a link shared to the Phone app) opens the pin box for any link, not only YouTube: what opens it on the TV, Pin to TV Home, Try on the TV; an app's own link is pinned under the app's name instead of the link's host.
