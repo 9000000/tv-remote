@@ -43,7 +43,7 @@ main.picking > .tabs, main.picking > .panel, main.picking > #help, main.picking 
 #picker { display:flex; flex-direction:column; gap:14px; }
 #pickcols.solo { grid-template-columns:1fr; max-width:640px; width:100%; margin:0 auto; }
 #picker .item { cursor:pointer; }
-#picker .item:hover { background:color-mix(in srgb, var(--ink) 8%, transparent); }
+#picker .item:hover { background:var(--btn); background:color-mix(in srgb, var(--ink) 8%, transparent); }
 /* each saved TV at a glance (js/tvstatus.js): a status line under the name; "Xem màn hình" turns the list into cards with a picture */
 .tvstat { display:flex; flex-direction:column; align-items:flex-start; gap:2px; margin-top:4px; }
 .tvstat .badge { margin-left:0; }

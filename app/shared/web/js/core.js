@@ -348,13 +348,17 @@ let stateMiss = 0, adbSoon = 0, adbSoonMs = 125;
 let stopped = false;
 function serverStopped() { stopped = true; }
 let refreshSeq = 0;                                                  // a slower older read must not undo a newer one (tvChanged would fire twice)
-async function refresh() {
+let refreshP = null;                                                  // the newest read: a call it replaced hands its caller this one, so `await refresh()` ends with STATE fresh
+function refresh() { const p = refreshRead(); refreshP = p; return p; }
+async function refreshRead() {
   if (stopped) return;
   let locked = false;
   if (invited) { inviteBad = !await invited; invited = null; }     // the invite first: then this very read is let in
   const seq = ++refreshSeq;
-  const s = await fetch('/api/state', { signal: timeoutSignal(6000) }).then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
-  if (seq !== refreshSeq) return;
+  const sig = timeoutSignal(15000);                                   // a busy or Tailscale TV answers slowly: that is not "no TV"
+  const s = await fetch('/api/state', { signal: sig }).then((r) => { locked = r.status === 401; return r.json(); }).catch(() => null);
+  if (seq !== refreshSeq) return refreshP;
+  if (!s && sig && sig.aborted && ++stateMiss < 3) return;            // a slow answer keeps the last STATE and chips for two waits; a TV gone off the network (no reply at all) still ends in "disconnected"
   if (CORE === 'tv') setLocked(locked, s);
   if (locked && inviteBad) { inviteBad = false; put('#pairerr', 'textContent', T('core.qr_expired')); }
   if (locked) return;

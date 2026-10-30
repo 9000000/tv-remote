@@ -12,7 +12,7 @@ async function loadRules(change, quiet) {
   if (rulesBusy && !change) return;
   rulesBusy = true;
   const gen = rulesGen;
-  const r = await api('/api/rules', change || null, quiet, change ? 0 : 15000);
+  const r = await api('/api/rules', change || null, quiet || (!change && !!RULES), change ? 0 : 20000);   // a read that times out with a list on screen keeps the list, no toast
   if (gen !== rulesGen) return null;
   rulesBusy = false;
   if (!r) return null;

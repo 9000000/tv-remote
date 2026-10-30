@@ -51,6 +51,8 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     private var manage: Manage? = null
     private var labels: RemoteLabels? = null
     private var forHost: String? = null
+    private var lastTab: String? = null                               // open's tab and "then", replayed when the WebView is rebuilt
+    private var lastThen: String? = null
     private var loaded = false                                        // the page is loaded for [forHost]
     private var picking: ValueCallback<Array<Uri>>? = null
     private var destroyed = false
@@ -107,7 +109,9 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
         view.addView(web, at, LinearLayout.LayoutParams(-1, 0, 1f))
         loaded = false
         pending = null
-        if (view.visibility == View.VISIBLE) open(forHost)
+        try { picking?.onReceiveValue(null) } catch (e: Exception) { }   // the dead page's file chooser would wait for ever
+        picking = null
+        if (view.visibility == View.VISIBLE) open(forHost, lastTab, lastThen)   // the tab and the action it was opened with come back
     }
 
     /** The small player floats over the page's bottom: its toast, error box and jobs card rise above it (`--cover-b`, css/page.css). */
@@ -161,6 +165,7 @@ internal class Managing(private val a: MainActivity, root: FrameLayout) : HttpSe
     /** Shows the page for [tvHost], on [tab] when one is named ("auto", "apps"...). */
     fun open(tvHost: String?, tab: String? = null, then: String? = null) {
         if (tvHost == null) return
+        lastTab = tab; lastThen = then
         try {
             if (http == null) {
                 val server = HttpServer(this)

@@ -105,3 +105,13 @@ test('small controls keep a 44px hit area', () => {
   const mini = all.find((r) => r.sels.includes('.seg.mini button'));
   assert.equal(mini.decl.find(([p]) => p === 'min-height')[1], 'var(--ctl-sm)');
 });
+
+test('color-mix on a logo plate and a hover has a plain colour before it (WebView < Chrome 111, Android 5)', () => {
+  // a declaration the old engine cannot parse is dropped; the line before it is what that engine shows
+  const bad = [];
+  for (const r of all) if (r.sels.some((x) => /chlogo$|^#picker \.item:hover$/.test(x)))
+    r.decl.forEach(([p, v], i) => { if (/color-mix\(/.test(v) && !r.decl.slice(0, i).some(([q, w]) => q === p && !/color-mix\(/.test(w))) bad.push(r.line + ' ' + r.sels.join(', '));
+    });
+  assert.deepEqual(bad, []);
+  assert.ok(all.some((r) => r.sels.some((x) => /chlogo$/.test(x)) && r.decl.some(([, v]) => /color-mix/.test(v))), 'the rule is still found');
+});

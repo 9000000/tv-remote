@@ -67,19 +67,22 @@ function drawTvset(t) {
     }),
   ]);
   dnsRow.append(dnsNote);
-  const off = t.dnsOff && new Date(t.dnsOff.at), p2 = (n) => String(n).padStart(2, '0');
-  if (!dnsOn && off && Date.now() - t.dnsOff.at < 7 * 86400000) dnsRow.append(el('p', { className: 'warnline',
-    textContent: T('tvset.dns_turned_off', { host: t.dnsOff.host, time: p2(off.getHours()) + ':' + p2(off.getMinutes()), date: p2(off.getDate()) + '/' + p2(off.getMonth() + 1) }) }));
+  if (!dnsOn && t.dnsOff && Date.now() - t.dnsOff.at < 7 * 86400000) {   // the moment in the page's language, not dd/mm
+    let when; try { when = new Date(t.dnsOff.at).toLocaleString(window.LANG, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { when = new Date(t.dnsOff.at).toLocaleString(); }
+    dnsRow.append(el('p', { className: 'warnline', textContent: T('tvset.dns_turned_off', { when }) }));
+  }
   if (t.sdk && t.sdk < 28) dnsRow.querySelectorAll('button').forEach((b) => { b.disabled = true; });
   rows.push(dnsRow);
 
   const sleeps = [[-1, T('tvset.sleep_never')], [30 * MIN, fmtWait(30 * MIN)], [60 * MIN, fmtWait(60 * MIN)], [240 * MIN, fmtWait(240 * MIN)], [720 * MIN, fmtWait(720 * MIN)], [1440 * MIN, fmtWait(1440 * MIN)]];
   const ownSleep = t.sleep !== null && !sleeps.some(([v]) => v === t.sleep);
-  rows.push(row(T('tvset.sleep_title'), [...sleeps.map(([v, label]) => choice(label, t.sleep === v, () => setTv('sleep', v, T('tvset.sleep_set', { label })))),
-    choice(ownSleep ? fmtWait(t.sleep) : T('tvset.type_own'), ownSleep, async () => {
-      const v = await askWait(ownSleep ? t.sleep : null);
-      if (v) setTv('sleep', v, T('tvset.sleep_set', { label: fmtWait(v) }));
-    })]));
+  const sleepBtns = sleeps.map(([v, label]) => [v, choice(label, t.sleep === v, () => setTv('sleep', v, T('tvset.sleep_set', { label })))]);
+  const ownBtn = choice(ownSleep ? fmtWait(t.sleep) : T('tvset.type_own'), ownSleep, async () => {
+    const v = await askWait(ownSleep ? t.sleep : null);
+    if (v) setTv('sleep', v, T('tvset.sleep_set', { label: fmtWait(v) }));
+  });
+  if (ownSleep) sleepBtns.push([t.sleep, ownBtn]), sleepBtns.sort((a, b) => (a[0] < 0 ? -1 : b[0] < 0 ? 1 : a[0] - b[0]));   // 45 min between 30 and 1 h, as the screensaver row below
+  rows.push(row(T('tvset.sleep_title'), [...sleepBtns.map(([, b]) => b), ...(ownSleep ? [] : [ownBtn])]));
 
   // the screensaver comes on after this long without a key; "never" is how some TVs (Sony) say off
   const saverOn = t.saver && t.saverAfter !== null && t.saverAfter < 86400000;

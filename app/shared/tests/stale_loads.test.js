@@ -9,6 +9,18 @@ const vm = require('node:vm');
 const js = (f) => fs.readFileSync(path.join(__dirname, '../web/js', f), 'utf8');
 // the source of one top-level function, up to its closing brace at column 0
 const fn = (src, name) => { const m = src.match(new RegExp('^(async )?function ' + name + '\\b[\\s\\S]*?^}', 'm')); assert.ok(m, name); return m[0]; };
+// the real onTvChange(...) statement of a file whose first line holds `marker`: what a test runs is the code the page runs, so
+// deleting a reset from the file turns the test red
+const tvChange = (src, marker) => {
+  const lines = src.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].startsWith('onTvChange(')) continue;
+    const one = /\);\s*(\/\/.*)?$/.test(lines[i]) && !lines[i].endsWith('{');
+    const j = one ? i : lines.findIndex((l, k) => k > i && l.startsWith('});')), block = lines.slice(i, j + 1).join('\n');
+    if (block.includes(marker)) return block;
+  }
+  assert.fail('no onTvChange block with ' + marker);
+};
 const later = () => new Promise((r) => setTimeout(r, 0));
 
 function sandbox(extra) {
@@ -28,8 +40,8 @@ test('apps.js: the old TV\'s app list that arrives after a TV change is dropped'
   const ctx = sandbox();
   vm.runInContext([
     'let appsLoaded = false, appsAll = [], appsInfo = new Map(), appsSys = null, appsSysBusy = false, appsBoot = new Set(), quickLoaded = true;',
-    'let appsGen = 0;', 'const appsStale = () => { quickLoaded = appsLoaded = false; };',
-    'onTvChange(() => { appsGen++; appsSysBusy = false; appsStale(); });',
+    'let appsGen = 0, quickApps = [];', src.match(/^const appsStale = .*$/m)[0],
+    tvChange(src, 'appsGen++'),
     fn(src, 'loadApps'), 'this.loadApps = loadApps; this.state = () => ({ appsLoaded, appsAll });',
   ].join('\n'), ctx);
   const p = ctx.loadApps(true);
@@ -60,12 +72,13 @@ test('apps.js: Quick launch drops the old TV\'s apps that arrive after a TV chan
   const ctx = sandbox();
   vm.runInContext([
     'let quickLoaded = false, quickApps = ["old.tv.app"], appsGen = 0, shown = null;',
-    'onTvChange(() => { appsGen++; quickApps = []; quickLoaded = false; });',
+    'const appsStale = () => { quickLoaded = appsLoaded = false; }; let appsSysBusy = false;', tvChange(src, 'appsGen++'),
     '$ = () => ({ replaceChildren(...x) { shown = x; } });',
     fn(src, 'loadQuick'), 'this.loadQuick = loadQuick; this.st = () => ({ quickLoaded, quickApps, shown });',
   ].join('\n'), ctx);
   const p = ctx.loadQuick();
   ctx.resets.forEach((f) => f());
+  vm.runInContext('shown = null', ctx);                              // the reset itself draws its "apps appear when ADB…" line; what matters is what the late answer adds
   ctx.waiting[0]({ apps: [{ pkg: 'old.tv.app' }] });
   await p; await later();
   assert.equal(ctx.st().quickApps.length, 0);
@@ -111,7 +124,7 @@ test('core.js: an older state read that ends after a newer one is dropped', asyn
     fetch: () => new Promise((ok) => answers.push(ok)), picking: false, curHost: null, justPicked: null, volHold: 0 });
   // stop right after the state is stored: what matters is which answer got that far
   vm.runInContext(fn(src, 'refresh').replace('STATE = s || {};', 'STATE = s || {}; return;') + '\nlet seqOk = 0; this.refresh = refresh;', ctx);
-  vm.runInContext('let refreshSeq = 0; this.setSeq = () => refreshSeq;', ctx);
+  vm.runInContext('let refreshSeq = 0, refreshP = null;', ctx);
   const a = ctx.refresh(), b = ctx.refresh();
   assert.equal(answers.length, 2);
   const res = (host) => ({ status: 200, json: async () => ({ host, connected: true, is_on: true, adb: { state: 'ready' } }) });
@@ -120,17 +133,36 @@ test('core.js: an older state read that ends after a newer one is dropped', asyn
   assert.equal(ctx.STATE.host, 'new');
 });
 
+test('core.js: a read a newer one replaced ends only when the newer one has stored its state', async () => {
+  const src = js('core.js');
+  const answers = [];
+  const ctx = sandbox({ stopped: false, invited: null, CORE: 'pc', setLocked() {}, tvOn: false, STATE: null, stateMiss: 0, setTimeout() {},
+    timeoutSignal: () => undefined, applyKind() {}, setChip() {}, NATIVE: () => false, setPicking() {}, showNowApp() {}, ADB_TEXT: { ready: ['', '', ''] }, tvChanged() {},
+    fetch: () => new Promise((ok) => answers.push(ok)), picking: false, curHost: null, justPicked: null, volHold: 0 });
+  vm.runInContext(fn(src, 'refresh').replace('STATE = s || {};', 'STATE = s || {}; return;') + '\nlet refreshSeq = 0, refreshP = null; this.refresh = refresh;', ctx);
+  const res = (host) => ({ status: 200, json: async () => ({ host, connected: true, is_on: true, adb: { state: 'ready' } }) });
+  const a = ctx.refresh(), b = ctx.refresh();
+  let aDone = false; a.then(() => { aDone = true; });
+  answers[0](res('old')); await later(); await later();             // the replaced read is answered; the newer one is not yet
+  assert.equal(aDone, false, 'an awaiter of the replaced call keeps waiting');
+  answers[1](res('new')); await a; await b;
+  assert.equal(ctx.STATE.host, 'new', 'and then reads the fresh state');
+});
+
 test('core.js: refresh settles when the TV never answers (timeout signal, old WebView fallback)', async () => {
   const src = js('core.js');
-  const sig = [];
-  const ctx = sandbox({ stopped: false, invited: null, CORE: 'pc', setLocked() {}, STATE: null, stateMiss: 5, setTimeout() {}, put() {}, setChip() {},
+  const sig = []; let chips = 0;
+  const ctx = sandbox({ stopped: false, invited: null, CORE: 'pc', setLocked() {}, STATE: { host: 'tv' }, stateMiss: 0, setTimeout() {}, put() {}, setChip: () => { chips++; },
     fetch: (u, o) => new Promise((ok, no) => { sig.push(o && o.signal); o.signal.addEventListener('abort', () => no(new Error('timeout'))); }) });
-  vm.runInContext(fn(src, 'refresh') + '\n' + src.match(/^function timeoutSignal[\s\S]*?^}/m)[0] + '\nlet refreshSeq = 0; this.refresh = refresh;', ctx);
+  vm.runInContext(fn(src, 'refresh') + '\n' + src.match(/^function timeoutSignal[\s\S]*?^}/m)[0] + '\nlet refreshSeq = 0, refreshP = null; this.refresh = refresh;', ctx);
   // a WebView without AbortSignal.timeout: a controller and a timer
-  ctx.AbortSignal = { }; ctx.AbortController = AbortController; ctx.setTimeout = (f, ms) => { assert.ok(ms <= 6000); return setTimeout(f, 1); };
+  ctx.AbortSignal = { }; ctx.AbortController = AbortController; ctx.setTimeout = (f, ms) => { assert.ok(ms <= 20000); return setTimeout(f, 1); };
   let polling = true;
   await Promise.race([ctx.refresh().finally(() => { polling = false; }), new Promise((_, no) => setTimeout(() => no(new Error('refresh hung')), 2000))]);
   assert.equal(polling, false); assert.ok(sig[0], 'the read carries a signal');
+  assert.equal(ctx.STATE.host, 'tv', 'a read with no answer yet keeps the last good state'); assert.equal(chips, 0, 'and the chips: it is not "no TV"');
+  await ctx.refresh(); assert.equal(chips, 0, 'two slow reads: still not "no TV"');
+  await ctx.refresh(); assert.ok(chips > 0, 'a TV that never answers (off the network) ends in "disconnected"');
 });
 
 test('core.js: the pairing box is cleared and focused after Start', () => {
