@@ -67,11 +67,30 @@ object Paired {
     /** A browser unseen for [WEB_DAYS] days. A clock before its creation is a box in the wrong year: nothing is known then, so it stays. */
     internal fun stale(e: Entry, now: Long): Boolean = e.kind == "web" && now >= e.created && now - e.seen > WEB_DAYS * DAY
 
-    /** Devices that are not seen for [WEB_DAYS] days are dropped (apps stay). Nothing is dropped while the clock is known to be a day or more off (Clock): a box that booted a year ahead must not forget every browser. */
+    /** The newest created / seen of any entry: the last moment the clock is known to have been at. */
+    private fun newest(l: List<Entry>): Long = l.maxOfOrNull { maxOf(it.created, it.seen) } ?: 0L
+
+    /**
+     * Whether the clock cannot be trusted now: a stored reading says it is a day or more off, or there is no reading (it exists
+     * only with TOTP / Telegram / client setup) and the clock stands more than a day past everything this list ever saw, which a
+     * box that booted a year ahead looks like. Then nothing is dropped and `seen` stays (see [seenAfter]) until a reading of the
+     * real time ([Clock.maybeCheck], asked for by [check]) or a new pairing says which it is.
+     */
+    internal fun suspect(l: List<Entry>, now: Long, hasReading: Boolean, drift: Long): Boolean =
+        if (hasReading) Math.abs(drift) >= DAY else l.isNotEmpty() && now - newest(l) > DAY
+
+    /** Drops the browsers unseen for [WEB_DAYS] days unless the clock is [suspect]. True when any went. */
+    internal fun dropStale(l: MutableList<Entry>, now: Long, hasReading: Boolean, drift: Long): Boolean =
+        !suspect(l, now, hasReading, drift) && l.removeAll { stale(it, now) }
+
+    /** The `seen` of [e] after a use at [now]: never lower, and kept under a [suspect] clock, so a wrong year is never written into it (a day a request would reach it after a year of requests). */
+    internal fun seenAfter(l: List<Entry>, e: Entry, now: Long, hasReading: Boolean, drift: Long): Long =
+        if (suspect(l, now, hasReading, drift)) e.seen else maxOf(e.seen, now)
+
+    /** Devices that are not seen for [WEB_DAYS] days are dropped (apps stay), unless the clock is [suspect]: a box that booted a year ahead must not forget every browser. */
     private fun prune(c: Context, now: Long) {
-        if (Math.abs(Clock.driftMs(c)) >= DAY) return
         val l = all(c)
-        if (l.removeAll { stale(it, now) }) save(c)
+        if (dropStale(l, now, Clock.hasReading(c), Clock.driftMs(c))) save(c)
     }
 
     @Synchronized fun count(c: Context): Int { prune(c, System.currentTimeMillis()); return all(c).size }
@@ -98,8 +117,11 @@ object Paired {
         val h = sha256(token).toByteArray()
         val e = all(c).firstOrNull { MessageDigest.isEqual(it.h.toByteArray(), h) } ?: return null
         if (e.tls && !tls) return null
-        val renew = e.kind == "web" && now - e.seen > DAY
-        e.seen = maxOf(e.seen, now)                                   // a clock set back never lowers it: the next look at a right clock would drop the pass
+        val known = Clock.hasReading(c); val drift = Clock.driftMs(c)
+        val doubt = suspect(all(c), now, known, drift)
+        if (doubt && !known) Clock.maybeCheckSoon(c)                    // the network says whether this is a wrong year or a long absence (half-hourly at most)
+        val renew = e.kind == "web" && !doubt && now - e.seen > DAY
+        e.seen = seenAfter(all(c), e, now, known, drift)                 // never lowered by a clock set back (the next right clock would drop the pass), nor raised by one set ahead
         if (renew || now - (written[e.id] ?: 0L) > WRITE_EVERY) save(c)
         return Hit(e, renew)
     }

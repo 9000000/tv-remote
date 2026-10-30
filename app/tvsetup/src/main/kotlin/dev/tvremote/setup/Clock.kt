@@ -59,6 +59,9 @@ internal object Clock {
     /** The TV's clock minus the real time, in ms; 0 with no reading yet. */
     fun driftMs(c: Context): Long = drift(load(c), System.currentTimeMillis(), SystemClock.elapsedRealtime())
 
+    /** Whether any reading is stored: with none, [driftMs] is 0 because nothing is known, not because the clock is right. */
+    fun hasReading(c: Context): Boolean = load(c) != null
+
     /** The real time as best known. */
     fun now(c: Context): Long = System.currentTimeMillis() - driftMs(c)
 
@@ -86,6 +89,14 @@ internal object Clock {
         if (!due(c) || (tried != 0L && el - tried < 30 * 60_000L && el >= tried)) return
         tried = el
         check(c)
+    }
+
+    /** [maybeCheck] on its own thread, started only when it would ask (a caller on a request thread asks on every request). */
+    @Synchronized fun maybeCheckSoon(c: Context) {
+        val el = SystemClock.elapsedRealtime()
+        if (!due(c) || (tried != 0L && el - tried < 30 * 60_000L && el >= tried)) return
+        tried = el
+        Thread({ check(c) }, "clock-check").apply { isDaemon = true }.start()
     }
 
     /** HEAD to a page every network answers briefly, and the `Date` of the answer. False when neither address answered. Blocks: never on the main thread. */

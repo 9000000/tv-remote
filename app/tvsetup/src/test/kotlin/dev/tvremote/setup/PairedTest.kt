@@ -20,4 +20,29 @@ class PairedTest {
         assertFalse(Paired.stale(e("web", t, t), t - 40 * day))
         assertFalse(Paired.stale(e("web", t, t + 5 * day), t + day))   // seen "ahead": not stale either
     }
+
+    private fun l() = mutableListOf(e("web", t - 50 * day, t - 2 * day), e("web", t - 50 * day, t - 40 * day), e("app", t - 50 * day, t - 40 * day))
+
+    @Test fun noReadingClockAYearAheadKeepsWebEntries() {
+        val l = l()
+        assertFalse(Paired.dropStale(l, t + 365 * day, false, 0L))
+        assertTrue(l.size == 3)
+        assertTrue(Paired.dropStale(l, t - day, false, 0L))               // a clock near the newest sighting prunes as before
+        assertTrue(l.size == 2)
+    }
+
+    @Test fun aReadingADayOffKeepsThemToo() {
+        val l = l()
+        assertFalse(Paired.dropStale(l, t + 365 * day, true, 365 * day))
+        assertTrue(l.size == 3)
+    }
+
+    @Test fun futureSeenDoesNotStick() {
+        val l = l(); val a = l[0]
+        val after = Paired.seenAfter(l, a, t + 365 * day, false, 0L)
+        assertTrue(after == a.seen)                                    // not a year ahead, not even a day a request
+        assertTrue(Paired.seenAfter(l, a.also { it.seen = after }, t + 365 * day, false, 0L) == a.seen)   // nor after many requests
+        assertTrue(Paired.seenAfter(l, a, t - day, false, 0L) == t - day)          // a right clock still sets it to now
+        assertTrue(Paired.seenAfter(l, a, t - 5 * day, false, 0L) == a.seen)   // never lowered
+    }
 }
