@@ -399,6 +399,11 @@
   "n": 1,
   "note": "ADB diagnostic: the TV's own ADB closed/refused; minutes now on elapsedRealtime (314c0f33)"
  },
+ "34a118fd3d429df53bebadbb|0.20.2": {
+  "at": "2026-10-30T19:28:38+07:00",
+  "n": 1,
+  "note": "system: FinalizerDaemon timed out in BinderInternal.GcWatcher (framework, no app frame) on a TCL Android 11; TV Home 0.20.2 is old; nothing to fix in our code"
+ },
  "3525468061a5c692ec2b7a8e|0.30.0": {
   "at": "2026-10-29T17:19:58+07:00",
   "n": 1,
