@@ -7,7 +7,6 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 ## Unreleased
 - Pool: while the balls roll the shooter's phone says so instead of showing a Fire that does nothing.
 - TV Games web games: a name changed on the phone shows in the game at once (lobby, scores, turn lines).
-
 - Pool (TV Games): the cue holds still while A is held, so the press jolting the phone (Tilt, the Phone app's gyroscope pointer) no longer swings it; with ball in hand one press sets the ball down and a hold shoots at once.
 
 ## 0.36.1 - 2026-10-30
