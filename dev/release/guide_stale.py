@@ -2,12 +2,13 @@
 """Which topics of the user guide (docs/guide.html) may be out of date.
 
 Each topic carries data-v, the release it was last checked against ("next" = checked against main, stamped with the
-version by release.sh), and data-src, the files whose changes can make it wrong (web/, core/, phone/, tv/, pc/ are
-short for the app folders). A topic is listed when one of its files changed since its release's tag.
+version by release.sh), and data-src, the files whose changes can make it wrong (web/, core/, phone/, setup/, pc/ are
+short for the app folders). A topic is listed when one of its files changed since its release's tag, beyond comments
+and moves (compare.py).
   dev/release/guide_stale.py          the list, with the commits
   dev/release/guide_stale.py -q       only the topic ids (release.sh)"""
 import json, os, re, subprocess, sys
-from renamed import before
+from compare import before, changed
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 P = {"web/": "app/shared/web/", "core/": "app/shared/src/main/kotlin/dev/tvremote/core/",
@@ -25,13 +26,6 @@ def git(*a):
 quiet = "-q" in sys.argv
 
 
-def moved_out(log):
-    """git log --name-status less the commits that only moved files (R100: the folder rename), as "  <hash> <subject>" lines."""
-    out = []
-    for c in log.split("\x01")[1:]:
-        head, *files = c.strip("\n").split("\n")
-        if any(f.strip() and not f.startswith("R100") for f in files): out.append(head)
-    return "\n".join(out)
 html = open(os.path.join(ROOT, "docs/guide.html"), encoding="utf-8").read()
 stale = 0
 try:
@@ -47,7 +41,8 @@ for tid, v, src in re.findall(r'<article class="topic" id="([^"]+)" data-v="([^"
     elif not git("tag", "-l", "v" + v):
         log = f"(no tag v{v})"
     else:
-        log = moved_out(git("log", "-M", "--name-status", "--format=%x01  %h %s", f"v{v}..HEAD", "--", *dict.fromkeys(q for p in paths if p not in gone for q in (p, before(p)))))
+        here = [p for p in paths if p not in gone]                   # net change since the tag, beyond comments and moves (compare.py)
+        log = git("log", "--format=  %h %s", f"v{v}..HEAD", "--", *dict.fromkeys(q for p in here for q in (p, before(p)))) if changed("v" + v, here, ROOT) else ""
     if log or gone:
         stale += 1
         if quiet: print(tid); continue
