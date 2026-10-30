@@ -18,7 +18,13 @@ object RemoteSpec {
         val id: String, val icon: String, val t: String, val sub: String,
         val key: String?, val action: String?, val arg: String?, val whenCond: String?, val expand: String?, val style: String?,
         val needs: List<String> = emptyList(), val tint: String = "",
+        val kinds: Map<String, Pair<String?, String?>> = emptyMap(),   // kind -> (t, icon) override
     ) {
+        /** This entry as one kind of TV shows it ("kinds" in remote.json: t and icon only); the entry itself when it has none. */
+        fun forKind(kind: String): Entry {
+            val (kt, ki) = kinds[kind] ?: return this
+            return Entry(id, ki ?: icon, kt ?: t, sub, key, action, arg, whenCond, expand, style, needs, tint, kinds)
+        }
         fun can(caps: Set<String>) = needs.all { it in caps }
         /** The words in the app's language ([t] and [sub] are ids in i18n/<lang>.json). */
         fun words(): String = if (t.isEmpty()) "" else T(t)
@@ -50,6 +56,7 @@ object RemoteSpec {
             e.optString("when").ifEmpty { null }, e.optString("expand").ifEmpty { null }, e.optString("style").ifEmpty { null },
             e.optJSONArray("needs")?.let { n -> (0 until n.length()).map { n.getString(it) } } ?: emptyList(),
             e.optString("tint"),
+            e.optJSONObject("kinds")?.let { k -> k.keys().asSequence().associateWith { n -> k.getJSONObject(n).let { o -> o.optString("t").ifEmpty { null } to o.optString("icon").ifEmpty { null } } } } ?: emptyMap(),
         )
     }
 }

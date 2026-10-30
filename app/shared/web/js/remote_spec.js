@@ -8,8 +8,12 @@ const REMOTE = (() => {
     return JSON.parse(x.responseText);
   } catch { return { rows: {}, menus: {} }; }
 })();
-// An entry as this page shows it: the "web" fields lay over the common ones.
-const remoteEntry = (e) => ({ ...e, ...e.web, sub: (e.web && e.web.sub) || e.sub });
+// An entry as this page shows it: the "web" fields lay over the common ones, then the "kinds" override of the connected TV
+// (t / icon only: VIDAA's settings key is named Menu); the kind is core.js's TV_KIND, the same one the phone reads (PhoneRemote.kt).
+const remoteEntry = (e, kind = typeof TV_KIND === 'string' ? TV_KIND : 'android') => {
+  const k = e.kinds && e.kinds[kind];
+  return { ...e, ...e.web, ...k && { t: k.t || (e.web && e.web.t) || e.t, icon: k.icon || e.icon }, sub: (e.web && e.web.sub) || e.sub };
+};
 const remoteWords = (id) => T(id);                                 // "t" and "sub" are ids in i18n/<lang>.json
 const remoteHere = (e) => !e.cores || e.cores.includes('web');   // "cores" says "phone" (the native remote) or "web" (the pages)
 // What a guest let in by a shared QR needs for an entry (SCOPE in core.js): pressing anything is "control"; sending files and

@@ -120,3 +120,24 @@ test('every menu entry has an action: a bare "key" entry in a menu crashed the p
   for (const [name, list] of Object.entries(spec.menus))
     for (const e of list) assert.ok(e.do || e.expand, `menus.${name}: ${e.id} has no "do" (use "do": "key", "arg": …)`);
 });
+
+test('remote.json "kinds": a known kind, t and icon only, a why; VIDAA reads Menu, the others unchanged (issue #8)', () => {
+  const kinds = [...read('shared/src/main/kotlin/dev/tvremote/core/remote/Remote.kt').matchAll(/const val \w+ = "(\w+)"/g)].map((m) => m[1]);
+  const sprite = new Set([...read('shared/web/index.html').matchAll(/<symbol id="i-(\w+)"/g)].map((m) => m[1]));
+  let n = 0;
+  for (const e of entries.filter((x) => x.kinds)) for (const [k, o] of Object.entries(e.kinds)) {
+    n++;
+    assert.ok(kinds.includes(k) && k !== 'android', e.id + ': kinds.' + k + ' is not a kind with its own TV');
+    assert.deepEqual(Object.keys(o).filter((f) => !['t', 'icon', 'why'].includes(f)), [], e.id + ': kinds override t and icon only');
+    assert.ok(o.why && (o.t || o.icon), e.id + ': kinds.' + k + ' says why and overrides something');
+    if (o.t) for (const l of ['vi', 'en']) assert.equal(typeof book(l)[o.t], 'string', e.id + ': ' + o.t + ' missing in ' + l);
+    if (o.icon) assert.ok(sprite.has(o.icon) && fs.existsSync(path.join(root, 'android/src/main/res/drawable/ic_' + o.icon + '.xml')), e.id + ': icon ' + o.icon);
+  }
+  assert.ok(n > 0);
+  const settings = entries.find((e) => e.id === 'settings');
+  for (const lang of ['en', 'vi']) {
+    const words = book(lang), page = (kind) => { const s = pageSpec('web', lang); s.TV_KIND = kind; return vm.runInContext('remoteEntry(' + JSON.stringify(settings) + ')', s); };
+    assert.equal(words[page('vidaa').t], 'Menu'); assert.equal(page('vidaa').icon, 'menu');
+    for (const k of ['android', 'lg', 'samsung', 'roku']) { assert.equal(page(k).t, 'rkey.settings'); assert.equal(page(k).icon, 'settings'); }
+  }
+});

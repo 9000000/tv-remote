@@ -93,7 +93,9 @@ internal fun MainActivity.kindOff() =
 internal fun MainActivity.greyRows() {
     val caps = caps()
     val keys = basic?.takeIf { kind() != Remote.Kind.ANDROID }?.keys
-    for ((b, e) in drawn) {
+    for ((b, e0) in drawn) {
+        val e = e0.forKind(kind())                                    // remote.json "kinds": a VIDAA's Settings key reads Menu
+        if (e0.kinds.isNotEmpty()) { b.setIcon("@" + e.icon, b.currentTextColor); b.contentDescription = e.words(); b.caption = e.words() }
         val ok = e.can(caps) && (keys == null || e.key == null || Scenes.KEYS[e.key] in keys)
         b.tag = if (ok) null else KIND_OFF                            // still pressable: a press says why (kindOff)
         b.alpha = if (ok) 1f else 0.3f

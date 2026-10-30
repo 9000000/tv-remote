@@ -63,4 +63,15 @@ class RemoteSpecTest {
         assertTrue(all(phone).any { it.id == "open-cast" })
         assertFalse(all(web).any { it.id == "open-cast" })
     }
+
+    @Test fun vidaaCallsSettingsMenuOthersUnchanged() {                // issue #8: VIDAA's KEY_MENU is its settings screen
+        val s = all(phone).first { it.id == "settings" }
+        assertEquals("rkey.menu", s.forKind(Remote.Kind.VIDAA).t)
+        assertEquals("menu", s.forKind(Remote.Kind.VIDAA).icon)
+        assertEquals("SETTINGS", s.forKind(Remote.Kind.VIDAA).key)
+        for (k in listOf(Remote.Kind.ANDROID, Remote.Kind.LG, Remote.Kind.SAMSUNG, Remote.Kind.ROKU)) {
+            assertEquals("rkey.settings", s.forKind(k).t); assertEquals("settings", s.forKind(k).icon)
+        }
+        for (e in all(phone) + all(web)) for (k in e.kinds.keys) assertTrue(e.id + ": unknown kind " + k, k in Remote.Kind.ALL)
+    }
 }

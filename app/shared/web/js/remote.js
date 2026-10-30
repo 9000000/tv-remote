@@ -9,9 +9,18 @@ document.querySelectorAll('[data-rows]').forEach((box) => {
     if (e.key) b.dataset.k = e.key; else b.addEventListener('click', () => REMOTE_DO[e.do](e.arg));
     const needs = [...e.needs || [], ...remoteRole(e)];
     if (needs.length) b.dataset.needs = needs.join(' ');              // greyed on a TV that cannot, or for a guest (applyKind in core.js)
+    b.dataset.rid = e.id;
     box.append(b);
   }
 });
+// A key the connected TV names differently (remote.json "kinds": VIDAA's SETTINGS is its Menu) is relabelled when the kind
+// changes: applyKind (core.js) sets data-kind on <html>, and the rows are drawn before the TV is known.
+const paintRows = () => document.querySelectorAll('[data-rows] [data-rid]').forEach((b) => {
+  const raw = Object.values(REMOTE.rows).flat(2).find((x) => x.id === b.dataset.rid); if (!raw || !raw.kinds) return;
+  const e = remoteEntry(raw);
+  b.querySelector('use').setAttribute('href', '#i-' + e.icon); b.querySelector('small').textContent = remoteWords(e.t);
+});
+paintRows(); new MutationObserver(paintRows).observe(document.documentElement, { attributes: true, attributeFilter: ['data-kind'] });
 // ---------- keys ----------
 // A tap counts when the pointer lifts on the key (slide off it and nothing is sent). Hold (0.4 s) = the TV sees the key held down until you let go: fast scrolling, long-press menus.
 document.querySelectorAll('[data-k]').forEach((b) => {

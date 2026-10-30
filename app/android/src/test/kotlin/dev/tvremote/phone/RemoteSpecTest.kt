@@ -28,4 +28,10 @@ class RemoteSpecTest {
         for (r in listOf("more", "nav", "media")) assertTrue(r, spec.rows.containsKey(r))
         for (m in listOf("open", "timer", "scenes")) assertTrue(m, spec.menus.containsKey(m))
     }
+
+    @Test fun vidaaSettingsKeyReadsMenu() {                          // greyRows applies forKind(kind()) to the drawn entries
+        val e = spec.rows["nav"]!!.flatten().first { it.id == "settings" }
+        assertTrue(e.forKind("vidaa").t == "rkey.menu" && e.forKind("vidaa").icon == "menu")
+        assertTrue(e.forKind("android").t == "rkey.settings" && e.forKind("lg").icon == "settings")
+    }
 }
