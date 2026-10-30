@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.37.0 - 2026-10-30
+
+Web 0.37.0 · Phone app 0.34.0 · TV app 0.35.0 · TV Home 0.21.0 · TV Channels 0.16.0 · TV Games 0.15.1 · TV Apps 0.1.0
 - TV Apps joins the other TV apps: TV Setup installs it with them once it has ADB and keeps it up to date, its banner is in TV Setup's More TV apps row (the words for the focused banner now sit under the row, so they are not cut), and it is in each release as tv-apps.apk.
 - TV Apps (Apps tab → Browse apps): free, open-source apps for the TV (SmartTube, TizenTube, Kodi, VLC, Jellyfin, Just Player, Nova, mpv, Moonlight, LocalSend), each downloaded from its maker's own release, checked against its maker's signing certificate and installed in one tap; the list is signed and updated on the site without a new release.
 - TV Apps on the TV (new app, `dev.tvremote.apps`): the same list with the remote, a pill per category, hold OK for Open / Install again / Details; installs with no question through TV Setup's ADB link, else through Android's installer (it explains "Install unknown apps" first and goes on once allowed).
