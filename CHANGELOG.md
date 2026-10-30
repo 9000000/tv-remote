@@ -4,7 +4,9 @@ Ba số phiên bản, mỗi số chỉ tăng khi phần của nó đổi: `VERSI
 
 Three version numbers, each bumped only when its own part changes: `VERSION` (the release and the computer app), `app/android/VERSION` (phone app), `app/tv/VERSION` (TV app). Releases with the install files are on the [Releases](https://github.com/HoangTran0410/tv-remote/releases) page; the apps check there for updates.
 
-## Unreleased
+## 0.37.1 - 2026-10-30
+
+Web 0.37.1 · Phone app 0.34.0 · TV app 0.35.0 · TV Home 0.21.1 · TV Channels 0.16.0 · TV Games 0.15.1 · TV Apps 0.1.0
 
 - TV Home no longer crashes when a TV starts it right after a reboot, before Android has unlocked its storage (0.21.0 read its pinned shortcuts too early; seen on a Xiaomi TV).
 
