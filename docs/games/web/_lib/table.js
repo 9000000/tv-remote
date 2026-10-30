@@ -275,7 +275,7 @@
         if (why) { pad.say(player, why); pad.vibrate(player, 250); Sfx.play('bad'); }
       });
       const moved = () => { seat(); changed(); wake(); };   // a phone took a bot's seat or gave it back
-      pad.on('join', moved); pad.on('leave', moved);
+      pad.on('join', moved); pad.on('leave', moved); pad.on('rename', () => { changed(); wake(); });   // t.name() reads the new name
       pad.on('button', ({ btn, down }) => { if (down && btn === 'START' && t.done) go(); });
       if (typeof document === 'object') document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && t.done && R.pre !== false && !e.repeat) go(); });
     }

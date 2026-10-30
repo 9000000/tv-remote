@@ -5,14 +5,14 @@
 const W = Object.assign({}, Table.W, Table.VI ? {
   solids: 'Bi màu', stripes: 'Bi sọc', openT: 'Bàn mở', hintAim: 'Kéo để xoay cơ · giữ A lấy lực · thả để đánh', hintPlace: 'Kéo để đặt bi cái · chạm A để đặt · giữ A để đánh luôn',
   tvAim: '◀ ▶ xoay cơ · giữ OK lấy lực · thả OK để đánh', tvPlace: '◀ ▶ ▲ ▼ chuyển bi cái · chạm OK để đặt · giữ OK để đánh luôn',
-  badSpot: 'Chỗ này chưa đặt được bi', power: 'Lực', breakT: (n) => `${n} khai cuộc`, turnOf: (n) => `Lượt của ${n}`, goOn: (n) => `${n} đánh tiếp`,
+  badSpot: 'Chỗ này chưa đặt được bi', power: 'Lực', breakT: (n) => `${n} khai cuộc`, turnOf: (n) => `Lượt của ${n}`, rolling: 'Bi đang lăn…', goOn: (n) => `${n} đánh tiếp`,
   hand: (n) => `${n} được đặt bi cái`, takes: (n, g) => `${n} đánh ${g}`, watch: 'Bạn đang xem trận này',
   f: { scratch: 'Lỗi: bi cái xuống lỗ', nohit: 'Lỗi: không chạm bi nào', wrong: 'Lỗi: chạm sai bi đầu tiên', rail: 'Lỗi: không bi nào chạm băng' },
   why: { clear: (n) => `${n} đưa bi 8 xuống lỗ`, early: (n) => `${n} làm bi 8 xuống lỗ quá sớm`, foul: (n) => `${n} làm bi 8 xuống lỗ cùng lỗi` },
 } : {
   solids: 'Solids', stripes: 'Stripes', openT: 'Open table', hintAim: 'Drag to turn the cue · hold A to charge · release to shoot', hintPlace: 'Drag to place the cue ball · tap A to set it · hold A to shoot',
   tvAim: '◀ ▶ turn the cue · hold OK to charge · release OK to shoot', tvPlace: '◀ ▶ ▲ ▼ move the cue ball · tap OK to set it · hold OK to shoot',
-  badSpot: 'The ball cannot go there', power: 'Power', breakT: (n) => `${n} breaks`, turnOf: (n) => `${n} to play`, goOn: (n) => `${n} shoots again`,
+  badSpot: 'The ball cannot go there', power: 'Power', breakT: (n) => `${n} breaks`, turnOf: (n) => `${n} to play`, rolling: 'Balls rolling…', goOn: (n) => `${n} shoots again`,
   hand: (n) => `${n} has the cue ball in hand`, takes: (n, g) => `${n} plays ${g}`, watch: 'You are watching this game',
   f: { scratch: 'Foul: cue ball in the pocket', nohit: 'Foul: no ball was hit', wrong: 'Foul: wrong ball hit first', rail: 'Foul: no ball reached a rail' },
   why: { clear: (n) => `${n} potted the 8-ball`, early: (n) => `${n} potted the 8-ball too early`, foul: (n) => `${n} potted the 8-ball with a foul` },
@@ -24,7 +24,7 @@ const cv = document.getElementById('c'), cx = cv.getContext('2d');
 const S = {
   g: null, phase: 'idle', ang: 0, px: 0, py: 0, chg: 0, charging: false, bot: null, level: 1, lastA: 0, hold: 0, setDown: false,
   k: [{ L: 0, R: 0, U: 0, D: 0, ax: 0, ay: 0 }, { L: 0, R: 0, U: 0, D: 0, ax: 0, ay: 0 }],
-  msg: '', banner: '', bannerT: 0, shotId: 0, hinted: '', fireT: 0,
+  msg: () => '', banner: '', bannerT: 0, shotId: 0, hinted: '', fireT: 0,
 };
 const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
 const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p));
@@ -36,7 +36,7 @@ const table = Table({
   deal(t) {
     S.g = BD.create(); S.g.turn = t.lastWinner >= 0 ? t.lastWinner : 0; t.turn = S.g.turn;       // the last winner breaks
     S.level = [0, 1, 1, 2][Math.floor(Math.random() * 4)]; S.bot = null; S.charging = false; S.chg = 0; S.shotId++;
-    S.phase = 'aim'; S.px = S.g.x[0]; S.py = S.g.y[0]; S.ang = 0; S.banner = ''; S.msg = W.breakT(t.name(t.turn));
+    S.phase = 'aim'; S.px = S.g.x[0]; S.py = S.g.y[0]; S.ang = 0; S.banner = ''; S.msg = () => W.breakT(t.name(t.turn));
   },
   bot(t, s) {
     if (S.phase !== 'aim' && S.phase !== 'place') return;
@@ -54,9 +54,12 @@ const table = Table({
   act: () => '',
   view(t, s) {
     if (t.done) return { buttons: ['START'], dpad: false };
-    if (s === t.turn) return { pointer: true, buttons: ['A'] };
+    // while the balls roll the shooter's phone waits too: a Fire pressed then did nothing, and when they stopped the cue swung to the
+    // nearest ball, so the press looked like it turned the cue and only the next one charged (the user, 2026-10-30)
+    if (s === t.turn && S.phase !== 'roll') return { pointer: true, buttons: ['A'] };
+    const note = s === t.turn ? W.rolling : W.turnOf(t.name(t.turn));
     // not your turn: say whose (an empty layout left the phone blank); the cards layout carries a note, an older TV Games falls back to a bare pad + a line
-    if (t.pad && t.pad.has && t.pad.has('cards')) return { cards: { hand: [], acts: [], note: W.turnOf(t.name(t.turn)) } };
+    if (t.pad && t.pad.has && t.pad.has('cards')) return { cards: { hand: [], acts: [], note } };
     return { buttons: [], dpad: false };
   },
   draw(t) { prompt(t); wake(); },
@@ -83,19 +86,21 @@ function fire() {
   table.say(table.turn, ''); table.changed();
 }
 function finish(res) {
-  const g = S.g, t = table, me = t.turn, nm = t.name(me), other = t.name(1 - me), who = t.name(g.turn);
+  const g = S.g, t = table, me = t.turn, turn = g.turn;
+  // the line is worded at draw time: a name changed on the phone shows at once
+  const nm = () => t.name(me), who = () => t.name(turn);
   S.chg = 0; S.shotId++;
   if (res.over) {
-    S.phase = 'idle'; S.banner = ''; S.msg = W.why[res.why](nm);
+    S.phase = 'idle'; S.banner = ''; S.msg = () => W.why[res.why](nm());
     t.over(res.winner === 0 ? [0, 1] : [1, 0]); return;
   }
   S.phase = g.hand ? 'place' : 'aim';
   if (res.foul) Sfx.play('bad'); else if (res.pots.some((b) => b !== 0)) Sfx.play('score');   // the pocket click is per frame; this says whether the shot counted
   if (g.hand) { S.px = g.x[0]; S.py = g.y[0]; } nearestBall();
-  if (res.foul) { S.banner = W.f[res.foul]; S.bannerT = 3; S.msg = W.hand(who); t.buzz(me, 300); }
-  else if (res.assigned) { S.banner = ''; S.msg = W.takes(nm, gname(g.grp[me])); }
-  else if (res.cont) S.msg = W.goOn(who);
-  else S.msg = W.turnOf(who);
+  if (res.foul) { S.banner = W.f[res.foul]; S.bannerT = 3; S.msg = () => W.hand(who()); t.buzz(me, 300); }
+  else if (res.assigned) { S.banner = ''; S.msg = () => W.takes(nm(), gname(g.grp[me])); }
+  else if (res.cont) S.msg = () => W.goOn(who());
+  else S.msg = () => W.turnOf(who());
   t.turnTo(g.turn);
 }
 const myTurn = () => table.ok && !table.done && S.g && table.human(table.turn) && !S.bot && (S.phase === 'aim' || S.phase === 'place');
@@ -345,7 +350,7 @@ function overlay() {
   const t = table, w = 640, h = 330, x = 320, y = 190;
   cx.fillStyle = 'rgba(5,8,18,.96)'; rrect(x, y, w, h, 24); cx.fill(); cx.strokeStyle = 'rgba(255,255,255,.2)'; cx.lineWidth = 2; cx.stroke();
   centered('🏆 ' + W.win(t.name(t.order[0])), 640, y + 56, 42, '#fde047');
-  fit(S.msg, 24, w - 40, 600); cx.fillStyle = '#c3cbe0'; cx.textAlign = 'center'; cx.fillText(S.msg, 640, y + 106);
+  const msg = S.msg(); fit(msg, 24, w - 40, 600); cx.fillStyle = '#c3cbe0'; cx.textAlign = 'center'; cx.fillText(msg, 640, y + 106);
   t.order.forEach((s, r) => {
     const yy = y + 160 + r * 52, p = t.points(r);
     cx.fillStyle = t.COLORS[s]; cx.beginPath(); cx.arc(x + 60, yy, 10, 0, 7); cx.fill();
@@ -378,7 +383,7 @@ function render() {
   }
   cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillStyle = '#fff'; cx.font = '800 40px ' + FONT; cx.fillText(t.scores[0] + ' : ' + t.scores[1], 640, 36);
   if (!t.done && t.human(t.turn)) { cx.font = '700 20px ' + FONT; cx.fillStyle = t.left <= 8 ? '#f87171' : '#9aa5bd'; cx.fillText('⏱ ' + Math.max(0, t.left), 640, 66); }
-  if (!t.done) { fit(S.msg, 26, 540, 700); cx.fillStyle = '#e5e9f5'; cx.textAlign = 'left'; cx.textBaseline = 'middle'; cx.fillText(S.msg, 74, 699); }
+  if (!t.done) { const msg = S.msg(); fit(msg, 26, 540, 700); cx.fillStyle = '#e5e9f5'; cx.textAlign = 'left'; cx.textBaseline = 'middle'; cx.fillText(msg, 74, 699); }
   if (S.bannerT > 0 && S.banner) {
     const a = Math.min(1, S.bannerT * 2);
     cx.globalAlpha = a; cx.fillStyle = 'rgba(30,8,8,.9)'; rrect(330, OY + 18, 620, 56, 16); cx.fill();

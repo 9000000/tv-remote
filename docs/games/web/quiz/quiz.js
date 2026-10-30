@@ -186,6 +186,7 @@ if (pad) {
   });
   pad.on('leave', () => { if (st.solo) { if (st.mode === 'lobby') lobby(); return; }       // a phone that came and went: the remote plays on
     if (!players().length && st.mode !== 'lobby') lobby(); else if (st.mode === 'lobby') lobby(); else { drawBoard(); if (st.mode === 'ask' && players().length && players().every((x) => st.ans[x] != null)) reveal(); } });
+  pad.on('rename', () => { if (st.mode === 'lobby') lobby(); else drawBoard(); });   // a name changed on the phone shows at once
   pad.on('button', ({ player, btn, down }) => {
     if (!down) return;
     if (btn === 'START' && (st.mode === 'lobby' || (st.mode === 'end' && (!st.solo || players().length)))) { begin(); return; }

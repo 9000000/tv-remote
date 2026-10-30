@@ -95,6 +95,10 @@
     pad.on('axis', (e) => { const s = st(e.player); s.ax = e.x || 0; s.ay = e.y || 0; });
     pad.on('join', (e) => { K.layout(); if (K.mode === 'play') adopt(e.player); });             // a phone joining mid-game gets the game's pad, and a seat if one is free
     pad.on('leave', (e) => { const s = S[e.player]; if (s) { s.dp = {}; s.held = {}; s.ax = s.ay = 0; } if (K.mode === 'play') away(e.player); });
+    pad.on('rename', (e) => {                                                                   // a name changed on the phone shows at once, in the lobby and in play
+      (K.slots || []).forEach((s) => { if (s.human && s.pad === e.player) s.name = pname(e.player); });
+      if (K.mode === 'title') lobbyShow();
+    });
   }
   const KB = { ArrowUp: [1, 'UP'], ArrowDown: [1, 'DOWN'], ArrowLeft: [1, 'LEFT'], ArrowRight: [1, 'RIGHT'], z: [1, 'A'], x: [1, 'B'], c: [1, 'X'], v: [1, 'Y'], Enter: [1, 'START'], ' ': [1, 'A'],
     w: [2, 'UP'], s: [2, 'DOWN'], a: [2, 'LEFT'], d: [2, 'RIGHT'], f: [2, 'A'], g: [2, 'B'], i: [3, 'UP'], k: [3, 'DOWN'], j: [3, 'LEFT'], l: [3, 'RIGHT'], h: [3, 'A'], ',': [4, 'UP'], '.': [4, 'DOWN'], ';': [4, 'A'] };
