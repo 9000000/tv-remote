@@ -79,7 +79,8 @@ internal object ScenePin {
 
     /** Asks the default home to pin [scene]. {pinned} when asked (TV Home takes it at once), {error} when this TV's home cannot. */
     fun request(c: Context, scene: JSONObject): JSONObject {
-        val sm = if (Build.VERSION.SDK_INT >= 26) c.getSystemService(ShortcutManager::class.java) else null
+        if (Build.VERSION.SDK_INT < 26) return JSONObject().put("error", Words.get(Words.lang, "scenepin.unsupported"))   // pinning came in Android 8
+        val sm: ShortcutManager? = c.getSystemService(ShortcutManager::class.java)
         if (sm == null || !sm.isRequestPinShortcutSupported) return JSONObject().put("error", Words.get(Words.lang, "scenepin.unsupported"))
         val info = ShortcutInfo.Builder(c, id(scene)).setShortLabel(scene.optString("name")).setIntent(intent(c, scene))
             .setIcon(Icon.createWithBitmap(art(scene))).build()

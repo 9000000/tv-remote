@@ -55,7 +55,7 @@ Remote control for Android TV / Google TV (and LG, Samsung, Roku, VIDAA) with no
 - [Draw on the TV](draw.md): Tap ✏️ by the picture (or More keys → Draw on the TV). _(ve len tv but pen anh chu text hinh draw)_
 - [Put a picture on the TV](photo.md): Two ways: lay a picture over the TV's screen (above every app), or play a photo or video from your device. _(dua anh len tv hinh anh phu len man hinh pic phat anh video)_
 - [TV screenshot](screenshot.md): Tap More keys on the Remote tab. _(chup man hinh screenshot anh png)_
-- [Screen off, dim the screen](screen-dim.md): In More keys → Sleep timer → TV screen: _(tat man hinh giam do sang loc anh sang xanh toi screen off dim night)_
+- [Screen off, dim the screen](screen-dim.md): Screen off is in More keys → Sleep timer; Dim the screen in More keys → Tools, and on the TV in TV Home's Control Center (the sun bar,… _(tat man hinh giam do sang loc anh sang xanh toi screen off dim night)_
 
 ## Automation
 - [Sleep timer](sleep.md): Tap More keys → Sleep timer, or open ⏰ Automation → 😴 Sleep timer. _(hen gio tat sleep timer tat man hinh van nghe)_

@@ -1,6 +1,6 @@
 # Tắt màn hình, giảm độ sáng
 
-Trong **Thêm phím → Hẹn giờ tắt → Màn hình TV**:
+**Tắt màn hình** nằm trong **Thêm phím → Hẹn giờ tắt**; **Giảm độ sáng** trong **Thêm phím → Tiện ích**, và trên TV ở **Bảng điều khiển của TV Home** (thanh mặt trời, nút màu kế bên):
 
 | Mục | Làm gì |
 | --- | --- |

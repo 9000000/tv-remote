@@ -2679,8 +2679,6 @@
  "rescue.failed": "Не удалось разморозить ТВ, попробуйте снова",
  "rkey.timer_more": "Другие интервалы",
  "rkey.timer_more_sub": "15 мин, 45 мин, 1ч30 или своё",
- "rkey.timer_screen": "Экран ТВ",
- "rkey.timer_screen_sub": "Экран выкл. со звуком, затемнение",
  "setup.ts_connect": "Подключить",
  "core.fr_input_not_taken": "ТВ не переключил вход",
  "core.fr_input_cannot": "Этот ТВ не умеет переключать входы отсюда",

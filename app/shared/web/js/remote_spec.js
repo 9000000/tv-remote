@@ -38,7 +38,7 @@ function remoteMenu(name, ctx = {}) {
 }
 
 // the groups an entry opens ("do": "menu", "arg": its name): their titles
-const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', screen: 'rkey.timer_screen', tools: 'rkey.tools', tvkeys: 'rkey.tools_keys' };
+const REMOTE_GROUPS = { get: 'rkey.open_get', send: 'rkey.open_send', timerMore: 'rkey.timer_more', tools: 'rkey.tools', tvkeys: 'rkey.tools_keys' };
 const APP_KEYS = new Set(['YOUTUBE', 'NETFLIX', 'PRIME']);
 const REMOTE_DO = {
   shot: () => screenshot(),

@@ -45,6 +45,7 @@
   "menus": {
     "tools": [
       { "id": "tools-keys", "icon": "tv", "t": "rkey.tools_keys", "sub": "rkey.tools_keys_sub", "do": "menu", "arg": "tvkeys" },
+      { "id": "dim", "icon": "sun", "t": "rkey.dim", "do": "dim", "needs": ["adb"], "sub": "rkey.dim_sub" },
       { "id": "tools-share", "icon": "share", "t": "rkey.share", "do": "share", "needs": ["adb"] },
       { "id": "tools-notify", "icon": "bell", "t": "rkey.notify", "do": "notify", "needs": ["adb"] },
       { "id": "tools-rescue", "icon": "alert", "t": "rkey.rescue", "sub": "rkey.rescue_sub", "do": "rescue", "needs": ["adb"] },
@@ -106,19 +107,14 @@
       { "id": "timer-lengths", "expand": "lengths", "needs": ["adb"] },
       { "id": "timer-more", "icon": "timer", "t": "rkey.timer_more", "do": "menu", "arg": "timerMore", "needs": ["adb"],
         "sub": "rkey.timer_more_sub" },
-      { "id": "timer-screen", "icon": "eye_off", "t": "rkey.timer_screen", "do": "menu", "arg": "screen",
-        "sub": "rkey.timer_screen_sub" },
+      { "id": "screen-off", "icon": "eye_off", "t": "rkey.screen_off", "do": "screenOff", "needs": ["screen_off"],
+        "sub": "rkey.screen_off_sub" },
       { "id": "timer-bedtime", "icon": "moon", "t": "rkey.timer_bedtime", "do": "automation", "arg": "bedcard", "needs": ["adb"] }
     ],
     "timerMore": [
       { "id": "timer-lengths-more", "expand": "lengthsMore", "needs": ["adb"] },
       { "id": "timer-custom", "icon": "timer", "t": "rkey.timer_custom", "do": "timerCustom", "needs": ["adb"],
         "sub": "rkey.timer_custom_sub" }
-    ],
-    "screen": [
-      { "id": "screen-off", "icon": "eye_off", "t": "rkey.screen_off", "do": "screenOff", "needs": ["screen_off"],
-        "sub": "rkey.screen_off_sub" },
-      { "id": "dim", "icon": "contrast", "t": "rkey.dim", "do": "dim", "needs": ["adb"], "sub": "rkey.dim_sub" }
     ],
     "scenes": [
       { "id": "scenes-list", "expand": "scenes" },

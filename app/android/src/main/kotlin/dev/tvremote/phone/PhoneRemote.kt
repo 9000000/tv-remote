@@ -25,7 +25,7 @@ private fun hook(f: MainActivity.(IconButton) -> Unit) = f
 
 /** What each "do" in remote.json does here; `it` is the entry's "arg". */
 /** The groups an entry opens ("do": "menu", "arg": its name): their titles (REMOTE_GROUPS on the page). */
-private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "screen" to "rkey.timer_screen", "tools" to "rkey.tools", "tvkeys" to "rkey.tools_keys")
+private val remoteGroups = mapOf("get" to "rkey.open_get", "send" to "rkey.open_send", "timerMore" to "rkey.timer_more", "tools" to "rkey.tools", "tvkeys" to "rkey.tools_keys")
 
 internal val phoneActions: Map<String, MainActivity.(String?) -> Unit> = mapOf(
     "shot" to act { shot() },

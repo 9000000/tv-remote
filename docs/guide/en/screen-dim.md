@@ -1,6 +1,6 @@
 # Screen off, dim the screen
 
-In **More keys → Sleep timer → TV screen**:
+**Screen off** is in **More keys → Sleep timer**; **Dim the screen** in **More keys → Tools**, and on the TV in **TV Home's Control Center** (the sun bar, the colour button beside it):
 
 | Entry | What it does |
 | --- | --- |

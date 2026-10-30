@@ -83,6 +83,18 @@ object ControlCenter {
      * 8 of them in the panel's first frame on the FPT box). The bitmap is shared, a drawable of it is new for each view.
      */
     private val bitmaps = java.util.concurrent.ConcurrentHashMap<Long, Bitmap>()
+    /** TV Setup's tint colours (RGB, as Dim.COLORS in :shared, which TV Home does not pack) and their names, in its order. */
+    private val TINTS: Map<String, Pair<Int, Int>> = linkedMapOf(
+        "dark" to (0x000000 to R.string.cc_tint_dark),
+        "amber" to (0xFF8A1E to R.string.cc_tint_amber),
+        "yellow" to (0xFFC800 to R.string.cc_tint_yellow),
+        "sepia" to (0x704214 to R.string.cc_tint_sepia),
+        "red" to (0x9A0000 to R.string.cc_tint_red),
+        "blue" to (0x10307A to R.string.cc_tint_blue))
+
+    /** A colour's dot with a light ring, so dark shows on the glass. */
+    private fun dot(color: Int, size: Int, ring: Int) = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor((0xFF shl 24) or color); setStroke(ring, TvGlass.HINT); setSize(size, size) }
+
     private fun glyph(c: Context, res: Int, dp: Int): Drawable {
         val px = (dp * c.resources.displayMetrics.density).toInt()
         val bmp = bitmaps.getOrPut(res.toLong() shl 32 or px.toLong()) {
@@ -132,6 +144,8 @@ object ControlCenter {
         }
 
         fun icon(res: Int) = pic.setImageDrawable(glyph(pic.context, res, 26))
+        /** A colour's dot in the icon's place (the tint's colours). */
+        fun swatch(color: Int) { pic.imageTintList = null; pic.setImageDrawable(dot(color, dp(22), dp(2))) }
 
         /** The state line; empty hides it (an action's tile is then one line). */
         fun say(text: String) { if (sub.text.toString() != text) sub.text = text; val v = if (text.isEmpty()) GONE else VISIBLE; if (sub.visibility != v) sub.visibility = v }   // the same words again (every 2 s) must not ask for a layout
@@ -139,6 +153,51 @@ object ControlCenter {
         fun state(text: String, needSetup: Boolean = false) {
             need = needSetup; say(text)
             alpha = if (needSetup) 0.45f else 1f                    // greyed, still focusable: pressing it says why
+        }
+    }
+
+    /**
+     * The screen's brightness as TV Setup's tint takes it away ([b] 100 = no tint, down to 10 = the tint at its 90 %): one glass row like a
+     * tile, the bar filled to [b]; Left / Right move it a step of 10 while it has the focus, [moved] gets each new value.
+     */
+    private class DimBar(c: Context, val dp: (Number) -> Int, name: String) : LinearLayout(c) {   // a sun, the track and the value: no words (the user, 2026-10-30: too many)
+        var b = 100; private set
+        var moved: (Int) -> Unit = {}
+        private val value = Font.on(TextView(c))
+        // a stock bar with a pill track and fill: no view of its own to draw
+        private val track = android.widget.ProgressBar(c, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100; isFocusable = false
+            fun pill(color: Int) = GradientDrawable().apply { setColor(color); cornerRadius = dp(4).toFloat() }
+            progressDrawable = android.graphics.drawable.LayerDrawable(arrayOf(pill(TvGlass.ROW_EDGE),
+                android.graphics.drawable.ClipDrawable(pill(Color.WHITE), Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL))).apply {
+                setId(0, android.R.id.background); setId(1, android.R.id.progress)
+            }
+        }
+
+        init {
+            orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; isFocusable = true; isClickable = true
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), TvGlass.glass(c, R_TILE, TvGlass.ROW_FOCUS, Color.WHITE))
+                addState(intArrayOf(), TvGlass.glass(c, R_TILE, TvGlass.ROW_FILL, TvGlass.ROW_EDGE))
+            }
+            contentDescription = name
+            addView(ImageView(c).apply { setImageDrawable(glyph(c, R.drawable.ic_sun, 26)); imageTintList = ColorStateList.valueOf(Color.WHITE) }, LayoutParams(dp(26), dp(26)))
+            addView(track, LayoutParams(0, dp(8), 1f).apply { leftMargin = dp(16); rightMargin = dp(12) })
+            addView(value.apply { textSize = 13f; setTextColor(TvGlass.HINT); gravity = Gravity.END; fontFeatureSettings = "tnum" }, LayoutParams(dp(44), -2))
+            show(100)
+        }
+
+        fun show(v: Int) { b = v; value.text = "$v%"; track.progress = v }
+
+        override fun onKeyDown(code: Int, e: android.view.KeyEvent): Boolean {
+            val to = when (code) {
+                android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> minOf(100, (b / 10 + 1) * 10)
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> maxOf(10, ((b + 9) / 10 - 1) * 10)
+                else -> return super.onKeyDown(code, e)
+            }
+            if (to != b) { show(to); moved(to) }
+            return true                                                // the ends keep the focus: Left / Right never leave the bar
         }
     }
 
@@ -185,6 +244,11 @@ object ControlCenter {
         private lateinit var net: CcTile
         private var inputTile: CcTile? = null; private var btTile: CcTile? = null
         private lateinit var kids: CcTile; private lateinit var sleep: CcTile
+        private lateinit var dim: DimBar
+        private lateinit var dimRow: LinearLayout
+        private lateinit var tintDot: ImageView
+        private var tintAt = ""
+        private var dimAt = 0L                                        // the bar was moved then: an answer older than that does not move it back
 
         private fun toast(id: Int) = Toast.makeText(a, id, Toast.LENGTH_SHORT).show()
         private fun hasSetup() = try { a.packageManager.getPackageInfo("dev.tvremote.setup", 0); true } catch (e: Exception) { false }
@@ -207,6 +271,29 @@ object ControlCenter {
         }
 
         /** "Turn off the TV": a small glass dialog with the two big choices (the person picks, nothing is armed); Back closes it, the focus starts on Screensaver. */
+        /** The tint's colours (DimLayer's, Dim.COLORS), each with its name: a pick turns the tint on in that colour. */
+        private fun tintMenu() {
+            val m = Dialog(a, R.style.Menu)
+            m.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(10), dp(10), dp(10), dp(10)); background = TvGlass.panelBg(a); clipChildren = false; clipToPadding = false }
+            box.addView(Font.on(TvUi.text(a, a.getString(R.string.cc_tint), 20f, Color.WHITE, bold = true)).apply { typeface = Font.bold; setPadding(dp(16), dp(12), dp(16), dp(12)) })
+            val col2 = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; clipChildren = false; clipToPadding = false; setPadding(dp(12), dp(8), dp(12), dp(8)) }
+            var first: View? = null
+            for ((n, e) in TINTS.entries.withIndex()) {
+                val t = CcTile(a, ::dp, R.drawable.ic_sun, a.getString(e.value.second)).apply { swatch(e.value.first); press = { m.dismiss(); control("dimc:" + e.key) } }
+                if (e.key == tintAt || first == null) first = t
+                col2.addView(t, LinearLayout.LayoutParams(-1, -2).apply { if (n > 0) topMargin = dp(8) })
+            }
+            box.addView(col2)
+            m.setContentView(box)
+            m.window?.apply {
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)); setGravity(Gravity.CENTER); setDimAmount(Drop.MENU_DIM)
+                attributes = attributes.apply { width = minOf(dp(380), dm.widthPixels - dp(32)); height = WindowManager.LayoutParams.WRAP_CONTENT }
+            }
+            m.setOnShowListener { first?.requestFocus() }
+            m.show()
+        }
+
         private fun powerMenu() {
             val m = Dialog(a, R.style.Menu)
             m.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -258,6 +345,7 @@ object ControlCenter {
                     ctl = out; if (out != null) lastCtl = out; paintCtl()
                     when (out?.optString("error")) {
                         "pin" -> toast(R.string.cc_kids_nopin)
+                        "overlay" -> toast(R.string.cc_dim_overlay)
                         "bad", "failed" -> if (word == "kids:off" || (word == "kids:setup" && ctl?.optBoolean("kids") == true)) toast(R.string.cc_kids_unlock) else if (word == "kids:setup") toast(R.string.cc_kids_nopin)   // a TV Setup older than the word
                         else -> if (word == "kids:setup" && out != null) dialog.dismiss()                // the Manage screen is over us
                     }
@@ -289,7 +377,28 @@ object ControlCenter {
         }
         private fun paintBt() { btTile?.state(btState()) }
 
+        /** The bar from TV Setup's tint; hidden while TV Setup is missing or too old to take "dim:" (its answer has no `dim`). */
+        private fun paintDim() {
+            val o = ctl?.optJSONObject("dim")
+            val v = if (o == null) View.GONE else View.VISIBLE
+            if (dimRow.visibility != v) dimRow.visibility = v
+            if (o != null) { val k = o.optString("color"); if (k != tintAt) { tintAt = k; tintDot.setImageDrawable(dot(TINTS[k]?.first ?: 0, dp(24), dp(2))) } }
+            if (o != null && System.currentTimeMillis() - dimAt > 3000) dim.show(if (o.optBoolean("on")) 100 - o.optInt("pct", 0) else 100)
+        }
+
+        /** The bar's value to TV Setup, the last one only (Left held down: one call, not ten). */
+        private var dimOwed = false
+        private val dimSend = Runnable {
+            dimOwed = false
+            val p = 100 - dim.b
+            Thread({
+                val out = ask("control", "dim:$p")
+                a.runOnUiThread { if (out?.optString("error") == "overlay") toast(R.string.cc_dim_overlay) }
+            }, "home-cc-dim").apply { isDaemon = true }.start()
+        }
+
         private fun paintCtl() {
+            paintDim()
             val c = ctl
             if (c == null) { kids.state(a.getString(R.string.cc_need_setup), true); sleep.state(a.getString(R.string.cc_need_setup), true); return }
             kids.state(a.getString(if (c.optBoolean("kids")) R.string.cc_kids_on else if (c.optBoolean("pin")) R.string.cc_off else R.string.cc_kids_nopin))
@@ -355,6 +464,21 @@ object ControlCenter {
             }.also { t -> t.hold = { if (ctl != null) control("kids:setup") } }
             tile(R.drawable.ic_settings, R.string.tv_settings) { go(listOf(Settings.ACTION_SETTINGS)) }.state(a.getString(R.string.cc_open_settings))
             tile(R.drawable.ic_sliders, R.string.cc_customize) { dialog.dismiss(); customize() }.state(a.getString(R.string.cc_customize_sub))
+            dim = DimBar(a, ::dp, a.getString(R.string.cc_brightness)).apply { moved = { dimAt = System.currentTimeMillis(); dimOwed = true; ui.removeCallbacks(dimSend); ui.postDelayed(dimSend, 250) } }
+            tintDot = ImageView(a)
+            val tint = FrameLayout(a).apply {
+                isFocusable = true; isClickable = true; contentDescription = a.getString(R.string.cc_tint); id = View.generateViewId()
+                background = StateListDrawable().apply {
+                    addState(intArrayOf(android.R.attr.state_focused), TvGlass.glass(a, R_TILE, TvGlass.ROW_FOCUS, Color.WHITE))
+                    addState(intArrayOf(), TvGlass.glass(a, R_TILE, TvGlass.ROW_FILL, TvGlass.ROW_EDGE))
+                }
+                addView(tintDot, FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER))
+                setOnClickListener { tintMenu() }
+            }
+            dimRow = LinearLayout(a).apply { clipChildren = false; clipToPadding = false
+                addView(dim, LinearLayout.LayoutParams(0, -1, 1f))
+                addView(tint, LinearLayout.LayoutParams(dp(64), -1).apply { leftMargin = dp(8) })
+            }
             paintCtl(); paintNet(known.net)           // the last reading; refresh() below corrects it off the UI thread
             val info = tiles.size
 
@@ -380,6 +504,9 @@ object ControlCenter {
                 else row.addView(View(a), LinearLayout.LayoutParams(0, 1, 1f).apply { leftMargin = dp(8) })
                 grid.addView(row, LinearLayout.LayoutParams(-1, -2).apply { if (i > 0) topMargin = dp(8) })
             }
+            grid.addView(dimRow, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })   // full width under the tiles: a bar wants room, a 7th tile would leave half a row
+            // the bar keeps Left / Right, so the colour button is reached from the tile above it (and Left from the button is the bar)
+            tiles.last().id = View.generateViewId(); tiles.last().nextFocusDownId = tint.id; tint.nextFocusUpId = tiles.last().id
             val at = IntArray(2).also { anchor.getLocationOnScreen(it) }
             val maxH = dm.heightPixels - at[1] - dp(12) - dp(170)     // the title, the round row and the footer stay on the screen
             col.addView(object : ScrollView(a) {
@@ -406,7 +533,7 @@ object ControlCenter {
             }
             val bar = anchor.parent as? TopBar
             bar?.holdWord(true)                                       // the button's word would show through the dim
-            dialog.setOnDismissListener { ui.removeCallbacksAndMessages(null); bar?.holdWord(false) }
+            dialog.setOnDismissListener { val owed = dimOwed; ui.removeCallbacksAndMessages(null); if (owed) dimSend.run(); bar?.holdWord(false) }   // a step made just before Back still reaches the TV
             dialog.setOnShowListener { tiles.first().requestFocus(); refresh(); ui.postDelayed(tick, TICK_MS) }   // the first tile focused; the clock ticks only while open
             dialog.show()
         }

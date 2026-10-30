@@ -1,6 +1,7 @@
 package dev.tvremote.setup
 
 import android.content.Context
+import dev.tvremote.core.ontv.Dim
 import org.json.JSONObject
 
 /**
@@ -9,8 +10,11 @@ import org.json.JSONObject
  * free in kids mode (Kids.ALWAYS), so a child could undo it from its own panel; "kids:off" only OPENS the PIN screen ([PinActivity] with
  * `kids_off`: the same PIN / Authenticator / backup code / ask a parent and Lockout as anywhere), and that screen changes the rules on a right code.
  * "kids:setup" opens TV Setup's Manage screen on the TV at the lock card, where the PIN is set; "manage:health" at the Health tab; "keytest" the key tester ([KeyTestActivity]).
- * `arg`: "" asks | "sleep:<minutes>" | "kids:on" | "kids:off" | "kids:setup" | "manage:health". The answer {sleep_at, kids, pin, error?}: error "bad" | "pin"
- * (kids needs a PIN or a code set first) | "failed" (the screen could not open). An old TV Setup answers "bad" to the last two.
+ * "dim:<pct>" sets the tint's strength ([DimLayer], its colour kept; 0 = off): the panel's brightness bar, a forgotten tint undone from the TV itself;
+ * "dimc:<colour>" (a [Dim.COLORS] key) the button beside it, turning the tint on.
+ * `arg`: "" asks | "sleep:<minutes>" | "kids:on" | "kids:off" | "kids:setup" | "manage:health" | "dim:<pct>" | "dimc:<colour>". The answer {sleep_at, kids, pin, dim, error?}: error "bad" | "pin"
+ * (kids needs a PIN or a code set first) | "failed" (the screen could not open) | "overlay" (this TV does not let TV Setup draw over apps). An old TV Setup answers
+ * "bad" to the last two and has no `dim`: TV Home shows no bar then.
  */
 object HomeControl {
     val SLEEP = setOf(0, 15, 30, 60, 90, 120)
@@ -23,6 +27,8 @@ object HomeControl {
         word == "kids:off" -> "pin"
         word == "kids:setup" || word == "manage:health" -> "manage"
         word == "keytest" -> "keytest"
+        word.startsWith("dim:") && word.substringAfter(':').toIntOrNull()?.let { it == 0 || it in Dim.MIN_PCT..Dim.MAX_PCT } == true -> "dim"
+        word.startsWith("dimc:") && word.substringAfter(':') in Dim.COLORS -> "dimc"
         else -> "bad"
     }
 
@@ -60,6 +66,11 @@ object HomeControl {
                 "rules" ->
                     if (word == "kids:on") Rules.change(c, JSONObject().put("do", "kids").put("mode", "kids"))
                     else Rules.change(c, JSONObject().put("do", "sleep").put("minutes", word.substringAfter(':').toInt()))
+                "dim" -> { val p = word.substringAfter(':').toInt()
+                    if (!DimLayer.set(c, DimLayer.state(c).put("on", p > 0).also { if (p > 0) it.put("pct", p) })) error = "overlay" }
+                "dimc" -> { val st = DimLayer.state(c)
+                    if (!st.optBoolean("on")) st.put("pct", Dim.PCT)                   // off: the bar left it at its last step (10 %), too faint to see a colour come on
+                    if (!DimLayer.set(c, st.put("on", true).put("color", word.substringAfter(':')))) error = "overlay" }
                 "pin", "manage", "keytest" -> if (!handOver && !open(c, screen(c, word)!!)) error = "failed"
                 else -> error = "bad"
             }
@@ -71,7 +82,7 @@ object HomeControl {
         val now = System.currentTimeMillis()
         val lock = o.optJSONObject("lock")
         return JSONObject().put("sleep_at", o.optLong("sleep_at").let { if (it > now) it else 0L })
-            .put("kids", Rules.kidsMode(o)).put("pin", lock?.has("hash") == true || lock?.has("totp") == true)
+            .put("kids", Rules.kidsMode(o)).put("dim", DimLayer.state(c)).put("pin", lock?.has("hash") == true || lock?.has("totp") == true)
             .also { if (error != null) it.put("error", error) }
     }
 }

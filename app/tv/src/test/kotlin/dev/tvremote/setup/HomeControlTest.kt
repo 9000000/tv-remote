@@ -17,4 +17,19 @@ class HomeControlTest {
         assertEquals("bad", HomeControl.route("kids:list"))
         assertEquals("ask", HomeControl.route(""))
     }
+
+    @Test fun theBrightnessBarTakesOffOrAStrengthInRange() {
+        assertEquals("dim", HomeControl.route("dim:0"))
+        assertEquals("dim", HomeControl.route("dim:30"))
+        assertEquals("bad", HomeControl.route("dim:95"))
+        assertEquals("bad", HomeControl.route("dim:2"))
+        assertEquals("bad", HomeControl.route("dim:x"))
+    }
+
+    @Test fun theColourButtonTakesOnlyTheTintsColours() {
+        assertEquals("dimc", HomeControl.route("dimc:amber"))
+        assertEquals("dimc", HomeControl.route("dimc:dark"))
+        assertEquals("bad", HomeControl.route("dimc:green"))
+        assertEquals("bad", HomeControl.route("dimc:"))
+    }
 }
