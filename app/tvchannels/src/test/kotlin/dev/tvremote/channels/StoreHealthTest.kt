@@ -20,6 +20,15 @@ class StoreHealthTest {
         assertTrue(old.all { it.startsWith("ok:http://x/") })
     }
 
+    @Test fun aMarkAheadOfNowIsNotFreshAndNothingIsPruned() {          // a box booted a year ahead: its marks are ignored, rewritten on the next check, and none pruned meanwhile
+        val ahead = now + 365 * 24 * h
+        assertTrue(Store.needsAliveWrite(ahead, true, now))
+        assertTrue(Store.needsAliveWrite(-ahead, false, now))
+        val all = mapOf("ok:http://a" to ahead, "ok:http://b" to now - 9 * h, "ok:http://c" to now - h)
+        assertTrue(Store.staleOk(all, now).isEmpty())
+        assertEquals(listOf("ok:http://b"), Store.staleOk(all - "ok:http://a", now))
+    }
+
     @Test fun aliveIsWrittenOnce() {
         var stored = 0L; var writes = 0
         repeat(20) {

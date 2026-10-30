@@ -35,11 +35,12 @@ class ApkCertTest {
         return File.createTempFile("cert", ".apk").apply { deleteOnExit(); writeBytes(out) }
     }
 
-    // PKCS#7 files (what META-INF/CERT.RSA holds) of two self-signed keys, and the SHA-256 of each one's certificate
-    private val p7x = java.util.Base64.getDecoder().decode("MIIBnAYJKoZIhvcNAQcCoIIBjTCCAYkCAQExADALBgkqhkiG9w0BBwGgggFxMIIBbTCCAROgAwIBAgIUaa7i1Ii3ZQcXP8J2L7bkjjpZ8KMwCgYIKoZIzj0EAwIwDDEKMAgGA1UEAwwBeDAeFw0yNjEwMzAxMTMyNDFaFw0zNjEwMjcxMTMyNDFaMAwxCjAIBgNVBAMMAXgwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAS57lV8220Q0wvxF7llztjIbFOAg3VUBtackT8Hupk/qglampZrNI9DmkXsBsFVDR9nYIcht2RcDdzNCsRXFjxvo1MwUTAdBgNVHQ4EFgQUeWIVH4vfTvjF00BWvE293dz4AwgwHwYDVR0jBBgwFoAUeWIVH4vfTvjF00BWvE293dz4AwgwDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNIADBFAiBnfa9a1+KfFXZQsJqkLy3/42RxFUS3UGzjztnpSOKu3QIhAIyaN+HUlZFde6z4sRNzMdXIQuo+f7BsM7bN6U4QGt9iMQA=")
-    private val p7y = java.util.Base64.getDecoder().decode("MIIBnAYJKoZIhvcNAQcCoIIBjTCCAYkCAQExADALBgkqhkiG9w0BBwGgggFxMIIBbTCCAROgAwIBAgIUH809MuTH1Pn6dH7P5zIrTSFg+TkwCgYIKoZIzj0EAwIwDDEKMAgGA1UEAwwBeTAeFw0yNjEwMzAxMTMyNDFaFw0zNjEwMjcxMTMyNDFaMAwxCjAIBgNVBAMMAXkwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR5roNJcWhMQUVYFe9Ij0mVfrmJxDQSlv6aHNt9Z6Q531WX1zujIGYrMNQsP27RXwxmaEwMtBX/LDIrP7K8FYD1o1MwUTAdBgNVHQ4EFgQU4wXTlIRGSK0GIV7NI/VnXGYJHp4wHwYDVR0jBBgwFoAU4wXTlIRGSK0GIV7NI/VnXGYJHp4wDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNIADBFAiEA7BmvSlPJfgS0s+80WdrZV+m1wgx2rnjiO65iVEKt6ksCIC5xdJ/Y7BBBWMDalBxkpdDge8u1dRb7pSHsIl05cRiUMQA=")
-    private val x = "2dbc16a52c4343d6a781822aece227a99f4442e7709abeb155213aa7514762e8"
-    private val y = "319b28159198c31e6bd4c1f4a23175c4d80e5069d544475c28d805198820f2cf"
+    // PKCS#7 files (what META-INF/CERT.RSA holds, `openssl cms -sign -noattr` over a small file) of two self-signed keys, and the SHA-256 of each one's certificate
+    private val p7x = java.util.Base64.getDecoder().decode("MIICNgYJKoZIhvcNAQcCoIICJzCCAiMCAQExDTALBglghkgBZQMEAgEwCwYJKoZIhvcNAQcBoIIBcDCCAWwwggEToAMCAQICFEG9tKdymdTg0NYDWJbsd+iXLf6rMAoGCCqGSM49BAMCMAwxCjAIBgNVBAMMAXgwHhcNMjYxMDMwMTI1NzIxWhcNMzYxMDI3MTI1NzIxWjAMMQowCAYDVQQDDAF4MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEnJjN4AzxRHw6gWEVDxaSRtXLc7JE+vPwgiyQEs90kz7TTrcoYylysqvhTw0yBAbJ0x4ZpmXAlqa6OMwAJx2zUKNTMFEwHQYDVR0OBBYEFNMz6k5AiSmHFlMZa61i0pgSSWWfMB8GA1UdIwQYMBaAFNMz6k5AiSmHFlMZa61i0pgSSWWfMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDRwAwRAIgKAsILwL80sWcM92U43K9p+R0AQmlOi7qhBUNL3quIUoCIGhJHqMBHya+tMZebHjreLZOPCM46js4V+8Ub+mPRo35MYGNMIGKAgEBMCQwDDEKMAgGA1UEAwwBeAIUQb20p3KZ1ODQ1gNYlux36Jct/qswCwYJYIZIAWUDBAIBMAoGCCqGSM49BAMCBEYwRAIgHxwHVPnrtJH9l8BryrMTInjyXVkjt6Ah2PDZHpUnsPcCIHLv5frlEga+i+1r3HaxmoIkoPKpJ3hPmqfwMei70Pau")
+    private val p7y = java.util.Base64.getDecoder().decode("MIICNgYJKoZIhvcNAQcCoIICJzCCAiMCAQExDTALBglghkgBZQMEAgEwCwYJKoZIhvcNAQcBoIIBcDCCAWwwggEToAMCAQICFAiWysKb516dpWkHa42cGNr4dbDBMAoGCCqGSM49BAMCMAwxCjAIBgNVBAMMAXkwHhcNMjYxMDMwMTI1NzIxWhcNMzYxMDI3MTI1NzIxWjAMMQowCAYDVQQDDAF5MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhn3BAOGbnteqEmHyar+lupl5g0LMymprd/kgT6hz3tFfR0W69+ip/lkTLdoA94C2X66z1mmpHGrjyMXNZmt9FKNTMFEwHQYDVR0OBBYEFJLUm5neN6Rzns3wUP8Vty0kggbVMB8GA1UdIwQYMBaAFJLUm5neN6Rzns3wUP8Vty0kggbVMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDRwAwRAIgZU6FG788TRnsfBytCPmZeVDZKDrNnMDLcl46dVTXLDACIDPqURVhpEzGTNwmWxZn9izmVIs8nmtsOdb0xv+iGnS/MYGNMIGKAgEBMCQwDDEKMAgGA1UEAwwBeQIUCJbKwpvnXp2laQdrjZwY2vh1sMEwCwYJYIZIAWUDBAIBMAoGCCqGSM49BAMCBEYwRAIgE92U0TWmhrU86MZXdcax/tQ0+0PErpfRg8DutjhJ5QcCICThlJxAOZB/6RC9UO3n8UG4uVZeZt++pZ42iDcdNGaQ")
+    private val p7xChain = java.util.Base64.getDecoder().decode("MIIDpgYJKoZIhvcNAQcCoIIDlzCCA5MCAQExDTALBglghkgBZQMEAgEwCwYJKoZIhvcNAQcBoIIC4DCCAWwwggEToAMCAQICFAiWysKb516dpWkHa42cGNr4dbDBMAoGCCqGSM49BAMCMAwxCjAIBgNVBAMMAXkwHhcNMjYxMDMwMTI1NzIxWhcNMzYxMDI3MTI1NzIxWjAMMQowCAYDVQQDDAF5MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhn3BAOGbnteqEmHyar+lupl5g0LMymprd/kgT6hz3tFfR0W69+ip/lkTLdoA94C2X66z1mmpHGrjyMXNZmt9FKNTMFEwHQYDVR0OBBYEFJLUm5neN6Rzns3wUP8Vty0kggbVMB8GA1UdIwQYMBaAFJLUm5neN6Rzns3wUP8Vty0kggbVMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwIDRwAwRAIgZU6FG788TRnsfBytCPmZeVDZKDrNnMDLcl46dVTXLDACIDPqURVhpEzGTNwmWxZn9izmVIs8nmtsOdb0xv+iGnS/MIIBbDCCAROgAwIBAgIUQb20p3KZ1ODQ1gNYlux36Jct/qswCgYIKoZIzj0EAwIwDDEKMAgGA1UEAwwBeDAeFw0yNjEwMzAxMjU3MjFaFw0zNjEwMjcxMjU3MjFaMAwxCjAIBgNVBAMMAXgwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAScmM3gDPFEfDqBYRUPFpJG1ctzskT68/CCLJASz3STPtNOtyhjKXKyq+FPDTIEBsnTHhmmZcCWpro4zAAnHbNQo1MwUTAdBgNVHQ4EFgQU0zPqTkCJKYcWUxlrrWLSmBJJZZ8wHwYDVR0jBBgwFoAU0zPqTkCJKYcWUxlrrWLSmBJJZZ8wDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNHADBEAiAoCwgvAvzSxZwz3ZTjcr2n5HQBCaU6LuqEFQ0veq4hSgIgaEkeowEfJr60xl5seOt4tk48IzjqOzhX7xRv6Y9GjfkxgY0wgYoCAQEwJDAMMQowCAYDVQQDDAF4AhRBvbSncpnU4NDWA1iW7Hfoly3+qzALBglghkgBZQMEAgEwCgYIKoZIzj0EAwIERjBEAiBDlpA9upQ0sxhrjra9/+G5s8yZGhFDb9dVLLX0Py6U+AIgcOXbrvHRr8QfO4eFLElycelMpRtIcayFwnp4p8oMz4E=")   // signed by x, y's certificate riding along as a chain
+    private val x = "334953e31831804e62d3a91264e55bd8155f5c9865759bf39fbe315fa8ec14d3"
+    private val y = "b0c8082a40dd7fa9417d0d11435d34130e4232c56adcb857c5bfcbe1fd6ac5d7"
 
     private val a = "cert A".toByteArray()
     private val b = "cert B".toByteArray()
@@ -73,6 +74,19 @@ class ApkCertTest {
 
     @Test fun aV1SignerOfTheSameKeyPasses() {
         val c = ApkCert.read(withV1(p7x))
+        assertEquals(listOf(x), c["v1"])
+        assertTrue(ApkCert.allPinned(c, listOf(ApkCert.sha256(a), x)))
+    }
+
+    @Test fun aChainedCertificateIsNotASigner() {                        // only the signer counts: y in the chain must not refuse x's APK
+        val c = ApkCert.read(withV1(p7xChain))
+        assertEquals(listOf(x), c["v1"])
+        assertTrue(ApkCert.allPinned(c, listOf(ApkCert.sha256(a), x)))
+    }
+
+    @Test fun aSignatureBlockWithoutItsSfIsNotASigner() {                // a bundled library's META-INF/LIB.DSA (another key) beside the real CERT.RSA + CERT.SF
+        val f = apk(listOf(v2a), mapOf("classes.dex" to ByteArray(10), "META-INF/CERT.RSA" to p7x, "META-INF/CERT.SF" to ByteArray(3), "META-INF/LIB.DSA" to p7y))
+        val c = ApkCert.read(f)
         assertEquals(listOf(x), c["v1"])
         assertTrue(ApkCert.allPinned(c, listOf(ApkCert.sha256(a), x)))
     }

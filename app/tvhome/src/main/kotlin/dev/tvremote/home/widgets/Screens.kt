@@ -261,6 +261,17 @@ class WeatherMapActivity : Activity() {
     private var named: TextView? = null                                         // under the icons: the focused one's name, else the layer shown
     private var loading: View? = null
     private var layer = "rain"; private var ready = false; private var started = false
+    private var failed = false; private var spin: View? = null; private var said: TextView? = null   // the main frame did not load: the overlay says so (Chromium's own error page is black-on-dark) and the page is asked for again
+    private val retry = Runnable { if (!isDestroyed && failed) { failed = false; started = false; show(layer) } }
+
+    private fun online(): Boolean { @Suppress("DEPRECATION") val n = (getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).activeNetworkInfo; return n != null && n.isConnected }
+
+    /** The map cannot be had: the overlay stays over the page with one readable line; asked again in 10 s (the network may be back). */
+    private fun fail() {
+        failed = true; ready = false
+        spin?.visibility = View.GONE; said?.text = getString(R.string.map_offline); loading?.visibility = View.VISIBLE
+        loading?.removeCallbacks(retry); loading?.postDelayed(retry, 10_000)
+    }
 
     /** Windy keeps its state in `W.store`: wind particles off (a canvas redrawn every frame is what makes a weak box lag). */
     private fun applyLight() { web?.evaluateJavascript("try{W.store.set('particlesAnim','off')}catch(e){}", null) }
@@ -292,7 +303,9 @@ class WeatherMapActivity : Activity() {
             setBackgroundColor(INK)
             settings.mediaPlaybackRequiresUserGesture = true
             webViewClient = object : WebViewClient() {
+                override fun onReceivedError(v: WebView, r: android.webkit.WebResourceRequest, e: android.webkit.WebResourceError) { if (r.isForMainFrame) fail() }
                 override fun onPageFinished(v: WebView?, u: String?) {
+                    if (failed) return                                                          // Chromium's error page also "finishes"
                     ready = true; applyLight(); if (layer != "rain") setLayer(layer)           // a layer chosen before the page was up
                     loading?.postDelayed({ loading?.visibility = View.GONE }, 2500)            // the map data comes ~1-2 s after the page
                 }
@@ -312,8 +325,8 @@ class WeatherMapActivity : Activity() {
         box.addView(wv, FrameLayout.LayoutParams(-1, -1))
         loading = LinearLayout(this).apply {                                         // Windy takes ~10 s: say so over the grey box
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setBackgroundColor(INK)
-            addView(android.widget.ProgressBar(this@WeatherMapActivity))
-            addView(label(getString(R.string.map_loading), 18f, DIMC).apply { gravity = Gravity.CENTER; setPadding(0, dpx(12), 0, 0) })
+            spin = android.widget.ProgressBar(this@WeatherMapActivity).also { addView(it) }
+            said = label(getString(R.string.map_loading), 18f, DIMC).apply { gravity = Gravity.CENTER; setPadding(dpx(24), dpx(12), dpx(24), 0) }.also { addView(it) }
         }
         box.addView(loading, FrameLayout.LayoutParams(-1, -1))
         root.addView(box, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 7f))
@@ -369,8 +382,11 @@ class WeatherMapActivity : Activity() {
     private fun show(l: String) {
         for ((k, c) in chips) setPillOn(c, k == l)
         layer = l; nameNow()
-        if (ready) setLayer(l) else if (!started) { started = true; web?.loadUrl(url(l)) }   // before the page is up onPageFinished applies `layer`
+        if (ready) setLayer(l) else if (!started) {
+            started = true
+            if (online()) { failed = false; spin?.visibility = View.VISIBLE; said?.text = getString(R.string.map_loading); loading?.visibility = View.VISIBLE; web?.loadUrl(url(l)) } else fail()
+        }   // before the page is up onPageFinished applies `layer`
     }
 
-    override fun onDestroy() { dev.tvremote.tvui.WebEnd.end(web); super.onDestroy() }   // the renderer too, unless the wall still uses it
+    override fun onDestroy() { loading?.removeCallbacks(retry); dev.tvremote.tvui.WebEnd.end(web); super.onDestroy() }   // the renderer too, unless the wall still uses it
 }

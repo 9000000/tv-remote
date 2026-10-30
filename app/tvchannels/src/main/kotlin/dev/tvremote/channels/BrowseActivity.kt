@@ -484,9 +484,12 @@ class BrowseActivity : Activity() {
     }
 
     /** What can be done with one channel: on a TV the Menu key or a long OK, on a phone a long press. */
+    private var actionsDlg: android.app.Dialog? = null
     fun actions(ch: List<Channel>) {
+        if (actionsDlg?.isShowing == true) return                     // one press can reach here twice (long-click and Menu key): a second sheet would stack
         val c = ch.first()
         val (dlg, box) = TvUi.sheet(this, R.style.Dialog)
+        actionsDlg = dlg
         TvUi.sheetTitle(box, c.name)
         box.addView(TvUi.row(this, R.drawable.ic_play, getString(R.string.play)) { dlg.dismiss(); play(ch) })
         val fav = Store.isFavourite(this, c.id)
@@ -888,18 +891,15 @@ class BrowseActivity : Activity() {
             if (at >= 0 && at % (grid.layoutManager as GridLayoutManager).spanCount == 0)
                 (0 until rail.childCount).map { rail.getChildAt(it) }.firstOrNull { it.isActivated }?.let { it.requestFocus(); return true }
         }
-        if (k == KeyEvent.KEYCODE_MENU || (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) && e.isLongPress) {
+        if (k == KeyEvent.KEYCODE_MENU) {                              // a long OK is the card's own long-click (Shelves, below): handled here too it opened a second sheet
             val v = currentFocus ?: return super.onKeyDown(k, e)
             val at = grid.findContainingViewHolder(v)?.bindingAdapterPosition ?: -1
             if (at in shown.indices) { if (shown[at].first().id != HDR) actions(shown[at]); return true }
-            (v.tag as? String)?.takeIf { k == KeyEvent.KEYCODE_MENU && it.startsWith("grp:") }?.let { groupMenu(it.removePrefix("grp:")); return true }
-            (v.tag as? String)?.takeIf { k == KeyEvent.KEYCODE_MENU && it.startsWith("pl:") }?.let { listMenu(it.removePrefix("pl:")); return true }
+            (v.tag as? String)?.takeIf { it.startsWith("grp:") }?.let { groupMenu(it.removePrefix("grp:")); return true }
+            (v.tag as? String)?.takeIf { it.startsWith("pl:") }?.let { listMenu(it.removePrefix("pl:")); return true }
         }
-        if (k == KeyEvent.KEYCODE_DPAD_CENTER || k == KeyEvent.KEYCODE_ENTER) e.startTracking()
         return super.onKeyDown(k, e)
     }
-
-    override fun onKeyLongPress(k: Int, e: KeyEvent) = onKeyDown(k, e)
 
     private val guides = java.util.concurrent.Executors.newFixedThreadPool(2) { r ->
         Thread { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND + 4); r.run() }

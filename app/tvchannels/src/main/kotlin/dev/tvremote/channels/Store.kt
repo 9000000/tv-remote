@@ -1,6 +1,7 @@
 package dev.tvremote.channels
 
 import android.content.Context
+import dev.tvremote.guard.Age
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -12,18 +13,28 @@ import org.json.JSONObject
 object Store {
     private fun p(c: Context): android.content.SharedPreferences {
         val s = c.getSharedPreferences("channels", Context.MODE_PRIVATE)
-        if (!pruned) { pruned = true; val old = staleOk(s.all, System.currentTimeMillis()); if (old.isNotEmpty()) s.edit().apply { old.forEach { remove(it) } }.apply() }   // once per process: one key per stream URL piled up for ever
+        if (!pruned) synchronized(okLock) {                           // once per process: one key per stream URL piled up for ever
+            if (!pruned) { pruned = true; val old = staleOk(s.all, System.currentTimeMillis()); if (old.isNotEmpty()) s.edit().apply { old.forEach { remove(it) } }.apply() }   // read and removed in one edit under the lock [setAlive] takes: a fresh mark written meanwhile is not in it
+        }
         return s
     }
     @Volatile private var pruned = false
+    private val okLock = Any()
 
-    /** The "ok:<url>" keys whose answer is over 6 hours old: [alive] ignores them already, so they are only weight in the prefs file. */
-    internal fun staleOk(all: Map<String, *>, now: Long): List<String> =
-        all.filter { (k, v) -> k.startsWith("ok:") && (v !is Long || now - Math.abs(v) > OK_MS) }.keys.toList()
+    /**
+     * The "ok:<url>" keys whose answer is over 6 hours old: [alive] ignores them already, so they are only weight in the prefs file.
+     * None when any stamp is ahead of [now] (a box booted with its clock a year ahead): which marks are old cannot be told until
+     * the clock is right, and [setAlive] overwrites an ahead stamp when its stream is checked again.
+     */
+    internal fun staleOk(all: Map<String, *>, now: Long): List<String> {
+        val oks = all.filter { (k, _) -> k.startsWith("ok:") }
+        if (oks.any { (_, v) -> v is Long && Math.abs(v) > now }) return emptyList()
+        return oks.filter { (_, v) -> v !is Long || !Age.fresh(Math.abs(v), OK_MS, now) }.keys.toList()
+    }
     private const val OK_MS = 6 * 3600_000L
 
     /** Whether [setAlive] has to write: not when the stream already stands as answered (a card re-bound or a stream restarted writes it again and again). */
-    internal fun needsAliveWrite(prev: Long, ok: Boolean, now: Long) = !(ok && prev > 0 && now - prev <= OK_MS)
+    internal fun needsAliveWrite(prev: Long, ok: Boolean, now: Long) = !(ok && prev > 0 && Age.fresh(prev, OK_MS, now))
 
     /** The ids of the favourites, parsed once per change of the stored string (a card bound asks [isFavourite] for each channel). */
     internal class IdCache(private val parse: (String) -> Set<String>) {
@@ -153,14 +164,16 @@ object Store {
     /** The stream's last check: true answered, false did not, null not checked in the last 6 hours. */
     fun alive(c: Context, url: String): Boolean? {
         val v = p(c).getLong("ok:$url", 0L)
-        if (v == 0L || System.currentTimeMillis() - Math.abs(v) > OK_MS) return null
+        if (v == 0L || !Age.fresh(Math.abs(v), OK_MS)) return null
         return v > 0
     }
     fun setAlive(c: Context, url: String, ok: Boolean) {
         val t = System.currentTimeMillis()
         val s = p(c)
-        if (!needsAliveWrite(s.getLong("ok:$url", 0L), ok, t)) return
-        s.edit().putLong("ok:$url", if (ok) t else -t).apply()
+        synchronized(okLock) {
+            if (!needsAliveWrite(s.getLong("ok:$url", 0L), ok, t)) return
+            s.edit().putLong("ok:$url", if (ok) t else -t).apply()
+        }
     }
 
     private fun write(ch: Channel) = JSONObject().put("id", ch.id).put("name", ch.name).put("logo", ch.logo).put("group", ch.group)

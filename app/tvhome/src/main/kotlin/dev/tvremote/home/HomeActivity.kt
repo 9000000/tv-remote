@@ -580,9 +580,9 @@ class HomeActivity : Activity() {
         if (locked) return
         if (away) Store.advance(this, true)                           // Home is shown again: "each time" moves on here, and a timed one that fell due while away
         if (trimmed) untrim()
-        else if (away) {                                              // a retry that came due while away did not run (a page attached then costs ~95 MB nobody sees): once now
+        else if (away) {                                              // a retry that came due while away did not run (a page attached then costs ~95 MB nobody sees): once now (not [webRetry]: it wants !away, cleared only in onResume)
             val w = conf.optString("wall")
-            if (w == HomeConfig.WEB && web == null) webRetry.run() else if (HomeConfig.isVideo(w) && video == null) attachVideo(w)
+            if (w == HomeConfig.WEB && web == null && conf.optString("wmode") != "snap") attachWeb() else if (HomeConfig.isVideo(w) && video == null) attachVideo(w)
         }
         WebWall.wake(web); snapper?.resume(); video?.start()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
     }

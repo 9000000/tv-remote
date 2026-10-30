@@ -8,6 +8,7 @@ import java.nio.ByteOrder
 import java.security.GeneralSecurityException
 import java.security.MessageDigest
 import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 import java.util.zip.ZipFile
 
 /**
@@ -49,20 +50,58 @@ object ApkCert {
         return certs.keys.any { it != "v1" } && certs.values.all { s -> s.isNotEmpty() && s.all { it in ok } }
     }
 
-    // the JAR signature: every certificate in each META-INF/*.RSA|DSA|EC (PKCS#7); null when the APK has none. An unreadable
-    // one throws, so the APK is refused rather than read as "no v1".
+    // the JAR signature: the signer's certificate of each META-INF/<name>.RSA|DSA|EC (PKCS#7) that has its <name>.SF; null when the
+    // APK has none. A block with no .SF is not a signature (a bundled library's file), and the other certificates in a block are its
+    // chain, not signers: Android's verifier ignores both, so they must not refuse an install. An unreadable block throws.
     private fun v1(apk: File): List<String>? = ZipFile(apk).use { z ->
+        val names = HashSet<String>()
+        for (e in z.entries()) names.add(e.name.uppercase())
         val out = ArrayList<String>()
         for (e in z.entries()) {
             val n = e.name.uppercase()
             if (!n.startsWith("META-INF/") || n.indexOf('/', 9) >= 0 || !(n.endsWith(".RSA") || n.endsWith(".DSA") || n.endsWith(".EC"))) continue
+            if ((n.substring(0, n.lastIndexOf('.')) + ".SF") !in names) continue
             if (e.size > 1 shl 20) throw IOException("bad signature file")
-            val certs = try { z.getInputStream(e).use { CertificateFactory.getInstance("X.509").generateCertificates(it) } }
+            val raw = z.getInputStream(e).use { it.readBytes() }
+            val certs = try { CertificateFactory.getInstance("X.509").generateCertificates(raw.inputStream()).filterIsInstance<X509Certificate>() }
                         catch (x: GeneralSecurityException) { throw IOException("bad signature file") }
             if (certs.isEmpty()) throw IOException("signature file without a certificate")
-            for (c in certs) out.add(sha256(c.encoded))
+            for ((issuer, serial) in signerIds(raw)) {
+                val c = certs.firstOrNull { it.serialNumber == serial && it.issuerX500Principal.encoded.contentEquals(issuer) }
+                    ?: throw IOException("signer certificate missing")
+                out.add(sha256(c.encoded))
+            }
         }
         out.takeIf { it.isNotEmpty() }
+    }
+
+    // PKCS#7 ContentInfo > SignedData > signerInfos > SignerInfo > issuerAndSerialNumber: (issuer DER, serial) of each signer
+    private fun signerIds(p7: ByteArray): List<Pair<ByteArray, java.math.BigInteger>> {
+        try {
+            val ci = der(p7, 0, p7.size)                                  // ContentInfo: the content type, then [0] SignedData
+            val a0 = children(p7, ci.vs, ci.ve).first { it.tag == 0xA0 }
+            val parts = children(p7, a0.vs, a0.ve).first().let { children(p7, it.vs, it.ve) }   // the SignedData SEQUENCE
+            val infos = parts.last { it.tag == 0x31 }                       // signerInfos: the last SET (certs and crls are tagged [0] / [1])
+            return children(p7, infos.vs, infos.ve).map { si ->
+                val f = children(p7, si.vs, si.ve)                          // version, issuerAndSerialNumber, ...
+                val ias = children(p7, f[1].vs, f[1].ve)
+                ias[0].let { p7.copyOfRange(it.start, it.ve) } to java.math.BigInteger(p7.copyOfRange(ias[1].vs, ias[1].ve))
+            }.also { if (it.isEmpty()) throw IOException("signature file without a signer") }
+        } catch (e: IOException) { throw e } catch (e: RuntimeException) { throw IOException("bad signature file") }
+    }
+    private class Tlv(val tag: Int, val start: Int, val vs: Int, val ve: Int)
+    private fun der(b: ByteArray, at: Int, end: Int): Tlv {
+        if (at + 2 > end) throw IOException("bad signature file")
+        val tag = b[at].toInt() and 0xff
+        var l = b[at + 1].toInt() and 0xff; var p = at + 2
+        if (l >= 0x80) { val n = l and 0x7f; if (n == 0 || n > 3 || p + n > end) throw IOException("bad signature file"); l = 0; repeat(n) { l = l shl 8 or (b[p++].toInt() and 0xff) } }
+        if (p + l > end) throw IOException("bad signature file")
+        return Tlv(tag, at, p, p + l)
+    }
+    private fun children(b: ByteArray, from: Int, to: Int): List<Tlv> {
+        val out = ArrayList<Tlv>(); var p = from
+        while (p < to) { val t = der(b, p, to); out.add(t); p = t.ve }
+        return out
     }
 
     // the block sits right before the central directory, which the end-of-central-directory record points to
