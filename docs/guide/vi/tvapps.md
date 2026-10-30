@@ -2,6 +2,8 @@
 
 Danh sách app miễn phí, mã nguồn mở cho TV (SmartTube, Kodi, VLC, Jellyfin…). Mỗi app tải thẳng từ bản phát hành của nhà làm app, và chỉ được cài khi đúng chữ ký của họ.
 
+Chỉ có remote của TV: cài bằng Downloader, mã **1082201**.
+
 1. Từ điện thoại hay máy tính: tab **📱 Ứng dụng** → thẻ **📦 Kho app** → **Xem app** → **Cài** (cần ADB).
 2. Trên TV: mở app **TV Apps** (TV Setup tự cài khi có ADB, hoặc ở hàng app TV của TV Setup). Chọn loại, chọn app, bấm OK. Giữ OK: Mở, Cài lại, Chi tiết.
 

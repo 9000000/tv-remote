@@ -12,7 +12,7 @@ import json, os, re, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LIST = os.path.join(ROOT, "docs", "data", "downloader.json")
 KEY = os.environ.get("LAUNCHERS_KEY", os.path.expanduser("~/.tv-remote-release/launchers.key"))
-IDS = {"setup", "remote", "home", "channels", "games"}               # tv-setup, tv-remote, tv-home, tv-channels, tv-games
+IDS = {"setup", "remote", "home", "channels", "games", "tvapps"}     # tv-setup, tv-remote, tv-home, tv-channels, tv-games, tv-apps
 
 
 def fail(m):

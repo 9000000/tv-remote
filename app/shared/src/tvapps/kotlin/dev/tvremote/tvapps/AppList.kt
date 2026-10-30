@@ -75,23 +75,30 @@ object AppList {
     fun why(a: App, sdk: Int, abis: List<String>) = when { sdk in 1 until a.minSdk -> "sdk"; pick(a, abis) == null -> "abi"; else -> "" }
 
     @Volatile private var mem: Pair<Long, List_>? = null
+    private val asking = java.util.concurrent.atomic.AtomicBoolean()
 
-    /** The list: asked again after a minute (the screens call this on every opening); [dir] keeps a copy for when the network fails. */
+    /**
+     * The list: asked again after a minute (the screens call this on every opening); [dir] keeps a copy. With a copy kept it is
+     * returned at once and the site asked behind it (the next opening has the new one): offline, a name lookup can hang ~20 s on
+     * "Loading". [fresh] (Try again) waits for the site.
+     */
     @Throws(IOException::class)
     fun fetch(dir: File?, fresh: Boolean = false): List_ {
         mem?.let { if (!fresh && System.currentTimeMillis() - it.first < 60_000) return it.second }
         val kept = dir?.let { File(it, NAME) }
-        val l = try {
-            SignedList.fetch(bases, NAME, MAX, keys) { list, sig, base ->
-                if (kept != null) try { SignedList.keep(kept, list, sig) } catch (e: IOException) { }
-                parse(list, base)
-            }
-        } catch (e: IOException) {
+        if (!fresh) (mem?.second ?: kept?.let { SignedList.kept(it, keys) }?.let { parse(it, bases.first()) })?.let { l ->
+            if (asking.compareAndSet(false, true)) Thread { try { ask(kept) } catch (e: IOException) { } finally { asking.set(false) } }.start()
+            return l
+        }
+        return try { ask(kept) } catch (e: IOException) {
             kept?.let { SignedList.kept(it, keys) }?.let { parse(it, bases.first()) } ?: throw IOException(NO_NET, e)
         }
-        mem = System.currentTimeMillis() to l
-        return l
     }
+
+    private fun ask(kept: File?): List_ = SignedList.fetch(bases, NAME, MAX, keys) { list, sig, base ->
+        if (kept != null) try { SignedList.keep(kept, list, sig) } catch (e: IOException) { }
+        parse(list, base)
+    }.also { mem = System.currentTimeMillis() to it }
 
     private val icons = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
 
@@ -127,7 +134,12 @@ object AppList {
      * IOException ([NO_APK], [BAD_CERT], the network's). [pct] gets 0-100; [stop] true ends it (the file is removed).
      */
     @Throws(IOException::class)
-    fun download(a: App, abis: List<String>, dir: File, pct: (Int) -> Unit, stop: () -> Boolean): File {
+    fun download(a: App, abis: List<String>, dir: File, pct: (Int) -> Unit, stop: () -> Boolean): File = try { get(a, abis, dir, pct, stop) }
+        catch (e: java.net.UnknownHostException) { throw IOException(NO_NET, e) }   // offline: Java's own words name a host
+        catch (e: java.net.ConnectException) { throw IOException(NO_NET, e) }
+        catch (e: java.net.NoRouteToHostException) { throw IOException(NO_NET, e) }
+
+    private fun get(a: App, abis: List<String>, dir: File, pct: (Int) -> Unit, stop: () -> Boolean): File {
         val src = pick(a, abis)?.second ?: throw IOException(NO_APK)
         val f = File(dir, "tvapps-${a.id}.apk")
         val c = URL(resolve(src)).openConnection() as HttpURLConnection
