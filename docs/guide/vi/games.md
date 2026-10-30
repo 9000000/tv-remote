@@ -8,7 +8,7 @@ Chỉ có remote của TV: cài bằng Downloader, mã **2294968**.
 2. Bấm **Mở TV Games**, rồi quét QR trên TV bằng điện thoại để làm tay cầm.
 3. Game bài và cờ (Tiến lên, Bài màu, Cờ tỷ phú…): mỗi người cầm bài trên điện thoại, chạm hoặc vuốt chọn lá rồi bấm nút. Ghế trống thì máy chơi.
 4. Chơi một mình bằng remote TV: OK là nút A. Start, Select, B: **Back → Gán nút remote**, rồi bấm nút muốn dùng (nút màu, ⏯…). Hoặc nút **🎮 Tay cầm** trên remote.
-5. Mời một người ra khỏi phòng chờ: bấm ▲ trên remote để chọn người, rồi OK (Back là thôi). Điện thoại của họ chạm để vào lại.
+5. Mời ai ra khỏi phòng chờ: ▲ chọn người, rồi OK.
 6. Game nghiêng điện thoại (Bóng bay, Bida, Máy bay giấy…): bấm **Bật nghiêng**. Trình duyệt cảnh báo vì chuyển sang https: bấm **Nâng cao** rồi **Tiếp tục** (iPhone thêm **Cho phép**). Ghế vẫn giữ.
 7. Game web bị treo hay mới cập nhật? Trên TV giữ OK ở game web → **Mở bản mới nhất**; trên điện thoại menu ⚙ → **Tải lại game**. Các điện thoại vẫn giữ kết nối.
 
