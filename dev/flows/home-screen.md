@@ -21,7 +21,7 @@ sends Home there instead: the person sees the same thing. An error only when nei
 | Way | What is done on the TV | The record (`LauncherSwap.REC`) |
 |---|---|---|
 | **swap** | the TV's own launchers and the setup wizard's Home off, the new one the HOME role, Home pressed and checked | `off` = what went off, `why` = "" |
-| **key** (`LauncherSwap.byKey`) | nothing off; the role set (not for `boot`); TV Setup's rule `homekey` = the launcher (`HomeKey`: a short Home press opens it, a long one is the TV's own) | `off` = [], `why` = `key`, kept at once; `LauncherSwap.via` says why |
+| **key** (`LauncherSwap.byKey`) | nothing off; TV Setup's rule `homekey` = the launcher (`HomeKey`: a short Home press opens it, a long one is the TV's own), then up to `LauncherSwap.KEYS_WAIT` s for its key filter to run (`keys` in TV Setup's rules state, `KeysBridge.bound`; the add-on TV Setup Keys goes in first); the role set (not for `boot`) | `off` = [], `why` = `key`, kept once the filter runs; `LauncherSwap.via` says why |
 
 The key way needs TV Setup 0.26.3+ (`SetupNeed` "homekey"). Without it: `SetupNeed.Missing`, every client's one
 Install / Update TV Setup question (Optimize TV too: its other steps are done by then); nothing stays off.
@@ -39,7 +39,7 @@ Via `home` and `wifi_unknown` (TVs the swap does not know yet) go to the census:
 
 ## LauncherSwap.take(pkg): the cases, in order
 
-Cases (`app/shared/src/main/kotlin/dev/tvremote/core/ontv/LauncherSwap.kt:WHYS`): crash, home, timeout, interrupted, user, wifi, wifi_unknown, cast, zte, board, boot, key
+Cases (`app/shared/src/main/kotlin/dev/tvremote/core/ontv/LauncherSwap.kt:WHYS`): crash, home, timeout, interrupted, user, wifi, wifi_unknown, cast, zte, board, boot, keys, key
 
 | # | Told apart by | Way | Test |
 |---|---|---|---|
@@ -56,6 +56,7 @@ Cases (`app/shared/src/main/kotlin/dev/tvremote/core/ontv/LauncherSwap.kt:WHYS`)
 | 10 | a step hung so long the watchdog rolled back meanwhile | false, `interrupted` | `aSwapThatOutlivedTheWatchdogIsUndoneAgain` |
 | 11 | rows 2-8 with TV Setup older than 0.26.3, or none | `SetupNeed.Missing`, nothing stays off | `aTvSetupTooOldForTheKeyFilterIsAskedForAndNothingStaysOff` |
 | 12 | rows 2-8, TV Setup did not take the rule | false, `refused` = the via: the words `launcher.why_<via>` | `everyReasonHasWords` |
+| 13 | rows 2-8, the rule taken but the key filter not running after `KEYS_WAIT` s (issue #9, TCLs: Optimize said "through TV Setup", Home went to the TCL launcher) | the rule dropped, no record kept, false, `refused` = `keys`: "kept its own home screen" + turn on TV Setup Keys in Accessibility; to the census (`home:keys`) | `aKeyFilterThatNeverStartsIsNotCalledHome`, `aKeyFilterThatComesUpWhileTheAddOnGoesInKeepsHome` |
 
 ## After: the watchdog (`LauncherWatch.check` in TV Setup's `LauncherGuard`, every 3 s while a record is active)
 
@@ -63,6 +64,7 @@ Cases (`app/shared/src/main/kotlin/dev/tvremote/core/ontv/LauncherSwap.kt:WHYS`)
 |---|---|---|---|---|
 | swap, pending | no answer in time | rollback `timeout` | the "went back" notice | `watchdogWaitsForPendingThenRollsBackOnTimeout` |
 | swap | Home on the wizard / a picker / the fallback, or the wizard on again (an Acer at boot, a TCL in seconds) | rollback, then key, via `home` | nothing: Home still opens the launcher | `theWizardWholeBackOnAfterABootGoesToTheKeyFilter`, `theWizardsHomeBackOnAfterABootGoesToTheKeyFilter` |
+| swap | same, but the key filter does not run (row 13) | rollback, nothing kept | the notice, why `keys` | `theWatchdogSaysSoWhenTheKeyFilterCannotTakeHomeBack` |
 | swap | the launcher was uninstalled | rollback `home` (no launcher for the key way) | notice | `watchdogRollsBackOnABadHomeAndOnlyAfterKeepToo` |
 | swap or key | the launcher crashed twice in 5 min | rollback `crash` | notice | `theKeyWayIsGuardedForCrashesOnly` |
 | key | where Android sends Home | ignored: Home is the filter's | | `theWizardWholeBackOnAfterABootGoesToTheKeyFilter` |

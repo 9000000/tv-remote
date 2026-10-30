@@ -47,13 +47,20 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val NO_SWAP = setOf("moka", "kalley", "prismplus", "prism+")
 
         /** Every [Rec.why] and [via]: the flow's "Cases" list (dev/flows/check.js keeps them equal). */
-        val WHYS = listOf("crash", "home", "timeout", "interrupted", "user", "wifi", "wifi_unknown", "cast", "zte", "board", "boot", "key")
+        val WHYS = listOf("crash", "home", "timeout", "interrupted", "user", "wifi", "wifi_unknown", "cast", "zte", "board", "boot", "keys", "key")
         /** [Rec.why] of a launcher Home reaches through TV Setup's key filter, nothing turned off ([byKey]). */
         const val KEY = "key"
+        /**
+         * Why the key way was not kept: TV Setup took the rule but its key filter (the add-on's accessibility service, KeysBridge)
+         * never came up, so Home would still reach the TV's own launcher (issue #9, TCLs: the rule set, Optimize said "through TV
+         * Setup", Home went to the TCL launcher). [KEYS_WAIT] seconds for the add-on to be put on the TV and bound.
+         */
+        const val KEYS = "keys"
+        const val KEYS_WAIT = 45
 
         /** The words (their id) for why a swap was put back ([Rec.why]): one table for TV Setup, the page and the computer's settings. */
         /** The whys where the swap was refused before anything stayed changed: the TV kept its launcher, it did not "go back". */
-        val REFUSED = setOf("wifi", "wifi_unknown", "cast", "zte", "board", "boot")
+        val REFUSED = setOf("wifi", "wifi_unknown", "cast", "zte", "board", "boot", KEYS)
         /** The notice's words for a swap put back with [why]: "kept its launcher" for a refusal, "went back" for an undone swap. */
         fun backId(why: String): String = if (why in REFUSED) "core.fr_launcher_kept" else "core.fr_launcher_back"
 
@@ -234,14 +241,33 @@ class LauncherSwap(private val sh: (String) -> String, private val log: (String)
         val have = SetupNeed.have(sh)
         if (!SetupNeed.ok(have, "homekey")) throw SetupNeed.Missing("homekey", have)
         val prev = state()?.takeIf { it.why != KEY }?.prev?.takeIf { it.contains('/') } ?: homeNow()   // after a rollback: the one before it
-        if (why != "boot") sh("cmd package set-home-activity $ours 2>/dev/null")
         val st = RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", pkg))
         if (st.optString("homekey") != pkg) { log("TV Setup did not take Home: $st"); refused = why; return false }
+        if (!filterUp(st)) {                                          // the rule alone sends Home nowhere: never "Home opens it" then
+            RulesClient.call(sh, org.json.JSONObject().put("do", "homekey").put("pkg", ""))
+            log("TV Setup's key filter did not start"); refused = KEYS; return false
+        }
+        if (why != "boot") sh("cmd package set-home-activity $ours 2>/dev/null")
         save(Rec(pkg, ours, prev, emptyList(), tvNow(), "kept", 0, KEY))
         via = why
         sh("am start -n $ours")
         log("Home by TV Setup's key filter: $why")
         return true
+    }
+
+    /**
+     * Whether TV Setup's key filter is running, after the rule [st] was taken: KeyFix.sync puts the add-on on the TV and turns its
+     * service on, which can take a while the first time. A TV Setup that does not say ("keys" missing, 0.34.1 and older) is trusted.
+     */
+    private fun filterUp(st: JSONObject): Boolean {
+        if (!st.has(KEYS)) return true
+        var now = st
+        for (i in 0 until KEYS_WAIT) {
+            if (now.optBoolean(KEYS)) return true
+            sh("sleep 1")
+            now = RulesClient.call(sh, null)
+        }
+        return now.optBoolean(KEYS)
     }
 
     /**
@@ -362,6 +388,6 @@ class LauncherWatch(private val sh: (String) -> String) {
         swap.rollback(why)
         // the TV took Home back (a TCL turns its wizard on again): the key filter sends it to the launcher instead, nothing to tell
         if (why == "home" && try { swap.byKey(r.pkg, "home") } catch (e: IOException) { false }) return null
-        return why
+        return if (why == "home" && swap.refused == LauncherSwap.KEYS) LauncherSwap.KEYS else why   // the key filter did not start: say that
     }
 }

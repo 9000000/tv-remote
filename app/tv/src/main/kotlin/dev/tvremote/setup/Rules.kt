@@ -533,6 +533,7 @@ internal object Rules {
             .put("limits", limits).put("volume", o.optJSONArray("volume") ?: JSONArray()).put("volume_now", volumeCap(o, now) ?: JSONObject.NULL)
             .put("ram", ram(o)).put("volume_fixed", Guard.volumeFixed(c)).put("running", RemoteService.isRunning()).put("wanted", active(c))
             .put("adb", RemoteService.adbState()).put("awake", o.optBoolean("awake")).put("holdkeys", o.optBoolean("holdkeys")).put("mic", o.optBoolean("mic")).put("homekey", o.optString("homekey"))
+            .put("keys", KeysBridge.bound())                           // the key filter is up: LauncherSwap.byKey keeps Home only then (issue #9)
             .put("sched", sched)
             .put("lock", JSONObject().put("pin", o.optJSONObject("lock")?.has("hash") == true)
                 .put("apps", JSONArray(locked(o).map { JSONObject().put("pkg", it).put("label", label(c, it)) }))

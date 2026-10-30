@@ -2697,6 +2697,7 @@
  "launcher.key_wifi": "Home mở TV Home qua TV Setup. Muốn đổi hẳn: Quên Wi-Fi này (Cài đặt → Mạng), kết nối lại, chạy lại Tối ưu TV.",
  "launcher.why_board": "MOKA (Kalley, PRISM+) tự bật lại trình cài đặt mỗi lần khởi động: đổi màn hình chính sẽ kẹt logo. TV giữ màn hình cũ.",
  "launcher.why_boot": "TV không có màn hình chờ khi khởi động: màn hình chính mới có thể làm TV kẹt màn đen. TV giữ màn hình cũ.",
+ "launcher.why_keys": "TV Setup Keys chưa chạy nên Home vẫn mở màn hình cũ. Bật nó trong Cài đặt → Hỗ trợ tiếp cận rồi thử lại.",
  "launcher.why_user": "Bạn chọn quay lại.",
  "launcher.details": "Chi tiết",
  "launcher.download": "Tải APK",

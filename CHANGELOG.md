@@ -6,6 +6,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 
+- Home screen: where TV Setup has to take over the Home button (a TCL that keeps its setup app), Optimize TV and the launcher gallery now wait for TV Setup's key filter to really run, and say plainly when it did not start instead of "Home opens TV Home through TV Setup" (issue #9).
 - TV Channels: leaving the channel list while it still loads, or a TV with a full disk, no longer closes the app.
 - TV Setup's Manage screen and the web page work again on TV boxes with an old WebView (and older iPhones): one piece of code they could not read stopped the page.
 - TV Home: a firmware that fails while pinning a shortcut no longer closes TV Home.

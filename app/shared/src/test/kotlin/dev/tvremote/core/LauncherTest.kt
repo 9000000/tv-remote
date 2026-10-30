@@ -25,6 +25,8 @@ class LauncherTest {
         var device = "sabrina_not"                                     // ro.product.device
         var setup = "0.26.3"                                           // TV Setup's versionName
         var homekey: String? = null                                    // its rule "homekey", set by RulesReceiver
+        var keys: Boolean? = null                                      // its key filter is up (null: a TV Setup that does not say, 0.34.1 and older)
+        var keysAfter = 0                                              // looks before it comes up (the add-on being put on the TV)
         val enabledOrder = mutableListOf<String>()
         var chosen: String? = null
         var focus: String? = null                                      // what the Home key really opens, when not the home (a Google TV Streamer)
@@ -60,9 +62,11 @@ class LauncherTest {
                 cmd.startsWith("pm path ") -> cmd.removePrefix("pm path ").substringBefore(' ').let { if (it in installed) "package:/system_ext/app/$it.apk" else "" }
                 cmd.startsWith("dumpsys package ${RulesClient.SETUP}") -> "    versionName=$setup"
                 cmd.startsWith("am broadcast") && cmd.contains("RulesReceiver") -> {
-                    val d = org.json.JSONObject(String(java.util.Base64.getDecoder().decode(cmd.substringAfter("--es set ").substringBefore(' '))))
+                    val d = if ("--es set " !in cmd) org.json.JSONObject() else org.json.JSONObject(String(java.util.Base64.getDecoder().decode(cmd.substringAfter("--es set ").substringBefore(' '))))   // none: a read
                     if (d.optString("do") == "homekey") homekey = d.optString("pkg")
-                    "Broadcast completed: result=0, data=\"" + java.util.Base64.getEncoder().encodeToString(org.json.JSONObject().put("homekey", homekey ?: "").toString().toByteArray()) + "\""
+                    val st = org.json.JSONObject().put("homekey", homekey ?: "")
+                    keys?.let { k -> st.put("keys", k && keysAfter-- <= 0) }
+                    "Broadcast completed: result=0, data=\"" + java.util.Base64.getEncoder().encodeToString(st.toString().toByteArray()) + "\""
                 }
                 cmd.startsWith("pm list packages -U ") -> "package:${cmd.substringAfterLast(' ')} uid:10039"
                 cmd == "pm list packages -e" -> (installed - disabled).joinToString("\n") { "package:$it" }
@@ -165,6 +169,33 @@ class LauncherTest {
             assertFalse(tv.said.any { it == "pm disable-user --user 0 $WIZ" })
             keyWay(tv, s, why)
         }
+    }
+
+    @Test fun aKeyFilterThatNeverStartsIsNotCalledHome() {          // issue #9, TCLs: the rule set, the filter off, Home still on the TCL launcher
+        val tv = Tv().apply { wizardLocked = true; wifi = "WifiConfigManager\nID: 0 SSID\ncname=$WIZ:10039"; keys = false }
+        val s = LauncherSwap({ tv.sh(it) })
+        assertFalse(s.take("com.new.home", 30))
+        assertEquals(LauncherSwap.KEYS, s.refused)                    // "The TV kept its own home screen", with what to do
+        assertEquals("", tv.homekey)                                  // no rule left behind that says otherwise
+        assertTrue(s.state()?.active != true)                         // nothing for the watchdog, no "TV Home" in Optimize's log
+        assertEquals(Setup.LAUNCHERX, s.homeOpens().substringBefore('/'))
+        assertEquals(setOf("com.google.android.tvlauncher"), tv.disabled)
+        assertEquals(LauncherSwap.KEYS_WAIT, tv.said.count { it == "sleep 1" })   // it was given the time to come up
+    }
+
+    @Test fun aKeyFilterThatComesUpWhileTheAddOnGoesInKeepsHome() {
+        val tv = Tv().apply { wizardLocked = true; wifi = "WifiConfigManager\nID: 0 SSID\ncname=$WIZ:10039"; keys = true; keysAfter = 3 }
+        val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 30))
+        keyWay(tv, s, "wifi")
+    }
+
+    @Test fun theWatchdogSaysSoWhenTheKeyFilterCannotTakeHomeBack() {   // a TCL turns its wizard on again after a full swap
+        val tv = Tv().apply { wizardLocked = true }; val s = LauncherSwap({ tv.sh(it) })
+        assertTrue(s.take("com.new.home", 0))
+        tv.disabled -= WIZ; tv.keys = false
+        assertEquals(LauncherSwap.KEYS, LauncherWatch({ tv.sh(it) }).check())
+        assertEquals("", tv.homekey)
     }
 
     @Test fun aChromecastKeepsItsWizardForCastingAndTvSetupTakesHome() {

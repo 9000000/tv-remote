@@ -293,7 +293,7 @@ class Setup internal constructor(private val adb0: Adb?, private val dir: File?,
             if (refused.isNotEmpty()) log.line(t(LauncherSwap.whyId(refused)))   // the reason, when it is one the person can know
             if (refused == "home" && opened.isNotEmpty()) log.line(t("launcher.home_opens", "pkg" to opened))
             // the known refusals (a Chromecast, a MOKA board) say nothing new; these are the TVs the swap does not know yet
-            if (refused in setOf("home", "interrupted", "wifi_unknown", "")) report("home:" + refused.ifEmpty { "?" }, opened, emptyMap())
+            if (refused in setOf("home", "interrupted", "wifi_unknown", LauncherSwap.KEYS, "")) report("home:" + refused.ifEmpty { "?" }, opened, emptyMap())
             log.line(t("optimize.done"))
         }
     }
