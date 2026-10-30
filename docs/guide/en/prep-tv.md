@@ -11,6 +11,8 @@ Optional, and usually not needed: TV Setup opens the switch itself. Without ADB 
 
 > 📡 A TV with **Wireless debugging** only (Android 11+)? No ADB debugging switch needed: open the TV's web page, press **📡 Pair with Wireless debugging**, follow [the steps](wireless.md).
 
+> 🔐 TV Setup says “The TV is asking Allow USB debugging?”: ADB is already on, just tick **Always allow** on the TV, then choose OK.
+
 > 📡 Also worth turning on: **Network & Internet → Remote start**, so the TV can be woken from afar.
 
 > 💡 The TV’s address: TV Setup shows it. By hand: **Settings → Network & Internet** → the Wi-Fi name, like `192.168.1.20`. Menu names vary a little by brand.

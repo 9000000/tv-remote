@@ -6,6 +6,14 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 
+- A Hisense VIDAA TV's Settings key on the remote now reads "Menu" with the menu icon, on the web remote and the Phone app; it already sent the TV's Menu key (#8).
+- TV Setup: a TV whose clock jumps ahead with no network time no longer forgets paired browsers, and never stamps them with the wrong year.
+- TV Channels: one long OK on a channel opens one menu, not two stacked; a stream check saved while the clock was ahead no longer sticks for a year.
+- TV Apps: the old JAR (v1) signature check reads only the real signer of each signed block, so a bundled library's file or a certificate chain no longer refuses an install.
+- TV Home: the Weather map says when there is no network and loads by itself once it is back (it showed an unreadable error page); a wall video that got a passing server error is tried again after 5 minutes.
+- Computer app: the Tailscale scan finds peers again when `tailscale status` prints a lot (it waited for a full pipe and found none).
+- Files: an upload of unknown length goes to a `.part` file and moves in whole, so a failed one no longer truncates a file already there; download and install jobs are named in the page's language.
+- Page: the custom sleep time sits in order with the presets; the "DNS filter turned off" note is one short line with the date in the page's language.
 - When nobody answers the TV's "Allow USB debugging?" question, the page and TV Setup now say the TV is asking (tick Always allow, then Allow) instead of "ADB error: timeout" and "turn on ADB debugging"; other ADB errors are shown in plain words instead of raw socket text.
 - TV Channels keeps its reminders when a box boots with the clock a year ahead (they were all deleted as past), and arms them again once the clock is set.
 - Downloaded lists (channels, guide, games, themes, links, wallpapers, Downloader codes) are fetched again on boxes that saved them while their clock was ahead; before, they looked fresh until that date came.

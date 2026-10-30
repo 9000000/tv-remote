@@ -11,6 +11,8 @@ Không bắt buộc, và thường không cần làm: TV Setup tự mở chỗ b
 
 > 📡 TV chỉ có **Gỡ lỗi không dây** (Android 11 trở lên)? Không cần Gỡ lỗi ADB: mở trang web của TV, bấm **📡 Ghép bằng Gỡ lỗi không dây**, làm theo [hướng dẫn](wireless.md).
 
+> 🔐 TV Setup báo “TV đang hỏi Cho phép gỡ lỗi USB?”: ADB đã bật, chỉ cần tích **Luôn cho phép** trên TV rồi chọn OK.
+
 > 📡 Nên bật thêm: **Mạng & Internet → Khởi động từ xa** (Remote start), để bật TV từ xa.
 
 > 💡 Địa chỉ TV: TV Setup hiện sẵn. Tự tìm: **Cài đặt → Mạng & Internet** → bấm tên Wi-Fi, dạng `192.168.1.20`. Tên các mục có thể khác chút tùy hãng.
