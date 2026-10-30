@@ -4,7 +4,8 @@
 //   - labelled next-release ("fixed on main, waiting for a release") and a release came out after our last comment: say it is out,
 //     then take the label off (and close the issue when the fix is all it asked for).
 // Prints nothing when nothing is due. Run by the session hooks (.claude/settings.json; --every N: at most once per N minutes) and at
-// the end of dev/release/release.sh. Needs gh; offline or no gh: silent.
+// the end of dev/release/release.sh. Needs gh; offline or no gh: silent. --json: [{key, text}] for crashwatch (key changes with each
+// new comment, so an answer on an issue already waiting is news again).
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -12,7 +13,7 @@ const os = require('os');
 
 const OWNER = 'HoangTran0410';
 const LABEL = 'next-release';
-const gh = (...a) => JSON.parse(execFileSync('gh', a, { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }));
+const gh = (...a) => JSON.parse(execFileSync('gh', a, { cwd: path.join(__dirname, '../..'), encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }));
 
 function due() {
   const issues = gh('issue', 'list', '--state', 'open', '--limit', '100', '--json', 'number,title,author,createdAt,comments,labels');
@@ -22,10 +23,11 @@ function due() {
     const ours = i.comments.filter((c) => c.author.login === OWNER);
     const last = i.comments[i.comments.length - 1];
     const waiting = last ? last.author.login !== OWNER : i.author.login !== OWNER;
-    if (waiting) out.push(`#${i.number} waits for a reply (${last ? 'last comment by ' + last.author.login : 'no answer yet'}): ${i.title}`);
+    const at = last ? last.createdAt : i.createdAt;
+    if (waiting) out.push(`${i.number}@${at}|#${i.number} waits for a reply (${last ? 'last comment by ' + last.author.login : 'no answer yet'}): ${i.title}`);
     const lastOurs = ours.length ? ours[ours.length - 1].createdAt : i.createdAt;
     if (rel && i.labels.some((l) => l.name === LABEL) && rel.publishedAt > lastOurs)
-      out.push(`#${i.number} is ${LABEL} and ${rel.tagName} is out since our last comment: say the fix is out, remove the label: ${i.title}`);
+      out.push(`${i.number}@${rel.tagName}|#${i.number} is ${LABEL} and ${rel.tagName} is out since our last comment: say the fix is out, remove the label: ${i.title}`);
   }
   return out;
 }
@@ -37,8 +39,10 @@ if (require.main === module) {
     try { if (Date.now() - fs.statSync(stamp).mtimeMs < +process.argv[k + 1] * 60000) process.exit(0); } catch (e) { }
     try { fs.writeFileSync(stamp, ''); } catch (e) { }
   }
-  let lines;
-  try { lines = due(); } catch (e) { process.exit(0); }
+  let rows;
+  try { rows = due().map((l) => ({ key: l.slice(0, l.indexOf('|')), text: l.slice(l.indexOf('|') + 1) })); } catch (e) { process.exit(0); }
+  if (process.argv.includes('--json')) { console.log(JSON.stringify(rows)); process.exit(0); }
+  const lines = rows.map((r) => r.text);
   if (lines.length) console.log('GitHub issues needing a reply (dev/admin/issues.js; replies are public: write them for the person, per AGENTS.md):\n- ' + lines.join('\n- '));
 }
 module.exports = { due };
