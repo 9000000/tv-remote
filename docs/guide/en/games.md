@@ -8,7 +8,8 @@ Only the TV's remote at hand: install it with Downloader, code **2294968**.
 2. Press **Open TV Games**, then scan the QR on the TV with a phone to use it as a pad.
 3. Card and board games (Tiến lên, Color Cards, Tycoon…): each player holds their hand on their phone, taps or swipes to pick cards, then presses a button. Bots take empty seats.
 4. Alone with the TV remote: OK is the A button. Start, Select, B: **Back → Map remote keys**, then press the keys you want (color keys, ⏯…). Or **🎮 Gamepad** on the remote.
-5. Tilt games (Balloons, Pool, Paper Planes…): on the pad tap **Turn on tilt**. The browser warns as the pad switches to https: tap **Advanced** then **Proceed** (iPhone adds **Allow**). You keep your seat.
-6. A web game stuck or just updated? On the TV hold OK on the web game → **Open the latest version**; on the phone the ⚙ menu → **Reload the game**. Phones stay connected.
+5. Send someone out of the lobby: press ▲ on the remote to pick them, then OK (Back keeps everyone). Their phone taps to join again.
+6. Tilt games (Balloons, Pool, Paper Planes…): on the pad tap **Turn on tilt**. The browser warns as the pad switches to https: tap **Advanced** then **Proceed** (iPhone adds **Allow**). You keep your seat.
+7. A web game stuck or just updated? On the TV hold OK on the web game → **Open the latest version**; on the phone the ⚙ menu → **Reload the game**. Phones stay connected.
 
 ### Tips
