@@ -54,14 +54,18 @@ object GuardLogic {
     /**
      * True when [t] is Android's own fault inside a call it made to the app, nothing the app did or can change: the system refusing
      * to start the TV's assistant while it asked the screen for assist data (census 4ccc4845), a TextClock unregistering a receiver
-     * the system had already dropped while its screen was closed (630851a6). Logged, not shown or sent, and the app goes on.
+     * the system had already dropped while its screen was closed (630851a6), the system's window manager failing on its own record
+     * while the app told it a screen had paused or stopped (an Allwinner H616 on Android 10, e19ee5e7: the NPE is thrown inside
+     * system_server and sent back through the binder). Logged, not shown or sent, and the app goes on.
      */
     fun systemFault(t: Throwable): Boolean {
         val f = t.stackTrace
         val assist = t is IllegalStateException && f.any { it.className == "android.app.ActivityThread" && it.methodName == "handleRequestAssistContextExtras" }
         val clock = t is IllegalArgumentException && t.message?.startsWith("Receiver not registered") == true &&
             f.any { it.className == "android.widget.TextClock" && it.methodName == "onDetachedFromWindow" }
-        return assist || clock
+        val lifecycle = f.take(8).any { it.className == "android.os.Parcel" && it.methodName == "readException" } &&   // thrown on the system's side
+            f.any { it.className.startsWith("android.app.servertransaction.") && it.methodName == "postExecute" }   // the app reporting pause / stop back
+        return assist || clock || lifecycle
     }
 
     /** The whole text saved to the file and put on the clipboard: when, which app and phone, which thread, then the stack. */

@@ -49,6 +49,13 @@ class GuardLogicTest {
         assertFalse(GuardLogic.systemFault(IllegalArgumentException("Receiver not registered: a.B@1").apply {
             stackTrace = arrayOf(StackTraceElement("a.B", "onDestroy", "X.java", 1)) }))         // our own receiver: still reported
         assertFalse(GuardLogic.systemFault(thrown("android.app.ActivityThread" to "handleRequestAssistContextExtras")))
+        val paused = NullPointerException("Attempt to read from field 'com.android.server.wm.TaskRecord com.android.server.wm.ActivityRecord.task' on a null object reference").apply {
+            stackTrace = arrayOf(StackTraceElement("android.os.Parcel", "createException", "X.java", 1), StackTraceElement("android.os.Parcel", "readException", "X.java", 1),
+                StackTraceElement("android.app.IActivityTaskManager\$Stub\$Proxy", "activityPaused", "X.java", 1),
+                StackTraceElement("android.app.servertransaction.PauseActivityItem", "postExecute", "X.java", 1)) }   // e19ee5e7
+        assertTrue(GuardLogic.systemFault(paused))
+        assertFalse(GuardLogic.systemFault(NullPointerException("x").apply {
+            stackTrace = arrayOf(StackTraceElement("a.B", "onPause", "X.java", 1), StackTraceElement("android.app.servertransaction.PauseActivityItem", "execute", "X.java", 1)) }))   // our own onPause: still reported
     }
 
     @Test fun `the report has when, app, android, device, thread and the stack`() {
