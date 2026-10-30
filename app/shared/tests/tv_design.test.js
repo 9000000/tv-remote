@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const APPS = ['tv', 'home', 'channels', 'games'];
+const APPS = ['tv', 'home', 'channels', 'games', 'tvapps'];
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true })
   .flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.kt') ? [path.join(d, e.name)] : []);
 
@@ -20,6 +20,7 @@ const RAW = {
   channels: { 'BrowseActivity.kt': 4, 'Pins.kt': 2, 'PlayActivity.kt': 8, 'ReminderNotice.kt': 1 },
   games: { 'GameActivity.kt': 4, 'GameCards.kt': 4, 'LibraryActivity.kt': 34, 'LobbyTheme.kt': 1, 'LobbyView.kt': 46, 'Pins.kt': 3, 'Systems.kt': 4,
     'WebGameActivity.kt': 4 },
+  tvapps: {},
 };
 const COLOUR = /0x[0-9A-Fa-f]{8}\b|Color\.(rgb|argb|parseColor)\(/g;
 const NAMED = /^\s*(private |internal |public )?(const )?va[lr] [A-Z][A-Z0-9_]*\s*[:=]/;
@@ -48,7 +49,7 @@ const DRAWN = {
 
 test('no new hand-drawn view: build from the components (DESIGN-TV.md §3, phone: Ui.kt)', () => {
   const bad = [];
-  for (const a of ['tv', 'home', 'channels', 'games', 'android']) {
+  for (const a of ['tv', 'home', 'channels', 'games', 'tvapps', 'android']) {
     for (const f of walk(path.join(ROOT, 'app', a, 'src', 'main'))) {
       const n = (fs.readFileSync(f, 'utf8').match(/override fun (onDraw|dispatchDraw)\(/g) || []).length;
       const allowed = (DRAWN[a] || {})[path.basename(f)] || 0;
@@ -93,7 +94,7 @@ test('no app defines a component tvui already has', () => {
   const bad = [];
   for (const a of APPS) for (const f of walk(path.join(ROOT, 'app', a, 'src', 'main'))) {
     const src = fs.readFileSync(f, 'utf8');
-    for (const n of (a === 'channels' || a === 'games') ? names : own) if (new RegExp('fun (\\w+\\.)?' + n + '\\(').test(src)) bad.push(`app/${a}/.../${path.basename(f)}: fun ${n}( : use tvui's`);
+    for (const n of (a === 'channels' || a === 'games' || a === 'tvapps') ? names : own) if (new RegExp('fun (\\w+\\.)?' + n + '\\(').test(src)) bad.push(`app/${a}/.../${path.basename(f)}: fun ${n}( : use tvui's`);
     if (/object Ui\b/.test(src)) bad.push(`app/${a}/.../${path.basename(f)}: object Ui: the look is tvui's TvUi`);
     if (/(object Motion|class Spring|class Glass|object TvGlass|open class TvTile)\b/.test(src)) bad.push(`app/${a}/.../${path.basename(f)}: Motion / Spring / Glass / TvTile are tvui's`);
     // the colours tvui owns, named again (Setup's BG / CARD / INK, Home's RING_ACCENT / GLASS_* / PANEL_*)

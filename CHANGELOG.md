@@ -6,6 +6,7 @@ Three version numbers, each bumped only when its own part changes: `VERSION` (th
 
 ## Unreleased
 - TV Apps (Apps tab → Browse apps): free, open-source apps for the TV (SmartTube, TizenTube, Kodi, VLC, Jellyfin, Just Player, Nova, mpv, Moonlight, LocalSend), each downloaded from its maker's own release, checked against its maker's signing certificate and installed in one tap; the list is signed and updated on the site without a new release.
+- TV Apps on the TV (new app, `dev.tvremote.apps`): the same list with the remote, a pill per category, hold OK for Open / Install again / Details; installs with no question through TV Setup's ADB link, else through Android's installer (it explains "Install unknown apps" first and goes on once allowed).
 - TV Home: the Control Center has a brightness bar (a sun icon; OK to change it, Left / Right in steps of 10 %, Back when done; 100 % = no tint) and a button beside it to pick the tint colour (Dark, Blue light filter, Yellow, Sepia, Night red, Blue; a colour picked while off comes on light, at 90 %); shown when TV Setup is new enough, so a dim left on is always one press from Home.
 - Remote: Dim the screen moves into More keys → Tools (sun icon); the Sleep timer menu has Screen off directly instead of a TV screen submenu.
 - TV Home: the weather map's layers are icon buttons with one line naming the focused one, plus Play / Pause for the forecast (Windy's own play button sat on the map, out of the remote's reach); the next days get their room back.

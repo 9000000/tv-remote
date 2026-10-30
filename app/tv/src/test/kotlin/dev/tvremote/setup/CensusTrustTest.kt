@@ -11,6 +11,7 @@ class CensusTrustTest {
         assertTrue(HomeInfo.censusOk("dev.tvremote.home", listOf(home), emptyList()))
         assertTrue(HomeInfo.censusOk("dev.tvremote.channels", listOf(HomeInfo.CENSUS_APPS.getValue("dev.tvremote.channels")), emptyList()))
         assertTrue(HomeInfo.censusOk("dev.tvremote.games", listOf(HomeInfo.CENSUS_APPS.getValue("dev.tvremote.games")), emptyList()))
+        assertTrue(HomeInfo.censusOk("dev.tvremote.apps", listOf(HomeInfo.CENSUS_APPS.getValue("dev.tvremote.apps")), emptyList()))
         assertTrue(HomeInfo.censusOk("dev.tvremote.games", listOf("debugkey"), listOf("debugkey")))   // debug builds share one key
     }
     @Test fun nobodyElse() {

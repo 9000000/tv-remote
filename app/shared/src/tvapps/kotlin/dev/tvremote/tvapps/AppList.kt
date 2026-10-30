@@ -135,7 +135,7 @@ object AppList {
         c.setRequestProperty("User-Agent", "tv-remote")
         try {
             if (c.responseCode != 200) throw IOException("HTTP " + c.responseCode)
-            val total = c.contentLengthLong
+            val total = c.getHeaderField("Content-Length")?.toLongOrNull() ?: -1L    // contentLengthLong is API 24
             if (total > 400L shl 20) throw IOException("file too big")
             var got = 0L; var last = -1
             c.inputStream.use { i -> FileOutputStream(f).use { o ->

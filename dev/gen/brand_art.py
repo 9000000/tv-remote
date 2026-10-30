@@ -4,8 +4,8 @@ them on a TV home reads as one brand (the user, 2026-10-25: four banners, four s
 
   python3 dev/gen/brand_art.py
 
-Writes app/<x>/src/main/res/drawable/banner.png (320x180) for TV Setup, TV Home, TV Channels and TV Games, icon.png (192) for
-the last three (TV Setup's icon is the project's logo: dev/gen/round_icons.py), and the copies: TV Setup's More TV apps row
+Writes app/<x>/src/main/res/drawable/banner.png (320x180) for TV Setup, TV Home, TV Channels, TV Games and TV Apps, icon.png (192) for
+the last four (TV Setup's icon is the project's logo: dev/gen/round_icons.py), and the copies: TV Setup's More TV apps row
 (app/tv/.../eco_*.png), TV Home's TV Setup suggestion (suggest_setup.png) and the site's demo (docs/demo/img/banner-*.png). Drawn at 4x and scaled down. Needs Pillow."""
 import pathlib
 from PIL import Image, ImageDraw, ImageFont
@@ -17,6 +17,7 @@ APPS = {                                                             # name, the
     "home": ("Home", (22, 40, 83), (41, 83, 154)),
     "channels": ("Channels", (20, 184, 166), (37, 99, 235)),
     "games": ("Games", (124, 58, 237), (219, 39, 119)),
+    "tvapps": ("Apps", (245, 158, 11), (234, 88, 12)),
 }
 BOLT = (255, 200, 61)                                                # TV Setup's bolt keeps the logo's yellow
 
@@ -66,6 +67,12 @@ def glyph(kind, d, cx, cy, s, mid):
         d.rounded_rectangle((x0, y0, x0 + w, y0 + h), s * 0.12, outline="white", width=lw)
         t = s * 0.16
         d.polygon([(cx - t * 0.7, cy - t + s * 0.08), (cx - t * 0.7, cy + t + s * 0.08), (cx + t, cy + s * 0.08)], fill="white")
+    elif kind == "tvapps":                                           # a box, as the page's 📦 line icon: three faces meeting in the middle
+        r, top, mid_y = s * 0.46, cy - s * 0.48, cy - s * 0.2
+        rim = [(cx, top), (cx + r, mid_y), (cx + r, cy + s * 0.26), (cx, cy + s * 0.52), (cx - r, cy + s * 0.26), (cx - r, mid_y), (cx, top)]
+        line(d, rim, lw)
+        line(d, [(cx - r, mid_y), (cx, cy + s * 0.06), (cx + r, mid_y)], lw)
+        line(d, [(cx, cy + s * 0.06), (cx, cy + s * 0.52)], lw)
     else:                                                            # a pad: white body, a cross, two buttons
         w, h = s, s * 0.56
         x0, y0 = cx - w / 2, cy - h / 2
@@ -107,7 +114,8 @@ for app, (name, a, b) in APPS.items():
     if app == "tv":                                                  # TV Home's suggestion tile for it, while it is not installed
         ban.save(ROOT / "app/home/src/main/res/drawable/suggest_setup.png")
     if app != "tv":
-        ban.save(ROOT / f"app/tv/src/main/res/drawable/eco_{app}.png")
+        if app != "tvapps":                                          # not in TV Setup's More TV apps row (yet)
+            ban.save(ROOT / f"app/tv/src/main/res/drawable/eco_{app}.png")
         icon = tile(192 * K, 192 * K, 44 * K, a, b)
         glyph(app, ImageDraw.Draw(icon), 96 * K, 96 * K, 120 * K, mid)
         icon.resize((192, 192), Image.LANCZOS).save(out / "icon.png")

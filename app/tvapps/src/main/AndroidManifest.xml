@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />   <!-- the apps of the list, and its own update, through Android's installer -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />          <!-- which apps of the list are on the TV already: the list changes on the site, a <queries> block could not follow it -->
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <queries><package android:name="dev.tvremote.setup" /></queries>
+    <application android:name=".TvAppsApp" android:label="@string/app_name" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false"
+        android:theme="@style/TvApps" android:supportsRtl="false">
+        <activity android:name=".AppsActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|locale|layoutDirection">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <receiver android:name="dev.tvremote.update.SelfUpdate$Installed" android:exported="false" />
+    </application>
+</manifest>

@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '../../..');
-const DIRS = ['app/tv', 'app/android', 'app/home', 'app/channels', 'app/games'].map((d) => path.join(ROOT, d, 'src/main'));
+const DIRS = ['app/tv', 'app/android', 'app/home', 'app/channels', 'app/games', 'app/tvapps'].map((d) => path.join(ROOT, d, 'src/main'));
 const HANDLER = /set(OnClickListener|OnKeyListener|OnLongClickListener|OnCheckedChangeListener)\s*\{|onClick\s*=\s*\{|set(Positive|Negative|Neutral)Button\([^)]*\{/g;
 const NET = /\b\w+\.shell\(|URL\(|openConnection|Socket\(|Census\.\w+Now\(/;
 const OFF = /Thread\s*\{|Thread\(|thread\s*\{|\bgo\s*\{|launch\s*\{|async\s*\{|bg\s*\{|later\s*\{|execute\s*\{|submit\s*\{|work\s*\{/;   // past here it is off the main thread

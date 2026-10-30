@@ -265,7 +265,8 @@ class HomeInfo : ContentProvider() {
         val CENSUS_APPS = mapOf(
             "dev.tvremote.home" to "657aabacfdccbc22ff1f61138df7efd79fae765df742f7d15d80dac84c7d81b3",        // app/home/signing.jks
             "dev.tvremote.channels" to "a3e09c97fb750bf09285d6fa7c065d4c63ee6d8247b1caaa555dd279e2534b6a",    // app/channels/signing.jks
-            "dev.tvremote.games" to "b7b61e8be4809effc2b4c16ab75a320b9b655d45a0ef5f0f706feb483bbff567")       // app/games/signing.jks
+            "dev.tvremote.games" to "b7b61e8be4809effc2b4c16ab75a320b9b655d45a0ef5f0f706feb483bbff567",       // app/games/signing.jks
+            "dev.tvremote.apps" to "a628f2d051a71479c5c6b7c4dbf26eb9e947c680a2091bfd6a63c17d704d3160")        // app/tvapps/signing.jks
 
         /** [pkg] is one of those apps and [theirs] (its signing digests) hold its pinned one, or one of [mine] (debug builds of all apps share a key). */
         fun censusOk(pkg: String, theirs: List<String>, mine: List<String>): Boolean = CENSUS_APPS[pkg]?.let { pin -> theirs.any { it == pin || it in mine } } == true

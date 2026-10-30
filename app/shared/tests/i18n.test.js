@@ -126,7 +126,7 @@ test('scripts write no words of their own: every word is an id', () => {
 });
 
 // The native apps' words: i18n/apps/<lang>/<module>.json, built into res/values-<lang> by app/gradle/i18n.gradle
-const MODULES = ['android', 'channels', 'games', 'home', 'tvkeys', 'tvui'];
+const MODULES = ['android', 'channels', 'games', 'home', 'tvapps', 'tvkeys', 'tvui'];
 const fmt = (s) => [...new Set([...(typeof s === 'object' ? Object.values(s).join(' ') : Array.isArray(s) ? s.join(' ') : s).matchAll(/%(?:\d+\$)?[sdf%]/g)].map((m) => m[0]))].sort().join(',');
 const FREE = new Set(['lunar_year']);                                  // numbered args: a language may use more of them (en leaves the zodiac out)
 const shape = (v) => (Array.isArray(v) ? 'array' : v && typeof v === 'object' ? 'plurals' : typeof v);
@@ -153,12 +153,12 @@ test('apps/<lang>/<module>.json: every language of langs.json has every module w
   }
   assert.deepEqual(bad, []);
   const tvui = Object.keys(JSON.parse(read('../i18n/apps/en/tvui.json')));   // tvui.json is merged into home, games, channels and tv: no id of theirs may repeat
-  for (const m of ['channels', 'games', 'home']) assert.deepEqual(tvui.filter((k) => k in JSON.parse(read(`../i18n/apps/en/${m}.json`))), [], 'tvui ids clash with ' + m);
+  for (const m of ['channels', 'games', 'home', 'tvapps']) assert.deepEqual(tvui.filter((k) => k in JSON.parse(read(`../i18n/apps/en/${m}.json`))), [], 'tvui ids clash with ' + m);
 });
 
 test('no hand-written strings.xml: the words of the native apps come from i18n/apps (app/gradle/i18n.gradle)', () => {
   const bad = [];
-  for (const a of ['android', 'channels', 'games', 'home', 'tvkeys']) {
+  for (const a of ['android', 'channels', 'games', 'home', 'tvapps', 'tvkeys']) {
     const res = path.join(__dirname, '../..', a, 'src/main/res');
     for (const d of fs.existsSync(res) ? fs.readdirSync(res) : []) if (d.startsWith('values')) for (const f of fs.readdirSync(path.join(res, d)))
       if (/<(string|plurals|string-array)\b/.test(fs.readFileSync(path.join(res, d, f), 'utf8'))) bad.push(`app/${a}/src/main/res/${d}/${f}`);
