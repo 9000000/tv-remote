@@ -1,6 +1,7 @@
 package dev.tvremote.home.widgets
 
 import android.content.Context
+import dev.tvremote.guard.Age
 import org.json.JSONArray
 import org.json.JSONObject
 import org.xml.sax.Attributes
@@ -147,8 +148,11 @@ object News {
         if (feeds.isEmpty()) return false
         if (p.getString("sig", "") != sig) return now - p.getLong("tried", 0) >= RETRY_MS || now < p.getLong("tried", 0)
         if (now - p.getLong("tried", 0) < RETRY_MS && now >= p.getLong("tried", 0)) return false
-        return now - p.getLong("at", 0) > FRESH_MS || cached(c).isEmpty()
+        return stale(p.getLong("at", 0), now) || cached(c).isEmpty()
     }
+
+    /** The pure part of [due]: a stamp ahead of [now] is stale too (a box that booted with its clock a year ahead saved it). */
+    internal fun stale(at: Long, now: Long) = !Age.fresh(at, FRESH_MS, now)
 
     private var busy = false
 

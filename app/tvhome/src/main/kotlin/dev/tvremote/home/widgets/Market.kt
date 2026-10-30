@@ -1,6 +1,7 @@
 package dev.tvremote.home.widgets
 
 import android.content.Context
+import dev.tvremote.guard.Age
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -121,8 +122,12 @@ object Market {
         val tried = prefs(c).getLong("tried", 0)
         if (now - tried < RETRY_MS && now >= tried) return false
         val s = cached(c) ?: return true
-        return now - s.ratesAt > FRESH_MS || now - s.goldAt > FRESH_MS || (btc && now - s.btcAt > FRESH_MS)
+        return stale(s, btc, now)
     }
+
+    /** The pure part of [due]: a stamp ahead of [now] is stale too (a box that booted with its clock a year ahead saved it). */
+    internal fun stale(s: Snap, btc: Boolean, now: Long) =
+        !Age.fresh(s.ratesAt, FRESH_MS, now) || !Age.fresh(s.goldAt, FRESH_MS, now) || (btc && !Age.fresh(s.btcAt, FRESH_MS, now))
 
     private var busy = false
 

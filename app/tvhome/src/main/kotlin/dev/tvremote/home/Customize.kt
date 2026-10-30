@@ -288,7 +288,7 @@ object Customize {
             false
         }
     }
-    fun forget(a: Activity) { if (readyFor === a) { ready = null; readyFor = null } }
+    fun forget(a: Activity) { if (readyFor === a) { ready = null; readyFor = null }; if (panelDialog?.context === a) panelDialog = null }
 
     /** [at] a page's key: the panel opens on it, without a slide (it reopens on Language after a new language built Home again). */
     fun show(a: Activity, at: String? = null): Dialog {
@@ -339,7 +339,7 @@ object Customize {
         val cols = WALL_COLS; val gap = dp(10); val w = tileW(a)
         val shots = java.util.concurrent.ThreadPoolExecutor(1, 1, 0, java.util.concurrent.TimeUnit.MILLISECONDS, java.util.concurrent.LinkedBlockingQueue(),
             java.util.concurrent.ThreadPoolExecutor.DiscardPolicy())   // the scenes drawn and the photos read small, off the main thread; a tile shown after the panel closed is dropped, not thrown (census 4823c228)
-        dialog.setOnDismissListener { shots.shutdownNow(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
+        dialog.setOnDismissListener { if (panelDialog === dialog) panelDialog = null; shots.shutdownNow(); Keys.onState = null; a.window.decorView.postDelayed({ prepare(a) }, 1500) }   // the next one ready
         // the pictures are put in together once the panel has slid in: one by one during the slide each drew the whole panel again
         val waiting = ArrayList<Pair<ImageView, Bitmap>>()
         var slid = !Motion.on

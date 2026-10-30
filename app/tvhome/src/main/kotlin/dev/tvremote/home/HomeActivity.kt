@@ -580,10 +580,14 @@ class HomeActivity : Activity() {
         if (locked) return
         if (away) Store.advance(this, true)                           // Home is shown again: "each time" moves on here, and a timed one that fell due while away
         if (trimmed) untrim()
+        else if (away) {                                              // a retry that came due while away did not run (a page attached then costs ~95 MB nobody sees): once now
+            val w = conf.optString("wall")
+            if (w == HomeConfig.WEB && web == null) webRetry.run() else if (HomeConfig.isVideo(w) && video == null) attachVideo(w)
+        }
         WebWall.wake(web); snapper?.resume(); video?.start()                          // a page keeps running only while Home is on screen: it is a slideshow, not a service
     }
 
-    override fun onStop() { away = true; zoom.hidden(); ManageServer.release(); WebWall.sleep(web); snapper?.pause(); video?.stop(); super.onStop() }   // the QR stops opening the page; a phone already on it goes on until idle
+    override fun onStop() { away = true; ui.removeCallbacks(webRetry); ui.removeCallbacks(videoRetry); zoom.hidden(); ManageServer.release(); WebWall.sleep(web); snapper?.pause(); video?.stop(); super.onStop() }   // the QR stops opening the page; a phone already on it goes on until idle
 
     /** Memory is short and the screen is hidden: the wallpaper's big bitmap and every banner go, the next [onStart] brings them back. */
     override fun onTrimMemory(level: Int) {
@@ -1598,7 +1602,7 @@ class HomeActivity : Activity() {
         if (netVideo.isNotEmpty()) netFailed() else { detachVideo(); ui.postDelayed(videoRetry, 120_000) }
     }.also { video = it }
 
-    private val webRetry = Runnable { if (!isDestroyed && !trimmed && web == null && conf.optString("wall") == HomeConfig.WEB && conf.optString("wmode") != "snap") attachWeb() }
+    private val webRetry = Runnable { if (!isDestroyed && !trimmed && !away && web == null && conf.optString("wall") == HomeConfig.WEB && conf.optString("wmode") != "snap") attachWeb() }
 
     /** The page of the "web" wall behind the grid; a page that cannot load is taken away (the gradient shows, no dialog) and tried again in 2 minutes. */
     private fun attachWeb() {

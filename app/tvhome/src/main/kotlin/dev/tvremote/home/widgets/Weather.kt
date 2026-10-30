@@ -1,6 +1,7 @@
 package dev.tvremote.home.widgets
 
 import android.content.Context
+import dev.tvremote.guard.Age
 import android.location.Geocoder
 import android.location.LocationManager
 import org.json.JSONArray
@@ -116,10 +117,13 @@ object Weather {
     fun due(c: Context, typed: String, now: Long = System.currentTimeMillis(), air: Boolean = false): Boolean {
         val p = prefs(c); val f = cached(c)
         if (now - p.getLong("tried", 0) < RETRY_MS && now >= p.getLong("tried", 0)) return false
-        val a = if (air) cachedAir(c) else null
-        return f == null || now - f.at > FRESH_MS || p.getString("typed", "") != typed.trim()   // a new city asked for: at once
-            || (air && (a == null || now - a.at > FRESH_MS))
+        return stale(f?.at, if (air) cachedAir(c)?.at else null, air, p.getString("typed", "") == typed.trim(), now)
     }
+
+    /** The pure part of [due]: a stamp ahead of [now] is stale too (a box that booted with its clock a year ahead saved it). */
+    internal fun stale(fcAt: Long?, airAt: Long?, air: Boolean, sameCity: Boolean, now: Long) =
+        fcAt == null || !Age.fresh(fcAt, FRESH_MS, now) || !sameCity   // a new city asked for: at once
+            || (air && (airAt == null || !Age.fresh(airAt, FRESH_MS, now)))
 
     private var busy = false
 
